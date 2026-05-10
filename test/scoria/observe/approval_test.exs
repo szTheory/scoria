@@ -16,11 +16,11 @@ defmodule Scoria.Observe.ApprovalTest do
       changeset = Approval.changeset(%Approval{}, attrs)
 
       assert changeset.valid?
-      assert get_change(changeset, :tool_name) == "delete_user"
-      assert get_change(changeset, :arguments) == %{"user_id" => "123"}
-      assert get_change(changeset, :status) == "pending"
-      assert get_change(changeset, :session_id) == "sess_xyz"
-      assert get_change(changeset, :run_id) == "run_xyz"
+      assert get_field(changeset, :tool_name) == "delete_user"
+      assert get_field(changeset, :arguments) == %{"user_id" => "123"}
+      assert get_field(changeset, :status) == "pending"
+      assert get_field(changeset, :session_id) == "sess_xyz"
+      assert get_field(changeset, :run_id) == "run_xyz"
     end
   end
 end
