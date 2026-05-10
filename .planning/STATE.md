@@ -7,15 +7,15 @@
 
 ## Current Position
 **Phase:** 2
-**Plan:** 1
-**Status:** 2-01 Completed
+**Plan:** 2
+**Status:** 2-02 Completed
 
 **Progress:**
-`[#####---------------------------------------------] 11%`
+`[######--------------------------------------------] 12%`
 
 ## Performance Metrics
 - **Completed Phases:** 1
-- **Completed Plans:** 5
+- **Completed Plans:** 6
 - **Total Requirements:** 19
 - **Coverage:** 100%
 
@@ -29,6 +29,7 @@
 - Phase 1 (OBS-03): Use Native OTP Buffer (GenServer + ETS) for async span batching to avoid external dependencies.
 - Phase 1 (OBS-04): Use Hybrid Configurable Deny-list + MFA Escape Hatch for telemetry redaction.
 - Phase 1 (OBS-01): Use Core Columns + JSONB Attributes for the Ecto OpenInference schemas to balance query speed and schema flexibility.
+- Phase 2 (MCP-03): Validating input arguments via Ecto.Changeset.cast/3 and a dynamic schema map matching the required interface.
 
 **Todos:**
 - Begin Phase 2 planning.
