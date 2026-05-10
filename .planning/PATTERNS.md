@@ -1,33 +1,36 @@
-# Phase 3: LiveView Operator UX - Pattern Map
+# Phase 4: Evaluation Flywheel - Pattern Map
 
-**Mapped:** 2026-05-15
-**Files analyzed:** 5
-**Analogs found:** 3 / 5
+**Mapped:** 2024-05-10
+**Files analyzed:** 8
+**Analogs found:** 7 / 8
 
 ## File Classification
 
 | New/Modified File | Role | Data Flow | Closest Analog | Match Quality |
 |-------------------|------|-----------|----------------|---------------|
-| `lib/scoria/observe/approval.ex` | model | CRUD | `lib/scoria/repo/trace.ex` | exact |
-| `lib/scoria_web/router.ex` | route | request-response | `lib/scoria/mcp/router.ex` | role-match |
-| `lib/scoria_web/live/orchestrator_live.ex` | controller | event-driven | `lib/scoria/observe/buffer.ex` | partial |
-| `lib/scoria_web/components/trace_tree_component.ex`| component | UI | None | no-match |
-| `lib/mix/tasks/scoria.install.ex` | utility | one-off | None | no-match |
+| `lib/scoria_eval/datasets/dataset.ex` | schema | storage | `lib/scoria/repo/trace.ex` | exact |
+| `lib/scoria_eval/datasets/item.ex` | schema | storage | `lib/scoria/repo/span.ex` | exact |
+| `lib/scoria_eval/eval_specs/eval_spec.ex` | schema | storage | `lib/scoria/observe/approval.ex` | role-match |
+| `lib/scoria_eval/runs/eval_run.ex` | schema | storage | `lib/scoria/observe/approval.ex` | role-match |
+| `lib/scoria_web/live/dataset_live/promote_component.ex` | component | request-response | `lib/scoria_web/components/trace_tree_component.ex` | exact |
+| `lib/scoria_web/live/eval_spec_live/index.ex` | liveview | request-response | `lib/scoria_web/live/orchestrator_live.ex` | exact |
+| `lib/mix/tasks/scoria.eval.ex` | mix task | command-line | `lib/mix/tasks/scoria.install.ex` | exact |
+| `test/support/eval_case.ex` | test support | test | No Analog Found | N/A |
 
 ## Pattern Assignments
 
-### `lib/scoria/observe/approval.ex` (model, CRUD)
+### Ecto Schemas (`lib/scoria_eval/**/*.ex`)
 
-**Analog:** `lib/scoria/repo/trace.ex`
+**Analog:** `lib/scoria/repo/trace.ex` and `lib/scoria/repo/span.ex`
 
-**Imports pattern** (lines 1-3):
+**Imports pattern** (`lib/scoria/repo/trace.ex` lines 1-3):
 ```elixir
 defmodule Scoria.Repo.Trace do
   use Ecto.Schema
   import Ecto.Changeset
 ```
 
-**Core schema pattern** (lines 5-15):
+**Core Schema Pattern** (`lib/scoria/repo/trace.ex` lines 5-13):
 ```elixir
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -41,57 +44,123 @@ defmodule Scoria.Repo.Trace do
   end
 ```
 
-**Changeset pattern** (lines 17-21):
+**Validation/Changeset Pattern** (`lib/scoria/repo/span.ex` lines 20-31):
 ```elixir
-  def changeset(trace, attrs) do
-    trace
-    |> cast(attrs, [:session_id, :attributes])
+  def changeset(span, attrs) do
+    span
+    |> cast(attrs, [
+      :trace_id,
+      :parent_id,
+      :name,
+      :span_kind,
+      :status_code,
+      :start_time,
+      :end_time,
+      :attributes
+    ])
+    |> validate_required([:trace_id, :name, :start_time])
   end
 ```
 
 ---
 
-### `lib/scoria_web/live/orchestrator_live.ex` (controller, event-driven)
+### LiveView Components (`lib/scoria_web/live/dataset_live/promote_component.ex`)
 
-**Analog:** `lib/scoria/observe/buffer.ex` (partial match for buffering/timer)
+**Analog:** `lib/scoria_web/components/trace_tree_component.ex`
 
-**Token Buffering / Coalescing pattern** (lines 40-47):
+**Core Pattern** (`lib/scoria_web/components/trace_tree_component.ex` lines 1-13):
 ```elixir
-  @impl true
-  def handle_info(:flush, state) do
-    flush_spans(state.spans)
-    state = %{state | spans: []}
-    state = schedule_flush(state)
-    {:noreply, state}
+defmodule ScoriaWeb.TraceTreeComponent do
+  use Phoenix.LiveComponent
+
+  def mount(socket) do
+    {:ok, assign(socket, active_span_id: nil)}
+  end
+
+  def update(assigns, socket) do
+    {:ok, assign(socket, assigns)}
   end
 ```
 
-**Timer Scheduling pattern** (lines 53-57):
+**Event Handling / Async Pattern** (`lib/scoria_web/components/trace_tree_component.ex` lines 10-21):
 ```elixir
-  defp schedule_flush(state) do
-    if state.timer, do: Process.cancel_timer(state.timer)
-    timer = Process.send_after(self(), :flush, state.flush_interval)
-    %{state | timer: timer}
+  def handle_event("load_metadata", %{"span_id" => span_id}, socket) do
+    socket =
+      socket
+      |> assign(:active_span_id, span_id)
+      |> assign_async(:active_metadata, fn ->
+        Process.sleep(100)
+        {:ok, %{active_metadata: "Deep trace metadata loaded lazily for span #{span_id}."}}
+      end)
+
+    {:noreply, socket}
   end
 ```
 
 ---
 
-### `lib/scoria_web/router.ex` (route, request-response)
+### LiveViews (`lib/scoria_web/live/eval_spec_live/index.ex`)
 
-**Analog:** `lib/scoria/mcp/router.ex`
+**Analog:** `lib/scoria_web/live/orchestrator_live.ex`
 
-**Router Structure pattern** (lines 1-7):
+**Core Pattern** (`lib/scoria_web/live/orchestrator_live.ex` lines 1-17):
 ```elixir
-defmodule Scoria.MCP.Router do
-  @moduledoc """
-  Plug router for handling incoming MCP (Model Context Protocol) JSON-RPC 2.0 requests.
-  """
+defmodule ScoriaWeb.OrchestratorLive do
+  use Phoenix.LiveView
 
-  use Plug.Router
+  def mount(_params, session, socket) do
+    if connected?(socket) do
+      tenant_id = session["tenant_id"] || "default"
+      Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
+    end
+
+    socket =
+      socket
+      |> assign(:page_title, "Scoria Dashboard")
+      |> assign(:token_buffer, [])
+      |> assign(:timer_ref, nil)
+      |> assign(:token_text, "")
+      |> assign(:active_approval, nil)
+      |> stream(:traces, [])
+
+    {:ok, socket}
+  end
 ```
 
 ---
+
+### Mix Tasks (`lib/mix/tasks/scoria.eval.ex`)
+
+**Analog:** `lib/mix/tasks/scoria.install.ex`
+
+**Core Pattern** (`lib/mix/tasks/scoria.install.ex` lines 1-14):
+```elixir
+defmodule Mix.Tasks.Scoria.Install do
+  use Mix.Task
+
+  @shortdoc "Installs Scoria dashboard into a Phoenix application"
+
+  def run(_args) do
+    # Implementation
+  end
+```
+
+## Shared Patterns
+
+### DB Foreign Key & Primary Key defaults
+**Source:** `lib/scoria/repo/span.ex`
+**Apply to:** All Ecto schemas in `scoria_eval`
+```elixir
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+```
+
+### Async Test Setup
+**Source:** `test/scoria/observe/approval_test.exs`
+**Apply to:** All test cases
+```elixir
+  use ExUnit.Case, async: true
+```
 
 ## No Analog Found
 
@@ -99,11 +168,10 @@ Files with no close match in the codebase (planner should use RESEARCH.md patter
 
 | File | Role | Data Flow | Reason |
 |------|------|-----------|--------|
-| `lib/scoria_web/components/trace_tree_component.ex` | component | lazy UI | No Phoenix LiveComponents or UI code exists in the current project root. |
-| `lib/mix/tasks/scoria.install.ex` | utility | one-off | No Mix tasks exist in the project for generating files or migrations. |
+| `test/support/eval_case.ex` | test support | test | Standard ExUnit macros like `DataCase` or `ConnCase` are missing from this specific application's `test/support/` structure. Planner should follow standard Elixir/ExUnit Macro conventions (e.g. `__using__` macro for injecting test setup). |
 
 ## Metadata
 
-**Analog search scope:** `lib/**/*.ex`
-**Files scanned:** 5 expected files
-**Pattern extraction date:** 2026-05-15
+**Analog search scope:** `lib/**/*.ex`, `test/**/*.exs`
+**Files scanned:** 40
+**Pattern extraction date:** 2024-05-10

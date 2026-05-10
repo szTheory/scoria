@@ -35,6 +35,7 @@ defmodule Scoria.MixProject do
       {:phoenix, "~> 1.7"},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_html, "~> 4.1"},
+      {:phoenix_ecto, "~> 4.4"},
       {:floki, ">= 0.30.0", only: :test},
       {:lazy_html, ">= 0.1.0", only: :test}
     ]

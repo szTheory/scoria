@@ -132,6 +132,18 @@ defmodule Scoria.Eval do
   end
 
   @doc """
+  Returns the list of current eval specs.
+  """
+  def list_eval_specs do
+    Repo.all(from s in EvalSpec, where: s.is_current == true, order_by: [desc: s.updated_at])
+  end
+
+  @doc """
+  Gets a single eval spec.
+  """
+  def get_eval_spec!(id), do: Repo.get!(EvalSpec, id)
+
+  @doc """
   Creates an eval spec.
   """
   def create_eval_spec(attrs \\ %{}) do
@@ -156,17 +168,18 @@ defmodule Scoria.Eval do
 
     old_spec_changeset = Ecto.Changeset.change(old_spec, is_current: false)
 
-    base_attrs = Map.take(old_spec, [:entity_id, :name, :description, :rubric])
-    
-    new_attrs = 
-      base_attrs
-      |> Map.merge(attrs)
-      |> Map.put(:version, new_version)
-      |> Map.put(:is_current, true)
+    base_struct = %EvalSpec{
+      entity_id: old_spec.entity_id,
+      name: old_spec.name,
+      description: old_spec.description,
+      rubric: old_spec.rubric,
+      version: new_version,
+      is_current: true
+    }
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:deprecate_old, old_spec_changeset)
-    |> Ecto.Multi.insert(:new_spec, EvalSpec.changeset(%EvalSpec{}, new_attrs))
+    |> Ecto.Multi.insert(:new_spec, EvalSpec.changeset(base_struct, attrs))
     |> Repo.transaction()
     |> case do
       {:ok, %{new_spec: new_spec}} -> {:ok, new_spec}

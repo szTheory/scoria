@@ -1,9 +1,10 @@
 defmodule ScoriaWeb.OrchestratorLive do
   use Phoenix.LiveView
 
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     if connected?(socket) do
-      Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:all")
+      tenant_id = session["tenant_id"] || "default"
+      Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
     end
 
     socket =

@@ -41,7 +41,6 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   setup do
-    start_supervised!({Phoenix.PubSub, name: Scoria.PubSub})
     start_supervised!(ScoriaWeb.OrchestratorLiveTest.Endpoint)
     :ok
   end

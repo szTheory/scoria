@@ -2,5 +2,6 @@
 {:ok, _} = Application.ensure_all_started(:postgrex)
 Scoria.Repo.start_link()
 Application.put_env(:phoenix_live_view, :html_parser, Floki)
+{:ok, _} = Supervisor.start_link([{Phoenix.PubSub, name: Scoria.PubSub}], strategy: :one_for_one)
 ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, :manual)
