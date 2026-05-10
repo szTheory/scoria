@@ -76,9 +76,9 @@
   2. Operator can execute deterministic or LLM-as-judge evaluations on datasets.
   3. Evals can be configured with baseline thresholds to prevent nondeterministic CI failures (e.g., requires >95% success).
 **Plans**: 3 plans
-- [ ] 04-01-PLAN.md — Immutable Ecto Schemas for Datasets & Rubrics
-- [ ] 04-02-PLAN.md — Evaluation Execution Engine & ExUnit Integration
-- [ ] 04-03-PLAN.md — LiveView UI Integration for Dataset Promotion
+- [x] 04-01-PLAN.md — Immutable Ecto Schemas for Datasets & Rubrics
+- [x] 04-02-PLAN.md — Evaluation Execution Engine & ExUnit Integration
+- [x] 04-03-PLAN.md — LiveView UI Integration for Dataset Promotion
 **UI hint**: yes
 
 ## Progress
@@ -88,4 +88,4 @@
 | 1. Core Observability & Telemetry | 4/4 | Complete | - |
 | 2. MCP Gateway & Tool Governance | 2/3 | In Progress | - |
 | 3. LiveView Operator UX | 0/0 | Not started | - |
-| 4. Evaluation Flywheel | 0/3 | Planned | - |
+| 4. Evaluation Flywheel | 3/3 | Complete | - |

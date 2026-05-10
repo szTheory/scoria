@@ -48,7 +48,7 @@
 | UI-03 | Phase 3 | Pending |
 | UI-04 | Phase 3 | Pending |
 | UI-05 | Phase 3 | Pending |
-| EVAL-01 | Phase 4 | Pending |
-| EVAL-02 | Phase 4 | Pending |
-| EVAL-03 | Phase 4 | Pending |
-| EVAL-04 | Phase 4 | Pending |
+| EVAL-01 | Phase 4 | Complete |
+| EVAL-02 | Phase 4 | Complete |
+| EVAL-03 | Phase 4 | Complete |
+| EVAL-04 | Phase 4 | Complete |
