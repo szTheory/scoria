@@ -6,18 +6,19 @@
 **Current Focus:** Implementation of Core Observability complete. Transitioning to Phase 2.
 
 ## Current Position
-**Phase:** 2
+**Phase:** 4
 **Plan:** 2
-**Status:** 2-02 Completed
+**Status:** 4-02 Completed
 
 **Progress:**
-`[######--------------------------------------------] 12%`
+`[###################-------------------------------] 38%`
 
 ## Performance Metrics
 - **Completed Phases:** 1
 - **Completed Plans:** 6
 - **Total Requirements:** 19
 - **Coverage:** 100%
+- **Phase 4-02 Metrics:** 10m, 2 tasks, 4 files
 
 ## Accumulated Context
 **Decisions:**
@@ -30,6 +31,8 @@
 - Phase 1 (OBS-04): Use Hybrid Configurable Deny-list + MFA Escape Hatch for telemetry redaction.
 - Phase 1 (OBS-01): Use Core Columns + JSONB Attributes for the Ecto OpenInference schemas to balance query speed and schema flexibility.
 - Phase 2 (MCP-03): Validating input arguments via Ecto.Changeset.cast/3 and a dynamic schema map matching the required interface.
+- Phase 4-02: Created an ExUnit case template macro Scoria.EvalCase to segregate fast unit tests from slow evaluation runs.
+- Phase 4-02: Set up a Mix task scoria.eval that starts the Ecto repository and parses the --dataset argument.
 
 **Todos:**
 - Begin Phase 2 planning.
