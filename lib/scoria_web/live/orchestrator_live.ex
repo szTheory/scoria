@@ -67,6 +67,14 @@ defmodule ScoriaWeb.OrchestratorLive do
     {:noreply, assign(socket, :active_approval, nil)}
   end
 
+  def handle_event("load_metadata", %{"id" => trace_id}, socket) do
+    {:noreply,
+     assign_async(socket, :trace_metadata, fn ->
+       # Fetch deep trace metadata (simulated here)
+       {:ok, %{trace_metadata: %{id: trace_id, deep_data: "loaded lazily"}}}
+     end)}
+  end
+
   def render(assigns) do
     ~H"""
     <div class="scoria-dashboard bg-gray-50 min-h-screen p-8 text-gray-900 font-sans relative">
@@ -79,8 +87,19 @@ defmodule ScoriaWeb.OrchestratorLive do
         <div id="traces-list" phx-update="stream" class="space-y-4">
           <div :for={{id, trace} <- @streams.traces} id={id} class="bg-white p-4 rounded shadow">
             <.live_component module={ScoriaWeb.TraceTreeComponent} id={"tree-#{id}"} spans={trace.spans} />
+            <button phx-click="load_metadata" phx-value-id={trace.id} class="mt-2 text-xs text-blue-500 underline">Load Deep Metadata</button>
           </div>
         </div>
+
+        <%= if assigns[:trace_metadata] do %>
+          <div class="mt-4 p-4 bg-gray-100 rounded text-sm">
+            <.async_result :let={metadata} assign={@trace_metadata}>
+              <:loading>Loading metadata...</:loading>
+              <:failed :let={_failure}>Failed to load metadata</:failed>
+              <pre><%= inspect(metadata) %></pre>
+            </.async_result>
+          </div>
+        <% end %>
       </div>
 
       <%= if @active_approval do %>
