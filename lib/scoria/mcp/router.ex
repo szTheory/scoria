@@ -5,6 +5,8 @@ defmodule Scoria.MCP.Router do
 
   use Plug.Router
   alias Scoria.MCP.Protocol
+  alias Scoria.MCP.Validator
+  alias Scoria.MCP.Executor
 
   plug Plug.Parsers,
     parsers: [:json],
@@ -14,22 +16,41 @@ defmodule Scoria.MCP.Router do
   plug :match
   plug :dispatch
 
+  def call(conn, opts) do
+    conn = assign(conn, :mcp_tools, Keyword.get(opts, :tools, %{}))
+    super(conn, opts)
+  end
+
   post "/" do
-    # Get the actor context from assigns.
-    # We fallback to nil if it's not set.
     actor = conn.assigns[:current_actor]
+    tools = conn.assigns[:mcp_tools]
 
     case Protocol.parse(conn.body_params) do
       {:ok, request} ->
-        # Placeholder execution: echo back the parsed method/params and the actor.
-        result = %{
-          "method" => request.method,
-          "params" => request.params,
-          "actor" => actor
-        }
+        case Map.fetch(tools, request.method) do
+          {:ok, tool_module} ->
+            params = request.params || %{}
+            case Validator.validate_args(tool_module, params) do
+              {:ok, valid_args} ->
+                case Executor.execute(tool_module, valid_args, actor) do
+                  {:ok, result} ->
+                    send_success(conn, request.id, result)
 
-        response = Protocol.format_response(request.id, result)
-        send_json(conn, 200, response)
+                  {:error, :timeout} ->
+                    send_error(conn, request.id, -32000, "Execution timeout")
+
+                  {:error, _reason} ->
+                    send_error(conn, request.id, -32603, "Internal error")
+                end
+
+              {:error, changeset} ->
+                errors = traverse_errors(changeset)
+                send_error(conn, request.id, -32602, "Invalid params", errors)
+            end
+
+          :error ->
+            send_error(conn, request.id, -32601, "Method not found")
+        end
 
       {:error, error_response} ->
         send_json(conn, 400, error_response)
@@ -40,9 +61,27 @@ defmodule Scoria.MCP.Router do
     send_resp(conn, 404, "Not Found")
   end
 
+  defp send_success(conn, id, result) do
+    response = Protocol.format_response(id, result)
+    send_json(conn, 200, response)
+  end
+
+  defp send_error(conn, id, code, message, data \\ nil) do
+    response = Protocol.format_error(id, code, message, data)
+    send_json(conn, 200, response) # JSON-RPC errors typically return 200 OK
+  end
+
   defp send_json(conn, status, data) do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(status, Jason.encode!(data))
+  end
+
+  defp traverse_errors(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
   end
 end

@@ -8,6 +8,7 @@ defmodule Scoria.MCP.Executor do
   Executes a tool module with the given arguments and context.
   """
   def execute(tool_module, args, context, timeout \\ 5000) do
+    context = context || %{}
     metadata = Map.merge(context, %{tool: tool_module, args: args})
 
     :telemetry.execute([:scoria, :tool, :started], %{system_time: System.system_time()}, metadata)
