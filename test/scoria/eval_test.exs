@@ -65,6 +65,28 @@ defmodule Scoria.EvalTest do
       assert new_item.input == %{"q" => "hello"}
       assert new_item.id != item.id
     end
+
+    test "promote_trace_to_dataset/2 creates dataset and item from a given trace struct" do
+      trace = %Scoria.Repo.Trace{
+        id: Ecto.UUID.generate(),
+        session_id: "sess-123",
+        attributes: %{"some" => "attr"},
+        spans: []
+      }
+
+      assert {:ok, %Dataset{} = dataset} = Eval.promote_trace_to_dataset(trace, %{name: "Promoted Trace Dataset"})
+      assert dataset.name == "Promoted Trace Dataset"
+
+      items = Eval.list_dataset_items(dataset.id)
+      assert length(items) == 1
+      item = hd(items)
+      
+      assert item.input["trace_id"] == trace.id
+      assert item.input["session_id"] == "sess-123"
+      assert item.input["attributes"] == %{"some" => "attr"}
+      assert item.metadata["promoted_from_trace"] == true
+      assert item.metadata["span_count"] == 0
+    end
   end
 
   describe "eval_specs" do

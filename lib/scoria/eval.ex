@@ -108,6 +108,30 @@ defmodule Scoria.Eval do
   end
 
   @doc """
+  Promotes a Trace and its Spans into a new Dataset snapshot.
+  """
+  def promote_trace_to_dataset(trace, dataset_attrs \\ %{}) do
+    spans = if Ecto.assoc_loaded?(trace.spans), do: trace.spans, else: []
+
+    item_attrs = %{
+      input: %{
+        "trace_id" => trace.id,
+        "session_id" => trace.session_id,
+        "attributes" => trace.attributes || %{}
+      },
+      expected_output: %{},
+      metadata: %{
+        "promoted_from_trace" => true,
+        "span_count" => length(spans)
+      }
+    }
+
+    dataset_attrs
+    |> Map.put(:items, [item_attrs])
+    |> create_dataset()
+  end
+
+  @doc """
   Creates an eval spec.
   """
   def create_eval_spec(attrs \\ %{}) do
