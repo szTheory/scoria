@@ -1,5 +1,6 @@
 {:ok, _} = Application.ensure_all_started(:ecto_sql)
 {:ok, _} = Application.ensure_all_started(:postgrex)
 Scoria.Repo.start_link()
+Application.put_env(:phoenix_live_view, :html_parser, Floki)
 ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, :manual)
