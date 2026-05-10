@@ -70,5 +70,26 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert render(view) =~ "llm_call"
     assert render(view) =~ "trace-tree"
   end
+
+  test "tokens are buffered and flushed properly" do
+    conn = build_conn()
+           |> Plug.Test.init_test_session(%{})
+           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, html} = live(conn, "/scoria")
+    
+    # Send tokens
+    send(view.pid, {:token, "Hello"})
+    send(view.pid, {:token, " World"})
+
+    # Ensure they are not in the DOM immediately (buffered)
+    refute render(view) =~ "Hello World"
+    
+    # Send flush event explicitly (or wait for timer)
+    send(view.pid, :flush_tokens)
+
+    # Now they should be in the DOM
+    assert render(view) =~ "Hello World"
+  end
 end
 
