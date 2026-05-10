@@ -41,6 +41,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   setup do
+    start_supervised!({Phoenix.PubSub, name: Scoria.PubSub})
     start_supervised!(ScoriaWeb.OrchestratorLiveTest.Endpoint)
     :ok
   end
@@ -52,6 +53,22 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
 
     {:ok, _view, html} = live(conn, "/scoria")
     assert html =~ "scoria-dashboard"
+  end
+
+  test "OrchestratorLive subscribes to PubSub and renders streaming traces" do
+    conn = build_conn()
+           |> Plug.Test.init_test_session(%{})
+           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+    
+    # Send a dummy trace message simulating PubSub broadcast
+    trace = %{id: "trace-123", spans: [%{id: "span-1", name: "llm_call", depth: 0}]}
+    send(view.pid, {:new_trace, trace})
+
+    # Render again to see if it streamed the trace using the component
+    assert render(view) =~ "llm_call"
+    assert render(view) =~ "trace-tree"
   end
 end
 
