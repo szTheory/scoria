@@ -29,7 +29,8 @@ defmodule Scoria.MixProject do
     [
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:plug, "~> 1.14"}
     ]
   end
 end
