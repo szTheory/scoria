@@ -27,6 +27,7 @@ defmodule Scoria.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:tribunal, "~> 1.3"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.4"},
