@@ -1,0 +1,22 @@
+defmodule ScoriaWeb.RouterTest do
+  use ExUnit.Case, async: true
+
+  # We define a dummy router to test the macro
+  defmodule DummyRouter do
+    use Phoenix.Router
+    import ScoriaWeb.Router
+
+    pipeline :browser do
+      plug :accepts, ["html"]
+    end
+
+    scope "/" do
+      pipe_through :browser
+      scoria_dashboard("/scoria")
+    end
+  end
+
+  test "scoria_dashboard macro mounts orchestrator live view" do
+    assert Phoenix.Router.route_info(DummyRouter, "GET", "/scoria", nil).plug == Phoenix.LiveView.Plug
+  end
+end

@@ -30,7 +30,11 @@ defmodule Scoria.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.4"},
-      {:plug, "~> 1.14"}
+      {:plug, "~> 1.14"},
+      {:phoenix, "~> 1.7"},
+      {:phoenix_live_view, "~> 1.0"},
+      {:phoenix_html, "~> 4.1"},
+      {:floki, ">= 0.30.0", only: :test}
     ]
   end
 end
