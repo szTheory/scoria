@@ -39,7 +39,10 @@
   1. Tool executions happen in isolated OTP processes that do not crash the host app upon failure or timeout.
   2. All tool invocations are strictly schema-validated before execution and bound to an authenticated actor context.
   3. MCP traffic is handled via a standard Plug endpoint securely.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 02-01-PLAN.md — MCP Router and JSON-RPC Protocol Transport
+- [ ] 02-02-PLAN.md — Tool Definition and Changeset Validation
+- [ ] 02-03-PLAN.md — OTP-Isolated Execution and Audit Logging
 
 ### Phase 3: LiveView Operator UX
 **Goal**: Surface observability data with a deeply integrated, operator-first LiveView experience featuring the "Shape of AI".
@@ -76,7 +79,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Observability & Telemetry | 0/4 | Planned | - |
-| 2. MCP Gateway & Tool Governance | 0/0 | Not started | - |
+| 1. Core Observability & Telemetry | 4/4 | Complete | - |
+| 2. MCP Gateway & Tool Governance | 1/3 | In Progress | - |
 | 3. LiveView Operator UX | 0/0 | Not started | - |
 | 4. Evaluation Flywheel | 0/0 | Not started | - |

@@ -38,8 +38,8 @@
 | OBS-03 | Phase 1 | Pending |
 | OBS-04 | Phase 1 | Pending |
 | OBS-05 | Phase 1 | Pending |
-| MCP-01 | Phase 2 | Pending |
-| MCP-02 | Phase 2 | Pending |
+| MCP-01 | Phase 2 | Complete |
+| MCP-02 | Phase 2 | Complete |
 | MCP-03 | Phase 2 | Pending |
 | MCP-04 | Phase 2 | Pending |
 | MCP-05 | Phase 2 | Pending |
