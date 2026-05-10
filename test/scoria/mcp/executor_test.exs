@@ -40,7 +40,9 @@ defmodule Scoria.MCP.ExecutorTest do
     ref = make_ref()
 
     handler = fn event_name, measurements, metadata, _config ->
-      send(parent, {:telemetry_event, ref, event_name, measurements, metadata})
+      if metadata.tool == Scoria.MCP.ExecutorTest.DummyTool do
+        send(parent, {:telemetry_event, ref, event_name, measurements, metadata})
+      end
     end
 
     events = [
@@ -50,10 +52,11 @@ defmodule Scoria.MCP.ExecutorTest do
       [:scoria, :tool, :failed]
     ]
 
-    :telemetry.attach_many("executor-test-#{System.unique_integer()}", events, handler, nil)
+    handler_id = "executor-test-#{System.unique_integer()}"
+    :telemetry.attach_many(handler_id, events, handler, nil)
 
     on_exit(fn ->
-      :telemetry.detach("executor-test-#{System.unique_integer()}")
+      :telemetry.detach(handler_id)
     end)
 
     %{ref: ref, context: %{actor_id: "user-123"}}

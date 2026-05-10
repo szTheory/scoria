@@ -1,23 +1,12 @@
-# Phase 1: Core Observability & Telemetry - Research
+# Phase 3: LiveView Operator UX - Research
 
-**Researched:** 2026-05-09
-**Domain:** AI Ops, Observability, Telemetry, Ecto
+**Researched:** 2024-05-18
+**Domain:** Elixir/Phoenix LiveView UI, Real-time Streaming
 **Confidence:** HIGH
 
 <user_constraints>
-## User Constraints
-
-### Locked Decisions
-- **Ash Framework Non-Goal:** Do not attempt to integrate with or use the Ash framework. We are strictly all-in on standard Phoenix and Ecto architectures (from GEMINI.md).
-- **Async Batching Engine:** Use a native OTP Buffer (`Scoria.Telemetry.Buffer`) with GenServer + `Repo.insert_all` instead of Oban or Broadway (from phase_1_decisions.md).
-- **Redaction Strategy:** Hybrid Configurable Deny-list + MFA Escape Hatch for deep PII scrubbing (from phase_1_decisions.md).
-- **OpenInference Schema:** Hybrid Ecto schema with Core Metadata Columns (indexed) + JSONB `:map` field for arbitrary attributes (from phase_1_decisions.md).
-
-### the agent's Discretion
-- Adapter integration patterns for `ReqLLM` or `Jido`.
-
-### Deferred Ideas (OUT OF SCOPE)
-- N/A
+## Project Constraints (from GEMINI.md)
+- **Ash Framework:** Do not attempt to integrate with or use the Ash framework. We are strictly all-in on standard Phoenix and Ecto architectures.
 </user_constraints>
 
 <phase_requirements>
@@ -25,131 +14,173 @@
 
 | ID | Description | Research Support |
 |----|-------------|------------------|
-| OBS-01 | Implement Ecto-native state schemas (`ai_traces`, `ai_spans`, `ai_span_events`) based on OpenInference specifications. | Hybrid schema: core relational columns + JSONB (`:map`) `attributes`. |
-| OBS-02 | Implement Telemetry handlers to capture Erlang `:telemetry` events and translate them into spans. | Standard `:telemetry.attach/4` translating into OpenInference span maps. |
-| OBS-03 | Create asynchronous processing for batch-inserting spans into Ecto without blocking the main process. | Native OTP Buffer (GenServer) + `Task` using `Repo.insert_all`. Avoid Oban. |
-| OBS-04 | Implement strict telemetry redaction boundaries to scrub PII, secrets, and API keys before insertion. | Configurable deny-list applied recursively, with MFA override. |
-| OBS-05 | Provide adapters for `ReqLLM` or `Jido` events with the internal trace storage. | Default `:telemetry` event interception for known `ReqLLM` namespaces. |
+| UI-01 | Build a Root orchestrator LiveView mounted via the host Phoenix application's router (including `mix scoria.install` generator). | Research verifies `defmacro scoria_dashboard` approach mapped to `live_session`. |
+| UI-02 | Develop a Visual Trace Explorer with lazy-loading for deep trace trees and CSS grid-based nested visualization. | Research recommends CSS Grid for deep nesting to avoid DOM bloat, and `stream` for lazy loading. |
+| UI-03 | Implement asynchronous token stream rendering with coalescing (buffering) to prevent DOM bloat and CPU spikes. | Research confirms `Process.send_after` buffering pattern (50-100ms interval) to coalesce token updates. |
+| UI-04 | Build Human-in-the-Loop (HITL) tool approval modals triggered via PubSub for high-risk tools. | Research outlines PubSub subscription + OTP Task `receive` with long/infinite timeout. |
+| UI-05 | Connect real-time PubSub subscriptions (`scoria:runs:tenant_id`) for passive UI updates. | Research confirms `Phoenix.PubSub.subscribe/2` in LiveView `mount/3`. |
 </phase_requirements>
 
 ## Summary
 
-This phase establishes the foundational AI observability layer for Scoria. The goal is to capture AI execution data (LLM requests, agent steps, tool calls), format it according to the OpenInference standard, and durably persist it in an Ecto database. The architecture prioritizes minimal performance impact on the application's critical path by using native OTP buffering and batch insertion, specifically avoiding heavy dependencies like Oban or Broadway for telemetry ingestion. Redaction of PII and secrets is enforced at the ingestion boundary before persistence.
+This phase implements an embedded, operator-first LiveView control plane for the Scoria observability suite. The dashboard must integrate seamlessly into host Phoenix applications via a router macro (similar to `phoenix_live_dashboard`). The UI handles complex AI-specific requirements: rendering deep trace trees efficiently without DOM bloat, managing high-frequency token streams without spiking CPU, and enabling Human-in-the-Loop (HITL) execution pauses.
 
-**Primary recommendation:** Build a native OTP-based telemetry buffer that captures `:telemetry` events, applies a default deny-list redaction, formats as OpenInference spans, and flushes to a hybrid Ecto schema (Core columns + JSONB) using `Repo.insert_all`.
+**Primary recommendation:** Use an embedded LiveView macro (`scoria_dashboard`) in the router, CSS Grid for trace tree layout, and server-side coalescing (`Process.send_after` with ~75ms interval) for token streams.
 
 ## Architectural Responsibility Map
 
 | Capability | Primary Tier | Secondary Tier | Rationale |
 |------------|-------------|----------------|-----------|
-| Telemetry Ingestion | Backend OTP | — | Erlang `:telemetry` handlers run synchronously in the calling process; must offload data immediately to avoid blocking. |
-| Batching & Flushing | Backend OTP (Buffer) | — | A GenServer/Task combo gathers span data and periodically flushes it to Ecto to optimize DB write performance. |
-| Trace Persistence | Database (Ecto) | — | Postgres handles indexing core metadata for LiveView queries while storing arbitrary OI fields in JSONB. |
-| Data Redaction | Backend OTP | — | Redaction must occur securely in memory before any data is sent over the wire to the database. |
+| Router Integration | API / Backend | — | Host app router integration allows embedding LiveView at a specific scope via macro. |
+| Trace Explorer | Frontend Server (SSR) | Browser / Client | LiveView handles tree structure, streams handle lazy loading, CSS grid manages deep layout. |
+| Token Coalescing | Frontend Server (SSR) | — | LiveView buffers incoming tokens and flushes every ~75ms to minimize WebSocket and DOM diff overhead. |
+| HITL Tool Approval | Frontend Server (SSR) | API / Backend | LiveView subscribes to PubSub. Renders modal. Publishes approval back to executing OTP Task. |
+| Real-time Updates | Frontend Server (SSR) | — | Phoenix PubSub integrated directly into LiveView `mount` for pushing state updates. |
 
 ## Standard Stack
 
 ### Core
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| `:telemetry` | ~> 1.0 | Event capture | Erlang standard for instrumentation. |
-| `Ecto` | ~> 3.10 | Database mapping | Idiomatic Phoenix persistence, strong JSONB support. |
-| `OTP (GenServer/Task)` | N/A | Concurrency buffer | Zero dependencies, predictable latency, massive throughput. |
+| Phoenix LiveView | v1.0+ | Interactive dashboard UI | Project standard; built-in real-time capabilities. |
+| Phoenix PubSub | Standard | Internal event broadcasting | Core Phoenix technology for real-time node communication. |
+| Elixir `Task` / `Process` | Standard | Async execution & timers | Built-in OTP patterns for HITL pausing and token coalescing. |
 
 ### Supporting
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| `ReqLLM` / `Jido` | Current | Telemetry sources | The primary sources of AI events that Scoria will listen to and adapt. |
-
-### Alternatives Considered
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| OTP Buffer | Oban | Oban provides guarantees but overwhelming Postgres with transaction overhead for time-series telemetry is an anti-pattern. |
-| OTP Buffer | Broadway | Broadway handles massive throughput but introduces an overly complex, heavy dependency for a "SaaS in a Box" library. |
+| CSS Grid | Native | Layout / Indentation | Use for rendering deep trace trees to avoid HTML nesting limitations and DOM bloat. |
 
 ## Architecture Patterns
 
 ### System Architecture Diagram
+
 ```
-Client Request -> [Phoenix Controller/LiveView] -> App Logic (ReqLLM/Jido)
-                                                           |
-                                                   (emits :telemetry)
-                                                           |
-                                                    [Scoria.Observe]
-                                                    (Telemetry Handler)
-                                                           |
-                                                (async cast / ETS write)
-                                                           |
-                                              [Scoria.Telemetry.Buffer] (GenServer)
-                                                (applies default redaction)
-                                                           |
-                                                 (periodic flush Task)
-                                                           |
-                                                    [Repo.insert_all]
-                                                           |
-                                                  [PostgreSQL / Ecto]
-                                                  (scoria_traces, scoria_spans)
+[Host App Router] --> (scoria_dashboard macro) --> [Scoria LiveSession]
+                                                         |
+                                                         v
+[OTP Tasks/Actors] <--(Phoenix PubSub: hitl/tokens)--> [Scoria LiveView Components]
+  |                                                      |
+  v                                                      v
+(Executes tool or           (Receives Token chunks, buffers 75ms) -> [Browser DOM]
+ waits on receive)          (Receives HITL event, displays Modal) -> [Browser DOM]
 ```
 
 ### Recommended Project Structure
 ```
-lib/scoria/
-├── observe/             # Public API for observability
-│   ├── telemetry.ex     # Telemetry attachment and handlers
-│   ├── buffer.ex        # GenServer for batching spans
-│   └── redactor.ex      # PII/Secret scrubbing logic
-└── repo/
-    ├── trace.ex         # Ecto schema for ai_traces
-    ├── span.ex          # Ecto schema for ai_spans
-    └── span_event.ex    # Ecto schema for ai_span_events
+lib/
+├── scoria_web/
+│   ├── components/            # UI Components (Trace Explorer, HITL Modal)
+│   ├── live/                  # LiveView Pages (Orchestrator)
+│   └── router.ex              # Scoria Router Macro Definitions
+├── scoria/
+│   └── observe/               # Backend logic for trace queries & approvals
+└── mix/
+    └── tasks/
+        └── scoria.install.ex  # Mix task for installing dashboard
 ```
 
-### Pattern 1: Native OTP Buffer for Telemetry
-**What:** Use a GenServer to accumulate span data in memory and periodically flush to the database.
-**When to use:** High-volume time-series telemetry where synchronous DB inserts would impact application latency.
+### Pattern 1: Embeddable Router Macro
+**What:** Creating a router macro that allows the host app to embed Scoria.
+**When to use:** To mount the `ScoriaWeb.OrchestratorLive` directly in the host's `router.ex`.
 **Example:**
 ```elixir
-defmodule Scoria.Telemetry.Buffer do
-  use GenServer
-  
-  # ... initialization and flush timer ...
-  
-  def handle_cast({:span, span_data}, state) do
-    new_state = [span_data | state.spans]
-    if length(new_state) >= @batch_size do
-      flush(new_state)
-      {:noreply, %{state | spans: []}}
-    else
-      {:noreply, %{state | spans: new_state}}
+# Source: Phoenix LiveDashboard standard pattern
+defmodule ScoriaWeb.Router do
+  defmacro scoria_dashboard(path, opts \\ []) do
+    quote bind_quoted: binding() do
+      scope path, alias: false, as: false do
+        import Phoenix.Router, only: [get: 4, post: 4, put: 4]
+        import Phoenix.LiveView.Router, only: [live: 4, live_session: 3]
+        
+        live_session :scoria_dashboard, [
+          session: {ScoriaWeb.Router, :__session__, [opts]}
+        ] do
+          live "/", ScoriaWeb.OrchestratorLive, :index
+        end
+      end
     end
   end
 end
 ```
 
+### Pattern 2: Token Coalescing (Buffering)
+**What:** Delaying high-frequency LLM token updates to avoid LiveView DOM and CPU bloat.
+**When to use:** Whenever receiving real-time token streams via PubSub or direct messages.
+**Example:**
+```elixir
+# Source: Elixir ecosystem standard for LiveView token streams
+def handle_info({:token, token}, socket) do
+  new_buffer = [token | socket.assigns.token_buffer]
+  
+  socket = 
+    if socket.assigns.timer_ref == nil do
+      ref = Process.send_after(self(), :flush_tokens, 75)
+      assign(socket, timer_ref: ref)
+    else
+      socket
+    end
+
+  {:noreply, assign(socket, token_buffer: new_buffer)}
+end
+
+def handle_info(:flush_tokens, socket) do
+  new_chunk = socket.assigns.token_buffer |> Enum.reverse() |> Enum.join("")
+  {:noreply, 
+   socket 
+   |> assign(full_text: socket.assigns.full_text <> new_chunk)
+   |> assign(token_buffer: [], timer_ref: nil)}
+end
+```
+
 ### Anti-Patterns to Avoid
-- **Synchronous Telemetry Inserts:** Never call `Repo.insert/2` directly inside a `:telemetry` handler, as it blocks the process executing the AI call.
-- **Strict Migrations for OpenInference:** Do not create columns for every OpenInference property (e.g., `llm.token_count`). Specs evolve too fast. Use a JSONB `:map` column.
-- **Oban for Telemetry Storage:** Writing every telemetry event as a persistent background job overwhelms the DB.
+- **Deep HTML div nesting for trees:** Do not use `div` inside `div` for every level of the AI trace tree. Browsers struggle with very deep DOMs. Use a flat list with CSS variables (`--indent-level`) or CSS Grid.
+- **Immediate Socket Assignment on Tokens:** Do not call `assign/2` and let LiveView diff the DOM for every single token received. It will crash the browser/process for fast models.
 
 ## Don't Hand-Roll
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Custom trace shapes | A proprietary JSON format | OpenInference specs | Standardized schema mapped on OTel; allows future export compatibility and standard UI filtering. |
-| Complex Job Queues | Broadway/Oban for telemetry | Native OTP Buffer | A local library shouldn't mandate heavy external queue infrastructure for simple telemetry batching. |
+| Client-side token throttling | JS hooks for `phx-debounce` | `Process.send_after` | Server-side debouncing prevents CPU waste in the Elixir process and reduces WebSocket traffic. |
+
+**Key insight:** LLMs can stream tokens far faster than browsers can efficiently diff the DOM. Buffering on the server using OTP timer events is the standard Elixir solution.
 
 ## Common Pitfalls
 
-### Pitfall 1: Telemetry Redaction Failures
-**What goes wrong:** Sensitive user prompts or API keys are written to the database.
-**Why it happens:** Attempting to manually allow-list safe keys fails because JSON payloads are highly dynamic.
-**How to avoid:** Use an aggressive default deny-list (`password`, `api_key`, `token`, etc.) applied recursively to all map/JSON values before buffering, and provide an MFA escape hatch for deep regex scrubbing.
-**Warning signs:** PII appearing in the `attributes` column during manual inspection.
+### Pitfall 1: CSS Isolation
+**What goes wrong:** The embedded LiveView inherits host application CSS which breaks Scoria UI, or Scoria CSS overrides the host.
+**Why it happens:** Shared class names (e.g., Tailwind defaults) across boundaries.
+**How to avoid:** Namespace Scoria's CSS or rely completely on semantic Tailwind classes scoped tightly to a `.scoria-dashboard` wrapper.
 
-### Pitfall 2: Application Shutdown Data Loss
-**What goes wrong:** The node shuts down or restarts, and the in-memory buffer loses the last N seconds of spans.
-**Why it happens:** The GenServer is forcefully terminated before its periodic flush triggers.
-**How to avoid:** Implement graceful shutdown handling (e.g., `terminate/2` callback or hooking into `System.at_exit`) to execute a synchronous `Repo.insert_all` before the VM exits.
+### Pitfall 2: Task Timeout during HITL
+**What goes wrong:** A human is prompted to approve a tool execution, but before they click "Approve", the tool execution crashes.
+**Why it happens:** The `Task.await` or `receive` block waiting for the PubSub approval has a standard 5000ms timeout.
+**How to avoid:** Ensure the `receive` block waiting for human approval uses an `:infinity` timeout or a very generous duration (e.g., 5 minutes).
+
+## State of the Art
+
+| Old Approach | Current Approach | When Changed | Impact |
+|--------------|------------------|--------------|--------|
+| Deep DOM tree nesting | CSS Grid / Flat DOM | LiveView era | Massive performance boost for rendering deep recursion |
+| Client JS throttling | Server-side coalescing | Ongoing | Less bandwidth, lower Elixir CPU usage |
+
+## Assumptions Log
+
+| # | Claim | Section | Risk if Wrong |
+|---|-------|---------|---------------|
+| A1 | [ASSUMED] CSS Grid is sufficient for flat DOM trees. | Patterns | Might still need JS virtual scrolling if trees get > 1000 nodes. |
+| A2 | [ASSUMED] Host app uses standard Phoenix Router. | Patterns | `scoria_dashboard` macro will fail if the host uses a non-standard router. |
+
+## Open Questions
+
+1. **CSS Distribution**
+   - What we know: Scoria UI is embedded in host apps.
+   - What's unclear: Does Scoria bundle a pre-compiled CSS file like LiveDashboard, or assume the host has Tailwind configured to scan Scoria's `deps` directory?
+   - Recommendation: Use inline Tailwind classes and instruct the host in the `mix scoria.install` output to add `deps/scoria/lib/**/*.*ex` to their `tailwind.config.js`.
+
+## Environment Availability
+
+Step 2.6: SKIPPED (no external dependencies identified outside of the Elixir/Phoenix ecosystem).
 
 ## Validation Architecture
 
@@ -164,15 +195,20 @@ end
 ### Phase Requirements → Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| OBS-01 | Trace/Span schema validation | unit | `mix test test/scoria/repo/span_test.exs` | ❌ Wave 0 |
-| OBS-02 | Telemetry capture translation | unit | `mix test test/scoria/observe/telemetry_test.exs` | ❌ Wave 0 |
-| OBS-03 | Async batch buffering and flush | unit/integration | `mix test test/scoria/observe/buffer_test.exs` | ❌ Wave 0 |
-| OBS-04 | Deny-list redaction | unit | `mix test test/scoria/observe/redactor_test.exs` | ❌ Wave 0 |
+| UI-01 | Router macro definition | unit | `mix test test/scoria_web/router_test.exs` | ❌ Wave 0 |
+| UI-02 | Trace Explorer component | unit | `mix test test/scoria_web/components/trace_tree_component_test.exs` | ❌ Wave 0 |
+| UI-03 | Token stream coalescing | unit | `mix test test/scoria_web/live/orchestrator_live_test.exs` | ❌ Wave 0 |
+| UI-04 | HITL PubSub triggers | unit | `mix test test/scoria_web/live/orchestrator_live_test.exs` | ❌ Wave 0 |
 
 ### Sampling Rate
 - **Per task commit:** `mix test`
 - **Per wave merge:** `mix test`
 - **Phase gate:** Full suite green before `/gsd-verify-work`
+
+### Wave 0 Gaps
+- [ ] `test/scoria_web/router_test.exs` — covers UI-01
+- [ ] `test/scoria_web/live/orchestrator_live_test.exs` — covers UI-03, UI-04
+- [ ] `test/scoria_web/components/trace_tree_component_test.exs` — covers UI-02
 
 ## Security Domain
 
@@ -180,27 +216,34 @@ end
 
 | ASVS Category | Applies | Standard Control |
 |---------------|---------|-----------------|
-| V5 Input Validation | yes | Aggressive Deny-list Redaction + MFA |
+| V2 Authentication | yes | Host app router `pipe_through :browser, :admin_auth` wrapper |
+| V3 Session Management | yes | Host app session handling |
+| V4 Access Control | yes | Sigra (via project requirements) for UI RBAC |
+| V5 Input Validation | yes | Ecto Changesets for UI inputs |
+| V6 Cryptography | no | — |
 
-### Known Threat Patterns for Elixir Telemetry
+### Known Threat Patterns for Elixir / LiveView
 
 | Pattern | STRIDE | Standard Mitigation |
 |---------|--------|---------------------|
-| PII / Secret Leakage | Information Disclosure | Recursive redaction of JSON keys (`api_key`, `secret`, `password`) before persistence. |
-| DB Resource Exhaustion | Denial of Service | Batching telemetry with a max buffer size and dropping events if the buffer is overwhelmed (backpressure). |
+| Cross-Site Scripting (XSS) in Trace content | Spoofing | Rely on LiveView's default HTML escaping (avoid `raw/1` on trace outputs). |
+| Unauthorized HITL Approval | Elevation of Privilege | Validate actor session context before broadcasting approval event. |
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `.planning/research/phase_1_decisions.md` - Verified architecture decisions for Scoria Phase 1.
-- `.planning/research/evals-and-observability.md` - Verified OpenInference mapping and Ecto schema design.
+- Phoenix LiveView Docs - [How LiveView Router macros work]
+- Phoenix LiveDashboard Source - [How to implement embedded dashboard macros]
+
+### Secondary (MEDIUM confidence)
+- ElixirForum / Community - [Server-side token buffering with Process.send_after]
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH - Directly follows the project's pre-approved phase 1 decisions and Elixir idioms.
-- Architecture: HIGH - GenServer buffering and Ecto JSONB are proven OTP/Phoenix patterns.
-- Pitfalls: HIGH - Redaction and shutdown hooks are standard industry concerns for telemetry.
+- Standard stack: HIGH - Core Phoenix concepts (LiveView, PubSub).
+- Architecture: HIGH - Adheres strictly to Phoenix idiomatic patterns.
+- Pitfalls: HIGH - Known limits of WebSocket DOM diffing with high-frequency streams.
 
-**Research date:** 2026-05-09
-**Valid until:** 2027-05-09
+**Research date:** 2024-05-18
+**Valid until:** 2025-05-18

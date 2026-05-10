@@ -1,55 +1,97 @@
-# Phase 1: Core Observability & Telemetry - Pattern Map
+# Phase 3: LiveView Operator UX - Pattern Map
 
-**Mapped:** 2024-05-18
-**Files analyzed:** 8
-**Analogs found:** 0 / 8
+**Mapped:** 2026-05-15
+**Files analyzed:** 5
+**Analogs found:** 3 / 5
 
 ## File Classification
 
 | New/Modified File | Role | Data Flow | Closest Analog | Match Quality |
 |-------------------|------|-----------|----------------|---------------|
-| `lib/scoria/span.ex` | model | CRUD | None | no-match |
-| `lib/scoria/trace.ex` | model | CRUD | None | no-match |
-| `lib/scoria/span_event.ex` | model | CRUD | None | no-match |
-| `lib/scoria/telemetry/handler.ex` | service | event-driven | None | no-match |
-| `lib/scoria/telemetry/buffer.ex` | service | batch | None | no-match |
-| `lib/scoria/telemetry/redactor.ex` | utility | transform | None | no-match |
-| `lib/scoria/telemetry/adapters/req_llm.ex` | service | transform | None | no-match |
-| `lib/scoria/telemetry/adapters/jido.ex` | service | transform | None | no-match |
+| `lib/scoria/observe/approval.ex` | model | CRUD | `lib/scoria/repo/trace.ex` | exact |
+| `lib/scoria_web/router.ex` | route | request-response | `lib/scoria/mcp/router.ex` | role-match |
+| `lib/scoria_web/live/orchestrator_live.ex` | controller | event-driven | `lib/scoria/observe/buffer.ex` | partial |
+| `lib/scoria_web/components/trace_tree_component.ex`| component | UI | None | no-match |
+| `lib/mix/tasks/scoria.install.ex` | utility | one-off | None | no-match |
 
 ## Pattern Assignments
 
-Since this is an empty/greenfield project, there are no existing source files to derive analog patterns from. The planner must rely strictly on the research, decisions, and architectural guidelines defined in `.planning/research/phase_1_decisions.md`, `.planning/research/evals-and-observability.md`, and `GEMINI.md`.
+### `lib/scoria/observe/approval.ex` (model, CRUD)
 
-## Shared Patterns
+**Analog:** `lib/scoria/repo/trace.ex`
 
-### GEMINI.md Guidelines
-**Source:** `GEMINI.md`
-**Apply to:** All files
-- **Ash Framework Non-Goal:** Do not attempt to integrate with or use the Ash framework. Strictly use standard Phoenix and Ecto architectures.
-- Provide deep, cohesive recommendations with a focus on developer ergonomics, principle of least surprise, and great UI/UX.
+**Imports pattern** (lines 1-3):
+```elixir
+defmodule Scoria.Repo.Trace do
+  use Ecto.Schema
+  import Ecto.Changeset
+```
 
-### Schema Design Pattern (OBS-01)
-**Source:** `.planning/research/phase_1_decisions.md`
-**Apply to:** `lib/scoria/span.ex`, `lib/scoria/trace.ex`, `lib/scoria/span_event.ex`
-- Adopt a hybrid Ecto schema: use highly-indexed relational columns for searchable, routable fields (e.g., `id`, `trace_id`, `parent_id`, `name`, `span_kind`, `status_code`, `start_time`, `end_time`) and use an `attributes` column defined as `:map` (JSONB) for variable OpenInference attributes.
+**Core schema pattern** (lines 5-15):
+```elixir
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+  schema "ai_traces" do
+    field(:session_id, :string)
+    field(:attributes, :map, default: %{})
 
-### Telemetry Batch Ingestion Pattern (OBS-03)
-**Source:** `.planning/research/phase_1_decisions.md`
-**Apply to:** `lib/scoria/telemetry/buffer.ex`, `lib/scoria/telemetry/handler.ex`
-- Use a native OTP Buffer (`Scoria.Telemetry.Buffer`). Use `cast` to a GenServer or write to ETS for max concurrency, and use a background `Task` with `Repo.insert_all` to batch-insert OpenInference spans into Postgres. Avoid Broadway or Oban to prevent unnecessary bloat.
-- Hook into the application's shutdown sequence (`System.at_exit` or standard supervision tree termination) to flush remaining spans before exit.
+    has_many(:spans, Scoria.Repo.Span)
 
-### Redaction Pattern (OBS-04)
-**Source:** `.planning/research/phase_1_decisions.md`
-**Apply to:** `lib/scoria/telemetry/redactor.ex`
-- Use a hybrid Configurable Deny-list + MFA Escape Hatch. Default aggressive deny-list (e.g., password, api_key, token), allow appending via `config :scoria, :redact_keys`, and provide an MFA override via `config :scoria, :redactor`. Intercept OpenInference payload, walk map/JSON recursively, replace with `[REDACTED]`.
+    timestamps(type: :utc_datetime_usec)
+  end
+```
 
-### Data Flow Integration (OBS-02, OBS-05)
-**Source:** `.planning/research/evals-and-observability.md`
-**Apply to:** `lib/scoria/telemetry/handler.ex`, `lib/scoria/telemetry/adapters/req_llm.ex`, `lib/scoria/telemetry/adapters/jido.ex`
-- Runtime emits standard Erlang `:telemetry` events (e.g., `[:scoria, :llm, :request, :stop]`).
-- Adapters listen to third-party library telemetry (ReqLLM, Jido) and normalize them into OpenInference-compliant span maps.
+**Changeset pattern** (lines 17-21):
+```elixir
+  def changeset(trace, attrs) do
+    trace
+    |> cast(attrs, [:session_id, :attributes])
+  end
+```
+
+---
+
+### `lib/scoria_web/live/orchestrator_live.ex` (controller, event-driven)
+
+**Analog:** `lib/scoria/observe/buffer.ex` (partial match for buffering/timer)
+
+**Token Buffering / Coalescing pattern** (lines 40-47):
+```elixir
+  @impl true
+  def handle_info(:flush, state) do
+    flush_spans(state.spans)
+    state = %{state | spans: []}
+    state = schedule_flush(state)
+    {:noreply, state}
+  end
+```
+
+**Timer Scheduling pattern** (lines 53-57):
+```elixir
+  defp schedule_flush(state) do
+    if state.timer, do: Process.cancel_timer(state.timer)
+    timer = Process.send_after(self(), :flush, state.flush_interval)
+    %{state | timer: timer}
+  end
+```
+
+---
+
+### `lib/scoria_web/router.ex` (route, request-response)
+
+**Analog:** `lib/scoria/mcp/router.ex`
+
+**Router Structure pattern** (lines 1-7):
+```elixir
+defmodule Scoria.MCP.Router do
+  @moduledoc """
+  Plug router for handling incoming MCP (Model Context Protocol) JSON-RPC 2.0 requests.
+  """
+
+  use Plug.Router
+```
+
+---
 
 ## No Analog Found
 
@@ -57,17 +99,11 @@ Files with no close match in the codebase (planner should use RESEARCH.md patter
 
 | File | Role | Data Flow | Reason |
 |------|------|-----------|--------|
-| `lib/scoria/span.ex` | model | CRUD | Empty codebase |
-| `lib/scoria/trace.ex` | model | CRUD | Empty codebase |
-| `lib/scoria/span_event.ex` | model | CRUD | Empty codebase |
-| `lib/scoria/telemetry/handler.ex` | service | event-driven | Empty codebase |
-| `lib/scoria/telemetry/buffer.ex` | service | batch | Empty codebase |
-| `lib/scoria/telemetry/redactor.ex` | utility | transform | Empty codebase |
-| `lib/scoria/telemetry/adapters/req_llm.ex` | service | transform | Empty codebase |
-| `lib/scoria/telemetry/adapters/jido.ex` | service | transform | Empty codebase |
+| `lib/scoria_web/components/trace_tree_component.ex` | component | lazy UI | No Phoenix LiveComponents or UI code exists in the current project root. |
+| `lib/mix/tasks/scoria.install.ex` | utility | one-off | No Mix tasks exist in the project for generating files or migrations. |
 
 ## Metadata
 
-**Analog search scope:** Codebase via glob `**/*.ex`, `**/*.exs`
-**Files scanned:** 0 (No Elixir files found)
-**Pattern extraction date:** 2024-05-18
+**Analog search scope:** `lib/**/*.ex`
+**Files scanned:** 5 expected files
+**Pattern extraction date:** 2026-05-15

@@ -57,7 +57,10 @@
   2. Real-time streaming tokens render efficiently without spiking CPU or DOM updates, utilizing coalescing.
   3. High-risk tool calls trigger an interactive approval modal for an admin, pausing the actual execution process until resolved.
   4. Day-0 users can install the dashboard via a `mix scoria.install` task with zero manual configuration.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 03-01-PLAN.md — Root LiveView and Install Task
+- [ ] 03-02-PLAN.md — CSS Grid Trace Tree Component
+- [ ] 03-03-PLAN.md — Coalescing and HITL Approval
 **UI hint**: yes
 
 ### Phase 4: Evaluation Flywheel
