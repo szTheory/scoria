@@ -12,6 +12,7 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:token_buffer, [])
       |> assign(:timer_ref, nil)
       |> assign(:token_text, "")
+      |> assign(:active_approval, nil)
       |> stream(:traces, [])
 
     {:ok, socket}
@@ -47,9 +48,27 @@ defmodule ScoriaWeb.OrchestratorLive do
     {:noreply, socket}
   end
 
+  def handle_info({:hitl_request, approval}, socket) do
+    {:noreply, assign(socket, :active_approval, approval)}
+  end
+
+  def handle_event("approve", _, socket) do
+    if approval = socket.assigns.active_approval do
+      Scoria.Repo.update(Scoria.Observe.Approval.changeset(approval, %{status: "approved"}))
+    end
+    {:noreply, assign(socket, :active_approval, nil)}
+  end
+
+  def handle_event("reject", _, socket) do
+    if approval = socket.assigns.active_approval do
+      Scoria.Repo.update(Scoria.Observe.Approval.changeset(approval, %{status: "rejected"}))
+    end
+    {:noreply, assign(socket, :active_approval, nil)}
+  end
+
   def render(assigns) do
     ~H"""
-    <div class="scoria-dashboard bg-gray-50 min-h-screen p-8 text-gray-900 font-sans">
+    <div class="scoria-dashboard bg-gray-50 min-h-screen p-8 text-gray-900 font-sans relative">
       <div class="max-w-7xl mx-auto">
         <h1 class="text-3xl font-bold mb-6">Scoria Orchestrator</h1>
         <p class="text-gray-600 mb-8">A Phoenix-native AI Application Quality Layer.</p>
@@ -62,6 +81,19 @@ defmodule ScoriaWeb.OrchestratorLive do
           </div>
         </div>
       </div>
+
+      <%= if @active_approval do %>
+        <div id="approval-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div class="bg-white p-6 rounded shadow-lg max-w-md w-full">
+            <h2 class="text-xl font-bold mb-4">Approval Required</h2>
+            <p class="mb-2"><strong>Tool:</strong> <%= @active_approval.tool_name %></p>
+            <div class="flex justify-end space-x-4 mt-6">
+              <button phx-click="reject" class="px-4 py-2 bg-red-500 text-white rounded">Reject</button>
+              <button phx-click="approve" class="px-4 py-2 bg-blue-500 text-white rounded">Approve</button>
+            </div>
+          </div>
+        </div>
+      <% end %>
     </div>
     """
   end

@@ -76,7 +76,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
            |> Plug.Test.init_test_session(%{})
            |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
-    {:ok, view, html} = live(conn, "/scoria")
+    {:ok, view, _html} = live(conn, "/scoria")
     
     # Send tokens
     send(view.pid, {:token, "Hello"})
@@ -90,6 +90,68 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
 
     # Now they should be in the DOM
     assert render(view) =~ "Hello World"
+  end
+
+  test "HITL approval request renders modal and handles approve" do
+    Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
+    conn = build_conn()
+           |> Plug.Test.init_test_session(%{})
+           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+    
+    # Create an approval
+    {:ok, approval} = Scoria.Repo.insert(
+      %Scoria.Observe.Approval{
+        tool_name: "test_tool",
+        status: "pending",
+        session_id: "sess_1",
+        run_id: "run_1"
+      }
+    )
+
+    # Trigger HITL
+    send(view.pid, {:hitl_request, approval})
+
+    # Render view and assert modal exists
+    html = render(view)
+    assert html =~ "Approval Required"
+    assert html =~ "test_tool"
+
+    # Click approve
+    render_click(view, "approve", %{})
+
+    # Modal should be gone
+    refute render(view) =~ "Approval Required"
+
+    # DB should be updated
+    updated_approval = Scoria.Repo.get!(Scoria.Observe.Approval, approval.id)
+    assert updated_approval.status == "approved"
+  end
+
+  test "HITL approval request handles reject" do
+    Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
+    conn = build_conn()
+           |> Plug.Test.init_test_session(%{})
+           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+    
+    {:ok, approval} = Scoria.Repo.insert(
+      %Scoria.Observe.Approval{
+        tool_name: "dangerous_tool",
+        status: "pending",
+        session_id: "sess_2",
+        run_id: "run_2"
+      }
+    )
+
+    send(view.pid, {:hitl_request, approval})
+
+    render_click(view, "reject", %{})
+
+    updated_approval = Scoria.Repo.get!(Scoria.Observe.Approval, approval.id)
+    assert updated_approval.status == "rejected"
   end
 end
 
