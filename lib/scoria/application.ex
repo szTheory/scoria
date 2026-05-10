@@ -8,8 +8,7 @@ defmodule Scoria.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: Scoria.Worker.start_link(arg)
-      # {Scoria.Worker, arg}
+      {Task.Supervisor, name: Scoria.MCP.TaskSupervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
