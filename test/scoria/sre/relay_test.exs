@@ -239,6 +239,6 @@ defmodule Scoria.SRE.RelayTest do
     {:ok, %{adapter: adapter, status: :delivered}}
   end
 
-  defp restore_env(_key, nil), do: :ok
+  defp restore_env(key, nil), do: Application.delete_env(:scoria, key)
   defp restore_env(key, value), do: Application.put_env(:scoria, key, value)
 end

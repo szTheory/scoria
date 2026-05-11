@@ -168,7 +168,7 @@ defmodule Scoria.SRE.Relay do
   end
 
   defp deliver_notification(delivery) do
-    sink = SRE.alert_sink()
+    sink = notification_sink(delivery)
     envelope = notification_envelope(delivery)
 
     case publish_with_rescue(sink, envelope) do
@@ -176,6 +176,14 @@ defmodule Scoria.SRE.Relay do
       {:error, reason} -> mark_notification_failed(delivery, reason)
     end
   end
+
+  defp notification_sink(%NotificationDelivery{sink_kind: "chimeway"}),
+    do: Scoria.SRE.Adapters.Chimeway
+
+  defp notification_sink(%NotificationDelivery{sink_kind: "mailglass"}),
+    do: Scoria.SRE.Adapters.Mailglass
+
+  defp notification_sink(_delivery), do: SRE.alert_sink()
 
   defp publish_with_rescue(sink, envelope) do
     sink.publish(envelope)
@@ -255,11 +263,16 @@ defmodule Scoria.SRE.Relay do
       routing_key: delivery.routing_key,
       workflow_run_id: delivery.workflow_run_id || incident && incident.workflow_run_id,
       trace_id: delivery.trace_id || incident && incident.trace_id || alert_event && alert_event.trace_id,
-      severity: incident && incident.severity || alert_event && alert_event.severity || "warning",
-      routing_class: incident && incident.routing_class || "review",
+      severity:
+        metadata_value(delivery.metadata, "severity") ||
+          incident && incident.severity || alert_event && alert_event.severity || "warning",
+      routing_class:
+        metadata_value(delivery.metadata, "routing_class") ||
+          incident && incident.routing_class || "review",
       incident_key: incident && incident.incident_key,
       reason_code: alert_event && alert_event.reason_code,
       payload_hash: delivery.payload_hash,
+      summary: metadata_value(delivery.metadata, "summary"),
       metadata: Map.new(delivery.metadata || %{})
     }
   end
@@ -278,6 +291,12 @@ defmodule Scoria.SRE.Relay do
 
   defp format_error(%_{} = error), do: Exception.message(error)
   defp format_error(reason), do: inspect(reason)
+
+  defp metadata_value(metadata, key) do
+    metadata
+    |> Map.new()
+    |> Map.get(key)
+  end
 
   defp log_relay_error(message, error) do
     Logger.debug(fn -> "#{message}: #{Exception.message(error)}" end)
