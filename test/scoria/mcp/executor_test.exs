@@ -129,7 +129,7 @@ defmodule Scoria.MCP.ExecutorTest do
 
       reservation = Repo.get_by!(BudgetReservation, trace_id: trace_id)
       assert reservation.status == "reconciled"
-      assert reservation.actual_units == Decimal.new("0")
+      assert Decimal.equal?(reservation.actual_units, Decimal.new("0"))
       assert reservation.metadata["outcome"] == "timeout"
     end
 
@@ -152,7 +152,7 @@ defmodule Scoria.MCP.ExecutorTest do
 
       reservation = Repo.get_by!(BudgetReservation, trace_id: trace_id)
       assert reservation.status == "reconciled"
-      assert reservation.actual_units == Decimal.new("0")
+      assert Decimal.equal?(reservation.actual_units, Decimal.new("0"))
       assert reservation.metadata["outcome"] == "execution_failed"
     end
   end

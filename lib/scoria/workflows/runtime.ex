@@ -1,0 +1,208 @@
+defmodule Scoria.Workflows.Runtime do
+  @moduledoc """
+  Executes bounded workflow steps under supervision and persists stable outcomes.
+  """
+
+  alias Decimal, as: D
+  alias Scoria.SRE.BudgetEngine
+  alias Scoria.Workflows
+
+  @default_timeout 5_000
+
+  def execute_step(step_id, opts \\ []) do
+    with {:ok, _claimed} <- Workflows.claim_step(step_id) do
+      step = Workflows.get_step!(step_id)
+      run = Workflows.get_run!(step.run_id)
+      timeout = Keyword.get(opts, :timeout, @default_timeout)
+      handler = resolve_handler(step, opts)
+      budget_context = Keyword.get(opts, :budget_context, %{})
+
+      case reserve_budget(step, run, budget_context) do
+        {:error, envelope} ->
+          Workflows.fail_step(step.id, normalize_budget_envelope(envelope))
+
+        {:ok, reservation_context} ->
+          task =
+            Task.Supervisor.async_nolink(Scoria.Workflow.TaskSupervisor, fn ->
+              invoke_handler(handler, step, run)
+            end)
+
+          case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
+            {:ok, {:ok, result}} ->
+              reconcile_budget(reservation_context, budget_context, result, "completed")
+              Workflows.complete_step(step.id, attach_budget_evidence(normalize_payload(result), reservation_context))
+
+            {:ok, {:waiting_for_approval, approval_attrs}} ->
+              reconcile_budget(reservation_context, budget_context, %{}, "waiting_for_approval")
+              Workflows.mark_waiting_for_approval(run.id, step.id, Map.new(approval_attrs))
+
+            {:ok, {:handoff, handoff_attrs}} ->
+              reconcile_budget(reservation_context, budget_context, %{}, "handoff")
+              handle_handoff(run, step, Map.new(handoff_attrs))
+
+            {:ok, {:error, reason}} ->
+              reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
+              Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
+
+            {:ok, other} ->
+              reconcile_budget(reservation_context, budget_context, other, "completed")
+
+              Workflows.complete_step(
+                step.id,
+                attach_budget_evidence(normalize_payload(other), reservation_context),
+                run_status: "running"
+              )
+
+            nil ->
+              reconcile_budget(reservation_context, budget_context, %{}, "timeout")
+              Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => "timeout"}, reservation_context))
+
+            {:exit, reason} ->
+              reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
+              Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
+          end
+      end
+    end
+  end
+
+  defp reserve_budget(step, run, budget_context) do
+    if budget_required?(budget_context) do
+      BudgetEngine.reserve_step(%{
+        tenant_id: Map.get(budget_context, :tenant_id),
+        actor_id: Map.get(budget_context, :actor_id),
+        run_id: run.id,
+        step_id: step.id,
+        step_sequence: step.sequence,
+        trace_id: Map.get(budget_context, :trace_id),
+        resource: budget_resource(budget_context, "workflow_steps"),
+        reason_code: Map.get(budget_context, :reason_code, "workflow_step"),
+        estimated_units: estimated_units(budget_context),
+        integration_kind: Map.get(budget_context, :integration_kind, "workflow"),
+        provider_ref: Map.get(budget_context, :provider_ref),
+        tool_ref: Map.get(budget_context, :tool_ref),
+        metadata:
+          budget_context
+          |> Map.get(:metadata, %{})
+          |> Map.put_new("workflow_step_count", step.sequence)
+          |> Map.put_new("consecutive_failures", Map.get(run.error_envelope || %{}, "consecutive_failures", 0))
+      })
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp reconcile_budget(nil, _budget_context, _result, _outcome), do: :ok
+
+  defp reconcile_budget(%{reservation: reservation}, budget_context, result, outcome) do
+    BudgetEngine.reconcile_usage(reservation, %{
+      actual_units: actual_units(budget_context, result, outcome),
+      metadata: %{"outcome" => outcome}
+    })
+  end
+
+  defp handle_handoff(run, step, attrs) do
+    delegated_role_id = Map.fetch!(attrs, "delegated_role_id")
+    projected_context = Map.get(attrs, "projected_context", %{})
+
+    if Enum.any?(Map.keys(projected_context), &(&1 in ["transcript", "provider_session", "secrets", "socket_state"])) do
+      Workflows.fail_step(step.id, %{"reason" => "unsafe_projected_context"})
+    else
+      {:ok, _handoff} =
+        Workflows.create_handoff(step, %{
+          delegated_role_id: delegated_role_id,
+          capability_tags: List.wrap(Map.get(attrs, "capability_tags", [])),
+          handoff_input: Map.get(attrs, "handoff_input", %{}),
+          result_summary: %{},
+          status: "pending"
+        })
+
+      {:ok, _child_step} =
+        Workflows.create_step(run.id, %{
+          parent_step_id: step.id,
+          sequence: Workflows.next_step_sequence(run.id),
+          kind: "handoff",
+          role_id: delegated_role_id,
+          status: "queued",
+          handoff_input: Map.get(attrs, "handoff_input", %{}),
+          projected_context: projected_context
+        })
+
+      Workflows.complete_step(step.id, %{"handoff" => delegated_role_id}, run_status: "running")
+    end
+  end
+
+  defp resolve_handler(step, opts) do
+    cond do
+      handler = Keyword.get(opts, :handler) ->
+        handler
+
+      is_map_keyword = Keyword.get(opts, :handlers) ->
+        Map.fetch!(is_map_keyword, step.kind)
+
+      true ->
+        handlers = Application.get_env(:scoria, :workflow_runtime_handlers, %{})
+        Map.fetch!(handlers, step.kind)
+    end
+  end
+
+  defp invoke_handler({module, function}, step, run), do: apply(module, function, [step, run])
+  defp invoke_handler({module, function, extra_args}, step, run), do: apply(module, function, [step, run | List.wrap(extra_args)])
+  defp invoke_handler(handler, step, _run) when is_function(handler, 1), do: handler.(step)
+  defp invoke_handler(handler, step, run) when is_function(handler, 2), do: handler.(step, run)
+
+  defp normalize_payload(%{} = payload), do: payload
+  defp normalize_payload(payload), do: %{"result" => payload}
+
+  defp attach_budget_evidence(envelope, nil), do: envelope
+
+  defp attach_budget_evidence(envelope, %{reservation: reservation}) do
+    Map.put(envelope, "budget_reservation_id", reservation.id)
+  end
+
+  defp normalize_budget_envelope(envelope) do
+    envelope
+    |> Enum.into(%{}, fn {key, value} -> {to_string(key), normalize_budget_value(value)} end)
+  end
+
+  defp normalize_budget_value(%D{} = value), do: D.to_string(value)
+  defp normalize_budget_value(value), do: value
+
+  defp budget_required?(budget_context) do
+    Map.get(budget_context, :estimated_cost_usd) ||
+      Map.get(budget_context, :estimated_tokens) ||
+      Map.get(budget_context, :sensitive_tool) ||
+      Map.get(budget_context, :estimated_units)
+  end
+
+  defp budget_resource(budget_context, default) do
+    cond do
+      Map.get(budget_context, :resource) -> Map.get(budget_context, :resource)
+      Map.get(budget_context, :estimated_cost_usd) -> "cost_usd"
+      Map.get(budget_context, :estimated_tokens) -> "token_in"
+      Map.get(budget_context, :sensitive_tool) -> "tool_calls"
+      true -> default
+    end
+  end
+
+  defp estimated_units(budget_context) do
+    cond do
+      Map.get(budget_context, :estimated_units) -> Map.get(budget_context, :estimated_units)
+      Map.get(budget_context, :estimated_cost_usd) -> Map.get(budget_context, :estimated_cost_usd)
+      Map.get(budget_context, :estimated_tokens) -> Map.get(budget_context, :estimated_tokens)
+      Map.get(budget_context, :sensitive_tool) -> 1
+      true -> 1
+    end
+  end
+
+  defp actual_units(_budget_context, _result, outcome) when outcome in ["timeout", "execution_failed", "handler_error"], do: 0
+
+  defp actual_units(budget_context, result, _outcome) do
+    cond do
+      is_map(result) && Map.has_key?(result, :actual_units) -> Map.fetch!(result, :actual_units)
+      is_map(result) && Map.has_key?(result, "actual_units") -> Map.fetch!(result, "actual_units")
+      is_map(result) && Map.has_key?(result, :actual_cost_usd) -> Map.fetch!(result, :actual_cost_usd)
+      is_map(result) && Map.has_key?(result, "actual_cost_usd") -> Map.fetch!(result, "actual_cost_usd")
+      true -> estimated_units(budget_context)
+    end
+  end
+end
