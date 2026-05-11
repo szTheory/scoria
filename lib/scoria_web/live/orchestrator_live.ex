@@ -22,6 +22,7 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:active_approval, nil)
       |> assign(:budget_state, nil)
       |> assign(:incident_evidence, nil)
+      |> assign(:trace_records, %{})
       |> assign(:replay_notice, nil)
       |> assign(:promote_notice, nil)
       |> stream(:traces, [])
@@ -30,7 +31,12 @@ defmodule ScoriaWeb.OrchestratorLive do
   end
 
   def handle_info({:new_trace, trace}, socket) do
-    {:noreply, stream_insert(socket, :traces, trace)}
+    socket =
+      socket
+      |> assign(:trace_records, Map.put(socket.assigns.trace_records, trace.id, trace))
+      |> stream_insert(:traces, trace)
+
+    {:noreply, socket}
   end
 
   def handle_info({:token, token}, socket) do
@@ -97,7 +103,9 @@ defmodule ScoriaWeb.OrchestratorLive do
     run_id = Map.get(params, "run_id")
 
     {:noreply,
-     assign_async(socket, :budget_state, fn ->
+     socket
+     |> refresh_trace_badges(trace_id, run_id)
+     |> assign_async(:budget_state, fn ->
        {:ok, %{budget_state: load_budget_projection(trace_id, run_id)}}
      end)}
   end
@@ -107,7 +115,9 @@ defmodule ScoriaWeb.OrchestratorLive do
     run_id = Map.get(params, "run_id")
 
     {:noreply,
-     assign_async(socket, :incident_evidence, fn ->
+     socket
+     |> refresh_trace_badges(trace_id, run_id)
+     |> assign_async(:incident_evidence, fn ->
        {:ok, %{incident_evidence: load_incident_projection(trace_id, run_id)}}
      end)}
   end
@@ -567,4 +577,35 @@ defmodule ScoriaWeb.OrchestratorLive do
   defp decimal_to_string(nil), do: "0"
   defp decimal_to_string(%D{} = value), do: D.to_string(value, :normal)
   defp decimal_to_string(value), do: to_string(value)
+
+  defp refresh_trace_badges(socket, trace_id, run_id) do
+    case Map.get(socket.assigns.trace_records, trace_id) do
+      nil ->
+        socket
+
+      trace ->
+        badge_assigns = compact_trace_badges(trace_id, run_id)
+        updated_trace = Map.merge(trace, badge_assigns)
+
+        socket
+        |> assign(:trace_records, Map.put(socket.assigns.trace_records, trace_id, updated_trace))
+        |> stream_insert(:traces, updated_trace)
+    end
+  rescue
+    _error ->
+      socket
+  end
+
+  defp compact_trace_badges(trace_id, run_id) do
+    incidents = list_incidents(trace_id, run_id)
+    budget = latest_budget(trace_id, run_id)
+    breaker = latest_breaker(trace_id, run_id)
+
+    %{
+      budget_state: budget_signal(budget),
+      breaker_state: breaker && breaker.state,
+      review_incident: Enum.any?(incidents, &(&1.routing_class == "review" and &1.status == "open")),
+      page_incident: Enum.any?(incidents, &(&1.routing_class == "page" and &1.status == "open"))
+    }
+  end
 end
