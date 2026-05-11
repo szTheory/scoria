@@ -36,6 +36,8 @@
 - Phase 5: Introduced `Scoria.Workflows` as the durable workflow source of truth with Ecto-backed runs, steps, checkpoints, events, approvals, and handoffs.
 - Phase 5: Added exact resume, retry-failed-step, and a trace-first workflow LiveView at `/scoria/workflows/:id`.
 - Phase 5: Kept Jido interoperability behind `Scoria.Workflows.JidoAdapter`.
+- Phase 7 (07-07): Kept alert and incident root rows optimistic-lock ready with explicit stable keys rather than opaque map storage.
+- Phase 7 (07-07): Stored audit payload hashes and redacted refs instead of raw sensitive arguments in durable outbox rows.
 
 **Todos:**
 - Plan Phase 6: Advanced RAG, Citations & Knowledge Grounding.
@@ -46,3 +48,4 @@
 **Reference Updates:**
 - AWS Bedrock AgentCore research captured in `.planning/research/agentcore-lessons.md`.
 - Future planning seed captured in `.planning/seeds/SEED-001-agentcore-lessons.md`.
+- Phase 7 incident, delivery, and audit storage summary captured in `.planning/phases/07-seismograph/07-07-SUMMARY.md`.
