@@ -100,6 +100,42 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
     assert html =~ "approval.requested"
   end
 
+  test "lazy budget and incident loads promote compact trace badges without replacing the trace-first controls" do
+    run_id = Ecto.UUID.generate()
+    seed_incident_evidence!("trace-sre-2", run_id)
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    send(view.pid, {:new_trace,
+      %{
+        id: "trace-sre-2",
+        workflow_run_id: run_id,
+        spans: [%{id: "span-sre-2", name: "budget_guard", depth: 0}]
+      }})
+
+    html = render(view)
+    refute html =~ "Budget warn"
+    refute html =~ "breaker open"
+
+    render_click(view, "load_budget_state", %{"id" => "trace-sre-2", "run_id" => run_id})
+    render_click(view, "load_incident_evidence", %{"id" => "trace-sre-2", "run_id" => run_id})
+    render_async(view)
+
+    html = render(view)
+
+    assert html =~ ~r/id="traces-trace-sre-2".*Budget warn.*Load Incident Evidence/s
+    assert html =~ ~r/id="traces-trace-sre-2".*breaker open.*Load Incident Evidence/s
+    assert html =~ ~r/id="traces-trace-sre-2".*review incident.*Load Incident Evidence/s
+    assert html =~ ~r/id="traces-trace-sre-2".*page incident.*Load Incident Evidence/s
+    assert html =~ "Load Retrieval Evidence"
+    assert html =~ "budget_guard"
+  end
+
   defp seed_incident_evidence!(trace_id, run_id) do
     {:ok, policy} =
       %BudgetPolicy{}

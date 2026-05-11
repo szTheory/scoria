@@ -91,6 +91,63 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert render(view) =~ "Hello World"
   end
 
+  test "retrieval evidence loads lazily and renders citation freshness details" do
+    conn = build_conn()
+           |> Plug.Test.init_test_session(%{})
+           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    trace = %{id: "trace-evidence", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
+    send(view.pid, {:new_trace, trace})
+
+    render_click(view, "load_retrieval_evidence", %{"id" => "trace-evidence"})
+
+    assert render(view) =~ "citation"
+    assert render(view) =~ "freshness"
+    assert render(view) =~ "side-by-side"
+  end
+
+  test "retrieval evidence remains available alongside the SRE incident panel" do
+    conn = build_conn()
+           |> Plug.Test.init_test_session(%{})
+           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    trace = %{id: "trace-combined", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
+    send(view.pid, {:new_trace, trace})
+
+    refute render(view) =~ "Composite health rollup"
+
+    render_click(view, "load_retrieval_evidence", %{"id" => "trace-combined"})
+    render_click(view, "load_incident_evidence", %{"id" => "trace-combined"})
+    render_async(view)
+
+    html = render(view)
+    assert html =~ "side-by-side"
+    assert html =~ "Composite health rollup"
+    assert html =~ "Load Retrieval Evidence"
+  end
+
+  test "replay and promote retrieval actions surface trace-first notices" do
+    conn = build_conn()
+           |> Plug.Test.init_test_session(%{})
+           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    trace = %{id: "trace-actions", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
+    send(view.pid, {:new_trace, trace})
+
+    render_click(view, "replay_retrieval", %{"id" => "trace-actions"})
+    render_click(view, "promote_retrieval", %{"id" => "trace-actions"})
+
+    html = render(view)
+    assert html =~ "replay_retrieval"
+    assert html =~ "promote_retrieval"
+  end
+
   test "HITL approval request renders modal and handles approve" do
     Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
     conn = build_conn()
@@ -153,4 +210,3 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert updated_approval.status == "rejected"
   end
 end
-
