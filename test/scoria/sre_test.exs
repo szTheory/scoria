@@ -4,7 +4,19 @@ defmodule Scoria.SRETest do
   alias Decimal, as: D
   alias Scoria.Repo
   alias Scoria.SRE
-  alias Scoria.SRE.{AlertSink, AuditSink, BreakerTrip, BudgetPolicy, BudgetReservation}
+  alias Scoria.SRE.{
+    AlertEvent,
+    AlertPolicy,
+    AlertSink,
+    AuditOutboxEvent,
+    AuditSink,
+    BreakerTrip,
+    BudgetPolicy,
+    BudgetReservation,
+    Incident,
+    IncidentEvent,
+    NotificationDelivery
+  }
 
   defmodule CustomAuditSink do
     @behaviour AuditSink
@@ -100,6 +112,15 @@ defmodule Scoria.SRETest do
       assert BudgetReservation.changeset(%BudgetReservation{}, reservation_attrs(policy)).valid?
       assert BreakerTrip.changeset(%BreakerTrip{}, breaker_trip_attrs()).valid?
     end
+
+    test "alert, incident, delivery, and audit changesets validate durable routing fields" do
+      assert AlertPolicy.changeset(%AlertPolicy{}, alert_policy_attrs()).valid?
+      assert AlertEvent.changeset(%AlertEvent{}, alert_event_attrs()).valid?
+      assert Incident.changeset(%Incident{}, incident_attrs()).valid?
+      assert IncidentEvent.changeset(%IncidentEvent{}, incident_event_attrs()).valid?
+      assert NotificationDelivery.changeset(%NotificationDelivery{}, notification_delivery_attrs()).valid?
+      assert AuditOutboxEvent.changeset(%AuditOutboxEvent{}, audit_outbox_event_attrs()).valid?
+    end
   end
 
   describe "durable budget and breaker persistence" do
@@ -174,6 +195,48 @@ defmodule Scoria.SRETest do
     end
   end
 
+  describe "durable incident and audit storage nouns" do
+    test "persists alert policy, incident, delivery, and audit rows with stable keys and hashed payload refs" do
+      {:ok, alert_policy} =
+        %AlertPolicy{}
+        |> AlertPolicy.changeset(alert_policy_attrs())
+        |> Repo.insert()
+
+      {:ok, incident} =
+        %Incident{}
+        |> Incident.changeset(incident_attrs())
+        |> Repo.insert()
+
+      {:ok, alert_event} =
+        %AlertEvent{}
+        |> AlertEvent.changeset(alert_event_attrs(alert_policy, incident))
+        |> Repo.insert()
+
+      {:ok, incident_event} =
+        %IncidentEvent{}
+        |> IncidentEvent.changeset(incident_event_attrs(incident, alert_event))
+        |> Repo.insert()
+
+      {:ok, delivery} =
+        %NotificationDelivery{}
+        |> NotificationDelivery.changeset(notification_delivery_attrs(incident, alert_event))
+        |> Repo.insert()
+
+      {:ok, audit_event} =
+        %AuditOutboxEvent{}
+        |> AuditOutboxEvent.changeset(audit_outbox_event_attrs())
+        |> Repo.insert()
+
+      assert alert_policy.policy_key == "tenant:cost-burn:page"
+      assert incident.incident_key == "tenant-1:workflow:tenant:default:cost_usd:budget_fast_burn:2026-05-11T17"
+      assert incident_event.event_type == "alert_linked"
+      assert delivery.delivery_status == "pending"
+      assert delivery.attempt_count == 1
+      assert audit_event.payload_hash == "sha256:abcd1234"
+      assert audit_event.redacted_refs["approval_id"] == "approval-123"
+    end
+  end
+
   defp budget_policy_attrs do
     %{
       tenant_id: "tenant-1",
@@ -228,6 +291,120 @@ defmodule Scoria.SRETest do
       trace_id: "trace-123",
       evidence_refs: %{"trace_id" => "trace-123", "provider_request_id" => "req-42"},
       metadata: %{"consecutive_failures" => 3}
+    }
+  end
+
+  defp alert_policy_attrs do
+    %{
+      tenant_id: "tenant-1",
+      policy_key: "tenant:cost-burn:page",
+      sli_kind: "cost",
+      severity: "critical",
+      routing_class: "page",
+      burn_window: "5m",
+      scorer_version_ref: "scorer:v2",
+      baseline_version_ref: "baseline:v4",
+      enabled: true,
+      lock_version: 1,
+      metadata: %{"channel" => "ops"}
+    }
+  end
+
+  defp alert_event_attrs(alert_policy \\ nil, incident \\ nil) do
+    %{
+      tenant_id: "tenant-1",
+      alert_policy_id: alert_policy && alert_policy.id,
+      incident_id: incident && incident.id,
+      incident_key: "tenant-1:workflow:tenant:default:cost_usd:budget_fast_burn:2026-05-11T17",
+      reason_code: "budget_fast_burn",
+      severity: "critical",
+      status: "new",
+      measured_value: D.new("122.5"),
+      threshold_value: D.new("100.0"),
+      scorer_version_ref: "scorer:v2",
+      baseline_version_ref: "baseline:v4",
+      workflow_run_id: Ecto.UUID.generate(),
+      trace_id: "trace-123",
+      evidence_refs: %{"trace_id" => "trace-123", "step_id" => Ecto.UUID.generate()},
+      metadata: %{"sli_kind" => "cost"}
+    }
+  end
+
+  defp incident_attrs do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    %{
+      tenant_id: "tenant-1",
+      incident_key: "tenant-1:workflow:tenant:default:cost_usd:budget_fast_burn:2026-05-11T17",
+      severity: "critical",
+      status: "open",
+      summary: "Cost budget is burning too quickly",
+      routing_class: "page",
+      dedupe_key: "tenant-1:workflow:budget_fast_burn",
+      first_seen_at: now,
+      last_seen_at: now,
+      workflow_run_id: Ecto.UUID.generate(),
+      trace_id: "trace-123",
+      evidence_summary: %{"latest_reason_code" => "budget_fast_burn"},
+      lock_version: 1,
+      metadata: %{"source" => "runtime"}
+    }
+  end
+
+  defp incident_event_attrs(incident \\ nil, alert_event \\ nil) do
+    %{
+      tenant_id: "tenant-1",
+      incident_id: incident && incident.id,
+      alert_event_id: alert_event && alert_event.id,
+      incident_key: "tenant-1:workflow:tenant:default:cost_usd:budget_fast_burn:2026-05-11T17",
+      event_type: "alert_linked",
+      reason_code: "budget_fast_burn",
+      actor_ref: "system:runtime",
+      workflow_run_id: Ecto.UUID.generate(),
+      trace_id: "trace-123",
+      evidence_refs: %{"alert_event_id" => alert_event && alert_event.id},
+      metadata: %{"state" => "open"}
+    }
+  end
+
+  defp notification_delivery_attrs(incident \\ nil, alert_event \\ nil) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    %{
+      tenant_id: "tenant-1",
+      incident_id: incident && incident.id,
+      alert_event_id: alert_event && alert_event.id,
+      sink_kind: "chimeway",
+      routing_key: "ops-primary",
+      delivery_status: "pending",
+      pending_at: now,
+      attempt_count: 1,
+      payload_hash: "sha256:beefcafe",
+      last_error: nil,
+      workflow_run_id: Ecto.UUID.generate(),
+      trace_id: "trace-123",
+      metadata: %{"delivery_class" => "page"}
+    }
+  end
+
+  defp audit_outbox_event_attrs do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    %{
+      tenant_id: "tenant-1",
+      event_type: "approval.requested",
+      policy_class: "sensitive_tool",
+      sink_status: "pending",
+      dedupe_key: "approval.requested:approval-123",
+      payload_hash: "sha256:abcd1234",
+      pending_at: now,
+      attempt_count: 0,
+      actor_ref: "user:42",
+      workflow_run_id: Ecto.UUID.generate(),
+      step_id: Ecto.UUID.generate(),
+      trace_id: "trace-123",
+      redacted_refs: %{"approval_id" => "approval-123", "tool_name" => "deploy_prod"},
+      metadata: %{"policy_result" => "review_required"}
     }
   end
 
