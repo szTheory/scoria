@@ -10,9 +10,10 @@ defmodule Scoria.SRE do
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
+  alias Scoria.Observe.Redactor
   alias Scoria.Repo
-  alias Scoria.SRE.{AlertSink, AuditSink}
-  alias Scoria.SRE.{BreakerTrip, BudgetPolicy, BudgetReservation}
+  alias Scoria.SRE.{AlertEvent, AlertSink, AuditOutboxEvent, AuditSink, Incident, IncidentEvent}
+  alias Scoria.SRE.{BreakerTrip, BudgetPolicy, BudgetReservation, IncidentManager}
 
   @type attrs :: map()
 
@@ -46,9 +47,13 @@ defmodule Scoria.SRE do
       |> normalize_reservation_attrs(policy)
       |> then(&BudgetReservation.changeset(%BudgetReservation{}, &1))
     end)
+    |> maybe_insert_reservation_audit(attrs)
     |> Repo.transaction()
     |> case do
-      {:ok, %{reservation: reservation}} -> {:ok, reservation}
+      {:ok, %{reservation: reservation} = changes} ->
+        maybe_emit_audit_telemetry(changes[:audit_outbox_event])
+        {:ok, reservation}
+
       {:error, _operation, value, _changes} -> {:error, value}
     end
   end
@@ -100,24 +105,59 @@ defmodule Scoria.SRE do
   end
 
   def record_alert_event(envelope) when is_map(envelope) do
-    envelope
-    |> normalize_envelope()
-    |> alert_sink().publish()
+    IncidentManager.record_alert_event(envelope)
   end
 
-  def open_incident(attrs), do: not_implemented(:open_incident, attrs)
+  def open_incident(attrs), do: IncidentManager.open_incident(attrs)
 
-  def append_incident_event(incident, attrs),
-    do: not_implemented(:append_incident_event, %{incident: incident, attrs: attrs})
+  def append_incident_event(incident, attrs), do: IncidentManager.append_incident_event(incident, attrs)
 
   def create_audit_outbox_event(envelope) when is_map(envelope) do
-    envelope
-    |> normalize_envelope()
-    |> audit_sink().publish()
+    Multi.new()
+    |> Multi.run(:audit_outbox_event, fn repo, _changes ->
+      {:ok, insert_audit_outbox_event(repo, envelope)}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{audit_outbox_event: audit_outbox_event}} ->
+        emit_audit_outbox_telemetry(audit_outbox_event)
+        {:ok, audit_outbox_event}
+
+      {:error, _operation, value, _changes} ->
+        {:error, value}
+    end
   end
 
   def deliver_notification(target, envelope),
     do: not_implemented(:deliver_notification, %{target: target, envelope: envelope})
+
+  def insert_audit_outbox_event(repo, envelope) when is_map(envelope) do
+    changeset =
+      %AuditOutboxEvent{}
+      |> AuditOutboxEvent.changeset(normalize_audit_envelope(envelope))
+
+    case repo.insert(changeset) do
+      {:ok, audit_outbox_event} -> audit_outbox_event
+      {:error, failed_changeset} -> repo.rollback(failed_changeset)
+    end
+  end
+
+  def emit_audit_outbox_telemetry(%AuditOutboxEvent{} = audit_outbox_event) do
+    :telemetry.execute(
+      [:scoria, :sre, :audit_outbox, :created],
+      %{count: 1},
+      %{
+        event_type: audit_outbox_event.event_type,
+        policy_class: audit_outbox_event.policy_class,
+        tenant_id: audit_outbox_event.tenant_id,
+        trace_id: audit_outbox_event.trace_id,
+        workflow_run_id: audit_outbox_event.workflow_run_id,
+        step_id: audit_outbox_event.step_id
+      }
+    )
+
+    :ok
+  end
 
   def audit_sink do
     resolve_sink!(:sre_audit_sink, AuditSink, AuditSink.Noop)
@@ -125,6 +165,26 @@ defmodule Scoria.SRE do
 
   def alert_sink do
     resolve_sink!(:sre_alert_sink, AlertSink, AlertSink.Noop)
+  end
+
+  def get_incident!(id), do: Repo.get!(Incident, id)
+
+  def get_incident_event!(id), do: Repo.get!(IncidentEvent, id)
+
+  def get_alert_event!(id), do: Repo.get!(AlertEvent, id)
+
+  def list_incident_events(incident_id) do
+    IncidentEvent
+    |> where([event], event.incident_id == ^incident_id)
+    |> order_by([event], asc: event.inserted_at)
+    |> Repo.all()
+  end
+
+  def list_alert_events(incident_id) do
+    AlertEvent
+    |> where([event], event.incident_id == ^incident_id)
+    |> order_by([event], asc: event.inserted_at)
+    |> Repo.all()
   end
 
   defp normalize_envelope(envelope), do: Map.new(envelope)
@@ -158,6 +218,168 @@ defmodule Scoria.SRE do
     )
   end
 
+  defp maybe_insert_reservation_audit(multi, attrs) do
+    case Map.get(attrs, :audit_envelope) || Map.get(attrs, "audit_envelope") do
+      nil ->
+        multi
+
+      audit_envelope ->
+        Multi.run(multi, :audit_outbox_event, fn repo, %{reservation: reservation} ->
+          envelope =
+            audit_envelope
+            |> normalize_envelope()
+            |> Map.put_new(:workflow_run_id, reservation.workflow_run_id)
+            |> Map.put_new(:trace_id, reservation.trace_id)
+            |> Map.update(:metadata, %{}, &Map.put(normalize_envelope(&1), "budget_reservation_id", reservation.id))
+
+          {:ok, insert_audit_outbox_event(repo, envelope)}
+        end)
+    end
+  end
+
+  defp maybe_emit_audit_telemetry(nil), do: :ok
+  defp maybe_emit_audit_telemetry(audit_outbox_event), do: emit_audit_outbox_telemetry(audit_outbox_event)
+
+  defp normalize_audit_envelope(envelope) do
+    redacted_refs = build_redacted_refs(envelope)
+    metadata = build_audit_metadata(envelope)
+
+    %{
+      tenant_id: Map.get(envelope, :tenant_id) || Map.get(envelope, "tenant_id") || "system",
+      event_type: Map.get(envelope, :event_type) || Map.fetch!(envelope, "event_type"),
+      policy_class: Map.get(envelope, :policy_class) || Map.get(envelope, "policy_class") || "policy_sensitive",
+      sink_status: Map.get(envelope, :sink_status) || Map.get(envelope, "sink_status") || "pending",
+      dedupe_key:
+        Map.get(envelope, :dedupe_key) ||
+          Map.get(envelope, "dedupe_key") ||
+          build_audit_dedupe_key(envelope),
+      payload_hash: Map.get(envelope, :payload_hash) || Map.get(envelope, "payload_hash") || hash_payload(redacted_refs, metadata),
+      pending_at:
+        Map.get(envelope, :pending_at) || Map.get(envelope, "pending_at") ||
+          DateTime.utc_now() |> DateTime.truncate(:microsecond),
+      sent_at: Map.get(envelope, :sent_at) || Map.get(envelope, "sent_at"),
+      attempt_count: Map.get(envelope, :attempt_count) || Map.get(envelope, "attempt_count") || 0,
+      actor_ref: Map.get(envelope, :actor_ref) || Map.get(envelope, "actor_ref") || Map.get(envelope, :actor_id) || Map.get(envelope, "actor_id"),
+      workflow_run_id: Map.get(envelope, :workflow_run_id) || Map.get(envelope, "workflow_run_id"),
+      step_id: Map.get(envelope, :step_id) || Map.get(envelope, "step_id"),
+      trace_id: Map.get(envelope, :trace_id) || Map.get(envelope, "trace_id"),
+      redacted_refs: redacted_refs,
+      metadata: metadata
+    }
+  end
+
+  defp build_redacted_refs(envelope) do
+    envelope
+    |> normalize_envelope()
+    |> Map.take([
+      :approval_id,
+      :alert_event_id,
+      :args,
+      :arguments,
+      :tool_name,
+      :tool_ref,
+      :decision,
+      :access_decision,
+      :access_reason,
+      :policy_key,
+      :reason,
+      :reason_code,
+      :run_id,
+      :step_id,
+      :target,
+      "approval_id",
+      "alert_event_id",
+      "args",
+      "arguments",
+      "tool_name",
+      "tool_ref",
+      "decision",
+      "access_decision",
+      "access_reason",
+      "policy_key",
+      "reason",
+      "reason_code",
+      "run_id",
+      "step_id",
+      "target"
+    ])
+    |> Enum.into(%{}, fn {key, value} -> {to_string(key), normalize_ref_value(value)} end)
+    |> Redactor.redact()
+    |> stringify_nested_keys()
+  end
+
+  defp build_audit_metadata(envelope) do
+    envelope
+    |> normalize_envelope()
+    |> Map.drop([
+      :actor_id,
+      :actor_ref,
+      :alert_event_id,
+      :approval_id,
+      :args,
+      :arguments,
+      :attempt_count,
+      :dedupe_key,
+      :event_type,
+      :payload_hash,
+      :pending_at,
+      :policy_class,
+      :raw_args,
+      :redacted_refs,
+      :sent_at,
+      :sink_status,
+      :step_id,
+      :tenant_id,
+      :trace_id,
+      :workflow_run_id,
+      "actor_id",
+      "actor_ref",
+      "alert_event_id",
+      "approval_id",
+      "args",
+      "arguments",
+      "attempt_count",
+      "dedupe_key",
+      "event_type",
+      "payload_hash",
+      "pending_at",
+      "policy_class",
+      "raw_args",
+      "redacted_refs",
+      "sent_at",
+      "sink_status",
+      "step_id",
+      "tenant_id",
+      "trace_id",
+      "workflow_run_id"
+    ])
+    |> Enum.into(%{}, fn {key, value} -> {to_string(key), normalize_ref_value(value)} end)
+    |> stringify_nested_keys()
+  end
+
+  defp build_audit_dedupe_key(envelope) do
+    [
+      Map.get(envelope, :event_type) || Map.get(envelope, "event_type"),
+      Map.get(envelope, :tenant_id) || Map.get(envelope, "tenant_id"),
+      Map.get(envelope, :approval_id) || Map.get(envelope, "approval_id"),
+      Map.get(envelope, :trace_id) || Map.get(envelope, "trace_id"),
+      Map.get(envelope, :access_decision) || Map.get(envelope, "access_decision")
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(":")
+  end
+
+  defp hash_payload(redacted_refs, metadata) do
+    payload =
+      %{
+        redacted_refs: redacted_refs,
+        metadata: metadata
+      }
+      |> Jason.encode!()
+
+    "sha256:" <> Base.encode16(:crypto.hash(:sha256, payload), case: :lower)
+  end
+
   defp build_policy_snapshot(nil, snapshot), do: Map.new(snapshot || %{})
 
   defp build_policy_snapshot(policy, snapshot) do
@@ -180,6 +402,18 @@ defmodule Scoria.SRE do
   defp merge_metadata(left, right) do
     Map.merge(Map.new(left || %{}), Map.new(right || %{}))
   end
+
+  defp normalize_ref_value(%DateTime{} = value), do: DateTime.to_iso8601(value)
+  defp normalize_ref_value(value), do: value
+
+  defp stringify_nested_keys(%_{} = value), do: value
+
+  defp stringify_nested_keys(map) when is_map(map) do
+    Enum.into(map, %{}, fn {key, value} -> {to_string(key), stringify_nested_keys(value)} end)
+  end
+
+  defp stringify_nested_keys(list) when is_list(list), do: Enum.map(list, &stringify_nested_keys/1)
+  defp stringify_nested_keys(value), do: value
 
   defp resolve_sink!(config_key, behaviour, default) do
     module = Application.get_env(:scoria, config_key, default)

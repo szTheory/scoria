@@ -57,6 +57,6 @@ defmodule Scoria.SRE.AuditOutboxEvent do
     ])
     |> validate_inclusion(:sink_status, @sink_statuses)
     |> validate_number(:attempt_count, greater_than_or_equal_to: 0)
-    |> unique_constraint([:tenant_id, :dedupe_key])
+    |> unique_constraint([:tenant_id, :dedupe_key], name: :ai_audit_outbox_events_tenant_dedupe_key_idx)
   end
 end

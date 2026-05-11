@@ -204,7 +204,7 @@ defmodule Scoria.SRE.BudgetEngine do
   defp persist_reservation(attrs, policy, usage) do
     reservation_attrs =
       attrs
-      |> Map.take([:tenant_id, :policy_key, :scope_key, :resource_kind, :estimated_units, :reason_code, :trace_id])
+      |> Map.take([:tenant_id, :policy_key, :scope_key, :resource_kind, :estimated_units, :reason_code, :trace_id, :audit_envelope])
       |> Map.merge(%{
         workflow_run_id: Map.get(attrs, :run_id),
         provider_ref: Map.get(attrs, :provider_ref),

@@ -6,6 +6,7 @@ defmodule Scoria.MCP.Executor do
 
   alias Scoria.SRE.BudgetEngine
   alias Scoria.SRE.BreakerRegistry
+  alias Scoria.SRE
 
   @doc """
   Executes a tool module with the given arguments and context.
@@ -13,41 +14,44 @@ defmodule Scoria.MCP.Executor do
   def execute(tool_module, args, context, timeout \\ 5000) do
     context = context || %{}
 
-    case reserve_budget(tool_module, args, context) do
+    with {:ok, access_context} <- maybe_capture_sensitive_mcp_access(tool_module, args, context),
+         {:ok, reservation_context} <- reserve_budget(tool_module, args, access_context),
+         {:ok, execution_context} <- ensure_policy_sensitive_invocation(tool_module, args, access_context, reservation_context) do
+      metadata =
+        access_context
+        |> Map.merge(%{tool: tool_module, args: args})
+        |> attach_budget_metadata(execution_context)
+        |> Map.put_new(:tool_ref, inspect(tool_module))
+
+      breaker_context =
+        access_context
+        |> Map.put_new(:tool_ref, inspect(tool_module))
+
+      case BreakerRegistry.run(breaker_context, fn ->
+             execute_tool(tool_module, args, access_context, timeout, metadata)
+           end) do
+        {:ok, {:completed, result, duration}} ->
+          reconcile_budget(execution_context, access_context, result, "completed")
+          :telemetry.execute([:scoria, :tool, :completed], %{duration: duration}, metadata)
+          result
+
+        {:error, {:timeout, duration}} ->
+          reconcile_budget(execution_context, access_context, %{}, "timeout")
+          :telemetry.execute([:scoria, :tool, :timeout], %{duration: duration}, metadata)
+          {:error, :timeout}
+
+        {:error, {:execution_failed, duration, reason}} ->
+          reconcile_budget(execution_context, access_context, %{}, "execution_failed")
+          :telemetry.execute([:scoria, :tool, :failed], %{duration: duration}, Map.put(metadata, :reason, reason))
+          {:error, :execution_failed}
+
+        {:error, %{status: :breaker_open} = envelope} ->
+          :telemetry.execute([:scoria, :tool, :failed], %{duration: 0}, Map.put(metadata, :reason, :breaker_open))
+          {:error, envelope}
+      end
+    else
       {:error, envelope} ->
         {:error, envelope}
-
-      {:ok, reservation_context} ->
-        metadata =
-          context
-          |> Map.merge(%{tool: tool_module, args: args})
-          |> attach_budget_metadata(reservation_context)
-          |> Map.put_new(:tool_ref, inspect(tool_module))
-
-        breaker_context =
-          context
-          |> Map.put_new(:tool_ref, inspect(tool_module))
-
-        case BreakerRegistry.run(breaker_context, fn -> execute_tool(tool_module, args, context, timeout, metadata) end) do
-          {:ok, {:completed, result, duration}} ->
-            reconcile_budget(reservation_context, context, result, "completed")
-            :telemetry.execute([:scoria, :tool, :completed], %{duration: duration}, metadata)
-            result
-
-          {:error, {:timeout, duration}} ->
-            reconcile_budget(reservation_context, context, %{}, "timeout")
-            :telemetry.execute([:scoria, :tool, :timeout], %{duration: duration}, metadata)
-            {:error, :timeout}
-
-          {:error, {:execution_failed, duration, reason}} ->
-            reconcile_budget(reservation_context, context, %{}, "execution_failed")
-            :telemetry.execute([:scoria, :tool, :failed], %{duration: duration}, Map.put(metadata, :reason, reason))
-            {:error, :execution_failed}
-
-          {:error, %{status: :breaker_open} = envelope} ->
-            :telemetry.execute([:scoria, :tool, :failed], %{duration: 0}, Map.put(metadata, :reason, :breaker_open))
-            {:error, envelope}
-        end
     end
   end
 
@@ -80,6 +84,7 @@ defmodule Scoria.MCP.Executor do
         estimated_units: estimated_units(context),
         integration_kind: Map.get(context, :integration_kind, "tool"),
         tool_ref: inspect(tool_module),
+        audit_envelope: policy_sensitive_audit_envelope(tool_module, args, context),
         metadata:
           context
           |> Map.get(:metadata, %{})
@@ -91,6 +96,7 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp reconcile_budget(nil, _context, _result, _outcome), do: :ok
+  defp reconcile_budget(%{audit_outbox_event: _audit_outbox_event}, _context, _result, _outcome), do: :ok
 
   defp reconcile_budget(%{reservation: reservation}, context, result, outcome) do
     BudgetEngine.reconcile_usage(reservation, %{
@@ -100,6 +106,7 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp attach_budget_metadata(metadata, nil), do: metadata
+  defp attach_budget_metadata(metadata, %{audit_outbox_event: audit_outbox_event}), do: Map.put(metadata, :audit_outbox_event_id, audit_outbox_event.id)
   defp attach_budget_metadata(metadata, %{reservation: reservation}), do: Map.put(metadata, :budget_reservation_id, reservation.id)
 
   defp budget_required?(context) do
@@ -136,6 +143,89 @@ defmodule Scoria.MCP.Executor do
       is_map(result) && Map.has_key?(result, :actual_cost_usd) -> Map.fetch!(result, :actual_cost_usd)
       is_map(result) && Map.has_key?(result, "actual_cost_usd") -> Map.fetch!(result, "actual_cost_usd")
       true -> estimated_units(context)
+    end
+  end
+
+  defp maybe_capture_sensitive_mcp_access(tool_module, args, context) do
+    if Map.get(context, :sensitive_mcp_access) do
+      decision = Map.get(context, :access_decision, "granted")
+
+      with {:ok, audit_outbox_event} <-
+             SRE.create_audit_outbox_event(%{
+               tenant_id: Map.get(context, :tenant_id),
+               actor_id: Map.get(context, :actor_id),
+               workflow_run_id: Map.get(context, :run_id),
+               step_id: Map.get(context, :step_id),
+               trace_id: Map.get(context, :trace_id),
+               event_type: "mcp.access.#{decision}",
+               policy_class: "sensitive_mcp_access",
+               access_decision: decision,
+               access_reason: Map.get(context, :access_reason),
+               policy_key: Map.get(context, :policy_key),
+               tool_ref: inspect(tool_module),
+               args: args,
+               metadata: %{
+                 "integration_kind" => Map.get(context, :integration_kind, "remote_mcp"),
+                 "mcp_endpoint" => Map.get(context, :mcp_endpoint) || Map.get(context, :endpoint)
+               }
+             }) do
+        case decision do
+          "denied" ->
+            {:error,
+             %{
+               status: :access_denied,
+               reason_code: Map.get(context, :access_reason, "policy_denied"),
+               audit_outbox_event_id: audit_outbox_event.id,
+               trace_id: Map.get(context, :trace_id),
+               policy_key: Map.get(context, :policy_key)
+             }}
+
+          _ ->
+            {:ok, context}
+        end
+      end
+    else
+      {:ok, context}
+    end
+  end
+
+  defp ensure_policy_sensitive_invocation(tool_module, args, context, nil) do
+    if policy_sensitive_invocation?(context) do
+      case SRE.create_audit_outbox_event(policy_sensitive_audit_envelope(tool_module, args, context)) do
+        {:ok, audit_outbox_event} -> {:ok, %{audit_outbox_event: audit_outbox_event}}
+        {:error, value} -> {:error, value}
+      end
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp ensure_policy_sensitive_invocation(_tool_module, _args, _context, reservation_context),
+    do: {:ok, reservation_context}
+
+  defp policy_sensitive_invocation?(context) do
+    Map.get(context, :policy_sensitive) || Map.get(context, :sensitive_tool)
+  end
+
+  defp policy_sensitive_audit_envelope(tool_module, args, context) do
+    if policy_sensitive_invocation?(context) do
+      %{
+        tenant_id: Map.get(context, :tenant_id),
+        actor_id: Map.get(context, :actor_id),
+        workflow_run_id: Map.get(context, :run_id),
+        step_id: Map.get(context, :step_id),
+        trace_id: Map.get(context, :trace_id),
+        event_type: "tool.invocation",
+        policy_class: "policy_sensitive",
+        policy_key: Map.get(context, :policy_key),
+        tool_ref: inspect(tool_module),
+        args: args,
+        metadata: %{
+          "integration_kind" => Map.get(context, :integration_kind, "tool"),
+          "tool_target" => Map.get(context, :tool_target),
+          "breaker_target" => Map.get(context, :breaker_target)
+        }
+      }
     end
   end
 end

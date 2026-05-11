@@ -37,9 +37,34 @@ defmodule Scoria.MCP.ExecutorTest do
     end
   end
 
+  defmodule BlockingTool do
+    @behaviour Scoria.MCP.Tool
+
+    @impl true
+    def name, do: "blocking_tool"
+
+    @impl true
+    def description, do: "A blocking tool for audit seam tests"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(args, context) do
+      send(context.test_pid, {:tool_started, self(), context.trace_id, args})
+
+      receive do
+        :continue -> {:ok, %{result: "released"}}
+      after
+        1_000 -> {:error, :timed_out_waiting_for_test}
+      end
+    end
+  end
+
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+    ensure_audit_outbox_table!()
     :fuse.remove("remote_mcp:https://mcp.example.test")
     :fuse.remove("tool:local-dummy")
     if :ets.whereis(:scoria_breaker_registry) != :undefined, do: :ets.delete(:scoria_breaker_registry, "remote_mcp:https://mcp.example.test")
@@ -182,6 +207,69 @@ defmodule Scoria.MCP.ExecutorTest do
       assert {:error, :execution_failed} = Executor.execute(DummyTool, %{"action" => "crash"}, local_context)
       assert {:ok, %{result: "success"}} = Executor.execute(DummyTool, %{"action" => "success"}, local_context)
     end
+
+    test "writes a redacted policy-sensitive audit row before the tool invocation completes", %{context: context} do
+      trace_id = "trace-sensitive-tool"
+      parent = self()
+
+      task =
+        Task.async(fn ->
+          Executor.execute(
+            BlockingTool,
+            %{"token" => "secret-value", "target" => "prod"},
+            Map.merge(context, %{
+              trace_id: trace_id,
+              run_id: Ecto.UUID.generate(),
+              step_id: Ecto.UUID.generate(),
+              tenant_id: "tenant-1",
+              actor_id: "user-123",
+              policy_sensitive: true,
+              tool_target: "deploy_prod",
+              test_pid: parent
+            }),
+            1_000
+          )
+        end)
+
+      assert_receive {:tool_started, tool_pid, ^trace_id, _args}
+
+      audit_event = Repo.get_by!(Scoria.SRE.AuditOutboxEvent, trace_id: trace_id)
+      assert audit_event.event_type == "tool.invocation"
+      assert audit_event.policy_class == "policy_sensitive"
+      assert audit_event.redacted_refs["args"]["token"] == "[REDACTED]"
+      assert audit_event.redacted_refs["args"]["target"] == "prod"
+      refute audit_event.metadata["raw_args"]
+
+      send(tool_pid, :continue)
+      assert {:ok, %{result: "released"}} = Task.await(task)
+    end
+
+    test "writes a durable sensitive MCP access denied audit row without executing the tool", %{context: context} do
+      trace_id = "trace-access-denied"
+
+      assert {:error, %{status: :access_denied}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"token" => "secret-value", "target" => "prod"},
+                 Map.merge(context, %{
+                   trace_id: trace_id,
+                   tenant_id: "tenant-1",
+                   actor_id: "user-123",
+                   integration_kind: "remote_mcp",
+                   mcp_endpoint: "https://mcp.example.test",
+                   sensitive_mcp_access: true,
+                   access_decision: "denied",
+                   policy_key: "mcp.admin",
+                   access_reason: "policy_denied"
+                 })
+               )
+
+      audit_event = Repo.get_by!(Scoria.SRE.AuditOutboxEvent, trace_id: trace_id)
+      assert audit_event.event_type == "mcp.access.denied"
+      assert audit_event.policy_class == "sensitive_mcp_access"
+      assert audit_event.redacted_refs["args"]["token"] == "[REDACTED]"
+      assert audit_event.redacted_refs["access_decision"] == "denied"
+    end
   end
 
   defp create_budget_policy!(tenant_id, resource_kind) do
@@ -200,5 +288,35 @@ defmodule Scoria.MCP.ExecutorTest do
                max_consecutive_failures: 2,
                metadata: %{}
              })
+  end
+
+  defp ensure_audit_outbox_table! do
+    Repo.query!("""
+    CREATE TABLE IF NOT EXISTS ai_audit_outbox_events (
+      id uuid PRIMARY KEY,
+      tenant_id varchar NOT NULL,
+      event_type varchar NOT NULL,
+      policy_class varchar NOT NULL,
+      sink_status varchar NOT NULL DEFAULT 'pending',
+      dedupe_key varchar NOT NULL,
+      payload_hash varchar NOT NULL,
+      pending_at timestamp(6) without time zone NOT NULL,
+      sent_at timestamp(6) without time zone NULL,
+      attempt_count integer NOT NULL DEFAULT 0,
+      actor_ref varchar NULL,
+      workflow_run_id uuid NULL,
+      step_id uuid NULL,
+      trace_id varchar NULL,
+      redacted_refs jsonb NOT NULL DEFAULT '{}'::jsonb,
+      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+      inserted_at timestamp(6) without time zone NOT NULL,
+      updated_at timestamp(6) without time zone NOT NULL
+    )
+    """)
+
+    Repo.query!("""
+    CREATE UNIQUE INDEX IF NOT EXISTS ai_audit_outbox_events_tenant_dedupe_key_idx
+    ON ai_audit_outbox_events (tenant_id, dedupe_key)
+    """)
   end
 end
