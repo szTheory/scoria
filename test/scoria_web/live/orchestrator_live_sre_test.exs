@@ -84,6 +84,7 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
       }})
 
     render_click(view, "load_incident_evidence", %{"id" => "trace-sre-1", "run_id" => run_id})
+    render_async(view)
 
     html = render(view)
 
