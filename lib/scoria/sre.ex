@@ -161,7 +161,7 @@ defmodule Scoria.SRE do
   defp build_policy_snapshot(nil, snapshot), do: Map.new(snapshot || %{})
 
   defp build_policy_snapshot(policy, snapshot) do
-    snapshot
+    (snapshot || %{})
     |> Map.new()
     |> Map.put_new("policy_id", policy.id)
     |> Map.put_new("policy_key", policy.policy_key)
