@@ -7,13 +7,22 @@ defmodule Scoria.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      {Task.Supervisor, name: Scoria.MCP.TaskSupervisor}
-    ]
+    children =
+      [
+        Scoria.Repo,
+        {Phoenix.PubSub, name: Scoria.PubSub},
+        {Task.Supervisor, name: Scoria.MCP.TaskSupervisor},
+        {Task.Supervisor, name: Scoria.Workflow.TaskSupervisor},
+        Scoria.SRE.Relay
+      ] ++ maybe_reconciler()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Scoria.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp maybe_reconciler do
+    if Mix.env() == :test, do: [], else: [Scoria.Workflows.Reconciler]
   end
 end
