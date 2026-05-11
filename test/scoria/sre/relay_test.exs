@@ -2,7 +2,7 @@ defmodule Scoria.SRE.RelayTest do
   use ExUnit.Case, async: false
 
   alias Scoria.Repo
-  alias Scoria.SRE.AuditOutboxEvent
+  alias Scoria.SRE.{AuditOutboxEvent, NotificationDelivery}
 
   defmodule FailingAuditSink do
     @behaviour Scoria.SRE.AuditSink
@@ -23,12 +23,19 @@ defmodule Scoria.SRE.RelayTest do
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
 
     original_audit_sink = Application.get_env(:scoria, :sre_audit_sink)
+    original_threadline = Application.get_env(:scoria, :sre_threadline_dispatcher)
+    original_chimeway = Application.get_env(:scoria, :sre_chimeway_dispatcher)
+    original_mailglass = Application.get_env(:scoria, :sre_mailglass_dispatcher)
 
     on_exit(fn ->
       restore_env(:sre_audit_sink, original_audit_sink)
+      restore_env(:sre_threadline_dispatcher, original_threadline)
+      restore_env(:sre_chimeway_dispatcher, original_chimeway)
+      restore_env(:sre_mailglass_dispatcher, original_mailglass)
     end)
 
     ensure_audit_outbox_table!()
+    ensure_notification_delivery_table!()
     :ok
   end
 
@@ -82,6 +89,96 @@ defmodule Scoria.SRE.RelayTest do
     end
   end
 
+  describe "optional first-party adapters" do
+    test "keep Threadline, Chimeway, and Mailglass as no-op defaults when unconfigured" do
+      assert {:ok, %{status: :noop, adapter: :threadline, envelope: audit_envelope}} =
+               Scoria.SRE.Adapters.Threadline.publish(%{
+                 event_type: "approval.requested",
+                 trace_id: "trace-threadline",
+                 redacted_refs: %{"approval_id" => "approval-2"}
+               })
+
+      refute Map.has_key?(audit_envelope, :__struct__)
+      assert audit_envelope.category == "audit"
+      assert audit_envelope.event_type == "approval.requested"
+
+      assert {:ok, %{status: :noop, adapter: :chimeway, envelope: chimeway_envelope}} =
+               Scoria.SRE.Adapters.Chimeway.publish(%{
+                 severity: "warning",
+                 routing_class: "review",
+                 routing_key: "reviews"
+               })
+
+      assert chimeway_envelope.severity == "warning"
+      assert chimeway_envelope.routing_class == "review"
+
+      assert {:ok, %{status: :noop, adapter: :mailglass, envelope: mailglass_envelope}} =
+               Scoria.SRE.Adapters.Mailglass.publish(%{
+                 severity: "critical",
+                 routing_class: "page",
+                 routing_key: "ops@example.com"
+               })
+
+      assert mailglass_envelope.severity == "critical"
+      assert mailglass_envelope.routing_class == "page"
+    end
+
+    test "routes notification deliveries through sink-specific adapters with severity metadata" do
+      Application.put_env(
+        :scoria,
+        :sre_chimeway_dispatcher,
+        {__MODULE__, :capture_delivery, [self(), :chimeway]}
+      )
+
+      Application.put_env(
+        :scoria,
+        :sre_mailglass_dispatcher,
+        {__MODULE__, :capture_delivery, [self(), :mailglass]}
+      )
+
+      chimeway_delivery =
+        Repo.insert!(%NotificationDelivery{
+          tenant_id: "tenant-relay",
+          sink_kind: "chimeway",
+          routing_key: "reviews",
+          delivery_status: "pending",
+          pending_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
+          attempt_count: 0,
+          payload_hash: "sha256:chimeway",
+          trace_id: "trace-chimeway",
+          metadata: %{"severity" => "warning", "routing_class" => "review", "summary" => "Review me"}
+        })
+
+      mailglass_delivery =
+        Repo.insert!(%NotificationDelivery{
+          tenant_id: "tenant-relay",
+          sink_kind: "mailglass",
+          routing_key: "ops@example.com",
+          delivery_status: "pending",
+          pending_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
+          attempt_count: 0,
+          payload_hash: "sha256:mailglass",
+          trace_id: "trace-mailglass",
+          metadata: %{"severity" => "critical", "routing_class" => "page", "summary" => "Page me"}
+        })
+
+      assert :ok = Scoria.SRE.Relay.drain_once()
+
+      assert_receive {:captured_delivery, :chimeway, envelope}
+      assert envelope.severity == "warning"
+      assert envelope.routing_class == "review"
+      assert envelope.summary == "Review me"
+
+      assert_receive {:captured_delivery, :mailglass, envelope}
+      assert envelope.severity == "critical"
+      assert envelope.routing_class == "page"
+      assert envelope.summary == "Page me"
+
+      assert Repo.get!(NotificationDelivery, chimeway_delivery.id).delivery_status == "delivered"
+      assert Repo.get!(NotificationDelivery, mailglass_delivery.id).delivery_status == "delivered"
+    end
+  end
+
   defp ensure_audit_outbox_table! do
     Repo.query!("""
     CREATE TABLE IF NOT EXISTS ai_audit_outbox_events (
@@ -110,6 +207,36 @@ defmodule Scoria.SRE.RelayTest do
     CREATE UNIQUE INDEX IF NOT EXISTS ai_audit_outbox_events_tenant_dedupe_key_idx
     ON ai_audit_outbox_events (tenant_id, dedupe_key)
     """)
+  end
+
+  defp ensure_notification_delivery_table! do
+    Repo.query!("""
+    CREATE TABLE IF NOT EXISTS ai_notification_deliveries (
+      id uuid PRIMARY KEY,
+      tenant_id varchar NOT NULL,
+      sink_kind varchar NOT NULL,
+      routing_key varchar NOT NULL,
+      delivery_status varchar NOT NULL DEFAULT 'pending',
+      pending_at timestamp(6) without time zone NOT NULL,
+      last_attempt_at timestamp(6) without time zone NULL,
+      delivered_at timestamp(6) without time zone NULL,
+      attempt_count integer NOT NULL DEFAULT 0,
+      payload_hash varchar NOT NULL,
+      last_error varchar NULL,
+      workflow_run_id uuid NULL,
+      trace_id varchar NULL,
+      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+      incident_id uuid NULL,
+      alert_event_id uuid NULL,
+      inserted_at timestamp(6) without time zone NOT NULL,
+      updated_at timestamp(6) without time zone NOT NULL
+    )
+    """)
+  end
+
+  def capture_delivery(pid, adapter, envelope) do
+    send(pid, {:captured_delivery, adapter, envelope})
+    {:ok, %{adapter: adapter, status: :delivered}}
   end
 
   defp restore_env(_key, nil), do: :ok
