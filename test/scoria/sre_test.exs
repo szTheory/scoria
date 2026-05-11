@@ -4,6 +4,7 @@ defmodule Scoria.SRETest do
   alias Decimal, as: D
   alias Scoria.Repo
   alias Scoria.SRE
+
   alias Scoria.SRE.{
     AlertEvent,
     AlertPolicy,
@@ -118,7 +119,12 @@ defmodule Scoria.SRETest do
       assert AlertEvent.changeset(%AlertEvent{}, alert_event_attrs()).valid?
       assert Incident.changeset(%Incident{}, incident_attrs()).valid?
       assert IncidentEvent.changeset(%IncidentEvent{}, incident_event_attrs()).valid?
-      assert NotificationDelivery.changeset(%NotificationDelivery{}, notification_delivery_attrs()).valid?
+
+      assert NotificationDelivery.changeset(
+               %NotificationDelivery{},
+               notification_delivery_attrs()
+             ).valid?
+
       assert AuditOutboxEvent.changeset(%AuditOutboxEvent{}, audit_outbox_event_attrs()).valid?
     end
   end
@@ -228,7 +234,10 @@ defmodule Scoria.SRETest do
         |> Repo.insert()
 
       assert alert_policy.policy_key == "tenant:cost-burn:page"
-      assert incident.incident_key == "tenant-1:workflow:tenant:default:cost_usd:budget_fast_burn:2026-05-11T17"
+
+      assert incident.incident_key ==
+               "tenant-1:workflow:tenant:default:cost_usd:budget_fast_burn:2026-05-11T17"
+
       assert incident_event.event_type == "alert_linked"
       assert delivery.delivery_status == "pending"
       assert delivery.attempt_count == 1
@@ -354,7 +363,7 @@ defmodule Scoria.SRETest do
   defp incident_event_attrs(incident \\ nil, alert_event \\ nil) do
     %{
       tenant_id: "tenant-1",
-      incident_id: incident && incident.id,
+      incident_id: if(incident, do: incident.id, else: Ecto.UUID.generate()),
       alert_event_id: alert_event && alert_event.id,
       incident_key: "tenant-1:workflow:tenant:default:cost_usd:budget_fast_burn:2026-05-11T17",
       event_type: "alert_linked",
