@@ -20,6 +20,9 @@ defmodule Scoria.Workflows.RuntimeTest do
     Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
     Application.put_env(:scoria, :workflow_runtime_handlers, %{})
     start_supervised!(Scoria.Workflows.Reconciler)
+    :fuse.remove("provider:runtime-test")
+    :fuse.remove("workflow:local-runtime-test")
+    if :ets.whereis(:scoria_breaker_registry) != :undefined, do: :ets.delete(:scoria_breaker_registry, "provider:runtime-test")
     :ok
   end
 
@@ -99,6 +102,53 @@ defmodule Scoria.Workflows.RuntimeTest do
       assert failed_step.status == "failed"
       assert failed_step.error_envelope["reason_code"] == "trip_threshold_exceeded"
       refute_receive {:side_effect_ran, ^step_id}
+    end
+
+    test "external-effect handlers trip an integration-scoped breaker before the side effect reruns" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, first_step} = Workflows.create_step(run.id, %{sequence: 1, kind: "external", role_id: "executor", status: "queued"})
+
+      assert {:ok, failed_step} =
+               Runtime.execute_step(
+                 first_step.id,
+                 handler: {Handlers, :raise_error},
+                 breaker_context: %{integration_kind: "provider", provider_ref: "runtime-test"}
+               )
+
+      assert failed_step.status == "failed"
+      assert failed_step.error_envelope["reason"] =~ "boom"
+
+      {:ok, second_step} = Workflows.create_step(run.id, %{sequence: 2, kind: "external", role_id: "executor", status: "queued"})
+      second_step_id = second_step.id
+
+      assert {:ok, blocked_step} =
+               Runtime.execute_step(
+                 second_step.id,
+                 handler: {Handlers, :succeed_and_notify, [self()]},
+                 breaker_context: %{integration_kind: "provider", provider_ref: "runtime-test"}
+               )
+
+      assert blocked_step.status == "failed"
+      assert blocked_step.error_envelope["reason_code"] == "breaker_open"
+      assert blocked_step.error_envelope["breaker_key"] == "provider:runtime-test"
+      refute_receive {:side_effect_ran, ^second_step_id}
+    end
+
+    test "local workflow handlers are not breaker-wrapped by default" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, first_step} = Workflows.create_step(run.id, %{sequence: 1, kind: "local", role_id: "executor", status: "queued"})
+
+      assert {:ok, failed_step} = Runtime.execute_step(first_step.id, handler: {Handlers, :raise_error})
+      assert failed_step.status == "failed"
+
+      {:ok, second_step} = Workflows.create_step(run.id, %{sequence: 2, kind: "local", role_id: "executor", status: "queued"})
+      second_step_id = second_step.id
+
+      assert {:ok, completed_step} =
+               Runtime.execute_step(second_step.id, handler: {Handlers, :succeed_and_notify, [self()]})
+
+      assert completed_step.status == "completed"
+      assert_receive {:side_effect_ran, ^second_step_id}
     end
   end
 

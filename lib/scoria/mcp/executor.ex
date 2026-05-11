@@ -5,6 +5,7 @@ defmodule Scoria.MCP.Executor do
   """
 
   alias Scoria.SRE.BudgetEngine
+  alias Scoria.SRE.BreakerRegistry
 
   @doc """
   Executes a tool module with the given arguments and context.
@@ -21,34 +22,48 @@ defmodule Scoria.MCP.Executor do
           context
           |> Map.merge(%{tool: tool_module, args: args})
           |> attach_budget_metadata(reservation_context)
+          |> Map.put_new(:tool_ref, inspect(tool_module))
 
-        :telemetry.execute([:scoria, :tool, :started], %{system_time: System.system_time()}, metadata)
+        breaker_context =
+          context
+          |> Map.put_new(:tool_ref, inspect(tool_module))
 
-        start_time = System.monotonic_time()
-
-        task = Task.Supervisor.async_nolink(Scoria.MCP.TaskSupervisor, fn ->
-          tool_module.execute(args, context)
-        end)
-
-        case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
-          {:ok, result} ->
+        case BreakerRegistry.run(breaker_context, fn -> execute_tool(tool_module, args, context, timeout, metadata) end) do
+          {:ok, {:completed, result, duration}} ->
             reconcile_budget(reservation_context, context, result, "completed")
-            duration = System.monotonic_time() - start_time
             :telemetry.execute([:scoria, :tool, :completed], %{duration: duration}, metadata)
             result
 
-          nil ->
+          {:error, {:timeout, duration}} ->
             reconcile_budget(reservation_context, context, %{}, "timeout")
-            duration = System.monotonic_time() - start_time
             :telemetry.execute([:scoria, :tool, :timeout], %{duration: duration}, metadata)
             {:error, :timeout}
 
-          {:exit, reason} ->
+          {:error, {:execution_failed, duration, reason}} ->
             reconcile_budget(reservation_context, context, %{}, "execution_failed")
-            duration = System.monotonic_time() - start_time
             :telemetry.execute([:scoria, :tool, :failed], %{duration: duration}, Map.put(metadata, :reason, reason))
             {:error, :execution_failed}
+
+          {:error, %{status: :breaker_open} = envelope} ->
+            :telemetry.execute([:scoria, :tool, :failed], %{duration: 0}, Map.put(metadata, :reason, :breaker_open))
+            {:error, envelope}
         end
+    end
+  end
+
+  defp execute_tool(tool_module, args, context, timeout, metadata) do
+    :telemetry.execute([:scoria, :tool, :started], %{system_time: System.system_time()}, metadata)
+
+    start_time = System.monotonic_time()
+
+    task = Task.Supervisor.async_nolink(Scoria.MCP.TaskSupervisor, fn ->
+      tool_module.execute(args, context)
+    end)
+
+    case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
+      {:ok, result} -> {:ok, {:completed, result, System.monotonic_time() - start_time}}
+      nil -> {:error, {:timeout, System.monotonic_time() - start_time}}
+      {:exit, reason} -> {:error, {:execution_failed, System.monotonic_time() - start_time, reason}}
     end
   end
 

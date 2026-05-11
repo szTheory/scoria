@@ -5,6 +5,7 @@ defmodule Scoria.Workflows.Runtime do
 
   alias Decimal, as: D
   alias Scoria.SRE.BudgetEngine
+  alias Scoria.SRE.BreakerRegistry
   alias Scoria.Workflows
 
   @default_timeout 5_000
@@ -16,19 +17,15 @@ defmodule Scoria.Workflows.Runtime do
       timeout = Keyword.get(opts, :timeout, @default_timeout)
       handler = resolve_handler(step, opts)
       budget_context = Keyword.get(opts, :budget_context, %{})
+      breaker_context = build_breaker_context(step, run, Keyword.get(opts, :breaker_context, %{}))
 
       case reserve_budget(step, run, budget_context) do
         {:error, envelope} ->
           Workflows.fail_step(step.id, normalize_budget_envelope(envelope))
 
         {:ok, reservation_context} ->
-          task =
-            Task.Supervisor.async_nolink(Scoria.Workflow.TaskSupervisor, fn ->
-              invoke_handler(handler, step, run)
-            end)
-
-          case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
-            {:ok, {:ok, result}} ->
+          case BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end) do
+            {:ok, {:completed, result}} ->
               reconcile_budget(reservation_context, budget_context, result, "completed")
               Workflows.complete_step(step.id, attach_budget_evidence(normalize_payload(result), reservation_context))
 
@@ -40,11 +37,11 @@ defmodule Scoria.Workflows.Runtime do
               reconcile_budget(reservation_context, budget_context, %{}, "handoff")
               handle_handoff(run, step, Map.new(handoff_attrs))
 
-            {:ok, {:error, reason}} ->
+            {:error, {:handler_error, reason}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
 
-            {:ok, other} ->
+            {:ok, {:other, other}} ->
               reconcile_budget(reservation_context, budget_context, other, "completed")
 
               Workflows.complete_step(
@@ -53,15 +50,35 @@ defmodule Scoria.Workflows.Runtime do
                 run_status: "running"
               )
 
-            nil ->
+            {:error, {:timeout}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "timeout")
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => "timeout"}, reservation_context))
 
-            {:exit, reason} ->
+            {:error, {:execution_failed, reason}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
+
+            {:error, %{status: :breaker_open} = envelope} ->
+              Workflows.fail_step(step.id, attach_budget_evidence(normalize_budget_envelope(envelope), reservation_context))
           end
       end
+    end
+  end
+
+  defp execute_handler(handler, step, run, timeout) do
+    task =
+      Task.Supervisor.async_nolink(Scoria.Workflow.TaskSupervisor, fn ->
+        invoke_handler(handler, step, run)
+      end)
+
+    case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
+      {:ok, {:ok, result}} -> {:ok, {:completed, result}}
+      {:ok, {:waiting_for_approval, approval_attrs}} -> {:ok, {:waiting_for_approval, approval_attrs}}
+      {:ok, {:handoff, handoff_attrs}} -> {:ok, {:handoff, handoff_attrs}}
+      {:ok, {:error, reason}} -> {:error, {:handler_error, reason}}
+      {:ok, other} -> {:ok, {:other, other}}
+      nil -> {:error, {:timeout}}
+      {:exit, reason} -> {:error, {:execution_failed, reason}}
     end
   end
 
@@ -149,6 +166,13 @@ defmodule Scoria.Workflows.Runtime do
   defp invoke_handler({module, function, extra_args}, step, run), do: apply(module, function, [step, run | List.wrap(extra_args)])
   defp invoke_handler(handler, step, _run) when is_function(handler, 1), do: handler.(step)
   defp invoke_handler(handler, step, run) when is_function(handler, 2), do: handler.(step, run)
+
+  defp build_breaker_context(step, run, breaker_context) do
+    breaker_context
+    |> Map.new()
+    |> Map.put_new(:run_id, run.id)
+    |> Map.put_new(:trace_id, step.id)
+  end
 
   defp normalize_payload(%{} = payload), do: payload
   defp normalize_payload(payload), do: %{"result" => payload}

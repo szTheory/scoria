@@ -40,6 +40,9 @@ defmodule Scoria.MCP.ExecutorTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+    :fuse.remove("remote_mcp:https://mcp.example.test")
+    :fuse.remove("tool:local-dummy")
+    if :ets.whereis(:scoria_breaker_registry) != :undefined, do: :ets.delete(:scoria_breaker_registry, "remote_mcp:https://mcp.example.test")
 
     # Capture telemetry events
     parent = self()
@@ -154,6 +157,30 @@ defmodule Scoria.MCP.ExecutorTest do
       assert reservation.status == "reconciled"
       assert Decimal.equal?(reservation.actual_units, Decimal.new("0"))
       assert reservation.metadata["outcome"] == "execution_failed"
+    end
+
+    test "breaker-open failures are distinct from timeouts for remote integrations", %{context: context} do
+      remote_context =
+        Map.merge(context, %{
+          integration_kind: "remote_mcp",
+          mcp_endpoint: "https://mcp.example.test"
+        })
+
+      assert {:error, :execution_failed} = Executor.execute(DummyTool, %{"action" => "crash"}, remote_context)
+
+      assert {:error, envelope} =
+               Executor.execute(DummyTool, %{"action" => "success"}, remote_context)
+
+      assert envelope.status == :breaker_open
+      assert envelope.reason_code == "breaker_open"
+      assert envelope.breaker_key == "remote_mcp:https://mcp.example.test"
+    end
+
+    test "local tools are not breaker-wrapped unless the context marks them external", %{context: context} do
+      local_context = Map.merge(context, %{integration_kind: "tool", tool_target: "local-dummy"})
+
+      assert {:error, :execution_failed} = Executor.execute(DummyTool, %{"action" => "crash"}, local_context)
+      assert {:ok, %{result: "success"}} = Executor.execute(DummyTool, %{"action" => "success"}, local_context)
     end
   end
 
