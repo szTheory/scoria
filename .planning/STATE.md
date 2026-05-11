@@ -3,22 +3,24 @@
 ## Project Reference
 **Name:** Scoria
 **Core Value:** A Phoenix-native "AI Application Quality Layer" providing deep observability, continuous evaluation, and secure governance tailored for Elixir and Phoenix applications, adhering to the szTheory "SaaS in a Box" DNA.
-**Current Focus:** v1.1 Caldera shipped. Planning v1.2 Corpus.
+**Current Focus:** v1.2 Corpus shipped. Ready to resume milestone planning from the updated baseline.
 
 ## Current Position
-**Milestone:** v1.1
-**Status:** Shipped
+**Milestone:** v1.2
+**Status:** Completed
 
 **Progress:**
 `[##################################################] 100%`
 
 ## Performance Metrics
-- **Completed Phases:** 5
-- **Completed Plans:** 18
-- **Total Requirements:** 26
+- **Completed Phases:** 6
+- **Completed Plans:** 23
+- **Total Requirements:** 27
 - **Coverage:** 100%
 - **Phase 5 Verification:** `MIX_ENV=test mix test` passed on 2026-05-11
 - **Phase 5 Surface:** Durable workflow runtime, recovery, and operator UI shipped
+- **Phase 6 Verification:** Phase 6 validation passed on 2026-05-11 with pgvector-backed knowledge, citations, grounding, and evidence projection
+- **Phase 6 Surface:** Durable knowledge storage, retrieval provenance, deterministic grounding, and async operator evidence shipped
 
 ## Accumulated Context
 **Decisions:**
@@ -36,13 +38,18 @@
 - Phase 5: Introduced `Scoria.Workflows` as the durable workflow source of truth with Ecto-backed runs, steps, checkpoints, events, approvals, and handoffs.
 - Phase 5: Added exact resume, retry-failed-step, and a trace-first workflow LiveView at `/scoria/workflows/:id`.
 - Phase 5: Kept Jido interoperability behind `Scoria.Workflows.JidoAdapter`.
+- Phase 6: Kept `Scoria.Knowledge` as the sole public context for corpus, retrieval, citation, and grounding work.
+- Phase 6: Used pgvector as the default retrieval backend behind a narrow adapter boundary.
+- Phase 6: Made citation anchors machine-readable and offset-valid before any optional judge review.
 - Phase 7 (07-07): Kept alert and incident root rows optimistic-lock ready with explicit stable keys rather than opaque map storage.
 - Phase 7 (07-07): Stored audit payload hashes and redacted refs instead of raw sensitive arguments in durable outbox rows.
 - Phase 7 (07-04): Audit outbox rows are created transactionally at workflow approvals and MCP execution seams, with telemetry emitted only after commit.
 - Phase 7 (07-04): Incident dedupe keys use tenant, subject kind, policy key, reason code, and window bucket to keep operator incidents low-cardinality while preserving append-only evidence.
+- Phase 7 (07-03): External-effect breaker state is enforced at runtime and MCP seams with deterministic open-state tracking plus reason-coded telemetry.
+- Phase 7 (07-08): Relay polling stays supervised in normal boots, but timer-driven polling is disabled in `MIX_ENV=test` to avoid sandbox ownership conflicts.
 
 **Todos:**
-- Plan Phase 6: Advanced RAG, Citations & Knowledge Grounding.
+- Plan Phase 7: SRE, Circuit Breakers & Ecosystem Synergy.
 
 **Blockers:**
 - None
@@ -50,5 +57,16 @@
 **Reference Updates:**
 - AWS Bedrock AgentCore research captured in `.planning/research/agentcore-lessons.md`.
 - Future planning seed captured in `.planning/seeds/SEED-001-agentcore-lessons.md`.
+- Phase 6 validation and verification captured in `.planning/phases/06-corpus/06-VALIDATION.md` and `.planning/phases/06-corpus/06-VERIFICATION.md`.
+- Phase 6 execution summaries captured in `.planning/phases/06-corpus/06-00-SUMMARY.md` through `06-05-SUMMARY.md`.
 - Phase 7 incident, delivery, and audit storage summary captured in `.planning/phases/07-seismograph/07-07-SUMMARY.md`.
 - Phase 7 transactional audit and incident routing summary captured in `.planning/phases/07-seismograph/07-04-SUMMARY.md`.
+- Phase 7 execution summaries captured in `.planning/phases/07-seismograph/07-01-SUMMARY.md` through `07-08-SUMMARY.md`.
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-05-11:
+
+| Category | Item | Status |
+|----------|------|--------|
+| seed | SEED-001-agentcore-lessons | dormant |

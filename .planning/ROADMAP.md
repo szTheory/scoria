@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1-4 (shipped 2026-05-10)
 - ✅ **v1.1 Caldera** — Phase 5: Durable Agent Workflows & Handoffs (shipped 2026-05-11)
-- 📅 **v1.2 Corpus** — Phase 6: Advanced RAG, Citations & Knowledge Grounding
+- ✅ **v1.2 Corpus** — Phase 6: Advanced RAG, Citations & Knowledge Grounding (shipped 2026-05-11)
 - 📅 **v1.3 Seismograph** — Phase 7: SRE, Circuit Breakers & Ecosystem Synergy
 
 ## Phases
@@ -27,16 +27,16 @@
 </details>
 
 <details>
-<summary>📅 v1.2 Corpus (Phase 6) — PLANNED</summary>
+<summary>✅ v1.2 Corpus (Phase 6) — SHIPPED 2026-05-11</summary>
 
-- [ ] Phase 6: Advanced RAG, Citations & Knowledge Grounding
+- [x] Phase 6: Advanced RAG, Citations & Knowledge Grounding (6 plans)
 
 </details>
 
 <details>
-<summary>📅 v1.3 Seismograph (Phase 7) — IN PROGRESS</summary>
+<summary>✅ v1.3 Seismograph (Phase 7) — COMPLETE 2026-05-11</summary>
 
-- [ ] Phase 7: SRE, Circuit Breakers & Ecosystem Synergy
+- [x] Phase 7: SRE, Circuit Breakers & Ecosystem Synergy
 
 </details>
 
@@ -49,5 +49,5 @@
 | 3. LiveView Operator UX | v1.0 | 3/3 | Complete | 2026-05-10 |
 | 4. Evaluation Flywheel | v1.0 | 3/3 | Complete | 2026-05-10 |
 | 5. Durable Agent Workflows & Handoffs | v1.1 | 4/4 | Complete | 2026-05-11 |
-| 6. Advanced RAG, Citations & Knowledge | v1.2 | 0/0 | Planned | |
-| 7. SRE, Circuit Breakers & Synergy | v1.3 | 4/8 | In Progress | |
+| 6. Advanced RAG, Citations & Knowledge | v1.2 | 6/6 | Complete | 2026-05-11 |
+| 7. SRE, Circuit Breakers & Synergy | v1.3 | 8/8 | Complete | 2026-05-11 |
