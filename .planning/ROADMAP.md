@@ -3,6 +3,9 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-4 (shipped 2026-05-10)
+- ✅ **v1.1 Caldera** — Phase 5: Durable Agent Workflows & Handoffs (shipped 2026-05-11)
+- 📅 **v1.2 Corpus** — Phase 6: Advanced RAG, Citations & Knowledge Grounding
+- 📅 **v1.3 Seismograph** — Phase 7: SRE, Circuit Breakers & Ecosystem Synergy
 
 ## Phases
 
@@ -16,6 +19,27 @@
 
 </details>
 
+<details>
+<summary>✅ v1.1 Caldera (Phase 5) — SHIPPED 2026-05-11</summary>
+
+- [x] Phase 5: Durable Agent Workflows & Handoffs
+
+</details>
+
+<details>
+<summary>📅 v1.2 Corpus (Phase 6) — PLANNED</summary>
+
+- [ ] Phase 6: Advanced RAG, Citations & Knowledge Grounding
+
+</details>
+
+<details>
+<summary>📅 v1.3 Seismograph (Phase 7) — IN PROGRESS</summary>
+
+- [ ] Phase 7: SRE, Circuit Breakers & Ecosystem Synergy
+
+</details>
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -24,3 +48,6 @@
 | 2. MCP Gateway & Tool Governance | v1.0 | 3/3 | Complete | 2026-05-10 |
 | 3. LiveView Operator UX | v1.0 | 3/3 | Complete | 2026-05-10 |
 | 4. Evaluation Flywheel | v1.0 | 3/3 | Complete | 2026-05-10 |
+| 5. Durable Agent Workflows & Handoffs | v1.1 | 4/4 | Complete | 2026-05-11 |
+| 6. Advanced RAG, Citations & Knowledge | v1.2 | 0/0 | Planned | |
+| 7. SRE, Circuit Breakers & Synergy | v1.3 | 4/8 | In Progress | |

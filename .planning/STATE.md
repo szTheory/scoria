@@ -14,7 +14,7 @@
 
 ## Performance Metrics
 - **Completed Phases:** 5
-- **Completed Plans:** 17
+- **Completed Plans:** 18
 - **Total Requirements:** 26
 - **Coverage:** 100%
 - **Phase 5 Verification:** `MIX_ENV=test mix test` passed on 2026-05-11
@@ -38,6 +38,8 @@
 - Phase 5: Kept Jido interoperability behind `Scoria.Workflows.JidoAdapter`.
 - Phase 7 (07-07): Kept alert and incident root rows optimistic-lock ready with explicit stable keys rather than opaque map storage.
 - Phase 7 (07-07): Stored audit payload hashes and redacted refs instead of raw sensitive arguments in durable outbox rows.
+- Phase 7 (07-04): Audit outbox rows are created transactionally at workflow approvals and MCP execution seams, with telemetry emitted only after commit.
+- Phase 7 (07-04): Incident dedupe keys use tenant, subject kind, policy key, reason code, and window bucket to keep operator incidents low-cardinality while preserving append-only evidence.
 
 **Todos:**
 - Plan Phase 6: Advanced RAG, Citations & Knowledge Grounding.
@@ -49,3 +51,4 @@
 - AWS Bedrock AgentCore research captured in `.planning/research/agentcore-lessons.md`.
 - Future planning seed captured in `.planning/seeds/SEED-001-agentcore-lessons.md`.
 - Phase 7 incident, delivery, and audit storage summary captured in `.planning/phases/07-seismograph/07-07-SUMMARY.md`.
+- Phase 7 transactional audit and incident routing summary captured in `.planning/phases/07-seismograph/07-04-SUMMARY.md`.
