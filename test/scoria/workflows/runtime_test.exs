@@ -1,35 +1,72 @@
 defmodule Scoria.Workflows.RuntimeTest do
   use ExUnit.Case, async: false
 
+  alias Scoria.Repo
+  alias Scoria.SRE.AuditOutboxEvent
+  alias Scoria.SRE.BudgetReservation
   alias Scoria.Workflows
   alias Scoria.Workflows.{Reconciler, Resume, Runtime}
   alias Scoria.SRE
 
   defmodule Handlers do
     def succeed(step, _run), do: {:ok, %{"step_id" => step.id, "status" => "ok"}}
-    def succeed_and_notify(step, _run, pid), do: send(pid, {:side_effect_ran, step.id}) && {:ok, %{"step_id" => step.id, "status" => "ok"}}
-    def wait_for_approval(_step, _run), do: {:waiting_for_approval, %{tool_name: "approve_publish", arguments: %{"target" => "prod"}, reason: "Requires approval"}}
-    def handoff(_step, _run), do: {:handoff, %{"delegated_role_id" => "critic", "handoff_input" => %{"brief" => "review"}, "projected_context" => %{"task" => "review"}}}
+
+    def succeed_and_notify(step, _run, pid),
+      do:
+        send(pid, {:side_effect_ran, step.id}) && {:ok, %{"step_id" => step.id, "status" => "ok"}}
+
+    def wait_for_approval(_step, run) do
+      {:waiting_for_approval,
+       %{
+         tool_name: "approve_publish",
+         arguments: %{"target" => "prod"},
+         reason: "Requires approval",
+         actor_id: "operator-runtime",
+         tenant_id: "tenant-runtime",
+         trace_id: "trace-#{run.id}"
+       }}
+    end
+
+    def handoff(_step, _run),
+      do:
+        {:handoff,
+         %{
+           "delegated_role_id" => "critic",
+           "handoff_input" => %{"brief" => "review"},
+           "projected_context" => %{"task" => "review"}
+         }}
+
     def fail(_step, _run), do: {:error, :bad_tool}
     def timeout(_step, _run), do: Process.sleep(50)
-    def raise_error(_step, _run), do: raise "boom"
+    def raise_error(_step, _run), do: raise("boom")
   end
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
+    ensure_audit_outbox_table!()
     Application.put_env(:scoria, :workflow_runtime_handlers, %{})
     start_supervised!(Scoria.Workflows.Reconciler)
     :fuse.remove("provider:runtime-test")
     :fuse.remove("workflow:local-runtime-test")
-    if :ets.whereis(:scoria_breaker_registry) != :undefined, do: :ets.delete(:scoria_breaker_registry, "provider:runtime-test")
+
+    if :ets.whereis(:scoria_breaker_registry) != :undefined,
+      do: :ets.delete(:scoria_breaker_registry, "provider:runtime-test")
+
     :ok
   end
 
   describe "workflow runtime supervision" do
     test "workflow runtime executes bounded step work under a named Task.Supervisor" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, step} = Workflows.create_step(run.id, %{sequence: 1, kind: "success", role_id: "executor", status: "queued"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "success",
+          role_id: "executor",
+          status: "queued"
+        })
 
       assert {:ok, _step} = Runtime.execute_step(step.id, handler: {Handlers, :succeed})
 
@@ -40,25 +77,52 @@ defmodule Scoria.Workflows.RuntimeTest do
 
     test "timeout or crash paths emit durable failure transitions" do
       {:ok, timeout_run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, timeout_step} = Workflows.create_step(timeout_run.id, %{sequence: 1, kind: "timeout", role_id: "executor", status: "queued"})
 
-      assert {:ok, failed_step} = Runtime.execute_step(timeout_step.id, handler: {Handlers, :timeout}, timeout: 10)
+      {:ok, timeout_step} =
+        Workflows.create_step(timeout_run.id, %{
+          sequence: 1,
+          kind: "timeout",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, failed_step} =
+               Runtime.execute_step(timeout_step.id, handler: {Handlers, :timeout}, timeout: 10)
+
       assert failed_step.status == "failed"
       assert Workflows.get_run!(timeout_run.id).status == "failed"
 
       {:ok, crash_run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, crash_step} = Workflows.create_step(crash_run.id, %{sequence: 1, kind: "crash", role_id: "executor", status: "queued"})
 
-      assert {:ok, crash_failed_step} = Runtime.execute_step(crash_step.id, handler: {Handlers, :raise_error})
+      {:ok, crash_step} =
+        Workflows.create_step(crash_run.id, %{
+          sequence: 1,
+          kind: "crash",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, crash_failed_step} =
+               Runtime.execute_step(crash_step.id, handler: {Handlers, :raise_error})
+
       assert crash_failed_step.status == "failed"
       assert Workflows.get_run!(crash_run.id).status == "failed"
     end
 
     test "application boot and post-transition reconciliation scan persisted runnable steps and dispatch them safely" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, _step} = Workflows.create_step(run.id, %{sequence: 1, kind: "success", role_id: "executor", status: "queued"})
 
-      assert {:ok, 1} = Reconciler.dispatch_runnable_steps(handlers: %{"success" => {Handlers, :succeed}})
+      {:ok, _step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "success",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, 1} =
+               Reconciler.dispatch_runnable_steps(handlers: %{"success" => {Handlers, :succeed}})
+
       Process.sleep(20)
 
       [step] = Workflows.list_run_steps(run.id)
@@ -83,7 +147,15 @@ defmodule Scoria.Workflows.RuntimeTest do
         })
 
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, step} = Workflows.create_step(run.id, %{sequence: 1, kind: "budgeted", role_id: "executor", status: "queued"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "budgeted",
+          role_id: "executor",
+          status: "queued"
+        })
+
       step_id = step.id
 
       assert {:ok, failed_step} =
@@ -105,8 +177,31 @@ defmodule Scoria.Workflows.RuntimeTest do
     end
 
     test "external-effect handlers trip an integration-scoped breaker before the side effect reruns" do
+      {:ok, _policy} =
+        SRE.create_budget_policy(%{
+          tenant_id: "tenant-breaker-open",
+          policy_key: "tenant:default:cost_usd",
+          scope_key: "tenant:tenant-breaker-open",
+          scope_kind: "tenant",
+          resource_kind: "cost_usd",
+          status: "active",
+          warn_threshold: Decimal.new("8.0"),
+          trip_threshold: Decimal.new("10.0"),
+          max_workflow_steps: 25,
+          max_repeated_tool_calls: 3,
+          max_consecutive_failures: 2,
+          metadata: %{}
+        })
+
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, first_step} = Workflows.create_step(run.id, %{sequence: 1, kind: "external", role_id: "executor", status: "queued"})
+
+      {:ok, first_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "external",
+          role_id: "executor",
+          status: "queued"
+        })
 
       assert {:ok, failed_step} =
                Runtime.execute_step(
@@ -118,34 +213,74 @@ defmodule Scoria.Workflows.RuntimeTest do
       assert failed_step.status == "failed"
       assert failed_step.error_envelope["reason"] =~ "boom"
 
-      {:ok, second_step} = Workflows.create_step(run.id, %{sequence: 2, kind: "external", role_id: "executor", status: "queued"})
+      {:ok, second_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "external",
+          role_id: "executor",
+          status: "queued"
+        })
+
       second_step_id = second_step.id
+      trace_id = "trace-runtime-breaker-open"
 
       assert {:ok, blocked_step} =
                Runtime.execute_step(
                  second_step.id,
                  handler: {Handlers, :succeed_and_notify, [self()]},
-                 breaker_context: %{integration_kind: "provider", provider_ref: "runtime-test"}
+                 breaker_context: %{integration_kind: "provider", provider_ref: "runtime-test"},
+                 budget_context: %{
+                   tenant_id: "tenant-breaker-open",
+                   actor_id: "actor-1",
+                   trace_id: trace_id,
+                   estimated_cost_usd: Decimal.new("5.0"),
+                   integration_kind: "provider",
+                   provider_ref: "runtime-test"
+                 }
                )
+
+      reservation = Repo.get_by!(BudgetReservation, trace_id: trace_id)
 
       assert blocked_step.status == "failed"
       assert blocked_step.error_envelope["reason_code"] == "breaker_open"
       assert blocked_step.error_envelope["breaker_key"] == "provider:runtime-test"
+      assert blocked_step.error_envelope["budget_reservation_id"] == reservation.id
       refute_receive {:side_effect_ran, ^second_step_id}
+      assert reservation.status == "reconciled"
+      assert Decimal.equal?(reservation.actual_units, Decimal.new("0"))
+      assert reservation.metadata["outcome"] == "breaker_open"
     end
 
     test "local workflow handlers are not breaker-wrapped by default" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, first_step} = Workflows.create_step(run.id, %{sequence: 1, kind: "local", role_id: "executor", status: "queued"})
 
-      assert {:ok, failed_step} = Runtime.execute_step(first_step.id, handler: {Handlers, :raise_error})
+      {:ok, first_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "local",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, failed_step} =
+               Runtime.execute_step(first_step.id, handler: {Handlers, :raise_error})
+
       assert failed_step.status == "failed"
 
-      {:ok, second_step} = Workflows.create_step(run.id, %{sequence: 2, kind: "local", role_id: "executor", status: "queued"})
+      {:ok, second_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "local",
+          role_id: "executor",
+          status: "queued"
+        })
+
       second_step_id = second_step.id
 
       assert {:ok, completed_step} =
-               Runtime.execute_step(second_step.id, handler: {Handlers, :succeed_and_notify, [self()]})
+               Runtime.execute_step(second_step.id,
+                 handler: {Handlers, :succeed_and_notify, [self()]}
+               )
 
       assert completed_step.status == "completed"
       assert_receive {:side_effect_ran, ^second_step_id}
@@ -155,26 +290,74 @@ defmodule Scoria.Workflows.RuntimeTest do
   describe "durable approval waits and handoffs" do
     test "entering approval wait persists waiting_for_approval before any projection step" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, step} = Workflows.create_step(run.id, %{sequence: 1, kind: "approval", role_id: "executor", status: "queued"})
 
-      assert {:ok, approval} = Runtime.execute_step(step.id, handler: {Handlers, :wait_for_approval})
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, approval} =
+               Runtime.execute_step(step.id, handler: {Handlers, :wait_for_approval})
 
       assert approval.workflow_run_id == run.id
       assert Workflows.get_run!(run.id).status == "waiting_for_approval"
       assert Workflows.get_step!(step.id).status == "waiting_for_approval"
     end
 
+    test "approval expiration keeps workflow truth paused while writing durable audit evidence" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, approval} =
+               Runtime.execute_step(step.id, handler: {Handlers, :wait_for_approval})
+
+      assert {:ok, expired} = Workflows.approve(approval.id, "expired")
+
+      expired_event =
+        Repo.get_by!(AuditOutboxEvent,
+          workflow_run_id: run.id,
+          event_type: "approval.expired",
+          trace_id: "trace-#{run.id}"
+        )
+
+      assert expired.status == "expired"
+      assert Workflows.get_run!(run.id).status == "waiting_for_approval"
+      assert Workflows.get_step!(step.id).status == "waiting_for_approval"
+      assert expired_event.actor_ref == "operator-runtime"
+      assert expired_event.redacted_refs["approval_id"] == approval.id
+      assert expired_event.redacted_refs["decision"] == "expired"
+    end
+
     test "handoff execution passes projected context slices only and preserves root ownership" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "researcher"})
-      {:ok, step} = Workflows.create_step(run.id, %{sequence: 1, kind: "handoff", role_id: "researcher", status: "queued"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "handoff",
+          role_id: "researcher",
+          status: "queued"
+        })
 
       assert {:ok, completed_step} = Runtime.execute_step(step.id, handler: {Handlers, :handoff})
 
       child_steps = Workflows.list_run_steps(run.id)
       assert completed_step.status == "completed"
       assert Enum.any?(child_steps, &(&1.parent_step_id == step.id and &1.role_id == "critic"))
+
       assert Enum.all?(child_steps, fn workflow_step ->
-               workflow_step.projected_context == %{} or Map.keys(workflow_step.projected_context) == ["task"]
+               workflow_step.projected_context == %{} or
+                 Map.keys(workflow_step.projected_context) == ["task"]
              end)
     end
   end
@@ -182,11 +365,21 @@ defmodule Scoria.Workflows.RuntimeTest do
   describe "exact resume and retry failed step" do
     test "resume reads the latest durable checkpoint and chooses the correct next action" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, step} = Workflows.create_step(run.id, %{sequence: 1, kind: "approval", role_id: "executor", status: "queued"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval",
+          role_id: "executor",
+          status: "queued"
+        })
+
       {:ok, approval} = Runtime.execute_step(step.id, handler: {Handlers, :wait_for_approval})
 
       assert {:ok, _approval} = Workflows.approve(approval.id, "approved")
-      assert {:ok, resumed_run} = Resume.resume_run(run.id, handlers: %{"approval" => {Handlers, :succeed}})
+
+      assert {:ok, resumed_run} =
+               Resume.resume_run(run.id, handlers: %{"approval" => {Handlers, :succeed}})
 
       Process.sleep(20)
 
@@ -196,12 +389,21 @@ defmodule Scoria.Workflows.RuntimeTest do
 
     test "retry failed step creates the expected retry state without replaying completed durable boundaries" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
-      {:ok, step} = Workflows.create_step(run.id, %{sequence: 1, kind: "failing", role_id: "executor", status: "queued"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "failing",
+          role_id: "executor",
+          status: "queued"
+        })
 
       {:ok, failed_step} = Runtime.execute_step(step.id, handler: {Handlers, :fail})
       assert failed_step.status == "failed"
 
-      assert {:ok, _run} = Resume.retry_failed_step(run.id, handlers: %{"failing" => {Handlers, :succeed}})
+      assert {:ok, _run} =
+               Resume.retry_failed_step(run.id, handlers: %{"failing" => {Handlers, :succeed}})
+
       Process.sleep(20)
 
       retried_step = Workflows.get_step!(step.id)
@@ -210,5 +412,35 @@ defmodule Scoria.Workflows.RuntimeTest do
       assert retried_step.status == "completed"
       assert Enum.count(Enum.filter(checkpoints, &(&1.transition == "step_completed"))) == 1
     end
+  end
+
+  defp ensure_audit_outbox_table! do
+    Repo.query!("""
+    CREATE TABLE IF NOT EXISTS ai_audit_outbox_events (
+      id uuid PRIMARY KEY,
+      tenant_id varchar NOT NULL,
+      event_type varchar NOT NULL,
+      policy_class varchar NOT NULL,
+      sink_status varchar NOT NULL DEFAULT 'pending',
+      dedupe_key varchar NOT NULL,
+      payload_hash varchar NOT NULL,
+      pending_at timestamp(6) without time zone NOT NULL,
+      sent_at timestamp(6) without time zone NULL,
+      attempt_count integer NOT NULL DEFAULT 0,
+      actor_ref varchar NULL,
+      workflow_run_id uuid NULL,
+      step_id uuid NULL,
+      trace_id varchar NULL,
+      redacted_refs jsonb NOT NULL DEFAULT '{}'::jsonb,
+      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+      inserted_at timestamp(6) without time zone NOT NULL,
+      updated_at timestamp(6) without time zone NOT NULL
+    )
+    """)
+
+    Repo.query!("""
+    CREATE UNIQUE INDEX IF NOT EXISTS ai_audit_outbox_events_tenant_id_dedupe_key_index
+    ON ai_audit_outbox_events (tenant_id, dedupe_key)
+    """)
   end
 end

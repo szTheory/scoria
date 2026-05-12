@@ -9,6 +9,7 @@ defmodule Scoria.Workflows do
   alias Scoria.Observe.Approval
   alias Scoria.Repo
   alias Scoria.SRE
+  alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows.{Checkpoint, Event, Handoff, Run, Step}
 
   @topic_prefix "scoria:workflow_runs:"
@@ -58,13 +59,13 @@ defmodule Scoria.Workflows do
   def get_run_tree!(id) do
     Run
     |> Repo.get!(id)
-    |> Repo.preload([
+    |> Repo.preload(
       approvals: from(a in Approval, order_by: [asc: a.inserted_at]),
       checkpoints: from(c in Checkpoint, order_by: [asc: c.sequence]),
       events: from(e in Event, order_by: [asc: e.sequence]),
       handoffs: from(h in Handoff, order_by: [asc: h.inserted_at]),
       steps: from(s in Step, order_by: [asc: s.sequence])
-    ])
+    )
   end
 
   def list_runnable_steps do
@@ -81,16 +82,24 @@ defmodule Scoria.Workflows do
 
     multi =
       Multi.new()
-      |> Multi.insert(:run, Run.changeset(%Run{}, Map.merge(%{status: "running", started_at: now}, run_attrs)))
+      |> Multi.insert(
+        :run,
+        Run.changeset(%Run{}, Map.merge(%{status: "running", started_at: now}, run_attrs))
+      )
       |> maybe_insert_initial_step(initial_step, now)
       |> Multi.run(:checkpoint, fn repo, changes ->
         {:ok,
-         insert_checkpoint(repo, changes.run.id, changes[:initial_step] && changes.initial_step.id, %{
-           transition: "run_started",
-           status: changes.run.status,
-           snapshot: %{root_role_id: changes.run.root_role_id, metadata: changes.run.metadata},
-           metadata: %{}
-         })}
+         insert_checkpoint(
+           repo,
+           changes.run.id,
+           changes[:initial_step] && changes.initial_step.id,
+           %{
+             transition: "run_started",
+             status: changes.run.status,
+             snapshot: %{root_role_id: changes.run.root_role_id, metadata: changes.run.metadata},
+             metadata: %{}
+           }
+         )}
       end)
       |> Multi.run(:event, fn repo, changes ->
         {:ok,
@@ -129,12 +138,15 @@ defmodule Scoria.Workflows do
     |> maybe_broadcast_step(run_id)
   end
 
-  def append_checkpoint(%Run{id: run_id}, step_id, attrs), do: append_checkpoint(run_id, step_id, attrs)
+  def append_checkpoint(%Run{id: run_id}, step_id, attrs),
+    do: append_checkpoint(run_id, step_id, attrs)
 
   def append_checkpoint(run_id, step_id, attrs) do
     multi =
       Multi.new()
-      |> Multi.run(:checkpoint, fn repo, _changes -> {:ok, insert_checkpoint(repo, run_id, step_id, attrs)} end)
+      |> Multi.run(:checkpoint, fn repo, _changes ->
+        {:ok, insert_checkpoint(repo, run_id, step_id, attrs)}
+      end)
       |> Multi.update(:run, fn %{checkpoint: checkpoint} ->
         run = Repo.get!(Run, run_id)
         Run.changeset(run, %{latest_checkpoint_id: checkpoint.id})
@@ -190,7 +202,9 @@ defmodule Scoria.Workflows do
   end
 
   def complete_step(step_or_id, result_envelope, opts \\ [])
-  def complete_step(%Step{id: step_id}, result_envelope, opts), do: complete_step(step_id, result_envelope, opts)
+
+  def complete_step(%Step{id: step_id}, result_envelope, opts),
+    do: complete_step(step_id, result_envelope, opts)
 
   def complete_step(step_id, result_envelope, opts) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
@@ -201,15 +215,24 @@ defmodule Scoria.Workflows do
 
       completed_step =
         step
-        |> Step.changeset(%{status: "completed", completed_at: now, result_envelope: result_envelope, error_envelope: %{}})
+        |> Step.changeset(%{
+          status: "completed",
+          completed_at: now,
+          result_envelope: result_envelope,
+          error_envelope: %{}
+        })
         |> repo.update!()
 
       pending_count =
         Step
-        |> where([s], s.run_id == ^run.id and s.id != ^step.id and s.status not in ["completed", "cancelled"])
+        |> where(
+          [s],
+          s.run_id == ^run.id and s.id != ^step.id and s.status not in ["completed", "cancelled"]
+        )
         |> repo.aggregate(:count)
 
-      run_status = Keyword.get(opts, :run_status, if(pending_count == 0, do: "completed", else: "running"))
+      run_status =
+        Keyword.get(opts, :run_status, if(pending_count == 0, do: "completed", else: "running"))
 
       checkpoint =
         insert_checkpoint(repo, run.id, completed_step.id, %{
@@ -258,9 +281,13 @@ defmodule Scoria.Workflows do
       step = repo.get!(Step, step_id)
 
       updated_run =
-        repo.update!(Run.changeset(run, %{status: "waiting_for_approval", current_step_id: step.id}))
+        repo.update!(
+          Run.changeset(run, %{status: "waiting_for_approval", current_step_id: step.id})
+        )
 
-      repo.update!(Step.changeset(step, %{status: "waiting_for_approval", started_at: step.started_at || now}))
+      repo.update!(
+        Step.changeset(step, %{status: "waiting_for_approval", started_at: step.started_at || now})
+      )
 
       checkpoint =
         insert_checkpoint(repo, run.id, step.id, %{
@@ -293,7 +320,10 @@ defmodule Scoria.Workflows do
 
       updated_run =
         repo.update!(
-          Run.changeset(updated_run, %{latest_checkpoint_id: checkpoint.id, last_heartbeat_at: now})
+          Run.changeset(updated_run, %{
+            latest_checkpoint_id: checkpoint.id,
+            last_heartbeat_at: now
+          })
         )
 
       audit_outbox_event =
@@ -330,7 +360,9 @@ defmodule Scoria.Workflows do
   end
 
   def fail_step(step_or_id, error_envelope, opts \\ [])
-  def fail_step(%Step{id: step_id}, error_envelope, opts), do: fail_step(step_id, error_envelope, opts)
+
+  def fail_step(%Step{id: step_id}, error_envelope, opts),
+    do: fail_step(step_id, error_envelope, opts)
 
   def fail_step(step_id, error_envelope, opts) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
@@ -475,7 +507,11 @@ defmodule Scoria.Workflows do
 
           updated_run =
             run
-            |> Run.changeset(%{status: "running", latest_checkpoint_id: checkpoint.id, current_step_id: resumed_step.id})
+            |> Run.changeset(%{
+              status: "running",
+              latest_checkpoint_id: checkpoint.id,
+              current_step_id: resumed_step.id
+            })
             |> repo.update!()
 
           {updated_run, resumed_step}
@@ -509,6 +545,7 @@ defmodule Scoria.Workflows do
   def approve(approval_id, status, attrs) when status in ["approved", "rejected", "expired"] do
     Repo.transaction(fn repo ->
       approval = repo.get!(Approval, approval_id)
+      audit_context = approval_decision_context(repo, approval, attrs)
 
       updated_approval =
         approval
@@ -517,18 +554,21 @@ defmodule Scoria.Workflows do
 
       audit_outbox_event =
         SRE.insert_audit_outbox_event(repo, %{
-          tenant_id: Map.get(attrs, :tenant_id) || Map.get(attrs, "tenant_id") || "system",
+          tenant_id: audit_context.tenant_id,
           event_type: "approval.#{status}",
           policy_class: "approval",
           dedupe_key: Map.get(attrs, :dedupe_key) || Map.get(attrs, "dedupe_key"),
-          actor_ref: Map.get(attrs, :actor_id) || Map.get(attrs, "actor_id"),
+          actor_ref: audit_context.actor_id,
           workflow_run_id: updated_approval.workflow_run_id,
           step_id: updated_approval.step_id,
-          trace_id: Map.get(attrs, :trace_id) || Map.get(attrs, "trace_id"),
+          trace_id: audit_context.trace_id,
           approval_id: updated_approval.id,
           decision: status,
           arguments: updated_approval.arguments,
-          tool_name: updated_approval.tool_name
+          tool_name: updated_approval.tool_name,
+          request_audit_event_id: audit_context.request_event && audit_context.request_event.id,
+          request_trace_id: audit_context.request_event && audit_context.request_event.trace_id,
+          request_actor_ref: audit_context.request_event && audit_context.request_event.actor_ref
         })
 
       {updated_approval, audit_outbox_event}
@@ -610,5 +650,38 @@ defmodule Scoria.Workflows do
     approvals
     |> Enum.reverse()
     |> Enum.find(&(&1.status in ["pending", "approved"]))
+  end
+
+  defp approval_decision_context(repo, approval, attrs) do
+    request_event = approval_request_event(repo, approval)
+
+    %{
+      tenant_id:
+        attr_value(attrs, :tenant_id) || (request_event && request_event.tenant_id) || "system",
+      actor_id:
+        attr_value(attrs, :actor_id) || (request_event && request_event.actor_ref) ||
+          approval.session_id,
+      trace_id: attr_value(attrs, :trace_id) || (request_event && request_event.trace_id),
+      request_event: request_event
+    }
+  end
+
+  defp approval_request_event(_repo, %Approval{workflow_run_id: nil}), do: nil
+
+  defp approval_request_event(repo, %Approval{} = approval) do
+    AuditOutboxEvent
+    |> where(
+      [event],
+      event.workflow_run_id == ^approval.workflow_run_id and
+        event.event_type == "approval.requested"
+    )
+    |> where([event], fragment("?->>? = ?", event.redacted_refs, "approval_id", ^approval.id))
+    |> order_by([event], desc: event.inserted_at)
+    |> limit(1)
+    |> repo.one()
+  end
+
+  defp attr_value(attrs, key) do
+    Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
   end
 end
