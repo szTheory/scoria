@@ -3,31 +3,55 @@ defmodule ScoriaWeb.OrchestratorLiveTest.Router do
   import ScoriaWeb.Router
 
   pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
   end
 
   scope "/" do
-    pipe_through :browser
+    pipe_through(:browser)
     scoria_dashboard("/scoria")
   end
 end
 
 defmodule ScoriaWeb.OrchestratorLiveTest.Endpoint do
   use Phoenix.Endpoint, otp_app: :scoria
-  plug Plug.Session,
+
+  plug(Plug.Session,
     store: :cookie,
     key: "_scoria_key",
     signing_salt: "scoria_salt"
-  plug ScoriaWeb.OrchestratorLiveTest.Router
+  )
+
+  plug(ScoriaWeb.OrchestratorLiveTest.Router)
 end
 
 defmodule ScoriaWeb.OrchestratorLiveTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
+  alias Scoria.Repo
+  alias Scoria.SRE.AuditOutboxEvent
+  alias Scoria.Workflows
+  alias Scoria.Workflows.Runtime
+
   @endpoint ScoriaWeb.OrchestratorLiveTest.Endpoint
+
+  defmodule ApprovalHandlers do
+    def wait_for_approval(_step, run) do
+      {:waiting_for_approval,
+       %{
+         tool_name: "test_tool",
+         arguments: %{"env" => "prod"},
+         reason: "Requires approval",
+         actor_id: "operator-live",
+         tenant_id: "tenant-live",
+         trace_id: "trace-#{run.id}"
+       }}
+    end
+
+    def succeed(step, _run), do: {:ok, %{"step_id" => step.id, "status" => "approved"}}
+  end
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.OrchestratorLiveTest.Endpoint,
@@ -41,26 +65,37 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+    Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+    ensure_audit_outbox_table!()
+
+    Application.put_env(:scoria, :workflow_runtime_handlers, %{
+      "approval" => {ApprovalHandlers, :succeed}
+    })
+
+    start_supervised!(Scoria.Workflows.Reconciler)
     start_supervised!(ScoriaWeb.OrchestratorLiveTest.Endpoint)
     :ok
   end
 
   test "OrchestratorLive mounts successfully and renders dummy wrapper" do
-    conn = build_conn()
-           |> Plug.Test.init_test_session(%{})
-           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, _view, html} = live(conn, "/scoria")
     assert html =~ "scoria-dashboard"
   end
 
   test "OrchestratorLive subscribes to PubSub and renders streaming traces" do
-    conn = build_conn()
-           |> Plug.Test.init_test_session(%{})
-           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
-    
+
     # Send a dummy trace message simulating PubSub broadcast
     trace = %{id: "trace-123", spans: [%{id: "span-1", name: "llm_call", depth: 0}]}
     send(view.pid, {:new_trace, trace})
@@ -71,19 +106,20 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "tokens are buffered and flushed properly" do
-    conn = build_conn()
-           |> Plug.Test.init_test_session(%{})
-           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
-    
+
     # Send tokens
     send(view.pid, {:token, "Hello"})
     send(view.pid, {:token, " World"})
 
     # Ensure they are not in the DOM immediately (buffered)
     refute render(view) =~ "Hello World"
-    
+
     # Send flush event explicitly (or wait for timer)
     send(view.pid, :flush_tokens)
 
@@ -92,9 +128,10 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "retrieval evidence loads lazily and renders citation freshness details" do
-    conn = build_conn()
-           |> Plug.Test.init_test_session(%{})
-           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
 
@@ -109,9 +146,10 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "retrieval evidence remains available alongside the SRE incident panel" do
-    conn = build_conn()
-           |> Plug.Test.init_test_session(%{})
-           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
 
@@ -131,9 +169,10 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "replay and promote retrieval actions surface trace-first notices" do
-    conn = build_conn()
-           |> Plug.Test.init_test_session(%{})
-           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
 
@@ -149,64 +188,131 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "HITL approval request renders modal and handles approve" do
-    Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
-    conn = build_conn()
-           |> Plug.Test.init_test_session(%{})
-           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "actor_id" => "operator-live",
+        "tenant_id" => "tenant-live"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
-    
-    # Create an approval
-    {:ok, approval} = Scoria.Repo.insert(
-      %Scoria.Observe.Approval{
-        tool_name: "test_tool",
-        status: "pending",
-        session_id: "sess_1",
-        run_id: "run_1"
-      }
-    )
 
-    # Trigger HITL
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    {:ok, approval} =
+      Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_approval})
+
     send(view.pid, {:hitl_request, approval})
 
-    # Render view and assert modal exists
     html = render(view)
     assert html =~ "Approval Required"
     assert html =~ "test_tool"
+    assert html =~ "Approve Decision"
+    assert html =~ "Reject Decision"
+    assert html =~ "durably"
 
-    # Click approve
     render_click(view, "approve", %{})
+    Process.sleep(20)
 
-    # Modal should be gone
     refute render(view) =~ "Approval Required"
 
-    # DB should be updated
-    updated_approval = Scoria.Repo.get!(Scoria.Observe.Approval, approval.id)
+    updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
     assert updated_approval.status == "approved"
+    assert Workflows.get_run!(run.id).status == "completed"
+    assert Workflows.get_step!(step.id).status == "completed"
+
+    approved_event =
+      Repo.get_by!(AuditOutboxEvent,
+        workflow_run_id: run.id,
+        event_type: "approval.approved",
+        trace_id: "trace-#{run.id}"
+      )
+
+    assert approved_event.actor_ref == "operator-live"
+    assert approved_event.redacted_refs["approval_id"] == approval.id
   end
 
   test "HITL approval request handles reject" do
-    Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
-    conn = build_conn()
-           |> Plug.Test.init_test_session(%{})
-           |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "actor_id" => "operator-live",
+        "tenant_id" => "tenant-live"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
-    
-    {:ok, approval} = Scoria.Repo.insert(
-      %Scoria.Observe.Approval{
-        tool_name: "dangerous_tool",
-        status: "pending",
-        session_id: "sess_2",
-        run_id: "run_2"
-      }
-    )
+
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    {:ok, approval} =
+      Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_approval})
 
     send(view.pid, {:hitl_request, approval})
 
     render_click(view, "reject", %{})
+    Process.sleep(20)
 
-    updated_approval = Scoria.Repo.get!(Scoria.Observe.Approval, approval.id)
+    updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
     assert updated_approval.status == "rejected"
+    assert Workflows.get_run!(run.id).status == "waiting_for_approval"
+    assert Workflows.get_step!(step.id).status == "waiting_for_approval"
+
+    rejected_event =
+      Repo.get_by!(AuditOutboxEvent,
+        workflow_run_id: run.id,
+        event_type: "approval.rejected",
+        trace_id: "trace-#{run.id}"
+      )
+
+    assert rejected_event.actor_ref == "operator-live"
+    assert rejected_event.redacted_refs["approval_id"] == approval.id
+  end
+
+  defp ensure_audit_outbox_table! do
+    Repo.query!("""
+    CREATE TABLE IF NOT EXISTS ai_audit_outbox_events (
+      id uuid PRIMARY KEY,
+      tenant_id varchar NOT NULL,
+      event_type varchar NOT NULL,
+      policy_class varchar NOT NULL,
+      sink_status varchar NOT NULL DEFAULT 'pending',
+      dedupe_key varchar NOT NULL,
+      payload_hash varchar NOT NULL,
+      pending_at timestamp(6) without time zone NOT NULL,
+      sent_at timestamp(6) without time zone NULL,
+      attempt_count integer NOT NULL DEFAULT 0,
+      actor_ref varchar NULL,
+      workflow_run_id uuid NULL,
+      step_id uuid NULL,
+      trace_id varchar NULL,
+      redacted_refs jsonb NOT NULL DEFAULT '{}'::jsonb,
+      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+      inserted_at timestamp(6) without time zone NOT NULL,
+      updated_at timestamp(6) without time zone NOT NULL
+    )
+    """)
+
+    Repo.query!("""
+    CREATE UNIQUE INDEX IF NOT EXISTS ai_audit_outbox_events_tenant_id_dedupe_key_index
+    ON ai_audit_outbox_events (tenant_id, dedupe_key)
+    """)
   end
 end

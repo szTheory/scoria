@@ -4,12 +4,25 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   alias Decimal, as: D
   alias Scoria.Repo
-  alias Scoria.SRE.{AlertEvent, AuditOutboxEvent, BreakerTrip, BudgetReservation, Incident, IncidentEvent, NotificationDelivery}
+
+  alias Scoria.SRE.{
+    AlertEvent,
+    AuditOutboxEvent,
+    BreakerTrip,
+    BudgetReservation,
+    Incident,
+    IncidentEvent,
+    NotificationDelivery
+  }
+
+  alias Scoria.Workflows
+  alias Scoria.Workflows.Resume
   alias ScoriaWeb.{CitationEvidenceComponent, IncidentEvidenceComponent}
 
   def mount(_params, session, socket) do
+    tenant_id = session["tenant_id"] || "default"
+
     if connected?(socket) do
-      tenant_id = session["tenant_id"] || "default"
       Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
     end
 
@@ -20,11 +33,16 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:timer_ref, nil)
       |> assign(:token_text, "")
       |> assign(:active_approval, nil)
+      |> assign(
+        :actor_id,
+        session["actor_id"] || session["user_id"] || session["session_id"] || "operator"
+      )
       |> assign(:budget_state, nil)
       |> assign(:incident_evidence, nil)
       |> assign(:trace_records, %{})
       |> assign(:replay_notice, nil)
       |> assign(:promote_notice, nil)
+      |> assign(:tenant_id, tenant_id)
       |> stream(:traces, [])
 
     {:ok, socket}
@@ -41,8 +59,8 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   def handle_info({:token, token}, socket) do
     new_buffer = [token | socket.assigns.token_buffer]
-    
-    socket = 
+
+    socket =
       if is_nil(socket.assigns.timer_ref) do
         ref = Process.send_after(self(), :flush_tokens, 75)
         assign(socket, timer_ref: ref)
@@ -55,13 +73,13 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   def handle_info(:flush_tokens, socket) do
     new_chunk = socket.assigns.token_buffer |> Enum.reverse() |> Enum.join("")
-    
-    socket = 
-      socket 
+
+    socket =
+      socket
       |> assign(token_text: socket.assigns.token_text <> new_chunk)
       |> assign(token_buffer: [])
       |> assign(timer_ref: nil)
-      
+
     {:noreply, socket}
   end
 
@@ -70,17 +88,11 @@ defmodule ScoriaWeb.OrchestratorLive do
   end
 
   def handle_event("approve", _, socket) do
-    if approval = socket.assigns.active_approval do
-      Scoria.Repo.update(Scoria.Observe.Approval.changeset(approval, %{status: "approved"}))
-    end
-    {:noreply, assign(socket, :active_approval, nil)}
+    {:noreply, record_approval_decision(socket, "approved")}
   end
 
   def handle_event("reject", _, socket) do
-    if approval = socket.assigns.active_approval do
-      Scoria.Repo.update(Scoria.Observe.Approval.changeset(approval, %{status: "rejected"}))
-    end
-    {:noreply, assign(socket, :active_approval, nil)}
+    {:noreply, record_approval_decision(socket, "rejected")}
   end
 
   def handle_event("load_metadata", %{"id" => trace_id}, socket) do
@@ -225,10 +237,16 @@ defmodule ScoriaWeb.OrchestratorLive do
           <div class="bg-white p-6 rounded shadow-lg max-w-md w-full">
             <h2 class="text-xl font-bold mb-4">Approval Required</h2>
             <p class="mb-2"><strong>Tool:</strong> <%= @active_approval.tool_name %></p>
+            <p class="text-sm text-stone-600">
+              Record a workflow-owned decision. The approval state and audit evidence are written durably before any resume attempt.
+            </p>
             <div class="flex justify-end space-x-4 mt-6">
-              <button phx-click="reject" class="px-4 py-2 bg-red-500 text-white rounded">Reject</button>
-              <button phx-click="approve" class="px-4 py-2 bg-blue-500 text-white rounded">Approve</button>
+              <button phx-click="reject" class="px-4 py-2 bg-red-500 text-white rounded">Reject Decision</button>
+              <button phx-click="approve" class="px-4 py-2 bg-blue-500 text-white rounded">Approve Decision</button>
             </div>
+            <p class="mt-4 text-xs text-stone-500">
+              Reject Decision keeps the workflow paused until a new operator action is recorded.
+            </p>
           </div>
         </div>
       <% end %>
@@ -246,7 +264,11 @@ defmodule ScoriaWeb.OrchestratorLive do
         %{label: "[2]", title: "Grounding rules", locator: "file:///docs/grounding.md"}
       ],
       ranked_chunks: [
-        %{rank: 1, score: "0.98", body: "citation evidence is shown side-by-side for operator review."},
+        %{
+          rank: 1,
+          score: "0.98",
+          body: "citation evidence is shown side-by-side for operator review."
+        },
         %{rank: 2, score: "0.91", body: "unsupported claims are surfaced before promotion."}
       ],
       unsupported_claims: ["none"],
@@ -298,7 +320,8 @@ defmodule ScoriaWeb.OrchestratorLive do
         budget_detail: budget_actuals(budget),
         breaker_signal: breaker_signal(breaker),
         breaker_detail: breaker_detail(breaker),
-        review_count: Enum.count(incidents, &(&1.routing_class == "review" and &1.status == "open")),
+        review_count:
+          Enum.count(incidents, &(&1.routing_class == "review" and &1.status == "open")),
         page_count: Enum.count(incidents, &(&1.routing_class == "page" and &1.status == "open")),
         relay_signal: relay_signal(audit_rows, deliveries),
         relay_detail: relay_detail(audit_rows, deliveries)
@@ -309,7 +332,8 @@ defmodule ScoriaWeb.OrchestratorLive do
         actuals: budget_actuals(budget),
         reason_code: if(budget, do: budget.reason_code, else: "budget evidence unavailable"),
         policy_key: if(budget, do: budget.policy_key, else: "n/a"),
-        provider_ref: if(budget && budget.provider_ref, do: budget.provider_ref, else: "provider n/a"),
+        provider_ref:
+          if(budget && budget.provider_ref, do: budget.provider_ref, else: "provider n/a"),
         tool_ref: if(budget && budget.tool_ref, do: budget.tool_ref, else: "tool n/a")
       },
       breaker: %{
@@ -446,7 +470,9 @@ defmodule ScoriaWeb.OrchestratorLive do
       %{
         incident_key: incident.incident_key,
         summary: incident.summary,
-        reason_code: get_in(incident.metadata || %{}, ["reason_code"]) || alert_event && alert_event.reason_code || "incident",
+        reason_code:
+          get_in(incident.metadata || %{}, ["reason_code"]) ||
+            (alert_event && alert_event.reason_code) || "incident",
         routing_class: incident.routing_class,
         routing_label: routing_label(incident.routing_class),
         severity: incident.severity,
@@ -458,13 +484,13 @@ defmodule ScoriaWeb.OrchestratorLive do
           first_present([
             alert_event && alert_event.scorer_version_ref,
             get_in(incident.evidence_summary || %{}, ["scorer_version"]),
-            get_in(incident_event && incident_event.metadata || %{}, ["scorer_version"])
+            get_in((incident_event && incident_event.metadata) || %{}, ["scorer_version"])
           ]) || "n/a",
         baseline_version:
           first_present([
             alert_event && alert_event.baseline_version_ref,
             get_in(incident.evidence_summary || %{}, ["baseline_version"]),
-            get_in(incident_event && incident_event.metadata || %{}, ["baseline_version"])
+            get_in((incident_event && incident_event.metadata) || %{}, ["baseline_version"])
           ]) || "n/a"
       }
     end)
@@ -604,8 +630,69 @@ defmodule ScoriaWeb.OrchestratorLive do
     %{
       budget_state: budget_signal(budget),
       breaker_state: breaker && breaker.state,
-      review_incident: Enum.any?(incidents, &(&1.routing_class == "review" and &1.status == "open")),
+      review_incident:
+        Enum.any?(incidents, &(&1.routing_class == "review" and &1.status == "open")),
       page_incident: Enum.any?(incidents, &(&1.routing_class == "page" and &1.status == "open"))
     }
+  end
+
+  defp record_approval_decision(socket, status) do
+    case socket.assigns.active_approval do
+      nil ->
+        socket
+
+      approval ->
+        attrs = approval_decision_attrs(socket, approval)
+
+        with {:ok, updated_approval} <- Workflows.approve(approval.id, status, attrs),
+             {:ok, updated_socket} <- maybe_resume_approval(socket, updated_approval, status) do
+          assign(updated_socket, :active_approval, nil)
+        else
+          {:error, reason} ->
+            put_flash(socket, :error, approval_error_message(status, reason))
+        end
+    end
+  end
+
+  defp maybe_resume_approval(socket, _approval, status) when status != "approved",
+    do: {:ok, socket}
+
+  defp maybe_resume_approval(socket, approval, "approved") do
+    case approval.workflow_run_id do
+      nil -> {:ok, socket}
+      run_id -> Resume.resume_run(run_id)
+    end
+    |> case do
+      {:ok, _run} -> {:ok, socket}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp approval_decision_attrs(socket, approval) do
+    request_event = approval_request_event(approval)
+
+    %{
+      actor_id: socket.assigns.actor_id || approval.session_id || "operator",
+      tenant_id:
+        socket.assigns.tenant_id || (request_event && request_event.tenant_id) || "default",
+      trace_id: request_event && request_event.trace_id
+    }
+  end
+
+  defp approval_request_event(approval) do
+    AuditOutboxEvent
+    |> where(
+      [event],
+      event.workflow_run_id == ^approval.workflow_run_id and
+        event.event_type == "approval.requested"
+    )
+    |> where([event], fragment("?->>? = ?", event.redacted_refs, "approval_id", ^approval.id))
+    |> order_by([event], desc: event.inserted_at)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  defp approval_error_message(status, reason) do
+    "Could not #{status} approval through workflow-owned state: #{inspect(reason)}"
   end
 end
