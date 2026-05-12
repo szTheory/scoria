@@ -2,6 +2,7 @@ defmodule Scoria.SRE.RelayTest do
   use ExUnit.Case, async: false
 
   alias Scoria.Repo
+  alias Decimal, as: D
   alias Scoria.SRE.{AuditOutboxEvent, NotificationDelivery}
 
   defmodule FailingAuditSink do
@@ -36,6 +37,7 @@ defmodule Scoria.SRE.RelayTest do
 
     ensure_audit_outbox_table!()
     ensure_notification_delivery_table!()
+    ensure_incident_tables!()
     :ok
   end
 
@@ -123,7 +125,7 @@ defmodule Scoria.SRE.RelayTest do
       assert mailglass_envelope.routing_class == "page"
     end
 
-    test "routes notification deliveries through sink-specific adapters with severity metadata" do
+    test "routes producer-shaped notification deliveries through sink-specific adapters with severity metadata" do
       Application.put_env(
         :scoria,
         :sre_chimeway_dispatcher,
@@ -136,31 +138,34 @@ defmodule Scoria.SRE.RelayTest do
         {__MODULE__, :capture_delivery, [self(), :mailglass]}
       )
 
-      chimeway_delivery =
-        Repo.insert!(%NotificationDelivery{
-          tenant_id: "tenant-relay",
-          sink_kind: "chimeway",
-          routing_key: "reviews",
-          delivery_status: "pending",
-          pending_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
-          attempt_count: 0,
-          payload_hash: "sha256:chimeway",
-          trace_id: "trace-chimeway",
-          metadata: %{"severity" => "warning", "routing_class" => "review", "summary" => "Review me"}
-        })
+      assert {:ok, %{notification_deliveries: [chimeway_delivery]}} =
+               Scoria.SRE.record_alert_event(%{
+                 tenant_id: "tenant-relay",
+                 subject_kind: "workflow",
+                 policy_key: "tenant:default:quality",
+                 reason_code: "quality_regression",
+                 summary: "Review me",
+                 measured_value: D.new("0.55"),
+                 threshold_value: D.new("0.75"),
+                 trace_id: "trace-chimeway",
+                 workflow_run_id: Ecto.UUID.generate(),
+                 window_bucket: "2026-05-11T20",
+                 routing_class: "review"
+               })
 
-      mailglass_delivery =
-        Repo.insert!(%NotificationDelivery{
-          tenant_id: "tenant-relay",
-          sink_kind: "mailglass",
-          routing_key: "ops@example.com",
-          delivery_status: "pending",
-          pending_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
-          attempt_count: 0,
-          payload_hash: "sha256:mailglass",
-          trace_id: "trace-mailglass",
-          metadata: %{"severity" => "critical", "routing_class" => "page", "summary" => "Page me"}
-        })
+      assert {:ok, %{notification_deliveries: [mailglass_delivery]}} =
+               Scoria.SRE.record_alert_event(%{
+                 tenant_id: "tenant-relay",
+                 subject_kind: "workflow",
+                 policy_key: "tenant:default:latency",
+                 reason_code: "breaker_open",
+                 summary: "Page me",
+                 measured_value: D.new("150.0"),
+                 threshold_value: D.new("100.0"),
+                 trace_id: "trace-mailglass",
+                 workflow_run_id: Ecto.UUID.generate(),
+                 window_bucket: "2026-05-11T21"
+               })
 
       assert :ok = Scoria.SRE.Relay.drain_once()
 
@@ -228,6 +233,76 @@ defmodule Scoria.SRE.RelayTest do
       metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
       incident_id uuid NULL,
       alert_event_id uuid NULL,
+      inserted_at timestamp(6) without time zone NOT NULL,
+      updated_at timestamp(6) without time zone NOT NULL
+    )
+    """)
+  end
+
+  defp ensure_incident_tables! do
+    Repo.query!("""
+    CREATE TABLE IF NOT EXISTS ai_incidents (
+      id uuid PRIMARY KEY,
+      tenant_id varchar NOT NULL,
+      incident_key varchar NOT NULL,
+      severity varchar NOT NULL,
+      status varchar NOT NULL DEFAULT 'open',
+      summary text NOT NULL,
+      routing_class varchar NOT NULL,
+      dedupe_key varchar NOT NULL,
+      first_seen_at timestamp(6) without time zone NOT NULL,
+      last_seen_at timestamp(6) without time zone NOT NULL,
+      workflow_run_id uuid NULL,
+      trace_id varchar NULL,
+      evidence_summary jsonb NOT NULL DEFAULT '{}'::jsonb,
+      lock_version integer NOT NULL DEFAULT 1,
+      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+      inserted_at timestamp(6) without time zone NOT NULL,
+      updated_at timestamp(6) without time zone NOT NULL
+    )
+    """)
+
+    Repo.query!(
+      "CREATE UNIQUE INDEX IF NOT EXISTS ai_incidents_tenant_incident_key_idx ON ai_incidents (tenant_id, incident_key)"
+    )
+
+    Repo.query!("""
+    CREATE TABLE IF NOT EXISTS ai_alert_events (
+      id uuid PRIMARY KEY,
+      tenant_id varchar NOT NULL,
+      alert_policy_id uuid NULL,
+      incident_id uuid NULL,
+      incident_key varchar NOT NULL,
+      reason_code varchar NOT NULL,
+      severity varchar NOT NULL,
+      status varchar NOT NULL DEFAULT 'new',
+      measured_value numeric(18,6) NOT NULL,
+      threshold_value numeric(18,6) NOT NULL,
+      scorer_version_ref varchar NULL,
+      baseline_version_ref varchar NULL,
+      workflow_run_id uuid NULL,
+      trace_id varchar NULL,
+      evidence_refs jsonb NOT NULL DEFAULT '{}'::jsonb,
+      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+      inserted_at timestamp(6) without time zone NOT NULL,
+      updated_at timestamp(6) without time zone NOT NULL
+    )
+    """)
+
+    Repo.query!("""
+    CREATE TABLE IF NOT EXISTS ai_incident_events (
+      id uuid PRIMARY KEY,
+      tenant_id varchar NOT NULL,
+      incident_id uuid NOT NULL,
+      alert_event_id uuid NULL,
+      incident_key varchar NOT NULL,
+      event_type varchar NOT NULL,
+      reason_code varchar NOT NULL,
+      actor_ref varchar NULL,
+      workflow_run_id uuid NULL,
+      trace_id varchar NULL,
+      evidence_refs jsonb NOT NULL DEFAULT '{}'::jsonb,
+      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
       inserted_at timestamp(6) without time zone NOT NULL,
       updated_at timestamp(6) without time zone NOT NULL
     )

@@ -9,7 +9,7 @@ defmodule Scoria.SRE.IncidentManager do
   alias Decimal, as: D
   alias Ecto.Multi
   alias Scoria.Repo
-  alias Scoria.SRE.{AlertEvent, Incident, IncidentEvent}
+  alias Scoria.SRE.{AlertEvent, Incident, IncidentEvent, NotificationDelivery}
 
   def record_alert_event(envelope) when is_map(envelope) do
     envelope = normalize_envelope(envelope)
@@ -21,13 +21,34 @@ defmodule Scoria.SRE.IncidentManager do
     |> Multi.run(:alert_event, fn repo, %{incident: {incident, status}} ->
       {:ok, create_alert_event(repo, incident, status, envelope)}
     end)
-    |> Multi.run(:incident_event, fn repo, %{incident: {incident, _status}, alert_event: alert_event} ->
+    |> Multi.run(:incident_event, fn repo,
+                                     %{incident: {incident, _status}, alert_event: alert_event} ->
       {:ok, append_incident_event_record(repo, incident, alert_event, envelope)}
+    end)
+    |> Multi.run(:notification_deliveries, fn repo,
+                                              %{
+                                                incident: {incident, incident_state},
+                                                alert_event: alert_event
+                                              } ->
+      {:ok,
+       maybe_create_notification_deliveries(repo, incident, alert_event, incident_state, envelope)}
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{incident: {incident, _status}, alert_event: alert_event, incident_event: incident_event}} ->
-        {:ok, %{incident: incident, alert_event: alert_event, incident_event: incident_event}}
+      {:ok,
+       %{
+         incident: {incident, _status},
+         alert_event: alert_event,
+         incident_event: incident_event,
+         notification_deliveries: notification_deliveries
+       }} ->
+        {:ok,
+         %{
+           incident: incident,
+           alert_event: alert_event,
+           incident_event: incident_event,
+           notification_deliveries: notification_deliveries
+         }}
 
       {:error, _operation, value, _changes} ->
         {:error, value}
@@ -92,15 +113,17 @@ defmodule Scoria.SRE.IncidentManager do
           |> Incident.changeset(attrs)
           |> repo.insert!()
 
-        {incident, :new}
+        {incident, %{status: :new, escalated?: false}}
 
       %Incident{} = incident ->
+        next_routing_class = max_routing_class(incident.routing_class, route.routing_class)
+
         updated_incident =
           incident
           |> Incident.changeset(%{
             last_seen_at: now,
             severity: max_severity(incident.severity, route.severity),
-            routing_class: max_routing_class(incident.routing_class, route.routing_class),
+            routing_class: next_routing_class,
             workflow_run_id: Map.get(envelope, :workflow_run_id, incident.workflow_run_id),
             trace_id: Map.get(envelope, :trace_id, incident.trace_id),
             evidence_summary: merge_maps(incident.evidence_summary, evidence_summary(envelope)),
@@ -108,7 +131,11 @@ defmodule Scoria.SRE.IncidentManager do
           })
           |> repo.update!()
 
-        {updated_incident, :deduped}
+        {updated_incident,
+         %{
+           status: :deduped,
+           escalated?: incident.routing_class != "page" and next_routing_class == "page"
+         }}
     end
   end
 
@@ -120,7 +147,7 @@ defmodule Scoria.SRE.IncidentManager do
       incident_key: incident.incident_key,
       reason_code: Map.fetch!(envelope, :reason_code),
       severity: route(envelope).severity,
-      status: if(status == :new, do: "new", else: "deduped"),
+      status: if(status.status == :new, do: "new", else: "deduped"),
       measured_value: decimal_value(Map.get(envelope, :measured_value, 0)),
       threshold_value: decimal_value(Map.get(envelope, :threshold_value, 0)),
       scorer_version_ref: Map.get(envelope, :scorer_version),
@@ -216,7 +243,9 @@ defmodule Scoria.SRE.IncidentManager do
     reason_code = Map.get(envelope, :reason_code)
     fast_burn = Map.get(envelope, :fast_burn, false)
     breaker_trip = reason_code in ["breaker_open", "breaker_trip"]
-    baseline_regression = reason_code in ["ci_baseline_dip", "quality_regression", "cost_regression"]
+
+    baseline_regression =
+      reason_code in ["ci_baseline_dip", "quality_regression", "cost_regression"]
 
     cond do
       breaker_trip or fast_burn ->
@@ -258,7 +287,13 @@ defmodule Scoria.SRE.IncidentManager do
     }
     |> Map.merge(
       envelope
-      |> Map.take([:policy_key, :subject_kind, :window_bucket, :scorer_version, :baseline_version])
+      |> Map.take([
+        :policy_key,
+        :subject_kind,
+        :window_bucket,
+        :scorer_version,
+        :baseline_version
+      ])
       |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
     )
   end
@@ -275,6 +310,100 @@ defmodule Scoria.SRE.IncidentManager do
       :baseline_version
     ])
     |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
+  end
+
+  defp maybe_create_notification_deliveries(
+         _repo,
+         _incident,
+         _alert_event,
+         %{status: :deduped, escalated?: false},
+         _envelope
+       ),
+       do: []
+
+  defp maybe_create_notification_deliveries(
+         repo,
+         incident,
+         alert_event,
+         _incident_state,
+         envelope
+       ) do
+    [insert_notification_delivery(repo, incident, alert_event, envelope)]
+  end
+
+  defp insert_notification_delivery(repo, incident, alert_event, envelope) do
+    sink_kind = sink_kind_for_routing(incident.routing_class)
+
+    %NotificationDelivery{}
+    |> NotificationDelivery.changeset(%{
+      tenant_id: incident.tenant_id,
+      incident_id: incident.id,
+      alert_event_id: alert_event.id,
+      sink_kind: sink_kind,
+      routing_key: routing_key_for_sink(sink_kind),
+      delivery_status: "pending",
+      pending_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
+      attempt_count: 0,
+      payload_hash: payload_hash(incident, alert_event, sink_kind),
+      workflow_run_id: incident.workflow_run_id || alert_event.workflow_run_id,
+      trace_id: alert_event.trace_id || incident.trace_id,
+      metadata: delivery_metadata(incident, alert_event, envelope, sink_kind)
+    })
+    |> repo.insert!()
+  end
+
+  defp delivery_metadata(incident, alert_event, envelope, sink_kind) do
+    %{
+      "severity" => incident.severity,
+      "routing_class" => incident.routing_class,
+      "summary" => incident.summary,
+      "incident_key" => incident.incident_key,
+      "reason_code" => alert_event.reason_code,
+      "transport_mode" => transport_mode(sink_kind),
+      "transport_sink" => sink_kind,
+      "workflow_run_id" => incident.workflow_run_id || alert_event.workflow_run_id,
+      "trace_id" => alert_event.trace_id || incident.trace_id
+    }
+    |> Map.merge(
+      envelope
+      |> Map.take([:policy_key, :subject_kind, :window_bucket])
+      |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
+    )
+  end
+
+  defp sink_kind_for_routing("page"), do: "mailglass"
+  defp sink_kind_for_routing(_routing_class), do: "chimeway"
+
+  defp routing_key_for_sink("mailglass"), do: "ops@example.com"
+  defp routing_key_for_sink(_sink_kind), do: "reviews"
+
+  defp transport_mode("mailglass") do
+    if Application.get_env(:scoria, :sre_mailglass_dispatcher),
+      do: "configured",
+      else: "unconfigured"
+  end
+
+  defp transport_mode("chimeway") do
+    if Application.get_env(:scoria, :sre_chimeway_dispatcher),
+      do: "configured",
+      else: "unconfigured"
+  end
+
+  defp transport_mode(_sink_kind), do: "noop"
+
+  defp payload_hash(incident, alert_event, sink_kind) do
+    %{
+      incident_id: incident.id,
+      alert_event_id: alert_event.id,
+      sink_kind: sink_kind,
+      routing_class: incident.routing_class,
+      reason_code: alert_event.reason_code,
+      trace_id: alert_event.trace_id || incident.trace_id
+    }
+    |> Jason.encode!()
+    |> then(&:crypto.hash(:sha256, &1))
+    |> Base.encode16(case: :lower)
+    |> then(&("sha256:" <> &1))
   end
 
   defp decimal_value(%D{} = value), do: value
