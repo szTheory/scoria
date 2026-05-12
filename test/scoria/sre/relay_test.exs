@@ -179,8 +179,41 @@ defmodule Scoria.SRE.RelayTest do
       assert envelope.routing_class == "page"
       assert envelope.summary == "Page me"
 
-      assert Repo.get!(NotificationDelivery, chimeway_delivery.id).delivery_status == "delivered"
-      assert Repo.get!(NotificationDelivery, mailglass_delivery.id).delivery_status == "delivered"
+      stored_chimeway_delivery = Repo.get!(NotificationDelivery, chimeway_delivery.id)
+      stored_mailglass_delivery = Repo.get!(NotificationDelivery, mailglass_delivery.id)
+
+      assert stored_chimeway_delivery.delivery_status == "delivered"
+      assert stored_mailglass_delivery.delivery_status == "delivered"
+      assert stored_chimeway_delivery.metadata["delivery_outcome"] == "delivered"
+      assert stored_mailglass_delivery.metadata["delivery_outcome"] == "delivered"
+      assert stored_chimeway_delivery.metadata["delivery_adapter"] == "chimeway"
+      assert stored_mailglass_delivery.metadata["delivery_adapter"] == "mailglass"
+    end
+
+    test "records unconfigured noop outcomes durably for later operator evidence" do
+      assert {:ok, %{notification_deliveries: [delivery]}} =
+               Scoria.SRE.record_alert_event(%{
+                 tenant_id: "tenant-relay",
+                 subject_kind: "workflow",
+                 policy_key: "tenant:default:quality",
+                 reason_code: "quality_regression",
+                 summary: "Review me later",
+                 measured_value: D.new("0.61"),
+                 threshold_value: D.new("0.75"),
+                 trace_id: "trace-unconfigured",
+                 workflow_run_id: Ecto.UUID.generate(),
+                 window_bucket: "2026-05-12T01",
+                 routing_class: "review"
+               })
+
+      assert :ok = Scoria.SRE.Relay.drain_once()
+
+      stored_delivery = Repo.get!(NotificationDelivery, delivery.id)
+
+      assert stored_delivery.delivery_status == "delivered"
+      assert stored_delivery.metadata["transport_mode"] == "unconfigured"
+      assert stored_delivery.metadata["delivery_outcome"] == "unconfigured"
+      assert stored_delivery.metadata["delivery_adapter"] == "chimeway"
     end
   end
 

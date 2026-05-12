@@ -204,6 +204,7 @@ defmodule Scoria.SRE.IncidentManager do
   end
 
   @envelope_keys %{
+    "approval_id" => :approval_id,
     "actor_ref" => :actor_ref,
     "baseline_version" => :baseline_version,
     "fast_burn" => :fast_burn,
@@ -269,6 +270,7 @@ defmodule Scoria.SRE.IncidentManager do
 
   defp evidence_summary(envelope) do
     %{
+      "approval_id" => Map.get(envelope, :approval_id),
       "policy_key" => Map.get(envelope, :policy_key),
       "trace_id" => Map.get(envelope, :trace_id),
       "workflow_run_id" => Map.get(envelope, :workflow_run_id),
@@ -304,6 +306,7 @@ defmodule Scoria.SRE.IncidentManager do
       :policy_key,
       :subject_kind,
       :window_bucket,
+      :approval_id,
       :routing_class,
       :severity,
       :scorer_version,

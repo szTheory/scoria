@@ -3,12 +3,12 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest.Router do
   import ScoriaWeb.Router
 
   pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
   end
 
   scope "/" do
-    pipe_through :browser
+    pipe_through(:browser)
     scoria_dashboard("/scoria")
   end
 end
@@ -16,12 +16,13 @@ end
 defmodule ScoriaWeb.OrchestratorLiveSRETest.Endpoint do
   use Phoenix.Endpoint, otp_app: :scoria
 
-  plug Plug.Session,
+  plug(Plug.Session,
     store: :cookie,
     key: "_scoria_sre_key",
     signing_salt: "scoria_sre_salt"
+  )
 
-  plug ScoriaWeb.OrchestratorLiveSRETest.Router
+  plug(ScoriaWeb.OrchestratorLiveSRETest.Router)
 end
 
 defmodule ScoriaWeb.OrchestratorLiveSRETest do
@@ -44,6 +45,8 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
     NotificationDelivery
   }
 
+  alias Scoria.Workflows
+
   @endpoint ScoriaWeb.OrchestratorLiveSRETest.Endpoint
 
   setup_all do
@@ -54,20 +57,78 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
       debug_errors: true
     )
 
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn -> ensure_sre_tables!() end)
     :ok
   end
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
-    ensure_sre_tables!()
     start_supervised!(@endpoint)
     :ok
   end
 
-  test "incident evidence renders deep links, version evidence, and distinct review vs page severity" do
-    run_id = Ecto.UUID.generate()
-    seed_incident_evidence!("trace-sre-1", run_id)
+  test "incident evidence renders workflow-owned approval, incident, and delivery lineage from the real path" do
+    trace_id = "trace-sre-real"
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval_gate",
+        role_id: "critic",
+        status: "running"
+      })
+
+    {:ok, approval} =
+      Workflows.mark_waiting_for_approval(run.id, step.id, %{
+        tool_name: "publish",
+        arguments: %{"env" => "prod"},
+        reason: "Need operator approval",
+        actor_id: "operator-sre",
+        tenant_id: "tenant-sre",
+        trace_id: trace_id
+      })
+
+    seed_budget_and_breaker!(trace_id, run.id)
+
+    assert {:ok, %{notification_deliveries: [review_delivery]}} =
+             Scoria.SRE.record_alert_event(%{
+               tenant_id: "tenant-sre",
+               subject_kind: "workflow",
+               policy_key: "tenant:default:quality",
+               reason_code: "ci_baseline_dip",
+               summary: "Review incident",
+               measured_value: D.new("0.61"),
+               threshold_value: D.new("0.75"),
+               scorer_version: "scorer-v4",
+               baseline_version: "baseline-2026-05-11",
+               trace_id: trace_id,
+               workflow_run_id: run.id,
+               window_bucket: "2026-05-11T18",
+               routing_class: "review",
+               approval_id: approval.id
+             })
+
+    assert {:ok, %{notification_deliveries: [page_delivery]}} =
+             Scoria.SRE.record_alert_event(%{
+               tenant_id: "tenant-sre",
+               subject_kind: "workflow",
+               policy_key: "tenant:default:cost_usd",
+               reason_code: "budget_fast_burn",
+               summary: "Page incident",
+               measured_value: D.new("103.0"),
+               threshold_value: D.new("100.0"),
+               severity: "critical",
+               routing_class: "page",
+               fast_burn: true,
+               trace_id: trace_id,
+               workflow_run_id: run.id,
+               window_bucket: "2026-05-11T18",
+               approval_id: approval.id
+             })
+
+    assert :ok = Scoria.SRE.Relay.drain_once()
 
     conn =
       build_conn()
@@ -76,14 +137,17 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
 
     {:ok, view, _html} = live(conn, "/scoria")
 
-    send(view.pid, {:new_trace,
-      %{
-        id: "trace-sre-1",
-        workflow_run_id: run_id,
-        spans: [%{id: "span-sre-1", name: "score_run", depth: 0}]
-      }})
+    send(
+      view.pid,
+      {:new_trace,
+       %{
+         id: trace_id,
+         workflow_run_id: run.id,
+         spans: [%{id: "span-sre-1", name: "score_run", depth: 0}]
+       }}
+    )
 
-    render_click(view, "load_incident_evidence", %{"id" => "trace-sre-1", "run_id" => run_id})
+    render_click(view, "load_incident_evidence", %{"id" => trace_id, "run_id" => run.id})
     render_async(view)
 
     html = render(view)
@@ -91,13 +155,35 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
     assert html =~ "Composite health rollup"
     assert html =~ "scorer-v4"
     assert html =~ "baseline-2026-05-11"
-    assert html =~ "approval-123"
-    assert html =~ "trace-sre-1"
-    assert html =~ run_id
+    assert html =~ approval.id
+    assert html =~ trace_id
+    assert html =~ run.id
     assert html =~ "Review incident"
     assert html =~ "Page incident"
+    assert html =~ "chimeway"
     assert html =~ "mailglass"
     assert html =~ "approval.requested"
+    assert html =~ "outcome"
+    assert html =~ "unconfigured"
+
+    audit_event =
+      Repo.get_by!(AuditOutboxEvent,
+        workflow_run_id: run.id,
+        event_type: "approval.requested",
+        trace_id: trace_id
+      )
+
+    assert audit_event.redacted_refs["approval_id"] == approval.id
+
+    review_delivery = Repo.get!(NotificationDelivery, review_delivery.id)
+    page_delivery = Repo.get!(NotificationDelivery, page_delivery.id)
+
+    assert review_delivery.trace_id == trace_id
+    assert review_delivery.workflow_run_id == run.id
+    assert page_delivery.trace_id == trace_id
+    assert page_delivery.workflow_run_id == run.id
+    assert review_delivery.metadata["delivery_outcome"] == "unconfigured"
+    assert page_delivery.metadata["delivery_outcome"] == "unconfigured"
   end
 
   test "lazy budget and incident loads promote compact trace badges without replacing the trace-first controls" do
@@ -111,12 +197,15 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
 
     {:ok, view, _html} = live(conn, "/scoria")
 
-    send(view.pid, {:new_trace,
-      %{
-        id: "trace-sre-2",
-        workflow_run_id: run_id,
-        spans: [%{id: "span-sre-2", name: "budget_guard", depth: 0}]
-      }})
+    send(
+      view.pid,
+      {:new_trace,
+       %{
+         id: "trace-sre-2",
+         workflow_run_id: run_id,
+         spans: [%{id: "span-sre-2", name: "budget_guard", depth: 0}]
+       }}
+    )
 
     html = render(view)
     refute html =~ "Budget warn"
@@ -136,7 +225,7 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
     assert html =~ "budget_guard"
   end
 
-  defp seed_incident_evidence!(trace_id, run_id) do
+  defp seed_budget_and_breaker!(trace_id, run_id) do
     {:ok, policy} =
       %BudgetPolicy{}
       |> BudgetPolicy.changeset(%{
@@ -192,12 +281,17 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
         metadata: %{"relay_status" => "degraded"}
       })
       |> Repo.insert()
+  end
+
+  defp seed_incident_evidence!(trace_id, run_id) do
+    seed_budget_and_breaker!(trace_id, run_id)
 
     {:ok, review_incident} =
       %Incident{}
       |> Incident.changeset(%{
         tenant_id: "tenant-sre",
-        incident_key: "tenant-sre:workflow:tenant:default:quality:ci_baseline_dip:ci:2026-05-11T18",
+        incident_key:
+          "tenant-sre:workflow:tenant:default:quality:ci_baseline_dip:ci:2026-05-11T18",
         severity: "warning",
         status: "open",
         summary: "CI baseline dip on helpfulness",
@@ -222,7 +316,8 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
       %Incident{}
       |> Incident.changeset(%{
         tenant_id: "tenant-sre",
-        incident_key: "tenant-sre:workflow:tenant:default:cost_usd:budget_fast_burn:2026-05-11T18",
+        incident_key:
+          "tenant-sre:workflow:tenant:default:cost_usd:budget_fast_burn:2026-05-11T18",
         severity: "critical",
         status: "open",
         summary: "Fast burn budget incident",
@@ -448,7 +543,9 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
     )
     """)
 
-    Repo.query!("CREATE UNIQUE INDEX IF NOT EXISTS ai_incidents_tenant_incident_key_idx ON ai_incidents (tenant_id, incident_key)")
+    Repo.query!(
+      "CREATE UNIQUE INDEX IF NOT EXISTS ai_incidents_tenant_incident_key_idx ON ai_incidents (tenant_id, incident_key)"
+    )
 
     Repo.query!("""
     CREATE TABLE IF NOT EXISTS ai_alert_events (

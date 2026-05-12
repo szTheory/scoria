@@ -514,9 +514,17 @@ defmodule ScoriaWeb.OrchestratorLive do
         delivery_status: delivery.delivery_status,
         routing_key: delivery.routing_key,
         attempt_count: delivery.attempt_count,
-        last_error: delivery.last_error
+        last_error: delivery.last_error,
+        delivery_outcome: delivery_outcome(delivery),
+        transport_mode: get_in(delivery.metadata || %{}, ["transport_mode"]),
+        transport_sink: get_in(delivery.metadata || %{}, ["transport_sink"])
       }
     end)
+  end
+
+  defp delivery_outcome(delivery) do
+    get_in(delivery.metadata || %{}, ["delivery_outcome"]) ||
+      if(delivery.delivery_status == "failed", do: "failed", else: "delivered")
   end
 
   defp budget_status(nil), do: "ok"

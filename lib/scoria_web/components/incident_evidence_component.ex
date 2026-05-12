@@ -1,7 +1,7 @@
 defmodule ScoriaWeb.IncidentEvidenceComponent do
   use Phoenix.Component
 
-  attr :evidence, :map, required: true
+  attr(:evidence, :map, required: true)
 
   def render(assigns) do
     ~H"""
@@ -152,6 +152,11 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
                   <span class={badge_class(delivery.delivery_status, :delivery)}><%= delivery.delivery_status %></span>
                 </div>
                 <p class="mt-1 text-xs text-stone-500"><%= delivery.routing_key %></p>
+                <p class="mt-2 text-xs text-stone-600">
+                  outcome <span class="font-medium text-stone-900"><%= delivery.delivery_outcome %></span>
+                  <span :if={delivery.transport_mode}>· <%= delivery.transport_mode %></span>
+                  <span :if={delivery.transport_sink}>· <%= delivery.transport_sink %></span>
+                </p>
                 <p class="mt-2 text-xs text-stone-600">
                   attempts <%= delivery.attempt_count %>
                   <span :if={delivery.last_error}>· <%= delivery.last_error %></span>

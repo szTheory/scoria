@@ -172,7 +172,7 @@ defmodule Scoria.SRE.Relay do
     envelope = notification_envelope(delivery)
 
     case publish_with_rescue(sink, envelope) do
-      {:ok, _result} -> mark_notification_delivered(delivery)
+      {:ok, result} -> mark_notification_delivered(delivery, result)
       {:error, reason} -> mark_notification_failed(delivery, reason)
     end
   end
@@ -212,13 +212,13 @@ defmodule Scoria.SRE.Relay do
     |> Repo.update()
   end
 
-  defp mark_notification_delivered(delivery) do
+  defp mark_notification_delivered(delivery, result) do
     delivery
     |> NotificationDelivery.changeset(%{
       delivery_status: "delivered",
       delivered_at: now(),
       last_error: nil,
-      metadata: drop_last_error(delivery.metadata)
+      metadata: delivered_notification_metadata(delivery, result)
     })
     |> Repo.update()
   end
@@ -261,14 +261,16 @@ defmodule Scoria.SRE.Relay do
       delivery_id: delivery.id,
       sink_kind: delivery.sink_kind,
       routing_key: delivery.routing_key,
-      workflow_run_id: delivery.workflow_run_id || incident && incident.workflow_run_id,
-      trace_id: delivery.trace_id || incident && incident.trace_id || alert_event && alert_event.trace_id,
+      workflow_run_id: delivery.workflow_run_id || (incident && incident.workflow_run_id),
+      trace_id:
+        delivery.trace_id || (incident && incident.trace_id) ||
+          (alert_event && alert_event.trace_id),
       severity:
         metadata_value(delivery.metadata, "severity") ||
-          incident && incident.severity || alert_event && alert_event.severity || "warning",
+          (incident && incident.severity) || (alert_event && alert_event.severity) || "warning",
       routing_class:
         metadata_value(delivery.metadata, "routing_class") ||
-          incident && incident.routing_class || "review",
+          (incident && incident.routing_class) || "review",
       incident_key: incident && incident.incident_key,
       reason_code: alert_event && alert_event.reason_code,
       payload_hash: delivery.payload_hash,
@@ -276,6 +278,31 @@ defmodule Scoria.SRE.Relay do
       metadata: Map.new(delivery.metadata || %{})
     }
   end
+
+  defp delivered_notification_metadata(delivery, result) do
+    delivery.metadata
+    |> drop_last_error()
+    |> Map.merge(%{
+      "delivery_outcome" => delivery_outcome(delivery, result),
+      "delivery_adapter" => delivery_adapter(result)
+    })
+  end
+
+  defp delivery_outcome(delivery, %{status: :noop}) do
+    case get_in(delivery.metadata || %{}, ["transport_mode"]) do
+      "unconfigured" -> "unconfigured"
+      _ -> "noop"
+    end
+  end
+
+  defp delivery_outcome(_delivery, %{status: status}) when status in [:delivered, "delivered"],
+    do: "delivered"
+
+  defp delivery_outcome(_delivery, _result), do: "delivered"
+
+  defp delivery_adapter(%{adapter: adapter}) when is_atom(adapter), do: Atom.to_string(adapter)
+  defp delivery_adapter(%{adapter: adapter}) when is_binary(adapter), do: adapter
+  defp delivery_adapter(_result), do: nil
 
   defp put_last_error(metadata, reason) do
     metadata
