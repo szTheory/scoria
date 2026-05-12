@@ -69,7 +69,6 @@ defmodule Scoria.WorkflowsIntegrationTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
-    ensure_audit_outbox_table!()
 
     Application.put_env(:scoria, :workflow_runtime_handlers, %{"approval" => {Handlers, :succeed}})
 
@@ -176,33 +175,4 @@ defmodule Scoria.WorkflowsIntegrationTest do
     assert render(view) =~ "step_completed"
   end
 
-  defp ensure_audit_outbox_table! do
-    Repo.query!("""
-    CREATE TABLE IF NOT EXISTS ai_audit_outbox_events (
-      id uuid PRIMARY KEY,
-      tenant_id varchar NOT NULL,
-      event_type varchar NOT NULL,
-      policy_class varchar NOT NULL,
-      sink_status varchar NOT NULL DEFAULT 'pending',
-      dedupe_key varchar NOT NULL,
-      payload_hash varchar NOT NULL,
-      pending_at timestamp(6) without time zone NOT NULL,
-      sent_at timestamp(6) without time zone NULL,
-      attempt_count integer NOT NULL DEFAULT 0,
-      actor_ref varchar NULL,
-      workflow_run_id uuid NULL,
-      step_id uuid NULL,
-      trace_id varchar NULL,
-      redacted_refs jsonb NOT NULL DEFAULT '{}'::jsonb,
-      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
-      inserted_at timestamp(6) without time zone NOT NULL,
-      updated_at timestamp(6) without time zone NOT NULL
-    )
-    """)
-
-    Repo.query!("""
-    CREATE UNIQUE INDEX IF NOT EXISTS ai_audit_outbox_events_tenant_id_dedupe_key_index
-    ON ai_audit_outbox_events (tenant_id, dedupe_key)
-    """)
-  end
 end

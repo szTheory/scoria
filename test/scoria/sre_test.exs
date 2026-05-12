@@ -65,33 +65,58 @@ defmodule Scoria.SRETest do
       assert function_exported?(SRE, :create_audit_outbox_event, 1)
     end
 
-    test "uses no-op sinks by default so optional integrations are not required" do
+    test "uses durable audit inserts and no-op alert sinks by default so optional integrations are not required" do
       Application.delete_env(:scoria, :sre_audit_sink)
       Application.delete_env(:scoria, :sre_alert_sink)
 
-      assert {:ok, %{status: :noop, envelope: %{event_type: "approval.requested"}}} =
+      assert {:ok, %AuditOutboxEvent{} = audit_event} =
                SRE.create_audit_outbox_event(%{event_type: "approval.requested"})
 
-      assert {:ok, %{status: :noop, envelope: %{severity: :warning}}} =
-               SRE.record_alert_event(%{severity: :warning})
+      assert audit_event.event_type == "approval.requested"
+      assert audit_event.sink_status == "pending"
+
+      assert {:ok, %{alert_event: alert_event, incident: incident}} =
+               SRE.record_alert_event(%{
+                 tenant_id: "tenant-test",
+                 policy_key: "tenant:default:quality",
+                 reason_code: "ci_baseline_dip",
+                 severity: :warning,
+                 scorer_version: "scorer-v1",
+                 baseline_version: "baseline-v1"
+               })
+
+      assert alert_event.reason_code == "ci_baseline_dip"
+      assert incident.routing_class == "review"
     end
 
     test "resolves configured sinks through the declared behaviors" do
       Application.put_env(:scoria, :sre_audit_sink, CustomAuditSink)
       Application.put_env(:scoria, :sre_alert_sink, CustomAlertSink)
 
-      assert {:ok, %{delivered_by: CustomAuditSink}} =
+      assert SRE.audit_sink() == CustomAuditSink
+      assert {:ok, %AuditOutboxEvent{} = audit_event} =
                SRE.create_audit_outbox_event(%{event_type: "approval.approved"})
 
-      assert {:ok, %{delivered_by: CustomAlertSink}} =
-               SRE.record_alert_event(%{severity: :critical})
+      assert audit_event.event_type == "approval.approved"
+
+      assert {:ok, %{alert_event: alert_event, incident: incident}} =
+               SRE.record_alert_event(%{
+                 tenant_id: "tenant-test",
+                 policy_key: "tenant:default:cost_usd",
+                 reason_code: "budget_fast_burn",
+                 severity: :critical,
+                 fast_burn: true
+               })
+
+      assert alert_event.reason_code == "budget_fast_burn"
+      assert incident.routing_class == "page"
     end
 
     test "rejects sink modules that do not implement the required behavior" do
       Application.put_env(:scoria, :sre_audit_sink, Map)
 
       assert_raise ArgumentError, ~r/does not implement Scoria.SRE.AuditSink/, fn ->
-        SRE.create_audit_outbox_event(%{event_type: "approval.denied"})
+        SRE.audit_sink()
       end
     end
   end
@@ -187,6 +212,23 @@ defmodule Scoria.SRETest do
       assert released.status == "released"
       assert released.release_reason == "post_reconciliation_cleanup"
       assert released.metadata["released_by"] == "runtime"
+    end
+
+    test "reconciles breaker-open closeout rows to durable zero-usage evidence" do
+      {:ok, policy} = SRE.create_budget_policy(budget_policy_attrs())
+
+      assert {:ok, reservation} = SRE.reserve_usage(reservation_attrs(policy))
+
+      assert {:ok, reconciled} =
+               SRE.reconcile_usage(reservation, %{
+                 actual_units: D.new("0"),
+                 reconciliation_status: "matched",
+                 metadata: %{"outcome" => "breaker_open"}
+               })
+
+      assert reconciled.status == "reconciled"
+      assert reconciled.actual_units == D.new("0")
+      assert reconciled.metadata["outcome"] == "breaker_open"
     end
 
     test "records append-only breaker trips with evidence references" do

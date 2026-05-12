@@ -3,6 +3,7 @@ defmodule Scoria.SRE.TelemetryTest do
 
   alias Scoria.SRE.Adapters.Parapet
   alias Scoria.SRE.Telemetry
+  alias Scoria.SRE.TelemetryIdentity
 
   setup do
     parent = self()
@@ -30,13 +31,13 @@ defmodule Scoria.SRE.TelemetryTest do
     :ok
   end
 
-  test "quality telemetry preserves incident and version metadata for Parapet consumers" do
+  test "quality telemetry preserves canonical identity and correlation refs for Parapet consumers" do
     :ok =
       Telemetry.emit_quality(%{
         score: 0.61,
         threshold: 0.8,
         tenant_id: "tenant-1",
-        incident_key: "tenant-1:quality:helpfulness:quality_regression",
+        subject_kind: "workflow",
         reason_code: "quality_regression",
         severity: "review",
         trace_id: "trace-123",
@@ -50,10 +51,20 @@ defmodule Scoria.SRE.TelemetryTest do
     assert_receive {:telemetry_event, [:scoria, :sre, :sli, :quality], measurements, metadata}
     assert measurements.score == 0.61
     assert measurements.threshold == 0.8
-    assert metadata.incident_key == "tenant-1:quality:helpfulness:quality_regression"
+    assert metadata.identity_key ==
+             TelemetryIdentity.identity_key(%{
+               tenant_id: "tenant-1",
+               subject_kind: "workflow",
+               policy_key: "quality:helpfulness",
+               reason_code: "quality_regression",
+               window_bucket: "global",
+               severity: "review"
+             })
+
     assert metadata.reason_code == "quality_regression"
     assert metadata.scorer_version == "scorer:v2"
     assert metadata.baseline_version == "baseline:v4"
+    refute Map.has_key?(metadata, :incident_key)
     refute Map.has_key?(metadata, :prompt_text)
 
     parapet_event = Parapet.translate([:scoria, :sre, :sli, :quality], measurements, metadata)
@@ -72,7 +83,7 @@ defmodule Scoria.SRE.TelemetryTest do
         duration_ms: 245,
         threshold_ms: 200,
         tenant_id: "tenant-1",
-        incident_key: "tenant-1:latency:provider:openai:latency_budget",
+        subject_kind: "workflow_step",
         reason_code: "latency_budget_burn",
         severity: "page",
         trace_id: "trace-latency",
@@ -88,7 +99,9 @@ defmodule Scoria.SRE.TelemetryTest do
     assert measurements.threshold_ms == 200
     assert metadata.provider == "openai"
     assert metadata.model == "gpt-5"
-    assert metadata.incident_key == "tenant-1:latency:provider:openai:latency_budget"
+    assert metadata.identity_key ==
+             "tenant-1:workflow_step:provider:openai:latency_budget_burn:global:openai:gpt-5"
+
     refute Map.has_key?(metadata, :actor_id)
   end
 

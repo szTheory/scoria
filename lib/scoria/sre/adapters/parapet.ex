@@ -4,11 +4,13 @@ defmodule Scoria.SRE.Adapters.Parapet do
   """
 
   @label_keys [
+    :identity_key,
     :tenant_id,
-    :incident_key,
+    :subject_kind,
     :reason_code,
     :severity,
     :policy_key,
+    :window_bucket,
     :provider,
     :model,
     :tool_name,
@@ -17,7 +19,7 @@ defmodule Scoria.SRE.Adapters.Parapet do
     :state
   ]
 
-  @ref_keys [:trace_id, :run_id, :scorer_version, :baseline_version]
+  @ref_keys [:trace_id, :run_id, :workflow_run_id, :scorer_version, :baseline_version]
 
   def translate([:scoria, :sre, :sli, category], measurements, metadata) do
     %{
@@ -26,6 +28,17 @@ defmodule Scoria.SRE.Adapters.Parapet do
       value: metric_value(category, measurements),
       measurements: Map.new(measurements),
       labels: take_keys(metadata, @label_keys),
+      refs: take_keys(metadata, @ref_keys)
+    }
+  end
+
+  def translate([:scoria, :sre, :incident, :lifecycle], measurements, metadata) do
+    %{
+      metric: "scoria.incident.lifecycle",
+      category: :incident_lifecycle,
+      value: Map.get(measurements, :count, 1),
+      measurements: Map.new(measurements),
+      labels: take_keys(metadata, [:incident_key | @label_keys]),
       refs: take_keys(metadata, @ref_keys)
     }
   end

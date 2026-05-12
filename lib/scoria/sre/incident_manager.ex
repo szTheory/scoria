@@ -10,6 +10,7 @@ defmodule Scoria.SRE.IncidentManager do
   alias Ecto.Multi
   alias Scoria.Repo
   alias Scoria.SRE.{AlertEvent, Incident, IncidentEvent, NotificationDelivery}
+  alias Scoria.SRE.Telemetry
 
   def record_alert_event(envelope) when is_map(envelope) do
     envelope = normalize_envelope(envelope)
@@ -42,6 +43,8 @@ defmodule Scoria.SRE.IncidentManager do
          incident_event: incident_event,
          notification_deliveries: notification_deliveries
        }} ->
+        emit_incident_telemetry(incident, alert_event, notification_deliveries, envelope)
+
         {:ok,
          %{
            incident: incident,
@@ -226,6 +229,24 @@ defmodule Scoria.SRE.IncidentManager do
 
   defp normalize_key(key) when is_atom(key), do: key
   defp normalize_key(key) when is_binary(key), do: Map.get(@envelope_keys, key, key)
+
+  defp emit_incident_telemetry(incident, alert_event, notification_deliveries, envelope) do
+    Telemetry.emit_incident_lifecycle(%{
+      tenant_id: incident.tenant_id,
+      subject_kind: Map.get(envelope, :subject_kind, "workflow"),
+      policy_key: Map.get(envelope, :policy_key),
+      reason_code: alert_event.reason_code,
+      severity: incident.severity,
+      trace_id: alert_event.trace_id,
+      workflow_run_id: alert_event.workflow_run_id,
+      incident_key: incident.incident_key,
+      scorer_version: alert_event.scorer_version_ref,
+      baseline_version: alert_event.baseline_version_ref,
+      delivery_count: length(notification_deliveries),
+      window_bucket: Map.get(envelope, :window_bucket, "global"),
+      state: alert_event.status
+    })
+  end
 
   defp incident_key(envelope) do
     Map.get_lazy(envelope, :incident_key, fn ->

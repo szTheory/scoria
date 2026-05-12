@@ -2,7 +2,7 @@ defmodule Scoria.Repo.Migrations.CreateSreIncidentAndAuditTables do
   use Ecto.Migration
 
   def change do
-    create table(:ai_alert_policies, primary_key: false) do
+    create_if_not_exists table(:ai_alert_policies, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:tenant_id, :string, null: false)
       add(:policy_key, :string, null: false)
@@ -19,13 +19,13 @@ defmodule Scoria.Repo.Migrations.CreateSreIncidentAndAuditTables do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(index(:ai_alert_policies, [:tenant_id]))
-    create(index(:ai_alert_policies, [:policy_key]))
-    create(index(:ai_alert_policies, [:severity]))
-    create(index(:ai_alert_policies, [:enabled]))
-    create(unique_index(:ai_alert_policies, [:tenant_id, :policy_key, :sli_kind]))
+    create_if_not_exists(index(:ai_alert_policies, [:tenant_id]))
+    create_if_not_exists(index(:ai_alert_policies, [:policy_key]))
+    create_if_not_exists(index(:ai_alert_policies, [:severity]))
+    create_if_not_exists(index(:ai_alert_policies, [:enabled]))
+    create_if_not_exists(unique_index(:ai_alert_policies, [:tenant_id, :policy_key, :sli_kind]))
 
-    create table(:ai_incidents, primary_key: false) do
+    create_if_not_exists table(:ai_incidents, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:tenant_id, :string, null: false)
       add(:incident_key, :string, null: false)
@@ -45,13 +45,13 @@ defmodule Scoria.Repo.Migrations.CreateSreIncidentAndAuditTables do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(index(:ai_incidents, [:tenant_id]))
-    create(index(:ai_incidents, [:incident_key]))
-    create(index(:ai_incidents, [:severity]))
-    create(index(:ai_incidents, [:status]))
-    create(unique_index(:ai_incidents, [:tenant_id, :incident_key]))
+    create_if_not_exists(index(:ai_incidents, [:tenant_id]))
+    create_if_not_exists(index(:ai_incidents, [:incident_key]))
+    create_if_not_exists(index(:ai_incidents, [:severity]))
+    create_if_not_exists(index(:ai_incidents, [:status]))
+    create_if_not_exists(unique_index(:ai_incidents, [:tenant_id, :incident_key]))
 
-    create table(:ai_alert_events, primary_key: false) do
+    create_if_not_exists table(:ai_alert_events, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:tenant_id, :string, null: false)
 
@@ -77,13 +77,13 @@ defmodule Scoria.Repo.Migrations.CreateSreIncidentAndAuditTables do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(index(:ai_alert_events, [:tenant_id]))
-    create(index(:ai_alert_events, [:incident_key]))
-    create(index(:ai_alert_events, [:severity]))
-    create(index(:ai_alert_events, [:status]))
-    create(index(:ai_alert_events, [:inserted_at]))
+    create_if_not_exists(index(:ai_alert_events, [:tenant_id]))
+    create_if_not_exists(index(:ai_alert_events, [:incident_key]))
+    create_if_not_exists(index(:ai_alert_events, [:severity]))
+    create_if_not_exists(index(:ai_alert_events, [:status]))
+    create_if_not_exists(index(:ai_alert_events, [:inserted_at]))
 
-    create table(:ai_incident_events, primary_key: false) do
+    create_if_not_exists table(:ai_incident_events, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:tenant_id, :string, null: false)
 
@@ -104,11 +104,11 @@ defmodule Scoria.Repo.Migrations.CreateSreIncidentAndAuditTables do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(index(:ai_incident_events, [:tenant_id]))
-    create(index(:ai_incident_events, [:incident_key]))
-    create(index(:ai_incident_events, [:inserted_at]))
+    create_if_not_exists(index(:ai_incident_events, [:tenant_id]))
+    create_if_not_exists(index(:ai_incident_events, [:incident_key]))
+    create_if_not_exists(index(:ai_incident_events, [:inserted_at]))
 
-    create table(:ai_notification_deliveries, primary_key: false) do
+    create_if_not_exists table(:ai_notification_deliveries, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:tenant_id, :string, null: false)
       add(:incident_id, references(:ai_incidents, on_delete: :nilify_all, type: :binary_id))
@@ -129,12 +129,12 @@ defmodule Scoria.Repo.Migrations.CreateSreIncidentAndAuditTables do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(index(:ai_notification_deliveries, [:tenant_id]))
-    create(index(:ai_notification_deliveries, [:delivery_status]))
-    create(index(:ai_notification_deliveries, [:pending_at]))
-    create(index(:ai_notification_deliveries, [:inserted_at]))
+    create_if_not_exists(index(:ai_notification_deliveries, [:tenant_id]))
+    create_if_not_exists(index(:ai_notification_deliveries, [:delivery_status]))
+    create_if_not_exists(index(:ai_notification_deliveries, [:pending_at]))
+    create_if_not_exists(index(:ai_notification_deliveries, [:inserted_at]))
 
-    create table(:ai_audit_outbox_events, primary_key: false) do
+    create_if_not_exists table(:ai_audit_outbox_events, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:tenant_id, :string, null: false)
       add(:event_type, :string, null: false)
@@ -155,10 +155,10 @@ defmodule Scoria.Repo.Migrations.CreateSreIncidentAndAuditTables do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(index(:ai_audit_outbox_events, [:tenant_id]))
-    create(index(:ai_audit_outbox_events, [:sink_status]))
-    create(index(:ai_audit_outbox_events, [:pending_at]))
-    create(index(:ai_audit_outbox_events, [:inserted_at]))
-    create(unique_index(:ai_audit_outbox_events, [:tenant_id, :dedupe_key]))
+    create_if_not_exists(index(:ai_audit_outbox_events, [:tenant_id]))
+    create_if_not_exists(index(:ai_audit_outbox_events, [:sink_status]))
+    create_if_not_exists(index(:ai_audit_outbox_events, [:pending_at]))
+    create_if_not_exists(index(:ai_audit_outbox_events, [:inserted_at]))
+    create_if_not_exists(unique_index(:ai_audit_outbox_events, [:tenant_id, :dedupe_key]))
   end
 end

@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Scoria.Install do
   use Mix.Task
 
-  @shortdoc "Installs Scoria dashboard into a Phoenix application"
+  @shortdoc "Installs the Scoria dashboard and workflow routes into a Phoenix application"
 
   def run(_args) do
     # In a real app we'd search for the router and tailwind config

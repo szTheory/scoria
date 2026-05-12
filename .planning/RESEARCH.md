@@ -247,3 +247,7 @@ Step 2.6: SKIPPED (no external dependencies identified outside of the Elixir/Pho
 
 **Research date:** 2024-05-18
 **Valid until:** 2025-05-18
+
+## External Reference
+
+- AWS Bedrock AgentCore lessons captured in `.planning/research/agentcore-lessons.md`.

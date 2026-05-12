@@ -67,3 +67,6 @@ jobs:
 
       - name: Run tests
         run: mix test
+
+      - name: Run knowledge lane
+        run: mix test.knowledge

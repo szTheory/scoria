@@ -1,6 +1,5 @@
 defmodule ScoriaWeb.EvalSpecLive.Index do
   use Phoenix.LiveView
-  import Phoenix.HTML.Form
   alias Scoria.Eval
   alias Scoria.Eval.EvalSpec
 

@@ -7,6 +7,7 @@ defmodule Scoria.MCP.Executor do
   alias Scoria.SRE.BudgetEngine
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE
+  alias Scoria.SRE.Telemetry
 
   @doc """
   Executes a tool module with the given arguments and context.
@@ -32,25 +33,31 @@ defmodule Scoria.MCP.Executor do
            end) do
         {:ok, {:completed, result, duration}} ->
           reconcile_budget(execution_context, access_context, result, "completed")
+          emit_sre_telemetry(tool_module, access_context, "completed", duration)
           :telemetry.execute([:scoria, :tool, :completed], %{duration: duration}, metadata)
           result
 
         {:error, {:timeout, duration}} ->
           reconcile_budget(execution_context, access_context, %{}, "timeout")
+          emit_sre_telemetry(tool_module, access_context, "timeout", duration)
           :telemetry.execute([:scoria, :tool, :timeout], %{duration: duration}, metadata)
           {:error, :timeout}
 
         {:error, {:execution_failed, duration, reason}} ->
           reconcile_budget(execution_context, access_context, %{}, "execution_failed")
+          emit_sre_telemetry(tool_module, access_context, "execution_failed", duration)
           :telemetry.execute([:scoria, :tool, :failed], %{duration: duration}, Map.put(metadata, :reason, reason))
           {:error, :execution_failed}
 
         {:error, %{status: :breaker_open} = envelope} ->
+          reconcile_budget(execution_context, access_context, %{}, "breaker_open")
+          emit_breaker_open_telemetry(tool_module, access_context, envelope)
           :telemetry.execute([:scoria, :tool, :failed], %{duration: 0}, Map.put(metadata, :reason, :breaker_open))
           {:error, envelope}
       end
     else
       {:error, envelope} ->
+        emit_access_denied_telemetry(tool_module, context, envelope)
         {:error, envelope}
     end
   end
@@ -97,6 +104,10 @@ defmodule Scoria.MCP.Executor do
 
   defp reconcile_budget(nil, _context, _result, _outcome), do: :ok
   defp reconcile_budget(%{audit_outbox_event: _audit_outbox_event}, _context, _result, _outcome), do: :ok
+
+  defp reconcile_budget(%{reservation: reservation}, _context, _result, "breaker_open") do
+    BudgetEngine.reconcile_breaker_open(reservation)
+  end
 
   defp reconcile_budget(%{reservation: reservation}, context, result, outcome) do
     BudgetEngine.reconcile_usage(reservation, %{
@@ -228,4 +239,92 @@ defmodule Scoria.MCP.Executor do
       }
     end
   end
+
+  defp emit_sre_telemetry(tool_module, context, outcome, duration_native) do
+    attrs =
+      base_attrs(tool_module, context, outcome)
+      |> Map.put(:duration_ms, System.convert_time_unit(duration_native, :native, :millisecond))
+      |> Map.put(:success, outcome == "completed")
+
+    Telemetry.emit_latency(attrs)
+    Telemetry.emit_tool_reliability(attrs)
+    maybe_emit_budget(attrs, context, outcome)
+  end
+
+  defp emit_breaker_open_telemetry(tool_module, context, envelope) do
+    attrs =
+      base_attrs(tool_module, context, "breaker_open")
+      |> Map.merge(%{
+        duration_ms: 0,
+        success: false,
+        breaker_key: Map.get(envelope, :breaker_key),
+        state: "open",
+        threshold: 1,
+        trip_count: 1
+      })
+
+    Telemetry.emit_latency(attrs)
+    Telemetry.emit_tool_reliability(attrs)
+    Telemetry.emit_breaker_state(attrs)
+    maybe_emit_budget(attrs, context, "breaker_open")
+  end
+
+  defp emit_access_denied_telemetry(tool_module, context, %{status: :access_denied}) do
+    attrs =
+      base_attrs(tool_module, context, "access_denied")
+      |> Map.put(:duration_ms, 0)
+      |> Map.put(:success, false)
+
+    Telemetry.emit_latency(attrs)
+    Telemetry.emit_tool_reliability(attrs)
+    maybe_emit_budget(attrs, context, "access_denied")
+  end
+
+  defp emit_access_denied_telemetry(_tool_module, _context, _envelope), do: :ok
+
+  defp base_attrs(tool_module, context, outcome) do
+    %{
+      tenant_id: Map.get(context, :tenant_id, "system"),
+      subject_kind: "mcp_tool",
+      policy_key: Map.get(context, :policy_key, inspect(tool_module)),
+      reason_code: outcome,
+      trace_id: Map.get(context, :trace_id),
+      run_id: Map.get(context, :run_id),
+      tool_name: tool_name(tool_module),
+      integration_kind: Map.get(context, :integration_kind, "tool"),
+      provider: Map.get(context, :provider),
+      model: Map.get(context, :model)
+    }
+  end
+
+  defp tool_name(tool_module) do
+    if function_exported?(tool_module, :name, 0), do: tool_module.name(), else: inspect(tool_module)
+  end
+
+  defp maybe_emit_budget(attrs, context, outcome) do
+    if budget_required?(context) do
+      actual = actual_units(context, %{}, outcome)
+      estimated = estimated_units(context)
+      burn_rate = numeric_ratio(actual, estimated)
+
+      Telemetry.emit_cost(Map.put(attrs, :cost_usd, actual))
+
+      Telemetry.emit_budget_burn(
+        attrs
+        |> Map.put(:burn_rate, burn_rate)
+        |> Map.put(:budget_remaining, budget_remaining(actual, estimated))
+        |> Map.put(:threshold, estimated)
+      )
+    end
+  end
+
+  defp numeric_ratio(actual, estimated) when is_number(actual) and is_number(estimated) and estimated != 0,
+    do: actual / estimated
+
+  defp numeric_ratio(_actual, _estimated), do: 0
+
+  defp budget_remaining(actual, estimated) when is_number(actual) and is_number(estimated),
+    do: max(estimated - actual, 0)
+
+  defp budget_remaining(_actual, estimated), do: estimated || 0
 end

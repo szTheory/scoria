@@ -1,6 +1,5 @@
 defmodule Mix.Tasks.Scoria.InstallTest do
   use ExUnit.Case, async: false
-  import Mix.Tasks.Scoria.Install
 
   @tmp_dir "test/tmp/installer"
 

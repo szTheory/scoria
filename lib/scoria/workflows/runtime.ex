@@ -6,6 +6,7 @@ defmodule Scoria.Workflows.Runtime do
   alias Decimal, as: D
   alias Scoria.SRE.BudgetEngine
   alias Scoria.SRE.BreakerRegistry
+  alias Scoria.SRE.Telemetry
   alias Scoria.Workflows
 
   @default_timeout 5_000
@@ -21,28 +22,34 @@ defmodule Scoria.Workflows.Runtime do
 
       case reserve_budget(step, run, budget_context) do
         {:error, envelope} ->
+          emit_budget_rejection(step, run, budget_context, envelope)
           Workflows.fail_step(step.id, normalize_budget_envelope(envelope))
 
         {:ok, reservation_context} ->
           case BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end) do
-            {:ok, {:completed, result}} ->
+            {:ok, {:completed, result, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, result, "completed")
+              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms)
               Workflows.complete_step(step.id, attach_budget_evidence(normalize_payload(result), reservation_context))
 
-            {:ok, {:waiting_for_approval, approval_attrs}} ->
+            {:ok, {:waiting_for_approval, approval_attrs, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "waiting_for_approval")
+              emit_runtime_telemetry(step, run, budget_context, "waiting_for_approval", duration_ms)
               Workflows.mark_waiting_for_approval(run.id, step.id, Map.new(approval_attrs))
 
-            {:ok, {:handoff, handoff_attrs}} ->
+            {:ok, {:handoff, handoff_attrs, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "handoff")
+              emit_runtime_telemetry(step, run, budget_context, "handoff", duration_ms)
               handle_handoff(run, step, Map.new(handoff_attrs))
 
-            {:error, {:handler_error, reason}} ->
+            {:error, {:handler_error, reason, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
+              emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms)
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
 
-            {:ok, {:other, other}} ->
+            {:ok, {:other, other, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, other, "completed")
+              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms)
 
               Workflows.complete_step(
                 step.id,
@@ -50,15 +57,19 @@ defmodule Scoria.Workflows.Runtime do
                 run_status: "running"
               )
 
-            {:error, {:timeout}} ->
+            {:error, {:timeout, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "timeout")
+              emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms)
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => "timeout"}, reservation_context))
 
-            {:error, {:execution_failed, reason}} ->
+            {:error, {:execution_failed, reason, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
+              emit_runtime_telemetry(step, run, budget_context, "execution_failed", duration_ms)
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
 
             {:error, %{status: :breaker_open} = envelope} ->
+              reconcile_breaker_open_budget(reservation_context, envelope)
+              emit_runtime_breaker_open(step, run, budget_context, envelope)
               Workflows.fail_step(step.id, attach_budget_evidence(normalize_budget_envelope(envelope), reservation_context))
           end
       end
@@ -66,19 +77,21 @@ defmodule Scoria.Workflows.Runtime do
   end
 
   defp execute_handler(handler, step, run, timeout) do
+    started_at = System.monotonic_time()
+
     task =
       Task.Supervisor.async_nolink(Scoria.Workflow.TaskSupervisor, fn ->
         invoke_handler(handler, step, run)
       end)
 
     case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
-      {:ok, {:ok, result}} -> {:ok, {:completed, result}}
-      {:ok, {:waiting_for_approval, approval_attrs}} -> {:ok, {:waiting_for_approval, approval_attrs}}
-      {:ok, {:handoff, handoff_attrs}} -> {:ok, {:handoff, handoff_attrs}}
-      {:ok, {:error, reason}} -> {:error, {:handler_error, reason}}
-      {:ok, other} -> {:ok, {:other, other}}
-      nil -> {:error, {:timeout}}
-      {:exit, reason} -> {:error, {:execution_failed, reason}}
+      {:ok, {:ok, result}} -> {:ok, {:completed, result, elapsed_ms(started_at)}}
+      {:ok, {:waiting_for_approval, approval_attrs}} -> {:ok, {:waiting_for_approval, approval_attrs, elapsed_ms(started_at)}}
+      {:ok, {:handoff, handoff_attrs}} -> {:ok, {:handoff, handoff_attrs, elapsed_ms(started_at)}}
+      {:ok, {:error, reason}} -> {:error, {:handler_error, reason, elapsed_ms(started_at)}}
+      {:ok, other} -> {:ok, {:other, other, elapsed_ms(started_at)}}
+      nil -> {:error, {:timeout, elapsed_ms(started_at)}}
+      {:exit, reason} -> {:error, {:execution_failed, reason, elapsed_ms(started_at)}}
     end
   end
 
@@ -115,6 +128,15 @@ defmodule Scoria.Workflows.Runtime do
       actual_units: actual_units(budget_context, result, outcome),
       metadata: %{"outcome" => outcome}
     })
+  end
+
+  defp reconcile_breaker_open_budget(nil, _envelope), do: :ok
+
+  defp reconcile_breaker_open_budget(reservation_context, envelope) do
+    BudgetEngine.reconcile_breaker_open(
+      reservation_context,
+      Map.take(envelope, [:breaker_key, :reason_code, :status])
+    )
   end
 
   defp handle_handoff(run, step, attrs) do
@@ -228,5 +250,90 @@ defmodule Scoria.Workflows.Runtime do
       is_map(result) && Map.has_key?(result, "actual_cost_usd") -> Map.fetch!(result, "actual_cost_usd")
       true -> estimated_units(budget_context)
     end
+  end
+
+  defp emit_runtime_telemetry(step, run, budget_context, outcome, duration_ms) do
+    attrs =
+      base_runtime_attrs(step, run, budget_context, outcome)
+      |> Map.put(:duration_ms, duration_ms)
+      |> Map.put(:success, outcome in ["completed", "waiting_for_approval", "handoff"])
+
+    Telemetry.emit_latency(attrs)
+    Telemetry.emit_tool_reliability(attrs)
+    maybe_emit_budget(attrs, budget_context, outcome)
+  end
+
+  defp emit_runtime_breaker_open(step, run, budget_context, envelope) do
+    attrs =
+      base_runtime_attrs(step, run, budget_context, "breaker_open")
+      |> Map.merge(%{
+        breaker_key: Map.get(envelope, :breaker_key),
+        state: "open",
+        threshold: 1,
+        trip_count: 1,
+        duration_ms: 0,
+        success: false
+      })
+
+    Telemetry.emit_latency(attrs)
+    Telemetry.emit_tool_reliability(attrs)
+    Telemetry.emit_breaker_state(attrs)
+    maybe_emit_budget(attrs, budget_context, "breaker_open")
+  end
+
+  defp emit_budget_rejection(step, run, budget_context, envelope) do
+    attrs =
+      base_runtime_attrs(step, run, budget_context, Map.get(envelope, :reason_code, "budget_rejected"))
+      |> Map.put(:success, false)
+
+    maybe_emit_budget(attrs, budget_context, "budget_rejected")
+  end
+
+  defp base_runtime_attrs(step, run, budget_context, outcome) do
+    %{
+      tenant_id: Map.get(budget_context, :tenant_id, "system"),
+      subject_kind: "workflow_step",
+      policy_key: Map.get(budget_context, :policy_key, "workflow:#{step.kind}"),
+      reason_code: outcome,
+      trace_id: Map.get(budget_context, :trace_id, step.id),
+      run_id: run.id,
+      tool_name: step.kind,
+      integration_kind: Map.get(budget_context, :integration_kind, "workflow"),
+      provider: Map.get(budget_context, :provider),
+      model: Map.get(budget_context, :model)
+    }
+  end
+
+  defp maybe_emit_budget(attrs, budget_context, outcome) do
+    if budget_required?(budget_context) do
+      actual = actual_units(budget_context, %{}, outcome)
+      estimated = estimated_units(budget_context)
+      burn_rate = numeric_ratio(actual, estimated)
+
+      Telemetry.emit_cost(Map.put(attrs, :cost_usd, actual))
+
+      Telemetry.emit_budget_burn(
+        attrs
+        |> Map.put(:burn_rate, burn_rate)
+        |> Map.put(:budget_remaining, budget_remaining(actual, estimated))
+        |> Map.put(:threshold, estimated)
+      )
+    end
+  end
+
+  defp numeric_ratio(actual, estimated) when is_number(actual) and is_number(estimated) and estimated != 0,
+    do: actual / estimated
+
+  defp numeric_ratio(_actual, _estimated), do: 0
+
+  defp budget_remaining(actual, estimated) when is_number(actual) and is_number(estimated),
+    do: max(estimated - actual, 0)
+
+  defp budget_remaining(_actual, estimated), do: estimated || 0
+
+  defp elapsed_ms(started_at) do
+    System.monotonic_time()
+    |> Kernel.-(started_at)
+    |> System.convert_time_unit(:native, :millisecond)
   end
 end

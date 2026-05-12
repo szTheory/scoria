@@ -186,5 +186,46 @@ defmodule Scoria.SRE.BudgetEngineTest do
       assert updated.actual_units == D.new("10.0")
       assert updated.metadata["outcome"] == "success"
     end
+
+    test "reconciles breaker-open reservations to zero actual usage" do
+      {:ok, policy} =
+        SRE.create_budget_policy(%{
+          tenant_id: "tenant-breaker-open",
+          policy_key: "tenant:default:cost_usd",
+          scope_key: "tenant:tenant-breaker-open",
+          scope_kind: "tenant",
+          resource_kind: "cost_usd",
+          status: "active",
+          warn_threshold: D.new("80.0"),
+          trip_threshold: D.new("100.0"),
+          max_workflow_steps: 25,
+          max_repeated_tool_calls: 3,
+          max_consecutive_failures: 2,
+          metadata: %{}
+        })
+
+      assert {:ok, %{reservation: reservation}} =
+               BudgetEngine.reserve_step(%{
+                 tenant_id: policy.tenant_id,
+                 actor_id: "actor-1",
+                 run_id: Ecto.UUID.generate(),
+                 step_id: Ecto.UUID.generate(),
+                 trace_id: "trace-breaker-open",
+                 resource: "cost_usd",
+                 reason_code: "llm_completion",
+                 estimated_units: D.new("12.5"),
+                 integration_kind: "provider"
+               })
+
+      assert {:ok, updated} =
+               BudgetEngine.reconcile_breaker_open(reservation, %{
+                 "breaker_key" => "provider:search"
+               })
+
+      assert updated.status == "reconciled"
+      assert updated.actual_units == D.new("0")
+      assert updated.metadata["outcome"] == "breaker_open"
+      assert updated.metadata["breaker_key"] == "provider:search"
+    end
   end
 end

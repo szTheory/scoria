@@ -3,6 +3,8 @@ import Config
 config :scoria,
   ecto_repos: [Scoria.Repo]
 
-config :scoria, Scoria.Repo, pool: Ecto.Adapters.SQL.Sandbox
+config :scoria, Scoria.Repo,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  types: Scoria.PostgrexTypes
 
 import_config "#{config_env()}.exs"

@@ -19,4 +19,8 @@ defmodule ScoriaWeb.RouterTest do
   test "scoria_dashboard macro mounts orchestrator live view" do
     assert Phoenix.Router.route_info(DummyRouter, "GET", "/scoria", nil).plug == Phoenix.LiveView.Plug
   end
+
+  test "scoria_dashboard macro mounts workflow run live view" do
+    assert Phoenix.Router.route_info(DummyRouter, "GET", "/scoria/workflows/123", nil).plug == Phoenix.LiveView.Plug
+  end
 end

@@ -11,6 +11,7 @@ defmodule ScoriaWeb.Router do
 
         live_session :scoria_dashboard do
           live "/", ScoriaWeb.OrchestratorLive, :index
+          live "/workflows/:id", ScoriaWeb.WorkflowLive.Show, :show
         end
       end
     end

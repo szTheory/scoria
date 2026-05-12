@@ -2,7 +2,7 @@ defmodule Scoria.Repo.Migrations.CreateSreBudgetAndBreakerTables do
   use Ecto.Migration
 
   def change do
-    create table(:ai_budget_policies, primary_key: false) do
+    create_if_not_exists table(:ai_budget_policies, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:tenant_id, :string, null: false)
       add(:policy_key, :string, null: false)
@@ -21,16 +21,16 @@ defmodule Scoria.Repo.Migrations.CreateSreBudgetAndBreakerTables do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(index(:ai_budget_policies, [:tenant_id]))
-    create(index(:ai_budget_policies, [:policy_key]))
-    create(index(:ai_budget_policies, [:scope_key]))
-    create(index(:ai_budget_policies, [:status]))
+    create_if_not_exists(index(:ai_budget_policies, [:tenant_id]))
+    create_if_not_exists(index(:ai_budget_policies, [:policy_key]))
+    create_if_not_exists(index(:ai_budget_policies, [:scope_key]))
+    create_if_not_exists(index(:ai_budget_policies, [:status]))
 
-    create(
+    create_if_not_exists(
       unique_index(:ai_budget_policies, [:tenant_id, :policy_key, :scope_key, :resource_kind])
     )
 
-    create table(:ai_budget_reservations, primary_key: false) do
+    create_if_not_exists table(:ai_budget_reservations, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:tenant_id, :string, null: false)
       add(:policy_id, references(:ai_budget_policies, on_delete: :nilify_all, type: :binary_id))
@@ -53,14 +53,14 @@ defmodule Scoria.Repo.Migrations.CreateSreBudgetAndBreakerTables do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(index(:ai_budget_reservations, [:tenant_id]))
-    create(index(:ai_budget_reservations, [:policy_key]))
-    create(index(:ai_budget_reservations, [:scope_key]))
-    create(index(:ai_budget_reservations, [:status]))
-    create(index(:ai_budget_reservations, [:workflow_run_id]))
-    create(index(:ai_budget_reservations, [:inserted_at]))
+    create_if_not_exists(index(:ai_budget_reservations, [:tenant_id]))
+    create_if_not_exists(index(:ai_budget_reservations, [:policy_key]))
+    create_if_not_exists(index(:ai_budget_reservations, [:scope_key]))
+    create_if_not_exists(index(:ai_budget_reservations, [:status]))
+    create_if_not_exists(index(:ai_budget_reservations, [:workflow_run_id]))
+    create_if_not_exists(index(:ai_budget_reservations, [:inserted_at]))
 
-    create table(:ai_breaker_trips, primary_key: false) do
+    create_if_not_exists table(:ai_breaker_trips, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
       add(:tenant_id, :string, null: false)
       add(:breaker_key, :string, null: false)
@@ -76,9 +76,9 @@ defmodule Scoria.Repo.Migrations.CreateSreBudgetAndBreakerTables do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(index(:ai_breaker_trips, [:tenant_id]))
-    create(index(:ai_breaker_trips, [:breaker_key]))
-    create(index(:ai_breaker_trips, [:state]))
-    create(index(:ai_breaker_trips, [:inserted_at]))
+    create_if_not_exists(index(:ai_breaker_trips, [:tenant_id]))
+    create_if_not_exists(index(:ai_breaker_trips, [:breaker_key]))
+    create_if_not_exists(index(:ai_breaker_trips, [:state]))
+    create_if_not_exists(index(:ai_breaker_trips, [:inserted_at]))
   end
 end

@@ -64,7 +64,6 @@ defmodule Scoria.MCP.ExecutorTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
-    ensure_audit_outbox_table!()
     :fuse.remove("remote_mcp:https://mcp.example.test")
     :fuse.remove("tool:local-dummy")
     if :ets.whereis(:scoria_breaker_registry) != :undefined, do: :ets.delete(:scoria_breaker_registry, "remote_mcp:https://mcp.example.test")
@@ -184,21 +183,37 @@ defmodule Scoria.MCP.ExecutorTest do
       assert reservation.metadata["outcome"] == "execution_failed"
     end
 
-    test "breaker-open failures are distinct from timeouts for remote integrations", %{context: context} do
+    test "breaker-open failures reconcile reservations and stay distinct from timeouts for remote integrations",
+         %{context: context} do
+      create_budget_policy!("tenant-1", "cost_usd")
+      trace_id = "trace-breaker-open"
+
       remote_context =
         Map.merge(context, %{
           integration_kind: "remote_mcp",
-          mcp_endpoint: "https://mcp.example.test"
+          mcp_endpoint: "https://mcp.example.test",
+          run_id: Ecto.UUID.generate(),
+          estimated_cost_usd: Decimal.new("5.0"),
+          sensitive_tool: true
         })
 
       assert {:error, :execution_failed} = Executor.execute(DummyTool, %{"action" => "crash"}, remote_context)
 
       assert {:error, envelope} =
-               Executor.execute(DummyTool, %{"action" => "success"}, remote_context)
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(remote_context, :trace_id, trace_id)
+               )
 
       assert envelope.status == :breaker_open
       assert envelope.reason_code == "breaker_open"
       assert envelope.breaker_key == "remote_mcp:https://mcp.example.test"
+
+      reservation = Repo.get_by!(BudgetReservation, trace_id: trace_id)
+      assert reservation.status == "reconciled"
+      assert Decimal.equal?(reservation.actual_units, Decimal.new("0"))
+      assert reservation.metadata["outcome"] == "breaker_open"
     end
 
     test "local tools are not breaker-wrapped unless the context marks them external", %{context: context} do
@@ -290,33 +305,4 @@ defmodule Scoria.MCP.ExecutorTest do
              })
   end
 
-  defp ensure_audit_outbox_table! do
-    Repo.query!("""
-    CREATE TABLE IF NOT EXISTS ai_audit_outbox_events (
-      id uuid PRIMARY KEY,
-      tenant_id varchar NOT NULL,
-      event_type varchar NOT NULL,
-      policy_class varchar NOT NULL,
-      sink_status varchar NOT NULL DEFAULT 'pending',
-      dedupe_key varchar NOT NULL,
-      payload_hash varchar NOT NULL,
-      pending_at timestamp(6) without time zone NOT NULL,
-      sent_at timestamp(6) without time zone NULL,
-      attempt_count integer NOT NULL DEFAULT 0,
-      actor_ref varchar NULL,
-      workflow_run_id uuid NULL,
-      step_id uuid NULL,
-      trace_id varchar NULL,
-      redacted_refs jsonb NOT NULL DEFAULT '{}'::jsonb,
-      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
-      inserted_at timestamp(6) without time zone NOT NULL,
-      updated_at timestamp(6) without time zone NOT NULL
-    )
-    """)
-
-    Repo.query!("""
-    CREATE UNIQUE INDEX IF NOT EXISTS ai_audit_outbox_events_tenant_dedupe_key_idx
-    ON ai_audit_outbox_events (tenant_id, dedupe_key)
-    """)
-  end
 end

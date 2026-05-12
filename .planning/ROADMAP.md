@@ -37,7 +37,7 @@
 <summary>📅 v1.3 Seismograph (Phase 7-11) — PLANNED</summary>
 
 - [ ] Phase 7: SRE, Circuit Breakers & Ecosystem Synergy
-- [ ] Phase 8: Reconcile Budget Reservations on Breaker-Open Paths
+- [x] Phase 8: Reconcile Budget Reservations on Breaker-Open Paths
 - [ ] Phase 9: Restore Audited Approval and Incident Delivery Wiring
 - [ ] Phase 10: Wire Production SRE Telemetry and Fix Default Verification Bootstrap
 - [ ] Phase 11: Re-verify Seismograph and Align Milestone State
@@ -55,7 +55,7 @@
 | 5. Durable Agent Workflows & Handoffs | v1.1 | 4/4 | Complete | 2026-05-11 |
 | 6. Advanced RAG, Citations & Knowledge | v1.2 | 6/6 | Complete | 2026-05-11 |
 | 7. SRE, Circuit Breakers & Synergy | v1.3 | 8/8 | Open | - |
-| 8. Reconcile Budget Reservations on Breaker-Open Paths | v1.3 | 0/3 | Planned | - |
+| 8. Reconcile Budget Reservations on Breaker-Open Paths | v1.3 | 3/3 | Complete | 2026-05-12 |
 | 9. Restore Audited Approval and Incident Delivery Wiring | v1.3 | 0/3 | Planned | - |
-| 10. Wire Production SRE Telemetry and Fix Default Verification Bootstrap | v1.3 | 0/3 | Planned | - |
+| 10. Wire Production SRE Telemetry and Fix Default Verification Bootstrap | v1.3 | 0/4 | Planned | - |
 | 11. Re-verify Seismograph and Align Milestone State | v1.3 | 0/3 | Planned | - |

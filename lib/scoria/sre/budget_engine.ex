@@ -78,6 +78,18 @@ defmodule Scoria.SRE.BudgetEngine do
 
   def reconcile_usage(%{reservation: %BudgetReservation{} = reservation}, attrs), do: reconcile_usage(reservation, attrs)
 
+  def reconcile_breaker_open(reservation_or_context, metadata \\ %{}) do
+    reconcile_usage(reservation_or_context, %{
+      actual_units: D.new(0),
+      reconciliation_status: "matched",
+      metadata:
+        metadata
+        |> Map.new()
+        |> stringify_map_keys()
+        |> Map.put("outcome", "breaker_open")
+    })
+  end
+
   defp load_policy(attrs) do
     tenant_id = Map.fetch!(attrs, :tenant_id)
     resource_kind = Map.fetch!(attrs, :resource_kind)

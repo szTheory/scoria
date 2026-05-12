@@ -3,24 +3,10 @@ defmodule Scoria.SRE.Telemetry do
   Public Phase 7 telemetry helpers for SLI and breaker evidence.
   """
 
-  @event_prefix [:scoria, :sre, :sli]
-  @shared_metadata_keys [
-    :tenant_id,
-    :incident_key,
-    :reason_code,
-    :severity,
-    :trace_id,
-    :run_id,
-    :policy_key,
-    :provider,
-    :model,
-    :tool_name,
-    :integration_kind,
-    :scorer_version,
-    :baseline_version,
-    :breaker_key,
-    :state
-  ]
+  alias Scoria.SRE.TelemetryIdentity
+
+  @runtime_prefix [:scoria, :sre, :sli]
+  @incident_prefix [:scoria, :sre, :incident]
 
   def emit_latency(attrs), do: emit(:latency, attrs, [:duration_ms, :threshold_ms])
   def emit_cost(attrs), do: emit(:cost, attrs, [:cost_usd, :budget_usd, :token_count])
@@ -37,14 +23,30 @@ defmodule Scoria.SRE.Telemetry do
       |> Map.put(:success_count, if(Map.get(attrs, :success, true), do: 1, else: 0))
       |> Map.put(:failure_count, if(Map.get(attrs, :success, true), do: 0, else: 1))
 
-    metadata = take_metadata(attrs)
-    :telemetry.execute(@event_prefix ++ [:tool_reliability], measurements, metadata)
+    :telemetry.execute(@runtime_prefix ++ [:tool_reliability], measurements, TelemetryIdentity.runtime_metadata(attrs))
+    :ok
+  end
+
+  def emit_incident_lifecycle(attrs) do
+    attrs = Map.new(attrs)
+
+    measurements =
+      attrs
+      |> take_measurements([:delivery_count])
+      |> Map.put_new(:count, 1)
+
+    :telemetry.execute(@incident_prefix ++ [:lifecycle], measurements, TelemetryIdentity.incident_metadata(attrs))
     :ok
   end
 
   defp emit(kind, attrs, measurement_keys) do
     attrs = Map.new(attrs)
-    :telemetry.execute(@event_prefix ++ [kind], take_measurements(attrs, measurement_keys), take_metadata(attrs))
+    :telemetry.execute(
+      @runtime_prefix ++ [kind],
+      take_measurements(attrs, measurement_keys),
+      TelemetryIdentity.runtime_metadata(attrs)
+    )
+
     :ok
   end
 
@@ -57,12 +59,4 @@ defmodule Scoria.SRE.Telemetry do
     end)
   end
 
-  defp take_metadata(attrs) do
-    Enum.reduce(@shared_metadata_keys, %{}, fn key, acc ->
-      case Map.fetch(attrs, key) do
-        {:ok, value} -> Map.put(acc, key, value)
-        :error -> acc
-      end
-    end)
-  end
 end
