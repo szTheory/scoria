@@ -17,22 +17,21 @@ defmodule Scoria.SRE.IncidentManager do
 
     Multi.new()
     |> Multi.run(:incident, fn repo, _changes ->
-      {:ok, get_or_create_incident(repo, envelope)}
+      get_or_create_incident(repo, envelope)
     end)
     |> Multi.run(:alert_event, fn repo, %{incident: {incident, status}} ->
-      {:ok, create_alert_event(repo, incident, status, envelope)}
+      create_alert_event(repo, incident, status, envelope)
     end)
     |> Multi.run(:incident_event, fn repo,
                                      %{incident: {incident, _status}, alert_event: alert_event} ->
-      {:ok, append_incident_event_record(repo, incident, alert_event, envelope)}
+      append_incident_event_record(repo, incident, alert_event, envelope)
     end)
     |> Multi.run(:notification_deliveries, fn repo,
                                               %{
                                                 incident: {incident, incident_state},
                                                 alert_event: alert_event
                                               } ->
-      {:ok,
-       maybe_create_notification_deliveries(repo, incident, alert_event, incident_state, envelope)}
+      maybe_create_notification_deliveries(repo, incident, alert_event, incident_state, envelope)
     end)
     |> Repo.transaction()
     |> case do
@@ -43,7 +42,13 @@ defmodule Scoria.SRE.IncidentManager do
          incident_event: incident_event,
          notification_deliveries: notification_deliveries
        }} ->
-        emit_incident_telemetry(incident, alert_event, notification_deliveries, envelope)
+        emit_alert_lifecycle_telemetry(
+          incident,
+          alert_event,
+          incident_event,
+          notification_deliveries,
+          envelope
+        )
 
         {:ok,
          %{
@@ -63,11 +68,14 @@ defmodule Scoria.SRE.IncidentManager do
 
     Multi.new()
     |> Multi.run(:incident, fn repo, _changes ->
-      {:ok, get_or_create_incident(repo, attrs)}
+      get_or_create_incident(repo, attrs)
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{incident: {incident, _status}}} -> {:ok, incident}
+      {:ok, %{incident: {incident, status}}} ->
+        emit_incident_state(incident, status, attrs)
+        {:ok, incident}
+
       {:error, _operation, value, _changes} -> {:error, value}
     end
   end
@@ -77,11 +85,14 @@ defmodule Scoria.SRE.IncidentManager do
 
     Multi.new()
     |> Multi.run(:incident_event, fn repo, _changes ->
-      {:ok, append_standalone_incident_event(repo, incident, attrs)}
+      append_standalone_incident_event(repo, incident, attrs)
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{incident_event: incident_event}} -> {:ok, incident_event}
+      {:ok, %{incident_event: incident_event}} ->
+        emit_incident_event_appended(incident, incident_event, attrs)
+        {:ok, incident_event}
+
       {:error, _operation, value, _changes} -> {:error, value}
     end
   end
@@ -111,34 +122,35 @@ defmodule Scoria.SRE.IncidentManager do
             metadata: incident_metadata(envelope)
           }
 
-        incident =
-          %Incident{}
-          |> Incident.changeset(attrs)
-          |> repo.insert!()
-
-        {incident, %{status: :new, escalated?: false}}
+        with {:ok, incident} <-
+               %Incident{}
+               |> Incident.changeset(attrs)
+               |> repo.insert() do
+          {:ok, {incident, %{status: :new, escalated?: false}}}
+        end
 
       %Incident{} = incident ->
         next_routing_class = max_routing_class(incident.routing_class, route.routing_class)
 
-        updated_incident =
-          incident
-          |> Incident.changeset(%{
-            last_seen_at: now,
-            severity: max_severity(incident.severity, route.severity),
-            routing_class: next_routing_class,
-            workflow_run_id: Map.get(envelope, :workflow_run_id, incident.workflow_run_id),
-            trace_id: Map.get(envelope, :trace_id, incident.trace_id),
-            evidence_summary: merge_maps(incident.evidence_summary, evidence_summary(envelope)),
-            metadata: merge_maps(incident.metadata, incident_metadata(envelope))
-          })
-          |> repo.update!()
-
-        {updated_incident,
-         %{
-           status: :deduped,
-           escalated?: incident.routing_class != "page" and next_routing_class == "page"
-         }}
+        with {:ok, updated_incident} <-
+               incident
+               |> Incident.changeset(%{
+                 last_seen_at: now,
+                 severity: max_severity(incident.severity, route.severity),
+                 routing_class: next_routing_class,
+                 workflow_run_id: Map.get(envelope, :workflow_run_id, incident.workflow_run_id),
+                 trace_id: Map.get(envelope, :trace_id, incident.trace_id),
+                 evidence_summary: merge_maps(incident.evidence_summary, evidence_summary(envelope)),
+                 metadata: merge_maps(incident.metadata, incident_metadata(envelope))
+               })
+               |> repo.update() do
+          {:ok,
+           {updated_incident,
+            %{
+              status: :deduped,
+              escalated?: incident.routing_class != "page" and next_routing_class == "page"
+            }}}
+        end
     end
   end
 
@@ -160,7 +172,7 @@ defmodule Scoria.SRE.IncidentManager do
       evidence_refs: evidence_summary(envelope),
       metadata: alert_metadata(envelope)
     })
-    |> repo.insert!()
+    |> repo.insert()
   end
 
   defp append_incident_event_record(repo, incident, alert_event, envelope) do
@@ -178,7 +190,7 @@ defmodule Scoria.SRE.IncidentManager do
       evidence_refs: evidence_summary(envelope),
       metadata: alert_metadata(envelope)
     })
-    |> repo.insert!()
+    |> repo.insert()
   end
 
   defp append_standalone_incident_event(repo, incident, attrs) do
@@ -195,7 +207,7 @@ defmodule Scoria.SRE.IncidentManager do
       evidence_refs: evidence_summary(attrs),
       metadata: alert_metadata(attrs)
     })
-    |> repo.insert!()
+    |> repo.insert()
   end
 
   defp normalize_envelope(envelope) do
@@ -230,8 +242,16 @@ defmodule Scoria.SRE.IncidentManager do
   defp normalize_key(key) when is_atom(key), do: key
   defp normalize_key(key) when is_binary(key), do: Map.get(@envelope_keys, key, key)
 
-  defp emit_incident_telemetry(incident, alert_event, notification_deliveries, envelope) do
-    Telemetry.emit_incident_lifecycle(%{
+  defp emit_alert_lifecycle_telemetry(
+         incident,
+         alert_event,
+         incident_event,
+         notification_deliveries,
+         envelope
+       ) do
+    emit_incident_state(incident, %{status: alert_event.status}, envelope)
+
+    Telemetry.emit_incident_lifecycle(:alert_recorded, %{
       tenant_id: incident.tenant_id,
       subject_kind: Map.get(envelope, :subject_kind, "workflow"),
       policy_key: Map.get(envelope, :policy_key),
@@ -242,11 +262,92 @@ defmodule Scoria.SRE.IncidentManager do
       incident_key: incident.incident_key,
       scorer_version: alert_event.scorer_version_ref,
       baseline_version: alert_event.baseline_version_ref,
-      delivery_count: length(notification_deliveries),
+      measured_value: alert_event.measured_value,
+      threshold_value: alert_event.threshold_value,
       window_bucket: Map.get(envelope, :window_bucket, "global"),
       state: alert_event.status
     })
+
+    Telemetry.emit_incident_lifecycle(:event_appended, %{
+      tenant_id: incident_event.tenant_id,
+      subject_kind: Map.get(envelope, :subject_kind, "workflow"),
+      policy_key: Map.get(envelope, :policy_key),
+      reason_code: incident_event.reason_code,
+      severity: incident.severity,
+      trace_id: incident_event.trace_id,
+      workflow_run_id: incident_event.workflow_run_id,
+      incident_key: incident.incident_key,
+      scorer_version: alert_event.scorer_version_ref,
+      baseline_version: alert_event.baseline_version_ref,
+      window_bucket: Map.get(envelope, :window_bucket, "global"),
+      state: alert_event.status
+    })
+
+    if notification_deliveries != [] do
+      Telemetry.emit_incident_lifecycle(:delivery_intent, %{
+        tenant_id: incident.tenant_id,
+        subject_kind: Map.get(envelope, :subject_kind, "workflow"),
+        policy_key: Map.get(envelope, :policy_key),
+        reason_code: alert_event.reason_code,
+        severity: incident.severity,
+        trace_id: alert_event.trace_id,
+        workflow_run_id: alert_event.workflow_run_id,
+        incident_key: incident.incident_key,
+        scorer_version: alert_event.scorer_version_ref,
+        baseline_version: alert_event.baseline_version_ref,
+        delivery_count: length(notification_deliveries),
+        window_bucket: Map.get(envelope, :window_bucket, "global"),
+        state: alert_event.status
+      })
+    end
   end
+
+  defp emit_incident_state(incident, status, attrs) do
+    Telemetry.emit_incident_lifecycle(lifecycle_category(status), %{
+      tenant_id: incident.tenant_id,
+      subject_kind: Map.get(attrs, :subject_kind, "workflow"),
+      policy_key: Map.get(attrs, :policy_key),
+      reason_code: Map.get(attrs, :reason_code),
+      severity: incident.severity,
+      trace_id: incident.trace_id,
+      workflow_run_id: incident.workflow_run_id,
+      incident_key: incident.incident_key,
+      scorer_version: Map.get(attrs, :scorer_version),
+      baseline_version: Map.get(attrs, :baseline_version),
+      window_bucket: Map.get(attrs, :window_bucket, "global"),
+      state: lifecycle_state(status)
+    })
+  end
+
+  defp emit_incident_event_appended(incident, incident_event, attrs) do
+    Telemetry.emit_incident_lifecycle(:event_appended, %{
+      tenant_id: incident_event.tenant_id,
+      subject_kind: Map.get(attrs, :subject_kind, "workflow"),
+      policy_key: Map.get(attrs, :policy_key),
+      reason_code: incident_event.reason_code,
+      severity: incident.severity,
+      trace_id: incident_event.trace_id,
+      workflow_run_id: incident_event.workflow_run_id,
+      incident_key: incident.incident_key,
+      scorer_version: Map.get(attrs, :scorer_version),
+      baseline_version: Map.get(attrs, :baseline_version),
+      window_bucket: Map.get(attrs, :window_bucket, "global"),
+      state: incident.status
+    })
+  end
+
+  defp lifecycle_state(%{status: status}), do: lifecycle_state(status)
+  defp lifecycle_state(:new), do: "new"
+  defp lifecycle_state(:deduped), do: "deduped"
+  defp lifecycle_state(status) when is_binary(status), do: status
+  defp lifecycle_state(_status), do: "open"
+
+  defp lifecycle_category(%{status: status}), do: lifecycle_category(status)
+  defp lifecycle_category(:new), do: :created
+  defp lifecycle_category("new"), do: :created
+  defp lifecycle_category(:deduped), do: :deduped
+  defp lifecycle_category("deduped"), do: :deduped
+  defp lifecycle_category(_status), do: :created
 
   defp incident_key(envelope) do
     Map.get_lazy(envelope, :incident_key, fn ->
@@ -343,7 +444,7 @@ defmodule Scoria.SRE.IncidentManager do
          %{status: :deduped, escalated?: false},
          _envelope
        ),
-       do: []
+       do: {:ok, []}
 
   defp maybe_create_notification_deliveries(
          repo,
@@ -352,7 +453,9 @@ defmodule Scoria.SRE.IncidentManager do
          _incident_state,
          envelope
        ) do
-    [insert_notification_delivery(repo, incident, alert_event, envelope)]
+    with {:ok, delivery} <- insert_notification_delivery(repo, incident, alert_event, envelope) do
+      {:ok, [delivery]}
+    end
   end
 
   defp insert_notification_delivery(repo, incident, alert_event, envelope) do
@@ -373,7 +476,7 @@ defmodule Scoria.SRE.IncidentManager do
       trace_id: alert_event.trace_id || incident.trace_id,
       metadata: delivery_metadata(incident, alert_event, envelope, sink_kind)
     })
-    |> repo.insert!()
+    |> repo.insert()
   end
 
   defp delivery_metadata(incident, alert_event, envelope, sink_kind) do

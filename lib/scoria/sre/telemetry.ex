@@ -27,15 +27,15 @@ defmodule Scoria.SRE.Telemetry do
     :ok
   end
 
-  def emit_incident_lifecycle(attrs) do
+  def emit_incident_lifecycle(category, attrs) when is_atom(category) do
     attrs = Map.new(attrs)
 
     measurements =
       attrs
-      |> take_measurements([:delivery_count])
+      |> take_measurements([:delivery_count, :measured_value, :threshold_value])
       |> Map.put_new(:count, 1)
 
-    :telemetry.execute(@incident_prefix ++ [:lifecycle], measurements, TelemetryIdentity.incident_metadata(attrs))
+    :telemetry.execute(@incident_prefix ++ [category], measurements, TelemetryIdentity.incident_metadata(attrs))
     :ok
   end
 
