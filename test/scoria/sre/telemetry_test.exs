@@ -105,6 +105,55 @@ defmodule Scoria.SRE.TelemetryTest do
     refute Map.has_key?(metadata, :actor_id)
   end
 
+  test "telemetry identity splits canonical labels from correlation refs" do
+    attrs = %{
+      tenant_id: "tenant-1",
+      subject_kind: "mcp_tool",
+      policy_key: "tool:refund_customer",
+      reason_code: "timeout",
+      window_bucket: "5m",
+      provider: "openai",
+      model: "gpt-5",
+      tool_name: "refund_customer",
+      integration_kind: "remote_mcp",
+      trace_id: "trace-tool",
+      run_id: "run-tool",
+      workflow_run_id: "run-tool",
+      incident_key: "tenant-1:mcp_tool:tool:refund_customer:timeout:5m",
+      prompt_text: "do not leak",
+      tool_arguments: %{"customer_id" => "cus_123"}
+    }
+
+    assert TelemetryIdentity.labels(attrs) == %{
+             identity_key: "tenant-1:mcp_tool:tool:refund_customer:timeout:5m:openai:gpt-5:refund_customer:remote_mcp",
+             tenant_id: "tenant-1",
+             subject_kind: "mcp_tool",
+             policy_key: "tool:refund_customer",
+             reason_code: "timeout",
+             window_bucket: "5m",
+             provider: "openai",
+             model: "gpt-5",
+             tool_name: "refund_customer",
+             integration_kind: "remote_mcp"
+           }
+
+    assert TelemetryIdentity.refs(attrs) == %{
+             trace_id: "trace-tool",
+             run_id: "run-tool",
+             workflow_run_id: "run-tool"
+           }
+
+    runtime_metadata = TelemetryIdentity.runtime_metadata(attrs)
+    incident_metadata = TelemetryIdentity.incident_metadata(attrs)
+
+    assert runtime_metadata == Map.merge(TelemetryIdentity.labels(attrs), TelemetryIdentity.refs(attrs))
+    refute Map.has_key?(runtime_metadata, :incident_key)
+    refute Map.has_key?(runtime_metadata, :prompt_text)
+    refute Map.has_key?(runtime_metadata, :tool_arguments)
+
+    assert incident_metadata.incident_key == "tenant-1:mcp_tool:tool:refund_customer:timeout:5m"
+  end
+
   test "tool reliability telemetry shapes safe envelopes for Parapet" do
     :ok =
       Telemetry.emit_tool_reliability(%{
