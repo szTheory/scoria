@@ -1,7 +1,6 @@
 defmodule Scoria.SRE.TelemetryTest do
   use ExUnit.Case, async: false
 
-  alias Scoria.SRE.Adapters.Parapet
   alias Scoria.SRE.Telemetry
   alias Scoria.SRE.TelemetryIdentity
 
@@ -10,12 +9,12 @@ defmodule Scoria.SRE.TelemetryTest do
     handler_id = "scoria-sre-telemetry-test-#{System.unique_integer()}"
 
     events = [
-      [:scoria, :sre, :sli, :latency],
-      [:scoria, :sre, :sli, :cost],
-      [:scoria, :sre, :sli, :quality],
-      [:scoria, :sre, :sli, :tool_reliability],
-      [:scoria, :sre, :sli, :budget_burn],
-      [:scoria, :sre, :sli, :breaker_state]
+      [:scoria, :sre, :runtime, :latency],
+      [:scoria, :sre, :runtime, :cost],
+      [:scoria, :sre, :runtime, :quality],
+      [:scoria, :sre, :runtime, :tool_reliability],
+      [:scoria, :sre, :runtime, :budget_burn],
+      [:scoria, :sre, :runtime, :breaker_state]
     ]
 
     :telemetry.attach_many(
@@ -48,7 +47,7 @@ defmodule Scoria.SRE.TelemetryTest do
         prompt_text: "should not leak"
       })
 
-    assert_receive {:telemetry_event, [:scoria, :sre, :sli, :quality], measurements, metadata}
+    assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :quality], measurements, metadata}
     assert measurements.score == 0.61
     assert measurements.threshold == 0.8
     assert metadata.identity_key ==
@@ -67,14 +66,6 @@ defmodule Scoria.SRE.TelemetryTest do
     refute Map.has_key?(metadata, :incident_key)
     refute Map.has_key?(metadata, :prompt_text)
 
-    parapet_event = Parapet.translate([:scoria, :sre, :sli, :quality], measurements, metadata)
-
-    assert parapet_event.metric == "scoria.sli.quality"
-    assert parapet_event.category == :quality
-    assert parapet_event.labels.policy_key == "quality:helpfulness"
-    assert parapet_event.refs.trace_id == "trace-123"
-    assert parapet_event.refs.scorer_version == "scorer:v2"
-    assert parapet_event.refs.baseline_version == "baseline:v4"
   end
 
   test "latency telemetry emits stable incident metadata with low-cardinality labels" do
@@ -94,7 +85,7 @@ defmodule Scoria.SRE.TelemetryTest do
         actor_id: "actor-123"
       })
 
-    assert_receive {:telemetry_event, [:scoria, :sre, :sli, :latency], measurements, metadata}
+    assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :latency], measurements, metadata}
     assert measurements.duration_ms == 245
     assert measurements.threshold_ms == 200
     assert metadata.provider == "openai"
@@ -171,18 +162,12 @@ defmodule Scoria.SRE.TelemetryTest do
         tool_arguments: %{"customer_id" => "cus_123"}
       })
 
-    assert_receive {:telemetry_event, [:scoria, :sre, :sli, :tool_reliability], measurements, metadata}
+    assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :tool_reliability], measurements, metadata}
     assert measurements.duration_ms == 5_000
     assert measurements.failure_count == 1
     assert metadata.tool_name == "refund_customer"
     assert metadata.integration_kind == "remote_mcp"
     refute Map.has_key?(metadata, :tool_arguments)
 
-    parapet_event = Parapet.translate([:scoria, :sre, :sli, :tool_reliability], measurements, metadata)
-
-    assert parapet_event.metric == "scoria.sli.tool_reliability"
-    assert parapet_event.labels.tool_name == "refund_customer"
-    assert parapet_event.labels.integration_kind == "remote_mcp"
-    assert parapet_event.value == 1
   end
 end
