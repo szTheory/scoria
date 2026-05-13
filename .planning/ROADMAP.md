@@ -3,59 +3,90 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-4 (shipped 2026-05-10)
-- ✅ **v1.1 Caldera** — Phase 5: Durable Agent Workflows & Handoffs (shipped 2026-05-11)
-- ✅ **v1.2 Corpus** — Phase 6: Advanced RAG, Citations & Knowledge Grounding (shipped 2026-05-11)
+- ✅ **v1.1 Caldera** — Phase 5 (shipped 2026-05-11)
+- ✅ **v1.2 Corpus** — Phase 6 (shipped 2026-05-11)
 - ✅ **v1.3 Seismograph** — Phases 7-11 (shipped 2026-05-12)
+- 🟡 **v1.4 Keystone** — Phases 12-15 (planned)
+
+## Active Milestone: v1.4 Keystone
+
+**Theme:** Embedded app defaults, identity, and public runtime surface
+
+**Goal:** Make Scoria feel like the obvious way for a Phoenix app to add identity-aware AI runs, durable workflow state, policy-backed governance, and operator-visible evidence without guessing at internal boundaries.
+
+**Why this milestone exists**
+
+Scoria has already shipped the substrate: workflows, approvals, knowledge grounding, SRE controls, telemetry, and operator evidence. `v1.4 Keystone` turns that internal capability into a coherent product surface by defining runtime identity, public entrypoints, and adoption defaults before expanding into broader connector or release-ops work.
 
 ## Phases
 
-<details>
-<summary>✅ v1.0 MVP (Phases 1-4) — SHIPPED 2026-05-10</summary>
+### Phase 12: Canonical Runtime Identity
 
-- [x] Phase 1: Core Observability & Telemetry (4 plans)
-- [x] Phase 2: MCP Gateway & Tool Governance (3 plans)
-- [x] Phase 3: LiveView Operator UX (3 plans)
-- [x] Phase 4: Evaluation Flywheel (3 plans)
+**Goal**: Define first-class actor, tenant, and session identity so Scoria runs have stable application-facing nouns instead of ad hoc attrs.
+**Depends on**: Phases 5, 7, 9, and 10 for workflow truth, audit lineage, approvals, and runtime telemetry
+**Plans**: 3 plans
 
-</details>
+Plans:
 
-<details>
-<summary>✅ v1.1 Caldera (Phase 5) — SHIPPED 2026-05-11</summary>
+- [ ] 12-01: Identity Envelope and Public Runtime Nouns
+- [ ] 12-02: Workflow and Approval Identity Propagation
+- [ ] 12-03: Telemetry and Audit Identity Alignment
 
-- [x] Phase 5: Durable Agent Workflows & Handoffs
+**Requirement coverage:** `IDEN-01`, `IDEN-02`
 
-</details>
+### Phase 13: Public Runtime API and Session Lifecycle
 
-<details>
-<summary>✅ v1.2 Corpus (Phase 6) — SHIPPED 2026-05-11</summary>
+**Goal**: Expose a documented public API for starting, resuming, and inspecting app-facing runs on top of the durable workflow substrate.
+**Depends on**: Phase 12
+**Plans**: 4 plans
 
-- [x] Phase 6: Advanced RAG, Citations & Knowledge Grounding (6 plans)
+Plans:
 
-</details>
+- [ ] 13-01: Top-Level `Scoria` Runtime API Surface
+- [ ] 13-02: Start and Resume Run Contracts
+- [ ] 13-03: Run Inspection and Host-App References
+- [ ] 13-04: Session Continuity Verification
 
-<details>
-<summary>✅ v1.3 Seismograph (Phase 7-11) — SHIPPED 2026-05-12</summary>
+**Requirement coverage:** `IDEN-03`, `RUNT-01`, `RUNT-02`, `RUNT-03`
 
-- [x] Phase 7: SRE, Circuit Breakers & Ecosystem Synergy (8 plans)
-- [x] Phase 8: Reconcile Budget Reservations on Breaker-Open Paths
-- [x] Phase 9: Restore Audited Approval and Incident Delivery Wiring (3 plans)
-- [x] Phase 10: Wire Production SRE Telemetry and Fix Default Verification Bootstrap (4 plans)
-- [x] Phase 11: Re-verify Seismograph and Align Milestone State (2 plans)
+### Phase 14: Policy Defaults and Install Ergonomics
 
-</details>
+**Goal**: Make provider, model, prompt-policy, and runtime defaults feel predictable and installable for a normal Phoenix app integration.
+**Depends on**: Phases 12 and 13
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 14-01: Application-Facing Policy Configuration Surface
+- [ ] 14-02: Identity-Aware Runtime Default Composition
+- [ ] 14-03: Default-Lane Install and Verification Hardening
+
+**Requirement coverage:** `POLY-01`, `POLY-02`, `POLY-03`
+
+### Phase 15: Adoption Surface, Docs, and Example Flow
+
+**Goal**: Align the public-facing docs and example integration story with the shipped Keystone runtime surface.
+**Depends on**: Phases 12 through 14
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 15-01: README and Public Module Alignment
+- [ ] 15-02: End-to-End Phoenix Integration Example
+- [ ] 15-03: Operator-Facing Verification Story and Closeout
+
+**Requirement coverage:** `ADOP-01`, `ADOP-02`, `ADOP-03`, `ADOP-04`
 
 ## Progress
 
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 1. Core Observability & Telemetry | v1.0 | 4/4 | Complete | 2026-05-10 |
-| 2. MCP Gateway & Tool Governance | v1.0 | 3/3 | Complete | 2026-05-10 |
-| 3. LiveView Operator UX | v1.0 | 3/3 | Complete | 2026-05-10 |
-| 4. Evaluation Flywheel | v1.0 | 3/3 | Complete | 2026-05-10 |
-| 5. Durable Agent Workflows & Handoffs | v1.1 | 4/4 | Complete | 2026-05-11 |
-| 6. Advanced RAG, Citations & Knowledge | v1.2 | 6/6 | Complete | 2026-05-11 |
-| 7. SRE, Circuit Breakers & Synergy | v1.3 | 8/8 | Complete | 2026-05-12 |
-| 8. Reconcile Budget Reservations on Breaker-Open Paths | v1.3 | 3/3 | Complete | 2026-05-12 |
-| 9. Restore Audited Approval and Incident Delivery Wiring | v1.3 | 3/3 | Complete | 2026-05-12 |
-| 10. Wire Production SRE Telemetry and Fix Default Verification Bootstrap | v1.3 | 4/4 | Complete | 2026-05-12 |
-| 11. Re-verify Seismograph and Align Milestone State | v1.3 | 2/2 | Complete | 2026-05-12 |
+| Phase | Milestone | Plans Complete | Status |
+|-------|-----------|----------------|--------|
+| 12. Canonical Runtime Identity | v1.4 | 0/3 | Pending |
+| 13. Public Runtime API and Session Lifecycle | v1.4 | 0/4 | Pending |
+| 14. Policy Defaults and Install Ergonomics | v1.4 | 0/3 | Pending |
+| 15. Adoption Surface, Docs, and Example Flow | v1.4 | 0/3 | Pending |
+
+## Forward Look
+
+- `v1.5 Switchyard` remains the likely next milestone after Keystone for MCP/tool connector productization.
+- `v1.6 Flightpath` remains the likely follow-on for prompt lifecycle and eval-release operations.
