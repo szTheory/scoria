@@ -33,19 +33,19 @@ defmodule Scoria.MCP.Executor do
            end) do
         {:ok, {:completed, result, duration}} ->
           reconcile_budget(execution_context, access_context, result, "completed")
-          emit_sre_telemetry(tool_module, access_context, "completed", duration)
+          emit_sre_telemetry(tool_module, access_context, "completed", duration, result)
           :telemetry.execute([:scoria, :tool, :completed], %{duration: duration}, metadata)
           result
 
         {:error, {:timeout, duration}} ->
           reconcile_budget(execution_context, access_context, %{}, "timeout")
-          emit_sre_telemetry(tool_module, access_context, "timeout", duration)
+          emit_sre_telemetry(tool_module, access_context, "timeout", duration, %{})
           :telemetry.execute([:scoria, :tool, :timeout], %{duration: duration}, metadata)
           {:error, :timeout}
 
         {:error, {:execution_failed, duration, reason}} ->
           reconcile_budget(execution_context, access_context, %{}, "execution_failed")
-          emit_sre_telemetry(tool_module, access_context, "execution_failed", duration)
+          emit_sre_telemetry(tool_module, access_context, "execution_failed", duration, %{})
           :telemetry.execute([:scoria, :tool, :failed], %{duration: duration}, Map.put(metadata, :reason, reason))
           {:error, :execution_failed}
 
@@ -147,6 +147,8 @@ defmodule Scoria.MCP.Executor do
 
   defp actual_units(_context, _result, outcome) when outcome in ["timeout", "execution_failed"], do: 0
 
+  defp actual_units(context, {:ok, result}, outcome), do: actual_units(context, result, outcome)
+
   defp actual_units(context, result, _outcome) do
     cond do
       is_map(result) && Map.has_key?(result, :actual_units) -> Map.fetch!(result, :actual_units)
@@ -240,7 +242,7 @@ defmodule Scoria.MCP.Executor do
     end
   end
 
-  defp emit_sre_telemetry(tool_module, context, outcome, duration_native) do
+  defp emit_sre_telemetry(tool_module, context, outcome, duration_native, result) do
     attrs =
       base_attrs(tool_module, context, outcome)
       |> Map.put(:duration_ms, System.convert_time_unit(duration_native, :native, :millisecond))
@@ -248,7 +250,7 @@ defmodule Scoria.MCP.Executor do
 
     Telemetry.emit_latency(attrs)
     Telemetry.emit_tool_reliability(attrs)
-    maybe_emit_budget(attrs, context, outcome)
+    maybe_emit_budget(attrs, context, outcome, result)
   end
 
   defp emit_breaker_open_telemetry(tool_module, context, envelope) do
@@ -266,7 +268,7 @@ defmodule Scoria.MCP.Executor do
     Telemetry.emit_latency(attrs)
     Telemetry.emit_tool_reliability(attrs)
     Telemetry.emit_breaker_state(attrs)
-    maybe_emit_budget(attrs, context, "breaker_open")
+    maybe_emit_budget(attrs, context, "breaker_open", %{})
   end
 
   defp emit_access_denied_telemetry(tool_module, context, %{status: :access_denied}) do
@@ -277,7 +279,7 @@ defmodule Scoria.MCP.Executor do
 
     Telemetry.emit_latency(attrs)
     Telemetry.emit_tool_reliability(attrs)
-    maybe_emit_budget(attrs, context, "access_denied")
+    maybe_emit_budget(attrs, context, "access_denied", %{})
   end
 
   defp emit_access_denied_telemetry(_tool_module, _context, _envelope), do: :ok
@@ -301,9 +303,9 @@ defmodule Scoria.MCP.Executor do
     if function_exported?(tool_module, :name, 0), do: tool_module.name(), else: inspect(tool_module)
   end
 
-  defp maybe_emit_budget(attrs, context, outcome) do
+  defp maybe_emit_budget(attrs, context, outcome, result) do
     if budget_required?(context) do
-      actual = actual_units(context, %{}, outcome)
+      actual = actual_units(context, result, outcome)
       estimated = estimated_units(context)
       burn_rate = numeric_ratio(actual, estimated)
 

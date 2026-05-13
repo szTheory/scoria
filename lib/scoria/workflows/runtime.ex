@@ -29,27 +29,27 @@ defmodule Scoria.Workflows.Runtime do
           case BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end) do
             {:ok, {:completed, result, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, result, "completed")
-              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms)
+              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, result)
               Workflows.complete_step(step.id, attach_budget_evidence(normalize_payload(result), reservation_context))
 
             {:ok, {:waiting_for_approval, approval_attrs, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "waiting_for_approval")
-              emit_runtime_telemetry(step, run, budget_context, "waiting_for_approval", duration_ms)
+              emit_runtime_telemetry(step, run, budget_context, "waiting_for_approval", duration_ms, %{})
               Workflows.mark_waiting_for_approval(run.id, step.id, Map.new(approval_attrs))
 
             {:ok, {:handoff, handoff_attrs, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "handoff")
-              emit_runtime_telemetry(step, run, budget_context, "handoff", duration_ms)
+              emit_runtime_telemetry(step, run, budget_context, "handoff", duration_ms, %{})
               handle_handoff(run, step, Map.new(handoff_attrs))
 
             {:error, {:handler_error, reason, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
-              emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms)
+              emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
 
             {:ok, {:other, other, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, other, "completed")
-              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms)
+              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, other)
 
               Workflows.complete_step(
                 step.id,
@@ -59,12 +59,12 @@ defmodule Scoria.Workflows.Runtime do
 
             {:error, {:timeout, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "timeout")
-              emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms)
+              emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms, %{})
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => "timeout"}, reservation_context))
 
             {:error, {:execution_failed, reason, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
-              emit_runtime_telemetry(step, run, budget_context, "execution_failed", duration_ms)
+              emit_runtime_telemetry(step, run, budget_context, "execution_failed", duration_ms, %{})
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
 
             {:error, %{status: :breaker_open} = envelope} ->
@@ -252,7 +252,7 @@ defmodule Scoria.Workflows.Runtime do
     end
   end
 
-  defp emit_runtime_telemetry(step, run, budget_context, outcome, duration_ms) do
+  defp emit_runtime_telemetry(step, run, budget_context, outcome, duration_ms, result) do
     attrs =
       base_runtime_attrs(step, run, budget_context, outcome)
       |> Map.put(:duration_ms, duration_ms)
@@ -260,7 +260,7 @@ defmodule Scoria.Workflows.Runtime do
 
     Telemetry.emit_latency(attrs)
     Telemetry.emit_tool_reliability(attrs)
-    maybe_emit_budget(attrs, budget_context, outcome)
+    maybe_emit_budget(attrs, budget_context, outcome, result)
   end
 
   defp emit_runtime_breaker_open(step, run, budget_context, envelope) do
@@ -278,7 +278,7 @@ defmodule Scoria.Workflows.Runtime do
     Telemetry.emit_latency(attrs)
     Telemetry.emit_tool_reliability(attrs)
     Telemetry.emit_breaker_state(attrs)
-    maybe_emit_budget(attrs, budget_context, "breaker_open")
+    maybe_emit_budget(attrs, budget_context, "breaker_open", %{})
   end
 
   defp emit_budget_rejection(step, run, budget_context, envelope) do
@@ -286,7 +286,7 @@ defmodule Scoria.Workflows.Runtime do
       base_runtime_attrs(step, run, budget_context, Map.get(envelope, :reason_code, "budget_rejected"))
       |> Map.put(:success, false)
 
-    maybe_emit_budget(attrs, budget_context, "budget_rejected")
+    maybe_emit_budget(attrs, budget_context, "budget_rejected", %{})
   end
 
   defp base_runtime_attrs(step, run, budget_context, outcome) do
@@ -304,9 +304,9 @@ defmodule Scoria.Workflows.Runtime do
     }
   end
 
-  defp maybe_emit_budget(attrs, budget_context, outcome) do
+  defp maybe_emit_budget(attrs, budget_context, outcome, result) do
     if budget_required?(budget_context) do
-      actual = actual_units(budget_context, %{}, outcome)
+      actual = actual_units(budget_context, result, outcome)
       estimated = estimated_units(budget_context)
       burn_rate = numeric_ratio(actual, estimated)
 

@@ -5,7 +5,7 @@ defmodule Scoria.SRE.Telemetry do
 
   alias Scoria.SRE.TelemetryIdentity
 
-  @runtime_prefix [:scoria, :sre, :sli]
+  @runtime_prefix [:scoria, :sre, :runtime]
   @incident_prefix [:scoria, :sre, :incident]
 
   def emit_latency(attrs), do: emit(:latency, attrs, [:duration_ms, :threshold_ms])
