@@ -20,6 +20,23 @@ defmodule Scoria.SRE.TelemetryIdentity do
 
   @ref_keys [:trace_id, :run_id, :workflow_run_id, :scorer_version, :baseline_version]
 
+  def labels(attrs) do
+    attrs = normalize(attrs)
+
+    @label_keys
+    |> Enum.reduce(%{identity_key: build_identity_key(attrs)}, fn key, acc ->
+      put_if_present(acc, key, Map.get(attrs, key))
+    end)
+  end
+
+  def refs(attrs) do
+    attrs = normalize(attrs)
+
+    Enum.reduce(@ref_keys, %{}, fn key, acc ->
+      put_if_present(acc, key, Map.get(attrs, key))
+    end)
+  end
+
   def runtime_metadata(attrs) do
     attrs
     |> normalize()
@@ -40,13 +57,9 @@ defmodule Scoria.SRE.TelemetryIdentity do
 
   defp build_metadata(attrs, include_incident_key?) do
     metadata =
-      @label_keys
-      |> Enum.reduce(%{identity_key: build_identity_key(attrs)}, fn key, acc ->
-        put_if_present(acc, key, Map.get(attrs, key))
-      end)
-      |> then(fn metadata ->
-        Enum.reduce(@ref_keys, metadata, fn key, acc -> put_if_present(acc, key, Map.get(attrs, key)) end)
-      end)
+      attrs
+      |> labels()
+      |> Map.merge(refs(attrs))
 
     if include_incident_key? do
       put_if_present(metadata, :incident_key, Map.get(attrs, :incident_key))
