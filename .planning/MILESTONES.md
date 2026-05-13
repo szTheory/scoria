@@ -74,7 +74,8 @@ Scoria now ships a durable knowledge layer with pgvector-backed retrieval, prove
 
 ## v1.3 Seismograph
 
-**Status:** Planned
+**Shipped:** 2026-05-12
+**Phases:** 5 | **Plans:** 20
 **Theme:** SRE, Circuit Breakers & Ecosystem Synergy
 
 ### Objectives
@@ -85,3 +86,14 @@ Harden Scoria into a production-grade control plane with proactive governance, c
 - **Parapet SLO Integration:** Define SLOs for latency, cost, and eval pass rates for the upcoming `Parapet` SRE layer.
 - **Threadline Audit Export:** Clean integration to export sensitive `ToolApproval` and MCP access events into immutable audit logs.
 - **Automated Regression Alerts:** Automatically trigger incident workflows via `Chimeway`/`Mailglass` when a CI gate dips below the baseline.
+
+### Delivered
+Scoria now ships a durable SRE layer with explicit budget reservations and reconciliation, external-effect circuit breakers, runtime and incident telemetry, workflow-owned audit lineage, durable incident and delivery routing, and trace-first operator evidence inside the existing dashboard surface.
+
+### Key Accomplishments
+- Closed the breaker-open reservation gap at both workflow and MCP execution seams.
+- Restored audited approval handling and durable delivery production on the real incident path.
+- Wired live execution and incident lifecycle telemetry while keeping the knowledge lane explicit behind `mix test.knowledge`.
+- Backfilled Phase 7 verification and aligned milestone-state artifacts so the repo has a normal validation -> verification -> shipped evidence chain.
+
+**Known deferred items at close:** 1 (see STATE.md Deferred Items)

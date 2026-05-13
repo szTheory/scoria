@@ -3,24 +3,26 @@
 ## Project Reference
 **Name:** Scoria
 **Core Value:** A Phoenix-native "AI Application Quality Layer" providing deep observability, continuous evaluation, and secure governance tailored for Elixir and Phoenix applications, adhering to the szTheory "SaaS in a Box" DNA.
-**Current Focus:** v1.2 Corpus shipped. Ready to resume milestone planning from the updated baseline.
+**Current Focus:** v1.3 Seismograph shipped. Ready to define the next milestone from the updated baseline.
 
 ## Current Position
-**Milestone:** v1.2
+**Milestone:** v1.3
 **Status:** Completed
 
 **Progress:**
 `[##################################################] 100%`
 
 ## Performance Metrics
-- **Completed Phases:** 6
-- **Completed Plans:** 23
-- **Total Requirements:** 27
+- **Completed Phases:** 11
+- **Completed Plans:** 40
+- **Total Requirements:** 35
 - **Coverage:** 100%
 - **Phase 5 Verification:** `MIX_ENV=test mix test` passed on 2026-05-11
 - **Phase 5 Surface:** Durable workflow runtime, recovery, and operator UI shipped
 - **Phase 6 Verification:** Phase 6 validation passed on 2026-05-11 with pgvector-backed knowledge, citations, grounding, and evidence projection
 - **Phase 6 Surface:** Durable knowledge storage, retrieval provenance, deterministic grounding, and async operator evidence shipped
+- **Phase 7 Verification:** Phase 7 verification passed on 2026-05-12 with focused Seismograph, default-lane, and knowledge-lane coverage
+- **Phase 7 Surface:** Durable budgets, circuit breakers, telemetry, audit lineage, incident delivery, and trace-first SRE evidence shipped
 
 ## Accumulated Context
 **Decisions:**
@@ -47,9 +49,12 @@
 - Phase 7 (07-04): Incident dedupe keys use tenant, subject kind, policy key, reason code, and window bucket to keep operator incidents low-cardinality while preserving append-only evidence.
 - Phase 7 (07-03): External-effect breaker state is enforced at runtime and MCP seams with deterministic open-state tracking plus reason-coded telemetry.
 - Phase 7 (07-08): Relay polling stays supervised in normal boots, but timer-driven polling is disabled in `MIX_ENV=test` to avoid sandbox ownership conflicts.
+- Phase 8: Breaker-open exits now reconcile durable reservations to zero actual usage before failing workflow or MCP execution.
+- Phase 9: Operator approvals mutate truth only through `Scoria.Workflows`, and real incident routing now produces durable delivery rows and operator evidence lineage.
+- Phase 10: Runtime and incident lifecycle telemetry now emit from live seams, while `mix test` and `mix test.knowledge` run as separate explicit verification lanes.
 
 **Todos:**
-- Plan Phase 7: SRE, Circuit Breakers & Ecosystem Synergy.
+- Define the next milestone after `v1.3 Seismograph`.
 
 **Blockers:**
 - None
@@ -59,13 +64,15 @@
 - Future planning seed captured in `.planning/seeds/SEED-001-agentcore-lessons.md`.
 - Phase 6 validation and verification captured in `.planning/phases/06-corpus/06-VALIDATION.md` and `.planning/phases/06-corpus/06-VERIFICATION.md`.
 - Phase 6 execution summaries captured in `.planning/phases/06-corpus/06-00-SUMMARY.md` through `06-05-SUMMARY.md`.
+- Phase 7 validation and verification captured in `.planning/phases/07-seismograph/07-VALIDATION.md` and `.planning/phases/07-seismograph/07-VERIFICATION.md`.
 - Phase 7 incident, delivery, and audit storage summary captured in `.planning/phases/07-seismograph/07-07-SUMMARY.md`.
 - Phase 7 transactional audit and incident routing summary captured in `.planning/phases/07-seismograph/07-04-SUMMARY.md`.
 - Phase 7 execution summaries captured in `.planning/phases/07-seismograph/07-01-SUMMARY.md` through `07-08-SUMMARY.md`.
+- Phase 11 closeout summaries captured in `.planning/phases/11-re-verify-seismograph-and-align-milestone-state/11-01-SUMMARY.md` and `.planning/phases/11-re-verify-seismograph-and-align-milestone-state/11-02-SUMMARY.md`.
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close on 2026-05-11:
+Items acknowledged and deferred at milestone close on 2026-05-12:
 
 | Category | Item | Status |
 |----------|------|--------|
