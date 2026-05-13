@@ -63,6 +63,18 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+
+    original_audit_sink = Application.get_env(:scoria, :sre_audit_sink)
+
+    Application.delete_env(:scoria, :sre_audit_sink)
+
+    on_exit(fn ->
+      case original_audit_sink do
+        nil -> Application.delete_env(:scoria, :sre_audit_sink)
+        value -> Application.put_env(:scoria, :sre_audit_sink, value)
+      end
+    end)
+
     start_supervised!(@endpoint)
     :ok
   end

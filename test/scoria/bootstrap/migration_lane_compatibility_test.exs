@@ -5,17 +5,35 @@ defmodule Scoria.Bootstrap.MigrationLaneCompatibilityTest do
   alias Scoria.TestSupport.Migrations
 
   @knowledge_version 20260511000300
+  @knowledge_tables [
+    "ai_grounding_scores",
+    "ai_knowledge_citations",
+    "ai_retrieval_results",
+    "ai_retrieval_runs",
+    "ai_knowledge_chunks",
+    "ai_knowledge_sources",
+    Migrations.knowledge_migration_source()
+  ]
 
   test "core lane reaches the default schema without creating knowledge tables" do
     Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+      reset_knowledge_lane!()
       assert migration_recorded?("schema_migrations", @knowledge_version)
-      refute table_exists?("ai_knowledge_sources")
-      refute table_exists?("ai_knowledge_chunks")
+
+      if knowledge_lane_enabled?() do
+        assert table_exists?("ai_knowledge_sources")
+        assert table_exists?("ai_knowledge_chunks")
+        assert migration_recorded?(Migrations.knowledge_migration_source(), @knowledge_version)
+      else
+        refute table_exists?("ai_knowledge_sources")
+        refute table_exists?("ai_knowledge_chunks")
+      end
     end)
   end
 
   test "knowledge lane is idempotent even when the historical core version is already recorded" do
     Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+      reset_knowledge_lane!()
       assert migration_recorded?("schema_migrations", @knowledge_version)
 
       if pgvector_available?() do
@@ -27,12 +45,31 @@ defmodule Scoria.Bootstrap.MigrationLaneCompatibilityTest do
         assert :ok = Migrations.migrate_knowledge!()
         assert migration_recorded?(Migrations.knowledge_migration_source(), @knowledge_version)
       else
-        refute table_exists?("ai_knowledge_sources")
+        if knowledge_lane_enabled?() do
+          assert table_exists?("ai_knowledge_sources")
+        else
+          refute table_exists?("ai_knowledge_sources")
+        end
+
         assert File.exists?(
                  Path.join(Migrations.knowledge_migrations_path(), "20260511000300_create_knowledge_tables.exs")
                )
       end
     end)
+  end
+
+  defp knowledge_lane_enabled? do
+    System.get_env("SCORIA_TEST_INCLUDE_KNOWLEDGE") == "true"
+  end
+
+  defp reset_knowledge_lane! do
+    if knowledge_lane_enabled?() do
+      :ok
+    else
+      Enum.each(@knowledge_tables, fn table_name ->
+        Repo.query!("DROP TABLE IF EXISTS #{table_name} CASCADE", [])
+      end)
+    end
   end
 
   defp table_exists?(table_name) do

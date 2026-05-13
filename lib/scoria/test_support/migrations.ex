@@ -3,6 +3,24 @@ defmodule Scoria.TestSupport.Migrations do
 
   alias Scoria.Repo
 
+  defmodule KnowledgeMigrationRepo do
+    use Ecto.Repo,
+      otp_app: :scoria,
+      adapter: Ecto.Adapters.Postgres
+
+    @impl true
+    def init(_type, config) do
+      base_config =
+        Scoria.Repo.config()
+        |> Keyword.drop([:name, :telemetry_prefix, :repo])
+
+      {:ok,
+       base_config
+       |> Keyword.merge(config)
+       |> Keyword.put(:migration_source, "schema_migrations_knowledge")}
+    end
+  end
+
   @repo_priv Application.compile_env(:scoria, Repo)[:priv] || "priv/repo"
   @core_migrations Path.join(@repo_priv, "migrations")
   @knowledge_migrations Path.join(@repo_priv, "knowledge_migrations")
@@ -13,7 +31,12 @@ defmodule Scoria.TestSupport.Migrations do
   end
 
   def migrate_knowledge! do
-    migrate!([@knowledge_migrations], migration_source: @knowledge_source)
+    {:ok, _, _} =
+      Ecto.Migrator.with_repo(KnowledgeMigrationRepo, fn repo ->
+        Ecto.Migrator.run(repo, [@knowledge_migrations], :up, all: true, log: false)
+      end)
+
+    :ok
   end
 
   def core_migrations_path, do: @core_migrations
