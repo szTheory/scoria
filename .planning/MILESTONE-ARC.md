@@ -34,7 +34,7 @@ Shipped through `v1.4 Keystone` on 2026-05-17:
 - SRE budgets, breakers, audit lineage, incident routing, and telemetry
 - canonical runtime identity, public runtime APIs, install defaults, adoption docs, and executable guardrails
 
-No milestone is currently active. `v1.5 Switchyard` is the recommended next candidate.
+`v1.5 Switchyard` is now active.
 
 ## Sequencing Principles
 
@@ -53,7 +53,7 @@ No milestone is currently active. `v1.5 Switchyard` is the recommended next cand
 | v1.2 | Corpus | shipped | Knowledge, citations, grounding |
 | v1.3 | Seismograph | shipped | SRE budgets, breakers, telemetry, audit, incident delivery |
 | v1.4 | Keystone | shipped | Identity, sessions, public runtime API, install defaults, docs |
-| v1.5 | Switchyard | candidate | Tool and MCP connector productization |
+| v1.5 | Switchyard | active | Remote MCP connector productization |
 | v1.6 | Flightpath | candidate | Release gates, prompt lifecycle, and evaluation operations |
 
 ## Latest Shipped Milestone
@@ -76,30 +76,39 @@ No milestone is currently active. `v1.5 Switchyard` is the recommended next cand
 
 A Phoenix team can install Scoria, wire a normal app request or chat/session flow into it, and get identity-aware traces, workflow state, approvals, and evidence without guessing where the product boundary is.
 
-## Recommended Candidates
+## Active Milestone
 
-### 1. v1.5 Switchyard
+### v1.5 Switchyard
 
-**Status:** candidate
+**Status:** active
 **Priority:** highest
 **Theme:** Tool and MCP connector productization
 
 **What this milestone should deliver**
 
-- remote MCP connector support that respects OAuth/PKCE and metadata discovery expectations
-- policy-backed tool scopes and approval UX for local and remote tools
-- stronger audit and operator visibility for tool identity, sessions, and access failures
-- clear extension points for browser, code execution, and hosted tool integrations without making them mandatory
+- remote MCP connector support with boring discovery, auth, and capability refresh defaults
+- policy-backed tool scopes and workflow-owned approval UX for remote connector invocations
+- stronger audit and operator visibility for connector identity, grants, approvals, and access failures
+- a small curated connector/profile layer that improves DX without turning Scoria into a hosted connector marketplace
 
-**Why after Keystone**
+**How this milestone is intentionally bounded**
 
-Tooling breadth matters, but shipping more tool surface before identity, session, and public runtime clarity would make Scoria harder to understand and less trustworthy inside a Phoenix app.
+- stateless-first remote invocation is the default path
+- stateful remote session lifecycle is opt-in per connector, not the default milestone center
+- browser/code-exec productization remains out of scope
+- hosted connector-broker behavior remains out of scope
+
+**Why now**
+
+Keystone clarified Scoria's app-facing identity, runtime API, and boring install path. The next highest-leverage step is extending those same public boundaries into remote tool connectivity before adding release-ops or future-bet runtime surfaces.
 
 **Depends on**
 
 - `v1.4 Keystone`
 
-### 2. v1.6 Flightpath
+## Recommended Candidates
+
+### 1. v1.6 Flightpath
 
 **Status:** candidate
 **Priority:** medium
@@ -121,7 +130,7 @@ Teams expect to iterate on prompts, models, and tools without flying blind. Scor
 - `v1.4 Keystone`
 - ideally `v1.5 Switchyard` for tool-aware evaluation coverage
 
-### 3. v1.7 Outrider
+### 2. v1.7 Outrider
 
 **Status:** candidate
 **Priority:** medium
@@ -139,12 +148,13 @@ This is valuable, but it is a future bet. It should not outrank the work require
 
 ## Recommendation
 
-The next recommendation is `v1.5 Switchyard`, followed by `v1.6 Flightpath`.
+The active milestone is `v1.5 Switchyard`. The next recommendation after it remains `v1.6 Flightpath`.
 
 ## Source Notes
 
 These priorities were informed by:
 
-- current repo state as of 2026-05-12
+- current repo state as of 2026-05-17
 - `.planning/research/milestone-options-2026-05-12.md`
+- `.planning/research/v1.5-switchyard-recommendation.md`
 - dormant `SEED-001-agentcore-lessons`

@@ -3,23 +3,23 @@
 ## Project Reference
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** `v1.4 Keystone` is shipped. The repo is between milestones and ready to define `v1.5 Switchyard` as the next scoped planning surface.
+**Current Focus:** `v1.5 Switchyard` is active and defining remote MCP connector productization as Scoria's next embedded Phoenix planning surface.
 
 ## Current Position
-**Milestone:** None active
-**Phase:** Milestone closeout complete through `v1.4 Keystone`
-**Plan:** Awaiting next milestone definition
-**Status:** Ready for `$gsd-new-milestone`
-**Last activity:** 2026-05-17 - Shipped `v1.4 Keystone`, archived milestone artifacts, and tagged the shipped state after closing the remaining Phase 16-18 verification chain
+**Milestone:** `v1.5 Switchyard`
+**Phase:** Not started (requirements and roadmap defined)
+**Plan:** Ready to begin Phase 19 discussion/planning
+**Status:** Milestone initialized
+**Last activity:** 2026-05-17 - Activated `v1.5 Switchyard`, defined scoped requirements, and created the milestone roadmap
 
 **Progress:**
-`[##################################################] v1.4 shipped`
+`[..................................................] v1.5 planning complete, implementation not started`
 
 ## Performance Metrics
 - **Completed Phases:** 19
 - **Completed Plans:** 68
 - **Total Validated Requirements:** 52
-- **Coverage:** 100% on shipped milestones
+- **Coverage:** 100% on shipped milestones through `v1.4 Keystone`
 - **Latest Shipped Milestone:** `v1.4 Keystone` on 2026-05-17
 
 ## Accumulated Context
@@ -53,26 +53,27 @@
 - Phase 11: Re-verified Seismograph and aligned project state, roadmap, and requirement artifacts to the shipped baseline.
 - Phase 12 planning decision: activate `v1.4 Keystone` next, focused on identity, public runtime API, and adoptable Phoenix integration defaults.
 - Phase 18: Keep the adoption proof as checked docs/source/test seams and a bounded `mix test.adoption` lane instead of a browser-E2E-first harness.
+- Milestone activation decision for `v1.5`: remote connector support stays stateless-first by default, with operator/audit visibility prioritized over breadth.
 
 **Todos:**
-- Start the next milestone definition flow with `$gsd-new-milestone`.
-- Confirm whether `v1.5 Switchyard` remains the right next milestone before opening new requirements.
+- Start Phase 19 discussion with `$gsd-discuss-phase 19`.
+- Plan or discuss the Phase 19 connector registry and auth/discovery boundary.
 
 **Blockers:**
 - None.
 
 **Reference Updates:**
-- Milestone arc recommendation lives in `.planning/MILESTONE-ARC.md`.
-- Milestone option analysis lives in `.planning/research/milestone-options-2026-05-12.md`.
-- AgentCore boundary lessons remain relevant in `.planning/seeds/SEED-001-agentcore-lessons.md`.
-- `v1.4 Keystone` shipped-state evidence lives in `.planning/milestones/v1.4-ROADMAP.md`, `.planning/milestones/v1.4-REQUIREMENTS.md`, and Phase 12-18 verification artifacts.
+- Active milestone strategy lives in `.planning/MILESTONE-ARC.md`.
+- `v1.5` recommendation synthesis lives in `.planning/research/v1.5-switchyard-recommendation.md`.
+- `v1.4 Keystone` shipped-state evidence remains in `.planning/milestones/v1.4-ROADMAP.md`, `.planning/milestones/v1.4-REQUIREMENTS.md`, and Phase 12-18 verification artifacts.
 
 ## Deferred Items
 
-Items acknowledged but not pulled into the Keystone milestone by default:
+Items intentionally outside `v1.5 Switchyard` by default:
 
 | Category | Item | Status |
 |----------|------|--------|
-| future milestone | Remote MCP connector breadth | deferred to likely `v1.5 Switchyard` |
 | future milestone | Prompt/version release operations | deferred to likely `v1.6 Flightpath` |
-| seed | SEED-001-agentcore-lessons | acknowledged on 2026-05-17 for future milestone review |
+| future milestone | Hosted connector marketplace / broker behavior | deferred beyond `v1.5` |
+| future milestone | First-party browser/code-exec productization | deferred until connector policy and evidence are proven boring |
+| seed | SEED-001-agentcore-lessons | active reference for connector-boundary decisions |
