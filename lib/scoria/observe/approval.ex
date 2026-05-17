@@ -10,6 +10,8 @@ defmodule Scoria.Observe.Approval do
     field(:tool_name, :string)
     field(:arguments, :map, default: %{})
     field(:status, :string, default: "pending")
+    field(:actor_id, :string)
+    field(:tenant_id, :string)
     field(:session_id, :string)
     field(:run_id, :string)
     field(:workflow_run_id, :binary_id)
@@ -22,7 +24,19 @@ defmodule Scoria.Observe.Approval do
 
   def changeset(approval, attrs) do
     approval
-    |> cast(attrs, [:tool_name, :arguments, :status, :session_id, :run_id, :workflow_run_id, :step_id, :checkpoint_id, :lock_version])
+    |> cast(attrs, [
+      :tool_name,
+      :arguments,
+      :status,
+      :actor_id,
+      :tenant_id,
+      :session_id,
+      :run_id,
+      :workflow_run_id,
+      :step_id,
+      :checkpoint_id,
+      :lock_version
+    ])
     |> validate_required([:tool_name, :status])
     |> validate_inclusion(:status, @statuses)
     |> optimistic_lock(:lock_version)

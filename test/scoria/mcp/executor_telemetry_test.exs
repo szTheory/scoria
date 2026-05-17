@@ -70,6 +70,8 @@ defmodule Scoria.MCP.ExecutorTelemetryTest do
 
     assert {:ok, %{result: "success"}} =
              Executor.execute(DummyTool, %{"action" => "success"}, %{
+               actor_id: "mcp-actor",
+               session_id: "mcp-session",
                tenant_id: "tenant-mcp",
                trace_id: "trace-mcp",
                run_id: run_id,
@@ -83,6 +85,8 @@ defmodule Scoria.MCP.ExecutorTelemetryTest do
     assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :latency], measurements, metadata}
     assert is_integer(measurements.duration_ms)
     assert metadata.identity_key == "tenant-mcp:mcp_tool:Scoria.MCP.ExecutorTelemetryTest.DummyTool:completed:global:openai:gpt-5:dummy_tool:remote_mcp"
+    assert metadata.actor_id == "mcp-actor"
+    assert metadata.session_id == "mcp-session"
     assert metadata.run_id == run_id
 
     assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :tool_reliability], measurements, metadata}
@@ -146,6 +150,32 @@ defmodule Scoria.MCP.ExecutorTelemetryTest do
     assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :tool_reliability], measurements, _metadata}
     assert measurements.success_count == 0
     assert measurements.failure_count == 1
+  end
+
+  test "MCP telemetry consumes the stored runtime snapshot when callers pass nested runtime context" do
+    run_id = Ecto.UUID.generate()
+    create_budget_policy!("tenant-mcp", "tool_calls")
+
+    assert {:ok, %{result: "success"}} =
+             Executor.execute(DummyTool, %{"action" => "success"}, %{
+               actor_id: "mcp-actor",
+               session_id: "mcp-session",
+               tenant_id: "tenant-mcp",
+               trace_id: "trace-mcp-runtime",
+               run_id: run_id,
+               estimated_units: 5,
+               integration_kind: "remote_mcp",
+               runtime: %{
+                 provider: "anthropic",
+                 model: "claude-4-sonnet",
+                 policy_key: "tool:nested-runtime"
+               }
+             })
+
+    assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :latency], _measurements, metadata}
+    assert metadata.provider == "anthropic"
+    assert metadata.model == "claude-4-sonnet"
+    assert metadata.policy_key == "tool:nested-runtime"
   end
 
   defp flush_mailbox do

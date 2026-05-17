@@ -6,6 +6,7 @@ defmodule Scoria.Workflows do
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
+  alias Scoria.Identity
   alias Scoria.Observe.Approval
   alias Scoria.Repo
   alias Scoria.SRE
@@ -78,7 +79,12 @@ defmodule Scoria.Workflows do
 
   def create_run(attrs \\ %{}) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
-    {initial_step, run_attrs} = Map.pop(attrs, :initial_step)
+    attrs = Map.new(attrs)
+    initial_step = Map.get(attrs, :initial_step) || Map.get(attrs, "initial_step")
+    run_attrs = Map.drop(attrs, [:initial_step, "initial_step"])
+    identity = Identity.normalize(run_attrs)
+    run_attrs = run_attrs_with_identity(run_attrs, identity)
+    identity_snapshot = Identity.to_map(identity)
 
     multi =
       Multi.new()
@@ -96,8 +102,12 @@ defmodule Scoria.Workflows do
            %{
              transition: "run_started",
              status: changes.run.status,
-             snapshot: %{root_role_id: changes.run.root_role_id, metadata: changes.run.metadata},
-             metadata: %{}
+             snapshot: %{
+               root_role_id: changes.run.root_role_id,
+               metadata: changes.run.metadata,
+               identity: identity_snapshot
+             },
+             metadata: %{"identity" => stringify_map(identity_snapshot)}
            }
          )}
       end)
@@ -105,7 +115,7 @@ defmodule Scoria.Workflows do
         {:ok,
          insert_event(repo, changes.run.id, changes[:initial_step] && changes.initial_step.id, %{
            event_type: "run_started",
-           payload: %{status: changes.run.status}
+           payload: %{status: changes.run.status, identity: identity_snapshot}
          })}
       end)
       |> Multi.update(:run_with_checkpoint, fn changes ->
@@ -275,10 +285,12 @@ defmodule Scoria.Workflows do
 
   def mark_waiting_for_approval(run_id, step_id, attrs) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    attrs = Map.new(attrs)
 
     Repo.transaction(fn repo ->
       run = repo.get!(Run, run_id)
       step = repo.get!(Step, step_id)
+      approval_identity = immutable_identity(run, attrs)
 
       updated_run =
         repo.update!(
@@ -306,6 +318,9 @@ defmodule Scoria.Workflows do
         attrs
         |> Map.new()
         |> Map.merge(%{
+          actor_id: approval_identity.actor_id,
+          tenant_id: approval_identity.tenant_id,
+          session_id: approval_identity.session_id,
           workflow_run_id: run.id,
           step_id: step.id,
           checkpoint_id: checkpoint.id,
@@ -328,11 +343,11 @@ defmodule Scoria.Workflows do
 
       audit_outbox_event =
         SRE.insert_audit_outbox_event(repo, %{
-          tenant_id: Map.get(attrs, :tenant_id) || Map.get(attrs, "tenant_id") || "system",
+          tenant_id: approval_identity.tenant_id || "system",
           event_type: "approval.requested",
           policy_class: "approval",
           dedupe_key: Map.get(attrs, :dedupe_key) || Map.get(attrs, "dedupe_key"),
-          actor_ref: Map.get(attrs, :actor_id) || Map.get(attrs, "actor_id"),
+          actor_ref: approval_identity.actor_id,
           workflow_run_id: run.id,
           step_id: step.id,
           trace_id: Map.get(attrs, :trace_id) || Map.get(attrs, "trace_id"),
@@ -340,8 +355,10 @@ defmodule Scoria.Workflows do
           tool_name: approval.tool_name,
           arguments: approval.arguments,
           reason: Map.get(attrs, :reason) || Map.get(attrs, "reason"),
+          session_id: approval_identity.session_id,
           metadata: %{
             "checkpoint_id" => checkpoint.id,
+            "root_identity" => stringify_map(Identity.to_map(approval_identity)),
             "run_status" => updated_run.status
           }
         })
@@ -543,13 +560,19 @@ defmodule Scoria.Workflows do
   def approve(%Approval{} = approval, status, attrs), do: approve(approval.id, status, attrs)
 
   def approve(approval_id, status, attrs) when status in ["approved", "rejected", "expired"] do
+    attrs = Map.new(attrs)
+
     Repo.transaction(fn repo ->
       approval = repo.get!(Approval, approval_id)
       audit_context = approval_decision_context(repo, approval, attrs)
+      update_attrs =
+        attrs
+        |> Map.drop([:actor_id, "actor_id", :tenant_id, "tenant_id", :session_id, "session_id"])
+        |> Map.put(:status, status)
 
       updated_approval =
         approval
-        |> Approval.changeset(Map.merge(Map.new(attrs), %{status: status}))
+        |> Approval.changeset(update_attrs)
         |> repo.update!()
 
       audit_outbox_event =
@@ -568,7 +591,17 @@ defmodule Scoria.Workflows do
           tool_name: updated_approval.tool_name,
           request_audit_event_id: audit_context.request_event && audit_context.request_event.id,
           request_trace_id: audit_context.request_event && audit_context.request_event.trace_id,
-          request_actor_ref: audit_context.request_event && audit_context.request_event.actor_ref
+          request_actor_ref: audit_context.request_event && audit_context.request_event.actor_ref,
+          session_id: audit_context.session_id,
+          metadata: %{
+            "decision_actor_id" => attr_value(attrs, :actor_id),
+            "root_identity" =>
+              stringify_map(%{
+                actor_id: audit_context.actor_id,
+                tenant_id: audit_context.tenant_id,
+                session_id: audit_context.session_id
+              })
+          }
         })
 
       {updated_approval, audit_outbox_event}
@@ -654,13 +687,15 @@ defmodule Scoria.Workflows do
 
   defp approval_decision_context(repo, approval, attrs) do
     request_event = approval_request_event(repo, approval)
+    run = approval.workflow_run_id && repo.get(Run, approval.workflow_run_id)
+    identity = immutable_identity(run || %Run{}, approval)
 
     %{
-      tenant_id:
-        attr_value(attrs, :tenant_id) || (request_event && request_event.tenant_id) || "system",
-      actor_id:
-        attr_value(attrs, :actor_id) || (request_event && request_event.actor_ref) ||
-          approval.session_id,
+      tenant_id: identity.tenant_id || (request_event && request_event.tenant_id) || "system",
+      actor_id: identity.actor_id || (request_event && request_event.actor_ref),
+      session_id:
+        identity.session_id ||
+          (request_event && get_in(request_event.metadata || %{}, ["root_identity", "session_id"])),
       trace_id: attr_value(attrs, :trace_id) || (request_event && request_event.trace_id),
       request_event: request_event
     }
@@ -683,5 +718,36 @@ defmodule Scoria.Workflows do
 
   defp attr_value(attrs, key) do
     Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
+  end
+
+  defp run_attrs_with_identity(run_attrs, identity) do
+    run_attrs
+    |> Map.put(:actor_id, identity.actor_id)
+    |> Map.put(:tenant_id, identity.tenant_id)
+    |> Map.put(:session_id, identity.session_id)
+    |> Map.put(:metadata, Identity.metadata(run_attrs))
+  end
+
+  defp stringify_map(map) do
+    Map.new(map, fn {key, value} -> {to_string(key), value} end)
+  end
+
+  defp immutable_identity(%Run{} = run, fallback_attrs) do
+    root_identity =
+      Identity.normalize(%{
+        actor_id: run.actor_id,
+        tenant_id: run.tenant_id,
+        session_id: run.session_id,
+        metadata: run.metadata
+      })
+
+    fallback_identity = Identity.normalize(fallback_attrs)
+
+    %Identity{
+      root_identity
+      | actor_id: root_identity.actor_id || fallback_identity.actor_id,
+        tenant_id: root_identity.tenant_id || fallback_identity.tenant_id,
+        session_id: root_identity.session_id || fallback_identity.session_id
+    }
   end
 end

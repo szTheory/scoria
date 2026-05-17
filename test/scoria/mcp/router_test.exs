@@ -76,7 +76,18 @@ defmodule Scoria.MCP.RouterTest do
     assert response["jsonrpc"] == "2.0"
     assert response["id"] == 1
     assert response["result"]["result"] == "success"
-    assert response["result"]["actor"] == %{"id" => "user_123"}
+    assert response["result"]["actor"] == %{
+             "actor_id" => "user_123",
+             "identity" => %{
+               "actor_id" => "user_123",
+               "metadata" => %{},
+               "session_id" => nil,
+               "tenant_id" => nil
+             },
+             "metadata" => %{},
+             "session_id" => nil,
+             "tenant_id" => nil
+           }
   end
 
   test "returns method not found for unregistered tool" do

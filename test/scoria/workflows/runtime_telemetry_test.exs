@@ -51,7 +51,13 @@ defmodule Scoria.Workflows.RuntimeTelemetryTest do
 
   test "completed workflow execution emits canonical latency and reliability telemetry" do
     create_budget_policy!("tenant-runtime", "workflow_steps")
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        actor_id: "runtime-actor",
+        tenant_id: "tenant-runtime",
+        session_id: "runtime-session"
+      })
 
     {:ok, step} =
       Workflows.create_step(run.id, %{
@@ -77,6 +83,8 @@ defmodule Scoria.Workflows.RuntimeTelemetryTest do
     assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :latency], measurements, metadata}
     assert is_integer(measurements.duration_ms)
     assert metadata.identity_key == "tenant-runtime:workflow_step:workflow:success:completed:global:openai:gpt-5:success:provider"
+    assert metadata.actor_id == "runtime-actor"
+    assert metadata.session_id == "runtime-session"
     assert metadata.trace_id == "trace-runtime"
     refute Map.has_key?(metadata, :incident_key)
 
@@ -168,6 +176,42 @@ defmodule Scoria.Workflows.RuntimeTelemetryTest do
     assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :tool_reliability], measurements, _metadata}
     assert measurements.success_count == 0
     assert measurements.failure_count == 1
+  end
+
+  test "workflow telemetry falls back to the run runtime snapshot when the caller does not restate it" do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        actor_id: "runtime-actor",
+        tenant_id: "tenant-runtime",
+        session_id: "runtime-session",
+        metadata: %{
+          "runtime" => %{
+            "provider" => "openai",
+            "model" => "gpt-5",
+            "policy_key" => "workflow:policy"
+          }
+        }
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "success",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    assert {:ok, _completed_step} =
+             Runtime.execute_step(step.id,
+               handler: {Handlers, :succeed},
+               budget_context: %{trace_id: "trace-runtime-fallback"}
+             )
+
+    assert_receive {:telemetry_event, [:scoria, :sre, :runtime, :latency], _measurements, metadata}
+    assert metadata.provider == "openai"
+    assert metadata.model == "gpt-5"
+    assert metadata.policy_key == "workflow:policy"
   end
 
   defp flush_mailbox do

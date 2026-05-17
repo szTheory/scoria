@@ -41,17 +41,24 @@ defmodule Scoria.WorkflowsTest do
       assert {:ok, run} =
                Workflows.create_run(%{
                  root_role_id: "executor",
+                 actor: %{id: "actor-1"},
+                 tenant_id: "tenant-1",
                  session_id: "sess-1",
-                 metadata: %{"goal" => "ship"}
+                 metadata: %{"goal" => "ship", "actor_id" => "ignored-as-metadata"}
                })
 
       checkpoints = Repo.all(Ecto.assoc(run, :checkpoints))
       events = Repo.all(Ecto.assoc(run, :events))
 
       assert run.status == "running"
+      assert run.actor_id == "actor-1"
+      assert run.tenant_id == "tenant-1"
+      assert run.session_id == "sess-1"
       assert run.latest_checkpoint_id == hd(checkpoints).id
       assert Enum.map(checkpoints, & &1.transition) == ["run_started"]
       assert Enum.map(events, & &1.event_type) == ["run_started"]
+      assert hd(checkpoints).snapshot["identity"]["actor_id"] == "actor-1"
+      assert hd(events).payload["identity"]["tenant_id"] == "tenant-1"
     end
 
     test "complete_step/3 writes step state, checkpoint, and event in one transaction" do
@@ -79,7 +86,13 @@ defmodule Scoria.WorkflowsTest do
     end
 
     test "mark_waiting_for_approval/3 persists the wait state before any projection concerns" do
-      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          actor_id: "root-actor",
+          tenant_id: "root-tenant",
+          session_id: "root-session"
+        })
 
       {:ok, step} =
         Workflows.create_step(run.id, %{
@@ -93,7 +106,10 @@ defmodule Scoria.WorkflowsTest do
                Workflows.mark_waiting_for_approval(run.id, step.id, %{
                  tool_name: "dangerous_tool",
                  arguments: %{"value" => 1},
-                 reason: "Need operator approval"
+                 reason: "Need operator approval",
+                 actor_id: "request-actor",
+                 tenant_id: "request-tenant",
+                 session_id: "request-session"
                })
 
       updated_run = Workflows.get_run_tree!(run.id)
@@ -103,6 +119,9 @@ defmodule Scoria.WorkflowsTest do
       assert updated_step.status == "waiting_for_approval"
       assert approval.workflow_run_id == run.id
       assert approval.step_id == step.id
+      assert approval.actor_id == "root-actor"
+      assert approval.tenant_id == "root-tenant"
+      assert approval.session_id == "root-session"
       checkpoint_id = approval.checkpoint_id
       assert Enum.any?(updated_run.checkpoints, &(&1.id == checkpoint_id and &1.transition == "waiting_for_approval"))
     end

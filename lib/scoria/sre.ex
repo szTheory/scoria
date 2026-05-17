@@ -281,6 +281,7 @@ defmodule Scoria.SRE do
       :decision,
       :access_decision,
       :access_reason,
+      :session_id,
       :policy_key,
       :reason,
       :reason_code,
@@ -296,6 +297,7 @@ defmodule Scoria.SRE do
       "decision",
       "access_decision",
       "access_reason",
+      "session_id",
       "policy_key",
       "reason",
       "reason_code",
@@ -332,6 +334,7 @@ defmodule Scoria.SRE do
       :tenant_id,
       :trace_id,
       :workflow_run_id,
+      :session_id,
       "actor_id",
       "actor_ref",
       "alert_event_id",
@@ -351,7 +354,8 @@ defmodule Scoria.SRE do
       "step_id",
       "tenant_id",
       "trace_id",
-      "workflow_run_id"
+      "workflow_run_id",
+      "session_id"
     ])
     |> Enum.into(%{}, fn {key, value} -> {to_string(key), normalize_ref_value(value)} end)
     |> stringify_nested_keys()

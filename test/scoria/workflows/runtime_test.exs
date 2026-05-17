@@ -288,7 +288,13 @@ defmodule Scoria.Workflows.RuntimeTest do
 
   describe "durable approval waits and handoffs" do
     test "entering approval wait persists waiting_for_approval before any projection step" do
-      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          actor_id: "run-actor",
+          tenant_id: "run-tenant",
+          session_id: "run-session"
+        })
 
       {:ok, step} =
         Workflows.create_step(run.id, %{
@@ -302,6 +308,9 @@ defmodule Scoria.Workflows.RuntimeTest do
                Runtime.execute_step(step.id, handler: {Handlers, :wait_for_approval})
 
       assert approval.workflow_run_id == run.id
+      assert approval.actor_id == "run-actor"
+      assert approval.tenant_id == "run-tenant"
+      assert approval.session_id == "run-session"
       assert Workflows.get_run!(run.id).status == "waiting_for_approval"
       assert Workflows.get_step!(step.id).status == "waiting_for_approval"
     end

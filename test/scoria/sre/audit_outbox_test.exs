@@ -16,7 +16,13 @@ defmodule Scoria.SRE.AuditOutboxTest do
 
   describe "workflow audit outbox durability" do
     test "mark_waiting_for_approval writes a redacted audit row in the same transaction" do
-      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          actor_id: "root-actor",
+          tenant_id: "tenant-root",
+          session_id: "root-session"
+        })
 
       {:ok, step} =
         Workflows.create_step(run.id, %{
@@ -31,7 +37,7 @@ defmodule Scoria.SRE.AuditOutboxTest do
                  tool_name: "dangerous_tool",
                  arguments: %{"token" => "top-secret", "target" => "prod"},
                  reason: "Need operator approval",
-                 actor_id: "operator-1",
+                 actor_id: "request-actor",
                  trace_id: "trace-approval-request",
                  tenant_id: "tenant-approval"
                })
@@ -42,17 +48,26 @@ defmodule Scoria.SRE.AuditOutboxTest do
       assert audit_event.step_id == step.id
       assert audit_event.policy_class == "approval"
       assert audit_event.trace_id == "trace-approval-request"
-      assert audit_event.actor_ref == "operator-1"
+      assert audit_event.actor_ref == "root-actor"
+      assert audit_event.tenant_id == "tenant-root"
       assert audit_event.redacted_refs["tool_name"] == "dangerous_tool"
       assert audit_event.redacted_refs["arguments"]["token"] == "[REDACTED]"
       assert audit_event.redacted_refs["arguments"]["target"] == "prod"
       assert audit_event.redacted_refs["approval_id"] == approval.id
+      assert audit_event.redacted_refs["session_id"] == "root-session"
+      assert audit_event.metadata["metadata"]["root_identity"]["tenant_id"] == "tenant-root"
       refute audit_event.redacted_refs["arguments"]["token"] == "top-secret"
       refute audit_event.metadata["raw_arguments"]
     end
 
     test "workflow truth changes roll back when the audit outbox insert fails" do
-      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          actor_id: "rollback-root-actor",
+          tenant_id: "tenant-rollback",
+          session_id: "rollback-session"
+        })
 
       {:ok, step} =
         Workflows.create_step(run.id, %{
@@ -110,7 +125,13 @@ defmodule Scoria.SRE.AuditOutboxTest do
     end
 
     test "approve writes approval outcome audit rows for approved, rejected, and expired decisions" do
-      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          actor_id: "approved-root-actor",
+          tenant_id: "tenant-decisions",
+          session_id: "session-approved"
+        })
 
       {:ok, step} =
         Workflows.create_step(run.id, %{
@@ -124,14 +145,14 @@ defmodule Scoria.SRE.AuditOutboxTest do
         Workflows.mark_waiting_for_approval(run.id, step.id, %{
           tool_name: "dangerous_tool",
           arguments: %{"secret" => "123", "target" => "prod"},
-          tenant_id: "tenant-decisions",
+          tenant_id: "request-tenant",
           trace_id: "trace-approved",
-          actor_id: "operator-approved"
+          actor_id: "request-actor"
         })
 
       assert {:ok, approved} =
                Workflows.approve(approval.id, "approved", %{
-                 actor_id: "operator-approved",
+                 actor_id: "decision-approved",
                  tenant_id: "tenant-decisions",
                  trace_id: "trace-approved"
                })
@@ -145,13 +166,21 @@ defmodule Scoria.SRE.AuditOutboxTest do
           trace_id: "trace-approved"
         )
 
-      assert approved_event.actor_ref == "operator-approved"
+      assert approved_event.actor_ref == "approved-root-actor"
       assert approved_event.tenant_id == "tenant-decisions"
       assert approved_event.trace_id == "trace-approved"
       assert approved_event.redacted_refs["approval_id"] == approval.id
       assert approved_event.redacted_refs["decision"] == "approved"
+      assert approved_event.redacted_refs["session_id"] == "session-approved"
+      assert approved_event.metadata["metadata"]["decision_actor_id"] == "decision-approved"
 
-      {:ok, second_run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, second_run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          actor_id: "rejected-root-actor",
+          tenant_id: "tenant-decisions",
+          session_id: "session-rejected"
+        })
 
       {:ok, second_step} =
         Workflows.create_step(second_run.id, %{
@@ -165,14 +194,14 @@ defmodule Scoria.SRE.AuditOutboxTest do
         Workflows.mark_waiting_for_approval(second_run.id, second_step.id, %{
           tool_name: "dangerous_tool",
           arguments: %{"secret" => "456", "target" => "prod"},
-          tenant_id: "tenant-decisions",
+          tenant_id: "request-tenant",
           trace_id: "trace-rejected",
-          actor_id: "operator-rejected"
+          actor_id: "request-actor"
         })
 
       assert {:ok, rejected} =
                Workflows.approve(rejected_approval.id, "rejected", %{
-                 actor_id: "operator-rejected",
+                 actor_id: "decision-rejected",
                  tenant_id: "tenant-decisions",
                  trace_id: "trace-rejected"
                })
@@ -186,13 +215,21 @@ defmodule Scoria.SRE.AuditOutboxTest do
           trace_id: "trace-rejected"
         )
 
-      assert rejected_event.actor_ref == "operator-rejected"
+      assert rejected_event.actor_ref == "rejected-root-actor"
       assert rejected_event.tenant_id == "tenant-decisions"
       assert rejected_event.trace_id == "trace-rejected"
       assert rejected_event.redacted_refs["approval_id"] == rejected_approval.id
       assert rejected_event.redacted_refs["decision"] == "rejected"
+      assert rejected_event.redacted_refs["session_id"] == "session-rejected"
+      assert rejected_event.metadata["metadata"]["decision_actor_id"] == "decision-rejected"
 
-      {:ok, third_run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, third_run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          actor_id: "expired-root-actor",
+          tenant_id: "tenant-expired",
+          session_id: "session-expired"
+        })
 
       {:ok, third_step} =
         Workflows.create_step(third_run.id, %{
@@ -206,9 +243,9 @@ defmodule Scoria.SRE.AuditOutboxTest do
         Workflows.mark_waiting_for_approval(third_run.id, third_step.id, %{
           tool_name: "dangerous_tool",
           arguments: %{"secret" => "789", "target" => "prod"},
-          tenant_id: "tenant-expired",
+          tenant_id: "request-tenant",
           trace_id: "trace-expired",
-          actor_id: "operator-expired"
+          actor_id: "request-actor"
         })
 
       assert {:ok, expired} = Workflows.approve(expired_approval.id, "expired")
@@ -221,10 +258,11 @@ defmodule Scoria.SRE.AuditOutboxTest do
           trace_id: "trace-expired"
         )
 
-      assert expired_event.actor_ref == "operator-expired"
+      assert expired_event.actor_ref == "expired-root-actor"
       assert expired_event.tenant_id == "tenant-expired"
       assert expired_event.redacted_refs["approval_id"] == expired_approval.id
       assert expired_event.redacted_refs["decision"] == "expired"
+      assert expired_event.redacted_refs["session_id"] == "session-expired"
     end
   end
 

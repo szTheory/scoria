@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Test.Knowledge do
+defmodule Mix.Tasks.Scoria.Test.Knowledge do
   use Mix.Task
 
   @shortdoc "Runs the explicit knowledge/full verification lane"
@@ -19,4 +19,13 @@ defmodule Mix.Tasks.Test.Knowledge do
     Mix.Task.reenable("test")
     Mix.Task.run("test", args)
   end
+end
+
+defmodule Mix.Tasks.Test.Knowledge do
+  use Mix.Task
+
+  @shortdoc "Compatibility wrapper for the explicit Scoria knowledge verification lane"
+
+  @impl Mix.Task
+  def run(args), do: Mix.Tasks.Scoria.Test.Knowledge.run(args)
 end

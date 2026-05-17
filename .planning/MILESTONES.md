@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.4 Keystone
+
+**Shipped:** 2026-05-17
+**Phases:** 7 | **Plans:** 22
+**Theme:** Embedded app defaults, identity, and public runtime surface
+
+### Delivered
+Scoria now ships a Phoenix-facing runtime surface with canonical actor, tenant, and session identity, a public `Scoria` lifecycle API, predictable defaults and install ergonomics, adoption docs aligned to real runtime behavior, and executable guardrails that keep the public integration story from drifting.
+
+### Key Accomplishments
+- Added one canonical runtime identity contract and propagated it across workflows, approvals, telemetry, and audit evidence.
+- Promoted `Scoria` into the public runtime facade for start, resume, inspect, and session-aware run access.
+- Added documented provider/model/prompt-policy defaults with identity-aware composition and boring install defaults.
+- Rewrote the README, moduledocs, Phoenix example, and operator verification flow around the shipped public boundary.
+- Backfilled the missing canonical verification chain for Phases 12 through 15 and reconciled live milestone-state artifacts.
+- Added executable adoption guardrails, including the named `mix test.adoption` lane, to keep docs aligned with checked runtime truth.
+
+**Known deferred items at close:** 3 (see STATE.md Deferred Items)
+
 ## v1.0 MVP
 
 **Shipped:** 2026-05-10

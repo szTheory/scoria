@@ -7,6 +7,8 @@ defmodule Scoria.Workflows.Run do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "ai_workflow_runs" do
+    field :actor_id, :string
+    field :tenant_id, :string
     field :session_id, :string
     field :root_role_id, :string
     field :status, :string, default: "running"
@@ -32,6 +34,8 @@ defmodule Scoria.Workflows.Run do
     run
     |> cast(attrs, [
       :session_id,
+      :actor_id,
+      :tenant_id,
       :root_role_id,
       :status,
       :current_step_id,

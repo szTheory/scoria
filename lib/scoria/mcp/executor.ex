@@ -13,7 +13,7 @@ defmodule Scoria.MCP.Executor do
   Executes a tool module with the given arguments and context.
   """
   def execute(tool_module, args, context, timeout \\ 5000) do
-    context = context || %{}
+    context = canonical_context(context || %{})
 
     with {:ok, access_context} <- maybe_capture_sensitive_mcp_access(tool_module, args, context),
          {:ok, reservation_context} <- reserve_budget(tool_module, args, access_context),
@@ -80,9 +80,11 @@ defmodule Scoria.MCP.Executor do
 
   defp reserve_budget(tool_module, args, context) do
     if budget_required?(context) do
+      identity = context_identity(context)
+
       BudgetEngine.reserve_step(%{
-        tenant_id: Map.get(context, :tenant_id),
-        actor_id: Map.get(context, :actor_id),
+        tenant_id: identity.tenant_id,
+        actor_id: identity.actor_id,
         run_id: Map.get(context, :run_id),
         step_id: Map.get(context, :step_id),
         trace_id: Map.get(context, :trace_id),
@@ -162,11 +164,12 @@ defmodule Scoria.MCP.Executor do
   defp maybe_capture_sensitive_mcp_access(tool_module, args, context) do
     if Map.get(context, :sensitive_mcp_access) do
       decision = Map.get(context, :access_decision, "granted")
+      identity = context_identity(context)
 
       with {:ok, audit_outbox_event} <-
              SRE.create_audit_outbox_event(%{
-               tenant_id: Map.get(context, :tenant_id),
-               actor_id: Map.get(context, :actor_id),
+               tenant_id: identity.tenant_id,
+               actor_id: identity.actor_id,
                workflow_run_id: Map.get(context, :run_id),
                step_id: Map.get(context, :step_id),
                trace_id: Map.get(context, :trace_id),
@@ -222,9 +225,11 @@ defmodule Scoria.MCP.Executor do
 
   defp policy_sensitive_audit_envelope(tool_module, args, context) do
     if policy_sensitive_invocation?(context) do
+      identity = context_identity(context)
+
       %{
-        tenant_id: Map.get(context, :tenant_id),
-        actor_id: Map.get(context, :actor_id),
+        tenant_id: identity.tenant_id,
+        actor_id: identity.actor_id,
         workflow_run_id: Map.get(context, :run_id),
         step_id: Map.get(context, :step_id),
         trace_id: Map.get(context, :trace_id),
@@ -285,8 +290,13 @@ defmodule Scoria.MCP.Executor do
   defp emit_access_denied_telemetry(_tool_module, _context, _envelope), do: :ok
 
   defp base_attrs(tool_module, context, outcome) do
+    context = canonical_context(context)
+    identity = context_identity(context)
+
     %{
-      tenant_id: Map.get(context, :tenant_id, "system"),
+      actor_id: identity.actor_id,
+      tenant_id: identity.tenant_id || "system",
+      session_id: identity.session_id,
       subject_kind: "mcp_tool",
       policy_key: Map.get(context, :policy_key, inspect(tool_module)),
       reason_code: outcome,
@@ -297,6 +307,30 @@ defmodule Scoria.MCP.Executor do
       provider: Map.get(context, :provider),
       model: Map.get(context, :model)
     }
+  end
+
+  defp canonical_context(context) do
+    context = Map.new(context)
+    identity = Scoria.Identity.normalize(context)
+    runtime = runtime_context(context)
+
+    context
+    |> maybe_put_runtime_field(:provider, Map.get(runtime, :provider))
+    |> maybe_put_runtime_field(:model, Map.get(runtime, :model))
+    |> maybe_put_runtime_field(:policy_key, Map.get(runtime, :policy_key))
+    |> maybe_put_runtime_field(:prompt_ref, Map.get(runtime, :prompt_ref))
+    |> maybe_put_runtime_field(:prompt_version, Map.get(runtime, :prompt_version))
+    |> maybe_put_runtime_field(:prompt_policy, Map.get(runtime, :prompt_policy))
+    |> Map.put(:actor_id, identity.actor_id)
+    |> Map.put(:tenant_id, identity.tenant_id)
+    |> Map.put(:session_id, identity.session_id)
+    |> Map.put(:identity, Scoria.Identity.to_map(identity))
+  end
+
+  defp context_identity(context) do
+    context
+    |> Map.get(:identity, %{})
+    |> Scoria.Identity.normalize()
   end
 
   defp tool_name(tool_module) do
@@ -329,4 +363,30 @@ defmodule Scoria.MCP.Executor do
     do: max(estimated - actual, 0)
 
   defp budget_remaining(_actual, estimated), do: estimated || 0
+
+  defp maybe_put_runtime_field(context, _key, nil), do: context
+
+  defp maybe_put_runtime_field(context, key, value) do
+    Map.put_new(context, key, value)
+  end
+
+  defp runtime_context(context) do
+    runtime =
+      Map.get(context, :runtime) ||
+        Map.get(context, "runtime") ||
+        Map.get(context, :runtime_defaults) ||
+        Map.get(context, "runtime_defaults") ||
+        %{}
+
+    runtime = Map.new(runtime)
+
+    %{
+      provider: Map.get(runtime, :provider) || Map.get(runtime, "provider"),
+      model: Map.get(runtime, :model) || Map.get(runtime, "model"),
+      policy_key: Map.get(runtime, :policy_key) || Map.get(runtime, "policy_key"),
+      prompt_ref: Map.get(runtime, :prompt_ref) || Map.get(runtime, "prompt_ref"),
+      prompt_version: Map.get(runtime, :prompt_version) || Map.get(runtime, "prompt_version"),
+      prompt_policy: Map.get(runtime, :prompt_policy) || Map.get(runtime, "prompt_policy")
+    }
+  end
 end

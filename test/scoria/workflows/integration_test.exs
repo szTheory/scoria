@@ -78,7 +78,13 @@ defmodule Scoria.WorkflowsIntegrationTest do
   end
 
   test "a run that pauses for approval can be resumed exactly from stored state" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        actor_id: "run-actor",
+        tenant_id: "run-tenant",
+        session_id: "run-session"
+      })
 
     {:ok, step} =
       Workflows.create_step(run.id, %{
@@ -93,7 +99,7 @@ defmodule Scoria.WorkflowsIntegrationTest do
 
     {:ok, _approval} =
       Workflows.approve(approval.id, "approved", %{
-        actor_id: "operator-integration",
+        actor_id: "decision-operator",
         tenant_id: "tenant-integration",
         trace_id: "trace-#{run.id}"
       })
@@ -111,9 +117,11 @@ defmodule Scoria.WorkflowsIntegrationTest do
         trace_id: "trace-#{run.id}"
       )
 
-    assert approved_event.actor_ref == "operator-integration"
+    assert approved_event.actor_ref == "run-actor"
     assert approved_event.redacted_refs["approval_id"] == approval.id
     assert approved_event.redacted_refs["decision"] == "approved"
+    assert approved_event.redacted_refs["session_id"] == "run-session"
+    assert approved_event.metadata["metadata"]["decision_actor_id"] == "decision-operator"
   end
 
   test "a failed step can be retried without replaying already persisted side-effect boundaries" do

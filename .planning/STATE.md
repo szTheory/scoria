@@ -3,24 +3,24 @@
 ## Project Reference
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** v1.4 Keystone is active in planning. Defining requirements and phase structure for identity, runtime API, and adoption defaults.
+**Current Focus:** `v1.4 Keystone` is shipped. The repo is between milestones and ready to define `v1.5 Switchyard` as the next scoped planning surface.
 
 ## Current Position
-**Milestone:** v1.4 Keystone
-**Phase:** Not started (defining requirements)
-**Plan:** -
-**Status:** Defining requirements
-**Last activity:** 2026-05-12 - Milestone v1.4 Keystone started
+**Milestone:** None active
+**Phase:** Milestone closeout complete through `v1.4 Keystone`
+**Plan:** Awaiting next milestone definition
+**Status:** Ready for `$gsd-new-milestone`
+**Last activity:** 2026-05-17 - Shipped `v1.4 Keystone`, archived milestone artifacts, and tagged the shipped state after closing the remaining Phase 16-18 verification chain
 
 **Progress:**
-`[--------------------------------------------------] 0%`
+`[##################################################] v1.4 shipped`
 
 ## Performance Metrics
-- **Completed Phases:** 11
-- **Completed Plans:** 40
-- **Total Validated Requirements:** 35
+- **Completed Phases:** 19
+- **Completed Plans:** 68
+- **Total Validated Requirements:** 52
 - **Coverage:** 100% on shipped milestones
-- **Latest Shipped Milestone:** `v1.3 Seismograph` on 2026-05-12
+- **Latest Shipped Milestone:** `v1.4 Keystone` on 2026-05-17
 
 ## Accumulated Context
 **Decisions:**
@@ -52,20 +52,20 @@
 - Phase 10: Runtime and incident lifecycle telemetry now emit from live seams, while `mix test` and `mix test.knowledge` run as separate explicit verification lanes.
 - Phase 11: Re-verified Seismograph and aligned project state, roadmap, and requirement artifacts to the shipped baseline.
 - Phase 12 planning decision: activate `v1.4 Keystone` next, focused on identity, public runtime API, and adoptable Phoenix integration defaults.
+- Phase 18: Keep the adoption proof as checked docs/source/test seams and a bounded `mix test.adoption` lane instead of a browser-E2E-first harness.
 
 **Todos:**
-- Define Keystone requirements and roadmap phases.
-- Replace placeholder public entrypoints with a real runtime-facing surface during milestone execution.
-- Align install/docs/examples with the shipped product boundary.
+- Start the next milestone definition flow with `$gsd-new-milestone`.
+- Confirm whether `v1.5 Switchyard` remains the right next milestone before opening new requirements.
 
 **Blockers:**
-- None
+- None.
 
 **Reference Updates:**
 - Milestone arc recommendation lives in `.planning/MILESTONE-ARC.md`.
 - Milestone option analysis lives in `.planning/research/milestone-options-2026-05-12.md`.
 - AgentCore boundary lessons remain relevant in `.planning/seeds/SEED-001-agentcore-lessons.md`.
-- `v1.3 Seismograph` shipped-state evidence lives in `.planning/phases/07-seismograph/07-VERIFICATION.md` plus follow-on Phase 8-11 artifacts.
+- `v1.4 Keystone` shipped-state evidence lives in `.planning/milestones/v1.4-ROADMAP.md`, `.planning/milestones/v1.4-REQUIREMENTS.md`, and Phase 12-18 verification artifacts.
 
 ## Deferred Items
 
@@ -75,3 +75,4 @@ Items acknowledged but not pulled into the Keystone milestone by default:
 |----------|------|--------|
 | future milestone | Remote MCP connector breadth | deferred to likely `v1.5 Switchyard` |
 | future milestone | Prompt/version release operations | deferred to likely `v1.6 Flightpath` |
+| seed | SEED-001-agentcore-lessons | acknowledged on 2026-05-17 for future milestone review |

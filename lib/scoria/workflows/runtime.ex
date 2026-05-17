@@ -4,6 +4,7 @@ defmodule Scoria.Workflows.Runtime do
   """
 
   alias Decimal, as: D
+  alias Scoria.Identity
   alias Scoria.SRE.BudgetEngine
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE.Telemetry
@@ -17,7 +18,7 @@ defmodule Scoria.Workflows.Runtime do
       run = Workflows.get_run!(step.run_id)
       timeout = Keyword.get(opts, :timeout, @default_timeout)
       handler = resolve_handler(step, opts)
-      budget_context = Keyword.get(opts, :budget_context, %{})
+      budget_context = runtime_context(run, Keyword.get(opts, :budget_context, %{}))
       breaker_context = build_breaker_context(step, run, Keyword.get(opts, :breaker_context, %{}))
 
       case reserve_budget(step, run, budget_context) do
@@ -97,9 +98,11 @@ defmodule Scoria.Workflows.Runtime do
 
   defp reserve_budget(step, run, budget_context) do
     if budget_required?(budget_context) do
+      identity = runtime_identity(run, budget_context)
+
       BudgetEngine.reserve_step(%{
-        tenant_id: Map.get(budget_context, :tenant_id),
-        actor_id: Map.get(budget_context, :actor_id),
+        tenant_id: identity.tenant_id,
+        actor_id: identity.actor_id,
         run_id: run.id,
         step_id: step.id,
         step_sequence: step.sequence,
@@ -290,8 +293,13 @@ defmodule Scoria.Workflows.Runtime do
   end
 
   defp base_runtime_attrs(step, run, budget_context, outcome) do
+    budget_context = runtime_context(run, budget_context)
+    identity = runtime_identity(run, budget_context)
+
     %{
-      tenant_id: Map.get(budget_context, :tenant_id, "system"),
+      actor_id: identity.actor_id,
+      tenant_id: identity.tenant_id || "system",
+      session_id: identity.session_id,
       subject_kind: "workflow_step",
       policy_key: Map.get(budget_context, :policy_key, "workflow:#{step.kind}"),
       reason_code: outcome,
@@ -301,6 +309,43 @@ defmodule Scoria.Workflows.Runtime do
       integration_kind: Map.get(budget_context, :integration_kind, "workflow"),
       provider: Map.get(budget_context, :provider),
       model: Map.get(budget_context, :model)
+    }
+  end
+
+  defp runtime_context(run, attrs) do
+    attrs = Map.new(attrs)
+    identity = runtime_identity(run, attrs)
+    runtime_defaults = run_runtime_defaults(run)
+
+    attrs
+    |> maybe_put_runtime_field(:provider, runtime_defaults.provider)
+    |> maybe_put_runtime_field(:model, runtime_defaults.model)
+    |> maybe_put_runtime_field(:policy_key, runtime_defaults.policy_key)
+    |> maybe_put_runtime_field(:prompt_ref, runtime_defaults.prompt_ref)
+    |> maybe_put_runtime_field(:prompt_version, runtime_defaults.prompt_version)
+    |> maybe_put_runtime_field(:prompt_policy, runtime_defaults.prompt_policy)
+    |> Map.put(:actor_id, identity.actor_id)
+    |> Map.put(:tenant_id, identity.tenant_id)
+    |> Map.put(:session_id, identity.session_id)
+    |> Map.put(:identity, Identity.to_map(identity))
+  end
+
+  defp runtime_identity(run, attrs) do
+    root_identity =
+      Identity.normalize(%{
+        actor_id: run.actor_id,
+        tenant_id: run.tenant_id,
+        session_id: run.session_id,
+        metadata: run.metadata
+      })
+
+    overlay_identity = Identity.normalize(attrs)
+
+    %Identity{
+      root_identity
+      | actor_id: root_identity.actor_id || overlay_identity.actor_id,
+        tenant_id: root_identity.tenant_id || overlay_identity.tenant_id,
+        session_id: root_identity.session_id || overlay_identity.session_id
     }
   end
 
@@ -335,5 +380,24 @@ defmodule Scoria.Workflows.Runtime do
     System.monotonic_time()
     |> Kernel.-(started_at)
     |> System.convert_time_unit(:native, :millisecond)
+  end
+
+  defp run_runtime_defaults(run) do
+    metadata = Map.get(run.metadata || %{}, "runtime", %{})
+
+    %{
+      provider: Map.get(metadata, "provider"),
+      model: Map.get(metadata, "model"),
+      policy_key: Map.get(metadata, "policy_key"),
+      prompt_ref: Map.get(metadata, "prompt_ref"),
+      prompt_version: Map.get(metadata, "prompt_version"),
+      prompt_policy: Map.get(metadata, "prompt_policy")
+    }
+  end
+
+  defp maybe_put_runtime_field(attrs, _key, nil), do: attrs
+
+  defp maybe_put_runtime_field(attrs, key, value) do
+    Map.put_new(attrs, key, value)
   end
 end

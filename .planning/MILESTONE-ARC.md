@@ -1,7 +1,7 @@
 # Milestone Arc: Scoria
 
 **Created:** 2026-05-12
-**Last updated:** 2026-05-12
+**Last updated:** 2026-05-17
 **Status:** active planning artifact
 
 ## Purpose
@@ -23,7 +23,7 @@ The product should stay:
 
 ## Current Baseline
 
-Shipped through `v1.3 Seismograph` on 2026-05-12:
+Shipped through `v1.4 Keystone` on 2026-05-17:
 
 - observability and trace storage
 - MCP gateway and governance seams
@@ -32,8 +32,9 @@ Shipped through `v1.3 Seismograph` on 2026-05-12:
 - durable workflows and handoffs
 - knowledge, citations, and grounding
 - SRE budgets, breakers, audit lineage, incident routing, and telemetry
+- canonical runtime identity, public runtime APIs, install defaults, adoption docs, and executable guardrails
 
-`v1.4 Keystone` is now the active planning milestone. Its job is to convert the shipped substrate into a clearer app-facing product surface for Phoenix adoption.
+No milestone is currently active. `v1.5 Switchyard` is the recommended next candidate.
 
 ## Sequencing Principles
 
@@ -51,37 +52,29 @@ Shipped through `v1.3 Seismograph` on 2026-05-12:
 | v1.1 | Caldera | shipped | Durable workflows and handoffs |
 | v1.2 | Corpus | shipped | Knowledge, citations, grounding |
 | v1.3 | Seismograph | shipped | SRE budgets, breakers, telemetry, audit, incident delivery |
-| v1.4 | Keystone | active | Identity, sessions, public runtime API, install defaults, docs |
+| v1.4 | Keystone | shipped | Identity, sessions, public runtime API, install defaults, docs |
+| v1.5 | Switchyard | candidate | Tool and MCP connector productization |
+| v1.6 | Flightpath | candidate | Release gates, prompt lifecycle, and evaluation operations |
 
-## Active Milestone
+## Latest Shipped Milestone
 
 ### v1.4 Keystone
 
-**Status:** active
-**Priority:** highest
+**Status:** shipped
+**Priority at close:** highest
 **Theme:** Embedded app defaults, identity, and public runtime surface
 
-**Why this is next**
-
-Scoria already has a strong substrate, but the product still under-signals how a Phoenix app should actually adopt it. Keystone closes the gap between "powerful internals" and "a package Phoenix teams can confidently embed."
-
-**What this milestone should deliver**
+**What shipped**
 
 - explicit actor, tenant, and session identity as first-class runtime nouns
-- a clean public Scoria runtime API for starting, resuming, and inspecting app-facing AI runs
-- provider/model/prompt policy configuration that matches Phoenix app expectations
-- better install and verification defaults so a new Phoenix app gets to value quickly
-- documentation and example flows that match what is actually shipped
+- a clean public `Scoria` runtime API for starting, resuming, and inspecting app-facing AI runs
+- provider/model/prompt-policy configuration that matches Phoenix app expectations
+- install and verification defaults that stay boring for normal Phoenix adoption
+- documentation and example flows tied to executable proof lanes
 
 **User-facing outcome**
 
 A Phoenix team can install Scoria, wire a normal app request or chat/session flow into it, and get identity-aware traces, workflow state, approvals, and evidence without guessing where the product boundary is.
-
-**Non-goals**
-
-- building a managed remote agent hosting product
-- broad browser/code-execution surfaces as the main event
-- reworking Seismograph internals unless needed for the new public surface
 
 ## Recommended Candidates
 
@@ -146,9 +139,7 @@ This is valuable, but it is a future bet. It should not outrank the work require
 
 ## Recommendation
 
-The current active milestone is `v1.4 Keystone`.
-
-If Keystone lands cleanly, the next recommendation should remain `v1.5 Switchyard`, followed by `v1.6 Flightpath`.
+The next recommendation is `v1.5 Switchyard`, followed by `v1.6 Flightpath`.
 
 ## Source Notes
 

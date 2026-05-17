@@ -4,6 +4,7 @@ defmodule Scoria.MCP.Router do
   """
 
   use Plug.Router
+  alias Scoria.Identity
   alias Scoria.MCP.Protocol
   alias Scoria.MCP.Validator
   alias Scoria.MCP.Executor
@@ -22,7 +23,7 @@ defmodule Scoria.MCP.Router do
   end
 
   post "/" do
-    actor = conn.assigns[:current_actor]
+    identity = Identity.from_conn_assigns(conn.assigns)
     tools = conn.assigns[:mcp_tools]
 
     case Protocol.parse(conn.body_params) do
@@ -32,7 +33,7 @@ defmodule Scoria.MCP.Router do
             params = request.params || %{}
             case Validator.validate_args(tool_module, params) do
               {:ok, valid_args} ->
-                case Executor.execute(tool_module, valid_args, actor) do
+                case Executor.execute(tool_module, valid_args, Identity.to_map(identity)) do
                   {:ok, result} ->
                     send_success(conn, request.id, result)
 

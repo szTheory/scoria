@@ -18,7 +18,15 @@ defmodule Scoria.SRE.TelemetryIdentity do
     :severity
   ]
 
-  @ref_keys [:trace_id, :run_id, :workflow_run_id, :scorer_version, :baseline_version]
+  @ref_keys [
+    :trace_id,
+    :run_id,
+    :workflow_run_id,
+    :actor_id,
+    :session_id,
+    :scorer_version,
+    :baseline_version
+  ]
 
   def labels(attrs) do
     attrs = normalize(attrs)

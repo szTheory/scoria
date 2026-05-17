@@ -92,14 +92,15 @@ defmodule Scoria.SRE.TelemetryTest do
     assert metadata.model == "gpt-5"
     assert metadata.identity_key ==
              "tenant-1:workflow_step:provider:openai:latency_budget_burn:global:openai:gpt-5"
-
-    refute Map.has_key?(metadata, :actor_id)
+    assert metadata.actor_id == "actor-123"
   end
 
   test "telemetry identity splits canonical labels from correlation refs" do
     attrs = %{
       tenant_id: "tenant-1",
       subject_kind: "mcp_tool",
+      actor_id: "actor-tool",
+      session_id: "session-tool",
       policy_key: "tool:refund_customer",
       reason_code: "timeout",
       window_bucket: "5m",
@@ -129,6 +130,8 @@ defmodule Scoria.SRE.TelemetryTest do
            }
 
     assert TelemetryIdentity.refs(attrs) == %{
+             actor_id: "actor-tool",
+             session_id: "session-tool",
              trace_id: "trace-tool",
              run_id: "run-tool",
              workflow_run_id: "run-tool"
