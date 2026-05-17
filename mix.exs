@@ -28,7 +28,10 @@ defmodule Scoria.MixProject do
   defp deps do
     [
       {:tribunal, "~> 1.3"},
+      {:cloak, "~> 1.1"},
+      {:cloak_ecto, "~> 1.3"},
       {:ecto_sql, "~> 3.10"},
+      {:oban, "~> 2.19"},
       {:postgrex, ">= 0.0.0"},
       {:pgvector, "~> 0.3.0"},
       {:hammer, "~> 7.3"},

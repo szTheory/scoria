@@ -10,6 +10,8 @@ defmodule Scoria.Application do
     children =
       [
         Scoria.Repo,
+        Scoria.Vault,
+        {Oban, Application.fetch_env!(:scoria, Oban)},
         {Phoenix.PubSub, name: Scoria.PubSub},
         {Task.Supervisor, name: Scoria.MCP.TaskSupervisor},
         {Task.Supervisor, name: Scoria.Workflow.TaskSupervisor},
