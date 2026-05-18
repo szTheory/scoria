@@ -13,57 +13,44 @@ defmodule Scoria.EvalTest do
   end
 
   describe "datasets" do
-    @valid_dataset_attrs %{name: "Test Dataset", description: "A test dataset"}
+    @valid_dataset_attrs %{name: "Test Dataset", description: "A test dataset", version: "1"}
     @valid_item_attrs %{input: %{"q" => "hello"}, expected_output: %{"a" => "world"}}
+
+    test "create_dataset/1 creates an :open dataset" do
+      assert {:ok, %Dataset{} = dataset} = Eval.create_dataset(@valid_dataset_attrs)
+      assert dataset.state == :open
+      assert dataset.version == "1"
+    end
 
     test "create_dataset/1 creates a dataset with items" do
       attrs = Map.put(@valid_dataset_attrs, :items, [@valid_item_attrs])
       assert {:ok, %Dataset{} = dataset} = Eval.create_dataset(attrs)
-      assert dataset.version == 1
-      assert dataset.is_current == true
-      assert dataset.name == "Test Dataset"
-      assert dataset.entity_id != nil
+      assert dataset.state == :open
 
       items = Eval.list_dataset_items(dataset.id)
       assert length(items) == 1
+      assert hd(items).input == %{"q" => "hello"}
     end
 
-    test "update_dataset/2 creates a new version and deprecates the old one" do
+    test "seal_dataset/1 updates dataset state to :sealed" do
       {:ok, dataset} = Eval.create_dataset(@valid_dataset_attrs)
-      assert dataset.version == 1
-      assert dataset.is_current == true
-
-      update_attrs = %{name: "Updated Dataset"}
-      assert {:ok, %Dataset{} = new_dataset} = Eval.update_dataset(dataset, update_attrs)
-      assert new_dataset.version == 2
-      assert new_dataset.is_current == true
-      assert new_dataset.name == "Updated Dataset"
-      assert new_dataset.entity_id == dataset.entity_id
-
-      # Reload old dataset
-      old_dataset = Repo.get(Dataset, dataset.id)
-      assert old_dataset.is_current == false
-      assert old_dataset.version == 1
+      assert {:ok, %Dataset{} = sealed} = Eval.seal_dataset(dataset)
+      assert sealed.state == :sealed
     end
 
-    test "update_dataset/2 clones associated dataset_items" do
-      {:ok, dataset} = Eval.create_dataset(Map.put(@valid_dataset_attrs, :items, [@valid_item_attrs]))
-      
-      # Make sure we have 1 item initially
-      items = Eval.list_dataset_items(dataset.id)
-      assert length(items) == 1
-      item = hd(items)
+    test "add_dataset_item/2 adds an item when dataset is :open" do
+      {:ok, dataset} = Eval.create_dataset(@valid_dataset_attrs)
+      assert {:ok, item} = Eval.add_dataset_item(dataset.id, @valid_item_attrs)
+      assert item.dataset_id == dataset.id
       assert item.input == %{"q" => "hello"}
+    end
 
-      update_attrs = %{name: "Version 2"}
-      assert {:ok, new_dataset} = Eval.update_dataset(dataset, update_attrs)
+    test "add_dataset_item/2 returns error changeset when dataset is :sealed" do
+      {:ok, dataset} = Eval.create_dataset(@valid_dataset_attrs)
+      {:ok, _sealed} = Eval.seal_dataset(dataset)
       
-      # The new dataset should have the cloned items
-      new_items = Eval.list_dataset_items(new_dataset.id)
-      assert length(new_items) == 1
-      new_item = hd(new_items)
-      assert new_item.input == %{"q" => "hello"}
-      assert new_item.id != item.id
+      assert {:error, changeset} = Eval.add_dataset_item(dataset.id, @valid_item_attrs)
+      assert {"cannot add or modify items in a sealed dataset", _} = changeset.errors[:dataset_id]
     end
 
     test "promote_trace_to_dataset/2 creates dataset and item from a given trace struct" do
@@ -74,8 +61,9 @@ defmodule Scoria.EvalTest do
         spans: []
       }
 
-      assert {:ok, %Dataset{} = dataset} = Eval.promote_trace_to_dataset(trace, %{name: "Promoted Trace Dataset"})
+      assert {:ok, %Dataset{} = dataset} = Eval.promote_trace_to_dataset(trace, %{name: "Promoted Trace Dataset", version: "1"})
       assert dataset.name == "Promoted Trace Dataset"
+      assert dataset.state == :open
 
       items = Eval.list_dataset_items(dataset.id)
       assert length(items) == 1
