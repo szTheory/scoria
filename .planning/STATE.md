@@ -8,25 +8,32 @@
 ## Current Position
 **Milestone:** `v1.6 Flightpath`
 **Phase:** 23-ecto-backed-prompt-registry-and-lifecycle
-**Plan:** 23-02
+**Plan:** 23-04
 **Status:** Active
-**Last activity:** 2026-05-18 - Completed 23-01-PLAN.md
+**Last activity:** 2026-05-18 - Completed 23-03-PLAN.md
 
 **Progress:**
-`[##................................................] Phase 23 (1/4)`
+`[##################................................] Phase 23 (3/4)`
 
 ## Performance Metrics
 - **Completed Phases:** 22
-- **Completed Plans:** 78
-- **Total Validated Requirements:** 66
+- **Completed Plans:** 79
+- **Total Validated Requirements:** 69
 - **Coverage:** 100% on shipped milestones through `v1.5 Switchyard`
 - **Latest Shipped Milestone:** `v1.5 Switchyard` on 2026-05-18
 
 **Phase 23 Metrics:**
 - **23-01:** 10m, 2 tasks, 4 files
+- **23-02:** 10m, 2 tasks, 3 files
+- **23-03:** 5m, 1 tasks, 2 files
 
 ## Accumulated Context
 **Decisions:**
+- Used `Ecto.Changeset.apply_changes/1` to compute merged text payloads in-memory before running the tokenizer, avoiding partial map logic.
+- Adopted strict `Ecto.Multi` version deprecation mimicking `Scoria.Eval`.
+- Added an explicit `update_draft_template/2` for draft-only in-place changes.
+- Used exact table pattern analog of `ai_eval_specs` for `ai_prompt_templates` via unique version constraints.
+- Test helper `errors_on` recreated locally since standard `Scoria.DataCase` wasn't immediately available, avoiding structural modification of test support.
 - Decoupled `scoria_observe` (traces) from `scoria_eval` to avoid a "God Package" architecture.
 - Follow OpenInference specifications for trace/span structures.
 - Use Ecto as the primary state engine (no external databases required).
