@@ -37,6 +37,12 @@
 **Goal**: Make remote connector invocation safe and unsurprising by enforcing dual-plane policy, stable local tool identity, and stateless-first invocation defaults.
 **Depends on**: Phase 19
 **Requirements**: `CONN-03`, `AUTH-03`, `POLI-01`, `POLI-02`
+**Plans**: 3 plans
+
+Plans:
+- [ ] `20-01-PLAN.md` — Add durable local-tool identity rows, alias/history tracking, and connector-context query helpers.
+- [ ] `20-02-PLAN.md` — Reconcile capability refresh into stable local-tool truth with fail-closed drift handling.
+- [ ] `20-03-PLAN.md` — Enforce dual-plane invocation policy, typed auth/scope outcomes, and stateless-first remote execution.
 
 **Success criteria**
 1. Scoria can derive a stable local tool identity even when the remote catalog changes.
@@ -61,6 +67,11 @@
 **Goal**: Productize the remote connector story with a small curated profile layer, install ergonomics, and verification defaults that feel boring in a normal Phoenix app.
 **Depends on**: Phase 21
 **Requirements**: `DX-01`, `DX-02`
+**Plans**: 2 plans
+
+Plans:
+- [ ] `22-01-PLAN.md` — Introduce a curated connector profile layer that normalizes predefined profiles.
+- [ ] `22-02-PLAN.md` — Wire profile verification test into default adoption proof lane and update operator documentation.
 
 **Success criteria**
 1. Scoria ships a small curated connector/profile layer that improves adoption without becoming a marketplace.
