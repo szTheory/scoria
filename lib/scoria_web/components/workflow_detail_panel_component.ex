@@ -8,7 +8,17 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
     ~H"""
     <aside id="workflow-detail-panel" class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
       <%= if @step do %>
-        <h2 class="text-lg font-semibold">Step Detail</h2>
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Step Detail</h2>
+          <button
+            type="button"
+            phx-click="open_promote_modal"
+            phx-value-step-id={@step.id}
+            class="rounded-md bg-stone-100 px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-200"
+          >
+            Promote to Dataset
+          </button>
+        </div>
         <dl class="mt-4 space-y-2 text-sm">
           <div>
             <dt class="font-medium text-stone-600">Role</dt>
