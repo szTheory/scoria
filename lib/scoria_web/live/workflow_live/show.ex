@@ -1,8 +1,9 @@
 defmodule ScoriaWeb.WorkflowLive.Show do
   use Phoenix.LiveView
 
+  alias Scoria.SRE
   alias Scoria.Workflows
-  alias ScoriaWeb.WorkflowDetailPanelComponent
+  alias ScoriaWeb.{RemoteInvocationEvidenceComponent, WorkflowDetailPanelComponent}
   alias ScoriaWeb.WorkflowTreeComponent
 
   @impl true
@@ -20,9 +21,20 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   end
 
   @impl true
+  def handle_event("open_promote_modal", %{"step-id" => step_id}, socket) do
+    {:noreply, assign(socket, :promote_step_id, step_id)}
+  end
+
+  @impl true
+  def handle_event("close_modal", _params, socket) do
+    {:noreply, assign(socket, :promote_step_id, nil)}
+  end
+
+  @impl true
   def handle_info({:workflow_updated, run_id}, socket), do: {:noreply, load_run(socket, run_id)}
 
-  def handle_info({:approval_requested, run_id, _approval_id}, socket), do: {:noreply, load_run(socket, run_id)}
+  def handle_info({:approval_requested, run_id, _approval_id}, socket),
+    do: {:noreply, load_run(socket, run_id)}
 
   @impl true
   def render(assigns) do
@@ -60,6 +72,25 @@ defmodule ScoriaWeb.WorkflowLive.Show do
             </li>
           </ol>
         </section>
+
+        <RemoteInvocationEvidenceComponent.render
+          :if={@remote_invocation_evidence.approvals != []}
+          evidence={@remote_invocation_evidence}
+        />
+
+        <div :if={@promote_step_id != nil} id="promote-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" phx-window-keydown="close_modal" phx-key="escape">
+          <div class="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl relative">
+            <button type="button" phx-click="close_modal" class="absolute top-4 right-4 text-stone-500 hover:text-stone-700">
+              <span class="sr-only">Close</span>
+              &times;
+            </button>
+            <.live_component
+              module={ScoriaWeb.DatasetLive.PromoteComponent}
+              id="promote-component"
+              step={Enum.find(@steps, &(&1.id == @promote_step_id))}
+            />
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -75,6 +106,8 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     |> assign(:run, run)
     |> assign(:steps, steps)
     |> assign(:events, run.events)
+    |> assign(:remote_invocation_evidence, SRE.remote_invocation_evidence(run_id))
+    |> assign_new(:promote_step_id, fn -> nil end)
     |> assign_selection(selected_step_id)
   end
 
