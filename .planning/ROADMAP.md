@@ -50,7 +50,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Operator can view a production trace in the LiveView dashboard and click to save it as a dataset.
   2. The resulting dataset successfully retains the multi-turn context and expected output formats natively.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 24-01-PLAN.md — Create foundational Ecto relational models for evaluation datasets and items.
+- [ ] 24-02-PLAN.md — Implement the context interface for Dataset and DatasetItem CRUD operations.
+- [ ] 24-03-PLAN.md — Implement the "Promote to Dataset" LiveView flow for operators.
 **UI hint**: yes
 
 ### Phase 25: CI/CD Regression & Evaluation Framework
@@ -89,7 +93,7 @@ All 12 active v1.6 milestone requirements are mapped exactly once.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 23. Ecto-backed Prompt Registry & Lifecycle | 1/4 | In Progress | - |
+| 23. Ecto-backed Prompt Registry & Lifecycle | 2/4 | In Progress | - |
 | 24. Trace-to-Dataset Curation via LiveView | 0/0 | Not started | - |
 | 25. CI/CD Regression & Evaluation Framework | 0/0 | Not started | - |
 | 26. Release Gates & Approvals | 0/0 | Not started | - |
