@@ -2,23 +2,26 @@ defmodule Scoria.Eval.DatasetItem do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  schema "ai_dataset_items" do
+  schema "ai_eval_dataset_items" do
+    belongs_to :dataset, Scoria.Eval.Dataset
+    field :source_trace_id, :string
     field :input, :map
     field :expected_output, :map
-    field :metadata, :map
-
-    belongs_to :dataset, Scoria.Eval.Dataset
+    field :metadata, :map, default: %{}
 
     timestamps(type: :utc_datetime_usec)
   end
 
-  @doc false
-  def changeset(dataset_item, attrs) do
-    dataset_item
-    |> cast(attrs, [:input, :expected_output, :metadata, :dataset_id])
-    |> validate_required([:input, :dataset_id])
-    |> foreign_key_constraint(:dataset_id)
+  def changeset(item, attrs, dataset_state \\ :open) do
+    item
+    |> cast(attrs, [:dataset_id, :source_trace_id, :input, :expected_output, :metadata])
+    |> validate_required([:dataset_id, :input])
+    |> validate_dataset_state(dataset_state)
   end
+
+  defp validate_dataset_state(changeset, :sealed) do
+    add_error(changeset, :dataset_id, "cannot add or modify items in a sealed dataset")
+  end
+
+  defp validate_dataset_state(changeset, _), do: changeset
 end
