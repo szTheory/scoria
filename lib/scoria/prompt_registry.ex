@@ -10,6 +10,18 @@ defmodule Scoria.PromptRegistry do
   alias Scoria.PromptRegistry.Tokenizer
 
   @doc """
+  Lists all prompt templates, ordered by inserted_at descending.
+  """
+  def list_prompt_templates do
+    Repo.all(from p in PromptTemplate, order_by: [desc: p.inserted_at])
+  end
+
+  @doc """
+  Gets a single prompt template by ID.
+  """
+  def get_prompt_template!(id), do: Repo.get!(PromptTemplate, id)
+
+  @doc """
   Creates a new draft template.
   """
   def create_draft_template(attrs \\ %{}) do
