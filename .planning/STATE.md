@@ -3,24 +3,27 @@
 ## Project Reference
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** `v1.5 Switchyard` is active and defining remote MCP connector productization as Scoria's next embedded Phoenix planning surface.
+**Current Focus:** `v1.6 Flightpath` is active and defining prompt lifecycle and eval-release operations.
 
 ## Current Position
-**Milestone:** `v1.5 Switchyard`
-**Phase:** Not started (requirements and roadmap defined)
-**Plan:** Ready to begin Phase 19 discussion/planning
-**Status:** Milestone initialized
-**Last activity:** 2026-05-17 - Activated `v1.5 Switchyard`, defined scoped requirements, and created the milestone roadmap
+**Milestone:** `v1.6 Flightpath`
+**Phase:** 23-ecto-backed-prompt-registry-and-lifecycle
+**Plan:** 23-02
+**Status:** Active
+**Last activity:** 2026-05-18 - Completed 23-01-PLAN.md
 
 **Progress:**
-`[..................................................] v1.5 planning complete, implementation not started`
+`[##................................................] Phase 23 (1/4)`
 
 ## Performance Metrics
-- **Completed Phases:** 19
-- **Completed Plans:** 68
-- **Total Validated Requirements:** 52
-- **Coverage:** 100% on shipped milestones through `v1.4 Keystone`
-- **Latest Shipped Milestone:** `v1.4 Keystone` on 2026-05-17
+- **Completed Phases:** 22
+- **Completed Plans:** 78
+- **Total Validated Requirements:** 66
+- **Coverage:** 100% on shipped milestones through `v1.5 Switchyard`
+- **Latest Shipped Milestone:** `v1.5 Switchyard` on 2026-05-18
+
+**Phase 23 Metrics:**
+- **23-01:** 10m, 2 tasks, 4 files
 
 ## Accumulated Context
 **Decisions:**
@@ -54,18 +57,19 @@
 - Phase 12 planning decision: activate `v1.4 Keystone` next, focused on identity, public runtime API, and adoptable Phoenix integration defaults.
 - Phase 18: Keep the adoption proof as checked docs/source/test seams and a bounded `mix test.adoption` lane instead of a browser-E2E-first harness.
 - Milestone activation decision for `v1.5`: remote connector support stays stateless-first by default, with operator/audit visibility prioritized over breadth.
+- Milestone activation decision for `v1.6`: `v1.5 Switchyard` successfully shipped. Focus shifts to prompt lifecycle and eval-release operations.
+- Phase 23 (23-01): Used the tiktoken hex package with the native Rust bindings to handle accurate prompt token estimation for gpt-4o.
+- Phase 23 (23-01): Handled potential string or atom keys in prompt template maps uniformly.
+- Phase 23 (23-01): Implemented robust nil-handling and concatenation strategies for upper-bound token estimation without risking crashes.
 
 **Todos:**
-- Start Phase 19 discussion with `$gsd-discuss-phase 19`.
-- Plan or discuss the Phase 19 connector registry and auth/discovery boundary.
+- Discuss and define requirements for milestone `v1.6 Flightpath` using `/gsd-new-milestone`.
 
 **Blockers:**
 - None.
 
 **Reference Updates:**
-- Active milestone strategy lives in `.planning/MILESTONE-ARC.md`.
-- `v1.5` recommendation synthesis lives in `.planning/research/v1.5-switchyard-recommendation.md`.
-- `v1.4 Keystone` shipped-state evidence remains in `.planning/milestones/v1.4-ROADMAP.md`, `.planning/milestones/v1.4-REQUIREMENTS.md`, and Phase 12-18 verification artifacts.
+- `v1.5 Switchyard` shipped-state evidence remains in `.planning/milestones/v1.5-ROADMAP.md`, `.planning/milestones/v1.5-REQUIREMENTS.md`, and Phase 19-22 verification artifacts.
 
 ## Deferred Items
 

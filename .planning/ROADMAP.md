@@ -36,11 +36,12 @@
   1. Operator can save a structured prompt template and it persists as an immutable, versioned Ecto record.
   2. System rejects in-place edits to active prompts, forcing a new version instead.
   3. System calculates and displays token count estimations when saving a prompt.
-**Plans**: 3 plans
+**Plans**: 4 plans
 Plans:
 - [ ] 23-01-PLAN.md — Setup the Tiktoken dependency and create the token estimation utility for prompt templates.
 - [ ] 23-02-PLAN.md — Create the Ecto schema and database migration for storing versioned, structured prompt templates.
 - [ ] 23-03-PLAN.md — Implement the primary context interface for prompt registry operations, including token estimation injection and immutable lifecycle transitions.
+- [ ] 23-04-PLAN.md — Create the LiveView interface for managing prompt templates and displaying token estimations.
 
 ### Phase 24: Trace-to-Dataset Curation via LiveView
 **Goal**: Operators can seamlessly promote real production traces into durable, baseline datasets for future testing.
@@ -88,7 +89,7 @@ All 12 active v1.6 milestone requirements are mapped exactly once.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 23. Ecto-backed Prompt Registry & Lifecycle | 0/3 | Planned | - |
+| 23. Ecto-backed Prompt Registry & Lifecycle | 1/4 | In Progress | - |
 | 24. Trace-to-Dataset Curation via LiveView | 0/0 | Not started | - |
 | 25. CI/CD Regression & Evaluation Framework | 0/0 | Not started | - |
 | 26. Release Gates & Approvals | 0/0 | Not started | - |
