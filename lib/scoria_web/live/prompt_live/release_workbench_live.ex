@@ -37,6 +37,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
       |> assign(:show_reject_modal, false)
       |> assign(:draft_run, fetch_eval_run(draft.id))
       |> assign(:active_run, fetch_eval_run(if active, do: active.id, else: nil))
+      |> assign(:pending_approval, fetch_pending_approval(draft.id))
 
     {:ok, socket}
   end
@@ -47,6 +48,16 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
       from r in EvalRun,
         where: r.prompt_template_id == ^prompt_id,
         order_by: [desc: r.inserted_at],
+        limit: 1
+    )
+  end
+
+  defp fetch_pending_approval(prompt_id) do
+    alias Scoria.Observe.Approval
+    Repo.one(
+      from a in Approval,
+        where: a.tool_name == "prompt_release" and a.status == "pending" and fragment("?->>'template_id' = ?", a.arguments, ^prompt_id),
+        order_by: [desc: a.inserted_at],
         limit: 1
     )
   end
@@ -68,14 +79,50 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
     {:noreply, assign(socket, show_reject_modal: false)}
   end
 
+  def handle_event("request_release", _params, socket) do
+    draft_id = socket.assigns.draft.id
+    actor_id = socket.assigns.actor_id
+    alias Scoria.Workflows.PromptRelease
+    case PromptRelease.start_release_workflow(draft_id, actor_id) do
+      {:ok, _} ->
+        {:noreply, assign(socket, pending_approval: fetch_pending_approval(draft_id))}
+      _ ->
+        {:noreply, assign(socket, rejection_notice: "Failed to request release.")}
+    end
+  end
+
   def handle_event("approve_release", _params, socket) do
-    # TBD: approve release logic via PromptRelease.approve
-    {:noreply, assign(socket, show_approve_modal: false, approval_notice: "Prompt Release Approved.")}
+    actor_id = socket.assigns.actor_id
+    approval = socket.assigns.pending_approval
+    alias Scoria.Workflows.PromptRelease
+
+    if approval do
+      case PromptRelease.approve(approval.id, "approved", %{actor_id: actor_id}) do
+        {:ok, _} ->
+          {:noreply, assign(socket, show_approve_modal: false, approval_notice: "Prompt Release Approved.", pending_approval: nil)}
+        _ ->
+          {:noreply, assign(socket, show_approve_modal: false, rejection_notice: "Failed to approve.")}
+      end
+    else
+      {:noreply, assign(socket, show_approve_modal: false, rejection_notice: "No pending approval found.")}
+    end
   end
 
   def handle_event("reject_release", _params, socket) do
-    # TBD: reject release logic via PromptRelease.approve
-    {:noreply, assign(socket, show_reject_modal: false, rejection_notice: "Prompt Release Rejected.")}
+    actor_id = socket.assigns.actor_id
+    approval = socket.assigns.pending_approval
+    alias Scoria.Workflows.PromptRelease
+
+    if approval do
+      case PromptRelease.approve(approval.id, "rejected", %{actor_id: actor_id}) do
+        {:ok, _} ->
+          {:noreply, assign(socket, show_reject_modal: false, rejection_notice: "Prompt Release Rejected.", pending_approval: nil)}
+        _ ->
+          {:noreply, assign(socket, show_reject_modal: false, rejection_notice: "Failed to reject.")}
+      end
+    else
+      {:noreply, assign(socket, show_reject_modal: false, rejection_notice: "No pending approval found.")}
+    end
   end
 
   @impl true
@@ -169,13 +216,20 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
 
       <!-- Approval Rail -->
       <div class="mt-12 flex items-center justify-between border-t border-stone-200 pt-6">
-        <button phx-click="open_reject" class="px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded" disabled={@draft.status != "draft"}>
-          Reject Release
-        </button>
+        <%= if is_nil(@pending_approval) do %>
+          <div></div>
+          <button phx-click="request_release" disabled={!can_approve?(@draft, @draft_run, @active, @active_run)} class="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+            Request Release
+          </button>
+        <% else %>
+          <button phx-click="open_reject" class="px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded" disabled={@draft.status != "draft"}>
+            Reject Release
+          </button>
 
-        <button phx-click="open_approve" class="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded disabled:opacity-50 disabled:cursor-not-allowed" disabled={!can_approve?(@draft, @draft_run, @active, @active_run)}>
-          Approve Prompt Release
-        </button>
+          <button phx-click="open_approve" class="px-4 py-2 text-sm font-medium bg-green-600 text-white hover:bg-green-700 rounded disabled:opacity-50 disabled:cursor-not-allowed" disabled={!can_approve?(@draft, @draft_run, @active, @active_run)}>
+            Approve Prompt Release
+          </button>
+        <% end %>
       </div>
 
       <!-- Approve Modal -->
