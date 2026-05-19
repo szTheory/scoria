@@ -8,7 +8,7 @@ defmodule Scoria.Eval.EvalRun do
     field :status, :string, default: "pending"
     field :duration_ms, :integer
 
-    belongs_to :dataset, Scoria.Eval.Dataset
+    belongs_to :dataset, Scoria.Eval.Dataset, type: :id
     belongs_to :eval_spec, Scoria.Eval.EvalSpec
 
     has_many :scores, Scoria.Eval.Score

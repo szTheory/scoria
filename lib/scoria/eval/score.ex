@@ -10,7 +10,7 @@ defmodule Scoria.Eval.Score do
     field :details, :map
 
     belongs_to :eval_run, Scoria.Eval.EvalRun
-    belongs_to :dataset_item, Scoria.Eval.DatasetItem
+    belongs_to :dataset_item, Scoria.Eval.DatasetItem, type: :id
 
     timestamps(type: :utc_datetime_usec)
   end
