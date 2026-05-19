@@ -4,6 +4,19 @@ defmodule ScoriaWeb.Router do
   in a host Phoenix application.
   """
 
+  defmacro scoria_mcp(path, opts \\ []) do
+    quote bind_quoted: binding() do
+      scope path, alias: false, as: false do
+        import Phoenix.Router, only: [get: 4, post: 3]
+
+        opts_assigns = %{mcp_tools: Keyword.get(opts, :tools, [])}
+
+        get("/sse", ScoriaWeb.MCPController, :sse, assigns: opts_assigns)
+        post("/messages", ScoriaWeb.MCPController, :messages)
+      end
+    end
+  end
+
   defmacro scoria_dashboard(path, _opts \\ []) do
     quote bind_quoted: binding() do
       scope path, alias: false, as: false do
