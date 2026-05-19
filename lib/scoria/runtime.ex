@@ -25,6 +25,7 @@ defmodule Scoria.Runtime do
   def start_run(identity, opts \\ []) do
     with {:ok, %{workflow_attrs: workflow_attrs, dispatch_opts: dispatch_opts}} <-
            Params.start(identity, opts),
+         :ok <- Scoria.Runtime.ReleaseGate.check(workflow_attrs),
          {:ok, run} <- Workflows.create_run(workflow_attrs),
          {:ok, _count} <- maybe_dispatch(run.id, dispatch_opts) do
       {:ok, get_run!(run.id)}
