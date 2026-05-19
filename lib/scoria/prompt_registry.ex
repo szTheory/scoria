@@ -36,11 +36,11 @@ defmodule Scoria.PromptRegistry do
 
     attrs_with_defaults = 
       attrs
-      |> Map.put(:entity_id, entity_id)
-      |> Map.put(:version, 1)
-      |> Map.put(:status, "draft")
-      |> Map.put(:is_current, true)
-      |> Map.put(:estimated_tokens, estimated_tokens)
+      |> Map.put_new(:entity_id, entity_id)
+      |> Map.put_new(:version, 1)
+      |> Map.put_new(:status, "draft")
+      |> Map.put_new(:is_current, true)
+      |> Map.put_new(:estimated_tokens, estimated_tokens)
 
     %PromptTemplate{}
     |> PromptTemplate.changeset(attrs_with_defaults)

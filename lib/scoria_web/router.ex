@@ -22,6 +22,7 @@ defmodule ScoriaWeb.Router do
           live("/", ScoriaWeb.OrchestratorLive, :index)
           live("/workflows/:id", ScoriaWeb.WorkflowLive.Show, :show)
           live("/prompts", ScoriaWeb.PromptLive.Index, :index)
+          live("/prompts/:id/release", ScoriaWeb.PromptLive.ReleaseWorkbenchLive, :index)
         end
       end
     end
