@@ -27,6 +27,17 @@ defmodule Scoria.Req.StepsTest do
     assert Keyword.has_key?(req.error_steps, :scoria_resiliency)
   end
 
+  test "req_options/1 returns declarative list of steps" do
+    opts = Scoria.Req.Steps.req_options("test_model")
+    assert [
+             {Req.Request, :register_options, [[:model_id]]},
+             {Req.Request, :merge_options, [[model_id: "test_model"]]},
+             {Req.Request, :append_request_steps, [[scoria_circuit_breaker: _]]},
+             {Req.Request, :append_response_steps, [[scoria_resiliency: _]]},
+             {Req.Request, :append_error_steps, [[scoria_resiliency: _]]}
+           ] = opts
+  end
+
   test "integration: respects transient retries without tripping circuit breaker too early" do
     model_id = "test_integration_500"
     
