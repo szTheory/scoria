@@ -141,4 +141,47 @@ defmodule Scoria.RuntimeTest do
     Application.put_env(:scoria, Scoria.Runtime, defaults: [provider: "anthropic"])
     assert Workflows.get_run!(summary.run_id).metadata["runtime"]["provider"] == "openai"
   end
+
+  describe "register_instance/1" do
+    test "creates or updates the first_seen_at/last_seen_at" do
+      attrs = %{
+        "tenant_id" => "tenant-1",
+        "transport_kind" => "mcp_sse"
+      }
+      
+      {:ok, instance} = Runtime.register_instance(attrs)
+      assert instance.tenant_id == "tenant-1"
+      assert instance.first_seen_at != nil
+      assert instance.last_seen_at != nil
+      assert instance.terminal_offline_reason == nil
+      
+      # Update
+      Process.sleep(1000)
+      
+      attrs_update = %{
+        "id" => instance.id,
+        "tenant_id" => "tenant-1",
+        "transport_kind" => "mcp_sse"
+      }
+      {:ok, updated} = Runtime.register_instance(attrs_update)
+      assert updated.id == instance.id
+      assert updated.first_seen_at == instance.first_seen_at
+      assert DateTime.compare(updated.last_seen_at, instance.last_seen_at) == :gt
+    end
+  end
+
+  describe "mark_offline/2" do
+    test "sets the terminal_offline_reason and updates last_seen_at" do
+      {:ok, instance} = Runtime.register_instance(%{
+        "tenant_id" => "tenant-1",
+        "transport_kind" => "mcp_sse"
+      })
+      
+      Process.sleep(1000)
+      
+      {:ok, offline} = Runtime.mark_offline(instance.id, "transport_closed")
+      assert offline.terminal_offline_reason == "transport_closed"
+      assert DateTime.compare(offline.last_seen_at, instance.last_seen_at) == :gt
+    end
+  end
 end

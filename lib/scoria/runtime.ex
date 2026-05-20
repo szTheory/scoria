@@ -15,7 +15,7 @@ defmodule Scoria.Runtime do
 
   alias Ecto.NoResultsError
   alias Scoria.Repo
-  alias Scoria.Runtime.{Params, RunDetail, RunSummary}
+  alias Scoria.Runtime.{Instance, Params, RunDetail, RunSummary}
   alias Scoria.Workflows
   alias Scoria.Workflows.{Reconciler, Resume, Run}
 
@@ -87,6 +87,55 @@ defmodule Scoria.Runtime do
     |> order_by([run], desc: run.inserted_at, desc: run.id)
     |> Repo.all()
     |> Enum.map(&RunSummary.from_run/1)
+  end
+
+  @doc """
+  Registers or updates a durable runtime instance presence.
+  """
+  def register_instance(attrs) when is_map(attrs) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    
+    attrs_string = for {k, v} <- attrs, into: %{}, do: {to_string(k), v}
+    
+    instance = 
+      cond do
+        id = attrs_string["id"] -> Repo.get(Instance, id) || %Instance{}
+        host_session_id = attrs_string["host_session_id"] -> 
+          Repo.get_by(Instance, host_session_id: host_session_id) || %Instance{}
+        true -> %Instance{}
+      end
+      
+    # Only set first_seen_at if it's a new instance (or hasn't been set)
+    attrs_string = 
+      if instance.first_seen_at do
+        attrs_string
+      else
+        Map.put_new(attrs_string, "first_seen_at", now)
+      end
+      |> Map.put("last_seen_at", now)
+      |> Map.put("terminal_offline_reason", nil)
+      
+    instance
+    |> Instance.changeset(attrs_string)
+    |> Repo.insert_or_update()
+  end
+
+  @doc """
+  Marks a runtime instance as offline with a reason.
+  """
+  def mark_offline(instance_id, reason) when is_binary(instance_id) and is_binary(reason) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    
+    case Repo.get(Instance, instance_id) do
+      nil -> {:error, :not_found}
+      instance ->
+        instance
+        |> Instance.changeset(%{
+          "last_seen_at" => now, 
+          "terminal_offline_reason" => reason
+        })
+        |> Repo.update()
+    end
   end
 
   defp maybe_dispatch(_run_id, dispatch_opts) when dispatch_opts == [] or dispatch_opts == %{},
