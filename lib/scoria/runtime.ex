@@ -138,6 +138,16 @@ defmodule Scoria.Runtime do
     end
   end
 
+  @doc """
+  Lists compacted memories for a given run, ordered by sequence.
+  """
+  def list_compacted_memories_for_run(run_id) do
+    Scoria.Runtime.CompactedMemory
+    |> where([m], m.run_id == ^run_id)
+    |> order_by([m], asc: m.start_sequence)
+    |> Repo.all()
+  end
+
   defp maybe_dispatch(_run_id, dispatch_opts) when dispatch_opts == [] or dispatch_opts == %{},
     do: {:ok, 0}
 

@@ -1,9 +1,10 @@
 defmodule ScoriaWeb.WorkflowLive.Show do
   use Phoenix.LiveView
 
+  alias Scoria.Runtime
   alias Scoria.SRE
   alias Scoria.Workflows
-  alias ScoriaWeb.{RemoteInvocationEvidenceComponent, WorkflowDetailPanelComponent}
+  alias ScoriaWeb.{MemoryNotebookComponent, RemoteInvocationEvidenceComponent, WorkflowDetailPanelComponent}
   alias ScoriaWeb.WorkflowTreeComponent
 
   @impl true
@@ -12,7 +13,14 @@ defmodule ScoriaWeb.WorkflowLive.Show do
       Workflows.subscribe_run(run_id)
     end
 
-    {:ok, load_run(socket, run_id)}
+    socket = 
+      socket
+      |> load_run(run_id)
+      |> assign_async(:compacted_memories, fn ->
+        {:ok, %{compacted_memories: Runtime.list_compacted_memories_for_run(run_id)}}
+      end)
+
+    {:ok, socket}
   end
 
   @impl true
@@ -46,6 +54,10 @@ defmodule ScoriaWeb.WorkflowLive.Show do
             <p class="text-xs uppercase tracking-[0.3em] text-stone-500">Scoria Workflow</p>
             <h1 class="text-3xl font-semibold">Workflow Run</h1>
             <p class="text-sm text-stone-600">Run <span class="font-mono"><%= @run.id %></span></p>
+            <a :if={@run.session_id} href={"/scoria?runtime=#{@run.session_id}"} class="mt-2 inline-flex items-center gap-2 text-sm font-medium text-blue-700 underline">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd" /></svg>
+              View associated runtime presence
+            </a>
           </div>
           <div class="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold">
             <span class="workflow-run-status"><%= @run.status %></span>
@@ -62,6 +74,20 @@ defmodule ScoriaWeb.WorkflowLive.Show do
 
           <WorkflowDetailPanelComponent.workflow_detail_panel step={@selected_step} checkpoint={@selected_checkpoint} />
         </div>
+
+        <.async_result :let={memories} assign={@compacted_memories}>
+          <:loading>
+            <div class="mt-6 flex items-center justify-center rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
+              <p class="text-sm text-stone-500">Loading compacted memories...</p>
+            </div>
+          </:loading>
+          <:failed :let={_failure}>
+            <div class="mt-6 flex items-center justify-center rounded-2xl border border-red-200 bg-red-50 p-8 shadow-sm">
+              <p class="text-sm text-red-600">Failed to load memories.</p>
+            </div>
+          </:failed>
+          <MemoryNotebookComponent.render :if={memories != []} memories={memories} runtime_instance_id={@run.session_id || "unknown"} />
+        </.async_result>
 
         <section class="mt-6 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
           <h2 class="text-lg font-semibold">Timeline</h2>
