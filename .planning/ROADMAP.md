@@ -30,7 +30,10 @@
   1. Node-local ETS table tracks model health state (open/closed circuit).
   2. Outbound `Req` calls use explicit retries with exponential backoff for 429s.
   3. Repeated failures trip the circuit breaker, immediately returning errors without waiting for timeouts.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 31-01-PLAN.md — ETS Circuit Breaker Foundation
+- [ ] 31-02-PLAN.md — Req Resiliency Middleware Steps
+- [ ] 31-03-PLAN.md — Pipeline and Worker Integration
 
 ### Phase 32: Multi-Model Fallback Orchestration
 **Goal**: Failed model requests automatically route to secondary models transparently based on fallback chains.
