@@ -9,6 +9,7 @@ config :scoria, Scoria.Repo,
     System.get_env("SCORIA_DB_NAME") ||
       "scoria_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 20,
   show_sensitive_data_on_connection_error: true
 
 config :scoria, Oban, testing: :manual

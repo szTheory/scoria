@@ -1,5 +1,5 @@
 defmodule ScoriaWeb.MCPControllerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import Plug.Test
   import Plug.Conn
 
@@ -23,16 +23,21 @@ defmodule ScoriaWeb.MCPControllerTest do
     conn = assign(conn, :tenant_id, "test_tenant")
 
     parent = self()
-    task = Task.async(fn ->
-      Ecto.Adapters.SQL.Sandbox.allow(Scoria.Repo, parent, self())
-      MCPController.sse(conn, %{})
-    end)
+
+    task =
+      Task.async(fn ->
+        Ecto.Adapters.SQL.Sandbox.allow(Scoria.Repo, parent, self())
+        MCPController.sse(conn, %{})
+      end)
 
     # Find the session id registered by the task (retry up to 1 second)
-    {session_id, pid} = 
+    {session_id, pid} =
       Enum.reduce_while(1..20, nil, fn _, _acc ->
         Process.sleep(50)
-        registrations = Registry.select(SessionRegistry, [{{:"$1", :"$2", :"$3"}, [], [{{:"$1", :"$2"}}]}])
+
+        registrations =
+          Registry.select(SessionRegistry, [{{:"$1", :"$2", :"$3"}, [], [{{:"$1", :"$2"}}]}])
+
         case Enum.find(registrations, fn {_id, p} -> p == task.pid end) do
           nil -> {:cont, nil}
           match -> {:halt, match}
@@ -44,7 +49,7 @@ defmodule ScoriaWeb.MCPControllerTest do
     # Send a message to the controller via messages/2
     msg_conn = conn(:post, "/mcp/messages?session_id=#{session_id}")
     msg_conn = %{msg_conn | body_params: %{"jsonrpc" => "2.0", "id" => 1, "method" => "ping"}}
-    
+
     res_conn = MCPController.messages(msg_conn, %{"session_id" => session_id})
     assert res_conn.status == 202
 

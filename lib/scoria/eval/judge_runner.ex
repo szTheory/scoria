@@ -38,8 +38,17 @@ defmodule Scoria.Eval.JudgeRunner do
   end
 
   defp judge_dataset(eval_run, eval_spec, dataset, attrs) do
-    req_llm_module = fetch(attrs, :req_llm_module) || Application.get_env(:scoria, :req_llm_module, ReqLLM)
-    model_spec = "#{fetch(attrs, :judge_provider) || fetch!(attrs, :provider)}:#{fetch(attrs, :judge_model) || fetch!(attrs, :model)}"
+    orchestrator_module =
+      fetch(attrs, :orchestrator_module) ||
+        Application.get_env(:scoria, :orchestrator_module, Scoria.Orchestrator)
+
+    opts =
+      if rlm = fetch(attrs, :req_llm_module),
+        do: [req_llm_module: rlm],
+        else: []
+
+    model_spec =
+      "#{fetch(attrs, :judge_provider) || fetch!(attrs, :provider)}:#{fetch(attrs, :judge_model) || fetch!(attrs, :model)}"
 
     score_attrs =
       dataset.id
@@ -49,7 +58,9 @@ defmodule Scoria.Eval.JudgeRunner do
         subject_output = build_subject_output(dataset_item)
         prompt = build_judge_prompt(dataset_item, subject_output)
 
-        {:ok, response} = req_llm_module.generate_object(model_spec, prompt, judge_schema(), req_options: Scoria.Req.Steps.req_options(model_spec))
+        {:ok, response} =
+          orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts)
+
         verdict = extract_object(response)
 
         %{

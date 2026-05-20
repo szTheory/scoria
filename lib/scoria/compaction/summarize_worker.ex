@@ -114,13 +114,12 @@ defmodule Scoria.Compaction.SummarizeWorker do
   end
 
   defp generate_summary!(prompt) do
-    req_llm_module = Application.get_env(:scoria, :req_llm_module, ReqLLM)
+    orchestrator_module = Application.get_env(:scoria, :orchestrator_module, Scoria.Orchestrator)
 
     with {:ok, response} <-
-           req_llm_module.generate_text(summary_model(), prompt,
+           orchestrator_module.generate_text(summary_model(), prompt,
              system_prompt:
-               "You compress workflow event history into durable operational memory for later retrieval.",
-             req_options: Scoria.Req.Steps.req_options(summary_model())
+               "You compress workflow event history into durable operational memory for later retrieval."
            ),
          summary when is_binary(summary) and summary != "" <- extract_summary_text(response) do
       summary
@@ -134,8 +133,8 @@ defmodule Scoria.Compaction.SummarizeWorker do
     embedding_module = Application.get_env(:scoria, :req_llm_embedding_module, ReqLLM.Embedding)
 
     case embedding_module.embed(embedding_model(), summary_text, dimensions: 3) do
-      {:ok, embedding} when is_list(embedding) -> Pgvector.new(embedding)
-      {:ok, %{embedding: embedding}} when is_list(embedding) -> Pgvector.new(embedding)
+      {:ok, embedding} when is_list(embedding) -> :erlang.term_to_binary(embedding)
+      {:ok, %{embedding: embedding}} when is_list(embedding) -> :erlang.term_to_binary(embedding)
       _ -> nil
     end
   end
