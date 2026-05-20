@@ -21,4 +21,10 @@ config :scoria, Scoria.Vault,
     }
   ]
 
+config :scoria,
+  fallback_chains: %{
+    "openai:gpt-4o" => ["openai:gpt-4-turbo", "openai:gpt-3.5-turbo"],
+    "anthropic:claude-3-opus" => ["anthropic:claude-3-sonnet"]
+  }
+
 import_config "#{config_env()}.exs"
