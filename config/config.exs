@@ -9,7 +9,7 @@ config :scoria, Scoria.Repo,
 
 config :scoria, Oban,
   engine: Oban.Engines.Basic,
-  queues: [connector_sync: 10],
+  queues: [connector_sync: 10, compaction: 10, system: 10, inference: 20, evals: 50],
   repo: Scoria.Repo
 
 config :scoria, Scoria.Vault,
