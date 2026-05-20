@@ -9,6 +9,8 @@ defmodule Scoria.Eval do
   alias Scoria.Eval.Dataset
   alias Scoria.Eval.DatasetItem
   alias Scoria.Eval.EvalSpec
+  alias Scoria.Eval.EvalRun
+  alias Scoria.Eval.Score
 
   @doc """
   Returns the list of datasets.
@@ -126,13 +128,12 @@ defmodule Scoria.Eval do
   Creates an eval spec.
   """
   def create_eval_spec(attrs \\ %{}) do
-    entity_id = Ecto.UUID.generate()
-    
-    attrs_with_defaults = 
+    attrs_with_defaults =
       attrs
-      |> Map.put(:entity_id, entity_id)
-      |> Map.put(:version, 1)
-      |> Map.put(:is_current, true)
+      |> put_new_attr(:entity_id, Ecto.UUID.generate())
+      |> put_new_attr(:version, 1)
+      |> put_new_attr(:is_current, true)
+      |> put_dataset_snapshot!()
 
     %EvalSpec{}
     |> EvalSpec.changeset(attrs_with_defaults)
@@ -143,26 +144,205 @@ defmodule Scoria.Eval do
   Updates an eval spec immutably.
   """
   def update_eval_spec(%EvalSpec{} = old_spec, attrs) do
-    new_version = old_spec.version + 1
-
     old_spec_changeset = Ecto.Changeset.change(old_spec, is_current: false)
 
-    base_struct = %EvalSpec{
-      entity_id: old_spec.entity_id,
-      name: old_spec.name,
-      description: old_spec.description,
-      rubric: old_spec.rubric,
-      version: new_version,
-      is_current: true
-    }
+    stringified_attrs = Map.new(attrs, fn {k, v} -> {to_string(k), v} end)
+    
+    base_attrs =
+      old_spec
+      |> EvalSpec.to_attrs()
+      |> Map.put(:version, old_spec.version + 1)
+      |> Map.put(:is_current, true)
+      |> Map.new(fn {k, v} -> {to_string(k), v} end)
+      |> Map.merge(stringified_attrs)
+      |> put_dataset_snapshot!()
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:deprecate_old, old_spec_changeset)
-    |> Ecto.Multi.insert(:new_spec, EvalSpec.changeset(base_struct, attrs))
+    |> Ecto.Multi.insert(:new_spec, EvalSpec.changeset(%EvalSpec{}, base_attrs))
     |> Repo.transaction()
     |> case do
       {:ok, %{new_spec: new_spec}} -> {:ok, new_spec}
       {:error, _failed_operation, failed_value, _changes_so_far} -> {:error, failed_value}
+    end
+  end
+
+  @doc """
+  Creates an eval run with resolved spec and dataset snapshot facts.
+  """
+  def create_eval_run(attrs \\ %{}) do
+    eval_spec = get_eval_spec!(fetch_attr!(attrs, :eval_spec_id))
+
+    attrs_with_defaults =
+      attrs
+      |> put_new_attr(:dataset_id, eval_spec.dataset_id)
+      |> put_new_attr(:dataset_version, eval_spec.dataset_version)
+      |> put_new_attr(:eval_spec_version, eval_spec.version)
+      |> put_new_attr(:prompt_template_id, eval_spec.subject.prompt_template_id)
+      |> put_new_attr(:prompt_version, eval_spec.subject.prompt_version)
+      |> put_new_attr(:status, "pending")
+
+    %EvalRun{}
+    |> EvalRun.changeset(attrs_with_defaults)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Marks an eval run complete and persists final aggregate facts.
+  """
+  def complete_eval_run(%EvalRun{} = eval_run, attrs) do
+    attrs_with_defaults = put_new_attr(attrs, :status, "completed")
+
+    eval_run
+    |> EvalRun.changeset(attrs_with_defaults)
+    |> Repo.update()
+  end
+
+  @doc """
+  Persists per-item eval score evidence and updates aggregate run counters.
+  """
+  def record_eval_scores(%EvalRun{} = eval_run, score_attrs_list) when is_list(score_attrs_list) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:scores, fn repo, _changes ->
+      insert_scores(repo, eval_run, score_attrs_list)
+    end)
+    |> Ecto.Multi.update(:eval_run, fn %{scores: scores} ->
+      aggregate_attrs = aggregate_score_attrs(eval_run, scores)
+      EvalRun.changeset(eval_run, aggregate_attrs)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{scores: scores, eval_run: updated_run}} -> {:ok, updated_run, scores}
+      {:error, _failed_operation, failed_value, _changes_so_far} -> {:error, failed_value}
+    end
+  end
+
+  defp insert_scores(repo, eval_run, score_attrs_list) do
+    Enum.reduce_while(score_attrs_list, {:ok, []}, fn score_attrs, {:ok, acc} ->
+      attrs_with_fk =
+        score_attrs
+        |> Map.new()
+        |> Map.put(:eval_run_id, eval_run.id)
+
+      case %Score{} |> Score.changeset(attrs_with_fk) |> repo.insert() do
+        {:ok, score} -> {:cont, {:ok, [score | acc]}}
+        {:error, changeset} -> {:halt, {:error, changeset}}
+      end
+    end)
+    |> case do
+      {:ok, scores} -> {:ok, Enum.reverse(scores)}
+      error -> error
+    end
+  end
+
+  defp aggregate_score_attrs(eval_run, scores) do
+    total_items = length(scores)
+    passed_items = Enum.count(scores, &(&1.status == "passed"))
+    failed_items = Enum.count(scores, &(&1.status == "failed"))
+    avg_latency_ms = average_integer(Enum.map(scores, &extract_latency_ms/1))
+    total_cost_usd = decimal_sum(Enum.map(scores, &extract_cost_usd/1))
+
+    %{
+      runner_mode: eval_run.runner_mode,
+      status: if(total_items > 0, do: "running", else: eval_run.status),
+      dataset_id: eval_run.dataset_id,
+      dataset_version: eval_run.dataset_version,
+      eval_spec_id: eval_run.eval_spec_id,
+      eval_spec_version: eval_run.eval_spec_version,
+      prompt_template_id: eval_run.prompt_template_id,
+      prompt_version: eval_run.prompt_version,
+      total_items: total_items,
+      passed_items: passed_items,
+      failed_items: failed_items,
+      avg_latency_ms: avg_latency_ms,
+      total_cost_usd: total_cost_usd
+    }
+  end
+
+  defp extract_latency_ms(score) do
+    score.metadata
+    |> Map.get("latency_ms", Map.get(score.metadata, :latency_ms))
+  end
+
+  defp extract_cost_usd(score) do
+    score.metadata
+    |> Map.get("cost_usd", Map.get(score.metadata, :cost_usd))
+  end
+
+  defp average_integer([]), do: nil
+
+  defp average_integer(values) do
+    present_values =
+      values
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&normalize_integer/1)
+
+    case present_values do
+      [] -> nil
+      _ -> present_values |> Enum.sum() |> Kernel./(length(present_values)) |> round()
+    end
+  end
+
+  defp decimal_sum(values) do
+    present_values =
+      values
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&normalize_decimal/1)
+
+    case present_values do
+      [] -> nil
+      [head | tail] -> Enum.reduce(tail, head, &Decimal.add/2)
+    end
+  end
+
+  defp normalize_integer(value) when is_integer(value), do: value
+  defp normalize_integer(value) when is_float(value), do: trunc(value)
+  defp normalize_integer(value) when is_binary(value), do: String.to_integer(value)
+
+  defp normalize_decimal(%Decimal{} = value), do: value
+  defp normalize_decimal(value) when is_integer(value), do: Decimal.new(value)
+  defp normalize_decimal(value) when is_float(value), do: Decimal.from_float(value)
+  defp normalize_decimal(value) when is_binary(value), do: Decimal.new(value)
+
+  defp put_dataset_snapshot!(attrs) do
+    dataset_id = fetch_attr(attrs, :dataset_id)
+    dataset_version = fetch_attr(attrs, :dataset_version)
+
+    case dataset_id do
+      nil ->
+        attrs
+
+      id ->
+        dataset = get_dataset!(id)
+
+        if dataset.state != :sealed do
+          raise ArgumentError, "eval specs must point at sealed datasets"
+        end
+
+        if dataset_version && dataset_version != dataset.version do
+          raise ArgumentError, "dataset_version must match the sealed dataset version"
+        end
+
+        put_new_attr(attrs, :dataset_version, dataset.version)
+    end
+  end
+
+  defp fetch_attr!(attrs, key) do
+    case fetch_attr(attrs, key) do
+      nil -> raise ArgumentError, "missing required eval attribute #{key}"
+      value -> value
+    end
+  end
+
+  defp fetch_attr(attrs, key) when is_map(attrs) do
+    Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
+  end
+
+  defp put_new_attr(attrs, key, value) when is_map(attrs) do
+    if Map.has_key?(attrs, key) || Map.has_key?(attrs, Atom.to_string(key)) do
+      attrs
+    else
+      Map.put(attrs, key, value)
     end
   end
 end
