@@ -5,6 +5,8 @@ defmodule ScoriaWeb.OrchestratorLive do
   alias Decimal, as: D
   alias Scoria.Repo
 
+  alias Scoria.Connectors
+
   alias Scoria.SRE.{
     AlertEvent,
     AuditOutboxEvent,
@@ -17,13 +19,21 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   alias Scoria.Workflows
   alias Scoria.Workflows.Resume
-  alias ScoriaWeb.{CitationEvidenceComponent, IncidentEvidenceComponent}
+
+  alias ScoriaWeb.{
+    ApprovalInboxComponent,
+    CitationEvidenceComponent,
+    ConnectorDetailDrawerComponent,
+    IncidentEvidenceComponent,
+    RuntimeDetailDrawerComponent
+  }
 
   def mount(_params, session, socket) do
     tenant_id = session["tenant_id"] || "default"
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
+      Phoenix.PubSub.subscribe(Scoria.PubSub, "mcp:runtimes:#{tenant_id}")
     end
 
     socket =
@@ -33,6 +43,11 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:timer_ref, nil)
       |> assign(:token_text, "")
       |> assign(:active_approval, nil)
+      |> assign(:approval_inbox, [])
+      |> assign(:connector_fleet, [])
+      |> assign(:connector_drawer, nil)
+      |> assign(:runtimes, [])
+      |> assign(:runtime_drawer, nil)
       |> assign(
         :actor_id,
         session["actor_id"] || session["user_id"] || session["session_id"] || "operator"
@@ -45,7 +60,11 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:tenant_id, tenant_id)
       |> stream(:traces, [])
 
-    {:ok, socket}
+    {:ok, load_operator_surface(socket)}
+  end
+
+  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, socket) do
+    {:noreply, load_operator_surface(socket)}
   end
 
   def handle_info({:new_trace, trace}, socket) do
@@ -84,7 +103,10 @@ defmodule ScoriaWeb.OrchestratorLive do
   end
 
   def handle_info({:hitl_request, approval}, socket) do
-    {:noreply, assign(socket, :active_approval, approval)}
+    {:noreply,
+     socket
+     |> assign(:active_approval, approval)
+     |> load_operator_surface()}
   end
 
   def handle_event("approve", _, socket) do
@@ -101,6 +123,23 @@ defmodule ScoriaWeb.OrchestratorLive do
        # Fetch deep trace metadata (simulated here)
        {:ok, %{trace_metadata: %{id: trace_id, deep_data: "loaded lazily"}}}
      end)}
+  end
+
+  def handle_event("open_connector_drawer", %{"id" => connector_id}, socket) do
+    {:noreply, assign(socket, :connector_drawer, Connectors.get_connector_drawer(connector_id))}
+  end
+
+  def handle_event("close_connector_drawer", _, socket) do
+    {:noreply, assign(socket, :connector_drawer, nil)}
+  end
+
+  def handle_event("open_runtime_drawer", %{"id" => id}, socket) do
+    runtime = Enum.find(socket.assigns.runtimes, &(&1.id == id))
+    {:noreply, assign(socket, :runtime_drawer, runtime)}
+  end
+
+  def handle_event("close_runtime_drawer", _, socket) do
+    {:noreply, assign(socket, :runtime_drawer, nil)}
   end
 
   def handle_event("load_retrieval_evidence", %{"id" => trace_id}, socket) do
@@ -150,6 +189,70 @@ defmodule ScoriaWeb.OrchestratorLive do
         <p class="text-gray-600 mb-8">A Phoenix-native AI Application Quality Layer.</p>
 
         <div id="token-stream" class="mb-4 whitespace-pre-wrap"><%= @token_text %></div>
+
+        <div class="mb-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+          <ApprovalInboxComponent.render approvals={@approval_inbox} />
+
+          <div class="space-y-6">
+            <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.24em] text-stone-500">external runtimes</p>
+                  <h2 class="text-lg font-semibold text-stone-900">Runtime posture</h2>
+                </div>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <article :for={runtime <- @runtimes} class="rounded-xl border border-stone-200 bg-stone-50 p-3 flex justify-between items-start">
+                  <div>
+                    <p class="text-sm font-semibold text-stone-900 truncate max-w-[12rem]"><%= runtime.id %></p>
+                    <p class="text-xs text-stone-500 mt-1">
+                      <span class={"inline-block w-2 h-2 rounded-full mr-1 #{if runtime.status == "online", do: "bg-emerald-500", else: "bg-stone-300"}"}></span>
+                      <%= runtime.status %>
+                    </p>
+                  </div>
+                  <button phx-click="open_runtime_drawer" phx-value-id={runtime.id} class="text-xs font-medium text-blue-700 underline">
+                    Details
+                  </button>
+                </article>
+              </div>
+            </section>
+
+            <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.24em] text-stone-500">connector fleet</p>
+                  <h2 class="text-lg font-semibold text-stone-900">Connector posture</h2>
+                </div>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <article :for={connector <- @connector_fleet} class="rounded-xl border border-stone-200 bg-stone-50 p-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-semibold text-stone-900"><%= connector.connector_label %></p>
+                      <p class="mt-1 text-xs text-stone-600">
+                        <%= connector.health_state %> · refresh <%= connector.last_refresh_status %>
+                      </p>
+                    </div>
+                    <button phx-click="open_connector_drawer" phx-value-id={connector.connector_id} class="text-xs font-medium text-blue-700 underline">
+                      Open drawer
+                    </button>
+                  </div>
+
+                  <div class="mt-3 flex flex-wrap gap-3 text-xs text-stone-600">
+                    <span>approvals <%= connector.pending_approval_count %></span>
+                    <span>pending tools <%= connector.pending_local_tool_count %></span>
+                    <span>auth <%= connector.auth_provenance.status %></span>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <RuntimeDetailDrawerComponent.render drawer={@runtime_drawer} />
+        <ConnectorDetailDrawerComponent.render drawer={@connector_drawer} />
 
         <div id="traces-list" phx-update="stream" class="space-y-4">
           <div :for={{id, trace} <- @streams.traces} id={id} class="bg-white p-4 rounded shadow">
@@ -654,7 +757,9 @@ defmodule ScoriaWeb.OrchestratorLive do
 
         with {:ok, updated_approval} <- Workflows.approve(approval.id, status, attrs),
              {:ok, updated_socket} <- maybe_resume_approval(socket, updated_approval, status) do
-          assign(updated_socket, :active_approval, nil)
+          updated_socket
+          |> assign(:active_approval, nil)
+          |> load_operator_surface()
         else
           {:error, reason} ->
             put_flash(socket, :error, approval_error_message(status, reason))
@@ -702,5 +807,37 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   defp approval_error_message(status, reason) do
     "Could not #{status} approval through workflow-owned state: #{inspect(reason)}"
+  end
+
+  defp load_operator_surface(socket) do
+    tenant_id = socket.assigns.tenant_id
+
+    presence_topic = "mcp:runtimes:#{tenant_id}"
+    presence_ids = ScoriaWeb.Presence.list(presence_topic) |> Map.keys()
+
+    instances =
+      Scoria.Runtime.Instance
+      |> where(tenant_id: ^tenant_id)
+      |> order_by(desc: :last_seen_at)
+      |> limit(10)
+      |> Repo.all()
+
+    runtimes =
+      Enum.map(instances, fn inst ->
+        status = if inst.id in presence_ids, do: "online", else: "offline"
+        %{
+          id: inst.id,
+          status: status,
+          host_session_id: inst.host_session_id,
+          transport_kind: inst.transport_kind,
+          terminal_offline_reason: inst.terminal_offline_reason,
+          current_run_id: inst.current_run_id
+        }
+      end)
+
+    socket
+    |> assign(:approval_inbox, Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id}))
+    |> assign(:connector_fleet, Connectors.list_connector_fleet(%{tenant_id: tenant_id}))
+    |> assign(:runtimes, runtimes)
   end
 end
