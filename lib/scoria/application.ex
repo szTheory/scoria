@@ -13,6 +13,7 @@ defmodule Scoria.Application do
         Scoria.Vault,
         {Oban, Application.fetch_env!(:scoria, Oban)},
         {Phoenix.PubSub, name: Scoria.PubSub},
+        ScoriaWeb.Presence,
         {Registry, keys: :unique, name: Scoria.MCP.SessionRegistry},
         {Task.Supervisor, name: Scoria.MCP.TaskSupervisor},
         {Task.Supervisor, name: Scoria.Workflow.TaskSupervisor},
