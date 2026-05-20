@@ -1,52 +1,74 @@
-# Roadmap: v1.7 Outrider
+# Scoria v1.8 Vanguard Roadmap
 
 ## Phases
 
-- [x] **Phase 27: MCP Server-Sent Events (SSE) Boundary** - Establish HTTP/SSE interfaces for external runtime interoperability.
-- [ ] **Phase 28: Async Session Compaction Engine** - Implement Oban-backed background workers for memory token sliding windows and Ecto summarization.
-- [x] **Phase 29: External Runtime Observability & Operator UX** - Expose LiveView presence tracking and memory time-travel diffing.
+- [ ] **Phase 30: Oban Infrastructure & Queue Segregation** - Establish isolated background processing queues and batch insertion.
+- [ ] **Phase 31: Model Routing & Resiliency Foundation** - Implement ETS-backed circuit breakers and bounded retries.
+- [ ] **Phase 32: Multi-Model Fallback Orchestration** - Enable automatic model routing based on health and fallback chains.
+- [ ] **Phase 33: Distributed Evaluation Fan-out** - Build the eval coordinator and workers for massive campaign execution.
+- [ ] **Phase 34: Real-time Operator Dashboards** - Expose orchestration state and eval progress via LiveView.
 
 ## Phase Details
 
-### Phase 27: MCP Server-Sent Events (SSE) Boundary
-**Goal**: External Python and Node runtimes can connect to Scoria over HTTP/SSE and invoke tools securely.
-**Depends on**: Phase 26 (v1.6 Release Gates and Approvals)
-**Requirements**: OUTRIDER-01
-**Success Criteria** (what must be TRUE):
-  1. An external agent can establish an SSE connection to a Scoria Phoenix endpoint.
-  2. Scoria can stream MCP standard JSON-RPC payloads to the connected agent.
-  3. The agent can respond and invoke a Scoria-registered tool over HTTP/SSE.
+### Phase 30: Oban Infrastructure & Queue Segregation
+**Goal**: Distributed jobs can be enqueued and executed in isolated queues without starving web requests.
+**Depends on**: Phase 29
+**Requirements**: EVAL-01, EVAL-03
+**Success Criteria**:
+  1. Oban is configured with isolated queues for `inference`, `evals`, and `system`.
+  2. Batch insertion of 100+ simulated jobs uses `Oban.insert_all` without blocking the Ecto connection pool.
+  3. Jobs are processed independently based on queue assignment.
+**Plans**: 2 plans
+- [ ] 30-01-PLAN.md — Queue configuration supporting explicit limits and environment overrides
+- [ ] 30-02-PLAN.md — Batch queuing utility wrapping Ecto.Multi inserts
+
+### Phase 31: Model Routing & Resiliency Foundation
+**Goal**: System correctly identifies and handles model failures via ETS-backed circuit breakers and bounded retries.
+**Depends on**: Phase 30
+**Requirements**: ORCH-02, ORCH-03
+**Success Criteria**:
+  1. Node-local ETS table tracks model health state (open/closed circuit).
+  2. Outbound `Req` calls use explicit retries with exponential backoff for 429s.
+  3. Repeated failures trip the circuit breaker, immediately returning errors without waiting for timeouts.
 **Plans**: TBD
 
-### Phase 28: Async Session Compaction Engine
-**Goal**: Scoria transparently compacts old session history without blocking web requests or external agents.
-**Depends on**: Phase 27
-**Requirements**: OUTRIDER-03, OUTRIDER-04, OUTRIDER-05
-**Success Criteria** (what must be TRUE):
-  1. An active session that breaches a configured token/time limit automatically enqueues an Oban compaction job.
-  2. The Oban worker successfully calls the LLM, summarizes the raw events, and stores the result in a new Ecto schema.
-  3. Raw session events are securely archived or soft-deleted from the active context window.
-**Plans**: 28-01, 28-02
+### Phase 32: Multi-Model Fallback Orchestration
+**Goal**: Failed model requests automatically route to secondary models transparently based on fallback chains.
+**Depends on**: Phase 31
+**Requirements**: ORCH-01
+**Success Criteria**:
+  1. Orchestrator detects a tripped circuit for the primary model.
+  2. Request is automatically routed to an appropriate fallback model matching context capabilities.
+  3. Telemetry events are emitted for both failures and successful fallbacks.
+**Plans**: TBD
 
-### Phase 29: External Runtime Observability & Operator UX
-**Goal**: Operators can monitor external runtime health and audit the compaction pipeline through the Scoria dashboard.
-**Depends on**: Phase 28
-**Requirements**: OUTRIDER-02, OUTRIDER-06, OUTRIDER-07
-**Success Criteria** (what must be TRUE):
-  1. The Scoria LiveView dashboard displays connected external agents in real-time using Phoenix Presence.
-  2. A disconnected agent triggers a visible offline state in the dashboard.
-  3. An operator can view an active session and see a diff of raw archived events versus the LLM-compacted summaries.
-**Plans**: 4 plans
-- [x] 29-01-PLAN.md
-- [x] 29-02-PLAN.md
-- [x] 29-03-PLAN.md
-- [x] 29-04-PLAN.md
+### Phase 33: Distributed Evaluation Fan-out
+**Goal**: Operators can run large evaluation campaigns across multiple models and tenants simultaneously.
+**Depends on**: Phase 32
+**Requirements**: EVAL-02
+**Success Criteria**:
+  1. Eval Coordinator accepts a campaign and fans out individual evaluation jobs via Oban.
+  2. Individual eval workers execute requests through the `Scoria.Orchestrator.Router`.
+  3. Worker results are written back to the database.
+**Plans**: TBD
+
+### Phase 34: Real-time Operator Dashboards
+**Goal**: Operators can visualize multi-model health and distributed evaluation progress in real-time.
+**Depends on**: Phase 33
+**Requirements**: OBS-01, OBS-02
+**Success Criteria**:
+  1. LiveView dashboard displays real-time health (ETS state) of all configured models.
+  2. Eval campaign progress is streamed to a LiveView interface via `Phoenix.PubSub`.
+  3. Operator can visually distinguish between primary model success and fallback usage.
+**Plans**: TBD
 **UI hint**: yes
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 27. MCP Server-Sent Events (SSE) Boundary | 1/1 | Completed | 2026-05-19 |
-| 28. Async Session Compaction Engine | 2/2 | Planned | - |
-| 29. External Runtime Observability & Operator UX | 4/4 | Completed | 2026-05-20 |
+| 30. Oban Infrastructure & Queue Segregation | 2/2 | Complete | 2026-05-20 |
+| 31. Model Routing & Resiliency Foundation | 0/3 | Not started | - |
+| 32. Multi-Model Fallback Orchestration | 0/3 | Not started | - |
+| 33. Distributed Evaluation Fan-out | 0/3 | Not started | - |
+| 34. Real-time Operator Dashboards | 0/3 | Not started | - |
