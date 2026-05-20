@@ -3,29 +3,47 @@
 ## Project Reference
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** `v1.6 Flightpath` is active and defining prompt lifecycle and eval-release operations.
+**Current Focus:** v1.7 Outrider milestone planning complete. Ready to begin execution.
 
 ## Current Position
-**Milestone:** `v1.6 Flightpath`
-**Phase:** 23-ecto-backed-prompt-registry-and-lifecycle
-**Plan:** 23-04
-**Status:** Active
-**Last activity:** 2026-05-18 - Completed 23-03-PLAN.md
+**Milestone:** v1.7 Outrider
+**Phase:** 29
+**Plan:** 03
+**Status:** Planned
+**Last activity:** [current date] - Completed v1.7 Outrider milestone planning
 
 **Progress:**
-`[##################................................] Phase 23 (3/4)`
+`[--------------------------------------------------] Milestone v1.7 Planned`
 
 ## Performance Metrics
-- **Completed Phases:** 22
-- **Completed Plans:** 79
-- **Total Validated Requirements:** 69
-- **Coverage:** 100% on shipped milestones through `v1.5 Switchyard`
-- **Latest Shipped Milestone:** `v1.5 Switchyard` on 2026-05-18
+- **Completed Phases:** 27
+- **Completed Plans:** 89
+- **Total Validated Requirements:** 81
+- **Coverage:** 100% on shipped milestones through `v1.6 Flightpath`
+- **Latest Shipped Milestone:** `v1.6 Flightpath` on 2026-05-19
 
 **Phase 23 Metrics:**
 - **23-01:** 10m, 2 tasks, 4 files
 - **23-02:** 10m, 2 tasks, 3 files
 - **23-03:** 5m, 1 tasks, 2 files
+
+**Phase 24 Metrics:**
+- **24-01:** 15m, 1 tasks, 4 files
+- **24-02:** 10m, 1 tasks, 2 files
+- **24-03:** 15m, 3 tasks, 3 files
+
+**Phase 25 Metrics:**
+- **25-01:** 25m, 3 tasks, 6 files
+- **25-02:** 40m, 3 tasks, 10 files
+- **25-03:** 20m, 2 tasks, 4 files
+
+**Phase 26 Metrics:**
+- **26-01:** 20m, 2 tasks, 3 files
+- **26-02:** 15m, 1 tasks, 2 files
+- **26-03:** 15m, 2 tasks, 3 files
+
+**Phase 27 Metrics:**
+- **27-01:** 10m, 3 tasks, 4 files
 
 ## Accumulated Context
 **Decisions:**
@@ -70,13 +88,13 @@
 - Phase 23 (23-01): Implemented robust nil-handling and concatenation strategies for upper-bound token estimation without risking crashes.
 
 **Todos:**
-- Discuss and define requirements for milestone `v1.6 Flightpath` using `/gsd-new-milestone`.
+- Discuss and define requirements for milestone `v1.7 Outrider` using `/gsd-new-milestone`.
 
 **Blockers:**
 - None.
 
 **Reference Updates:**
-- `v1.5 Switchyard` shipped-state evidence remains in `.planning/milestones/v1.5-ROADMAP.md`, `.planning/milestones/v1.5-REQUIREMENTS.md`, and Phase 19-22 verification artifacts.
+- `v1.6 Flightpath` shipped-state evidence remains in `.planning/milestones/v1.6-ROADMAP.md`, `.planning/milestones/v1.6-REQUIREMENTS.md`, and Phase 23-26 verification artifacts.
 
 ## Deferred Items
 

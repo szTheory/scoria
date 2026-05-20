@@ -7,6 +7,7 @@ defmodule ScoriaWeb.MCPControllerTest do
   alias ScoriaWeb.MCPController
 
   setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
     conn = conn(:get, "/")
     {:ok, conn: conn}
   end
@@ -19,8 +20,11 @@ defmodule ScoriaWeb.MCPControllerTest do
 
   test "sse loop registers and receives messages", %{conn: conn} do
     conn = assign(conn, :mcp_tools, [])
+    conn = assign(conn, :tenant_id, "test_tenant")
 
+    parent = self()
     task = Task.async(fn ->
+      Ecto.Adapters.SQL.Sandbox.allow(Scoria.Repo, parent, self())
       MCPController.sse(conn, %{})
     end)
 

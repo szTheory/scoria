@@ -12,6 +12,18 @@ defmodule ScoriaWeb.MCPController do
   """
   def sse(conn, _params) do
     session_id = Ecto.UUID.generate()
+    tenant_id = conn.assigns[:tenant_id] || "default"
+
+    {:ok, instance} = Scoria.Runtime.register_instance(%{
+      tenant_id: tenant_id,
+      transport_kind: "sse",
+      host_session_id: session_id
+    })
+
+    # Track in Presence using durable instance.id
+    {:ok, _} = ScoriaWeb.Presence.track(self(), "mcp:runtimes:#{tenant_id}", instance.id, %{
+      status: "connected"
+    })
     
     # Register in SessionRegistry
     {:ok, _} = Registry.register(SessionRegistry, session_id, [])
@@ -27,7 +39,11 @@ defmodule ScoriaWeb.MCPController do
     endpoint_event = "event: endpoint\ndata: /mcp/messages?session_id=#{session_id}\n\n"
     {:ok, conn} = chunk(conn, endpoint_event)
 
-    listen_loop(conn)
+    try do
+      listen_loop(conn)
+    after
+      Scoria.Runtime.mark_offline(instance.id, "transport_closed")
+    end
   end
 
   @doc """
