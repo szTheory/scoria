@@ -43,7 +43,9 @@
   1. Orchestrator detects a tripped circuit for the primary model.
   2. Request is automatically routed to an appropriate fallback model matching context capabilities.
   3. Telemetry events are emitted for both failures and successful fallbacks.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 32-01-PLAN.md — Orchestrator Domain Logic
+- [ ] 32-02-PLAN.md — Integration in Callers
 
 ### Phase 33: Distributed Evaluation Fan-out
 **Goal**: Operators can run large evaluation campaigns across multiple models and tenants simultaneously.
@@ -72,6 +74,6 @@
 |-------|----------------|--------|-----------|
 | 30. Oban Infrastructure & Queue Segregation | 2/2 | Complete | 2026-05-20 |
 | 31. Model Routing & Resiliency Foundation | 0/3 | Not started | - |
-| 32. Multi-Model Fallback Orchestration | 0/3 | Not started | - |
+| 32. Multi-Model Fallback Orchestration | 0/2 | Not started | - |
 | 33. Distributed Evaluation Fan-out | 0/3 | Not started | - |
 | 34. Real-time Operator Dashboards | 0/3 | Not started | - |
