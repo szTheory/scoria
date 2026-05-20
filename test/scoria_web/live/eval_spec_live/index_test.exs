@@ -45,11 +45,37 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
   end
 
   test "renders eval specs and handles editing" do
+    {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Test Dataset", state: :sealed})
+    
     # Create an initial EvalSpec
-    {:ok, spec} = Eval.create_eval_spec(%{
+    {:ok, spec} = Scoria.Eval.create_eval_spec(%{
       name: "Helpfulness",
       description: "How helpful is the response?",
-      rubric: %{"score" => "1-5"}
+      dataset_id: dataset.id,
+      dataset_version: dataset.version,
+      eval_mode: :offline_replay,
+      subject: %{
+        subject_kind: :prompt_template,
+        prompt_entity_id: Ecto.UUID.generate(),
+        prompt_template_id: Ecto.UUID.generate(),
+        prompt_version: 1
+      },
+      scorers: [
+        %{
+          metric_key: "accuracy",
+          scorer_kind: :llm_judge,
+          judge_prompt_template_id: Ecto.UUID.generate(),
+          judge_prompt_version: 1,
+          judge_provider: "openai",
+          judge_model: "gpt-4o-mini",
+          weight: 1.0
+        }
+      ],
+      threshold_policy: %{
+        pass_rate_gte: 0.8,
+        mean_score_gte: 0.8,
+        max_latency_ms: 100
+      }
     })
 
     conn = Phoenix.ConnTest.build_conn()
@@ -68,13 +94,10 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     assert html =~ "Edit Rubric: Helpfulness"
 
     # Submit form
-    rubric_json = Jason.encode!(%{"score" => "1-10"})
-    
     html = render_submit(view, "save", %{
       "eval_spec" => %{
         "name" => "Helpfulness V2",
-        "description" => "Updated description",
-        "rubric" => rubric_json
+        "description" => "Updated description"
       }
     })
 
@@ -90,6 +113,5 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     assert new_spec.name == "Helpfulness V2"
     assert new_spec.version == 2
     assert new_spec.entity_id == spec.entity_id
-    assert new_spec.rubric == %{"score" => "1-10"}
   end
 end

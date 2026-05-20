@@ -28,11 +28,16 @@ defmodule ScoriaWeb.MCPControllerTest do
       MCPController.sse(conn, %{})
     end)
 
-    Process.sleep(50)
-
-    # Find the session id registered by the task
-    registrations = Registry.select(SessionRegistry, [{{:"$1", :"$2", :"$3"}, [], [{{:"$1", :"$2"}}]}])
-    {session_id, pid} = Enum.find(registrations, fn {_id, p} -> p == task.pid end)
+    # Find the session id registered by the task (retry up to 1 second)
+    {session_id, pid} = 
+      Enum.reduce_while(1..20, nil, fn _, _acc ->
+        Process.sleep(50)
+        registrations = Registry.select(SessionRegistry, [{{:"$1", :"$2", :"$3"}, [], [{{:"$1", :"$2"}}]}])
+        case Enum.find(registrations, fn {_id, p} -> p == task.pid end) do
+          nil -> {:cont, nil}
+          match -> {:halt, match}
+        end
+      end) || {nil, nil}
 
     assert pid == task.pid
 

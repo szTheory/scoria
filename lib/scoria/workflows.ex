@@ -6,11 +6,15 @@ defmodule Scoria.Workflows do
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
+  alias Scoria.Connectors.Connector
+  alias Scoria.Connectors.LocalTool
   alias Scoria.Identity
   alias Scoria.Observe.Approval
   alias Scoria.Repo
   alias Scoria.SRE
   alias Scoria.SRE.AuditOutboxEvent
+  alias Scoria.Workflows.EventCompactor
+  alias Scoria.Workflows.RemoteApprovalProjection
   alias Scoria.Workflows.{Checkpoint, Event, Handoff, Run, Step}
 
   @topic_prefix "scoria:workflow_runs:"
@@ -24,6 +28,12 @@ defmodule Scoria.Workflows do
   def get_step!(id), do: Repo.get!(Step, id)
 
   def get_approval!(id), do: Repo.get!(Approval, id)
+
+  def list_pending_remote_approvals(filters \\ %{}),
+    do: RemoteApprovalProjection.list_pending_approvals(filters)
+
+  def get_remote_approval_lineage!(approval_id),
+    do: RemoteApprovalProjection.get_approval_lineage!(approval_id)
 
   def list_run_steps(run_id) do
     Step
@@ -187,6 +197,14 @@ defmodule Scoria.Workflows do
     end
   end
 
+  def record_connector_auth_failure(run_id, step_id, payload) do
+    append_event(run_id, step_id, %{event_type: "connector.auth_failed", payload: payload})
+  end
+
+  def record_connector_scope_escalation(run_id, step_id, payload) do
+    append_event(run_id, step_id, %{event_type: "connector.scope_escalation", payload: payload})
+  end
+
   def claim_step(%Step{id: id}), do: claim_step(id)
 
   def claim_step(step_id) do
@@ -317,6 +335,7 @@ defmodule Scoria.Workflows do
       approval_attrs =
         attrs
         |> Map.new()
+        |> enrich_remote_approval_attrs()
         |> Map.merge(%{
           actor_id: approval_identity.actor_id,
           tenant_id: approval_identity.tenant_id,
@@ -363,6 +382,11 @@ defmodule Scoria.Workflows do
           }
         })
 
+      approval =
+        approval
+        |> Approval.changeset(%{audit_outbox_event_id: audit_outbox_event.id})
+        |> repo.update!()
+
       {updated_run, approval, audit_outbox_event}
     end)
     |> case do
@@ -374,6 +398,18 @@ defmodule Scoria.Workflows do
       {:error, value} ->
         {:error, value}
     end
+  end
+
+  def request_remote_approval(%Run{id: run_id}, %Step{id: step_id}, attrs),
+    do: request_remote_approval(run_id, step_id, attrs)
+
+  def request_remote_approval(run_id, step_id, attrs) do
+    attrs =
+      attrs
+      |> Map.new()
+      |> Map.put_new(:replay_allowed, true)
+
+    mark_waiting_for_approval(run_id, step_id, attrs)
   end
 
   def fail_step(step_or_id, error_envelope, opts \\ [])
@@ -565,6 +601,7 @@ defmodule Scoria.Workflows do
     Repo.transaction(fn repo ->
       approval = repo.get!(Approval, approval_id)
       audit_context = approval_decision_context(repo, approval, attrs)
+
       update_attrs =
         attrs
         |> Map.drop([:actor_id, "actor_id", :tenant_id, "tenant_id", :session_id, "session_id"])
@@ -654,14 +691,18 @@ defmodule Scoria.Workflows do
   defp insert_event(repo, run_id, step_id, attrs) do
     sequence = next_sequence(repo, Event, run_id)
 
-    %Event{}
-    |> Event.changeset(
-      attrs
-      |> Map.put(:run_id, run_id)
-      |> Map.put(:step_id, step_id)
-      |> Map.put(:sequence, sequence)
-    )
-    |> repo.insert!()
+    event =
+      %Event{}
+      |> Event.changeset(
+        attrs
+        |> Map.put(:run_id, run_id)
+        |> Map.put(:step_id, step_id)
+        |> Map.put(:sequence, sequence)
+      )
+      |> repo.insert!()
+
+    _ = EventCompactor.maybe_enqueue_compaction(repo, run_id)
+    event
   end
 
   defp next_sequence(repo, schema, run_id) do
@@ -718,6 +759,34 @@ defmodule Scoria.Workflows do
 
   defp attr_value(attrs, key) do
     Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
+  end
+
+  defp enrich_remote_approval_attrs(attrs) do
+    connector_id = attr_value(attrs, :connector_id)
+    local_tool_id = attr_value(attrs, :local_tool_id)
+
+    connector =
+      case connector_id do
+        nil -> nil
+        id -> Repo.get(Connector, id)
+      end
+
+    local_tool =
+      case local_tool_id do
+        nil -> nil
+        id -> Repo.get(LocalTool, id)
+      end
+
+    attrs
+    |> Map.put_new(:connector_label, connector && connector.label)
+    |> Map.put_new(:connector_key, connector && connector.key)
+    |> Map.put_new(:local_tool_name, local_tool && local_tool.display_name)
+    |> Map.update(:missing_scopes, [], fn scopes ->
+      Enum.map(List.wrap(scopes), fn scope -> to_string(scope) end)
+    end)
+    |> Map.update(:requested_scopes, [], fn scopes ->
+      Enum.map(List.wrap(scopes), fn scope -> to_string(scope) end)
+    end)
   end
 
   defp run_attrs_with_identity(run_attrs, identity) do

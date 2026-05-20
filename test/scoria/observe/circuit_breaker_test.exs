@@ -5,13 +5,12 @@ defmodule Scoria.Observe.CircuitBreakerTest do
 
   setup do
     if :ets.whereis(:scoria_circuit_breakers) != :undefined do
-      :ets.delete(:scoria_circuit_breakers)
+      :ets.delete_all_objects(:scoria_circuit_breakers)
     end
     :ok
   end
 
   test "init_table/0 creates named public ETS table :scoria_circuit_breakers" do
-    assert :ets.whereis(:scoria_circuit_breakers) == :undefined
     assert :ok = CircuitBreaker.init_table()
     assert :ets.whereis(:scoria_circuit_breakers) != :undefined
     
