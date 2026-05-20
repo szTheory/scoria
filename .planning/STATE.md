@@ -7,8 +7,8 @@
 
 ## Current Position
 **Milestone:** v1.7 Outrider
-**Phase:** 29
-**Plan:** 04
+**Phase:** None
+**Plan:** None
 **Status:** Planned
 **Last activity:** [current date] - Completed v1.7 Outrider milestone planning
 

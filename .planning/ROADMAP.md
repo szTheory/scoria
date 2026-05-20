@@ -1,104 +1,52 @@
-# Roadmap: Scoria (v1.6 Flightpath)
-
-## Milestones
-
-- ✅ **v1.0 MVP** — Phases 1-4 (shipped 2026-05-10)
-- ✅ **v1.1 Caldera** — Phase 5 (shipped 2026-05-11)
-- ✅ **v1.2 Corpus** — Phase 6 (shipped 2026-05-11)
-- ✅ **v1.3 Seismograph** — Phases 7-11 (shipped 2026-05-12)
-- ✅ **v1.4 Keystone** — Phases 12-18 (shipped 2026-05-17)
-- ✅ **v1.5 Switchyard** — Phases 19-22 (shipped 2026-05-18)
-- 🚧 **v1.6 Flightpath** — Phases 23-26 (active)
-
-## Current Milestone
-
-**v1.6 Flightpath**
-
-- Theme: Release gates, prompt lifecycle, and evaluation operations
-- Goal: Establish a closed-loop LLM evaluation flywheel within the embedded Scoria architecture.
-- Requirements: 12 defined requirements (REG, DATA, EVAL, GATE)
-- Status: Active milestone planning
+# Roadmap: v1.7 Outrider
 
 ## Phases
 
-- [ ] **Phase 23: Ecto-backed Prompt Registry & Lifecycle** - Single durable Ecto source of truth for structured, versioned prompts.
-- [ ] **Phase 24: Trace-to-Dataset Curation via LiveView** - Promote real production traces into baseline datasets.
-- [ ] **Phase 25: CI/CD Regression & Evaluation Framework** - Deterministic and cost-effective ExUnit evaluation runs with VCR cassettes.
-- [ ] **Phase 26: Release Gates & Approvals** - Enforce workflow-backed policies for prompt activation and production rollout.
+- [x] **Phase 27: MCP Server-Sent Events (SSE) Boundary** - Establish HTTP/SSE interfaces for external runtime interoperability.
+- [ ] **Phase 28: Async Session Compaction Engine** - Implement Oban-backed background workers for memory token sliding windows and Ecto summarization.
+- [x] **Phase 29: External Runtime Observability & Operator UX** - Expose LiveView presence tracking and memory time-travel diffing.
 
 ## Phase Details
 
-### Phase 23: Ecto-backed Prompt Registry & Lifecycle
-**Goal**: Developers and operators have a single durable Ecto source of truth for structured, versioned prompts independent of code deployment cycles.
-**Depends on**: Phase 22 (from v1.5 Switchyard)
-**Requirements**: REG-01, REG-02, REG-03
+### Phase 27: MCP Server-Sent Events (SSE) Boundary
+**Goal**: External Python and Node runtimes can connect to Scoria over HTTP/SSE and invoke tools securely.
+**Depends on**: Phase 26 (v1.6 Release Gates and Approvals)
+**Requirements**: OUTRIDER-01
 **Success Criteria** (what must be TRUE):
-  1. Operator can save a structured prompt template and it persists as an immutable, versioned Ecto record.
-  2. System rejects in-place edits to active prompts, forcing a new version instead.
-  3. System calculates and displays token count estimations when saving a prompt.
+  1. An external agent can establish an SSE connection to a Scoria Phoenix endpoint.
+  2. Scoria can stream MCP standard JSON-RPC payloads to the connected agent.
+  3. The agent can respond and invoke a Scoria-registered tool over HTTP/SSE.
+**Plans**: TBD
+
+### Phase 28: Async Session Compaction Engine
+**Goal**: Scoria transparently compacts old session history without blocking web requests or external agents.
+**Depends on**: Phase 27
+**Requirements**: OUTRIDER-03, OUTRIDER-04, OUTRIDER-05
+**Success Criteria** (what must be TRUE):
+  1. An active session that breaches a configured token/time limit automatically enqueues an Oban compaction job.
+  2. The Oban worker successfully calls the LLM, summarizes the raw events, and stores the result in a new Ecto schema.
+  3. Raw session events are securely archived or soft-deleted from the active context window.
+**Plans**: 28-01, 28-02
+
+### Phase 29: External Runtime Observability & Operator UX
+**Goal**: Operators can monitor external runtime health and audit the compaction pipeline through the Scoria dashboard.
+**Depends on**: Phase 28
+**Requirements**: OUTRIDER-02, OUTRIDER-06, OUTRIDER-07
+**Success Criteria** (what must be TRUE):
+  1. The Scoria LiveView dashboard displays connected external agents in real-time using Phoenix Presence.
+  2. A disconnected agent triggers a visible offline state in the dashboard.
+  3. An operator can view an active session and see a diff of raw archived events versus the LLM-compacted summaries.
 **Plans**: 4 plans
-Plans:
-- [ ] 23-01-PLAN.md — Setup the Tiktoken dependency and create the token estimation utility for prompt templates.
-- [ ] 23-02-PLAN.md — Create the Ecto schema and database migration for storing versioned, structured prompt templates.
-- [ ] 23-03-PLAN.md — Implement the primary context interface for prompt registry operations, including token estimation injection and immutable lifecycle transitions.
-- [ ] 23-04-PLAN.md — Create the LiveView interface for managing prompt templates and displaying token estimations.
-
-### Phase 24: Trace-to-Dataset Curation via LiveView
-**Goal**: Operators can seamlessly promote real production traces into durable, baseline datasets for future testing.
-**Depends on**: Phase 23
-**Requirements**: DATA-01, DATA-02
-**Success Criteria** (what must be TRUE):
-  1. Operator can view a production trace in the LiveView dashboard and click to save it as a dataset.
-  2. The resulting dataset successfully retains the multi-turn context and expected output formats natively.
-**Plans**: 3 plans
-Plans:
-- [ ] 24-01-PLAN.md — Create foundational Ecto relational models for evaluation datasets and items.
-- [ ] 24-02-PLAN.md — Implement the context interface for Dataset and DatasetItem CRUD operations.
-- [ ] 24-03-PLAN.md — Implement the "Promote to Dataset" LiveView flow for operators.
+- [x] 29-01-PLAN.md
+- [x] 29-02-PLAN.md
+- [x] 29-03-PLAN.md
+- [x] 29-04-PLAN.md
 **UI hint**: yes
-
-### Phase 25: CI/CD Regression & Evaluation Framework
-**Goal**: Developers can run offline evaluation test suites in CI that are fast, deterministic, and cost-effective using standard ExUnit tools.
-**Depends on**: Phase 24
-**Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04
-**Success Criteria** (what must be TRUE):
-  1. Developer can run `mix test` and ExUnit will execute dataset assertions against a prompt version using VCR cassettes (no live network calls).
-  2. System can perform LLM-as-a-judge qualitative evaluations using structured outputs when live evaluations are requested.
-  3. Evaluation metrics (pass rate, latency) are saved as durable `EvalRun` records linked to the executed prompt version.
-**Plans**: TBD
-
-### Phase 26: Release Gates & Approvals
-**Goal**: Organizations can enforce policies that new prompts cannot serve production traffic until evaluated and explicitly approved by an operator.
-**Depends on**: Phase 25
-**Requirements**: GATE-01, GATE-02, GATE-03
-**Success Criteria** (what must be TRUE):
-  1. A newly created prompt version remains in "draft" state and cannot be invoked by `Scoria.Runtime` for production traffic.
-  2. Operator can view an embedded LiveView workbench comparing the draft prompt's EvalRun metrics against the active prompt.
-  3. Operator can explicitly approve the draft using Scoria's workflow system, promoting it to active and gating future invocations.
-**Plans**: TBD
-**UI hint**: yes
-
-## Coverage
-
-| Phase | Requirements Covered |
-|-------|----------------------|
-| 23 | REG-01, REG-02, REG-03 |
-| 24 | DATA-01, DATA-02 |
-| 25 | EVAL-01, EVAL-02, EVAL-03, EVAL-04 |
-| 26 | GATE-01, GATE-02, GATE-03 |
-
-All 12 active v1.6 milestone requirements are mapped exactly once.
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 23. Ecto-backed Prompt Registry & Lifecycle | 2/4 | In Progress | - |
-| 24. Trace-to-Dataset Curation via LiveView | 0/0 | Not started | - |
-| 25. CI/CD Regression & Evaluation Framework | 0/0 | Not started | - |
-| 26. Release Gates & Approvals | 0/0 | Not started | - |
-
-## Forward Look
-
-- `v1.7 Outrider` remains a future-bet milestone for deeper ecosystem/runtime expansion.
-- Next step: `/gsd-execute-phase 23`
+| 27. MCP Server-Sent Events (SSE) Boundary | 1/1 | Completed | 2026-05-19 |
+| 28. Async Session Compaction Engine | 2/2 | Planned | - |
+| 29. External Runtime Observability & Operator UX | 4/4 | Completed | 2026-05-20 |
