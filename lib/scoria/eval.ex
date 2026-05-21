@@ -8,6 +8,7 @@ defmodule Scoria.Eval do
 
   alias Scoria.Eval.Dataset
   alias Scoria.Eval.DatasetItem
+  alias Scoria.Eval.CampaignEnqueuer
   alias Scoria.Eval.EvalCampaign
   alias Scoria.Eval.EvalCampaignTarget
   alias Scoria.Eval.EvalSpec
@@ -223,6 +224,13 @@ defmodule Scoria.Eval do
       {:ok, %{campaign: campaign}} -> {:ok, campaign}
       {:error, _failed_operation, failed_value, _changes_so_far} -> {:error, failed_value}
     end
+  end
+
+  @doc """
+  Creates a campaign, child target rows, child eval runs, and batch-enqueues worker jobs.
+  """
+  def create_and_enqueue_campaign(attrs, opts \\ []) when is_map(attrs) do
+    CampaignEnqueuer.enqueue_campaign(attrs, opts)
   end
 
   @doc """

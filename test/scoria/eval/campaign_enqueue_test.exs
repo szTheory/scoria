@@ -41,7 +41,14 @@ defmodule Scoria.Eval.CampaignEnqueueTest do
 
       campaign = Repo.get!(EvalCampaign, result.campaign.id)
       targets = Eval.list_campaign_targets(campaign.id)
-      eval_runs = Repo.all(from(run in EvalRun, where: run.campaign_id == ^campaign.id, order_by: [asc: run.inserted_at, asc: run.id]))
+
+      eval_runs =
+        Repo.all(
+          from(run in EvalRun,
+            where: run.campaign_id == ^campaign.id,
+            order_by: [asc: run.inserted_at, asc: run.id]
+          )
+        )
 
       assert campaign.eval_spec_id == eval_spec.id
       assert campaign.tenant_id == "tenant-root"
@@ -159,20 +166,24 @@ defmodule Scoria.Eval.CampaignEnqueueTest do
   describe "CampaignWorker.new_job/2" do
     test "normalizes the async contract used by the coordinator" do
       job =
-        CampaignWorker.new_job(%{
-          "campaign_id" => "campaign-1",
-          :campaign_target_id => "target-1",
-          "eval_run_id" => "run-1",
-          :tenant_id => "tenant-1",
-          "eval_spec_id" => "spec-1",
-          :provider => "openai",
-          "model" => "gpt-4o-mini",
-          :metadata => %{lane: "nightly"}
-        }, priority: 4)
+        CampaignWorker.new_job(
+          %{
+            "campaign_id" => "campaign-1",
+            :campaign_target_id => "target-1",
+            "eval_run_id" => "run-1",
+            :tenant_id => "tenant-1",
+            "eval_spec_id" => "spec-1",
+            :provider => "openai",
+            "model" => "gpt-4o-mini",
+            :metadata => %{lane: "nightly"}
+          },
+          priority: 4
+        )
 
-      assert job.queue == "evals"
-      assert job.priority == 4
-      assert job.args == %{
+      assert job.changes.queue == "evals"
+      assert job.changes.priority == 4
+
+      assert job.changes.args == %{
                "campaign_id" => "campaign-1",
                "campaign_target_id" => "target-1",
                "eval_run_id" => "run-1",
