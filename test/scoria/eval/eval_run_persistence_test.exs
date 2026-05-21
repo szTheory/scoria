@@ -193,6 +193,9 @@ defmodule Scoria.Eval.EvalRunPersistenceTest do
         )
 
       legacy_run_id = Ecto.UUID.generate()
+      legacy_run_id_dump = Ecto.UUID.dump!(legacy_run_id)
+      eval_spec_id_dump = Ecto.UUID.dump!(eval_spec.id)
+      prompt_template_id_dump = Ecto.UUID.dump!(prompt_template_id)
       now = DateTime.utc_now() |> DateTime.truncate(:second)
 
       assert {1, nil} =
@@ -200,14 +203,14 @@ defmodule Scoria.Eval.EvalRunPersistenceTest do
                  "ai_eval_runs",
                  [
                    %{
-                     id: legacy_run_id,
+                     id: legacy_run_id_dump,
                      runner_mode: "offline_replay",
                      status: "pending",
                      dataset_id: dataset.id,
                      dataset_version: dataset.version,
-                     eval_spec_id: eval_spec.id,
+                     eval_spec_id: eval_spec_id_dump,
                      eval_spec_version: eval_spec.version,
-                     prompt_template_id: prompt_template_id,
+                     prompt_template_id: prompt_template_id_dump,
                      prompt_version: 3,
                      provider: "openai",
                      model: "gpt-4o-mini",
@@ -215,7 +218,7 @@ defmodule Scoria.Eval.EvalRunPersistenceTest do
                      updated_at: now
                    }
                  ]
-               )
+                )
 
       legacy_run = Repo.get!(EvalRun, legacy_run_id)
       assert is_nil(legacy_run.tenant_id)

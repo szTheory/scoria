@@ -3,7 +3,6 @@ defmodule Scoria.Eval.EvalCampaignPersistenceTest do
 
   alias Scoria.Eval
   alias Scoria.Eval.EvalCampaign
-  alias Scoria.Eval.EvalCampaignTarget
   alias Scoria.Repo
 
   describe "campaign persistence" do

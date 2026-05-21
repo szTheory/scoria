@@ -8,6 +8,8 @@ defmodule Scoria.Eval do
 
   alias Scoria.Eval.Dataset
   alias Scoria.Eval.DatasetItem
+  alias Scoria.Eval.EvalCampaign
+  alias Scoria.Eval.EvalCampaignTarget
   alias Scoria.Eval.EvalSpec
   alias Scoria.Eval.EvalRun
   alias Scoria.Eval.Score
@@ -30,8 +32,8 @@ defmodule Scoria.Eval do
   """
   def create_dataset(attrs \\ %{}) do
     {items, dataset_attrs} = Map.pop(attrs, :items, [])
-    
-    attrs_with_defaults = 
+
+    attrs_with_defaults =
       dataset_attrs
       |> Map.put_new(:version, "1")
 
@@ -41,11 +43,12 @@ defmodule Scoria.Eval do
       items_results =
         Enum.map(items, fn item_attrs ->
           item_attrs_with_fk = Map.put(item_attrs, :dataset_id, dataset.id)
+
           %DatasetItem{}
           |> DatasetItem.changeset(item_attrs_with_fk, dataset.state)
           |> repo.insert()
         end)
-        
+
       # Check for errors in items
       case Enum.find(items_results, fn {status, _} -> status == :error end) do
         nil -> {:ok, Enum.map(items_results, fn {:ok, item} -> item end)}
@@ -73,9 +76,9 @@ defmodule Scoria.Eval do
   """
   def add_dataset_item(dataset_id, attrs) do
     dataset = get_dataset!(dataset_id)
-    
+
     attrs_with_fk = Map.put(attrs, :dataset_id, dataset.id)
-    
+
     %DatasetItem{}
     |> DatasetItem.changeset(attrs_with_fk, dataset.state)
     |> Repo.insert()
@@ -85,7 +88,7 @@ defmodule Scoria.Eval do
   Returns the list of dataset items for a given dataset id.
   """
   def list_dataset_items(dataset_id) do
-    Repo.all(from i in DatasetItem, where: i.dataset_id == ^dataset_id)
+    Repo.all(from(i in DatasetItem, where: i.dataset_id == ^dataset_id))
   end
 
   @doc """
@@ -116,7 +119,7 @@ defmodule Scoria.Eval do
   Returns the list of current eval specs.
   """
   def list_eval_specs do
-    Repo.all(from s in EvalSpec, where: s.is_current == true, order_by: [desc: s.updated_at])
+    Repo.all(from(s in EvalSpec, where: s.is_current == true, order_by: [desc: s.updated_at]))
   end
 
   @doc """
@@ -147,7 +150,7 @@ defmodule Scoria.Eval do
     old_spec_changeset = Ecto.Changeset.change(old_spec, is_current: false)
 
     stringified_attrs = Map.new(attrs, fn {k, v} -> {to_string(k), v} end)
-    
+
     base_attrs =
       old_spec
       |> EvalSpec.to_attrs()
@@ -188,6 +191,53 @@ defmodule Scoria.Eval do
   end
 
   @doc """
+  Creates a campaign parent row and its runtime-only target rows atomically.
+  """
+  def create_eval_campaign(attrs \\ %{}) do
+    attrs = Map.new(attrs)
+    targets = Map.get(attrs, :targets) || Map.get(attrs, "targets") || []
+    eval_spec_id = fetch_attr!(attrs, :eval_spec_id)
+    tenant_id = fetch_attr!(attrs, :tenant_id)
+
+    campaign_attrs =
+      attrs
+      |> Map.drop([:targets, "targets"])
+      |> Map.put(:tenant_id, tenant_id)
+      |> Map.put(:eval_spec_id, eval_spec_id)
+      |> Map.put_new(:status, "queued")
+      |> Map.put_new(:total_targets, length(targets))
+      |> Map.put_new(:queued_targets, length(targets))
+      |> Map.put_new(:running_targets, 0)
+      |> Map.put_new(:completed_targets, 0)
+      |> Map.put_new(:failed_targets, 0)
+      |> Map.put_new(:cancelled_targets, 0)
+      |> Map.put_new(:metadata, %{})
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:campaign, EvalCampaign.changeset(%EvalCampaign{}, campaign_attrs))
+    |> Ecto.Multi.run(:targets, fn repo, %{campaign: campaign} ->
+      insert_campaign_targets(repo, campaign, eval_spec_id, targets)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{campaign: campaign}} -> {:ok, campaign}
+      {:error, _failed_operation, failed_value, _changes_so_far} -> {:error, failed_value}
+    end
+  end
+
+  @doc """
+  Lists campaign targets in insertion order.
+  """
+  def list_campaign_targets(campaign_id) do
+    Repo.all(
+      from(target in EvalCampaignTarget,
+        where: target.campaign_id == ^campaign_id,
+        order_by: [asc: target.inserted_at, asc: target.id]
+      )
+    )
+  end
+
+  @doc """
   Marks an eval run complete and persists final aggregate facts.
   """
   def complete_eval_run(%EvalRun{} = eval_run, attrs) do
@@ -201,7 +251,8 @@ defmodule Scoria.Eval do
   @doc """
   Persists per-item eval score evidence and updates aggregate run counters.
   """
-  def record_eval_scores(%EvalRun{} = eval_run, score_attrs_list) when is_list(score_attrs_list) do
+  def record_eval_scores(%EvalRun{} = eval_run, score_attrs_list)
+      when is_list(score_attrs_list) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:scores, fn repo, _changes ->
       insert_scores(repo, eval_run, score_attrs_list)
@@ -231,6 +282,29 @@ defmodule Scoria.Eval do
     end)
     |> case do
       {:ok, scores} -> {:ok, Enum.reverse(scores)}
+      error -> error
+    end
+  end
+
+  defp insert_campaign_targets(repo, campaign, eval_spec_id, targets) do
+    Enum.reduce_while(targets, {:ok, []}, fn target_attrs, {:ok, acc} ->
+      attrs_with_lineage =
+        target_attrs
+        |> Map.new()
+        |> Map.put(:campaign_id, campaign.id)
+        |> Map.put(:eval_spec_id, eval_spec_id)
+        |> Map.put_new(:status, "pending")
+        |> Map.put_new(:metadata, %{})
+
+      case %EvalCampaignTarget{}
+           |> EvalCampaignTarget.changeset(attrs_with_lineage)
+           |> repo.insert() do
+        {:ok, target} -> {:cont, {:ok, [target | acc]}}
+        {:error, changeset} -> {:halt, {:error, changeset}}
+      end
+    end)
+    |> case do
+      {:ok, inserted_targets} -> {:ok, Enum.reverse(inserted_targets)}
       error -> error
     end
   end
