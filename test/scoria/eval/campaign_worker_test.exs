@@ -204,8 +204,7 @@ defmodule Scoria.Eval.CampaignWorkerTest do
     test "uses persisted lineage over mismatched envelope tenant data and refuses cross-tenant retargeting" do
       %{campaign: campaign, target: target, eval_run: eval_run, job: job} = seeded_campaign()
 
-      replayed_job =
-        put_in(job.args["tenant_id"], "tenant-evil")
+      replayed_job = Map.put(job.args, "tenant_id", "tenant-evil")
 
       assert :ok = CampaignWorker.perform(%Job{args: replayed_job})
 
@@ -259,9 +258,11 @@ defmodule Scoria.Eval.CampaignWorkerTest do
         )
       )
 
-    jobs =
+    jobs_by_target =
       all_enqueued(worker: CampaignWorker)
-      |> Enum.sort_by(& &1.args["campaign_target_id"])
+      |> Map.new(fn job -> {job.args["campaign_target_id"], job} end)
+
+    jobs = Enum.map(targets, &Map.fetch!(jobs_by_target, &1.id))
 
     base = %{campaign: campaign, dataset_item: dataset_item, jobs: jobs, targets: targets, eval_runs: eval_runs}
 

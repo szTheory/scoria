@@ -2,6 +2,7 @@ defmodule Scoria.Eval.JudgeRunner do
   @moduledoc false
 
   alias Scoria.Eval
+  alias Scoria.Eval.EvalRun
   alias ReqLLM.Response
 
   def run_live(attrs) when is_map(attrs) do
@@ -37,6 +38,25 @@ defmodule Scoria.Eval.JudgeRunner do
     end
   end
 
+  def run_existing(%EvalRun{} = eval_run, attrs) when is_map(attrs) do
+    eval_spec = fetch!(attrs, :eval_spec)
+    dataset = fetch!(attrs, :dataset) || Eval.get_dataset!(eval_run.dataset_id)
+
+    if dataset.state != :sealed do
+      raise ArgumentError, "live judge runs require sealed datasets"
+    end
+
+    with {:ok, eval_run, scores} <- judge_dataset(eval_run, eval_spec, dataset, attrs),
+         {:ok, completed_run} <-
+           Eval.complete_eval_run(eval_run, %{
+             status: "completed",
+             duration_ms: Enum.sum(Enum.map(scores, &latency_ms/1)),
+             threshold_verdict: threshold_verdict(eval_spec, scores)
+           }) do
+      {:ok, %{eval_run: completed_run, scores: scores}}
+    end
+  end
+
   defp judge_dataset(eval_run, eval_spec, dataset, attrs) do
     orchestrator_module =
       fetch(attrs, :orchestrator_module) ||
@@ -50,36 +70,59 @@ defmodule Scoria.Eval.JudgeRunner do
     model_spec =
       "#{fetch(attrs, :judge_provider) || fetch!(attrs, :provider)}:#{fetch(attrs, :judge_model) || fetch!(attrs, :model)}"
 
-    score_attrs =
+    with {:ok, score_attrs} <-
+           build_score_attrs(eval_run, eval_spec, dataset, attrs, model_spec, orchestrator_module, opts) do
+      case Eval.replace_eval_scores(eval_run, score_attrs) do
+        {:ok, updated_run, scores} -> {:ok, updated_run, scores}
+        {:error, reason} -> {:error, reason}
+      end
+    end
+  end
+
+  defp build_score_attrs(
+         _eval_run,
+         eval_spec,
+         dataset,
+         attrs,
+         model_spec,
+         orchestrator_module,
+         opts
+       ) do
+    dataset_items =
       dataset.id
       |> Eval.list_dataset_items()
       |> Enum.sort_by(& &1.id)
-      |> Enum.map(fn dataset_item ->
+
+    Enum.reduce_while(dataset_items, {:ok, []}, fn dataset_item, {:ok, acc} ->
         subject_output = build_subject_output(dataset_item)
         prompt = build_judge_prompt(dataset_item, subject_output)
 
-        {:ok, response} =
-          orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts)
+        case orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts) do
+          {:ok, response} ->
+            verdict = extract_object(response)
 
-        verdict = extract_object(response)
+            score_attrs = %{
+              dataset_item_id: dataset_item.id,
+              scorer_kind: eval_spec.scorers |> List.first() |> Map.get(:scorer_kind) |> to_string(),
+              status: Map.get(verdict, "status", "failed"),
+              score: Map.get(verdict, "score", 0.0),
+              explanation: Map.get(verdict, "explanation", "Judge verdict unavailable"),
+              judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
+              rubric_version: "eval-spec-v#{eval_spec.version}",
+              evidence_refs: Map.get(verdict, "evidence_refs", %{}),
+              metadata: %{"cost_usd" => "0.0", "latency_ms" => 0}
+            }
 
-        %{
-          dataset_item_id: dataset_item.id,
-          scorer_kind: eval_spec.scorers |> List.first() |> Map.get(:scorer_kind) |> to_string(),
-          status: Map.get(verdict, "status", "failed"),
-          score: Map.get(verdict, "score", 0.0),
-          explanation: Map.get(verdict, "explanation", "Judge verdict unavailable"),
-          judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
-          rubric_version: "eval-spec-v#{eval_spec.version}",
-          evidence_refs: Map.get(verdict, "evidence_refs", %{}),
-          metadata: %{"cost_usd" => "0.0", "latency_ms" => 0}
-        }
+            {:cont, {:ok, [score_attrs | acc]}}
+
+          {:error, reason} ->
+            {:halt, {:error, reason}}
+        end
       end)
-
-    case Eval.record_eval_scores(eval_run, score_attrs) do
-      {:ok, updated_run, scores} -> {:ok, updated_run, scores}
-      {:error, reason} -> {:error, reason}
-    end
+      |> case do
+        {:ok, score_attrs} -> {:ok, Enum.reverse(score_attrs)}
+        error -> error
+      end
   end
 
   defp build_subject_output(dataset_item) do

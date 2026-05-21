@@ -4,6 +4,7 @@ defmodule Scoria.Eval do
   """
 
   import Ecto.Query, warn: false
+  alias Ecto.Multi
   alias Scoria.Repo
 
   alias Scoria.Eval.Dataset
@@ -13,6 +14,7 @@ defmodule Scoria.Eval do
   alias Scoria.Eval.EvalCampaignTarget
   alias Scoria.Eval.EvalSpec
   alias Scoria.Eval.EvalRun
+  alias Scoria.Eval.JudgeRunner
   alias Scoria.Eval.Score
 
   @doc """
@@ -261,7 +263,228 @@ defmodule Scoria.Eval do
   """
   def record_eval_scores(%EvalRun{} = eval_run, score_attrs_list)
       when is_list(score_attrs_list) do
+    persist_eval_scores(eval_run, score_attrs_list, replace?: false)
+  end
+
+  @doc """
+  Replaces prior score truth for an eval run, keeping worker retries idempotent.
+  """
+  def replace_eval_scores(%EvalRun{} = eval_run, score_attrs_list)
+      when is_list(score_attrs_list) do
+    persist_eval_scores(eval_run, score_attrs_list, replace?: true)
+  end
+
+  @doc """
+  Resolves the authoritative campaign/target/run lineage for a worker envelope.
+  Persisted lineage remains the durable tenant truth even when envelope tenant data differs.
+  """
+  def load_campaign_execution(args) when is_map(args) do
+    campaign_id = fetch_attr!(args, :campaign_id)
+    campaign_target_id = fetch_attr!(args, :campaign_target_id)
+    eval_run_id = fetch_attr!(args, :eval_run_id)
+
+    with %EvalCampaign{} = campaign <- Repo.get(EvalCampaign, campaign_id),
+         %EvalCampaignTarget{} = target <- Repo.get(EvalCampaignTarget, campaign_target_id),
+         %EvalRun{} = eval_run <- Repo.get(EvalRun, eval_run_id),
+         true <- target.campaign_id == campaign.id,
+         true <- eval_run.campaign_id == campaign.id and eval_run.campaign_target_id == target.id,
+         %EvalSpec{} = eval_spec <- Repo.get(EvalSpec, target.eval_spec_id) do
+      {:ok,
+       %{
+         campaign: campaign,
+         target: target,
+         eval_run: eval_run,
+         eval_spec: eval_spec,
+         envelope: inspectable_envelope(args)
+       }}
+    else
+      nil -> {:error, {:invalid_campaign_contract, :missing_lineage}}
+      false -> {:error, {:invalid_campaign_contract, :lineage_mismatch}}
+    end
+  end
+
+  @doc """
+  Moves a pending shard to running and refreshes aggregate campaign counters.
+  """
+  def mark_campaign_target_running(%{
+        campaign: campaign,
+        target: %EvalCampaignTarget{} = target,
+        eval_run: %EvalRun{} = eval_run
+      }) do
+    timestamp = now()
+
+    Multi.new()
+    |> Multi.run(:target, fn repo, _changes ->
+      fresh_target = repo.get!(EvalCampaignTarget, target.id)
+
+      case fresh_target.status do
+        "pending" ->
+          fresh_target
+          |> EvalCampaignTarget.changeset(%{status: "running", started_at: timestamp, last_error: %{}})
+          |> repo.update()
+
+        _ ->
+          {:ok, fresh_target}
+      end
+    end)
+    |> Multi.run(:eval_run, fn repo, _changes ->
+      fresh_run = repo.get!(EvalRun, eval_run.id)
+
+      case fresh_run.status do
+        "pending" ->
+          fresh_run
+          |> EvalRun.changeset(%{status: "running"})
+          |> repo.update()
+
+        _ ->
+          {:ok, fresh_run}
+      end
+    end)
+    |> Multi.run(:campaign, fn repo, _changes ->
+      refresh_campaign_rollup(repo, campaign.id, true)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{campaign: updated_campaign}} -> {:ok, updated_campaign}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Executes one campaign target through the shared orchestrator-backed judge path.
+  """
+  def execute_campaign_target(%{
+        target: %EvalCampaignTarget{} = target,
+        eval_run: %EvalRun{} = eval_run,
+        eval_spec: %EvalSpec{} = eval_spec
+      }) do
+    cond do
+      target.status == "completed" and eval_run.status == "completed" and has_scores?(eval_run.id) ->
+        {:ok, %{eval_run: eval_run, scores: list_scores(eval_run.id)}}
+
+      target.status in ["failed", "cancelled"] ->
+        {:error, :target_already_terminal}
+
+      true ->
+        JudgeRunner.run_existing(eval_run, %{
+          eval_spec: eval_spec,
+          dataset: get_dataset!(eval_run.dataset_id),
+          provider: target.provider,
+          model: target.model
+        })
+    end
+  end
+
+  @doc """
+  Finalizes a successful shard and updates the parent campaign summary row.
+  """
+  def complete_campaign_target(
+        %{campaign: campaign, target: %EvalCampaignTarget{} = target},
+        %{eval_run: %EvalRun{}}
+      ) do
+    timestamp = now()
+
+    Multi.new()
+    |> Multi.run(:target, fn repo, _changes ->
+      fresh_target = repo.get!(EvalCampaignTarget, target.id)
+
+      case fresh_target.status do
+        "completed" ->
+          {:ok, fresh_target}
+
+        _ ->
+          fresh_target
+          |> EvalCampaignTarget.changeset(%{
+            status: "completed",
+            started_at: fresh_target.started_at || timestamp,
+            finished_at: fresh_target.finished_at || timestamp,
+            last_error: %{}
+          })
+          |> repo.update()
+      end
+    end)
+    |> Multi.run(:campaign, fn repo, _changes ->
+      refresh_campaign_rollup(repo, campaign.id, true)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{campaign: updated_campaign}} -> {:ok, updated_campaign}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Finalizes a failed shard and narrows campaign-wide fatal state to explicit failure classes.
+  """
+  def fail_campaign_target(
+        %{campaign: campaign, target: %EvalCampaignTarget{} = target, eval_run: %EvalRun{} = eval_run},
+        reason,
+        opts \\ []
+      ) do
+    timestamp = now()
+    fatal? = Keyword.get(opts, :fatal?, false)
+
+    Multi.new()
+    |> Multi.run(:eval_run, fn repo, _changes ->
+      fresh_run = repo.get!(EvalRun, eval_run.id)
+
+      case fresh_run.status do
+        "completed" ->
+          {:ok, fresh_run}
+
+        _ ->
+          fresh_run
+          |> EvalRun.changeset(%{status: "failed"})
+          |> repo.update()
+      end
+    end)
+    |> Multi.run(:target, fn repo, _changes ->
+      fresh_target = repo.get!(EvalCampaignTarget, target.id)
+
+      case fresh_target.status do
+        "completed" ->
+          {:ok, fresh_target}
+
+        _ ->
+          fresh_target
+          |> EvalCampaignTarget.changeset(%{
+            status: "failed",
+            started_at: fresh_target.started_at || timestamp,
+            finished_at: timestamp,
+            last_error: failure_details(reason, fatal?)
+          })
+          |> repo.update()
+      end
+    end)
+    |> Multi.run(:campaign, fn repo, _changes ->
+      refresh_campaign_rollup(repo, campaign.id, true)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{campaign: updated_campaign}} -> {:ok, updated_campaign}
+      {:error, _step, failed_value, _changes} -> {:error, failed_value}
+    end
+  end
+
+  def fatal_campaign_failure?(reason) do
+    case reason do
+      {:invalid_campaign_contract, _detail} -> true
+      {:invalid_credentials, _detail} -> true
+      {:missing_credentials, _detail} -> true
+      {:quota_exhausted, _detail} -> true
+      {:configuration_error, _detail} -> true
+      {:integrity_error, _detail} -> true
+      {:persistence_error, _detail} -> true
+      :target_already_terminal -> false
+      _ -> false
+    end
+  end
+
+  defp persist_eval_scores(%EvalRun{} = eval_run, score_attrs_list, opts) do
+    replace? = Keyword.get(opts, :replace?, false)
+
     Ecto.Multi.new()
+    |> maybe_delete_scores(eval_run.id, replace?)
     |> Ecto.Multi.run(:scores, fn repo, _changes ->
       insert_scores(repo, eval_run, score_attrs_list)
     end)
@@ -292,6 +515,16 @@ defmodule Scoria.Eval do
       {:ok, scores} -> {:ok, Enum.reverse(scores)}
       error -> error
     end
+  end
+
+  defp maybe_delete_scores(multi, _eval_run_id, false), do: multi
+
+  defp maybe_delete_scores(multi, eval_run_id, true) do
+    Ecto.Multi.delete_all(
+      multi,
+      :delete_scores,
+      from(score in Score, where: score.eval_run_id == ^eval_run_id)
+    )
   end
 
   defp insert_campaign_targets(repo, campaign, eval_spec_id, targets) do
@@ -385,6 +618,125 @@ defmodule Scoria.Eval do
   defp normalize_decimal(value) when is_integer(value), do: Decimal.new(value)
   defp normalize_decimal(value) when is_float(value), do: Decimal.from_float(value)
   defp normalize_decimal(value) when is_binary(value), do: Decimal.new(value)
+
+  defp refresh_campaign_rollup(repo, campaign_id, touch_started?) do
+    campaign = repo.get!(EvalCampaign, campaign_id)
+
+    targets =
+      repo.all(
+        from(target in EvalCampaignTarget, where: target.campaign_id == ^campaign_id)
+      )
+
+    attrs = campaign_rollup_attrs(campaign, targets, touch_started?)
+
+    campaign
+    |> EvalCampaign.changeset(attrs)
+    |> repo.update()
+  end
+
+  defp campaign_rollup_attrs(campaign, targets, touch_started?) do
+    counts = %{
+      total_targets: length(targets),
+      queued_targets: Enum.count(targets, &(&1.status == "pending")),
+      running_targets: Enum.count(targets, &(&1.status == "running")),
+      completed_targets: Enum.count(targets, &(&1.status == "completed")),
+      failed_targets: Enum.count(targets, &(&1.status == "failed")),
+      cancelled_targets: Enum.count(targets, &(&1.status == "cancelled"))
+    }
+
+    terminal? = counts.total_targets > 0 and counts.queued_targets == 0 and counts.running_targets == 0
+
+    Map.merge(counts, %{
+      status: derive_campaign_status(counts, targets),
+      started_at: campaign.started_at || started_at_from_targets(targets, touch_started?),
+      finished_at: if(terminal?, do: finished_at_from_targets(targets), else: nil),
+      last_progress_at: now()
+    })
+  end
+
+  defp derive_campaign_status(counts, targets) do
+    cond do
+      counts.cancelled_targets == counts.total_targets and counts.total_targets > 0 ->
+        "cancelled"
+
+      Enum.any?(targets, &fatal_target?/1) ->
+        "failed_fatal"
+
+      counts.completed_targets == counts.total_targets and counts.total_targets > 0 ->
+        "completed"
+
+      counts.queued_targets == 0 and counts.running_targets == 0 and counts.failed_targets > 0 ->
+        "completed_partial"
+
+      counts.running_targets > 0 or counts.completed_targets > 0 or counts.failed_targets > 0 ->
+        "running"
+
+      true ->
+        "queued"
+    end
+  end
+
+  defp started_at_from_targets(targets, touch_started?) do
+    started =
+      targets
+      |> Enum.map(& &1.started_at)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.min(DateTime, fn -> nil end)
+
+    cond do
+      started -> started
+      touch_started? -> now()
+      true -> nil
+    end
+  end
+
+  defp finished_at_from_targets(targets) do
+    targets
+    |> Enum.map(& &1.finished_at)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.max(DateTime, fn -> nil end)
+  end
+
+  defp fatal_target?(target) do
+    target.last_error["class"] == "fatal" or target.last_error[:class] == "fatal"
+  end
+
+  defp failure_details(reason, fatal?) do
+    %{
+      "class" => if(fatal?, do: "fatal", else: "shard_local"),
+      "reason" => reason_code(reason),
+      "details" => inspect(reason)
+    }
+  end
+
+  defp reason_code({code, _detail}), do: to_string(code)
+  defp reason_code(code) when is_atom(code), do: to_string(code)
+  defp reason_code(code), do: inspect(code)
+
+  defp has_scores?(eval_run_id) do
+    Repo.exists?(from(score in Score, where: score.eval_run_id == ^eval_run_id))
+  end
+
+  defp list_scores(eval_run_id) do
+    Repo.all(
+      from(score in Score,
+        where: score.eval_run_id == ^eval_run_id,
+        order_by: [asc: score.inserted_at, asc: score.id]
+      )
+    )
+  end
+
+  defp inspectable_envelope(args) do
+    %{
+      tenant_id: fetch_attr(args, :tenant_id),
+      provider: fetch_attr(args, :provider),
+      model: fetch_attr(args, :model)
+    }
+  end
+
+  defp now do
+    DateTime.utc_now() |> DateTime.truncate(:microsecond)
+  end
 
   defp put_dataset_snapshot!(attrs) do
     dataset_id = fetch_attr(attrs, :dataset_id)
