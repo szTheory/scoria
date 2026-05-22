@@ -12,7 +12,7 @@ This file is the strategic source of truth for milestone sequencing. It should b
 
 ## Product North Star
 
-Scoria should feel like the obvious thing Phoenix teams reach for when they need AI observability, durable agent workflow state, retrieval grounding, approvals, evaluation, and guardrailed tool use inside an existing application.
+Scoria should feel like the obvious thing Phoenix teams reach for when they need AI observability, durable agent workflow state, retrieval grounding, approvals, evaluation, guardrailed tool use, and replayable operator evidence inside an existing application.
 
 The product should stay:
 
@@ -42,7 +42,7 @@ Shipped through `v1.8 Vanguard` on 2026-05-22:
 2. Prefer milestones that make existing power easier to use in Phoenix apps over milestones that only add more raw surface area.
 3. Keep Scoria embedded and boundary-driven; do not drift into a hosted runtime product.
 4. Promote milestones that improve installability, public API clarity, and operator trust.
-5. Keep future bets visible, but do not promote them ahead of missing product basics without an explicit decision.
+5. Close the trace -> replay -> score -> promote loop before moving on to broader future-bet capability families.
 
 ## Milestone Ledger
 
@@ -54,9 +54,10 @@ Shipped through `v1.8 Vanguard` on 2026-05-22:
 | v1.3 | Seismograph | shipped | SRE budgets, breakers, telemetry, audit, incident delivery |
 | v1.4 | Keystone | shipped | Identity, sessions, public runtime API, install defaults, docs |
 | v1.5 | Switchyard | shipped | Remote MCP connector productization |
-| v1.6 | Flightpath | shipped | Release gates, prompt lifecycle, and evaluation operations |
+| v1.6 | Flightpath | shipped | Prompt lifecycle and evaluation operations |
 | v1.7 | Outrider | shipped | Advanced ecosystem integrations and future-bet runtime surfaces |
 | v1.8 | Vanguard | shipped | Multi-model orchestration, distributed evaluations, and reconciled shipped milestone truth |
+| v1.9 | Crucible | active | Replayable debugging and online quality feedback |
 
 ## Latest Shipped Milestone
 
@@ -79,35 +80,67 @@ Teams can run resilient multi-model workloads at scale and inspect fallback, hea
 
 ## Active Milestone
 
-No active milestone. `v1.8 Vanguard` is shipped, and the next milestone has not been opened yet.
+### v1.9 Crucible
+
+**Status:** active
+**Priority:** highest
+**Theme:** Replayable debugging and online quality feedback
+
+**What this milestone should deliver**
+
+- replay branches as durable new runs rooted in existing checkpoint truth
+- replay-safe execution defaults for external-write and approval-sensitive seams
+- operator-visible replay provenance, diff context, and draft dataset promotion
+- asynchronous online scoring with a review queue and explicit promotion boundaries
+
+**Why now**
+
+Scoria already has durable runs, trace-first UI, trace-to-dataset promotion, eval fan-out, and operator dashboards. The next highest-leverage move is to close the operator remediation loop instead of expanding into broader agent-platform or performance-optimization bets.
 
 ## Recommended Candidates
 
-### 1. Next milestone discovery
+### 1. Bounded handoff productization
 
 **Status:** pending
-**Priority:** highest
-**Theme:** Define the next adoption-relevant milestone
+**Priority:** medium
+**Theme:** Public role handoffs without platform drift
 
 **What this step should deliver**
 
-- a fresh requirements surface and roadmap via `$gsd-new-milestone`
-- explicit prioritization against Scoria's Phoenix-first product shape
-- a clear choice between adoption basics, operator trust improvements, and future-bet capability expansion
+- a narrow public handoff contract over existing durable workflow seams
+- projected-context and least-privilege defaults that remain inspectable
+- richer operator evidence for delegated role lineage
 
-**Why this is first**
+**Why it is after v1.9**
 
-There is no active milestone after `v1.8`. The next correct move is to choose the next milestone deliberately instead of carrying closure-era assumptions forward.
+The handoff substrate already exists, but replay and online scoring better compound Scoria's current trace/eval strengths with less risk of product-shape drift.
+
+### 2. Tenant-scoped semantic fast path
+
+**Status:** pending
+**Priority:** medium
+**Theme:** Inspectable semantic caching for safe read-only classes of work
+
+**What this step should deliver**
+
+- bounded tenant-scoped semantic caching with durable hit/miss evidence
+- prompt/version/source-aware invalidation
+- operator-visible cache diagnostics instead of invisible magic
+
+**Why it is after v1.9**
+
+Semantic caching is valuable, but it is a latency/cost optimization with higher correctness and privacy risk. It should follow, not precede, the replay and scoring loop that improves operator trust.
 
 ## Recommendation
 
-Run `$gsd-new-milestone` when you want to open the next milestone.
+Run `$gsd-plan-phase 37` to start executing `v1.9 Crucible`.
 
 ## Source Notes
 
 These priorities were informed by:
 
-- current repo state as of 2026-05-17
+- current repo state as of 2026-05-22
 - `.planning/research/milestone-options-2026-05-12.md`
-- `.planning/research/v1.5-switchyard-recommendation.md`
 - archived seed references in `.planning/seeds/`
+- repo-local prompt research in `prompts/`
+- current official docs for OpenAI Agents SDK, LangGraph, Braintrust, Langfuse, Arize Phoenix, Jido, OpenInference, and MCP authorization

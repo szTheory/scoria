@@ -3,17 +3,17 @@
 ## Project Reference
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** No active milestone. `v1.8 Vanguard` shipped on 2026-05-22; next step is `$gsd-new-milestone` when ready.
+**Current Focus:** `v1.9 Crucible` - replayable debugging and online quality feedback rooted in durable trace truth.
 
 ## Current Position
-**Milestone:** None
-**Phase:** None
-**Plan:** None
-**Status:** Shipped through `v1.8 Vanguard`
-**Last activity:** 2026-05-22 - Archived and tagged `v1.8 Vanguard`
+**Milestone:** `v1.9 Crucible`
+**Phase:** Not started (defining requirements)
+**Plan:** —
+**Status:** Defining requirements and roadmap
+**Last activity:** 2026-05-22 - Started `v1.9 Crucible`
 
 **Progress:**
-`[==================================================] 100% - v1.8 Vanguard Shipped`
+`[..................................................] 0% - v1.9 Crucible Started`
 
 ## Performance Metrics
 - **Completed Phases:** 36
@@ -33,6 +33,8 @@
 
 ## Accumulated Context
 **Decisions:**
+- Milestone activation decision for `v1.9`: prioritize replayable debugging and online scoring with reviewable dataset promotion over semantic caching and broad handoff productization.
+- Milestone activation decision for `v1.9`: online scoring remains additive evidence only; sealed baseline datasets are never auto-mutated.
 - Used `Ecto.Changeset.apply_changes/1` to compute merged text payloads in-memory before running the tokenizer, avoiding partial map logic.
 - Adopted strict `Ecto.Multi` version deprecation mimicking `Scoria.Eval`.
 - Added an explicit `update_draft_template/2` for draft-only in-place changes.
@@ -76,7 +78,7 @@
 - Phase 32: Increased database connection `pool_size` to 20 in `test.exs` to stabilize concurrent tests.
 
 **Todos:**
-- Open the next milestone with `$gsd-new-milestone` when ready.
+- Run `$gsd-plan-phase 37` to start `v1.9 Crucible`.
 
 **Blockers:**
 - None.
