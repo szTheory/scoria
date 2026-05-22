@@ -1,21 +1,41 @@
+---
+gsd_state_version: 1.0
+milestone: v1.8
+milestone_name: milestone
+status: executing
+last_updated: "2026-05-22T22:43:04.952Z"
+last_activity: 2026-05-22
+progress:
+  total_phases: 4
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
+  percent: 25
+---
+
 # Project State
 
 ## Project Reference
+
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** `v1.9 Crucible` - replayable debugging and online quality feedback rooted in durable trace truth.
+**Current Focus:** Phase 37 — replay-lineage-branch-model
 
 ## Current Position
+
+Phase: 37 (replay-lineage-branch-model) — EXECUTING
+Plan: 1 of 3
 **Milestone:** `v1.9 Crucible`
 **Phase:** Not started (defining requirements)
 **Plan:** —
-**Status:** Defining requirements and roadmap
-**Last activity:** 2026-05-22 - Started `v1.9 Crucible`
+**Status:** Executing Phase 37
+**Last activity:** 2026-05-22
 
 **Progress:**
 `[..................................................] 0% - v1.9 Crucible Started`
 
 ## Performance Metrics
+
 - **Completed Phases:** 36
 - **Completed Plans:** 103
 - **Total Validated Requirements:** 106
@@ -23,16 +43,20 @@
 - **Latest Shipped Milestone:** `v1.8 Vanguard` on 2026-05-22
 
 **Phase 31 Metrics:**
+
 - **31-01:** 15m, 2 tasks, 4 files
 - **31-02:** 20m, 3 tasks, 6 files
 - **31-03:** 10m, 2 tasks, 3 files
 
 **Phase 32 Metrics:**
+
 - **32-01:** 15m, 2 tasks, 4 files
 - **32-02:** 20m, 3 tasks, 5 files
 
 ## Accumulated Context
+
 **Decisions:**
+
 - Milestone activation decision for `v1.9`: prioritize replayable debugging and online scoring with reviewable dataset promotion over semantic caching and broad handoff productization.
 - Milestone activation decision for `v1.9`: online scoring remains additive evidence only; sealed baseline datasets are never auto-mutated.
 - Used `Ecto.Changeset.apply_changes/1` to compute merged text payloads in-memory before running the tokenizer, avoiding partial map logic.
@@ -78,9 +102,11 @@
 - Phase 32: Increased database connection `pool_size` to 20 in `test.exs` to stabilize concurrent tests.
 
 **Todos:**
+
 - Run `$gsd-plan-phase 37` to start `v1.9 Crucible`.
 
 **Blockers:**
+
 - None.
 
 ## Deferred Items
