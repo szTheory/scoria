@@ -1,8 +1,8 @@
 # Milestone Arc: Scoria
 
 **Created:** 2026-05-12
-**Last updated:** 2026-05-17
-**Status:** active planning artifact
+**Last updated:** 2026-05-22
+**Status:** maintained planning artifact
 
 ## Purpose
 
@@ -23,7 +23,7 @@ The product should stay:
 
 ## Current Baseline
 
-Shipped through `v1.4 Keystone` on 2026-05-17:
+Shipped through `v1.8 Vanguard` on 2026-05-22:
 
 - observability and trace storage
 - MCP gateway and governance seams
@@ -33,8 +33,8 @@ Shipped through `v1.4 Keystone` on 2026-05-17:
 - knowledge, citations, and grounding
 - SRE budgets, breakers, audit lineage, incident routing, and telemetry
 - canonical runtime identity, public runtime APIs, install defaults, adoption docs, and executable guardrails
-
-`v1.5 Switchyard` is now active.
+- remote MCP connector productization, prompt lifecycle, async compaction, and external runtime observability
+- resilient multi-model fallback orchestration, distributed evaluation fan-out, and real-time operator dashboards
 
 ## Sequencing Principles
 
@@ -53,102 +53,55 @@ Shipped through `v1.4 Keystone` on 2026-05-17:
 | v1.2 | Corpus | shipped | Knowledge, citations, grounding |
 | v1.3 | Seismograph | shipped | SRE budgets, breakers, telemetry, audit, incident delivery |
 | v1.4 | Keystone | shipped | Identity, sessions, public runtime API, install defaults, docs |
-| v1.5 | Switchyard | active | Remote MCP connector productization |
-| v1.6 | Flightpath | candidate | Release gates, prompt lifecycle, and evaluation operations |
+| v1.5 | Switchyard | shipped | Remote MCP connector productization |
+| v1.6 | Flightpath | shipped | Release gates, prompt lifecycle, and evaluation operations |
+| v1.7 | Outrider | shipped | Advanced ecosystem integrations and future-bet runtime surfaces |
+| v1.8 | Vanguard | shipped | Multi-model orchestration, distributed evaluations, and reconciled shipped milestone truth |
 
 ## Latest Shipped Milestone
 
-### v1.4 Keystone
+### v1.8 Vanguard
 
 **Status:** shipped
 **Priority at close:** highest
-**Theme:** Embedded app defaults, identity, and public runtime surface
+**Theme:** Multi-model orchestration and distributed evaluations
 
 **What shipped**
 
-- explicit actor, tenant, and session identity as first-class runtime nouns
-- a clean public `Scoria` runtime API for starting, resuming, and inspecting app-facing AI runs
-- provider/model/prompt-policy configuration that matches Phoenix app expectations
-- install and verification defaults that stay boring for normal Phoenix adoption
-- documentation and example flows tied to executable proof lanes
+- breaker-aware multi-model routing with automatic fallback
+- distributed eval campaign fan-out and worker execution through Oban
+- tenant-scoped LiveView model-health and campaign dashboards
+- reconciled planning surfaces anchored to the canonical verification chain
 
 **User-facing outcome**
 
-A Phoenix team can install Scoria, wire a normal app request or chat/session flow into it, and get identity-aware traces, workflow state, approvals, and evidence without guessing where the product boundary is.
+Teams can run resilient multi-model workloads at scale and inspect fallback, health, and campaign progress through the embedded operator surface.
 
 ## Active Milestone
 
-### v1.5 Switchyard
-
-**Status:** active
-**Priority:** highest
-**Theme:** Tool and MCP connector productization
-
-**What this milestone should deliver**
-
-- remote MCP connector support with boring discovery, auth, and capability refresh defaults
-- policy-backed tool scopes and workflow-owned approval UX for remote connector invocations
-- stronger audit and operator visibility for connector identity, grants, approvals, and access failures
-- a small curated connector/profile layer that improves DX without turning Scoria into a hosted connector marketplace
-
-**How this milestone is intentionally bounded**
-
-- stateless-first remote invocation is the default path
-- stateful remote session lifecycle is opt-in per connector, not the default milestone center
-- browser/code-exec productization remains out of scope
-- hosted connector-broker behavior remains out of scope
-
-**Why now**
-
-Keystone clarified Scoria's app-facing identity, runtime API, and boring install path. The next highest-leverage step is extending those same public boundaries into remote tool connectivity before adding release-ops or future-bet runtime surfaces.
-
-**Depends on**
-
-- `v1.4 Keystone`
+No active milestone. `v1.8 Vanguard` is shipped, and the next milestone has not been opened yet.
 
 ## Recommended Candidates
 
-### 1. v1.6 Flightpath
+### 1. Next milestone discovery
 
-**Status:** candidate
-**Priority:** medium
-**Theme:** Release gates, prompt lifecycle, and evaluation operations
+**Status:** pending
+**Priority:** highest
+**Theme:** Define the next adoption-relevant milestone
 
-**What this milestone should deliver**
+**What this step should deliver**
 
-- first-class prompt/version registry tied to traces and evals
-- dataset curation, baseline comparisons, and approval-to-release gates
-- CI-friendly regression workflows that let teams prove a change is safe before rollout
-- better operator storytelling from trace -> dataset -> eval run -> decision
+- a fresh requirements surface and roadmap via `$gsd-new-milestone`
+- explicit prioritization against Scoria's Phoenix-first product shape
+- a clear choice between adoption basics, operator trust improvements, and future-bet capability expansion
 
-**Why this matters**
+**Why this is first**
 
-Teams expect to iterate on prompts, models, and tools without flying blind. Scoria already has part of the eval substrate; this milestone would turn it into a more complete release discipline.
-
-**Depends on**
-
-- `v1.4 Keystone`
-- ideally `v1.5 Switchyard` for tool-aware evaluation coverage
-
-### 2. v1.7 Outrider
-
-**Status:** candidate
-**Priority:** medium
-**Theme:** Advanced ecosystem integrations and future-bet runtime surfaces
-
-**What this milestone could deliver**
-
-- optional deep integrations with external agent runtimes or hosted tool systems
-- more advanced memory/session compaction strategies
-- multi-runtime interoperability without giving up the embedded Phoenix shape
-
-**Why this is not first**
-
-This is valuable, but it is a future bet. It should not outrank the work required to make Scoria feel complete and unsurprising in ordinary Phoenix adoption paths.
+There is no active milestone after `v1.8`. The next correct move is to choose the next milestone deliberately instead of carrying closure-era assumptions forward.
 
 ## Recommendation
 
-The active milestone is `v1.5 Switchyard`. The next recommendation after it remains `v1.6 Flightpath`.
+Run `$gsd-new-milestone` when you want to open the next milestone.
 
 ## Source Notes
 
@@ -157,4 +110,4 @@ These priorities were informed by:
 - current repo state as of 2026-05-17
 - `.planning/research/milestone-options-2026-05-12.md`
 - `.planning/research/v1.5-switchyard-recommendation.md`
-- dormant `SEED-001-agentcore-lessons`
+- archived seed references in `.planning/seeds/`

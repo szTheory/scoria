@@ -1,3 +1,9 @@
+---
+status: archived
+archived_on: 2026-05-22
+title: AgentCore Lessons for Scoria boundaries
+---
+
 # Seed: AgentCore Lessons for Scoria
 
 **Captured:** 2026-05-11
@@ -33,3 +39,8 @@ AgentCore is a useful external reference because it shows how a managed agent pl
 - Sandbox or IAM assumptions without explicit least-privilege review
 - Overly broad built-in tool surfaces
 
+## Resolution
+
+Archived as a reference seed on 2026-05-22.
+
+The design lessons were already absorbed into shipped and verified planning surfaces, especially the identity, policy, and anti-platform-drift work across Keystone and the remote connector phases. This seed remains useful background material, but it is no longer an open implementation candidate for milestone-close audit purposes.

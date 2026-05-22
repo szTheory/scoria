@@ -3,51 +3,33 @@
 ## Project Reference
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** v1.7 Outrider milestone planning complete. Ready to begin execution.
+**Current Focus:** No active milestone. `v1.8 Vanguard` shipped on 2026-05-22; next step is `$gsd-new-milestone` when ready.
 
 ## Current Position
 **Milestone:** None
 **Phase:** None
 **Plan:** None
-**Status:** Complete
-**Last activity:** 2026-05-20 - Completed v1.7 Outrider milestone
+**Status:** Shipped through `v1.8 Vanguard`
+**Last activity:** 2026-05-22 - Archived and tagged `v1.8 Vanguard`
 
 **Progress:**
-`[==================================================] Milestone v1.7 Shipped`
+`[==================================================] 100% - v1.8 Vanguard Shipped`
 
 ## Performance Metrics
-- **Completed Phases:** 31
-- **Completed Plans:** 98
-- **Total Validated Requirements:** 90
-- **Coverage:** 100% on shipped milestones through `v1.7 Outrider`
-- **Latest Shipped Milestone:** `v1.7 Outrider` on 2026-05-20
+- **Completed Phases:** 36
+- **Completed Plans:** 103
+- **Total Validated Requirements:** 106
+- **Coverage:** 100% on shipped milestones through `v1.8 Vanguard`
+- **Latest Shipped Milestone:** `v1.8 Vanguard` on 2026-05-22
 
-**Phase 23 Metrics:**
-- **23-01:** 10m, 2 tasks, 4 files
-- **23-02:** 10m, 2 tasks, 3 files
-- **23-03:** 5m, 1 tasks, 2 files
+**Phase 31 Metrics:**
+- **31-01:** 15m, 2 tasks, 4 files
+- **31-02:** 20m, 3 tasks, 6 files
+- **31-03:** 10m, 2 tasks, 3 files
 
-**Phase 24 Metrics:**
-- **24-01:** 15m, 1 tasks, 4 files
-- **24-02:** 10m, 1 tasks, 2 files
-- **24-03:** 15m, 3 tasks, 3 files
-
-**Phase 25 Metrics:**
-- **25-01:** 25m, 3 tasks, 6 files
-- **25-02:** 40m, 3 tasks, 10 files
-- **25-03:** 20m, 2 tasks, 4 files
-
-**Phase 26 Metrics:**
-- **26-01:** 20m, 2 tasks, 3 files
-- **26-02:** 15m, 1 tasks, 2 files
-- **26-03:** 15m, 2 tasks, 3 files
-
-**Phase 27 Metrics:**
-- **27-01:** 10m, 3 tasks, 4 files
-
-**Phase 30 Metrics:**
-- **30-01:** 3m, 2 tasks, 5 files
-- **30-02:** 2m, 1 tasks, 2 files
+**Phase 32 Metrics:**
+- **32-01:** 15m, 2 tasks, 4 files
+- **32-02:** 20m, 3 tasks, 5 files
 
 ## Accumulated Context
 **Decisions:**
@@ -90,25 +72,22 @@
 - Phase 23 (23-01): Used the tiktoken hex package with the native Rust bindings to handle accurate prompt token estimation for gpt-4o.
 - Phase 23 (23-01): Handled potential string or atom keys in prompt template maps uniformly.
 - Phase 23 (23-01): Implemented robust nil-handling and concatenation strategies for upper-bound token estimation without risking crashes.
+- Phase 32: Adjusted `ai_compacted_memories` to use `:binary` for embeddings to ensure environment compatibility.
+- Phase 32: Increased database connection `pool_size` to 20 in `test.exs` to stabilize concurrent tests.
 
 **Todos:**
-- Discuss and define requirements for the next milestone using `/gsd-new-milestone`.
+- Open the next milestone with `$gsd-new-milestone` when ready.
 
 **Blockers:**
 - None.
 
-**Reference Updates:**
-- `v1.6 Flightpath` shipped-state evidence remains in `.planning/milestones/v1.6-ROADMAP.md`, `.planning/milestones/v1.6-REQUIREMENTS.md`, and Phase 23-26 verification artifacts.
-
 ## Deferred Items
 
-Items intentionally outside `v1.5 Switchyard` by default:
+Items intentionally outside `v1.8 Vanguard` by default:
 
 | Category | Item | Status |
 |----------|------|--------|
-| future milestone | Prompt/version release operations | deferred to likely `v1.6 Flightpath` |
+| tech debt | Normalize Nyquist frontmatter for Phases 30-32 if they re-enter audit scope | accepted at `v1.8` close |
 | future milestone | Hosted connector marketplace / broker behavior | deferred beyond `v1.5` |
 | future milestone | First-party browser/code-exec productization | deferred until connector policy and evidence are proven boring |
-| seed | SEED-001-agentcore-lessons | active reference for connector-boundary decisions |
-ns |
-cisions |
+| reference | Archived planning seeds in `.planning/seeds/` | retained as background material, not active milestone work |

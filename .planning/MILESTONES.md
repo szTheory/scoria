@@ -1,5 +1,81 @@
 # Milestones
 
+## v1.8 Vanguard
+
+**Shipped:** 2026-05-22
+**Phases:** 7 | **Plans:** 19
+**Theme:** Multi-model orchestration and distributed evaluations
+
+### Delivered
+Scoria now ships resilient multi-model routing with ETS-backed breaker truth, distributed evaluation campaign fan-out through Oban, and a real-time operator dashboard that makes fallback and campaign progress visible without leaving Phoenix.
+
+### Key Accomplishments
+- Established isolated `system`, `inference`, and `evals` queues plus batch enqueue primitives for high-volume background work.
+- Added circuit breakers, bounded retries, and fallback-chain orchestration across summarization and judge flows.
+- Built durable eval campaign, target, and run lineage with coordinator fan-out and worker rollups.
+- Shipped tenant-scoped LiveView model-health and campaign dashboards with eval-run drill-in.
+- Restored the full canonical v1.8 verification chain and closed the orphaned requirement gaps.
+- Reconciled roadmap, state, project, milestone, and strategic-arc surfaces to shipped truth.
+
+**Known deferred items at close:** 1 (Nyquist frontmatter normalization for Phases 30-32 if they re-enter audit scope)
+
+---
+
+## v1.7 Outrider
+
+**Shipped:** 2026-05-20
+**Phases:** 3 | **Plans:** 7
+**Theme:** Advanced ecosystem integrations and future-bet runtime surfaces
+
+### Delivered
+Scoria now supports out-of-process multi-runtime integration capabilities (using MCP over HTTP/SSE) and an asynchronous memory compaction engine via Oban. This allows Scoria to orchestrate external runtimes, efficiently manage long-running session history without context bloat, and track agent presence visually via Phoenix LiveView.
+
+### Key Accomplishments
+- Established an HTTP/SSE boundary implementing the MCP Server specification.
+- Built an asynchronous Oban-backed memory compaction worker tracking `compacted_memories`.
+- Wired external agent health liveliness natively via Phoenix Presence.
+- Shipped an updated LiveView Operator UX capable of memory time-travel and displaying agent connection statuses.
+
+**Known deferred items at close:** 0
+
+---
+
+## v1.6 Flightpath
+
+**Shipped:** 2026-05-19
+**Phases:** 4 | **Plans:** 12
+**Theme:** Release gates, prompt lifecycle, and evaluation operations
+
+### Objectives
+Provide a unified prompt lifecycle and evaluation operations suite. Operators should be able to turn traces into datasets, developers should be able to run offline VCR-backed ExUnit evals, and organizations should be able to enforce release gates before a prompt goes live.
+
+### Scope
+- **Ecto-backed Prompt Registry:** Immutable versioning and lifecycle for prompts.
+- **Trace-to-Dataset Curation:** Elevate real traces into baseline datasets via the dashboard.
+- **CI/CD Regression & Evals:** Integration with `mix test`, ExUnit, and VCR cassettes.
+- **Release Gates:** Tie EvalRun evidence to Scoria's workflow primitives for operator approvals.
+
+---
+
+## v1.5 Switchyard
+
+**Shipped:** 2026-05-18
+**Phases:** 4 | **Plans:** 9
+**Theme:** Tool and MCP connector productization
+
+### Delivered
+Scoria now productizes remote MCP connector adoption as an embedded Phoenix capability with stateless-first defaults, policy-backed tool scopes, workflow-owned approvals, and operator-grade audit visibility.
+
+### Key Accomplishments
+- Established the Scoria-owned remote connector boundary with durable connector records, boring discovery defaults, and auth/grant storage.
+- Enforced dual-plane policy, stable local tool identity, and stateless-first invocation defaults.
+- Extended Scoria's workflow-owned approval and evidence model into remote connector scenarios with operator-grade visibility.
+- Shipped a curated connector profile layer with boring adoption paths.
+
+**Known deferred items at close:** 0
+
+---
+
 ## v1.4 Keystone
 
 **Shipped:** 2026-05-17
