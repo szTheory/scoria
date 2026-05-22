@@ -2,7 +2,7 @@
 phase: 38
 slug: replay-safe-execution-tool-modes
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-05-23
 ---
@@ -19,18 +19,18 @@ created: 2026-05-23
 |----------|-------|
 | **Framework** | ExUnit |
 | **Config file** | `test/test_helper.exs` |
-| **Quick run command** | `mix test test/scoria/workflows/replay_branch_test.exs test/scoria/connectors/invocation_test.exs` |
+| **Quick run command** | `mix test test/scoria/workflows/replay_disposition_test.exs` |
 | **Full suite command** | `mix test` |
-| **Estimated runtime** | ~90 seconds |
+| **Estimated runtime** | ~25 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `mix test test/scoria/workflows/replay_branch_test.exs test/scoria/connectors/invocation_test.exs`
+- **After every task commit:** Run `mix test test/scoria/workflows/replay_disposition_test.exs`
 - **After every plan wave:** Run `mix test test/scoria/workflows/replay_branch_test.exs test/scoria/connectors/invocation_test.exs test/scoria/workflows/integration_test.exs`
 - **Before `$gsd-verify-work`:** Full suite must be green
-- **Max feedback latency:** 90 seconds
+- **Max feedback latency:** 25 seconds
 
 ---
 
@@ -68,7 +68,7 @@ created: 2026-05-23
 - [ ] Sampling continuity: no 3 consecutive tasks without automated verify
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
-- [ ] Feedback latency < 90s
+- [ ] Feedback latency < 30s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending

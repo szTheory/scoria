@@ -28,6 +28,11 @@
 **Goal**: Replay execution preserves operator trust by defaulting unsafe effects to explicit safe modes.
 **Depends on**: Phase 37
 **Requirements**: RPLY-02
+**Plans**: 3 plans
+Plans:
+- [ ] `38-01-PLAN.md` — Add replay-safe persistence contracts, schema fields, and resolver types.
+- [ ] `38-02-PLAN.md` — Enforce replay-safe behavior in workflow, connector, and MCP execution seams.
+- [ ] `38-03-PLAN.md` — Project replay-safe seam evidence through public runtime DTOs and tests.
 **Success Criteria**:
 1. External-write and approval-sensitive seams are blocked or historically stubbed by default during replay.
 2. Replay-safe adapters make execution mode explicit per tool/result class.

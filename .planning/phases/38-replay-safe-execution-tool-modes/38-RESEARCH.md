@@ -362,22 +362,33 @@ The key should identify retries of the same replay-live request, and the fingerp
 
 All material claims in this research were verified against the repo, Hex registry output, or official docs. [VERIFIED: research session artifacts]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Where should `replay_disposition` live first: workflow events, audit rows, approval rows, or result envelopes?**
-   - What we know: The user left schema placement to agent discretion, but downstream surfaces must not infer from opaque metadata. [VERIFIED: `.planning/phases/38-replay-safe-execution-tool-modes/38-CONTEXT.md`]
-   - What's unclear: Which table becomes the canonical source for seam disposition versus supporting projections. [VERIFIED: `.planning/phases/38-replay-safe-execution-tool-modes/38-CONTEXT.md`]
-   - Recommendation: Plan for one canonical write path that updates workflow event plus whichever durable row already “owns” that seam, then project outward from there. [VERIFIED: `lib/scoria/workflows/event.ex`, `lib/scoria/observe/approval.ex`, `lib/scoria/sre/audit_outbox_event.ex`]
+1. **Canonical home for `replay_disposition`**
+   - Resolution: `ai_workflow_events` should be the canonical cross-seam source because every effect seam already emits workflow lifecycle evidence and later runtime/UI reads can project from a single event stream. [VERIFIED: `lib/scoria/workflows/event.ex`, `lib/scoria/workflows.ex`]
+   - Supporting rows: the seam-owning durable row must mirror the same truth for local reads and audits:
+     - approval-sensitive seams mirror onto `ai_approvals`
+     - live or stubbed external-effect seams mirror onto `ai_audit_outbox_events`
+     - checkpoints carry the same disposition for operator snapshot continuity
+   - Result envelopes and metadata remain supplementary payloads only; they are not the source of truth. [VERIFIED: `.planning/phases/38-replay-safe-execution-tool-modes/38-CONTEXT.md`]
 
-2. **How should Scoria detect a “materially changed” replayed call?**
-   - What we know: The context explicitly names tool identity, arguments, subject, scopes, grant state, and policy boundary as material. [VERIFIED: `.planning/phases/38-replay-safe-execution-tool-modes/38-CONTEXT.md`]
-   - What's unclear: Exact fingerprint algorithm and which redacted fields belong in the durable comparison. [VERIFIED: `.planning/phases/38-replay-safe-execution-tool-modes/38-CONTEXT.md`]
-   - Recommendation: Plan a dedicated comparator module and store both a stable fingerprint and a redacted comparison summary for operator evidence. [CITED: https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-idempotency-key-header-07, VERIFIED: `.planning/phases/38-replay-safe-execution-tool-modes/38-CONTEXT.md`]
+2. **How to detect a materially changed replayed call**
+   - Resolution: Scoria should compute a stable comparison set from the locally classified tool identity and policy boundary, not from remote hints. A replayed call is eligible for historical stubbing only when all of the following match the source evidence exactly:
+     - `local_tool_id` or equivalent stable tool ref
+     - normalized `args_fingerprint`
+     - `subject_ref`
+     - `required_scopes`
+     - grant state
+     - `policy_key`
+   - If any field differs, or if the replay requests scope escalation, re-auth, or another authority-expanding path, the disposition is `blocked`, never live by default. This resolves D-07, D-10, and D-15 into an explicit comparator contract. [VERIFIED: `.planning/phases/38-replay-safe-execution-tool-modes/38-CONTEXT.md`]
 
-3. **How should historical stubs feed step completion without pretending a live call happened?**
-   - What we know: Current `complete_step/3` persists `result_envelope` and appends `step_completed` evidence. [VERIFIED: `lib/scoria/workflows.ex`]
-   - What's unclear: Whether the stub marker belongs in the result envelope, event payload, checkpoint snapshot, or all three. [VERIFIED: `lib/scoria/workflows.ex`, `lib/scoria/workflows/checkpoint.ex`, `lib/scoria/workflows/event.ex`]
-   - Recommendation: Plan for a single replay evidence envelope shape reused by completed, blocked, and stubbed seam outcomes. [VERIFIED: `.planning/phases/38-replay-safe-execution-tool-modes/38-CONTEXT.md`; ASSUMED: exact module name/shape remains to be chosen]
+3. **How historical stubs should feed step completion**
+   - Resolution: historical stubs should flow through the normal step completion path, but the persisted evidence must explicitly mark the result as historical rather than live. The completion contract should:
+     - persist `replay_disposition="historical_stub"` and `replay_reason_code` on the workflow event
+     - persist the same disposition on the matching checkpoint and audit/approval row for that seam
+     - store a result envelope that preserves the original result shape plus an explicit historical-origin marker
+     - leave `executed_live=false` and never emit evidence that implies a fresh outbound tool execution occurred
+   - This keeps replay on the existing engine while preserving operator trust and downstream DTO clarity. [VERIFIED: `lib/scoria/workflows.ex`, `.planning/phases/38-replay-safe-execution-tool-modes/38-CONTEXT.md`]
 
 ## Environment Availability
 
