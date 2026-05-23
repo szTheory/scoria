@@ -6,13 +6,18 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
   @impl true
   def update(assigns, socket) do
     step = assigns[:step] || %{}
-    
-    # Extract input context for the initial form
-    input_json = 
-      case Map.get(step, :projected_context) do
-        nil -> "{}"
-        context -> Jason.encode!(context, pretty: true)
-      end
+    promotion_context = assigns[:promotion_context] || %{}
+
+    input_json =
+      promotion_context
+      |> initial_input(step)
+      |> Jason.encode!(pretty: true)
+
+    expected_output_json =
+      promotion_context
+      |> read_context_value(:expected_output)
+      |> normalize_map()
+      |> Jason.encode!(pretty: true)
       
     datasets = 
       Eval.list_datasets()
@@ -20,7 +25,7 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
       
     initial_params = %{
       "input" => input_json,
-      "expected_output" => "{}"
+      "expected_output" => expected_output_json
     }
     
     changeset = dataset_item_form(initial_params)
@@ -28,6 +33,7 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
     {:ok, 
      socket
      |> assign(assigns)
+     |> assign(:promotion_context, promotion_context)
      |> assign(:datasets, datasets)
      |> assign(:form, to_form(changeset, as: "item"))}
   end
@@ -97,6 +103,31 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
       end
     end)
   end
+
+  defp initial_input(promotion_context, step) do
+    promotion_context
+    |> read_context_value(:checkpoint_output)
+    |> case do
+      checkpoint_output when is_map(checkpoint_output) ->
+        checkpoint_output
+        |> read_context_value(:projected_context)
+        |> normalize_map(step[:projected_context] || %{})
+
+      _other ->
+        step[:projected_context] || %{}
+    end
+  end
+
+  defp normalize_map(value, fallback \\ %{})
+  defp normalize_map(value, _fallback) when is_map(value), do: value
+  defp normalize_map(nil, fallback), do: fallback
+  defp normalize_map(_value, fallback), do: fallback
+
+  defp read_context_value(context, key) when is_map(context) do
+    Map.get(context, key, Map.get(context, to_string(key)))
+  end
+
+  defp read_context_value(_context, _key), do: nil
 
   @impl true
   def render(assigns) do

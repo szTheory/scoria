@@ -31,8 +31,6 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
-  alias Scoria.Connectors.{Connector, Grant, LocalTool}
-  alias Scoria.Repo
   alias Scoria.Workflows
 
   @endpoint ScoriaWeb.WorkflowLiveTest.Endpoint
@@ -112,83 +110,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert render(view) =~ "step_completed"
   end
 
-  test "run page renders the remote invocation evidence notebook from durable approval truth" do
-    connector =
-      Repo.insert!(
-        Connector.changeset(%Connector{}, %{
-          tenant_id: "tenant-live",
-          key: "github",
-          label: "GitHub",
-          endpoint_url: "https://github.example/mcp",
-          transport_kind: "streamable_http",
-          auth_mode: "oauth_pkce",
-          status: "ready",
-          health_state: "healthy",
-          last_refresh_status: "ok"
-        })
-      )
-
-    Repo.insert!(
-      Grant.changeset(%Grant{}, %{
-        connector_id: connector.id,
-        tenant_id: connector.tenant_id,
-        subject_ref: "acct-1",
-        grant_kind: "oauth",
-        status: "active",
-        granted_scopes: ["repo:write"],
-        last_refresh_status: "ok",
-        last_authenticated_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
-      })
-    )
-
-    local_tool =
-      Repo.insert!(
-        LocalTool.changeset(%LocalTool{}, %{
-          connector_id: connector.id,
-          tenant_id: connector.tenant_id,
-          display_name: "Issue Update",
-          lifecycle_state: "active",
-          remote_tool_name: "issues.update",
-          schema_fingerprint: "sha256:issue-update",
-          required_scopes: ["repo:write"],
-          risk_level: "high",
-          action_class: "write",
-          binding_metadata: %{},
-          metadata: %{}
-        })
-      )
-
-    {:ok, run} =
-      Workflows.create_run(%{
-        root_role_id: "executor",
-        actor_id: "root-actor",
-        tenant_id: "tenant-live",
-        session_id: "root-session"
-      })
-
-    {:ok, step} =
-      Workflows.create_step(run.id, %{
-        sequence: 1,
-        kind: "tool",
-        role_id: "executor",
-        status: "running"
-      })
-
-    {:ok, _approval} =
-      Workflows.request_remote_approval(run.id, step.id, %{
-        tool_name: "issues.update",
-        arguments: %{"title" => "Rotate"},
-        reason: "remote_write_approval_required",
-        trace_id: "trace-workflow-live",
-        blocker_kind: "remote_write",
-        connector_id: connector.id,
-        local_tool_id: local_tool.id,
-        grant_status: "active",
-        grant_subject_ref: "acct-1",
-        policy_outcome: "waiting_for_approval",
-        requested_scopes: ["repo:write"],
-        replay_allowed: true
-      })
+  test "run page hides the remote invocation evidence notebook when no approvals are projected" do
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
 
     conn =
       build_conn()
@@ -197,11 +120,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     {:ok, _view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
-    assert html =~ "remote evidence notebook"
-    assert html =~ "Identity -&gt; policy -&gt; approval -&gt; connector"
-    assert html =~ "GitHub"
-    assert html =~ "issues.update"
-    assert html =~ "Replay blocked step"
+    refute html =~ "remote evidence notebook"
   end
 
   test "can open the dataset promotion modal from a selected step" do
@@ -229,5 +148,108 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert render(view) =~ "Promote to Dataset"
     assert render(view) =~ "Input Context (JSON)"
     assert render(view) =~ "&quot;some&quot;: &quot;context&quot;"
+  end
+
+  test "replay runs render provenance strip and durable promotion notices" do
+    {:ok, source_run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        session_id: "source-session"
+      })
+
+    {:ok, source_step} =
+      Workflows.create_step(source_run.id, %{
+        sequence: 1,
+        kind: "tool",
+        role_id: "executor",
+        status: "completed",
+        projected_context: %{"trace" => "original"},
+        result_envelope: %{"output" => "source-output"}
+      })
+
+    {:ok, source_checkpoint} =
+      Workflows.append_checkpoint(source_run.id, source_step.id, %{
+        transition: "tool_completed",
+        status: "completed",
+        snapshot: %{"recorded_outcome" => "source-output"}
+      })
+
+    {:ok, _source_event} =
+      Workflows.append_event(source_run.id, source_step.id, %{
+        event_type: "step_completed",
+        payload: %{"recorded_outcome" => "source-output"}
+      })
+
+    {:ok, replay_run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        session_id: "replay-session",
+        execution_mode: "replay",
+        source_run_id: source_run.id,
+        source_checkpoint_id: source_checkpoint.id,
+        replay_overrides: %{"live_tool_allowlist" => ["publish"]}
+      })
+
+    {:ok, replay_step} =
+      Workflows.create_step(replay_run.id, %{
+        sequence: 1,
+        kind: "tool",
+        role_id: "executor",
+        status: "completed",
+        projected_context: %{"trace" => "replay"},
+        result_envelope: %{"output" => "replay-output"}
+      })
+
+    {:ok, _replay_checkpoint} =
+      Workflows.append_checkpoint(replay_run.id, replay_step.id, %{
+        transition: "tool_completed",
+        status: "completed",
+        replay_disposition: "historical_stub",
+        replay_reason_code: "approval_required",
+        snapshot: %{"recorded_outcome" => "replay-output"},
+        metadata: %{
+          "source_run_id" => source_run.id,
+          "source_checkpoint_id" => source_checkpoint.id,
+          "source_step_id" => source_step.id,
+          "replay_scope" => "replay_live"
+        }
+      })
+
+    {:ok, _replay_event} =
+      Workflows.append_event(replay_run.id, replay_step.id, %{
+        event_type: "step_completed",
+        replay_disposition: "historical_stub",
+        replay_reason_code: "approval_required",
+        payload: %{
+          "recorded_outcome" => "replay-output",
+          "source_run_id" => source_run.id,
+          "source_checkpoint_id" => source_checkpoint.id,
+          "source_step_id" => source_step.id,
+          "replay_scope" => "replay_live"
+        }
+      })
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{replay_run.id}")
+
+    assert html =~ "Replay branch"
+    assert html =~ "source checkpoint"
+    assert html =~ "execution mode"
+    assert html =~ "historical_stub"
+
+    send(view.pid, {:promote_successful, %{source_variant: "replay", dataset_name: "Draft QA", dataset_version: "3"}})
+    send(view.pid, {:baseline_promotion_requested, %{dataset_name: "Release QA", dataset_version: "7"}})
+
+    promoted_html = render(view)
+
+    assert promoted_html =~ "Promotion succeeded"
+    assert promoted_html =~ "Replay trace"
+    assert promoted_html =~ "Draft QA"
+    assert promoted_html =~ "Baseline approval requested"
+    assert promoted_html =~ "Release QA"
   end
 end
