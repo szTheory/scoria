@@ -71,7 +71,15 @@ defmodule Scoria.Eval.JudgeRunner do
       "#{fetch(attrs, :judge_provider) || fetch!(attrs, :provider)}:#{fetch(attrs, :judge_model) || fetch!(attrs, :model)}"
 
     with {:ok, score_attrs} <-
-           build_score_attrs(eval_run, eval_spec, dataset, attrs, model_spec, orchestrator_module, opts) do
+           build_score_attrs(
+             eval_run,
+             eval_spec,
+             dataset,
+             attrs,
+             model_spec,
+             orchestrator_module,
+             opts
+           ) do
       case Eval.replace_eval_scores(eval_run, score_attrs) do
         {:ok, updated_run, scores} -> {:ok, updated_run, scores}
         {:error, reason} -> {:error, reason}
@@ -94,35 +102,36 @@ defmodule Scoria.Eval.JudgeRunner do
       |> Enum.sort_by(& &1.id)
 
     Enum.reduce_while(dataset_items, {:ok, []}, fn dataset_item, {:ok, acc} ->
-        subject_output = build_subject_output(dataset_item)
-        prompt = build_judge_prompt(dataset_item, subject_output)
+      subject_output = build_subject_output(dataset_item)
+      prompt = build_judge_prompt(dataset_item, subject_output)
 
-        case orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts) do
-          {:ok, response} ->
-            verdict = extract_object(response)
+      case orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts) do
+        {:ok, response} ->
+          verdict = extract_object(response)
+          scorer = eval_spec.scorers |> List.first() || %{}
 
-            score_attrs = %{
-              dataset_item_id: dataset_item.id,
-              scorer_kind: eval_spec.scorers |> List.first() |> Map.get(:scorer_kind) |> to_string(),
-              status: Map.get(verdict, "status", "failed"),
-              score: Map.get(verdict, "score", 0.0),
-              explanation: Map.get(verdict, "explanation", "Judge verdict unavailable"),
-              judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
-              rubric_version: "eval-spec-v#{eval_spec.version}",
-              evidence_refs: Map.get(verdict, "evidence_refs", %{}),
-              metadata: %{"cost_usd" => "0.0", "latency_ms" => 0}
-            }
+          score_attrs = %{
+            dataset_item_id: dataset_item.id,
+            scorer_kind: scorer |> fetch(:scorer_kind) |> to_string(),
+            status: Map.get(verdict, "status", "failed"),
+            score: Map.get(verdict, "score", 0.0),
+            explanation: Map.get(verdict, "explanation", "Judge verdict unavailable"),
+            judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
+            rubric_version: "eval-spec-v#{eval_spec.version}",
+            evidence_refs: Map.get(verdict, "evidence_refs", %{}),
+            metadata: %{"cost_usd" => "0.0", "latency_ms" => 0}
+          }
 
-            {:cont, {:ok, [score_attrs | acc]}}
+          {:cont, {:ok, [score_attrs | acc]}}
 
-          {:error, reason} ->
-            {:halt, {:error, reason}}
-        end
-      end)
-      |> case do
-        {:ok, score_attrs} -> {:ok, Enum.reverse(score_attrs)}
-        error -> error
+        {:error, reason} ->
+          {:halt, {:error, reason}}
       end
+    end)
+    |> case do
+      {:ok, score_attrs} -> {:ok, Enum.reverse(score_attrs)}
+      error -> error
+    end
   end
 
   defp build_subject_output(dataset_item) do
@@ -158,9 +167,13 @@ defmodule Scoria.Eval.JudgeRunner do
     mean_score = if total == 0, do: 0.0, else: Enum.sum(Enum.map(scores, & &1.score)) / total
     avg_latency = if total == 0, do: 0, else: Enum.sum(Enum.map(scores, &latency_ms/1)) / total
 
-    if pass_rate >= eval_spec.threshold_policy.pass_rate_gte and
-         mean_score >= eval_spec.threshold_policy.mean_score_gte and
-         avg_latency <= eval_spec.threshold_policy.max_latency_ms do
+    pass_rate_gte = fetch(eval_spec.threshold_policy, :pass_rate_gte) || 0.0
+    mean_score_gte = fetch(eval_spec.threshold_policy, :mean_score_gte) || 0.0
+    max_latency_ms = fetch(eval_spec.threshold_policy, :max_latency_ms) || 0
+
+    if pass_rate >= pass_rate_gte and
+         mean_score >= mean_score_gte and
+         avg_latency <= max_latency_ms do
       "passed"
     else
       "failed"

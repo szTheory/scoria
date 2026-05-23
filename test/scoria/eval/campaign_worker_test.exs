@@ -6,7 +6,16 @@ defmodule Scoria.Eval.CampaignWorkerTest do
 
   alias Oban.Job
   alias Scoria.Eval
-  alias Scoria.Eval.{CampaignWorker, EvalCampaign, EvalCampaignTarget, EvalRun, OnlineScoreCandidate, Score}
+
+  alias Scoria.Eval.{
+    CampaignWorker,
+    EvalCampaign,
+    EvalCampaignTarget,
+    EvalRun,
+    OnlineScoreCandidate,
+    Score
+  }
+
   alias Scoria.Repo.Trace
   alias Scoria.Repo
   alias Scoria.Workflows.{Run, Step}
@@ -90,7 +99,13 @@ defmodule Scoria.Eval.CampaignWorkerTest do
 
   describe "perform/1" do
     test "executes through the orchestrator path, persists durable truth, and completes the campaign" do
-      %{campaign: campaign, target: target, eval_run: eval_run, job: job, dataset_item: dataset_item} =
+      %{
+        campaign: campaign,
+        target: target,
+        eval_run: eval_run,
+        job: job,
+        dataset_item: dataset_item
+      } =
         seeded_campaign()
 
       assert :ok = CampaignWorker.perform(%Job{args: job.args})
@@ -134,13 +149,20 @@ defmodule Scoria.Eval.CampaignWorkerTest do
     end
 
     test "keeps failures shard-local and rolls the campaign to completed_partial when peers succeed" do
-      %{campaign: campaign, jobs: [job_1, job_2], targets: [target_1, target_2], eval_runs: [run_1, run_2]} =
+      %{
+        campaign: campaign,
+        jobs: [job_1, job_2],
+        targets: [target_1, target_2],
+        eval_runs: [run_1, run_2]
+      } =
         seeded_campaign(target_count: 2)
 
       assert :ok = CampaignWorker.perform(%Job{args: job_1.args})
 
       Process.put({OrchestratorStub, :mode}, {:error, :transient_provider_failure})
-      assert {:error, :transient_provider_failure} = CampaignWorker.perform(%Job{args: job_2.args})
+
+      assert {:error, :transient_provider_failure} =
+               CampaignWorker.perform(%Job{args: job_2.args})
 
       campaign = Repo.get!(EvalCampaign, campaign.id)
       target_1 = Repo.get!(EvalCampaignTarget, target_1.id)
@@ -161,8 +183,11 @@ defmodule Scoria.Eval.CampaignWorkerTest do
       assert campaign.queued_targets == 0
       assert campaign.finished_at
 
-      assert Repo.aggregate(from(score in Score, where: score.eval_run_id == ^run_1.id), :count) == 1
-      assert Repo.aggregate(from(score in Score, where: score.eval_run_id == ^run_2.id), :count) == 0
+      assert Repo.aggregate(from(score in Score, where: score.eval_run_id == ^run_1.id), :count) ==
+               1
+
+      assert Repo.aggregate(from(score in Score, where: score.eval_run_id == ^run_2.id), :count) ==
+               0
     end
 
     test "marks explicit fatal classes as failed_fatal" do
@@ -200,7 +225,11 @@ defmodule Scoria.Eval.CampaignWorkerTest do
       assert campaign.status == "completed"
       assert campaign.completed_targets == 1
       assert campaign.failed_targets == 0
-      assert Repo.aggregate(from(score in Score, where: score.eval_run_id == ^eval_run.id), :count) == 1
+
+      assert Repo.aggregate(
+               from(score in Score, where: score.eval_run_id == ^eval_run.id),
+               :count
+             ) == 1
     end
 
     test "uses persisted lineage over mismatched envelope tenant data and refuses cross-tenant retargeting" do
@@ -312,8 +341,15 @@ defmodule Scoria.Eval.CampaignWorkerTest do
                  workflow_step_id: workflow_step.id,
                  dedupe_key: dedupe_key,
                  sampling_metadata: %{"sampler" => "phase40", "window" => "2026-05-23T00"},
-                 score_summary: %{"status" => "failed", "score" => 0.18},
-                 promotion_snapshot: %{"dataset_name" => "prod-feedback", "dataset_version" => "draft"}
+                 score: 0.18,
+                 score_status: "failed",
+                 score_explanation: "Needs operator review",
+                 scorer_kind: "deterministic_rule",
+                 scorer_version: "policy-rules@2026.05.23",
+                 promotion_snapshot: %{
+                   "dataset_name" => "prod-feedback",
+                   "dataset_version" => "draft"
+                 }
                })
                |> Repo.insert()
 
@@ -323,7 +359,9 @@ defmodule Scoria.Eval.CampaignWorkerTest do
       assert candidate.workflow_run_id == workflow_run.id
       assert candidate.workflow_step_id == workflow_step.id
       assert candidate.sampling_metadata["sampler"] == "phase40"
-      assert candidate.score_summary["status"] == "failed"
+      assert candidate.score_status == "failed"
+      assert candidate.score == 0.18
+      assert candidate.scorer_kind == "deterministic_rule"
       assert candidate.promotion_snapshot["dataset_name"] == "prod-feedback"
 
       assert {:error, changeset} =
@@ -381,7 +419,13 @@ defmodule Scoria.Eval.CampaignWorkerTest do
 
     jobs = Enum.map(targets, &Map.fetch!(jobs_by_target, &1.id))
 
-    base = %{campaign: campaign, dataset_item: dataset_item, jobs: jobs, targets: targets, eval_runs: eval_runs}
+    base = %{
+      campaign: campaign,
+      dataset_item: dataset_item,
+      jobs: jobs,
+      targets: targets,
+      eval_runs: eval_runs
+    }
 
     case {targets, eval_runs, jobs} do
       {[target], [eval_run], [job]} ->

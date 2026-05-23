@@ -199,8 +199,8 @@ defmodule Scoria.Eval do
       |> put_new_attr(:dataset_id, eval_spec.dataset_id)
       |> put_new_attr(:dataset_version, eval_spec.dataset_version)
       |> put_new_attr(:eval_spec_version, eval_spec.version)
-      |> put_new_attr(:prompt_template_id, eval_spec.subject.prompt_template_id)
-      |> put_new_attr(:prompt_version, eval_spec.subject.prompt_version)
+      |> put_new_attr(:prompt_template_id, fetch_attr(eval_spec.subject, :prompt_template_id))
+      |> put_new_attr(:prompt_version, fetch_attr(eval_spec.subject, :prompt_version))
       |> put_new_attr(:status, "pending")
 
     %EvalRun{}
@@ -335,7 +335,11 @@ defmodule Scoria.Eval do
       case fresh_target.status do
         "pending" ->
           fresh_target
-          |> EvalCampaignTarget.changeset(%{status: "running", started_at: timestamp, last_error: %{}})
+          |> EvalCampaignTarget.changeset(%{
+            status: "running",
+            started_at: timestamp,
+            last_error: %{}
+          })
           |> repo.update()
 
         _ ->
@@ -432,7 +436,11 @@ defmodule Scoria.Eval do
   Finalizes a failed shard and narrows campaign-wide fatal state to explicit failure classes.
   """
   def fail_campaign_target(
-        %{campaign: campaign, target: %EvalCampaignTarget{} = target, eval_run: %EvalRun{} = eval_run},
+        %{
+          campaign: campaign,
+          target: %EvalCampaignTarget{} = target,
+          eval_run: %EvalRun{} = eval_run
+        },
         reason,
         opts \\ []
       ) do
@@ -519,6 +527,7 @@ defmodule Scoria.Eval do
       attrs_with_fk =
         score_attrs
         |> Map.new()
+        |> normalize_score_attrs()
         |> Map.put(:eval_run_id, eval_run.id)
 
       case %Score{} |> Score.changeset(attrs_with_fk) |> repo.insert() do
@@ -540,6 +549,19 @@ defmodule Scoria.Eval do
       :delete_scores,
       from(score in Score, where: score.eval_run_id == ^eval_run_id)
     )
+  end
+
+  defp normalize_score_attrs(attrs) do
+    explanation = fetch_attr(attrs, :explanation) || fetch_attr(attrs, :reasoning)
+    details = fetch_attr(attrs, :details) || fetch_attr(attrs, :metadata) || %{}
+    metadata = fetch_attr(attrs, :metadata) || fetch_attr(attrs, :details) || %{}
+
+    attrs
+    |> Map.put_new(:explanation, explanation)
+    |> Map.put_new(:reasoning, explanation)
+    |> Map.put_new(:details, details)
+    |> Map.put_new(:metadata, metadata)
+    |> Map.put_new(:evidence_refs, fetch_attr(attrs, :evidence_refs) || %{})
   end
 
   defp insert_campaign_targets(repo, campaign, eval_spec_id, targets) do
@@ -638,9 +660,7 @@ defmodule Scoria.Eval do
     campaign = repo.get!(EvalCampaign, campaign_id)
 
     targets =
-      repo.all(
-        from(target in EvalCampaignTarget, where: target.campaign_id == ^campaign_id)
-      )
+      repo.all(from(target in EvalCampaignTarget, where: target.campaign_id == ^campaign_id))
 
     attrs = campaign_rollup_attrs(campaign, targets, touch_started?)
 
@@ -659,7 +679,8 @@ defmodule Scoria.Eval do
       cancelled_targets: Enum.count(targets, &(&1.status == "cancelled"))
     }
 
-    terminal? = counts.total_targets > 0 and counts.queued_targets == 0 and counts.running_targets == 0
+    terminal? =
+      counts.total_targets > 0 and counts.queued_targets == 0 and counts.running_targets == 0
 
     Map.merge(counts, %{
       status: derive_campaign_status(counts, targets),
