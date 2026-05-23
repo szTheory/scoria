@@ -3,6 +3,7 @@ defmodule Scoria.Workflows.Run do
   import Ecto.Changeset
 
   @statuses ~w(running waiting_for_approval paused retrying failed completed cancelled)
+  @execution_modes ~w(live replay)
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -11,7 +12,11 @@ defmodule Scoria.Workflows.Run do
     field :tenant_id, :string
     field :session_id, :string
     field :root_role_id, :string
+    field :source_run_id, :binary_id
+    field :source_checkpoint_id, :binary_id
     field :status, :string, default: "running"
+    field :execution_mode, :string, default: "live"
+    field :replay_overrides, :map, default: %{}
     field :current_step_id, :binary_id
     field :latest_checkpoint_id, :binary_id
     field :lock_version, :integer, default: 1
@@ -37,7 +42,11 @@ defmodule Scoria.Workflows.Run do
       :actor_id,
       :tenant_id,
       :root_role_id,
+      :source_run_id,
+      :source_checkpoint_id,
       :status,
+      :execution_mode,
+      :replay_overrides,
       :current_step_id,
       :latest_checkpoint_id,
       :lock_version,
@@ -49,6 +58,7 @@ defmodule Scoria.Workflows.Run do
     ])
     |> validate_required([:root_role_id, :status])
     |> validate_inclusion(:status, @statuses)
+    |> validate_inclusion(:execution_mode, @execution_modes)
     |> optimistic_lock(:lock_version)
   end
 end
