@@ -19,17 +19,18 @@ created: 2026-05-23
 |----------|-------|
 | **Framework** | ExUnit |
 | **Config file** | `mix.exs` |
-| **Quick run command** | `mix test test/scoria/runtime_view_test.exs test/scoria_web/live/workflow_live_test.exs` |
+| **Quick run command** | `mix test test/scoria/runtime_view_test.exs test/scoria/eval_test.exs` |
 | **Full suite command** | `mix test` |
-| **Estimated runtime** | ~45 seconds |
+| **Estimated runtime** | ~24 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `mix test` for the task-local files called out in each plan.
+- **After every task commit:** Run the task-local smoke command in that task's `<verify>` block.
 - **After every plan wave:** Run `mix test`
 - **Before `$gsd-verify-work`:** Full suite must be green
+- **Target task-local latency:** under 30 seconds
 - **Max feedback latency:** 60 seconds
 
 ---
@@ -38,9 +39,14 @@ created: 2026-05-23
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 39-01-01 | 01 | 1 | RPLY-03 | T-39-01 | Replay provenance strip and comparison notebook render from durable DTO truth rather than raw metadata inspection. | LiveView | `mix test test/scoria/runtime_view_test.exs test/scoria_web/live/workflow_live_test.exs` | ✅ | ⬜ pending |
-| 39-02-01 | 02 | 2 | DATA-01 | T-39-02 | Promotion uses a frozen workflow evidence snapshot for original or replay variants and records durable dataset-item metadata. | integration | `mix test test/scoria_web/live/dataset_live/promote_component_test.exs test/scoria/eval_test.exs` | ✅ | ⬜ pending |
-| 39-03-01 | 03 | 3 | DATA-02 | T-39-03 | Sealed datasets remain immutable and baseline promotion must route through approval semantics instead of direct insertion. | workflow/integration | `mix test test/scoria/workflows_test.exs test/scoria/workflows/remote_approval_projection_test.exs` | ✅ | ⬜ pending |
+| 39-01-01 | 01 | 1 | RPLY-03 | T-39-01 | Replay provenance strip and comparison notebook render from durable DTO truth rather than raw metadata inspection. | runtime smoke | `mix test test/scoria/runtime_view_test.exs` | ✅ | ⬜ pending |
+| 39-02-01 | 02 | 2 | RPLY-03 | T-39-02 | Workflow page renders replay provenance and grouped comparison evidence from runtime DTOs. | LiveView smoke | `mix test test/scoria_web/live/workflow_live_test.exs` | ✅ | ⬜ pending |
+| 39-03-01 | 03 | 3 | DATA-01 | T-39-09 | Open-draft promotion inserts one immutable dataset item snapshot for the selected source variant. | eval smoke | `mix test test/scoria/eval_test.exs` | ✅ | ⬜ pending |
+| 39-03-02 | 03 | 3 | DATA-01 | T-39-10 | Promotion modal preserves the flat workflow-source contract and fails safely if a draft target seals before submit. | component smoke | `mix test test/scoria_web/live/dataset_live/promote_component_test.exs` | ✅ | ⬜ pending |
+| 39-04-01 | 04 | 4 | DATA-02 | T-39-11 | Sealed baseline requests persist as workflow approvals with inspectable lineage and no dataset-item insert. | workflow smoke | `mix test test/scoria/workflows/dataset_promotion_test.exs test/scoria/workflows/remote_approval_projection_test.exs` | ✅ | ⬜ pending |
+| 39-04-02 | 04 | 4 | DATA-02 | T-39-17 | Modal shows approval-required sealed baselines and requires explicit confirmation before sending a baseline request. | LiveComponent smoke | `mix test test/scoria_web/live/dataset_live/promote_component_test.exs` | ✅ | ⬜ pending |
+| 39-05-01 | 05 | 5 | RPLY-03, DATA-01 | T-39-13 | Replay promotion contract carries the correct source checkpoint lineage plus replay metadata. | runtime smoke | `mix test test/scoria/runtime_view_test.exs` | ✅ | ⬜ pending |
+| 39-05-02 | 05 | 5 | DATA-01 | T-39-15 | Replay dataset-item persistence uses the runtime/LiveView contract instead of synthetic params. | eval smoke | `mix test test/scoria/eval_test.exs` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -67,6 +73,7 @@ created: 2026-05-23
 - [x] Sampling continuity: no 3 consecutive tasks without automated verify
 - [x] Wave 0 covers all MISSING references
 - [x] No watch-mode flags
+- [x] Task-local smoke lanes target < 30s
 - [x] Feedback latency < 60s
 - [x] `nyquist_compliant: true` set in frontmatter
 

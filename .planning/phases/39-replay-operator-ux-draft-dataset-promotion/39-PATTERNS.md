@@ -1,8 +1,8 @@
 # Phase 39: replay-operator-ux-draft-dataset-promotion - Pattern Map
 
 **Mapped:** 2026-05-23
-**Files analyzed:** 15
-**Analogs found:** 15 / 15
+**Files analyzed:** 19
+**Analogs found:** 19 / 19
 
 ## File Classification
 
@@ -14,12 +14,16 @@
 | `test/scoria_web/live/workflow_live_test.exs` | test | request-response | `test/scoria_web/live/workflow_live_test.exs` | exact |
 | `lib/scoria_web/live/dataset_live/promote_component.ex` | component | request-response | `lib/scoria_web/live/dataset_live/promote_component.ex` | exact |
 | `lib/scoria/eval.ex` | service | CRUD | `lib/scoria/eval.ex` | exact |
+| `lib/scoria/eval/dataset_promotion.ex` | service | transform | `lib/scoria/eval.ex` | role-match |
 | `lib/scoria/workflows/dataset_promotion.ex` | service | transform | `lib/scoria/workflows/prompt_release.ex` | partial |
 | `test/scoria_web/live/dataset_live/promote_component_test.exs` | test | request-response | `test/scoria_web/live/dataset_live/promote_component_test.exs` | exact |
 | `test/scoria/eval_test.exs` | test | CRUD | `test/scoria/eval_test.exs` | exact |
 | `lib/scoria/workflows.ex` | service | event-driven | `lib/scoria/workflows.ex` | exact |
 | `lib/scoria/workflows/remote_approval_projection.ex` | service | request-response | `lib/scoria/workflows/remote_approval_projection.ex` | exact |
+| `lib/scoria/runtime.ex` | service | request-response | `lib/scoria/runtime.ex` | exact |
+| `lib/scoria/runtime/replay_comparison.ex` | model | transform | `lib/scoria/runtime/run_detail.ex` | role-match |
 | `lib/scoria/runtime/run_detail.ex` | model | transform | `lib/scoria/runtime/run_detail.ex` | exact |
+| `test/scoria/workflows/dataset_promotion_test.exs` | test | transform | `test/scoria/workflows/prompt_release_test.exs` | role-match |
 | `test/scoria/workflows/remote_approval_projection_test.exs` | test | request-response | `test/scoria/workflows/remote_approval_projection_test.exs` | exact |
 | `test/scoria/workflows_test.exs` | test | event-driven | `test/scoria/workflows_test.exs` | exact |
 | `test/scoria/runtime_view_test.exs` | test | transform | `test/scoria/runtime_view_test.exs` | exact |
@@ -366,6 +370,16 @@ Phase 39 should follow this style: centralize snapshot/immutability checks in se
 
 ---
 
+### `lib/scoria/eval/dataset_promotion.ex` (service, transform)
+
+**Analog:** `lib/scoria/eval.ex`
+
+Use a small helper module beside `Scoria.Eval` when the public context needs a focused promotion builder without bloating the main file. The governing pattern is: normalize attrs, build one `Ecto.Multi`, reuse existing changesets, and return the same `{:ok, value} | {:error, changeset}` shape already used in `lib/scoria/eval.ex`.
+
+**Apply to Phase 39:** build the frozen workflow-source snapshot from the flat `promotion_context` keys, then hand the final insert to `DatasetItem.changeset/3` inside one transaction.
+
+---
+
 ### `lib/scoria/workflows/dataset_promotion.ex` (service, transform)
 
 **Analog:** `lib/scoria/workflows/prompt_release.ex`
@@ -558,6 +572,26 @@ If baseline-promotion approvals need an operator-facing projection, mirror this 
 
 ---
 
+### `lib/scoria/runtime.ex` (service, request-response)
+
+**Analog:** `lib/scoria/runtime.ex`
+
+Use the existing runtime boundary whenever a LiveView or other operator surface needs curated run reads instead of raw workflow structs. The governing pattern is: load through one public runtime function, then return DTOs rather than leaking persistence details.
+
+**Apply to Phase 39:** keep original-run lazy loading and replay-comparison assembly behind `Runtime.get_run_detail!/1` or adjacent runtime helpers instead of moving that fetch logic into LiveView.
+
+---
+
+### `lib/scoria/runtime/replay_comparison.ex` (model, transform)
+
+**Analog:** `lib/scoria/runtime/run_detail.ex`
+
+Use the same transform-first posture as `RunDetail`: accept durable runtime/workflow inputs, normalize them into curated maps, and keep UI-facing grouping logic out of templates. This helper should stay free of Ecto queries except through explicit inputs handed in from `Runtime`.
+
+**Apply to Phase 39:** build `comparison_by_step` and `replay_provenance_strip` from replay and source run detail inputs using exact grouped keys for provenance, overrides, checkpoint/output, safety, and promotion snapshot.
+
+---
+
 ### `lib/scoria/runtime/run_detail.ex` (model, transform)
 
 **Analog:** `lib/scoria/runtime/run_detail.ex`
@@ -606,6 +640,16 @@ Phase 39 should prefer adding promotion-facing fields here only if the UI truly 
 **Coverage already present:** replay-safe inbox projection and lineage projection (test names at lines 15 and 74).
 
 Use this file if baseline-promotion approvals get their own `tool_name` or need new projected lineage fields.
+
+---
+
+### `test/scoria/workflows/dataset_promotion_test.exs` (test, transform)
+
+**Analog:** `test/scoria/workflows/prompt_release_test.exs`
+
+Use the same transaction-first workflow test posture as prompt release: assert the approval request row is created, assert the tool name and arguments are preserved, and assert the surrounding workflow truth or approval projection can read the new request back without UI involvement.
+
+**Apply to Phase 39:** cover the wrapper boundary and the dedicated baseline-confirmation contract, while leaving UI rendering details to `promote_component_test.exs`.
 
 ---
 

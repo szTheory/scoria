@@ -305,25 +305,25 @@ end
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
 | A1 | A small new repo-local helper such as `Scoria.Runtime.ReplayComparison` is the cleanest way to normalize original-vs-replay notebook data. [ASSUMED] | Recommended Project Structure | Low to medium; the planner may instead extend `RunDetail` directly if that keeps the surface simpler. |
-| A2 | Phase 39 can satisfy `DATA-02` by keeping sealed baselines visible and non-mutable, while deferring any actual baseline-mutation execution path until a dedicated approval-backed workflow exists. [ASSUMED] | Summary; Pattern 3; Open Questions | Medium; if stakeholders expect a full baseline approval request flow in Phase 39, the plan needs one more backend/UI slice. |
+| A2 | A small workflow-owned baseline-promotion approval request wrapper will be enough for Phase 39, provided the UI keeps sealed datasets non-mutable and requires a dedicated confirmation step before the request is sent. [ASSUMED] | Summary; Pattern 3 | Low to medium; this stays valid unless baseline approval must also complete the mutation in this phase. |
 | A3 | Promotion snapshots should use workflow truth as canonical and only attach a trace ID opportunistically when durable evidence already contains one. [ASSUMED] | Pitfall 4 | Medium; if downstream eval consumers require a mandatory trace FK, the schema or source builder needs expansion. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Does Phase 39 need to create baseline-promotion approval requests, or only expose sealed baselines as visible gated targets?**
-   - What we know: The requirement says release-driving baselines require explicit approval, while the UI spec phrases the baseline lane as conditional and the user prompt asks for the smallest decomposition. [VERIFIED: .planning/REQUIREMENTS.md; .planning/phases/39-replay-operator-ux-draft-dataset-promotion/39-UI-SPEC.md; user prompt]
-   - What's unclear: Whether “approval flow” in this phase means a fully wired request path or a visible non-mutable lane plus approval-required affordance. [VERIFIED: local artifact comparison]
-   - Recommendation: Decide this in planning up front, because it changes whether Phase 39 needs a new workflow service modeled after `PromptRelease`. [VERIFIED: lib/scoria/workflows/prompt_release.ex] [ASSUMED]
+1. **Baseline approval scope**
+   - Resolution: Phase 39 should create a workflow-owned baseline-promotion approval request path, but it should not mutate the sealed dataset in this phase. The operator flow is: visible sealed target -> dedicated confirmation step with immutability copy -> approval request recorded through workflow-owned seams. [VERIFIED: .planning/REQUIREMENTS.md; .planning/phases/39-replay-operator-ux-draft-dataset-promotion/39-UI-SPEC.md; lib/scoria/workflows/prompt_release.ex]
+   - Planning consequence: the plan set must include a baseline confirmation step, a small workflow service modeled after `PromptRelease`, and approval-facing regression coverage. [VERIFIED: lib/scoria/workflows/prompt_release.ex; test/scoria/workflows/prompt_release_test.exs]
 
-2. **What exact dataset item shape should represent a frozen replay snapshot?**
-   - What we know: `DatasetItem` supports `input`, `expected_output`, `metadata`, and optional `source_trace_id`, and current eval runners consume dataset items through `input`/`expected_output`. [VERIFIED: lib/scoria/eval/dataset_item.ex; lib/scoria/eval/judge_runner.ex; lib/scoria/eval/offline_runner_test.exs]
-   - What's unclear: Whether replay provenance belongs in `input`, in `metadata`, or split across both for downstream runner ergonomics. [VERIFIED: local code inspection]
-   - Recommendation: Keep replay lineage and operator notes in `metadata`, keep runner-essential invocation context in `input`, and avoid stuffing presentation-only groups into the executable payload. [VERIFIED: .planning/phases/24-trace-to-dataset-curation-via-liveview/24-RESEARCH.md] [ASSUMED]
+2. **Frozen snapshot shape**
+   - Resolution: the dataset item payload should split concerns explicitly:
+     - `input`: the frozen workflow evidence snapshot needed by downstream eval runners
+     - `expected_output`: operator-supplied expectation map
+     - `metadata`: promotion lineage and operator-facing replay provenance, including `promoted_from_workflow`, `source_variant`, `workflow_run_id`, `workflow_step_id`, `source_run_id`, `source_checkpoint_id`, `execution_mode`, `replay_disposition`, `replay_reason_code`, and `recorded_outcome`
+   - Planning consequence: the promotion API should accept one flat `promotion_context` contract and persist these keys in one `Ecto.Multi` insert without schema changes. [VERIFIED: lib/scoria/eval/dataset_item.ex; lib/scoria/eval.ex; .planning/phases/24-trace-to-dataset-curation-via-liveview/24-RESEARCH.md]
 
-3. **Where should “original” evidence come from when the operator is on a replay run?**
-   - What we know: Replay runs persist `source_run_id` and `source_checkpoint_id`, and replay-safe detail items preserve lineage IDs and replay disposition facts. [VERIFIED: lib/scoria/workflows/run.ex; lib/scoria/runtime/run_summary.ex; lib/scoria/runtime/run_detail.ex]
-   - What's unclear: Whether the comparison notebook should fetch the original run detail lazily by `source_run_id` or precompute a denormalized comparison projection from the replay run alone. [VERIFIED: local code inspection]
-   - Recommendation: Prefer lazy fetch of the original run detail by `source_run_id` so the notebook can compare like-for-like DTOs without duplicating storage. [VERIFIED: lib/scoria/runtime.ex] [ASSUMED]
+3. **Original evidence sourcing for replay comparisons**
+   - Resolution: use `source_run_id` to lazily load the original run detail and build a comparison projection from two like-for-like runtime DTOs. Only fall back to `source_step_id` or step sequence matching when explicit source lineage is missing on a given item. [VERIFIED: lib/scoria/workflows/run.ex; lib/scoria/runtime.ex; lib/scoria/runtime/run_detail.ex]
+   - Planning consequence: runtime comparison assembly belongs in a backend helper such as `Scoria.Runtime.ReplayComparison`, not in LiveView templates or client-side state. [VERIFIED: lib/scoria/runtime.ex; lib/scoria/runtime/run_detail.ex]
 
 ## Environment Availability
 
