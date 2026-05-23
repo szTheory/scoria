@@ -9,7 +9,7 @@
 ## Phases
 
 - [ ] **Phase 37: Replay Lineage & Branch Model** - Create replay branches as durable new runs rooted in existing checkpoint truth.
-- [ ] **Phase 38: Replay-Safe Execution & Tool Modes** - Enforce safe replay defaults and historical-stub boundaries for external effects.
+- [x] **Phase 38: Replay-Safe Execution & Tool Modes** - Enforce safe replay defaults and historical-stub boundaries for external effects. (completed 2026-05-23)
 - [ ] **Phase 39: Replay Operator UX & Draft Dataset Promotion** - Add replay provenance, diff context, and draft dataset promotion to the operator surface.
 - [ ] **Phase 40: Online Scoring & Review Queue** - Sample production traces asynchronously, attach additive score evidence, and route reviewable promotion candidates into operator workflows.
 
@@ -63,6 +63,6 @@ Plans:
 | Phase | Plans Complete | Status | Notes |
 |-------|----------------|--------|-------|
 | 37. Replay Lineage & Branch Model | 0/0 | Planned | Start with `$gsd-plan-phase 37` |
-| 38. Replay-Safe Execution & Tool Modes | 2/3 | In Progress|  |
+| 38. Replay-Safe Execution & Tool Modes | 3/3 | Complete    | 2026-05-23 |
 | 39. Replay Operator UX & Draft Dataset Promotion | 0/0 | Planned | Depends on replay truth and safety modes |
 | 40. Online Scoring & Review Queue | 0/0 | Planned | Depends on replay-driven evidence and draft promotion lanes |

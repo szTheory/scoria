@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: milestone
-status: executing
-last_updated: "2026-05-23T09:23:24.107Z"
+status: ready_to_plan
+last_updated: 2026-05-23T10:16:22.178Z
 last_activity: 2026-05-23
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 110
   percent: 25
+stopped_at: Phase 38 complete (3/3) — ready to discuss Phase 39
 ---
 
 # Project State
@@ -19,16 +20,16 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 38 — replay-safe-execution-tool-modes
+**Current Focus:** Phase 39 — replay operator ux & draft dataset promotion
 
 ## Current Position
 
 Phase: 38 (replay-safe-execution-tool-modes) — EXECUTING
 Plan: 1 of 3
 **Milestone:** `v1.9 Crucible`
-**Phase:** Not started (defining requirements)
-**Plan:** —
-**Status:** Executing Phase 38
+**Phase:** 39
+**Plan:** Not started
+**Status:** Ready to plan
 **Last activity:** 2026-05-23
 
 **Progress:**
