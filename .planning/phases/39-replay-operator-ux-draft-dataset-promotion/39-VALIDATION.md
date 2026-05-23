@@ -46,7 +46,7 @@ created: 2026-05-23
 | 39-04-01 | 04 | 4 | DATA-02 | T-39-11 | Sealed baseline requests persist as workflow approvals with inspectable lineage and no dataset-item insert. | workflow smoke | `mix test test/scoria/workflows/dataset_promotion_test.exs test/scoria/workflows/remote_approval_projection_test.exs` | ✅ | ⬜ pending |
 | 39-04-02 | 04 | 4 | DATA-02 | T-39-17 | Modal shows approval-required sealed baselines and requires explicit confirmation before sending a baseline request. | LiveComponent smoke | `mix test test/scoria_web/live/dataset_live/promote_component_test.exs` | ✅ | ⬜ pending |
 | 39-05-01 | 05 | 5 | RPLY-03, DATA-01 | T-39-13 | Replay promotion contract carries the correct source checkpoint lineage plus replay metadata. | runtime smoke | `mix test test/scoria/runtime_view_test.exs` | ✅ | ⬜ pending |
-| 39-05-02 | 05 | 5 | DATA-01 | T-39-15 | Replay dataset-item persistence uses the runtime/LiveView contract instead of synthetic params. | eval smoke | `mix test test/scoria/eval_test.exs` | ✅ | ⬜ pending |
+| 39-05-02 | 05 | 5 | DATA-01 | T-39-15 | Replay dataset-item persistence uses the runtime/LiveView contract instead of synthetic params. | eval + component smoke | `mix test test/scoria/eval_test.exs test/scoria_web/live/dataset_live/promote_component_test.exs` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
