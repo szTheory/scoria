@@ -51,6 +51,15 @@ defmodule Scoria.Runtime.RunDetail do
       sequence: checkpoint.sequence,
       transition: checkpoint.transition,
       status: checkpoint.status,
+      replay_disposition: checkpoint.replay_disposition,
+      replay_reason_code: checkpoint.replay_reason_code,
+      source_run_id: map_value(checkpoint.metadata, "source_run_id"),
+      source_checkpoint_id: map_value(checkpoint.metadata, "source_checkpoint_id"),
+      source_step_id: map_value(checkpoint.metadata, "source_step_id"),
+      source_approval_id: map_value(checkpoint.metadata, "source_approval_id"),
+      source_audit_outbox_event_id: map_value(checkpoint.metadata, "source_audit_outbox_event_id"),
+      replay_scope: map_value(checkpoint.metadata, "replay_scope"),
+      executed_live: truthy?(map_value(checkpoint.metadata, "executed_live")),
       inserted_at: checkpoint.inserted_at
     }
   end
@@ -61,6 +70,15 @@ defmodule Scoria.Runtime.RunDetail do
       step_id: event.step_id,
       sequence: event.sequence,
       event_type: event.event_type,
+      replay_disposition: event.replay_disposition,
+      replay_reason_code: event.replay_reason_code,
+      source_run_id: map_value(event.payload, "source_run_id"),
+      source_checkpoint_id: map_value(event.payload, "source_checkpoint_id"),
+      source_step_id: map_value(event.payload, "source_step_id"),
+      source_approval_id: map_value(event.payload, "source_approval_id"),
+      source_audit_outbox_event_id: map_value(event.payload, "source_audit_outbox_event_id"),
+      replay_scope: map_value(event.payload, "replay_scope"),
+      executed_live: truthy?(map_value(event.payload, "executed_live")),
       inserted_at: event.inserted_at
     }
   end
@@ -75,6 +93,15 @@ defmodule Scoria.Runtime.RunDetail do
       actor_id: approval.actor_id,
       tenant_id: approval.tenant_id,
       session_id: approval.session_id,
+      replay_disposition: approval.replay_disposition,
+      replay_reason_code: approval.replay_reason_code,
+      replay_scope: approval.replay_scope,
+      source_run_id: approval.source_run_id,
+      source_checkpoint_id: approval.source_checkpoint_id,
+      source_step_id: approval.source_step_id,
+      source_approval_id: approval.source_approval_id,
+      source_audit_outbox_event_id: approval.source_audit_outbox_event_id,
+      executed_live: approval.executed_live,
       inserted_at: approval.inserted_at
     }
   end
@@ -88,4 +115,19 @@ defmodule Scoria.Runtime.RunDetail do
       inserted_at: handoff.inserted_at
     }
   end
+
+  defp map_value(map, key) when is_map(map) do
+    atom_key =
+      try do
+        String.to_existing_atom(key)
+      rescue
+        ArgumentError -> nil
+      end
+
+    Map.get(map, key, atom_key && Map.get(map, atom_key))
+  end
+
+  defp map_value(_map, _key), do: nil
+
+  defp truthy?(value), do: value in [true, "true", 1, "1"]
 end

@@ -216,13 +216,14 @@ defmodule Scoria.RuntimeViewTest do
       }))
 
     assert {:ok, %RunDetail{} = detail} = Runtime.get_run_detail(run.id)
+    checkpoint_id = checkpoint.id
 
     assert detail.summary.execution_mode == "replay"
     assert detail.summary.replay_posture == "allowlist_live"
     assert detail.summary.live_tool_allowlist == ["publish", "sync"]
     assert detail.summary.any_seam_executed_live
 
-    assert [%{id: checkpoint_id, replay_disposition: "historical_stub", replay_reason_code: "exact_source_match"}] =
+    assert [%{id: ^checkpoint_id, replay_disposition: "historical_stub", replay_reason_code: "exact_source_match"}] =
              detail.checkpoints
 
     assert [%{
