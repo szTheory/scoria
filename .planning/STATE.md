@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Crucible
 status: verifying
-last_updated: "2026-05-23T12:47:11.453Z"
+last_updated: "2026-05-23T13:17:14.420Z"
 last_activity: 2026-05-23
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 75
+  completed_phases: 2
+  total_plans: 11
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State
@@ -19,20 +19,20 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 40 — online-scoring-review-queue
+**Current Focus:** Phase 39 — replay-operator-ux-draft-dataset-promotion
 
 ## Current Position
 
-Phase: 39 (replay-operator-ux-draft-dataset-promotion) — COMPLETE
-Plan: 3 of 3
+Phase: 39 (replay-operator-ux-draft-dataset-promotion) — EXECUTING
+Plan: 4 of 5
 **Milestone:** `v1.9 Crucible`
 **Phase:** 39
-**Plan:** 3 of 3
-**Status:** Phase complete — ready for verification
+**Plan:** 4 of 5
+**Status:** Plan 39-04 complete; 39-05 remains pending
 **Last activity:** 2026-05-23
 
 **Progress:**
-[██████████] 100%
+[█████████░] 91%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Plan: 3 of 3
 - **39-01:** 7m, 2 tasks, 5 files
 - **39-02:** 6min, 2 tasks, 5 files
 - **39-03:** 12m, 2 tasks, 12 files
+- **39-04:** 6min, 2 tasks, 9 files
 
 ## Accumulated Context
 
@@ -112,6 +113,7 @@ Plan: 3 of 3
 - Phase 39 (39-02): Keep `WorkflowDetailPanelComponent` as the shell and CTA host while delegating grouped comparison rendering to `ReplayEvidenceNotebookComponent`.
 - Phase 39 (39-03): Open dataset promotions call `Scoria.Eval.promote_workflow_source/1`, while sealed baselines route through `Scoria.Workflows.request_baseline_promotion/1`.
 - Phase 39 (39-03): Baseline promotion approvals use the exact `dataset_baseline_promotion` tool identity so workflow projections expose durable lineage and replay provenance.
+- Phase 39 (39-04): Sealed baseline targets stay visible in the promotion modal, but the baseline lane requires an explicit confirmation step before `Scoria.Workflows.request_baseline_promotion/1`.
 
 **Todos:**
 
