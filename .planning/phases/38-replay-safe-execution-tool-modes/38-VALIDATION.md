@@ -3,7 +3,7 @@ phase: 38
 slug: replay-safe-execution-tool-modes
 status: draft
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-05-23
 ---
 
@@ -38,9 +38,9 @@ created: 2026-05-23
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 38-01-01 | 01 | 1 | RPLY-02 | T-38-01 | Replay intent remains `live | replay`; seam-level replay truth is persisted separately from run intent | integration | `mix test test/scoria/workflows/replay_branch_test.exs test/scoria/workflows/integration_test.exs` | ❌ W0 | ⬜ pending |
-| 38-02-01 | 02 | 1 | RPLY-02 | T-38-02 | Connector and MCP seams default to `historical_stub` or `blocked` for risky replay paths and never silently fall through to live execution | integration | `mix test test/scoria/connectors/invocation_test.exs test/scoria/workflows/integration_test.exs` | ❌ W0 | ⬜ pending |
-| 38-03-01 | 03 | 2 | RPLY-02 | T-38-03 | Replay-live overrides require replay-scoped approval, durable evidence, and retry-safe idempotency | integration | `mix test test/scoria/connectors/invocation_test.exs test/scoria/workflows/integration_test.exs` | ❌ W0 | ⬜ pending |
+| 38-01-01 | 01 | 1 | RPLY-02 | T-38-01 | Replay intent remains `live | replay`; seam-level replay truth is persisted separately from run intent, with fail-closed local classification and exact-match stub rules | integration | `mix test test/scoria/workflows/replay_disposition_test.exs` | ✅ task-owned | ⬜ pending |
+| 38-02-01 | 02 | 2 | RPLY-02 | T-38-02 | Connector and MCP seams default to `historical_stub` or `blocked` for risky replay paths, block authority-expanding seams, and never silently fall through to live execution | integration | `mix test test/scoria/connectors/invocation_test.exs test/scoria/workflows/integration_test.exs` | ✅ existing | ⬜ pending |
+| 38-03-01 | 03 | 3 | RPLY-02 | T-38-03 | Replay-live overrides require replay-scoped approval, immutable branch allowlists, durable evidence, and retry-safe idempotency | integration | `mix test test/scoria/runtime_view_test.exs test/scoria/workflows/integration_test.exs` | ✅ existing | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -48,9 +48,7 @@ created: 2026-05-23
 
 ## Wave 0 Requirements
 
-- [ ] `test/scoria/connectors/invocation_test.exs` — add replay-specific cases for `historical_stub`, `blocked`, and allowlisted `execute_live`
-- [ ] `test/scoria/workflows/integration_test.exs` — add missing-evidence and replay-approval integration coverage
-- [ ] `test/scoria/workflows/replay_branch_test.exs` — extend replay branch assertions to cover seam-level replay evidence expectations
+- None. Each plan now owns an automated verification lane directly: plan 38-01 creates its resolver test file as part of Task 1, and plans 38-02/38-03 extend existing test files without a pre-execution scaffold step.
 
 ---
 
@@ -66,7 +64,7 @@ created: 2026-05-23
 
 - [ ] All tasks have `<automated>` verify or Wave 0 dependencies
 - [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
+- [x] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
 - [ ] Feedback latency < 30s
 - [ ] `nyquist_compliant: true` set in frontmatter
