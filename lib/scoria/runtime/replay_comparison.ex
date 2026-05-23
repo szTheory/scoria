@@ -60,7 +60,8 @@ defmodule Scoria.Runtime.ReplayComparison do
 
   defp source_refs_for_step(run, step_id) do
     checkpoint_refs =
-      run.checkpoints
+      run
+      |> assoc_list(:checkpoints)
       |> Enum.filter(&(&1.step_id == step_id))
       |> Enum.map(fn checkpoint ->
         %{
@@ -71,7 +72,8 @@ defmodule Scoria.Runtime.ReplayComparison do
       end)
 
     event_refs =
-      run.events
+      run
+      |> assoc_list(:events)
       |> Enum.filter(&(&1.step_id == step_id))
       |> Enum.map(fn event ->
         %{
@@ -82,7 +84,8 @@ defmodule Scoria.Runtime.ReplayComparison do
       end)
 
     approval_refs =
-      run.approvals
+      run
+      |> assoc_list(:approvals)
       |> Enum.filter(&(&1.step_id == step_id))
       |> Enum.map(fn approval ->
         %{
@@ -99,9 +102,10 @@ defmodule Scoria.Runtime.ReplayComparison do
     checkpoint = find_checkpoint(run, step)
     event = find_event(run, step)
     approval = find_approval(run, step)
+    source_refs = source_refs_for_step(run, step && step.id)
 
     %{
-      provenance: provenance_group(run, step, checkpoint, source_variant),
+      provenance: provenance_group(run, step, checkpoint, event, approval, source_variant, source_refs),
       overrides: overrides_group(run),
       checkpoint_output: checkpoint_output_group(step, checkpoint, event),
       safety: safety_group(step, checkpoint, event, approval),
@@ -110,25 +114,29 @@ defmodule Scoria.Runtime.ReplayComparison do
     |> Enum.into(%{}, fn {key, value} -> {key, value || %{}} end)
   end
 
-  defp provenance_group(run, nil, checkpoint, source_variant) do
+  defp provenance_group(run, nil, checkpoint, event, approval, source_variant, source_refs) do
     %{
       workflow_run_id: run.id,
       workflow_step_id: nil,
       source_variant: source_variant,
-      source_run_id: run.source_run_id,
-      source_checkpoint_id: checkpoint && checkpoint.id,
-      execution_mode: run.execution_mode
+      source_run_id: source_run_id(run, source_refs),
+      source_checkpoint_id: source_checkpoint_id(run, checkpoint, source_variant, source_refs),
+      execution_mode: run.execution_mode,
+      replay_disposition: replay_disposition(checkpoint, event, approval),
+      replay_reason_code: replay_reason_code(checkpoint, event, approval)
     }
   end
 
-  defp provenance_group(run, step, checkpoint, source_variant) do
+  defp provenance_group(run, step, checkpoint, event, approval, source_variant, source_refs) do
     %{
       workflow_run_id: run.id,
       workflow_step_id: step.id,
       source_variant: source_variant,
-      source_run_id: run.source_run_id,
-      source_checkpoint_id: checkpoint && checkpoint.id,
+      source_run_id: source_run_id(run, source_refs),
+      source_checkpoint_id: source_checkpoint_id(run, checkpoint, source_variant, source_refs),
       execution_mode: run.execution_mode,
+      replay_disposition: replay_disposition(checkpoint, event, approval),
+      replay_reason_code: replay_reason_code(checkpoint, event, approval),
       step_sequence: step.sequence
     }
   end
@@ -166,18 +174,8 @@ defmodule Scoria.Runtime.ReplayComparison do
           checkpoint && map_value(checkpoint.metadata, "replay_scope"),
           event && map_value(event.payload, "replay_scope")
         ),
-      replay_disposition:
-        value_or(
-          approval && approval.replay_disposition,
-          checkpoint && checkpoint.replay_disposition,
-          event && event.replay_disposition
-        ),
-      replay_reason_code:
-        value_or(
-          approval && approval.replay_reason_code,
-          checkpoint && checkpoint.replay_reason_code,
-          event && event.replay_reason_code
-        ),
+      replay_disposition: replay_disposition(checkpoint, event, approval),
+      replay_reason_code: replay_reason_code(checkpoint, event, approval),
       executed_live:
         truthy?(
           value_or(
@@ -242,6 +240,40 @@ defmodule Scoria.Runtime.ReplayComparison do
   end
 
   defp live_tool_allowlist(_), do: []
+
+  defp assoc_list(struct, field) do
+    case Map.get(struct, field) do
+      %Ecto.Association.NotLoaded{} -> []
+      value when is_list(value) -> value
+      _ -> []
+    end
+  end
+
+  defp source_run_id(%Run{} = run, source_refs) do
+    Enum.find_value(source_refs, & &1.source_run_id) || run.source_run_id
+  end
+
+  defp source_checkpoint_id(%Run{} = run, checkpoint, "replay", source_refs) do
+    Enum.find_value(source_refs, & &1.source_checkpoint_id) || run.source_checkpoint_id || (checkpoint && checkpoint.id)
+  end
+
+  defp source_checkpoint_id(%Run{}, checkpoint, _source_variant, _source_refs), do: checkpoint && checkpoint.id
+
+  defp replay_disposition(checkpoint, event, approval) do
+    value_or(
+      approval && approval.replay_disposition,
+      checkpoint && checkpoint.replay_disposition,
+      event && event.replay_disposition
+    )
+  end
+
+  defp replay_reason_code(checkpoint, event, approval) do
+    value_or(
+      approval && approval.replay_reason_code,
+      checkpoint && checkpoint.replay_reason_code,
+      event && event.replay_reason_code
+    )
+  end
 
   defp value_or(nil, nil, nil), do: nil
   defp value_or(first, _second, _third) when not is_nil(first), do: first

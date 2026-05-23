@@ -282,7 +282,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     |> assign(:selected_checkpoint, checkpoint)
     |> assign(:selected_comparison, selected_comparison)
     |> assign(:selected_comparison_entry, selected_comparison_entry)
-    |> assign(:promotion_context, build_promotion_context(selected_comparison_entry))
+    |> assign(:promotion_context, promotion_context(selected_comparison_entry))
   end
 
   defp decorate_steps(steps) do
@@ -316,17 +316,31 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   defp selected_comparison_entry(nil, _source_variant), do: nil
   defp selected_comparison_entry(comparison, source_variant), do: Map.get(comparison, String.to_existing_atom(source_variant))
 
-  defp build_promotion_context(nil), do: nil
+  defp promotion_context(nil), do: nil
 
-  defp build_promotion_context(selected_entry) do
+  defp promotion_context(selected_entry) do
+    provenance = Map.get(selected_entry, :provenance, %{})
+    checkpoint_output = Map.get(selected_entry, :checkpoint_output, %{})
+    safety = Map.get(selected_entry, :safety, %{})
+    promotion_snapshot = Map.get(selected_entry, :promotion_snapshot, %{})
+
     %{
-      workflow_run_id: get_in(selected_entry, [:provenance, :workflow_run_id]),
-      workflow_step_id: get_in(selected_entry, [:provenance, :workflow_step_id]),
-      source_variant: get_in(selected_entry, [:provenance, :source_variant]),
-      provenance: Map.get(selected_entry, :provenance, %{}),
-      checkpoint_output: Map.get(selected_entry, :checkpoint_output, %{}),
-      safety: Map.get(selected_entry, :safety, %{}),
-      promotion_snapshot: Map.get(selected_entry, :promotion_snapshot, %{}),
+      workflow_run_id: workflow_run_id,
+      workflow_step_id: workflow_step_id,
+      source_variant: source_variant,
+      source_checkpoint_id: _source_checkpoint_id,
+      replay_disposition: _replay_disposition,
+      replay_reason_code: _replay_reason_code
+    } = provenance
+
+    %{
+      workflow_run_id: workflow_run_id,
+      workflow_step_id: workflow_step_id,
+      source_variant: source_variant,
+      provenance: provenance,
+      checkpoint_output: checkpoint_output,
+      safety: safety,
+      promotion_snapshot: promotion_snapshot,
       notes: %{},
       expected_output: %{}
     }
