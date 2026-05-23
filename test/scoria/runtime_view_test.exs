@@ -1,9 +1,12 @@
 defmodule Scoria.RuntimeViewTest do
   use ExUnit.Case, async: false
 
+  alias Scoria.Observe.Approval
+  alias Scoria.Repo
   alias Scoria.Runtime
   alias Scoria.Runtime.{RunDetail, RunSummary}
   alias Scoria.Workflows
+  alias Scoria.Workflows.{Checkpoint, Event, Run, Step}
   alias Scoria.Workflows.Runtime, as: WorkflowRuntime
 
   defmodule Handlers do
@@ -103,5 +106,151 @@ defmodule Scoria.RuntimeViewTest do
 
     assert Enum.map(runs, & &1.run_id) |> Enum.sort() == Enum.sort([first.run_id, second.run_id])
     assert Enum.all?(runs, &match?(%RunSummary{}, &1))
+  end
+
+  test "summary keeps execution_mode as run intent while exposing replay posture" do
+    source_run_id = Ecto.UUID.generate()
+    source_checkpoint_id = Ecto.UUID.generate()
+
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        actor_id: "actor-replay",
+        tenant_id: "tenant-replay",
+        session_id: "session-replay",
+        execution_mode: "replay",
+        source_run_id: source_run_id,
+        source_checkpoint_id: source_checkpoint_id,
+        replay_overrides: %{"live_tool_allowlist" => ["publish"]},
+        status: "waiting_for_approval"
+      })
+
+    assert {:ok, %RunSummary{} = summary} = Runtime.get_run(run.id)
+
+    assert summary.execution_mode == "replay"
+    assert summary.source_run_id == source_run_id
+    assert summary.source_checkpoint_id == source_checkpoint_id
+    assert summary.replay_posture == "allowlist_live"
+    assert summary.live_tool_allowlist == ["publish"]
+    assert summary.awaiting_approval
+  end
+
+  test "detail exposes replay posture and seam-level replay evidence without raw structs" do
+    source_run_id = Ecto.UUID.generate()
+    source_checkpoint_id = Ecto.UUID.generate()
+    source_step_id = Ecto.UUID.generate()
+    source_approval_id = Ecto.UUID.generate()
+    source_audit_outbox_event_id = Ecto.UUID.generate()
+
+    run =
+      Repo.insert!(Run.changeset(%Run{}, %{
+        root_role_id: "executor",
+        actor_id: "actor-detail",
+        tenant_id: "tenant-detail",
+        session_id: "session-detail",
+        execution_mode: "replay",
+        source_run_id: source_run_id,
+        source_checkpoint_id: source_checkpoint_id,
+        replay_overrides: %{"live_tool_allowlist" => ["publish", "sync"]},
+        status: "running",
+        started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
+      }))
+
+    step =
+      Repo.insert!(Step.changeset(%Step{}, %{
+        run_id: run.id,
+        sequence: 1,
+        kind: "tool_call",
+        role_id: "executor",
+        status: "completed"
+      }))
+
+    checkpoint =
+      Repo.insert!(Checkpoint.changeset(%Checkpoint{}, %{
+        run_id: run.id,
+        step_id: step.id,
+        sequence: 2,
+        transition: "tool_stubbed",
+        status: "completed",
+        replay_disposition: "historical_stub",
+        replay_reason_code: "exact_source_match"
+      }))
+
+    event =
+      Repo.insert!(Event.changeset(%Event{}, %{
+        run_id: run.id,
+        step_id: step.id,
+        sequence: 2,
+        event_type: "tool_completed",
+        payload: %{
+          "source_run_id" => source_run_id,
+          "source_checkpoint_id" => source_checkpoint_id,
+          "source_step_id" => source_step_id,
+          "source_approval_id" => source_approval_id,
+          "executed_live" => true
+        },
+        replay_disposition: "execute_live",
+        replay_reason_code: "live_override_approved"
+      }))
+
+    approval =
+      Repo.insert!(Approval.changeset(%Approval{}, %{
+        tool_name: "publish",
+        status: "approved",
+        actor_id: "approver",
+        tenant_id: "tenant-detail",
+        session_id: "session-detail",
+        workflow_run_id: run.id,
+        step_id: step.id,
+        checkpoint_id: checkpoint.id,
+        replay_allowed: true,
+        replay_scope: "replay_live",
+        replay_disposition: "execute_live",
+        replay_reason_code: "live_override_approved",
+        source_run_id: source_run_id,
+        source_checkpoint_id: source_checkpoint_id,
+        source_step_id: source_step_id,
+        source_approval_id: source_approval_id,
+        source_audit_outbox_event_id: source_audit_outbox_event_id,
+        executed_live: true
+      }))
+
+    assert {:ok, %RunDetail{} = detail} = Runtime.get_run_detail(run.id)
+
+    assert detail.summary.execution_mode == "replay"
+    assert detail.summary.replay_posture == "allowlist_live"
+    assert detail.summary.live_tool_allowlist == ["publish", "sync"]
+    assert detail.summary.any_seam_executed_live
+
+    assert [%{id: checkpoint_id, replay_disposition: "historical_stub", replay_reason_code: "exact_source_match"}] =
+             detail.checkpoints
+
+    assert [%{
+              id: event_id,
+              replay_disposition: "execute_live",
+              replay_reason_code: "live_override_approved",
+              source_run_id: ^source_run_id,
+              source_checkpoint_id: ^source_checkpoint_id,
+              source_step_id: ^source_step_id,
+              source_approval_id: ^source_approval_id,
+              executed_live: true
+            }] = detail.events
+
+    assert [%{
+              id: approval_id,
+              replay_scope: "replay_live",
+              replay_disposition: "execute_live",
+              replay_reason_code: "live_override_approved",
+              source_run_id: ^source_run_id,
+              source_checkpoint_id: ^source_checkpoint_id,
+              source_step_id: ^source_step_id,
+              source_approval_id: ^source_approval_id,
+              source_audit_outbox_event_id: ^source_audit_outbox_event_id,
+              executed_live: true
+            }] = detail.approvals
+
+    assert event_id == event.id
+    assert approval_id == approval.id
+    refute Enum.any?(Map.values(detail), &match?(%Run{}, &1))
   end
 end
