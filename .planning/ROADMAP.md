@@ -44,7 +44,7 @@ Plans:
 **Requirements**: RPLY-03, DATA-01, DATA-02
 **Plans**: 3 plans
 Plans:
-- [ ] `39-01-PLAN.md` — Add comparison-ready replay runtime projections and promotion-source contracts.
+- [x] `39-01-PLAN.md` — Add comparison-ready replay runtime projections and promotion-source contracts.
 - [ ] `39-02-PLAN.md` — Render replay provenance and comparison notebook UX on the workflow page.
 - [ ] `39-03-PLAN.md` — Freeze workflow-source draft promotion and gate sealed baselines through approvals.
 **Success Criteria**:
@@ -69,5 +69,5 @@ Plans:
 |-------|----------------|--------|-------|
 | 37. Replay Lineage & Branch Model | 0/0 | Planned | Start with `$gsd-plan-phase 37` |
 | 38. Replay-Safe Execution & Tool Modes | 3/3 | Complete    | 2026-05-23 |
-| 39. Replay Operator UX & Draft Dataset Promotion | 0/0 | Planned | Depends on replay truth and safety modes |
+| 39. Replay Operator UX & Draft Dataset Promotion | 1/3 | In Progress|  |
 | 40. Online Scoring & Review Queue | 0/0 | Planned | Depends on replay-driven evidence and draft promotion lanes |

@@ -9,7 +9,7 @@
 
 - [ ] **RPLY-01**: Operator can branch a new replay run from a durable source run and chosen checkpoint without mutating original run history.
 - [x] **RPLY-02**: Replay execution defaults to safe modes that block or stub external-write and approval-sensitive effects while preserving explicit replay provenance.
-- [ ] **RPLY-03**: Operator can inspect replay provenance and compare replay output against the original run, including source checkpoint, overrides, and execution-mode evidence.
+- [x] **RPLY-03**: Operator can inspect replay provenance and compare replay output against the original run, including source checkpoint, overrides, and execution-mode evidence.
 
 ### Dataset Promotion
 
@@ -51,7 +51,7 @@
 |-------------|-------|--------|
 | RPLY-01 | Phase 37 | Pending |
 | RPLY-02 | Phase 38 | Complete |
-| RPLY-03 | Phase 39 | Pending |
+| RPLY-03 | Phase 39 | Complete |
 | DATA-01 | Phase 39 | Pending |
 | DATA-02 | Phase 39 | Pending |
 | SCOR-01 | Phase 40 | Pending |

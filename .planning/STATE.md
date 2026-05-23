@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.8
-milestone_name: milestone
-status: ready_to_plan
-last_updated: 2026-05-23T10:16:22.178Z
+milestone: v1.9
+milestone_name: Crucible
+status: executing
+last_updated: "2026-05-23T12:18:55Z"
 last_activity: 2026-05-23
 progress:
   total_phases: 4
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 110
-  percent: 25
-stopped_at: Phase 38 complete (3/3) — ready to discuss Phase 39
+  completed_phases: 2
+  total_plans: 9
+  completed_plans: 7
+  percent: 78
 ---
 
 # Project State
@@ -20,20 +19,20 @@ stopped_at: Phase 38 complete (3/3) — ready to discuss Phase 39
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 39 — replay operator ux & draft dataset promotion
+**Current Focus:** Phase 39 — replay-operator-ux-draft-dataset-promotion
 
 ## Current Position
 
-Phase: 38 (replay-safe-execution-tool-modes) — EXECUTING
-Plan: 1 of 3
+Phase: 39 (replay-operator-ux-draft-dataset-promotion) — EXECUTING
+Plan: 2 of 3
 **Milestone:** `v1.9 Crucible`
 **Phase:** 39
-**Plan:** Not started
-**Status:** Ready to plan
+**Plan:** 2 of 3
+**Status:** Executing Plan 2 of Phase 39
 **Last activity:** 2026-05-23
 
 **Progress:**
-`[..................................................] 0% - v1.9 Crucible Started`
+[████████░░] 78%
 
 ## Performance Metrics
 
@@ -53,6 +52,10 @@ Plan: 1 of 3
 
 - **32-01:** 15m, 2 tasks, 4 files
 - **32-02:** 20m, 3 tasks, 5 files
+
+**Phase 39 Metrics:**
+
+- **39-01:** 7m, 2 tasks, 5 files
 
 ## Accumulated Context
 
@@ -101,10 +104,12 @@ Plan: 1 of 3
 - Phase 23 (23-01): Implemented robust nil-handling and concatenation strategies for upper-bound token estimation without risking crashes.
 - Phase 32: Adjusted `ai_compacted_memories` to use `:binary` for embeddings to ensure environment compatibility.
 - Phase 32: Increased database connection `pool_size` to 20 in `test.exs` to stabilize concurrent tests.
+- Phase 39 (39-01): Keep replay source-run lookup inside `Scoria.Runtime.get_run_detail!/1` so UI layers consume `comparison_by_step` and `replay_provenance_strip` from curated runtime DTOs.
+- Phase 39 (39-01): Prefer explicit `source_step_id` lineage from checkpoints, events, and approvals before falling back to step-sequence matching in replay comparisons.
 
 **Todos:**
 
-- Run `$gsd-plan-phase 37` to start `v1.9 Crucible`.
+- Execute `39-02-PLAN.md` to render the replay provenance notebook on the workflow page.
 
 **Blockers:**
 
