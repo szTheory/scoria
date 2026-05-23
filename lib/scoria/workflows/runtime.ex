@@ -27,7 +27,7 @@ defmodule Scoria.Workflows.Runtime do
           Workflows.fail_step(step.id, normalize_budget_envelope(envelope))
 
         {:ok, reservation_context} ->
-          case BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end) do
+          case replay_execution(run, step, handler, timeout, opts, breaker_context) do
             {:ok, {:completed, result, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, result, "completed")
               emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, result)
@@ -42,6 +42,11 @@ defmodule Scoria.Workflows.Runtime do
               reconcile_budget(reservation_context, budget_context, %{}, "handoff")
               emit_runtime_telemetry(step, run, budget_context, "handoff", duration_ms, %{})
               handle_handoff(run, step, Map.new(handoff_attrs))
+
+            {:error, {:replay_blocked, envelope, duration_ms}} ->
+              reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
+              emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
+              Workflows.fail_step(step.id, envelope)
 
             {:error, {:handler_error, reason, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
@@ -75,6 +80,46 @@ defmodule Scoria.Workflows.Runtime do
           end
       end
     end
+  end
+
+  defp replay_execution(%{execution_mode: "replay"} = run, step, handler, timeout, opts, breaker_context) do
+    seam = Keyword.get(opts, :replay_seam, %{local_classification: :pure})
+    source_evidence = Keyword.get(opts, :replay_source_evidence, %{})
+    approval_context = Keyword.get(opts, :replay_approval_context, %{})
+    override_context = Keyword.get(opts, :replay_override_context, run.replay_overrides || %{})
+
+    case Scoria.Workflows.ReplayDisposition.resolve(run, seam, source_evidence, approval_context, override_context) do
+      {:historical_stub, evidence} ->
+        result =
+          Map.get(source_evidence, :result) ||
+            Map.get(source_evidence, "result") ||
+            %{"status" => :historical_stub}
+
+        {:ok, {:completed, Map.put(normalize_payload(result), "replay_disposition", evidence.replay_disposition), 0}}
+
+      {:blocked, evidence} ->
+        {:error, {:replay_blocked, replay_blocked_envelope(evidence), 0}}
+
+      {:execute_live, _evidence} ->
+        BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end)
+    end
+  end
+
+  defp replay_execution(run, step, handler, timeout, _opts, breaker_context) do
+    BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end)
+  end
+
+  defp replay_blocked_envelope(evidence) do
+    %{
+      "status" => "replay_blocked",
+      "replay_disposition" => Atom.to_string(evidence.replay_disposition),
+      "replay_reason_code" => evidence.replay_reason_code,
+      "source_run_id" => evidence.source_run_id,
+      "source_checkpoint_id" => evidence.source_checkpoint_id,
+      "source_step_id" => evidence.source_step_id,
+      "source_approval_id" => evidence.source_approval_id,
+      "source_audit_outbox_event_id" => evidence.source_audit_outbox_event_id
+    }
   end
 
   defp execute_handler(handler, step, run, timeout) do

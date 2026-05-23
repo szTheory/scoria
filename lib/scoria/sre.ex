@@ -113,17 +113,30 @@ defmodule Scoria.SRE do
   def append_incident_event(incident, attrs), do: IncidentManager.append_incident_event(incident, attrs)
 
   def create_audit_outbox_event(envelope) when is_map(envelope) do
-    Multi.new()
-    |> Multi.run(:audit_outbox_event, fn repo, _changes ->
-      {:ok, insert_audit_outbox_event(repo, envelope)}
+    normalized = normalize_audit_envelope(envelope)
+
+    Repo.transaction(fn repo ->
+      changeset =
+        %AuditOutboxEvent{}
+        |> AuditOutboxEvent.changeset(normalized)
+
+      case repo.insert(changeset) do
+        {:ok, audit_outbox_event} -> audit_outbox_event
+        {:error, changeset} -> repo.rollback(changeset)
+      end
     end)
-    |> Repo.transaction()
     |> case do
-      {:ok, %{audit_outbox_event: audit_outbox_event}} ->
+      {:ok, audit_outbox_event} ->
         emit_audit_outbox_telemetry(audit_outbox_event)
         {:ok, audit_outbox_event}
 
-      {:error, _operation, value, _changes} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
+        case get_existing_audit_outbox_event(normalized, changeset) do
+          %AuditOutboxEvent{} = audit_outbox_event -> {:ok, audit_outbox_event}
+          nil -> {:error, changeset}
+        end
+
+      {:error, value} ->
         {:error, value}
     end
   end
@@ -282,6 +295,22 @@ defmodule Scoria.SRE do
       replay_idempotency_key:
         Map.get(envelope, :replay_idempotency_key) || Map.get(envelope, "replay_idempotency_key")
     }
+  end
+
+  defp get_existing_audit_outbox_event(envelope, changeset) do
+    if unique_dedupe_error?(changeset) do
+      Repo.get_by(AuditOutboxEvent,
+        tenant_id: envelope.tenant_id,
+        dedupe_key: envelope.dedupe_key
+      )
+    end
+  end
+
+  defp unique_dedupe_error?(changeset) do
+    Enum.any?(changeset.errors, fn
+      {:dedupe_key, {_message, metadata}} -> metadata[:constraint] == :unique
+      _ -> false
+    end)
   end
 
   defp enum_string(value) when is_atom(value), do: Atom.to_string(value)

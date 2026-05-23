@@ -205,4 +205,99 @@ defmodule Scoria.WorkflowsIntegrationTest do
     assert Repo.get!(Run, run.id).replay_overrides == %{"live_tool_allowlist" => ["publish"]}
   end
 
+  test "replay runtime uses historical stub evidence without invoking the live handler" do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        execution_mode: "replay",
+        source_run_id: Ecto.UUID.generate(),
+        source_checkpoint_id: Ecto.UUID.generate()
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    handler = fn _step, _run ->
+      send(self(), :live_handler_called)
+      {:ok, %{"status" => "live"}}
+    end
+
+    assert {:ok, _step} =
+             Runtime.execute_step(step.id,
+               handler: handler,
+               replay_seam: %{
+                 local_classification: :read,
+                 tool_id: "repo.read",
+                 action_class: "read",
+                 risk_level: "low",
+                 args_fingerprint: "same",
+                 subject_ref: "repo:acme/scoria",
+                 required_scopes: ["repo:read"],
+                 grant_state: "active",
+                 policy_key: "repo.read"
+               },
+               replay_source_evidence: %{
+                 source_run_id: run.source_run_id,
+                 source_checkpoint_id: run.source_checkpoint_id,
+                 source_step_id: step.id,
+                 source_audit_outbox_event_id: Ecto.UUID.generate(),
+                 tool_id: "repo.read",
+                 args_fingerprint: "same",
+                 subject_ref: "repo:acme/scoria",
+                 required_scopes: ["repo:read"],
+                 grant_state: "active",
+                 policy_key: "repo.read",
+                 result: %{"status" => "stubbed"}
+               }
+             )
+
+    refute_receive :live_handler_called
+    assert Workflows.get_step!(step.id).result_envelope["status"] == "stubbed"
+  end
+
+  test "replay runtime blocks authority-expanding seams before handler execution" do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        execution_mode: "replay"
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    handler = fn _step, _run ->
+      send(self(), :live_handler_called)
+      {:ok, %{"status" => "live"}}
+    end
+
+    assert {:ok, _step} =
+             Runtime.execute_step(step.id,
+               handler: handler,
+               replay_seam: %{
+                 local_classification: :authority_expanding,
+                 tool_id: "admin.grant",
+                 action_class: "admin",
+                 risk_level: "high",
+                 authority_expanding: "re-auth",
+                 grant_state: "reauth_required",
+                 required_scopes: ["admin:write"],
+                 policy_key: "admin.grant"
+               }
+             )
+
+    refute_receive :live_handler_called
+    assert Workflows.get_step!(step.id).status == "failed"
+    assert Workflows.get_step!(step.id).error_envelope["status"] == "replay_blocked"
+  end
+
 end

@@ -8,12 +8,25 @@ defmodule Scoria.MCP.Executor do
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE
   alias Scoria.SRE.Telemetry
+  alias Scoria.Workflows.ReplayDisposition
+  alias Scoria.Workflows.Run
 
   @doc """
   Executes a tool module with the given arguments and context.
   """
   def execute(tool_module, args, context, timeout \\ 5000) do
     context = canonical_context(context || %{})
+
+    case replay_gate(tool_module, args, context) do
+      {:continue, context} ->
+        execute_live(tool_module, args, context, timeout)
+
+      other ->
+        other
+    end
+  end
+
+  defp execute_live(tool_module, args, context, timeout) do
 
     with {:ok, access_context} <- maybe_capture_sensitive_mcp_access(tool_module, args, context),
          {:ok, reservation_context} <- reserve_budget(tool_module, args, access_context),
@@ -56,9 +69,115 @@ defmodule Scoria.MCP.Executor do
           {:error, envelope}
       end
     else
-      {:error, envelope} ->
-        emit_access_denied_telemetry(tool_module, context, envelope)
-        {:error, envelope}
+        {:error, envelope} ->
+          emit_access_denied_telemetry(tool_module, context, envelope)
+          {:error, envelope}
+    end
+  end
+
+  defp replay_gate(tool_module, _args, context) do
+    case load_replay_run(context) do
+      %Run{execution_mode: "replay"} = run ->
+        seam = build_replay_seam(tool_module, context)
+        source_evidence = Map.get(context, :source_evidence, %{})
+        approval_context = Map.get(context, :approval_context, %{})
+        override_context = Map.get(context, :override_context, run.replay_overrides || %{})
+
+        case ReplayDisposition.resolve(run, seam, source_evidence, approval_context, override_context) do
+          {:historical_stub, evidence} ->
+            record_replay_audit(context, tool_module, evidence, "tool.replay.stubbed")
+
+            {:ok,
+             %{
+               status: :historical_stub,
+               replay_disposition: :historical_stub,
+               replay_reason_code: evidence.replay_reason_code,
+               result: Map.get(source_evidence, :result) || Map.get(source_evidence, "result")
+             }}
+
+          {:blocked, evidence} ->
+            audit_id = record_replay_audit(context, tool_module, evidence, "tool.replay.blocked")
+
+            {:error,
+             %{
+               status: :replay_blocked,
+               replay_disposition: :blocked,
+               replay_reason_code: evidence.replay_reason_code,
+               source_run_id: evidence.source_run_id,
+               source_checkpoint_id: evidence.source_checkpoint_id,
+               source_step_id: evidence.source_step_id,
+               source_approval_id: evidence.source_approval_id,
+               source_audit_outbox_event_id: evidence.source_audit_outbox_event_id,
+               audit_outbox_event_id: audit_id
+             }}
+
+          {:execute_live, evidence} ->
+            {:continue,
+             context
+             |> Map.put(:replay_disposition, evidence.replay_disposition)
+             |> Map.put(:replay_reason_code, evidence.replay_reason_code)
+             |> Map.put(:replay_idempotency_key, evidence.replay_idempotency_key)
+             |> Map.put(:source_run_id, evidence.source_run_id)
+             |> Map.put(:source_checkpoint_id, evidence.source_checkpoint_id)
+             |> Map.put(:source_step_id, evidence.source_step_id)
+             |> Map.put(:source_approval_id, evidence.source_approval_id)
+             |> Map.put(:source_audit_outbox_event_id, evidence.source_audit_outbox_event_id)
+             |> Map.put(:args_fingerprint, evidence.args_fingerprint)
+             |> Map.put(:executed_live, true)}
+        end
+
+      _ ->
+        {:continue, context}
+    end
+  end
+
+  defp load_replay_run(context) do
+    case Map.get(context, :run) do
+      %Run{} = run -> run
+      _ -> nil
+    end
+  end
+
+  defp build_replay_seam(tool_module, context) do
+    %{
+      local_classification: Map.get(context, :local_classification, :write),
+      tool_id: Map.get(context, :tool_id, inspect(tool_module)),
+      action_class: Map.get(context, :action_class, "write"),
+      risk_level: Map.get(context, :risk_level, "high"),
+      approval_sensitive: Map.get(context, :approval_sensitive, Map.get(context, :policy_sensitive, false)),
+      args_fingerprint: Map.get(context, :args_fingerprint),
+      subject_ref: Map.get(context, :subject_ref),
+      required_scopes: Map.get(context, :required_scopes, []),
+      grant_state: Map.get(context, :grant_state),
+      policy_key: Map.get(context, :policy_key),
+      authority_expanding: Map.get(context, :authority_expanding),
+      remote_hint: Map.get(context, :remote_hint)
+    }
+  end
+
+  defp record_replay_audit(context, tool_module, evidence, event_type) do
+    case SRE.create_audit_outbox_event(%{
+           tenant_id: Map.get(context, :tenant_id, "system"),
+           actor_id: Map.get(context, :actor_id),
+           workflow_run_id: Map.get(context, :run_id),
+           step_id: Map.get(context, :step_id),
+           trace_id: Map.get(context, :trace_id),
+           event_type: event_type,
+           policy_class: "replay_execution",
+           policy_key: evidence.policy_key,
+           tool_ref: inspect(tool_module),
+           replay_disposition: evidence.replay_disposition,
+           replay_reason_code: evidence.replay_reason_code,
+           source_run_id: evidence.source_run_id,
+           source_checkpoint_id: evidence.source_checkpoint_id,
+           source_step_id: evidence.source_step_id,
+           source_approval_id: evidence.source_approval_id,
+           source_audit_outbox_event_id: evidence.source_audit_outbox_event_id,
+           args_fingerprint: evidence.args_fingerprint,
+           executed_live: false
+         }) do
+      {:ok, event} -> event.id
+      _ -> nil
     end
   end
 
@@ -235,9 +354,20 @@ defmodule Scoria.MCP.Executor do
         trace_id: Map.get(context, :trace_id),
         event_type: "tool.invocation",
         policy_class: "policy_sensitive",
+        dedupe_key: Map.get(context, :replay_idempotency_key),
         policy_key: Map.get(context, :policy_key),
         tool_ref: inspect(tool_module),
         args: args,
+        replay_disposition: Map.get(context, :replay_disposition),
+        replay_reason_code: Map.get(context, :replay_reason_code),
+        source_run_id: Map.get(context, :source_run_id),
+        source_checkpoint_id: Map.get(context, :source_checkpoint_id),
+        source_step_id: Map.get(context, :source_step_id),
+        source_approval_id: Map.get(context, :source_approval_id),
+        source_audit_outbox_event_id: Map.get(context, :source_audit_outbox_event_id),
+        args_fingerprint: Map.get(context, :args_fingerprint),
+        executed_live: Map.get(context, :executed_live, false),
+        replay_idempotency_key: Map.get(context, :replay_idempotency_key),
         metadata: %{
           "integration_kind" => Map.get(context, :integration_kind, "tool"),
           "tool_target" => Map.get(context, :tool_target),
