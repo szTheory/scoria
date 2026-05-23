@@ -1,29 +1,24 @@
 ---
 phase: 39-replay-operator-ux-draft-dataset-promotion
-verified: 2026-05-23T13:42:17Z
-status: human_needed
+verified: 2026-05-23T14:13:19Z
+status: passed
 score: 7/7 must-haves verified
-overrides_applied: 0
+overrides_applied: 1
 re_verification:
   previous_status: human_needed
   previous_score: 7/7
-  gaps_closed: []
+  gaps_closed:
+    - "Human-only UX checks were explicitly closed via automation-substituted UAT at user direction."
   gaps_remaining: []
   regressions: []
-human_verification:
-  - test: "Inspect the replay workflow page with a real replay run and switch between Original trace and Replay trace."
-    expected: "The provenance strip, segmented toggle, grouped notebook cards, CTA helper copy, and inline notices remain clear and correctly reflect the selected source variant."
-    why_human: "Visual hierarchy, copy clarity, and operator comprehension are UI qualities not fully verifiable from code or ExUnit assertions."
-  - test: "Complete the promote modal flow manually for one open draft dataset and one sealed baseline dataset."
-    expected: "Open-target promotion closes with the success notice and preserved replay metadata; sealed-target flow shows the confirmation copy and records an approval request without inserting a dataset item."
-    why_human: "End-to-end operator flow and confirmation semantics require manual validation of the rendered LiveView behavior."
+human_verification: []
 ---
 
 # Phase 39: Replay Operator UX & Draft Dataset Promotion Verification Report
 
 **Phase Goal:** Operators can inspect replay provenance, compare outcomes, and promote reviewed traces into draft dataset items.
-**Verified:** 2026-05-23T13:42:17Z
-**Status:** human_needed
+**Verified:** 2026-05-23T14:13:19Z
+**Status:** passed
 **Re-verification:** Yes - current tree re-check after post-review fixes
 
 ## Goal Achievement
@@ -108,27 +103,13 @@ All Phase 39 requirement IDs declared in plan frontmatter are accounted for in `
 | `lib/scoria_web/live/workflow_live/show.ex` | 17 | `assign_async/3` background query can outlive the LiveView test owner and log sandbox disconnect noise | ⚠️ Warning | The scoped LiveView test passes, but teardown still emits owner-exited DB noise after `mix test test/scoria_web/live/workflow_live_test.exs`. |
 | `test/scoria_web/live/workflow_live_test.exs` | 113 | Only the empty remote-evidence branch is covered; no positive render test for non-empty approval evidence | ℹ️ Info | The missing-module regression is fixed by the new component, but a future rendering regression in the approval-present branch would not be caught by current Phase 39 tests. |
 
-### Human Verification Required
-
-### 1. Replay Comparison UX
-
-**Test:** Open a real replay run at `/scoria/workflows/:id`, switch between `Original trace` and `Replay trace`, and inspect the right rail.
-**Expected:** The provenance strip, grouped evidence cards, and CTA helper copy all stay aligned with the selected source variant and remain understandable without reading raw JSON.
-**Why human:** Visual hierarchy, readability, and operator comprehension are not fully captured by code structure or text assertions.
-
-### 2. Promotion Modal Flow
-
-**Test:** Use the promote modal once with an open draft dataset and once with a sealed baseline dataset.
-**Expected:** The open-target path finishes with the success notice and preserved replay metadata; the sealed-target path shows the confirmation copy and records an approval request without inserting a dataset item.
-**Why human:** This is a rendered operator flow with confirmation semantics and interaction quality that automated tests only approximate.
-
 ### Gaps Summary
 
 The post-review code fixes are present and working in the current tree. The approval boundary now rejects cross-run IDs before any workflow mutation, replay comparison reads the latest durable checkpoint/event/approval evidence for a step, the workflow page opens promotion with blank notes instead of `%{}`, and the missing remote-evidence module now exists and is wired into the page.
 
-Status remains `human_needed` because the remaining checks are UX-only: replay comparison clarity and the rendered promote/approval flow still require manual validation with a real replay run and live datasets.
+The original remaining checks were UX-only. The user accepted an automation-substituted closeout after the repo proved non-browserable in isolation because it lacks a host endpoint and HTTP server dependency for a literal manual walkthrough. The behavioral surface was still revalidated through targeted LiveView interaction tests covering replay toggling, open-dataset promotion, and sealed-baseline approval flow.
 
 ---
 
-_Verified: 2026-05-23T13:42:17Z_
+_Verified: 2026-05-23T14:13:19Z_
 _Verifier: Claude (gsd-verifier)_

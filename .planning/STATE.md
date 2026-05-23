@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Crucible
-status: executing
-last_updated: "2026-05-23T13:28:00.007Z"
+status: planning
+last_updated: "2026-05-23T14:13:19Z"
 last_activity: 2026-05-23
 progress:
   total_phases: 4
@@ -19,16 +19,16 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 39 — replay-operator-ux-draft-dataset-promotion
+**Current Focus:** Phase 40 — online-scoring-review-queue
 
 ## Current Position
 
-Phase: 39 (replay-operator-ux-draft-dataset-promotion) — EXECUTING
-Plan: 5 of 5
+Phase: 40 (online-scoring-review-queue) — PLANNING
+Plan: 0 of 0
 **Milestone:** `v1.9 Crucible`
-**Phase:** 39
-**Plan:** 5 of 5
-**Status:** Ready to execute
+**Phase:** 40
+**Plan:** 0 of 0
+**Status:** Ready to plan
 **Last activity:** 2026-05-23
 
 **Progress:**
@@ -114,6 +114,7 @@ Plan: 5 of 5
 - Phase 39 (39-03): Open dataset promotions call `Scoria.Eval.promote_workflow_source/1`, while sealed baselines route through `Scoria.Workflows.request_baseline_promotion/1`.
 - Phase 39 (39-03): Baseline promotion approvals use the exact `dataset_baseline_promotion` tool identity so workflow projections expose durable lineage and replay provenance.
 - Phase 39 (39-04): Sealed baseline targets stay visible in the promotion modal, but the baseline lane requires an explicit confirmation step before `Scoria.Workflows.request_baseline_promotion/1`.
+- Phase 39 closeout: user accepted automation-substituted UAT after targeted LiveView interaction tests revalidated replay UX and promotion flows, and the repo proved non-browserable in isolation without a host endpoint/server dependency.
 
 **Todos:**
 

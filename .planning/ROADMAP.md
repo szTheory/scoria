@@ -48,7 +48,7 @@ Plans:
 - [x] `39-02-PLAN.md` — Render replay provenance and comparison notebook UX on the workflow page.
 - [x] `39-03-PLAN.md` — Freeze workflow-source draft promotion for open datasets and modal handoff.
 - [x] `39-04-PLAN.md` — Gate sealed baseline promotion through workflow approvals and operator confirmation.
-- [ ] `39-05-PLAN.md` — Close replay promotion lineage/metadata regressions and replace synthetic coverage with runtime-driven end-to-end tests.
+- [x] `39-05-PLAN.md` — Close replay promotion lineage/metadata regressions and replace synthetic coverage with runtime-driven end-to-end tests.
 **Success Criteria**:
 1. LiveView shows source checkpoint, overrides, execution mode, and original-vs-replay context clearly.
 2. Operators can promote either original or replayed traces into draft dataset items backed by frozen evidence snapshots.
