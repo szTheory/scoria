@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-23T03:04:09.978Z"
+last_updated: "2026-05-23T09:23:24.107Z"
 last_activity: 2026-05-23
 progress:
   total_phases: 4
@@ -19,16 +19,16 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 37 — replay-lineage-branch-model
+**Current Focus:** Phase 38 — replay-safe-execution-tool-modes
 
 ## Current Position
 
-Phase: 37 (replay-lineage-branch-model) — EXECUTING
+Phase: 38 (replay-safe-execution-tool-modes) — EXECUTING
 Plan: 1 of 3
 **Milestone:** `v1.9 Crucible`
 **Phase:** Not started (defining requirements)
 **Plan:** —
-**Status:** Ready to execute
+**Status:** Executing Phase 38
 **Last activity:** 2026-05-23
 
 **Progress:**

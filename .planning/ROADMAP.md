@@ -63,6 +63,6 @@ Plans:
 | Phase | Plans Complete | Status | Notes |
 |-------|----------------|--------|-------|
 | 37. Replay Lineage & Branch Model | 0/0 | Planned | Start with `$gsd-plan-phase 37` |
-| 38. Replay-Safe Execution & Tool Modes | 0/0 | Planned | Follows phase 37 lineage model |
+| 38. Replay-Safe Execution & Tool Modes | 1/3 | In Progress|  |
 | 39. Replay Operator UX & Draft Dataset Promotion | 0/0 | Planned | Depends on replay truth and safety modes |
 | 40. Online Scoring & Review Queue | 0/0 | Planned | Depends on replay-driven evidence and draft promotion lanes |
