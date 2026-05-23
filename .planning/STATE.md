@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Crucible
 status: executing
-last_updated: "2026-05-23T12:18:55Z"
+last_updated: "2026-05-23T12:30:41.774Z"
 last_activity: 2026-05-23
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
-  percent: 78
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -24,15 +24,15 @@ progress:
 ## Current Position
 
 Phase: 39 (replay-operator-ux-draft-dataset-promotion) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 **Milestone:** `v1.9 Crucible`
 **Phase:** 39
-**Plan:** 2 of 3
-**Status:** Executing Plan 2 of Phase 39
+**Plan:** 3 of 3
+**Status:** Ready to execute Plan 3 of 3
 **Last activity:** 2026-05-23
 
 **Progress:**
-[████████░░] 78%
+[█████████░] 89%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Plan: 2 of 3
 **Phase 39 Metrics:**
 
 - **39-01:** 7m, 2 tasks, 5 files
+- **39-02:** 6min, 2 tasks, 5 files
 
 ## Accumulated Context
 
@@ -106,10 +107,12 @@ Plan: 2 of 3
 - Phase 32: Increased database connection `pool_size` to 20 in `test.exs` to stabilize concurrent tests.
 - Phase 39 (39-01): Keep replay source-run lookup inside `Scoria.Runtime.get_run_detail!/1` so UI layers consume `comparison_by_step` and `replay_provenance_strip` from curated runtime DTOs.
 - Phase 39 (39-01): Prefer explicit `source_step_id` lineage from checkpoints, events, and approvals before falling back to step-sequence matching in replay comparisons.
+- Phase 39 (39-02): Load `Workflows.get_run_tree!/1` and `Runtime.get_run_detail!/1` together so the workflow tree stays topology-driven while the right rail stays DTO-driven.
+- Phase 39 (39-02): Keep `WorkflowDetailPanelComponent` as the shell and CTA host while delegating grouped comparison rendering to `ReplayEvidenceNotebookComponent`.
 
 **Todos:**
 
-- Execute `39-02-PLAN.md` to render the replay provenance notebook on the workflow page.
+- Execute `39-03-PLAN.md` to freeze workflow-source promotion and gate sealed baselines through approvals.
 
 **Blockers:**
 
