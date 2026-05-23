@@ -42,6 +42,11 @@ Plans:
 **Goal**: Operators can inspect replay provenance, compare outcomes, and promote reviewed traces into draft dataset items.
 **Depends on**: Phase 38
 **Requirements**: RPLY-03, DATA-01, DATA-02
+**Plans**: 3 plans
+Plans:
+- [ ] `39-01-PLAN.md` — Add comparison-ready replay runtime projections and promotion-source contracts.
+- [ ] `39-02-PLAN.md` — Render replay provenance and comparison notebook UX on the workflow page.
+- [ ] `39-03-PLAN.md` — Freeze workflow-source draft promotion and gate sealed baselines through approvals.
 **Success Criteria**:
 1. LiveView shows source checkpoint, overrides, execution mode, and original-vs-replay context clearly.
 2. Operators can promote either original or replayed traces into draft dataset items backed by frozen evidence snapshots.
