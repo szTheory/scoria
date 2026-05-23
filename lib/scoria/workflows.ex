@@ -13,6 +13,7 @@ defmodule Scoria.Workflows do
   alias Scoria.Repo
   alias Scoria.SRE
   alias Scoria.SRE.AuditOutboxEvent
+  alias Scoria.Workflows.DatasetPromotion
   alias Scoria.Workflows.EventCompactor
   alias Scoria.Workflows.RemoteApprovalProjection
   alias Scoria.Workflows.{Checkpoint, Event, Handoff, ReplayDisposition, Run, Step}
@@ -33,6 +34,16 @@ defmodule Scoria.Workflows do
     do: RemoteApprovalProjection.list_pending_approvals(filters)
 
   def get_remote_approval_lineage!(approval_id),
+    do: RemoteApprovalProjection.get_approval_lineage!(approval_id)
+
+  def request_baseline_promotion(attrs) when is_map(attrs) do
+    DatasetPromotion.request_baseline_promotion(attrs)
+  end
+
+  def list_pending_approvals(filters \\ %{}),
+    do: RemoteApprovalProjection.list_pending_approvals(filters)
+
+  def get_approval_lineage!(approval_id),
     do: RemoteApprovalProjection.get_approval_lineage!(approval_id)
 
   def list_run_steps(run_id) do

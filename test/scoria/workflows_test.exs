@@ -189,6 +189,57 @@ defmodule Scoria.WorkflowsTest do
       assert event.replay_reason_code == "fresh_replay_approval_required"
     end
 
+    test "request_baseline_promotion/1 persists replay-safe workflow evidence for sealed baseline approvals" do
+      {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Release QA", version: "7"})
+      {:ok, _sealed} = Scoria.Eval.seal_dataset(dataset)
+
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          source_run_id: Ecto.UUID.generate(),
+          source_checkpoint_id: Ecto.UUID.generate(),
+          actor_id: "root-actor",
+          tenant_id: "root-tenant",
+          session_id: "root-session"
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      assert {:ok, approval} =
+               Workflows.request_baseline_promotion(%{
+                 dataset_id: dataset.id,
+                 workflow_run_id: run.id,
+                 workflow_step_id: step.id,
+                 source_variant: "replay",
+                 provenance: %{
+                   "execution_mode" => "replay",
+                   "source_run_id" => run.source_run_id,
+                   "source_checkpoint_id" => run.source_checkpoint_id
+                 },
+                 checkpoint_output: %{"projected_context" => %{"tool" => "publish"}},
+                 safety: %{"replay_scope" => "replay_live"},
+                 promotion_snapshot: %{"recorded_outcome" => %{"kind" => "result"}},
+                 notes: "request baseline approval",
+                 expected_output: %{"status" => "review"}
+               })
+
+      assert approval.tool_name == "dataset_baseline_promotion"
+      assert approval.replay_disposition == "blocked"
+      assert approval.replay_reason_code == "fresh_replay_approval_required"
+      assert approval.source_run_id == run.source_run_id
+      assert approval.source_checkpoint_id == run.source_checkpoint_id
+      assert approval.arguments["dataset_name"] == "Release QA"
+      assert approval.arguments["source_variant"] == "replay"
+      assert approval.arguments["expected_output"] == %{"status" => "review"}
+    end
+
     test "approve/3 only updates the current replay approval row and leaves historical approval as evidence" do
       source_run_id = Ecto.UUID.generate()
       source_checkpoint_id = Ecto.UUID.generate()

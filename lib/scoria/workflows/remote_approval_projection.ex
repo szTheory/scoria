@@ -37,6 +37,8 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
   end
 
   defp project_approval(%Approval{} = approval) do
+    baseline_target = baseline_target(approval)
+
     %{
       id: approval.id,
       workflow_run_id: approval.workflow_run_id,
@@ -69,6 +71,7 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
       policy_key: approval.policy_key,
       executed_live: approval.executed_live,
       replay_idempotency_key: approval.replay_idempotency_key,
+      baseline_target: baseline_target,
       audit_outbox_event_id: approval.audit_outbox_event_id,
       blocker_workflow_event_id: approval.blocker_workflow_event_id,
       blocker_audit_outbox_event_id: approval.blocker_audit_outbox_event_id,
@@ -95,4 +98,23 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
   end
 
   defp normalize_filters(_filters), do: %{}
+
+  defp baseline_target(%Approval{tool_name: "dataset_baseline_promotion"} = approval) do
+    %{
+      dataset_id: argument_value(approval.arguments, "dataset_id"),
+      dataset_name: argument_value(approval.arguments, "dataset_name"),
+      dataset_version: argument_value(approval.arguments, "dataset_version"),
+      source_variant: argument_value(approval.arguments, "source_variant")
+    }
+  end
+
+  defp baseline_target(_approval), do: nil
+
+  defp argument_value(arguments, key) when is_map(arguments) do
+    Map.get(arguments, key, Map.get(arguments, String.to_existing_atom(key), nil))
+  rescue
+    ArgumentError -> Map.get(arguments, key)
+  end
+
+  defp argument_value(_arguments, _key), do: nil
 end

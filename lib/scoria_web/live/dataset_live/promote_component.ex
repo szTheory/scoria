@@ -1,179 +1,478 @@
 defmodule ScoriaWeb.DatasetLive.PromoteComponent do
   use Phoenix.LiveComponent
+
   import Ecto.Changeset
+
   alias Scoria.Eval
+  alias Scoria.Workflows
 
   @impl true
   def update(assigns, socket) do
-    step = assigns[:step] || %{}
     promotion_context = assigns[:promotion_context] || %{}
+    form_params = socket.assigns[:form_params] || initial_form_params(promotion_context)
+    {open_datasets, sealed_datasets} = load_dataset_groups()
+    selected_open_dataset_id = selected_open_dataset_id(form_params, open_datasets)
+    baseline_target_id = socket.assigns[:baseline_target_id]
+    baseline_target = find_dataset(sealed_datasets, baseline_target_id)
+    mode = if(socket.assigns[:mode] == :baseline_confirm and baseline_target, do: :baseline_confirm, else: :draft)
 
-    input_json =
-      promotion_context
-      |> initial_input(step)
-      |> Jason.encode!(pretty: true)
-
-    expected_output_json =
-      promotion_context
-      |> read_context_value(:expected_output)
-      |> normalize_map()
-      |> Jason.encode!(pretty: true)
-      
-    datasets = 
-      Eval.list_datasets()
-      |> Enum.filter(&(&1.state == :open))
-      
-    initial_params = %{
-      "input" => input_json,
-      "expected_output" => expected_output_json
-    }
-    
-    changeset = dataset_item_form(initial_params)
-    
-    {:ok, 
+    {:ok,
      socket
      |> assign(assigns)
      |> assign(:promotion_context, promotion_context)
-     |> assign(:datasets, datasets)
-     |> assign(:form, to_form(changeset, as: "item"))}
+     |> assign(:open_datasets, open_datasets)
+     |> assign(:sealed_datasets, sealed_datasets)
+     |> assign(:selected_open_dataset_id, selected_open_dataset_id)
+     |> assign(:baseline_target_id, baseline_target_id)
+     |> assign(:mode, mode)
+     |> assign(:form_params, form_params)
+     |> assign(:form, to_form(promotion_form(form_params), as: "promotion"))}
   end
-  
+
   @impl true
-  def handle_event("validate", %{"item" => params}, socket) do
-    changeset = 
-      params
-      |> dataset_item_form()
-      |> Map.put(:action, :validate)
-      
-    {:noreply, assign(socket, :form, to_form(changeset, as: "item"))}
+  def handle_event("validate", %{"promotion" => params}, socket) do
+    {:noreply, assign_form(socket, params, promotion_form(params, action: :validate))}
   end
-  
+
   @impl true
-  def handle_event("save", %{"item" => params}, socket) do
-    changeset = dataset_item_form(params)
-    
-    if changeset.valid? do
-      dataset_id = Ecto.Changeset.get_field(changeset, :dataset_id)
-      
-      input_json = Ecto.Changeset.get_field(changeset, :input)
-      exp_json = Ecto.Changeset.get_field(changeset, :expected_output)
-      
-      with {:ok, input_map} <- Jason.decode(input_json),
-           {:ok, exp_map} <- Jason.decode(exp_json) do
-           
-        attrs = %{input: input_map, expected_output: exp_map}
-        
-        case Eval.add_dataset_item(dataset_id, attrs) do
-          {:ok, _item} ->
-            send(self(), {:promote_successful})
-            {:noreply, socket}
-          {:error, _} ->
-            changeset = add_error(changeset, :dataset_id, "failed to save to dataset")
-            {:noreply, assign(socket, :form, to_form(changeset, as: "item"))}
-        end
-      else
-        {:error, _} ->
-          # Add JSON parse errors
-          changeset = 
-            changeset
-            |> add_error(:input, "must be valid JSON")
-            |> add_error(:expected_output, "must be valid JSON")
-          {:noreply, assign(socket, :form, to_form(changeset, as: "item"))}
-      end
+  def handle_event("select_open_dataset", %{"dataset-id" => dataset_id}, socket) do
+    params =
+      socket.assigns.form_params
+      |> Map.put("dataset_id", dataset_id)
+
+    {:noreply,
+     socket
+     |> assign(:mode, :draft)
+     |> assign(:baseline_target_id, nil)
+     |> assign(:selected_open_dataset_id, parse_dataset_id(dataset_id))
+     |> assign_form(params, promotion_form(params))}
+  end
+
+  @impl true
+  def handle_event("select_sealed_dataset", %{"dataset-id" => dataset_id}, socket) do
+    {:noreply,
+     socket
+     |> assign(:mode, :baseline_confirm)
+     |> assign(:baseline_target_id, parse_dataset_id(dataset_id))}
+  end
+
+  @impl true
+  def handle_event("back_to_draft", _params, socket) do
+    {:noreply, socket |> assign(:mode, :draft) |> assign(:baseline_target_id, nil)}
+  end
+
+  @impl true
+  def handle_event("save", %{"promotion" => params}, socket) do
+    changeset = promotion_form(params, require_dataset: true, action: :validate)
+
+    with true <- changeset.valid?,
+         {:ok, expected_output} <- decode_expected_output(get_field(changeset, :expected_output)),
+         dataset_id when is_integer(dataset_id) <- get_field(changeset, :dataset_id),
+         promotion_attrs <- build_promotion_attrs(socket.assigns.promotion_context, dataset_id, get_field(changeset, :notes), expected_output),
+         {:ok, _item} <- Eval.promote_workflow_source(promotion_attrs) do
+      dataset = Eval.get_dataset!(dataset_id)
+
+      send(
+        self(),
+        {:promote_successful,
+         %{
+           source_variant: read_context_value(socket.assigns.promotion_context, :source_variant),
+           dataset_name: dataset.name,
+           dataset_version: dataset.version
+         }}
+      )
+
+      {:noreply, socket}
     else
-      {:noreply, assign(socket, :form, to_form(Map.put(changeset, :action, :validate), as: "item"))}
-    end
-  end
+      false ->
+        {:noreply, assign_form(socket, params, changeset)}
 
-  defp dataset_item_form(params) do
-    types = %{dataset_id: :integer, input: :string, expected_output: :string}
-    
-    {%{}, types}
-    |> cast(params, [:dataset_id, :input, :expected_output])
-    |> validate_required([:dataset_id, :input, :expected_output])
-    |> validate_json(:input)
-    |> validate_json(:expected_output)
-  end
-  
-  defp validate_json(changeset, field) do
-    validate_change(changeset, field, fn current_field, value ->
-      case Jason.decode(value) do
-        {:ok, _} -> []
-        {:error, _} -> [{current_field, "must be valid JSON"}]
-      end
-    end)
-  end
+      {:error, %Jason.DecodeError{}} ->
+        {:noreply, assign_form(socket, params, add_error(changeset, :expected_output, "must be valid JSON"))}
 
-  defp initial_input(promotion_context, step) do
-    promotion_context
-    |> read_context_value(:checkpoint_output)
-    |> case do
-      checkpoint_output when is_map(checkpoint_output) ->
-        checkpoint_output
-        |> read_context_value(:projected_context)
-        |> normalize_map(step[:projected_context] || %{})
+      {:error, %Ecto.Changeset{} = result_changeset} ->
+        message = first_error(result_changeset, :dataset_id, "failed to promote snapshot")
+        params = Map.put(params, "dataset_id", "")
+
+        {:noreply,
+         socket
+         |> refresh_datasets()
+         |> assign(:mode, :draft)
+         |> assign(:baseline_target_id, nil)
+         |> assign(:selected_open_dataset_id, nil)
+         |> assign_form(params, add_error(changeset, :dataset_id, message))}
 
       _other ->
-        step[:projected_context] || %{}
+        {:noreply, assign_form(socket, params, add_error(changeset, :dataset_id, "failed to promote snapshot"))}
     end
   end
 
-  defp normalize_map(value, fallback \\ %{})
-  defp normalize_map(value, _fallback) when is_map(value), do: value
-  defp normalize_map(nil, fallback), do: fallback
-  defp normalize_map(_value, fallback), do: fallback
+  @impl true
+  def handle_event("request_baseline_approval", _params, socket) do
+    params = socket.assigns.form_params
+    changeset = promotion_form(params, action: :validate)
+    baseline_target = find_dataset(socket.assigns.sealed_datasets, socket.assigns.baseline_target_id)
 
-  defp read_context_value(context, key) when is_map(context) do
-    Map.get(context, key, Map.get(context, to_string(key)))
+    with true <- changeset.valid?,
+         %{} = dataset <- baseline_target,
+         {:ok, expected_output} <- decode_expected_output(get_field(changeset, :expected_output)),
+         request_attrs <- build_promotion_attrs(socket.assigns.promotion_context, dataset.id, get_field(changeset, :notes), expected_output),
+         {:ok, _approval} <- Workflows.request_baseline_promotion(request_attrs) do
+      send(
+        self(),
+        {:baseline_promotion_requested,
+         %{dataset_name: dataset.name, dataset_version: dataset.version}}
+      )
+
+      {:noreply, socket}
+    else
+      false ->
+        {:noreply, assign_form(socket, params, changeset)}
+
+      nil ->
+        {:noreply,
+         socket
+         |> refresh_datasets()
+         |> assign(:mode, :draft)
+         |> assign_form(params, add_error(changeset, :dataset_id, "cannot add or modify items in a sealed dataset"))}
+
+      {:error, %Jason.DecodeError{}} ->
+        {:noreply, assign_form(socket, params, add_error(changeset, :expected_output, "must be valid JSON"))}
+
+      {:error, %Ecto.Changeset{} = result_changeset} ->
+        message = first_error(result_changeset, :dataset_id, "failed to request baseline approval")
+
+        {:noreply,
+         socket
+         |> refresh_datasets()
+         |> assign_form(params, add_error(changeset, :dataset_id, message))}
+
+      _other ->
+        {:noreply, assign_form(socket, params, add_error(changeset, :dataset_id, "failed to request baseline approval"))}
+    end
   end
-
-  defp read_context_value(_context, _key), do: nil
 
   @impl true
   def render(assigns) do
+    baseline_target = find_dataset(assigns.sealed_datasets, assigns.baseline_target_id)
+
+    assigns =
+      assigns
+      |> assign(:baseline_target, baseline_target)
+      |> assign(:source_variant, read_context_value(assigns.promotion_context, :source_variant) || "original")
+      |> assign(:source_label, variant_label(read_context_value(assigns.promotion_context, :source_variant)))
+      |> assign(:snapshot, read_context_value(assigns.promotion_context, :promotion_snapshot) || %{})
+
     ~H"""
     <div id={@id} class="promote-dataset-modal">
-      <h2 class="text-xl font-bold mb-4">Promote to Dataset</h2>
-      
-      <.form for={@form} phx-change="validate" phx-submit="save" phx-target={@myself}>
-        <div class="mb-4">
-          <label class="block font-medium mb-1">Select Dataset</label>
-          <select name={@form[:dataset_id].name} class="w-full border p-2 rounded">
-            <option value="">-- Select an open dataset --</option>
-            <%= for dataset <- @datasets do %>
-              <option value={dataset.id} selected={@form[:dataset_id].value == to_string(dataset.id)}>
-                <%= dataset.name %> (v<%= dataset.version %>)
-              </option>
-            <% end %>
-          </select>
-          <%= for error <- Keyword.get_values(@form.errors || [], :dataset_id) do %>
-            <span class="text-red-500 text-sm"><%= translate_error(error) %></span>
-          <% end %>
+      <.form for={@form} phx-change="validate" phx-submit="save" phx-target={@myself} class="space-y-6">
+        <input type="hidden" name={@form[:dataset_id].name} value={@form[:dataset_id].value || ""} />
+
+        <div class="space-y-2">
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Draft promotion</p>
+          <h2 class="text-2xl font-semibold text-stone-900">
+            <%= if @mode == :baseline_confirm, do: "Baseline Promotion Approval", else: "Promote Trace to Draft Dataset" %>
+          </h2>
+          <p class="text-sm text-stone-600">
+            <%= @source_label %> stays frozen as one dataset snapshot, with workflow provenance preserved on insert or approval request.
+          </p>
         </div>
 
-        <div class="mb-4">
-          <label class="block font-medium mb-1">Input Context (JSON)</label>
-          <textarea name={@form[:input].name} rows="8" class="w-full font-mono text-sm border p-2 rounded"><%= @form[:input].value %></textarea>
-          <%= for error <- Keyword.get_values(@form.errors || [], :input) do %>
-            <span class="text-red-500 text-sm"><%= translate_error(error) %></span>
-          <% end %>
-        </div>
+        <section class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+          <div class="flex flex-wrap items-center gap-2 text-xs text-stone-700">
+            <span class="rounded-full border border-stone-300 bg-white px-3 py-1"><%= @source_label %></span>
+            <span class="rounded-full border border-stone-300 bg-white px-3 py-1">
+              run <span class="font-mono"><%= read_context_value(@promotion_context, :workflow_run_id) %></span>
+            </span>
+            <span class="rounded-full border border-stone-300 bg-white px-3 py-1">
+              step <span class="font-mono"><%= read_context_value(@promotion_context, :workflow_step_id) %></span>
+            </span>
+          </div>
 
-        <div class="mb-4">
-          <label class="block font-medium mb-1">Expected Output (JSON)</label>
-          <textarea name={@form[:expected_output].name} rows="5" class="w-full font-mono text-sm border p-2 rounded"><%= @form[:expected_output].value %></textarea>
-          <%= for error <- Keyword.get_values(@form.errors || [], :expected_output) do %>
-            <span class="text-red-500 text-sm"><%= translate_error(error) %></span>
-          <% end %>
-        </div>
+          <div class="mt-4 grid gap-4 lg:grid-cols-2">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">Promotion Snapshot Summary</p>
+              <pre class="mt-3 overflow-x-auto whitespace-pre-wrap text-xs text-stone-700"><%= Jason.encode_to_iodata!(@snapshot, pretty: true) %></pre>
+            </div>
 
-        <div class="flex justify-end gap-2">
-          <button type="button" phx-click="close_modal" class="px-4 py-2 border rounded">Cancel</button>
-          <button type="submit" phx-disable-with="Saving..." class="px-4 py-2 bg-blue-600 text-white rounded">Promote</button>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <label class="block text-xs font-semibold uppercase tracking-[0.16em] text-stone-500" for={@form[:notes].id}>Operator Notes</label>
+              <textarea
+                id={@form[:notes].id}
+                name={@form[:notes].name}
+                rows="5"
+                class="mt-3 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-900"
+              ><%= @form[:notes].value %></textarea>
+
+              <label class="mt-4 block text-xs font-semibold uppercase tracking-[0.16em] text-stone-500" for={@form[:expected_output].id}>Expected Output (JSON)</label>
+              <textarea
+                id={@form[:expected_output].id}
+                name={@form[:expected_output].name}
+                rows="7"
+                class="mt-3 w-full rounded-xl border border-stone-300 px-3 py-2 font-mono text-sm text-stone-900"
+              ><%= @form[:expected_output].value %></textarea>
+              <%= for error <- Keyword.get_values(@form.errors || [], :expected_output) do %>
+                <p class="mt-2 text-sm text-rose-700"><%= translate_error(error) %></p>
+              <% end %>
+            </div>
+          </div>
+        </section>
+
+        <%= if @mode == :baseline_confirm do %>
+          <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Approval required</p>
+            <h3 class="mt-2 text-lg font-semibold text-stone-900">Baseline Promotion Approval</h3>
+            <p class="mt-3 text-sm text-stone-700">
+              Promote this draft evidence into a sealed release-driving baseline?
+              The baseline dataset will remain immutable until an explicit approval workflow records the decision.
+            </p>
+
+            <div :if={@baseline_target} class="mt-4 rounded-xl border border-amber-200 bg-white p-4 text-sm text-stone-700">
+              <p class="font-semibold text-stone-900"><%= @baseline_target.name %></p>
+              <p class="mt-1 font-mono">v<%= @baseline_target.version %></p>
+            </div>
+          </section>
+        <% else %>
+          <section class="space-y-4">
+            <div class="rounded-2xl border border-stone-200 bg-white p-4">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Open draft datasets</p>
+                  <h3 class="mt-1 text-lg font-semibold text-stone-900">Selectable targets</h3>
+                </div>
+                <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                  Draft open
+                </span>
+              </div>
+
+              <div :if={@open_datasets == []} class="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
+                Only draft/open datasets accept direct promotion; sealed baselines require approval.
+              </div>
+
+              <div :if={@open_datasets != []} class="mt-4 space-y-3">
+                <button
+                  :for={dataset <- @open_datasets}
+                  type="button"
+                  phx-click="select_open_dataset"
+                  phx-value-dataset-id={dataset.id}
+                  phx-target={@myself}
+                  class={[
+                    "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left",
+                    if(@selected_open_dataset_id == dataset.id,
+                      do: "border-blue-400 bg-blue-50",
+                      else: "border-stone-200 bg-stone-50 hover:border-stone-300 hover:bg-white"
+                    )
+                  ]}
+                >
+                  <span>
+                    <span class="block text-sm font-semibold text-stone-900"><%= dataset.name %></span>
+                    <span class="mt-1 block text-xs font-mono text-stone-500">v<%= dataset.version %></span>
+                  </span>
+                  <span class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                    <%= if @selected_open_dataset_id == dataset.id, do: "Selected", else: "Select" %>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-stone-200 bg-white p-4">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Sealed baseline</p>
+                  <h3 class="mt-1 text-lg font-semibold text-stone-900">Approval required</h3>
+                </div>
+                <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+                  Approval required
+                </span>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <div
+                  :for={dataset <- @sealed_datasets}
+                  class="flex items-center justify-between gap-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3"
+                >
+                  <div>
+                    <p class="text-sm font-semibold text-stone-900"><%= dataset.name %></p>
+                    <p class="mt-1 text-xs font-mono text-stone-500">v<%= dataset.version %></p>
+                    <p class="mt-2 text-xs text-stone-600">
+                      This sealed baseline is immutable until an explicit approval workflow records the decision.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    phx-click="select_sealed_dataset"
+                    phx-value-dataset-id={dataset.id}
+                    phx-target={@myself}
+                    class="rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-amber-700 hover:bg-amber-50"
+                  >
+                    Request baseline approval
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        <% end %>
+
+        <%= for error <- Keyword.get_values(@form.errors || [], :dataset_id) do %>
+          <p class="text-sm text-rose-700"><%= translate_error(error) %></p>
+        <% end %>
+
+        <div class="flex justify-end gap-3">
+          <button
+            :if={@mode == :baseline_confirm}
+            type="button"
+            phx-click="back_to_draft"
+            phx-target={@myself}
+            class="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700"
+          >
+            Back
+          </button>
+
+          <button type="button" phx-click="close_modal" class="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700">
+            Cancel
+          </button>
+
+          <button
+            :if={@mode == :draft}
+            type="submit"
+            phx-disable-with="Promoting snapshot..."
+            class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Promote snapshot
+          </button>
+
+          <button
+            :if={@mode == :baseline_confirm}
+            type="button"
+            phx-click="request_baseline_approval"
+            phx-target={@myself}
+            class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+          >
+            Confirm baseline request
+          </button>
         </div>
       </.form>
     </div>
     """
+  end
+
+  defp initial_form_params(promotion_context) do
+    %{
+      "dataset_id" => "",
+      "notes" => normalize_string(read_context_value(promotion_context, :notes)),
+      "expected_output" =>
+        promotion_context
+        |> read_context_value(:expected_output)
+        |> normalize_map()
+        |> Jason.encode!(pretty: true)
+    }
+  end
+
+  defp promotion_form(params, opts \\ []) do
+    types = %{dataset_id: :integer, notes: :string, expected_output: :string}
+
+    changeset =
+      {%{}, types}
+      |> cast(params, [:dataset_id, :notes, :expected_output])
+      |> maybe_validate_required(opts)
+      |> validate_expected_output()
+
+    case Keyword.get(opts, :action) do
+      nil -> changeset
+      action -> Map.put(changeset, :action, action)
+    end
+  end
+
+  defp maybe_validate_required(changeset, opts) do
+    if Keyword.get(opts, :require_dataset, false) do
+      validate_required(changeset, [:dataset_id])
+    else
+      changeset
+    end
+  end
+
+  defp validate_expected_output(changeset) do
+    validate_change(changeset, :expected_output, fn :expected_output, value ->
+      case decode_expected_output(value) do
+        {:ok, _map} -> []
+        {:error, _reason} -> [expected_output: "must be valid JSON"]
+      end
+    end)
+  end
+
+  defp decode_expected_output(value) when value in [nil, ""], do: {:ok, %{}}
+
+  defp decode_expected_output(value) do
+    Jason.decode(value)
+  end
+
+  defp build_promotion_attrs(context, dataset_id, notes, expected_output) do
+    %{
+      dataset_id: dataset_id,
+      workflow_run_id: read_context_value(context, :workflow_run_id),
+      workflow_step_id: read_context_value(context, :workflow_step_id),
+      source_variant: read_context_value(context, :source_variant),
+      provenance: normalize_map(read_context_value(context, :provenance)),
+      checkpoint_output: normalize_map(read_context_value(context, :checkpoint_output)),
+      safety: normalize_map(read_context_value(context, :safety)),
+      promotion_snapshot: normalize_map(read_context_value(context, :promotion_snapshot)),
+      notes: notes,
+      expected_output: normalize_map(expected_output)
+    }
+  end
+
+  defp load_dataset_groups do
+    Eval.list_datasets()
+    |> Enum.split_with(&(&1.state == :open))
+  end
+
+  defp refresh_datasets(socket) do
+    {open_datasets, sealed_datasets} = load_dataset_groups()
+
+    socket
+    |> assign(:open_datasets, open_datasets)
+    |> assign(:sealed_datasets, sealed_datasets)
+  end
+
+  defp assign_form(socket, params, changeset) do
+    socket
+    |> assign(:form_params, params)
+    |> assign(:form, to_form(changeset, as: "promotion"))
+  end
+
+  defp selected_open_dataset_id(params, datasets) do
+    dataset_id = params |> Map.get("dataset_id") |> parse_dataset_id()
+
+    if Enum.any?(datasets, &(&1.id == dataset_id)), do: dataset_id, else: nil
+  end
+
+  defp parse_dataset_id(nil), do: nil
+  defp parse_dataset_id(""), do: nil
+  defp parse_dataset_id(value) when is_integer(value), do: value
+  defp parse_dataset_id(value) when is_binary(value), do: String.to_integer(value)
+
+  defp find_dataset(_datasets, nil), do: nil
+  defp find_dataset(datasets, dataset_id), do: Enum.find(datasets, &(&1.id == dataset_id))
+
+  defp variant_label("replay"), do: "Replay trace"
+  defp variant_label(_variant), do: "Original trace"
+
+  defp normalize_map(nil), do: %{}
+  defp normalize_map(value) when is_map(value), do: value
+  defp normalize_map(_value), do: %{}
+
+  defp normalize_string(nil), do: ""
+  defp normalize_string(value), do: to_string(value)
+
+  defp read_context_value(context, key) when is_map(context), do: Map.get(context, key, Map.get(context, to_string(key)))
+  defp read_context_value(_context, _key), do: nil
+
+  defp first_error(changeset, field, fallback) do
+    case changeset.errors[field] do
+      {message, _opts} -> message
+      _other -> fallback
+    end
   end
 
   defp translate_error({msg, opts}) do

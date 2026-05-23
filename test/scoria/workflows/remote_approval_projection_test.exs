@@ -132,4 +132,72 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
     assert approval_id == approval.id
     assert projected_source_approval_id == historical.id
   end
+
+  test "dataset baseline promotion approvals project tool_name, target details, and replay lineage" do
+    {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Release QA", version: "7"})
+    {:ok, _sealed} = Scoria.Eval.seal_dataset(dataset)
+
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        execution_mode: "replay",
+        source_run_id: Ecto.UUID.generate(),
+        source_checkpoint_id: Ecto.UUID.generate(),
+        actor_id: "operator",
+        tenant_id: "tenant-baseline",
+        session_id: "session-baseline"
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval_gate",
+        role_id: "critic",
+        status: "running"
+      })
+
+    assert {:ok, approval} =
+             Workflows.request_baseline_promotion(%{
+               dataset_id: dataset.id,
+               workflow_run_id: run.id,
+               workflow_step_id: step.id,
+               source_variant: "replay",
+               provenance: %{
+                 "execution_mode" => "replay",
+                 "source_run_id" => run.source_run_id,
+                 "source_checkpoint_id" => run.source_checkpoint_id
+               },
+               checkpoint_output: %{"projected_context" => %{"tool" => "publish"}},
+               safety: %{"replay_scope" => "replay_live"},
+               promotion_snapshot: %{"recorded_outcome" => %{"kind" => "result"}}
+             })
+
+    assert [
+             %{
+               id: approval_id,
+               tool_name: "dataset_baseline_promotion",
+               replay_disposition: "blocked",
+               replay_reason_code: "fresh_replay_approval_required",
+               baseline_target: %{
+                 dataset_id: dataset_id,
+                 dataset_name: "Release QA",
+                 dataset_version: "7",
+                 source_variant: "replay"
+               }
+             }
+           ] = Workflows.list_pending_approvals(%{tenant_id: "tenant-baseline", tool_name: "dataset_baseline_promotion"})
+
+    assert approval_id == approval.id
+    assert dataset_id == dataset.id
+
+    assert %{
+             tool_name: "dataset_baseline_promotion",
+             replay_scope: "replay_live",
+             source_run_id: source_run_id,
+             source_checkpoint_id: source_checkpoint_id
+           } = Workflows.get_approval_lineage!(approval.id)
+
+    assert source_run_id == run.source_run_id
+    assert source_checkpoint_id == run.source_checkpoint_id
+  end
 end
