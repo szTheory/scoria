@@ -263,17 +263,19 @@ defmodule Scoria.Workflows do
         Keyword.get(opts, :run_status, if(pending_count == 0, do: "completed", else: "running"))
 
       checkpoint =
-        insert_checkpoint(repo, run.id, completed_step.id, %{
-          transition: "step_completed",
-          status: run_status,
-          snapshot: %{result_envelope: result_envelope},
-          metadata: %{}
-        })
+        insert_checkpoint(
+          repo,
+          run.id,
+          completed_step.id,
+          replay_transition_checkpoint_attrs(run, "step_completed", run_status, result_envelope, :result)
+        )
 
-      insert_event(repo, run.id, completed_step.id, %{
-        event_type: "step_completed",
-        payload: %{result_envelope: result_envelope}
-      })
+      insert_event(
+        repo,
+        run.id,
+        completed_step.id,
+        replay_transition_event_attrs(run, "step_completed", result_envelope, :result)
+      )
 
       updated_run =
         run
@@ -430,17 +432,19 @@ defmodule Scoria.Workflows do
         |> repo.update!()
 
       checkpoint =
-        insert_checkpoint(repo, run.id, failed_step.id, %{
-          transition: "step_failed",
-          status: run_status,
-          snapshot: %{error_envelope: error_envelope},
-          metadata: %{}
-        })
+        insert_checkpoint(
+          repo,
+          run.id,
+          failed_step.id,
+          replay_transition_checkpoint_attrs(run, "step_failed", run_status, error_envelope, :error)
+        )
 
-      insert_event(repo, run.id, failed_step.id, %{
-        event_type: "step_failed",
-        payload: %{error_envelope: error_envelope}
-      })
+      insert_event(
+        repo,
+        run.id,
+        failed_step.id,
+        replay_transition_event_attrs(run, "step_failed", error_envelope, :error)
+      )
 
       updated_run =
         run
@@ -769,10 +773,14 @@ defmodule Scoria.Workflows do
   defp with_replay_evidence(%Run{} = run, attrs, payload) do
     if run.execution_mode == "replay" do
       evidence = replay_approval_evidence(run, attrs)
+      replay_scope = attr_value(attrs, :replay_scope) || "replay_live"
+      replay_fields = replay_metadata_fields(evidence, replay_scope, attr_value(attrs, :executed_live) || false)
 
       payload
       |> Map.put(:replay_disposition, Atom.to_string(evidence.replay_disposition))
       |> Map.put(:replay_reason_code, evidence.replay_reason_code)
+      |> Map.update(:metadata, replay_fields, &Map.merge(&1 || %{}, replay_fields))
+      |> maybe_merge_replay_payload(replay_fields)
     else
       payload
     end
@@ -800,6 +808,88 @@ defmodule Scoria.Workflows do
   end
 
   defp merge_replay_audit_attrs(envelope, _run, _approval), do: envelope
+
+  defp replay_transition_checkpoint_attrs(%Run{} = run, transition, status, envelope, envelope_key) do
+    replay_fields =
+      if run.execution_mode == "replay" do
+        replay_transition_fields(envelope)
+      else
+        %{}
+      end
+
+    %{
+      transition: transition,
+      status: status,
+      snapshot: %{:"#{envelope_key}_envelope" => envelope},
+      metadata: replay_fields
+    }
+    |> maybe_put_replay_transition_columns(replay_fields)
+  end
+
+  defp replay_transition_event_attrs(%Run{} = run, event_type, envelope, envelope_key) do
+    replay_fields =
+      if run.execution_mode == "replay" do
+        replay_transition_fields(envelope)
+      else
+        %{}
+      end
+
+    %{
+      event_type: event_type,
+      payload: Map.merge(%{:"#{envelope_key}_envelope" => envelope}, replay_fields)
+    }
+    |> maybe_put_replay_transition_columns(replay_fields)
+  end
+
+  defp maybe_put_replay_transition_columns(attrs, %{"replay_disposition" => disposition, "replay_reason_code" => reason})
+       when not is_nil(disposition) and not is_nil(reason) do
+    attrs
+    |> Map.put(:replay_disposition, disposition)
+    |> Map.put(:replay_reason_code, reason)
+  end
+
+  defp maybe_put_replay_transition_columns(attrs, _replay_fields), do: attrs
+
+  defp replay_transition_fields(envelope) when is_map(envelope) do
+    [
+      "replay_disposition",
+      "replay_reason_code",
+      "source_run_id",
+      "source_checkpoint_id",
+      "source_step_id",
+      "source_approval_id",
+      "source_audit_outbox_event_id",
+      "args_fingerprint",
+      "subject_ref",
+      "required_scopes",
+      "policy_key",
+      "replay_scope",
+      "executed_live",
+      "replay_idempotency_key"
+    ]
+    |> Enum.reduce(%{}, fn key, acc ->
+      case attr_value(envelope, String.to_atom(key)) do
+        nil -> acc
+        value -> Map.put(acc, key, value)
+      end
+    end)
+  end
+
+  defp replay_transition_fields(_envelope), do: %{}
+
+  defp replay_metadata_fields(evidence, replay_scope, executed_live) do
+    replay_transition_fields(evidence)
+    |> Map.put("replay_scope", replay_scope)
+    |> Map.put("executed_live", executed_live)
+  end
+
+  defp maybe_merge_replay_payload(payload, replay_fields) do
+    if Map.has_key?(payload, :payload) do
+      Map.update!(payload, :payload, &Map.merge(&1 || %{}, replay_fields))
+    else
+      payload
+    end
+  end
 
   defp replay_evidence(%Run{} = run, attrs) do
     seam = %{

@@ -5,6 +5,7 @@ defmodule Scoria.MCP.ExecutorTest do
   alias Scoria.Repo
   alias Scoria.SRE
   alias Scoria.SRE.BudgetReservation
+  alias Scoria.Workflows
 
   defmodule DummyTool do
     @behaviour Scoria.MCP.Tool
@@ -284,6 +285,34 @@ defmodule Scoria.MCP.ExecutorTest do
       assert audit_event.policy_class == "sensitive_mcp_access"
       assert audit_event.redacted_refs["args"]["token"] == "[REDACTED]"
       assert audit_event.redacted_refs["access_decision"] == "denied"
+    end
+
+    test "replay gating still applies when callers pass only run_id", %{context: context} do
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          source_run_id: Ecto.UUID.generate(),
+          source_checkpoint_id: Ecto.UUID.generate()
+        })
+
+      assert {:error, envelope} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{
+                   run_id: run.id,
+                   local_classification: :write,
+                   action_class: "write",
+                   risk_level: "high",
+                   tool_id: DummyTool.name(),
+                   policy_key: "deploy.publish"
+                 })
+               )
+
+      assert envelope.status == :replay_blocked
+      assert envelope.replay_disposition == :blocked
+      assert envelope.replay_reason_code == "missing_source_evidence"
     end
   end
 

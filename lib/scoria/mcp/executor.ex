@@ -8,6 +8,7 @@ defmodule Scoria.MCP.Executor do
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE
   alias Scoria.SRE.Telemetry
+  alias Scoria.Workflows
   alias Scoria.Workflows.ReplayDisposition
   alias Scoria.Workflows.Run
 
@@ -134,7 +135,15 @@ defmodule Scoria.MCP.Executor do
   defp load_replay_run(context) do
     case Map.get(context, :run) do
       %Run{} = run -> run
-      _ -> nil
+      _ ->
+        try do
+          case Map.get(context, :run_id) do
+            nil -> nil
+            run_id -> Workflows.get_run!(run_id)
+          end
+        rescue
+          Ecto.NoResultsError -> nil
+        end
     end
   end
 

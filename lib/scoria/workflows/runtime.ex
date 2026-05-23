@@ -48,6 +48,11 @@ defmodule Scoria.Workflows.Runtime do
               emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
               Workflows.fail_step(step.id, envelope)
 
+            {:error, {:handler_error, envelope, duration_ms}} when is_map(envelope) ->
+              reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
+              emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
+              Workflows.fail_step(step.id, attach_budget_evidence(normalize_payload(envelope), reservation_context))
+
             {:error, {:handler_error, reason, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
               emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
@@ -63,10 +68,20 @@ defmodule Scoria.Workflows.Runtime do
                 run_status: "running"
               )
 
+            {:error, {:timeout, envelope, duration_ms}} when is_map(envelope) ->
+              reconcile_budget(reservation_context, budget_context, %{}, "timeout")
+              emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms, %{})
+              Workflows.fail_step(step.id, attach_budget_evidence(normalize_payload(envelope), reservation_context))
+
             {:error, {:timeout, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "timeout")
               emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms, %{})
               Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => "timeout"}, reservation_context))
+
+            {:error, {:execution_failed, envelope, duration_ms}} when is_map(envelope) ->
+              reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
+              emit_runtime_telemetry(step, run, budget_context, "execution_failed", duration_ms, %{})
+              Workflows.fail_step(step.id, attach_budget_evidence(normalize_payload(envelope), reservation_context))
 
             {:error, {:execution_failed, reason, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
@@ -95,13 +110,34 @@ defmodule Scoria.Workflows.Runtime do
             Map.get(source_evidence, "result") ||
             %{"status" => :historical_stub}
 
-        {:ok, {:completed, Map.put(normalize_payload(result), "replay_disposition", evidence.replay_disposition), 0}}
+        {:ok, {:completed, replay_result_payload(result, evidence, "historical_stub"), 0}}
 
       {:blocked, evidence} ->
         {:error, {:replay_blocked, replay_blocked_envelope(evidence), 0}}
 
-      {:execute_live, _evidence} ->
-        BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end)
+      {:execute_live, evidence} ->
+        case BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end) do
+          {:ok, {:completed, result, duration_ms}} ->
+            {:ok, {:completed, replay_result_payload(result, evidence, "replay_live"), duration_ms}}
+
+          {:ok, {:waiting_for_approval, approval_attrs, duration_ms}} ->
+            {:ok, {:waiting_for_approval, replay_waiting_approval_attrs(approval_attrs, evidence), duration_ms}}
+
+          {:ok, {:handoff, handoff_attrs, duration_ms}} ->
+            {:ok, {:handoff, handoff_attrs, duration_ms}}
+
+          {:error, {:handler_error, reason, duration_ms}} ->
+            {:error, {:handler_error, replay_failure_envelope(reason, evidence, "replay_live"), duration_ms}}
+
+          {:error, {:timeout, duration_ms}} ->
+            {:error, {:timeout, replay_failure_envelope("timeout", evidence, "replay_live"), duration_ms}}
+
+          {:error, {:execution_failed, reason, duration_ms}} ->
+            {:error, {:execution_failed, replay_failure_envelope(reason, evidence, "replay_live"), duration_ms}}
+
+          other ->
+            other
+        end
     end
   end
 
@@ -118,7 +154,13 @@ defmodule Scoria.Workflows.Runtime do
       "source_checkpoint_id" => evidence.source_checkpoint_id,
       "source_step_id" => evidence.source_step_id,
       "source_approval_id" => evidence.source_approval_id,
-      "source_audit_outbox_event_id" => evidence.source_audit_outbox_event_id
+      "source_audit_outbox_event_id" => evidence.source_audit_outbox_event_id,
+      "args_fingerprint" => evidence.args_fingerprint,
+      "subject_ref" => evidence.subject_ref,
+      "required_scopes" => evidence.required_scopes,
+      "policy_key" => evidence.policy_key,
+      "executed_live" => evidence.executed_live,
+      "replay_scope" => "replay_default"
     }
   end
 
@@ -246,6 +288,65 @@ defmodule Scoria.Workflows.Runtime do
 
   defp normalize_payload(%{} = payload), do: payload
   defp normalize_payload(payload), do: %{"result" => payload}
+
+  defp replay_result_payload(result, evidence, replay_scope) do
+    normalize_payload(result)
+    |> Map.merge(replay_payload_fields(evidence, replay_scope))
+  end
+
+  defp replay_waiting_approval_attrs(attrs, evidence) do
+    Map.new(attrs)
+    |> Map.merge(replay_approval_fields(evidence, "replay_live"))
+    |> Map.put(:replay_scope, "replay_live")
+    |> Map.put(:executed_live, evidence.executed_live)
+  end
+
+  defp replay_failure_envelope(reason, evidence, replay_scope) do
+    %{"reason" => inspect(reason)}
+    |> Map.merge(replay_payload_fields(evidence, replay_scope))
+  end
+
+  defp replay_payload_fields(evidence, replay_scope) do
+    %{
+      "replay_disposition" => Atom.to_string(evidence.replay_disposition),
+      "replay_reason_code" => evidence.replay_reason_code,
+      "source_run_id" => evidence.source_run_id,
+      "source_checkpoint_id" => evidence.source_checkpoint_id,
+      "source_step_id" => evidence.source_step_id,
+      "source_approval_id" => evidence.source_approval_id,
+      "source_audit_outbox_event_id" => evidence.source_audit_outbox_event_id,
+      "args_fingerprint" => evidence.args_fingerprint,
+      "subject_ref" => evidence.subject_ref,
+      "required_scopes" => evidence.required_scopes,
+      "policy_key" => evidence.policy_key,
+      "executed_live" => evidence.executed_live,
+      "replay_scope" => replay_scope,
+      "replay_idempotency_key" => evidence.replay_idempotency_key
+    }
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
+  end
+
+  defp replay_approval_fields(evidence, replay_scope) do
+    %{
+      replay_disposition: Atom.to_string(evidence.replay_disposition),
+      replay_reason_code: evidence.replay_reason_code,
+      source_run_id: evidence.source_run_id,
+      source_checkpoint_id: evidence.source_checkpoint_id,
+      source_step_id: evidence.source_step_id,
+      source_approval_id: evidence.source_approval_id,
+      source_audit_outbox_event_id: evidence.source_audit_outbox_event_id,
+      args_fingerprint: evidence.args_fingerprint,
+      subject_ref: evidence.subject_ref,
+      required_scopes: evidence.required_scopes,
+      policy_key: evidence.policy_key,
+      executed_live: evidence.executed_live,
+      replay_scope: replay_scope,
+      replay_idempotency_key: evidence.replay_idempotency_key
+    }
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
+  end
 
   defp attach_budget_evidence(envelope, nil), do: envelope
 

@@ -21,6 +21,11 @@ defmodule Scoria.RuntimeViewTest do
          trace_id: "trace-#{run.id}"
        }}
     end
+
+    def unexpected_live(_step, _run) do
+      send(self(), :unexpected_live_handler_called)
+      {:ok, %{"status" => "live"}}
+    end
   end
 
   setup do
@@ -61,6 +66,53 @@ defmodule Scoria.RuntimeViewTest do
     assert summary.latest_checkpoint_id
     assert summary.awaiting_approval
     assert summary.started_at
+  end
+
+  test "summary marks replay-live approval waits as having executed live" do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        actor_id: "actor-replay-live",
+        tenant_id: "tenant-replay-live",
+        session_id: "session-replay-live",
+        execution_mode: "replay",
+        replay_overrides: %{"live_tool_allowlist" => ["publish"]}
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    assert {:ok, _approval} =
+             WorkflowRuntime.execute_step(step.id,
+               handler: {Handlers, :wait_for_approval},
+               replay_seam: %{
+                 local_classification: :write,
+                 tool_id: "publish",
+                 action_class: "write",
+                 risk_level: "high",
+                 approval_sensitive: true,
+                 policy_key: "publish"
+               },
+               replay_approval_context: %{
+                 current_policy_ok?: true,
+                 replay_approved?: true
+               }
+             )
+
+    assert {:ok, %RunDetail{} = detail} = Runtime.get_run_detail(run.id)
+    assert detail.summary.awaiting_approval
+    assert detail.summary.any_seam_executed_live
+
+    assert [%{transition: "waiting_for_approval", executed_live: true}] =
+             Enum.filter(detail.checkpoints, &(&1.transition == "waiting_for_approval"))
+
+    assert [%{event_type: "waiting_for_approval", executed_live: true}] =
+             Enum.filter(detail.events, &(&1.event_type == "waiting_for_approval"))
   end
 
   test "detail view stays curated and excludes raw preload structs" do
@@ -253,5 +305,166 @@ defmodule Scoria.RuntimeViewTest do
     assert event_id == event.id
     assert approval_id == approval.id
     refute Enum.any?(Map.values(detail), &match?(%Run{}, &1))
+  end
+
+  test "detail projects persisted replay provenance from the real historical-stub runtime path" do
+    source_run_id = Ecto.UUID.generate()
+    source_checkpoint_id = Ecto.UUID.generate()
+    source_step_id = Ecto.UUID.generate()
+    source_approval_id = Ecto.UUID.generate()
+    source_audit_outbox_event_id = Ecto.UUID.generate()
+
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        actor_id: "actor-runtime-detail",
+        tenant_id: "tenant-runtime-detail",
+        session_id: "session-runtime-detail",
+        execution_mode: "replay",
+        source_run_id: source_run_id,
+        source_checkpoint_id: source_checkpoint_id,
+        replay_overrides: %{"live_tool_allowlist" => ["publish"]}
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "tool_call",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    assert {:ok, _step} =
+             WorkflowRuntime.execute_step(step.id,
+               handler: {Handlers, :unexpected_live},
+               replay_seam: %{
+                 local_classification: :read,
+                 tool_id: "repo.read",
+                 action_class: "read",
+                 risk_level: "low",
+                 args_fingerprint: "same",
+                 subject_ref: "repo:acme/scoria",
+                 required_scopes: ["repo:read"],
+                 grant_state: "active",
+                 policy_key: "repo.read"
+               },
+               replay_source_evidence: %{
+                 source_run_id: source_run_id,
+                 source_checkpoint_id: source_checkpoint_id,
+                 source_step_id: source_step_id,
+                 source_approval_id: source_approval_id,
+                 source_audit_outbox_event_id: source_audit_outbox_event_id,
+                 tool_id: "repo.read",
+                 args_fingerprint: "same",
+                 subject_ref: "repo:acme/scoria",
+                 required_scopes: ["repo:read"],
+                 grant_state: "active",
+                 policy_key: "repo.read",
+                 result: %{"status" => "stubbed"}
+               }
+             )
+
+    refute_received :unexpected_live_handler_called
+
+    assert {:ok, %RunDetail{} = detail} = Runtime.get_run_detail(run.id)
+
+    assert [%{
+              transition: "step_completed",
+              replay_disposition: "historical_stub",
+              replay_reason_code: "exact_source_match",
+              source_run_id: ^source_run_id,
+              source_checkpoint_id: ^source_checkpoint_id,
+              source_step_id: ^source_step_id,
+              source_approval_id: ^source_approval_id,
+              source_audit_outbox_event_id: ^source_audit_outbox_event_id,
+              replay_scope: "historical_stub",
+              executed_live: false
+            }] = Enum.filter(detail.checkpoints, &(&1.transition == "step_completed"))
+
+    assert [%{
+              event_type: "step_completed",
+              replay_disposition: "historical_stub",
+              replay_reason_code: "exact_source_match",
+              source_run_id: ^source_run_id,
+              source_checkpoint_id: ^source_checkpoint_id,
+              source_step_id: ^source_step_id,
+              source_approval_id: ^source_approval_id,
+              source_audit_outbox_event_id: ^source_audit_outbox_event_id,
+              replay_scope: "historical_stub",
+              executed_live: false
+            }] = Enum.filter(detail.events, &(&1.event_type == "step_completed"))
+  end
+
+  test "detail projects persisted replay provenance from the real blocked runtime path" do
+    source_run_id = Ecto.UUID.generate()
+    source_checkpoint_id = Ecto.UUID.generate()
+    source_step_id = Ecto.UUID.generate()
+
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        execution_mode: "replay",
+        source_run_id: source_run_id,
+        source_checkpoint_id: source_checkpoint_id
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    assert {:ok, _step} =
+             WorkflowRuntime.execute_step(step.id,
+               handler: {Handlers, :unexpected_live},
+               replay_seam: %{
+                 local_classification: :authority_expanding,
+                 tool_id: "admin.grant",
+                 action_class: "admin",
+                 risk_level: "high",
+                 authority_expanding: "re-auth",
+                 grant_state: "reauth_required",
+                 required_scopes: ["admin:write"],
+                 policy_key: "admin.grant",
+                 subject_ref: "env:prod"
+               },
+               replay_source_evidence: %{
+                 source_run_id: source_run_id,
+                 source_checkpoint_id: source_checkpoint_id,
+                 source_step_id: source_step_id,
+                 args_fingerprint: "admin-args",
+                 subject_ref: "env:prod",
+                 required_scopes: ["admin:write"],
+                 policy_key: "admin.grant"
+               }
+             )
+
+    refute_received :unexpected_live_handler_called
+
+    assert {:ok, %RunDetail{} = detail} = Runtime.get_run_detail(run.id)
+
+    assert [%{
+              transition: "step_failed",
+              replay_disposition: "blocked",
+              replay_reason_code: "authority_expanding_change",
+              source_run_id: ^source_run_id,
+              source_checkpoint_id: ^source_checkpoint_id,
+              source_step_id: ^source_step_id,
+              replay_scope: "replay_default",
+              executed_live: false
+            }] = Enum.filter(detail.checkpoints, &(&1.transition == "step_failed"))
+
+    assert [%{
+              event_type: "step_failed",
+              replay_disposition: "blocked",
+              replay_reason_code: "authority_expanding_change",
+              source_run_id: ^source_run_id,
+              source_checkpoint_id: ^source_checkpoint_id,
+              source_step_id: ^source_step_id,
+              replay_scope: "replay_default",
+              executed_live: false
+            }] = Enum.filter(detail.events, &(&1.event_type == "step_failed"))
   end
 end
