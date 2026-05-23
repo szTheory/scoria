@@ -123,10 +123,10 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     refute html =~ "remote evidence notebook"
   end
 
-  test "can open the dataset promotion modal from a selected step" do
+  test "live-only steps show the typed replay comparison empty state" do
     {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
 
-    {:ok, step} =
+    {:ok, _step} =
       Workflows.create_step(run.id, %{
         sequence: 1,
         kind: "tool",
@@ -140,17 +140,14 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
 
-    {:ok, view, _html} = live(conn, "/scoria/workflows/#{run.id}")
+    {:ok, _view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
-    # Send the event to open the modal
-    render_click(view |> element("button[phx-click='open_promote_modal'][phx-value-step-id='#{step.id}']"))
-    
-    assert render(view) =~ "Promote to Dataset"
-    assert render(view) =~ "Input Context (JSON)"
-    assert render(view) =~ "&quot;some&quot;: &quot;context&quot;"
+    assert html =~ "No Replay Comparison Available"
+    assert html =~ "Promote Trace to Draft Dataset"
+    assert html =~ "Original trace cannot be promoted until Scoria resolves a frozen promotion snapshot"
   end
 
-  test "replay runs render provenance strip and durable promotion notices" do
+  test "replay runs render provenance strip, source toggles, and durable promotion notices" do
     {:ok, source_run} =
       Workflows.create_run(%{
         root_role_id: "executor",
@@ -240,6 +237,18 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert html =~ "source checkpoint"
     assert html =~ "execution mode"
     assert html =~ "historical_stub"
+    assert html =~ "Original trace"
+    assert html =~ "Replay trace"
+    assert html =~ "Safety Evidence"
+    assert html =~ "Promotion Snapshot Summary"
+    assert html =~ "Promote Trace to Draft Dataset"
+
+    toggled_html =
+      view
+      |> element("button[phx-click='select_comparison_source'][phx-value-source='original']")
+      |> render_click()
+
+    assert toggled_html =~ "Original trace is active for this draft-dataset promotion."
 
     send(view.pid, {:promote_successful, %{source_variant: "replay", dataset_name: "Draft QA", dataset_version: "3"}})
     send(view.pid, {:baseline_promotion_requested, %{dataset_name: "Release QA", dataset_version: "7"}})
