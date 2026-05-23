@@ -13,8 +13,8 @@
 
 ### Dataset Promotion
 
-- [ ] **DATA-01**: Operator can promote an original or replayed trace into a draft dataset item backed by a frozen evidence snapshot.
-- [ ] **DATA-02**: Sealed datasets remain immutable, and promotion into release-driving baseline datasets always requires explicit operator approval.
+- [x] **DATA-01**: Operator can promote an original or replayed trace into a draft dataset item backed by a frozen evidence snapshot.
+- [x] **DATA-02**: Sealed datasets remain immutable, and promotion into release-driving baseline datasets always requires explicit operator approval.
 
 ### Online Scoring
 
@@ -52,8 +52,8 @@
 | RPLY-01 | Phase 37 | Pending |
 | RPLY-02 | Phase 38 | Complete |
 | RPLY-03 | Phase 39 | Complete |
-| DATA-01 | Phase 39 | Pending |
-| DATA-02 | Phase 39 | Pending |
+| DATA-01 | Phase 39 | Complete |
+| DATA-02 | Phase 39 | Complete |
 | SCOR-01 | Phase 40 | Pending |
 | SCOR-02 | Phase 40 | Pending |
 | SCOR-03 | Phase 40 | Pending |

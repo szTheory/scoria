@@ -10,7 +10,7 @@
 
 - [ ] **Phase 37: Replay Lineage & Branch Model** - Create replay branches as durable new runs rooted in existing checkpoint truth.
 - [x] **Phase 38: Replay-Safe Execution & Tool Modes** - Enforce safe replay defaults and historical-stub boundaries for external effects. (completed 2026-05-23)
-- [ ] **Phase 39: Replay Operator UX & Draft Dataset Promotion** - Add replay provenance, diff context, and draft dataset promotion to the operator surface.
+- [x] **Phase 39: Replay Operator UX & Draft Dataset Promotion** - Add replay provenance, diff context, and draft dataset promotion to the operator surface. (completed 2026-05-23)
 - [ ] **Phase 40: Online Scoring & Review Queue** - Sample production traces asynchronously, attach additive score evidence, and route reviewable promotion candidates into operator workflows.
 
 ## Phase Details
@@ -46,7 +46,7 @@ Plans:
 Plans:
 - [x] `39-01-PLAN.md` — Add comparison-ready replay runtime projections and promotion-source contracts.
 - [x] `39-02-PLAN.md` — Render replay provenance and comparison notebook UX on the workflow page.
-- [ ] `39-03-PLAN.md` — Freeze workflow-source draft promotion and gate sealed baselines through approvals.
+- [x] `39-03-PLAN.md` — Freeze workflow-source draft promotion and gate sealed baselines through approvals.
 **Success Criteria**:
 1. LiveView shows source checkpoint, overrides, execution mode, and original-vs-replay context clearly.
 2. Operators can promote either original or replayed traces into draft dataset items backed by frozen evidence snapshots.
@@ -69,5 +69,5 @@ Plans:
 |-------|----------------|--------|-------|
 | 37. Replay Lineage & Branch Model | 0/0 | Planned | Start with `$gsd-plan-phase 37` |
 | 38. Replay-Safe Execution & Tool Modes | 3/3 | Complete    | 2026-05-23 |
-| 39. Replay Operator UX & Draft Dataset Promotion | 2/3 | In Progress|  |
+| 39. Replay Operator UX & Draft Dataset Promotion | 3/3 | Complete   | 2026-05-23 |
 | 40. Online Scoring & Review Queue | 0/0 | Planned | Depends on replay-driven evidence and draft promotion lanes |

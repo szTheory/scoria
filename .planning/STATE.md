@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Crucible
-status: executing
-last_updated: "2026-05-23T12:30:41.774Z"
+status: verifying
+last_updated: "2026-05-23T12:47:11.453Z"
 last_activity: 2026-05-23
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
-  percent: 89
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State
@@ -19,20 +19,20 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 39 — replay-operator-ux-draft-dataset-promotion
+**Current Focus:** Phase 40 — online-scoring-review-queue
 
 ## Current Position
 
-Phase: 39 (replay-operator-ux-draft-dataset-promotion) — EXECUTING
+Phase: 39 (replay-operator-ux-draft-dataset-promotion) — COMPLETE
 Plan: 3 of 3
 **Milestone:** `v1.9 Crucible`
 **Phase:** 39
 **Plan:** 3 of 3
-**Status:** Ready to execute Plan 3 of 3
+**Status:** Phase complete — ready for verification
 **Last activity:** 2026-05-23
 
 **Progress:**
-[█████████░] 89%
+[██████████] 100%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Plan: 3 of 3
 
 - **39-01:** 7m, 2 tasks, 5 files
 - **39-02:** 6min, 2 tasks, 5 files
+- **39-03:** 12m, 2 tasks, 12 files
 
 ## Accumulated Context
 
@@ -109,10 +110,12 @@ Plan: 3 of 3
 - Phase 39 (39-01): Prefer explicit `source_step_id` lineage from checkpoints, events, and approvals before falling back to step-sequence matching in replay comparisons.
 - Phase 39 (39-02): Load `Workflows.get_run_tree!/1` and `Runtime.get_run_detail!/1` together so the workflow tree stays topology-driven while the right rail stays DTO-driven.
 - Phase 39 (39-02): Keep `WorkflowDetailPanelComponent` as the shell and CTA host while delegating grouped comparison rendering to `ReplayEvidenceNotebookComponent`.
+- Phase 39 (39-03): Open dataset promotions call `Scoria.Eval.promote_workflow_source/1`, while sealed baselines route through `Scoria.Workflows.request_baseline_promotion/1`.
+- Phase 39 (39-03): Baseline promotion approvals use the exact `dataset_baseline_promotion` tool identity so workflow projections expose durable lineage and replay provenance.
 
 **Todos:**
 
-- Execute `39-03-PLAN.md` to freeze workflow-source promotion and gate sealed baselines through approvals.
+- Plan and execute Phase 40 to attach additive online scoring evidence and operator review queues on top of replay-backed dataset promotion.
 
 **Blockers:**
 
