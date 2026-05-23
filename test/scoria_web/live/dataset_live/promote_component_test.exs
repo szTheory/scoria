@@ -65,6 +65,7 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponentTest do
   alias Scoria.Eval
   alias Scoria.Observe.Approval
   alias Scoria.Repo
+  alias Scoria.Runtime
   alias Scoria.Workflows
 
   @endpoint ScoriaWeb.DatasetLive.PromoteComponentTest.Endpoint
@@ -123,9 +124,9 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponentTest do
   test "routes sealed baseline requests through explicit approval confirmation" do
     {:ok, sealed_dataset} = Eval.create_dataset(%{name: "Release QA", version: "7"})
     {:ok, _sealed_dataset} = Eval.seal_dataset(sealed_dataset)
-    {:ok, run, step} = create_workflow_context("replay")
+    {promotion_context, run, _step} = runtime_replay_promotion_context()
 
-    {:ok, view, html} = mount_component(build_promotion_context("replay", run.id, step.id))
+    {:ok, view, html} = mount_component(promotion_context)
 
     assert html =~ "Sealed baseline"
     assert html =~ "Approval required"
@@ -164,6 +165,36 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponentTest do
     assert approval.arguments["notes"] == "request approval"
     assert approval.arguments["expected_output"] == %{"status" => "review"}
     assert Eval.list_dataset_items(sealed_dataset.id) == []
+  end
+
+  test "promotes a replay runtime contract into an open dataset with replay metadata preserved" do
+    {:ok, open_dataset} = Eval.create_dataset(%{name: "Replay Draft QA", version: "5"})
+    {promotion_context, _run, _step} = runtime_replay_promotion_context()
+
+    {:ok, view, _html} = mount_component(promotion_context)
+
+    view
+    |> element("button[phx-click='select_open_dataset'][phx-value-dataset-id='#{open_dataset.id}']")
+    |> render_click()
+
+    render_submit(element(view, "form"), %{
+      "promotion" => %{
+        "dataset_id" => "#{open_dataset.id}",
+        "notes" => "capture replay evidence",
+        "expected_output" => ~s({"status":"review"})
+      }
+    })
+
+    [item] = Eval.list_dataset_items(open_dataset.id)
+
+    assert item.metadata["source_variant"] == "replay"
+    assert item.metadata["source_run_id"] == promotion_context.provenance.source_run_id
+    assert item.metadata["source_checkpoint_id"] == promotion_context.provenance.source_checkpoint_id
+    assert item.metadata["workflow_run_id"] == promotion_context.workflow_run_id
+    assert item.metadata["workflow_step_id"] == promotion_context.workflow_step_id
+    assert item.metadata["replay_disposition"] == "historical_stub"
+    assert item.metadata["replay_reason_code"] == "exact_source_match"
+    assert item.metadata["recorded_outcome"] == %{"kind" => "result", "value" => %{"answer" => "replay"}}
   end
 
   test "keeps the modal state when a dataset seals between render and submit" do
@@ -257,5 +288,112 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponentTest do
            }) do
       {:ok, run, step}
     end
+  end
+
+  defp runtime_replay_promotion_context do
+    {:ok, source_run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        actor_id: "actor-source-component",
+        tenant_id: "tenant-source-component",
+        session_id: "session-source-component"
+      })
+
+    {:ok, source_step} =
+      Workflows.create_step(source_run.id, %{
+        sequence: 1,
+        kind: "tool_call",
+        role_id: "executor",
+        status: "completed",
+        projected_context: %{"prompt" => "source prompt"},
+        result_envelope: %{"output" => %{"answer" => "source"}}
+      })
+
+    source_checkpoint =
+      Repo.insert!(Scoria.Workflows.Checkpoint.changeset(%Scoria.Workflows.Checkpoint{}, %{
+        run_id: source_run.id,
+        step_id: source_step.id,
+        sequence: 2,
+        transition: "step_completed",
+        status: "completed",
+        snapshot: %{"result" => %{"answer" => "source"}}
+      }))
+
+    Repo.insert!(Scoria.Workflows.Event.changeset(%Scoria.Workflows.Event{}, %{
+      run_id: source_run.id,
+      step_id: source_step.id,
+      sequence: 2,
+      event_type: "step_completed",
+      payload: %{"recorded_outcome" => %{"kind" => "result", "value" => %{"answer" => "source"}}}
+    }))
+
+    {:ok, replay_run} =
+      Workflows.create_run(%{
+        root_role_id: "operator",
+        execution_mode: "replay",
+        source_run_id: source_run.id,
+        source_checkpoint_id: source_checkpoint.id,
+        actor_id: "operator-1",
+        tenant_id: "tenant-1",
+        session_id: "session-1"
+      })
+
+    {:ok, replay_step} =
+      Workflows.create_step(replay_run.id, %{
+        sequence: 1,
+        kind: "tool_call",
+        status: "completed",
+        role_id: "operator",
+        projected_context: %{"prompt" => "replay prompt"},
+        result_envelope: %{"output" => %{"answer" => "replay"}}
+      })
+
+    Repo.insert!(Scoria.Workflows.Checkpoint.changeset(%Scoria.Workflows.Checkpoint{}, %{
+      run_id: replay_run.id,
+      step_id: replay_step.id,
+      sequence: 2,
+      transition: "step_completed",
+      status: "completed",
+      replay_disposition: "historical_stub",
+      replay_reason_code: "exact_source_match",
+      metadata: %{
+        "source_run_id" => source_run.id,
+        "source_checkpoint_id" => source_checkpoint.id,
+        "source_step_id" => source_step.id
+      },
+      snapshot: %{
+        "recorded_outcome" => %{"kind" => "result", "value" => %{"answer" => "replay"}}
+      }
+    }))
+
+    Repo.insert!(Scoria.Workflows.Event.changeset(%Scoria.Workflows.Event{}, %{
+      run_id: replay_run.id,
+      step_id: replay_step.id,
+      sequence: 2,
+      event_type: "step_completed",
+      payload: %{
+        "source_run_id" => source_run.id,
+        "source_checkpoint_id" => source_checkpoint.id,
+        "source_step_id" => source_step.id,
+        "recorded_outcome" => %{"kind" => "result", "value" => %{"answer" => "replay"}}
+      },
+      replay_disposition: "historical_stub",
+      replay_reason_code: "exact_source_match"
+    }))
+
+    detail = Runtime.get_run_detail!(replay_run.id)
+    selected_entry = detail.comparison_by_step[replay_step.id].replay
+
+    {%{
+       workflow_run_id: selected_entry.provenance.workflow_run_id,
+       workflow_step_id: selected_entry.provenance.workflow_step_id,
+       source_variant: selected_entry.provenance.source_variant,
+       provenance: selected_entry.provenance,
+       checkpoint_output: selected_entry.checkpoint_output,
+       safety: selected_entry.safety,
+       promotion_snapshot: selected_entry.promotion_snapshot,
+       notes: "",
+       expected_output: %{}
+     }, replay_run, replay_step}
   end
 end
