@@ -56,9 +56,37 @@ defmodule Scoria.Workflows.Run do
       :completed_at,
       :last_heartbeat_at
     ])
+    |> validate_replay_allowlist_immutability()
     |> validate_required([:root_role_id, :status])
     |> validate_inclusion(:status, @statuses)
     |> validate_inclusion(:execution_mode, @execution_modes)
     |> optimistic_lock(:lock_version)
+  end
+
+  defp validate_replay_allowlist_immutability(changeset) do
+    run = changeset.data
+    next_overrides = get_field(changeset, :replay_overrides) || %{}
+    previous_overrides = run.replay_overrides || %{}
+
+    if replay_started?(run) and widening_allowlist?(previous_overrides, next_overrides) do
+      add_error(changeset, :replay_overrides, "live_tool_allowlist cannot expand after replay start")
+    else
+      changeset
+    end
+  end
+
+  defp replay_started?(%__MODULE__{execution_mode: "replay"} = run), do: not is_nil(run.started_at)
+  defp replay_started?(_run), do: false
+
+  defp widening_allowlist?(previous_overrides, next_overrides) do
+    previous = MapSet.new(live_tool_allowlist(previous_overrides))
+    next = MapSet.new(live_tool_allowlist(next_overrides))
+    not MapSet.subset?(next, previous)
+  end
+
+  defp live_tool_allowlist(overrides) do
+    overrides
+    |> Map.get("live_tool_allowlist", Map.get(overrides, :live_tool_allowlist, []))
+    |> List.wrap()
   end
 end

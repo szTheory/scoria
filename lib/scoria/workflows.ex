@@ -15,7 +15,7 @@ defmodule Scoria.Workflows do
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows.EventCompactor
   alias Scoria.Workflows.RemoteApprovalProjection
-  alias Scoria.Workflows.{Checkpoint, Event, Handoff, Run, Step}
+  alias Scoria.Workflows.{Checkpoint, Event, Handoff, ReplayDisposition, Run, Step}
 
   @topic_prefix "scoria:workflow_runs:"
 
@@ -320,17 +320,17 @@ defmodule Scoria.Workflows do
       )
 
       checkpoint =
-        insert_checkpoint(repo, run.id, step.id, %{
+        insert_checkpoint(repo, run.id, step.id, with_replay_evidence(run, attrs, %{
           transition: "waiting_for_approval",
           status: "waiting_for_approval",
           snapshot: %{reason: Map.get(attrs, :reason) || Map.get(attrs, "reason")},
           metadata: %{}
-        })
+        }))
 
-      insert_event(repo, run.id, step.id, %{
+      insert_event(repo, run.id, step.id, with_replay_evidence(run, attrs, %{
         event_type: "waiting_for_approval",
         payload: %{reason: Map.get(attrs, :reason) || Map.get(attrs, "reason")}
-      })
+      }))
 
       approval_attrs =
         attrs
@@ -346,6 +346,7 @@ defmodule Scoria.Workflows do
           status: "pending",
           run_id: run.id
         })
+        |> merge_replay_approval_attrs(run)
 
       approval =
         %Approval{}
@@ -380,7 +381,8 @@ defmodule Scoria.Workflows do
             "root_identity" => stringify_map(Identity.to_map(approval_identity)),
             "run_status" => updated_run.status
           }
-        })
+        }
+        |> merge_replay_audit_attrs(run, approval))
 
       approval =
         approval
@@ -404,10 +406,7 @@ defmodule Scoria.Workflows do
     do: request_remote_approval(run_id, step_id, attrs)
 
   def request_remote_approval(run_id, step_id, attrs) do
-    attrs =
-      attrs
-      |> Map.new()
-      |> Map.put_new(:replay_allowed, true)
+    attrs = Map.new(attrs)
 
     mark_waiting_for_approval(run_id, step_id, attrs)
   end
@@ -639,7 +638,8 @@ defmodule Scoria.Workflows do
                 session_id: audit_context.session_id
               })
           }
-        })
+        }
+        |> merge_replay_audit_attrs(audit_context.run, updated_approval))
 
       {updated_approval, audit_outbox_event}
     end)
@@ -738,8 +738,108 @@ defmodule Scoria.Workflows do
         identity.session_id ||
           (request_event && get_in(request_event.metadata || %{}, ["root_identity", "session_id"])),
       trace_id: attr_value(attrs, :trace_id) || (request_event && request_event.trace_id),
-      request_event: request_event
+      request_event: request_event,
+      run: run
     }
+  end
+
+  defp merge_replay_approval_attrs(attrs, %Run{} = run) do
+    if run.execution_mode == "replay" do
+      replay_evidence = replay_approval_evidence(run, attrs)
+
+      attrs
+      |> Map.put_new(:replay_disposition, "blocked")
+      |> Map.put_new(:replay_scope, "replay_live")
+      |> Map.put_new(:replay_reason_code, Map.fetch!(replay_evidence, :replay_reason_code))
+      |> Map.put_new(:source_run_id, replay_evidence.source_run_id)
+      |> Map.put_new(:source_checkpoint_id, replay_evidence.source_checkpoint_id)
+      |> Map.put_new(:source_step_id, replay_evidence.source_step_id)
+      |> Map.put_new(:source_approval_id, replay_evidence.source_approval_id)
+      |> Map.put_new(:source_audit_outbox_event_id, replay_evidence.source_audit_outbox_event_id)
+      |> Map.put_new(:args_fingerprint, replay_evidence.args_fingerprint)
+      |> Map.put_new(:subject_ref, replay_evidence.subject_ref)
+      |> Map.put_new(:required_scopes, replay_evidence.required_scopes)
+      |> Map.put_new(:policy_key, replay_evidence.policy_key)
+      |> Map.put_new(:executed_live, false)
+    else
+      attrs
+    end
+  end
+
+  defp with_replay_evidence(%Run{} = run, attrs, payload) do
+    if run.execution_mode == "replay" do
+      evidence = replay_approval_evidence(run, attrs)
+
+      payload
+      |> Map.put(:replay_disposition, Atom.to_string(evidence.replay_disposition))
+      |> Map.put(:replay_reason_code, evidence.replay_reason_code)
+    else
+      payload
+    end
+  end
+
+  defp merge_replay_audit_attrs(envelope, %Run{} = run, approval) do
+    if run.execution_mode == "replay" do
+      evidence = replay_approval_evidence(run, approval)
+
+      envelope
+      |> Map.put(:replay_disposition, Atom.to_string(evidence.replay_disposition))
+      |> Map.put(:replay_reason_code, evidence.replay_reason_code)
+      |> Map.put(:source_run_id, evidence.source_run_id)
+      |> Map.put(:source_checkpoint_id, evidence.source_checkpoint_id)
+      |> Map.put(:source_step_id, evidence.source_step_id)
+      |> Map.put(:source_approval_id, evidence.source_approval_id)
+      |> Map.put(:source_audit_outbox_event_id, evidence.source_audit_outbox_event_id)
+      |> Map.put(:args_fingerprint, evidence.args_fingerprint)
+      |> Map.put(:policy_key, evidence.policy_key)
+      |> Map.put(:executed_live, false)
+      |> Map.put_new(:replay_idempotency_key, Map.get(approval, :replay_idempotency_key))
+    else
+      envelope
+    end
+  end
+
+  defp merge_replay_audit_attrs(envelope, _run, _approval), do: envelope
+
+  defp replay_evidence(%Run{} = run, attrs) do
+    seam = %{
+      local_classification: :write,
+      tool_id: attr_value(attrs, :local_tool_name) || attr_value(attrs, :tool_name),
+      action_class: "write",
+      risk_level: "high",
+      approval_sensitive: true,
+      args_fingerprint: attr_value(attrs, :args_fingerprint),
+      subject_ref: attr_value(attrs, :subject_ref) || attr_value(attrs, :grant_subject_ref),
+      required_scopes:
+        attr_value(attrs, :required_scopes) || attr_value(attrs, :requested_scopes) || [],
+      grant_state: attr_value(attrs, :grant_status),
+      policy_key: attr_value(attrs, :policy_key)
+    }
+
+    source_evidence = %{
+      source_run_id: run.source_run_id,
+      source_checkpoint_id: run.source_checkpoint_id,
+      source_step_id: attr_value(attrs, :source_step_id),
+      source_approval_id: attr_value(attrs, :source_approval_id),
+      source_audit_outbox_event_id: attr_value(attrs, :source_audit_outbox_event_id),
+      args_fingerprint: attr_value(attrs, :args_fingerprint),
+      subject_ref: attr_value(attrs, :subject_ref) || attr_value(attrs, :grant_subject_ref),
+      required_scopes:
+        attr_value(attrs, :required_scopes) || attr_value(attrs, :requested_scopes) || [],
+      grant_state: attr_value(attrs, :grant_status),
+      policy_key: attr_value(attrs, :policy_key),
+      tool_id: attr_value(attrs, :local_tool_name) || attr_value(attrs, :tool_name)
+    }
+
+    {_disposition, evidence} = ReplayDisposition.resolve(run, seam, source_evidence, %{}, %{})
+
+    Map.put(evidence, :replay_reason_code, "fresh_replay_approval_required")
+  end
+
+  defp replay_approval_evidence(%Run{} = run, attrs) do
+    run
+    |> replay_evidence(attrs)
+    |> Map.put(:replay_disposition, :blocked)
   end
 
   defp approval_request_event(_repo, %Approval{workflow_run_id: nil}), do: nil

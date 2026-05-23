@@ -3,6 +3,7 @@ defmodule Scoria.WorkflowsTest do
   import Ecto.Query
 
   alias Scoria.Repo
+  alias Scoria.Observe.Approval
   alias Scoria.Workflows
   alias Scoria.Workflows.{Checkpoint, Event, Handoff, Run, Step}
 
@@ -124,6 +125,182 @@ defmodule Scoria.WorkflowsTest do
       assert approval.session_id == "root-session"
       checkpoint_id = approval.checkpoint_id
       assert Enum.any?(updated_run.checkpoints, &(&1.id == checkpoint_id and &1.transition == "waiting_for_approval"))
+    end
+
+    test "request_remote_approval/3 on a replay run creates a replay-scoped blocked approval and seam evidence" do
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          source_run_id: Ecto.UUID.generate(),
+          source_checkpoint_id: Ecto.UUID.generate(),
+          replay_overrides: %{"live_tool_allowlist" => ["publish"]},
+          actor_id: "root-actor",
+          tenant_id: "root-tenant",
+          session_id: "root-session"
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      source_approval_id = Ecto.UUID.generate()
+      source_audit_outbox_event_id = Ecto.UUID.generate()
+
+      assert {:ok, approval} =
+               Workflows.request_remote_approval(run.id, step.id, %{
+                 tool_name: "publish",
+                 local_tool_name: "publish",
+                 arguments: %{"value" => 1},
+                 requested_scopes: ["deploy:write"],
+                 subject_ref: "env:prod",
+                 args_fingerprint: "args-sha-1",
+                 policy_key: "deploy.publish",
+                 source_step_id: Ecto.UUID.generate(),
+                 source_approval_id: source_approval_id,
+                 source_audit_outbox_event_id: source_audit_outbox_event_id
+               })
+
+      updated_run = Workflows.get_run_tree!(run.id)
+      checkpoint = Enum.find(updated_run.checkpoints, &(&1.id == approval.checkpoint_id))
+      event = Enum.find(updated_run.events, &(&1.event_type == "waiting_for_approval"))
+
+      assert approval.status == "pending"
+      assert approval.replay_allowed == false
+      assert approval.replay_scope == "replay_live"
+      assert approval.replay_disposition == "blocked"
+      assert approval.replay_reason_code == "fresh_replay_approval_required"
+      assert approval.source_run_id == run.source_run_id
+      assert approval.source_checkpoint_id == run.source_checkpoint_id
+      assert approval.source_approval_id == source_approval_id
+      assert approval.source_audit_outbox_event_id == source_audit_outbox_event_id
+      assert approval.args_fingerprint == "args-sha-1"
+      assert approval.subject_ref == "env:prod"
+      assert approval.required_scopes == ["deploy:write"]
+      assert approval.policy_key == "deploy.publish"
+      assert approval.executed_live == false
+      assert checkpoint.replay_disposition == "blocked"
+      assert checkpoint.replay_reason_code == "fresh_replay_approval_required"
+      assert event.replay_disposition == "blocked"
+      assert event.replay_reason_code == "fresh_replay_approval_required"
+    end
+
+    test "approve/3 only updates the current replay approval row and leaves historical approval as evidence" do
+      source_run_id = Ecto.UUID.generate()
+      source_checkpoint_id = Ecto.UUID.generate()
+
+      historical_run =
+        Repo.insert!(Run.changeset(%Run{}, %{
+          root_role_id: "source",
+          status: "running",
+          started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
+        }))
+
+      historical =
+        Repo.insert!(Approval.changeset(%Approval{}, %{
+          tool_name: "publish",
+          status: "approved",
+          workflow_run_id: historical_run.id,
+          source_run_id: source_run_id,
+          source_checkpoint_id: source_checkpoint_id
+        }))
+
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          source_run_id: source_run_id,
+          source_checkpoint_id: source_checkpoint_id
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, approval} =
+        Workflows.request_remote_approval(run.id, step.id, %{
+          tool_name: "publish",
+          local_tool_name: "publish",
+          source_approval_id: historical.id
+        })
+
+      assert {:ok, updated} = Workflows.approve(approval.id, "approved", %{})
+
+      assert updated.id == approval.id
+      assert updated.status == "approved"
+      assert updated.source_approval_id == historical.id
+      assert Repo.get!(Approval, historical.id).status == "approved"
+      assert Repo.get!(Approval, approval.id).workflow_run_id == run.id
+    end
+
+    test "replay live_tool_allowlist cannot widen after replay start" do
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          replay_overrides: %{"live_tool_allowlist" => ["publish"]}
+        })
+
+      run = Repo.get!(Run, run.id)
+
+      assert {:error, changeset} =
+               run
+               |> Run.changeset(%{
+                 replay_overrides: %{"live_tool_allowlist" => ["publish", "delete"]}
+               })
+               |> Repo.update()
+
+      assert {"live_tool_allowlist cannot expand after replay start", _} =
+               Keyword.fetch!(changeset.errors, :replay_overrides)
+
+      assert Repo.get!(Run, run.id).replay_overrides == %{"live_tool_allowlist" => ["publish"]}
+    end
+
+    test "stale concurrent replay approval and run updates raise instead of last-write-winning" do
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          replay_overrides: %{"live_tool_allowlist" => ["publish"]}
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, approval} =
+        Workflows.request_remote_approval(run.id, step.id, %{
+          tool_name: "publish",
+          local_tool_name: "publish"
+        })
+
+      stale_run = Repo.get!(Run, run.id)
+      fresh_run = Repo.get!(Run, run.id)
+      Repo.update!(Run.changeset(fresh_run, %{metadata: %{"fresh" => true}}))
+
+      assert_raise Ecto.StaleEntryError, fn ->
+        Repo.update!(Run.changeset(stale_run, %{metadata: %{"stale" => true}}))
+      end
+
+      stale_approval = Repo.get!(Approval, approval.id)
+      fresh_approval = Repo.get!(Approval, approval.id)
+      Repo.update!(Approval.changeset(fresh_approval, %{reason: "fresh"}))
+
+      assert_raise Ecto.StaleEntryError, fn ->
+        Repo.update!(Approval.changeset(stale_approval, %{reason: "stale"}))
+      end
     end
   end
 end

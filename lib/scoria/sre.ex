@@ -131,6 +131,8 @@ defmodule Scoria.SRE do
   def deliver_notification(target, envelope),
     do: not_implemented(:deliver_notification, %{target: target, envelope: envelope})
 
+  def remote_invocation_evidence(_run_id), do: %{approvals: []}
+
   def insert_audit_outbox_event(repo, envelope) when is_map(envelope) do
     changeset =
       %AuditOutboxEvent{}
@@ -264,9 +266,26 @@ defmodule Scoria.SRE do
       step_id: Map.get(envelope, :step_id) || Map.get(envelope, "step_id"),
       trace_id: Map.get(envelope, :trace_id) || Map.get(envelope, "trace_id"),
       redacted_refs: redacted_refs,
-      metadata: metadata
+      metadata: metadata,
+      replay_disposition: enum_string(Map.get(envelope, :replay_disposition) || Map.get(envelope, "replay_disposition")),
+      replay_reason_code: Map.get(envelope, :replay_reason_code) || Map.get(envelope, "replay_reason_code"),
+      source_run_id: Map.get(envelope, :source_run_id) || Map.get(envelope, "source_run_id"),
+      source_checkpoint_id: Map.get(envelope, :source_checkpoint_id) || Map.get(envelope, "source_checkpoint_id"),
+      source_step_id: Map.get(envelope, :source_step_id) || Map.get(envelope, "source_step_id"),
+      source_approval_id: Map.get(envelope, :source_approval_id) || Map.get(envelope, "source_approval_id"),
+      source_audit_outbox_event_id:
+        Map.get(envelope, :source_audit_outbox_event_id) ||
+          Map.get(envelope, "source_audit_outbox_event_id"),
+      args_fingerprint: Map.get(envelope, :args_fingerprint) || Map.get(envelope, "args_fingerprint"),
+      policy_key: Map.get(envelope, :policy_key) || Map.get(envelope, "policy_key"),
+      executed_live: Map.get(envelope, :executed_live) || Map.get(envelope, "executed_live") || false,
+      replay_idempotency_key:
+        Map.get(envelope, :replay_idempotency_key) || Map.get(envelope, "replay_idempotency_key")
     }
   end
+
+  defp enum_string(value) when is_atom(value), do: Atom.to_string(value)
+  defp enum_string(value), do: value
 
   defp build_redacted_refs(envelope) do
     envelope

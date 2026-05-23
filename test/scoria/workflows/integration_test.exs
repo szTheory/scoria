@@ -33,6 +33,7 @@ defmodule Scoria.WorkflowsIntegrationTest do
 
   alias Scoria.Repo
   alias Scoria.SRE.AuditOutboxEvent
+  alias Scoria.Workflows.Run
   alias Scoria.Workflows
   alias Scoria.Workflows.{Resume, Runtime}
 
@@ -181,6 +182,27 @@ defmodule Scoria.WorkflowsIntegrationTest do
 
     assert render(view) =~ "completed"
     assert render(view) =~ "step_completed"
+  end
+
+  test "replay branch preserves the originally persisted live_tool_allowlist during execution" do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        execution_mode: "replay",
+        replay_overrides: %{"live_tool_allowlist" => ["publish"]}
+      })
+
+    persisted = Repo.get!(Run, run.id)
+
+    assert {:error, changeset} =
+             persisted
+             |> Run.changeset(%{replay_overrides: %{"live_tool_allowlist" => ["publish", "delete"]}})
+             |> Repo.update()
+
+    assert {"live_tool_allowlist cannot expand after replay start", _} =
+             Keyword.fetch!(changeset.errors, :replay_overrides)
+
+    assert Repo.get!(Run, run.id).replay_overrides == %{"live_tool_allowlist" => ["publish"]}
   end
 
 end
