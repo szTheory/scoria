@@ -241,6 +241,56 @@ defmodule Scoria.WorkflowsTest do
       assert Repo.get!(Approval, approval.id).workflow_run_id == run.id
     end
 
+    test "a historical approval cannot resume a replay branch without the replay-scoped approval" do
+      source_run_id = Ecto.UUID.generate()
+      source_checkpoint_id = Ecto.UUID.generate()
+
+      historical_run =
+        Repo.insert!(Run.changeset(%Run{}, %{
+          root_role_id: "source",
+          status: "running",
+          started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
+        }))
+
+      historical =
+        Repo.insert!(Approval.changeset(%Approval{}, %{
+          tool_name: "publish",
+          status: "approved",
+          workflow_run_id: historical_run.id,
+          source_run_id: source_run_id,
+          source_checkpoint_id: source_checkpoint_id
+        }))
+
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          source_run_id: source_run_id,
+          source_checkpoint_id: source_checkpoint_id
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, replay_approval} =
+        Workflows.request_remote_approval(run.id, step.id, %{
+          tool_name: "publish",
+          local_tool_name: "publish",
+          source_approval_id: historical.id
+        })
+
+      assert {:error, :not_resumable} = Workflows.resume_run(run.id)
+
+      assert {:ok, _approved_replay} = Workflows.approve(replay_approval.id, "approved", %{})
+      assert {:ok, resumed_step} = Workflows.resume_run(run.id)
+      assert resumed_step.id == step.id
+    end
+
     test "replay live_tool_allowlist cannot widen after replay start" do
       {:ok, run} =
         Workflows.create_run(%{
