@@ -79,6 +79,7 @@ defmodule Scoria.Eval.DatasetPromotion do
 
   defp build_metadata(attrs) do
     provenance = normalize_map(attrs["provenance"])
+    safety = normalize_map(attrs["safety"])
     promotion_snapshot = normalize_map(attrs["promotion_snapshot"])
 
     %{
@@ -89,8 +90,8 @@ defmodule Scoria.Eval.DatasetPromotion do
       "source_run_id" => provenance["source_run_id"],
       "source_checkpoint_id" => provenance["source_checkpoint_id"],
       "execution_mode" => provenance["execution_mode"],
-      "replay_disposition" => provenance["replay_disposition"],
-      "replay_reason_code" => provenance["replay_reason_code"],
+      "replay_disposition" => safety["replay_disposition"] || provenance["replay_disposition"],
+      "replay_reason_code" => safety["replay_reason_code"] || provenance["replay_reason_code"],
       "recorded_outcome" => normalize_map(promotion_snapshot["recorded_outcome"])
     }
   end

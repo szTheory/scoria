@@ -267,29 +267,6 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponentTest do
     }
   end
 
-  defp create_workflow_context(execution_mode) do
-    with {:ok, run} <-
-           Workflows.create_run(%{
-             root_role_id: "operator",
-             execution_mode: execution_mode,
-             source_run_id: if(execution_mode == "replay", do: Ecto.UUID.generate(), else: nil),
-             source_checkpoint_id:
-               if(execution_mode == "replay", do: Ecto.UUID.generate(), else: nil),
-             actor_id: "operator-1",
-             tenant_id: "tenant-1",
-             session_id: "session-1"
-           }),
-         {:ok, step} <-
-           Workflows.create_step(run.id, %{
-             sequence: 1,
-             kind: "tool_call",
-             status: "running",
-             role_id: "operator"
-           }) do
-      {:ok, run, step}
-    end
-  end
-
   defp runtime_replay_promotion_context do
     {:ok, source_run} =
       Workflows.create_run(%{
