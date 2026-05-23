@@ -22,6 +22,17 @@ defmodule Scoria.SRE.AuditOutboxEvent do
     field(:trace_id, :string)
     field(:redacted_refs, :map, default: %{})
     field(:metadata, :map, default: %{})
+    field(:replay_disposition, :string)
+    field(:replay_reason_code, :string)
+    field(:source_run_id, :binary_id)
+    field(:source_checkpoint_id, :binary_id)
+    field(:source_step_id, :binary_id)
+    field(:source_approval_id, :binary_id)
+    field(:source_audit_outbox_event_id, :binary_id)
+    field(:args_fingerprint, :string)
+    field(:policy_key, :string)
+    field(:executed_live, :boolean, default: false)
+    field(:replay_idempotency_key, :string)
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -43,7 +54,18 @@ defmodule Scoria.SRE.AuditOutboxEvent do
       :step_id,
       :trace_id,
       :redacted_refs,
-      :metadata
+      :metadata,
+      :replay_disposition,
+      :replay_reason_code,
+      :source_run_id,
+      :source_checkpoint_id,
+      :source_step_id,
+      :source_approval_id,
+      :source_audit_outbox_event_id,
+      :args_fingerprint,
+      :policy_key,
+      :executed_live,
+      :replay_idempotency_key
     ])
     |> validate_required([
       :tenant_id,

@@ -80,9 +80,71 @@ defmodule Scoria.Repo.Migrations.AddReplaySafeExecutionTruth do
     create_if_not_exists index(:ai_approvals, [:workflow_run_id, :replay_disposition])
     create_if_not_exists index(:ai_approvals, [:source_approval_id])
     create_if_not_exists index(:ai_approvals, [:replay_idempotency_key])
+
+    alter table(:ai_workflow_checkpoints) do
+      add_if_not_exists :replay_disposition, :string
+      add_if_not_exists :replay_reason_code, :string
+    end
+
+    create_if_not_exists index(:ai_workflow_checkpoints, [:replay_disposition])
+
+    alter table(:ai_workflow_events) do
+      add_if_not_exists :replay_disposition, :string
+      add_if_not_exists :replay_reason_code, :string
+    end
+
+    create_if_not_exists index(:ai_workflow_events, [:replay_disposition])
+
+    alter table(:ai_audit_outbox_events) do
+      add_if_not_exists :replay_disposition, :string
+      add_if_not_exists :replay_reason_code, :string
+      add_if_not_exists :source_run_id, :binary_id
+      add_if_not_exists :source_checkpoint_id, :binary_id
+      add_if_not_exists :source_step_id, :binary_id
+      add_if_not_exists :source_approval_id, :binary_id
+      add_if_not_exists :source_audit_outbox_event_id, :binary_id
+      add_if_not_exists :args_fingerprint, :string
+      add_if_not_exists :policy_key, :string
+      add_if_not_exists :executed_live, :boolean, default: false, null: false
+      add_if_not_exists :replay_idempotency_key, :string
+    end
+
+    create_if_not_exists index(:ai_audit_outbox_events, [:replay_disposition])
+    create_if_not_exists index(:ai_audit_outbox_events, [:replay_idempotency_key])
   end
 
   def down do
+    drop_if_exists index(:ai_audit_outbox_events, [:replay_idempotency_key])
+    drop_if_exists index(:ai_audit_outbox_events, [:replay_disposition])
+
+    alter table(:ai_audit_outbox_events) do
+      remove_if_exists :replay_idempotency_key
+      remove_if_exists :executed_live
+      remove_if_exists :policy_key
+      remove_if_exists :args_fingerprint
+      remove_if_exists :source_audit_outbox_event_id
+      remove_if_exists :source_approval_id
+      remove_if_exists :source_step_id
+      remove_if_exists :source_checkpoint_id
+      remove_if_exists :source_run_id
+      remove_if_exists :replay_reason_code
+      remove_if_exists :replay_disposition
+    end
+
+    drop_if_exists index(:ai_workflow_events, [:replay_disposition])
+
+    alter table(:ai_workflow_events) do
+      remove_if_exists :replay_reason_code
+      remove_if_exists :replay_disposition
+    end
+
+    drop_if_exists index(:ai_workflow_checkpoints, [:replay_disposition])
+
+    alter table(:ai_workflow_checkpoints) do
+      remove_if_exists :replay_reason_code
+      remove_if_exists :replay_disposition
+    end
+
     drop_if_exists index(:ai_approvals, [:replay_idempotency_key])
     drop_if_exists index(:ai_approvals, [:source_approval_id])
     drop_if_exists index(:ai_approvals, [:workflow_run_id, :replay_disposition])

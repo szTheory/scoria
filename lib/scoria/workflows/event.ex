@@ -8,6 +8,8 @@ defmodule Scoria.Workflows.Event do
     field :sequence, :integer
     field :event_type, :string
     field :payload, :map, default: %{}
+    field :replay_disposition, :string
+    field :replay_reason_code, :string
 
     belongs_to :run, Scoria.Workflows.Run
     belongs_to :step, Scoria.Workflows.Step
@@ -17,7 +19,15 @@ defmodule Scoria.Workflows.Event do
 
   def changeset(event, attrs) do
     event
-    |> cast(attrs, [:run_id, :step_id, :sequence, :event_type, :payload])
+    |> cast(attrs, [
+      :run_id,
+      :step_id,
+      :sequence,
+      :event_type,
+      :payload,
+      :replay_disposition,
+      :replay_reason_code
+    ])
     |> validate_required([:run_id, :sequence, :event_type])
     |> foreign_key_constraint(:run_id)
     |> foreign_key_constraint(:step_id)
