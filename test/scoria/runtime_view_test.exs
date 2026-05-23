@@ -802,6 +802,16 @@ defmodule Scoria.RuntimeViewTest do
              replay_reason_code: "exact_source_match"
            }
 
+    assert replay_detail.replay_provenance_strip == %{
+             source_run_id: source_run.id,
+             source_checkpoint_id: source_checkpoint.id,
+             execution_mode: "replay",
+             replay_posture: "allowlist_live",
+             live_tool_allowlist: ["publish"],
+             replay_disposition: "historical_stub",
+             replay_reason_code: "exact_source_match"
+           }
+
     assert source_event.id
   end
 end

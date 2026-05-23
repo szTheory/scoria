@@ -65,6 +65,28 @@ defmodule Scoria.RuntimeTest do
     assert is_struct(detail, RunDetail)
   end
 
+  test "get_run_detail keeps live runs readable without a source run" do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        actor_id: "actor-live-detail",
+        tenant_id: "tenant-live-detail",
+        session_id: "session-live-detail"
+      })
+
+    {:ok, _step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "draft",
+        role_id: "executor",
+        status: "completed"
+      })
+
+    assert {:ok, %RunDetail{} = detail} = Runtime.get_run_detail(run.id)
+    assert detail.comparison_by_step == %{}
+    assert detail.replay_provenance_strip == %{}
+  end
+
   test "list_runs_for_session groups continuity by session without becoming a resume shortcut" do
     {:ok, first} =
       Runtime.start_run(
