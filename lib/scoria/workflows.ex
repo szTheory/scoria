@@ -3,6 +3,7 @@ defmodule Scoria.Workflows do
   Durable workflow persistence and lifecycle transitions.
   """
 
+  import Ecto.Changeset
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
@@ -321,6 +322,13 @@ defmodule Scoria.Workflows do
     Repo.transaction(fn repo ->
       run = repo.get!(Run, run_id)
       step = repo.get!(Step, step_id)
+
+      if step.run_id != run.id do
+        repo.rollback(validation_changeset(%{workflow_run_id: run_id, workflow_step_id: step_id}, [
+          workflow_step_id: "does not belong to workflow_run_id"
+        ]))
+      end
+
       approval_identity = immutable_identity(run, attrs)
 
       updated_run =
@@ -413,6 +421,16 @@ defmodule Scoria.Workflows do
       {:error, value} ->
         {:error, value}
     end
+  end
+
+  defp validation_changeset(attrs, errors) do
+    changeset =
+      {%{}, %{workflow_run_id: :binary_id, workflow_step_id: :binary_id}}
+      |> cast(attrs, [:workflow_run_id, :workflow_step_id])
+
+    Enum.reduce(errors, changeset, fn {field, message}, acc ->
+      add_error(acc, field, message)
+    end)
   end
 
   def request_remote_approval(%Run{id: run_id}, %Step{id: step_id}, attrs),

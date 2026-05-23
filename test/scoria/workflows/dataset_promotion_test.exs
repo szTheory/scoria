@@ -80,4 +80,34 @@ defmodule Scoria.Workflows.DatasetPromotionTest do
 
     assert {"must reference a sealed dataset", _opts} = changeset.errors[:dataset_id]
   end
+
+  test "request_baseline_promotion/1 rejects workflow steps from another run", %{run: run} do
+    {:ok, dataset} = Eval.create_dataset(%{name: "Release QA", version: "8"})
+    {:ok, _sealed} = Eval.seal_dataset(dataset)
+
+    {:ok, other_run} = Workflows.create_run(%{root_role_id: "operator"})
+
+    {:ok, other_step} =
+      Workflows.create_step(other_run.id, %{
+        sequence: 1,
+        kind: "tool_call",
+        status: "running",
+        role_id: "operator"
+      })
+
+    assert {:error, changeset} =
+             Workflows.request_baseline_promotion(%{
+               dataset_id: dataset.id,
+               workflow_run_id: run.id,
+               workflow_step_id: other_step.id,
+               source_variant: "original",
+               provenance: %{"execution_mode" => "live"},
+               checkpoint_output: %{"projected_context" => %{"foo" => "bar"}},
+               safety: %{},
+               promotion_snapshot: %{"recorded_outcome" => %{"kind" => "result"}}
+             })
+
+    assert {"does not belong to workflow_run_id", _opts} = changeset.errors[:workflow_step_id]
+    assert Repo.aggregate(Approval, :count) == 0
+  end
 end

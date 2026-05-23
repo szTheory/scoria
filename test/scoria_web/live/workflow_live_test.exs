@@ -261,4 +261,92 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert promoted_html =~ "Baseline approval requested"
     assert promoted_html =~ "Release QA"
   end
+
+  test "promotion modal starts with a blank notes field" do
+    {:ok, source_run} = Workflows.create_run(%{root_role_id: "executor", session_id: "source-session"})
+
+    {:ok, source_step} =
+      Workflows.create_step(source_run.id, %{
+        sequence: 1,
+        kind: "tool",
+        role_id: "executor",
+        status: "completed",
+        projected_context: %{"trace" => "original"},
+        result_envelope: %{"output" => "source-output"}
+      })
+
+    {:ok, source_checkpoint} =
+      Workflows.append_checkpoint(source_run.id, source_step.id, %{
+        transition: "tool_completed",
+        status: "completed",
+        snapshot: %{"recorded_outcome" => "source-output"}
+      })
+
+    {:ok, _source_event} =
+      Workflows.append_event(source_run.id, source_step.id, %{
+        event_type: "step_completed",
+        payload: %{"recorded_outcome" => "source-output"}
+      })
+
+    {:ok, replay_run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        session_id: "replay-session",
+        execution_mode: "replay",
+        source_run_id: source_run.id,
+        source_checkpoint_id: source_checkpoint.id
+      })
+
+    {:ok, replay_step} =
+      Workflows.create_step(replay_run.id, %{
+        sequence: 1,
+        kind: "tool",
+        role_id: "executor",
+        status: "completed",
+        projected_context: %{"trace" => "replay"},
+        result_envelope: %{"output" => "replay-output"}
+      })
+
+    {:ok, _replay_checkpoint} =
+      Workflows.append_checkpoint(replay_run.id, replay_step.id, %{
+        transition: "tool_completed",
+        status: "completed",
+        replay_disposition: "historical_stub",
+        replay_reason_code: "approval_required",
+        snapshot: %{"recorded_outcome" => "replay-output"},
+        metadata: %{
+          "source_run_id" => source_run.id,
+          "source_checkpoint_id" => source_checkpoint.id,
+          "source_step_id" => source_step.id
+        }
+      })
+
+    {:ok, _replay_event} =
+      Workflows.append_event(replay_run.id, replay_step.id, %{
+        event_type: "step_completed",
+        replay_disposition: "historical_stub",
+        replay_reason_code: "approval_required",
+        payload: %{
+          "recorded_outcome" => "replay-output",
+          "source_run_id" => source_run.id,
+          "source_checkpoint_id" => source_checkpoint.id,
+          "source_step_id" => source_step.id
+        }
+      })
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria/workflows/#{replay_run.id}")
+
+    modal_html =
+      view
+      |> element("button[phx-click='open_promote_modal'][phx-value-step-id='#{replay_step.id}']")
+      |> render_click()
+
+    assert modal_html =~ ~s(name="promotion[notes]")
+    refute modal_html =~ ~s(>%{}<)
+  end
 end

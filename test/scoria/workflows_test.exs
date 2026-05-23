@@ -240,6 +240,31 @@ defmodule Scoria.WorkflowsTest do
       assert approval.arguments["expected_output"] == %{"status" => "review"}
     end
 
+    test "request_remote_approval/3 rejects a step from another run and leaves both workflows unchanged" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+      {:ok, other_run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(other_run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      assert {:error, changeset} =
+               Workflows.request_remote_approval(run.id, step.id, %{
+                 tool_name: "publish",
+                 arguments: %{"value" => 1}
+               })
+
+      assert {"does not belong to workflow_run_id", _opts} = changeset.errors[:workflow_step_id]
+      assert Workflows.get_run!(run.id).status == "running"
+      assert Workflows.get_run!(other_run.id).status == "running"
+      assert Workflows.get_step!(step.id).status == "running"
+      assert Repo.aggregate(Approval, :count) == 0
+    end
+
     test "approve/3 only updates the current replay approval row and leaves historical approval as evidence" do
       source_run_id = Ecto.UUID.generate()
       source_checkpoint_id = Ecto.UUID.generate()

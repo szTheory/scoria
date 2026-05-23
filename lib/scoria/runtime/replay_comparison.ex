@@ -44,6 +44,7 @@ defmodule Scoria.Runtime.ReplayComparison do
     explicit_source_step_id =
       replay_run
       |> source_refs_for_step(replay_step.id)
+      |> Enum.reverse()
       |> Enum.find_value(& &1.source_step_id)
 
     cond do
@@ -204,19 +205,25 @@ defmodule Scoria.Runtime.ReplayComparison do
   defp find_checkpoint(_run, nil), do: nil
 
   defp find_checkpoint(run, step) do
-    Enum.find(run.checkpoints, &(&1.step_id == step.id))
+    run.checkpoints
+    |> Enum.reverse()
+    |> Enum.find(&(&1.step_id == step.id))
   end
 
   defp find_event(_run, nil), do: nil
 
   defp find_event(run, step) do
-    Enum.find(run.events, &(&1.step_id == step.id))
+    run.events
+    |> Enum.reverse()
+    |> Enum.find(&(&1.step_id == step.id))
   end
 
   defp find_approval(_run, nil), do: nil
 
   defp find_approval(run, step) do
-    Enum.find(run.approvals, &(&1.step_id == step.id))
+    run.approvals
+    |> Enum.reverse()
+    |> Enum.find(&(&1.step_id == step.id))
   end
 
   defp recorded_outcome(%Event{} = event, _checkpoint, _step) do
@@ -250,11 +257,18 @@ defmodule Scoria.Runtime.ReplayComparison do
   end
 
   defp source_run_id(%Run{} = run, source_refs) do
-    Enum.find_value(source_refs, & &1.source_run_id) || run.source_run_id
+    source_refs
+    |> Enum.reverse()
+    |> Enum.find_value(& &1.source_run_id)
+    |> Kernel.||(run.source_run_id)
   end
 
   defp source_checkpoint_id(%Run{} = run, checkpoint, "replay", source_refs) do
-    Enum.find_value(source_refs, & &1.source_checkpoint_id) || run.source_checkpoint_id || (checkpoint && checkpoint.id)
+    source_refs
+    |> Enum.reverse()
+    |> Enum.find_value(& &1.source_checkpoint_id)
+    |> Kernel.||(run.source_checkpoint_id)
+    |> Kernel.||(checkpoint && checkpoint.id)
   end
 
   defp source_checkpoint_id(%Run{}, checkpoint, _source_variant, _source_refs), do: checkpoint && checkpoint.id

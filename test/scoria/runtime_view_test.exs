@@ -395,6 +395,180 @@ defmodule Scoria.RuntimeViewTest do
             }] = Enum.filter(detail.events, &(&1.event_type == "step_completed"))
   end
 
+  test "replay comparison uses the latest durable evidence for a step" do
+    source_run =
+      Repo.insert!(Run.changeset(%Run{}, %{
+        root_role_id: "executor",
+        started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
+        completed_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
+        status: "completed"
+      }))
+
+    stale_source_step =
+      Repo.insert!(Step.changeset(%Step{}, %{
+        run_id: source_run.id,
+        sequence: 1,
+        kind: "tool_call",
+        role_id: "executor",
+        status: "completed"
+      }))
+
+    source_checkpoint =
+      Repo.insert!(Checkpoint.changeset(%Checkpoint{}, %{
+        run_id: source_run.id,
+        step_id: stale_source_step.id,
+        sequence: 1,
+        transition: "step_completed",
+        status: "completed",
+        snapshot: %{"recorded_outcome" => %{"answer" => "source"}}
+      }))
+
+    Repo.insert!(Event.changeset(%Event{}, %{
+      run_id: source_run.id,
+      step_id: stale_source_step.id,
+      sequence: 1,
+      event_type: "step_completed",
+      payload: %{"recorded_outcome" => %{"answer" => "source"}}
+    }))
+
+    latest_source_step =
+      Repo.insert!(Step.changeset(%Step{}, %{
+        run_id: source_run.id,
+        sequence: 2,
+        kind: "tool_call",
+        role_id: "executor",
+        status: "completed"
+      }))
+
+    Repo.insert!(Checkpoint.changeset(%Checkpoint{}, %{
+      run_id: source_run.id,
+      step_id: latest_source_step.id,
+      sequence: 2,
+      transition: "step_completed",
+      status: "completed",
+      snapshot: %{"recorded_outcome" => %{"answer" => "latest-source"}}
+    }))
+
+    Repo.insert!(Event.changeset(%Event{}, %{
+      run_id: source_run.id,
+      step_id: latest_source_step.id,
+      sequence: 2,
+      event_type: "step_completed",
+      payload: %{"recorded_outcome" => %{"answer" => "latest-source"}}
+    }))
+
+    run =
+      Repo.insert!(Run.changeset(%Run{}, %{
+        root_role_id: "executor",
+        execution_mode: "replay",
+        source_run_id: source_run.id,
+        source_checkpoint_id: source_checkpoint.id,
+        started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
+        completed_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
+        status: "completed"
+      }))
+
+    step =
+      Repo.insert!(Step.changeset(%Step{}, %{
+        run_id: run.id,
+        sequence: 99,
+        kind: "tool_call",
+        role_id: "executor",
+        status: "completed",
+        result_envelope: %{"output" => %{"answer" => "latest"}}
+      }))
+
+    first_checkpoint =
+      Repo.insert!(Checkpoint.changeset(%Checkpoint{}, %{
+        run_id: run.id,
+        step_id: step.id,
+        sequence: 1,
+        transition: "step_completed",
+        status: "completed",
+        replay_disposition: "blocked",
+        replay_reason_code: "fresh_replay_approval_required",
+        snapshot: %{"recorded_outcome" => %{"answer" => "stale"}},
+        metadata: %{
+          "source_checkpoint_id" => "stale-checkpoint",
+          "source_step_id" => stale_source_step.id
+        }
+      }))
+
+    Repo.insert!(Event.changeset(%Event{}, %{
+      run_id: run.id,
+      step_id: step.id,
+      sequence: 1,
+      event_type: "step_completed",
+      replay_disposition: "blocked",
+      replay_reason_code: "fresh_replay_approval_required",
+      payload: %{
+        "recorded_outcome" => %{"answer" => "stale"},
+        "source_checkpoint_id" => "stale-checkpoint",
+        "source_step_id" => stale_source_step.id
+      }
+    }))
+
+    Repo.insert!(Approval.changeset(%Approval{}, %{
+      tool_name: "publish",
+      status: "pending",
+      workflow_run_id: run.id,
+      step_id: step.id,
+      checkpoint_id: first_checkpoint.id,
+      replay_disposition: "blocked",
+      replay_reason_code: "fresh_replay_approval_required"
+    }))
+
+    latest_checkpoint =
+      Repo.insert!(Checkpoint.changeset(%Checkpoint{}, %{
+        run_id: run.id,
+        step_id: step.id,
+        sequence: 2,
+        transition: "step_completed",
+        status: "completed",
+        replay_disposition: "historical_stub",
+        replay_reason_code: "exact_source_match",
+        snapshot: %{"recorded_outcome" => %{"answer" => "latest"}},
+        metadata: %{
+          "source_checkpoint_id" => "latest-checkpoint",
+          "source_step_id" => latest_source_step.id
+        }
+      }))
+
+    Repo.insert!(Event.changeset(%Event{}, %{
+      run_id: run.id,
+      step_id: step.id,
+      sequence: 2,
+      event_type: "step_completed",
+      replay_disposition: "historical_stub",
+      replay_reason_code: "exact_source_match",
+      payload: %{
+        "recorded_outcome" => %{"answer" => "latest"},
+        "source_checkpoint_id" => "latest-checkpoint",
+        "source_step_id" => latest_source_step.id
+      }
+    }))
+
+    Repo.insert!(Approval.changeset(%Approval{}, %{
+      tool_name: "publish",
+      status: "approved",
+      workflow_run_id: run.id,
+      step_id: step.id,
+      checkpoint_id: latest_checkpoint.id,
+      replay_disposition: "historical_stub",
+      replay_reason_code: "exact_source_match"
+    }))
+
+    assert {:ok, %RunDetail{} = detail} = Runtime.get_run_detail(run.id)
+    comparison = detail.comparison_by_step[step.id].replay
+
+    assert comparison.provenance.source_checkpoint_id == "latest-checkpoint"
+    assert comparison.safety.replay_disposition == "historical_stub"
+    assert comparison.safety.replay_reason_code == "exact_source_match"
+    assert comparison.checkpoint_output.recorded_outcome == %{"answer" => "latest"}
+    assert detail.comparison_by_step[step.id].original.provenance.workflow_step_id == latest_source_step.id
+    assert detail.comparison_by_step[step.id].original.checkpoint_output.recorded_outcome == %{"answer" => "latest-source"}
+  end
+
   test "detail projects persisted replay provenance from the real blocked runtime path" do
     source_run_id = Ecto.UUID.generate()
     source_checkpoint_id = Ecto.UUID.generate()

@@ -341,7 +341,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
       checkpoint_output: checkpoint_output,
       safety: safety,
       promotion_snapshot: promotion_snapshot,
-      notes: %{},
+      notes: "",
       expected_output: %{}
     }
   end
