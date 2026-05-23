@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Crucible
-status: planning
-last_updated: "2026-05-23T14:13:19Z"
+status: verifying
+last_updated: "2026-05-23T19:33:14.236Z"
 last_activity: 2026-05-23
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
-  percent: 75
+  total_plans: 18
+  completed_plans: 12
+  percent: 67
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 
 ## Current Position
 
-Phase: 40 (online-scoring-review-queue) — PLANNING
-Plan: 0 of 0
+Phase: 40 (online-scoring-review-queue) — EXECUTING
+Plan: 1 of 7
 **Milestone:** `v1.9 Crucible`
 **Phase:** 40
 **Plan:** 0 of 0
-**Status:** Ready to plan
+**Status:** Phase complete — ready for verification
 **Last activity:** 2026-05-23
 
 **Progress:**
-[██████████] 100%
+[███████░░░] 67%
 
 ## Performance Metrics
 
@@ -59,6 +59,10 @@ Plan: 0 of 0
 - **39-02:** 6min, 2 tasks, 5 files
 - **39-03:** 12m, 2 tasks, 12 files
 - **39-04:** 6min, 2 tasks, 9 files
+
+**Phase 40 Metrics:**
+
+- **40-01:** 66m, 1 task, 8 files
 
 ## Accumulated Context
 
@@ -115,6 +119,8 @@ Plan: 0 of 0
 - Phase 39 (39-03): Baseline promotion approvals use the exact `dataset_baseline_promotion` tool identity so workflow projections expose durable lineage and replay provenance.
 - Phase 39 (39-04): Sealed baseline targets stay visible in the promotion modal, but the baseline lane requires an explicit confirmation step before `Scoria.Workflows.request_baseline_promotion/1`.
 - Phase 39 closeout: user accepted automation-substituted UAT after targeted LiveView interaction tests revalidated replay UX and promotion flows, and the repo proved non-browserable in isolation without a host endpoint/server dependency.
+- Phase 40 (40-01): Kept `ai_scores.reasoning/details` as compatibility aliases while promoting `explanation`, `metadata`, and scorer provenance to the canonical online-scoring contract.
+- Phase 40 (40-01): Repaired the Phase 25 convergence migration so fresh databases materialize the typed `EvalSpec` and `EvalRun` contract required by current eval workers.
 
 **Todos:**
 
@@ -134,4 +140,3 @@ Items intentionally outside `v1.8 Vanguard` by default:
 | future milestone | Hosted connector marketplace / broker behavior | deferred beyond `v1.5` |
 | future milestone | First-party browser/code-exec productization | deferred until connector policy and evidence are proven boring |
 | reference | Archived planning seeds in `.planning/seeds/` | retained as background material, not active milestone work |
-| Phase 39 P5 | 5min | 2 tasks | 7 files |

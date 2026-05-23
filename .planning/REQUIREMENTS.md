@@ -18,8 +18,8 @@
 
 ### Online Scoring
 
-- [ ] **SCOR-01**: Scoria can asynchronously sample eligible production traces and attach online scoring evidence without adding latency to the request path.
-- [ ] **SCOR-02**: Online scoring supports deterministic-first rules and optional judge-based scoring while storing scorer version, judge model, and sampling provenance on every score.
+- [x] **SCOR-01**: Scoria can asynchronously sample eligible production traces and attach online scoring evidence without adding latency to the request path.
+- [x] **SCOR-02**: Online scoring supports deterministic-first rules and optional judge-based scoring while storing scorer version, judge model, and sampling provenance on every score.
 - [ ] **SCOR-03**: Operators can review low-quality or policy-triggered traces in a dedicated queue with deep links back to trace evidence and scoring rationale.
 - [ ] **SCOR-04**: Draft promotion candidates created from online scoring remain reviewable and separate from sealed baseline datasets until explicitly approved.
 
@@ -54,8 +54,8 @@
 | RPLY-03 | Phase 39 | Complete |
 | DATA-01 | Phase 39 | Complete |
 | DATA-02 | Phase 39 | Complete |
-| SCOR-01 | Phase 40 | Pending |
-| SCOR-02 | Phase 40 | Pending |
+| SCOR-01 | Phase 40 | Complete |
+| SCOR-02 | Phase 40 | Complete |
 | SCOR-03 | Phase 40 | Pending |
 | SCOR-04 | Phase 40 | Pending |
 
