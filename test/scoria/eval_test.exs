@@ -189,29 +189,75 @@ defmodule Scoria.EvalTest do
   end
 
   describe "eval_specs" do
-    @valid_spec_attrs %{name: "Test Spec", rubric: %{"metrics" => ["accuracy"]}}
+    setup do
+      {:ok, dataset} =
+        Eval.create_dataset(%{
+          name: "Spec Dataset",
+          version: "2026.05.23",
+          items: [%{input: %{"question" => "ready?"}, expected_output: %{"answer" => "yes"}}]
+        })
 
-    test "create_eval_spec/1 creates a spec" do
-      assert {:ok, %EvalSpec{} = spec} = Eval.create_eval_spec(@valid_spec_attrs)
+      {:ok, dataset} = Eval.seal_dataset(dataset)
+
+      %{dataset: dataset}
+    end
+
+    test "create_eval_spec/1 creates a spec", %{dataset: dataset} do
+      assert {:ok, %EvalSpec{} = spec} = Eval.create_eval_spec(valid_spec_attrs(dataset))
       assert spec.version == 1
       assert spec.is_current == true
       assert spec.name == "Test Spec"
       assert spec.entity_id != nil
+      assert spec.dataset_id == dataset.id
+      assert spec.dataset_version == dataset.version
     end
 
-    test "update_eval_spec/2 creates a new version and deprecates the old one" do
-      {:ok, spec} = Eval.create_eval_spec(@valid_spec_attrs)
+    test "update_eval_spec/2 creates a new version and deprecates the old one", %{dataset: dataset} do
+      {:ok, spec} = Eval.create_eval_spec(valid_spec_attrs(dataset))
       
-      update_attrs = %{name: "Updated Spec"}
+      update_attrs = %{name: "Updated Spec", threshold_policy: %{pass_rate_gte: 0.95, mean_score_gte: 0.9, max_latency_ms: 450}}
       assert {:ok, %EvalSpec{} = new_spec} = Eval.update_eval_spec(spec, update_attrs)
       
       assert new_spec.version == 2
       assert new_spec.is_current == true
       assert new_spec.name == "Updated Spec"
       assert new_spec.entity_id == spec.entity_id
+      assert new_spec.dataset_id == dataset.id
+      assert new_spec.threshold_policy[:pass_rate_gte] == 0.95
 
       old_spec = Repo.get(EvalSpec, spec.id)
       assert old_spec.is_current == false
     end
+  end
+
+  defp valid_spec_attrs(dataset) do
+    %{
+      name: "Test Spec",
+      dataset_id: dataset.id,
+      dataset_version: dataset.version,
+      eval_mode: :offline_replay,
+      subject: %{
+        subject_kind: :prompt_template,
+        prompt_template_id: Ecto.UUID.generate(),
+        prompt_entity_id: Ecto.UUID.generate(),
+        prompt_version: 1
+      },
+      scorers: [
+        %{
+          metric_key: "accuracy",
+          scorer_kind: :llm_judge,
+          judge_prompt_template_id: Ecto.UUID.generate(),
+          judge_prompt_version: 1,
+          judge_provider: "openai",
+          judge_model: "gpt-4o-mini",
+          weight: 1.0
+        }
+      ],
+      threshold_policy: %{
+        pass_rate_gte: 0.9,
+        mean_score_gte: 0.85,
+        max_latency_ms: 500
+      }
+    }
   end
 end

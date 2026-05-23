@@ -9,6 +9,7 @@ defmodule Scoria.Eval do
 
   alias Scoria.Eval.Dataset
   alias Scoria.Eval.DatasetItem
+  alias Scoria.Eval.DatasetPromotion
   alias Scoria.Eval.CampaignEnqueuer
   alias Scoria.Eval.EvalCampaign
   alias Scoria.Eval.EvalCampaignTarget
@@ -85,6 +86,20 @@ defmodule Scoria.Eval do
     %DatasetItem{}
     |> DatasetItem.changeset(attrs_with_fk, dataset.state)
     |> Repo.insert()
+  end
+
+  @doc """
+  Builds a frozen preview for workflow-source promotion into a dataset item.
+  """
+  def preview_workflow_source_promotion(attrs) when is_map(attrs) do
+    DatasetPromotion.preview(attrs)
+  end
+
+  @doc """
+  Promotes one original or replay workflow source into an existing dataset.
+  """
+  def promote_workflow_source(attrs) when is_map(attrs) do
+    DatasetPromotion.promote(attrs, &get_dataset!/1)
   end
 
   @doc """
