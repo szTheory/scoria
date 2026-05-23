@@ -6,8 +6,10 @@ defmodule Scoria.Eval.CampaignWorkerTest do
 
   alias Oban.Job
   alias Scoria.Eval
-  alias Scoria.Eval.{CampaignWorker, EvalCampaign, EvalCampaignTarget, EvalRun, Score}
+  alias Scoria.Eval.{CampaignWorker, EvalCampaign, EvalCampaignTarget, EvalRun, OnlineScoreCandidate, Score}
+  alias Scoria.Repo.Trace
   alias Scoria.Repo
+  alias Scoria.Workflows.{Run, Step}
 
   defmodule OrchestratorStub do
     def generate_object(model_spec, prompt, schema, opts) do
@@ -224,6 +226,121 @@ defmodule Scoria.Eval.CampaignWorkerTest do
     end
   end
 
+  describe "phase 40 persistence contracts" do
+    test "record_eval_scores persists additive scorer evidence without dropping provenance fields" do
+      {:ok, _dataset, eval_spec, dataset_item} = seeded_eval_contract()
+
+      assert {:ok, eval_run} =
+               Eval.create_eval_run(%{
+                 eval_spec_id: eval_spec.id,
+                 runner_mode: :live_judge,
+                 tenant_id: "tenant-score",
+                 provider: "openai",
+                 model: "gpt-4o-mini",
+                 judge_provider: "openai",
+                 judge_model: "gpt-4o"
+               })
+
+      assert {:ok, updated_run, [%Score{} = score]} =
+               Eval.record_eval_scores(eval_run, [
+                 %{
+                   dataset_item_id: dataset_item.id,
+                   score: 0.42,
+                   status: "failed",
+                   scorer_kind: "deterministic_rule",
+                   scorer_version: "policy-rules@2026.05.23",
+                   explanation: "Missing required policy disclaimer",
+                   judge_model: "gpt-4o",
+                   rubric_version: "online-feedback-v1",
+                   evidence_refs: %{
+                     "trace_id" => Ecto.UUID.generate(),
+                     "workflow_run_id" => Ecto.UUID.generate()
+                   },
+                   metadata: %{"sample_rate" => 0.05, "latency_ms" => 12, "cost_usd" => "0.0001"}
+                 }
+               ])
+
+      assert updated_run.total_items == 1
+      assert updated_run.failed_items == 1
+      assert updated_run.avg_latency_ms == 12
+      assert score.status == "failed"
+      assert score.scorer_kind == "deterministic_rule"
+      assert score.scorer_version == "policy-rules@2026.05.23"
+      assert score.explanation == "Missing required policy disclaimer"
+      assert score.judge_model == "gpt-4o"
+      assert score.rubric_version == "online-feedback-v1"
+      assert score.evidence_refs["trace_id"]
+      assert score.metadata["sample_rate"] == 0.05
+    end
+
+    test "online score candidates persist durable review lineage with dedupe defaults" do
+      {:ok, trace} =
+        %Trace{}
+        |> Trace.changeset(%{session_id: "sess-online-score", attributes: %{"env" => "prod"}})
+        |> Repo.insert()
+
+      {:ok, workflow_run} =
+        %Run{}
+        |> Run.changeset(%{
+          root_role_id: "assistant",
+          tenant_id: "tenant-alpha",
+          session_id: "sess-online-score",
+          status: "running",
+          execution_mode: "live"
+        })
+        |> Repo.insert()
+
+      {:ok, workflow_step} =
+        %Step{}
+        |> Step.changeset(%{
+          run_id: workflow_run.id,
+          sequence: 1,
+          kind: "llm_call",
+          role_id: "assistant",
+          status: "completed"
+        })
+        |> Repo.insert()
+
+      dedupe_key = "tenant-alpha:#{trace.id}:window-2026-05-23T00"
+
+      assert {:ok, candidate} =
+               %OnlineScoreCandidate{}
+               |> OnlineScoreCandidate.changeset(%{
+                 tenant_id: "tenant-alpha",
+                 trace_id: trace.id,
+                 workflow_run_id: workflow_run.id,
+                 workflow_step_id: workflow_step.id,
+                 dedupe_key: dedupe_key,
+                 sampling_metadata: %{"sampler" => "phase40", "window" => "2026-05-23T00"},
+                 score_summary: %{"status" => "failed", "score" => 0.18},
+                 promotion_snapshot: %{"dataset_name" => "prod-feedback", "dataset_version" => "draft"}
+               })
+               |> Repo.insert()
+
+      assert candidate.status == "queued"
+      assert candidate.review_status == "pending"
+      assert candidate.trace_id == trace.id
+      assert candidate.workflow_run_id == workflow_run.id
+      assert candidate.workflow_step_id == workflow_step.id
+      assert candidate.sampling_metadata["sampler"] == "phase40"
+      assert candidate.score_summary["status"] == "failed"
+      assert candidate.promotion_snapshot["dataset_name"] == "prod-feedback"
+
+      assert {:error, changeset} =
+               %OnlineScoreCandidate{}
+               |> OnlineScoreCandidate.changeset(%{
+                 tenant_id: "tenant-alpha",
+                 trace_id: trace.id,
+                 workflow_run_id: workflow_run.id,
+                 workflow_step_id: workflow_step.id,
+                 dedupe_key: dedupe_key
+               })
+               |> Repo.insert()
+
+      assert "has already been taken" in errors_on(changeset).dedupe_key
+    end
+  end
+
   defp seeded_campaign(opts \\ []) do
     target_count = Keyword.get(opts, :target_count, 1)
     {:ok, _dataset, eval_spec, dataset_item} = seeded_eval_contract()
@@ -324,5 +441,13 @@ defmodule Scoria.Eval.CampaignWorkerTest do
       })
 
     {:ok, dataset, eval_spec, dataset_item}
+  end
+
+  defp errors_on(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
+      Regex.replace(~r/%{(\w+)}/, message, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
   end
 end
