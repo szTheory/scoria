@@ -7,8 +7,26 @@ defmodule Scoria.Runtime.RunDetail do
   alias Scoria.Runtime.RunSummary
   alias Scoria.Workflows.{Checkpoint, Event, Handoff, Run, Step}
 
-  @enforce_keys [:summary, :steps, :checkpoints, :events, :approvals, :handoffs]
-  defstruct [:summary, :steps, :checkpoints, :events, :approvals, :handoffs]
+  @enforce_keys [
+    :summary,
+    :steps,
+    :checkpoints,
+    :events,
+    :approvals,
+    :handoffs,
+    :comparison_by_step,
+    :replay_provenance_strip
+  ]
+  defstruct [
+    :summary,
+    :steps,
+    :checkpoints,
+    :events,
+    :approvals,
+    :handoffs,
+    :comparison_by_step,
+    :replay_provenance_strip
+  ]
 
   @type item :: map()
   @type t :: %__MODULE__{
@@ -17,17 +35,21 @@ defmodule Scoria.Runtime.RunDetail do
           checkpoints: [item()],
           events: [item()],
           approvals: [item()],
-          handoffs: [item()]
+          handoffs: [item()],
+          comparison_by_step: %{optional(Ecto.UUID.t()) => map()},
+          replay_provenance_strip: map()
         }
 
-  def from_run_tree(%Run{} = run) do
+  def from_run_tree(%Run{} = run, opts \\ []) do
     %__MODULE__{
       summary: RunSummary.from_run(run),
       steps: Enum.map(run.steps, &step_item/1),
       checkpoints: Enum.map(run.checkpoints, &checkpoint_item/1),
       events: Enum.map(run.events, &event_item/1),
       approvals: Enum.map(run.approvals, &approval_item/1),
-      handoffs: Enum.map(run.handoffs, &handoff_item/1)
+      handoffs: Enum.map(run.handoffs, &handoff_item/1),
+      comparison_by_step: Keyword.get(opts, :comparison_by_step, %{}),
+      replay_provenance_strip: Keyword.get(opts, :replay_provenance_strip, %{})
     }
   end
 
@@ -39,6 +61,10 @@ defmodule Scoria.Runtime.RunDetail do
       role_id: step.role_id,
       status: step.status,
       parent_step_id: step.parent_step_id,
+      idempotency_key: step.idempotency_key,
+      projected_context: step.projected_context || %{},
+      result_envelope: step.result_envelope || %{},
+      error_envelope: step.error_envelope || %{},
       started_at: step.started_at,
       completed_at: step.completed_at
     }
@@ -51,6 +77,7 @@ defmodule Scoria.Runtime.RunDetail do
       sequence: checkpoint.sequence,
       transition: checkpoint.transition,
       status: checkpoint.status,
+      snapshot: checkpoint.snapshot || %{},
       replay_disposition: checkpoint.replay_disposition,
       replay_reason_code: checkpoint.replay_reason_code,
       source_run_id: map_value(checkpoint.metadata, "source_run_id"),

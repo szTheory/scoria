@@ -15,7 +15,7 @@ defmodule Scoria.Runtime do
 
   alias Ecto.NoResultsError
   alias Scoria.Repo
-  alias Scoria.Runtime.{Instance, Params, RunDetail, RunSummary}
+  alias Scoria.Runtime.{Instance, Params, ReplayComparison, RunDetail, RunSummary}
   alias Scoria.Workflows
   alias Scoria.Workflows.{Reconciler, Resume, Run}
 
@@ -73,9 +73,13 @@ defmodule Scoria.Runtime do
   Returns the curated detailed public view for a run or raises.
   """
   def get_run_detail!(run_id) do
-    run_id
-    |> Workflows.get_run_tree!()
-    |> RunDetail.from_run_tree()
+    run = Workflows.get_run_tree!(run_id)
+    source_run = load_source_run(run)
+
+    RunDetail.from_run_tree(run,
+      comparison_by_step: ReplayComparison.build(run, source_run),
+      replay_provenance_strip: ReplayComparison.provenance_strip(run)
+    )
   end
 
   @doc """
@@ -152,4 +156,13 @@ defmodule Scoria.Runtime do
     do: {:ok, 0}
 
   defp maybe_dispatch(run_id, dispatch_opts), do: Reconciler.dispatch_run(run_id, dispatch_opts)
+
+  defp load_source_run(%Run{execution_mode: "replay", source_run_id: source_run_id})
+       when is_binary(source_run_id) do
+    Workflows.get_run_tree!(source_run_id)
+  rescue
+    NoResultsError -> nil
+  end
+
+  defp load_source_run(_run), do: nil
 end
