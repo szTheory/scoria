@@ -814,4 +814,88 @@ defmodule Scoria.RuntimeViewTest do
 
     assert source_event.id
   end
+
+  test "replay comparison uses durable source lineage and forwards replay metadata in promotion groups" do
+    source_checkpoint_id = Ecto.UUID.generate()
+    source_run_id = Ecto.UUID.generate()
+
+    replay_run =
+      Repo.insert!(Run.changeset(%Run{}, %{
+        root_role_id: "executor",
+        actor_id: "actor-replay-contract",
+        tenant_id: "tenant-replay-contract",
+        session_id: "session-replay-contract",
+        execution_mode: "replay",
+        source_run_id: source_run_id,
+        source_checkpoint_id: source_checkpoint_id,
+        status: "completed",
+        started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
+        completed_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
+      }))
+
+    replay_step =
+      Repo.insert!(Step.changeset(%Step{}, %{
+        run_id: replay_run.id,
+        sequence: 1,
+        kind: "tool_call",
+        role_id: "executor",
+        status: "completed",
+        projected_context: %{"prompt" => "replay prompt"},
+        result_envelope: %{"output" => %{"answer" => "replay"}}
+      }))
+
+    replay_checkpoint =
+      Repo.insert!(Checkpoint.changeset(%Checkpoint{}, %{
+        run_id: replay_run.id,
+        step_id: replay_step.id,
+        sequence: 1,
+        transition: "step_completed",
+        status: "completed",
+        replay_disposition: "historical_stub",
+        replay_reason_code: "exact_source_match",
+        metadata: %{
+          "source_run_id" => source_run_id,
+          "source_checkpoint_id" => source_checkpoint_id
+        },
+        snapshot: %{
+          "recorded_outcome" => %{"kind" => "result", "value" => %{"answer" => "replay"}}
+        }
+      }))
+
+    Repo.insert!(Event.changeset(%Event{}, %{
+      run_id: replay_run.id,
+      step_id: replay_step.id,
+      sequence: 1,
+      event_type: "step_completed",
+      payload: %{
+        "source_run_id" => source_run_id,
+        "source_checkpoint_id" => source_checkpoint_id,
+        "recorded_outcome" => %{"kind" => "result", "value" => %{"answer" => "replay"}}
+      },
+      replay_disposition: "historical_stub",
+      replay_reason_code: "exact_source_match"
+    }))
+
+    comparison =
+      Scoria.Runtime.ReplayComparison.build(
+        Repo.preload(replay_run, [:steps, :checkpoints, :events, :approvals]),
+        %Run{steps: []}
+      )
+
+    replay_entry = comparison[replay_step.id].replay
+
+    assert replay_entry.provenance.source_checkpoint_id == source_checkpoint_id
+    refute replay_entry.provenance.source_checkpoint_id == replay_checkpoint.id
+    assert replay_entry.provenance.source_run_id == source_run_id
+    assert replay_entry.provenance.replay_disposition == "historical_stub"
+    assert replay_entry.provenance.replay_reason_code == "exact_source_match"
+    assert replay_entry.safety.replay_disposition == "historical_stub"
+    assert replay_entry.safety.replay_reason_code == "exact_source_match"
+    assert Map.take(replay_entry, [:provenance, :checkpoint_output, :safety, :promotion_snapshot]) == %{
+             provenance: replay_entry.provenance,
+             checkpoint_output: replay_entry.checkpoint_output,
+             safety: replay_entry.safety,
+             promotion_snapshot: replay_entry.promotion_snapshot
+           }
+  end
 end
