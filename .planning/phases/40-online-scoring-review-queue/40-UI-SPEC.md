@@ -1,10 +1,11 @@
 ---
 phase: 40
 slug: online-scoring-review-queue
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-23
+reviewed_at: 2026-05-23
 ---
 
 # Phase 40 — UI Design Contract
@@ -29,6 +30,7 @@ This phase must preserve the existing Scoria operator language established in Ph
 
 ## Layout and Interaction Contract
 
+- Primary focal point and first-read hierarchy: operators should notice the highest-severity selected queue row first, then the detail-rail action area, then the summary strip. The queue exists to drive a decision on one candidate at a time, so selection and actionable evidence outrank aggregate counts.
 - Use a dedicated review queue page or review queue section inside the operator surface with a two-column desktop layout: left queue list, right evidence/detail rail.
 - Keep queue rows dense and scannable: status badge, score summary, trigger reason, workflow/run refs, timestamp, and one-line rationale visible without expansion.
 - Selecting a queue row updates the detail rail in place; do not force full-page navigation for primary triage.
@@ -168,4 +170,4 @@ Additional action labels:
 - [ ] Dimension 5 Spacing: PASS
 - [ ] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-05-23
