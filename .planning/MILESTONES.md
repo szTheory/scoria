@@ -1,5 +1,26 @@
 # Milestones
 
+## v1.9 Crucible
+
+**Shipped:** 2026-05-24
+**Phases:** 4 | **Plans:** 18
+**Theme:** Replayable debugging and online quality feedback
+
+### Delivered
+Scoria now ships a closed operator remediation loop: durable replay branches, replay-safe execution, replay comparison and dataset promotion from workflow evidence, plus asynchronous online scoring that routes reviewable candidates into an embedded operator queue.
+
+### Key Accomplishments
+- Added durable replay-branch lineage rooted in checkpoint truth without mutating source run history.
+- Enforced replay-safe seam behavior with explicit blocked, historical-stub, and replay-live provenance across workflow, connector, and MCP boundaries.
+- Shipped replay comparison UX and frozen workflow-source draft promotion through the existing LiveView operator surface.
+- Added async sampled-trace online scoring with deterministic-first and optional judge-backed additive evidence.
+- Built a dedicated operator review queue with workflow/runtime deep links, dismissal, draft promotion, and sealed-baseline approval flow.
+- Restored the canonical proof chain for all four v1.9 phases and reconciled milestone-state planning surfaces to shipped truth.
+
+**Known deferred items at close:** 3 (project-level full-suite failures outside the owned lanes, connector/compaction warnings, and LiveView async teardown noise)
+
+---
+
 ## v1.8 Vanguard
 
 **Shipped:** 2026-05-22

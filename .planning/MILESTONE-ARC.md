@@ -1,7 +1,7 @@
 # Milestone Arc: Scoria
 
 **Created:** 2026-05-12
-**Last updated:** 2026-05-22
+**Last updated:** 2026-05-24
 **Status:** maintained planning artifact
 
 ## Purpose
@@ -23,7 +23,7 @@ The product should stay:
 
 ## Current Baseline
 
-Shipped through `v1.8 Vanguard` on 2026-05-22:
+Shipped through `v1.9 Crucible` on 2026-05-24:
 
 - observability and trace storage
 - MCP gateway and governance seams
@@ -35,6 +35,8 @@ Shipped through `v1.8 Vanguard` on 2026-05-22:
 - canonical runtime identity, public runtime APIs, install defaults, adoption docs, and executable guardrails
 - remote MCP connector productization, prompt lifecycle, async compaction, and external runtime observability
 - resilient multi-model fallback orchestration, distributed evaluation fan-out, and real-time operator dashboards
+- replay branching from durable checkpoint truth with replay-safe execution defaults
+- replay comparison, workflow-source dataset promotion, and asynchronous online scoring review queues
 
 ## Sequencing Principles
 
@@ -57,45 +59,30 @@ Shipped through `v1.8 Vanguard` on 2026-05-22:
 | v1.6 | Flightpath | shipped | Prompt lifecycle and evaluation operations |
 | v1.7 | Outrider | shipped | Advanced ecosystem integrations and future-bet runtime surfaces |
 | v1.8 | Vanguard | shipped | Multi-model orchestration, distributed evaluations, and reconciled shipped milestone truth |
-| v1.9 | Crucible | active | Replayable debugging and online quality feedback |
+| v1.9 | Crucible | shipped | Replayable debugging and online quality feedback |
 
 ## Latest Shipped Milestone
 
-### v1.8 Vanguard
+### v1.9 Crucible
 
 **Status:** shipped
 **Priority at close:** highest
-**Theme:** Multi-model orchestration and distributed evaluations
+**Theme:** Replayable debugging and online quality feedback
 
 **What shipped**
 
-- breaker-aware multi-model routing with automatic fallback
-- distributed eval campaign fan-out and worker execution through Oban
-- tenant-scoped LiveView model-health and campaign dashboards
-- reconciled planning surfaces anchored to the canonical verification chain
+- replay branches rooted in durable checkpoint truth without mutating original run history
+- replay-safe execution defaults with explicit seam-level provenance
+- replay comparison and workflow-source dataset promotion in the operator UI
+- asynchronous online scoring with a review queue and explicit approval boundaries
 
 **User-facing outcome**
 
-Teams can run resilient multi-model workloads at scale and inspect fallback, health, and campaign progress through the embedded operator surface.
+Teams can inspect, replay, score, and promote production workflow evidence through a single embedded operator loop without blurring observed behavior with sealed release truth.
 
 ## Active Milestone
 
-### v1.9 Crucible
-
-**Status:** active
-**Priority:** highest
-**Theme:** Replayable debugging and online quality feedback
-
-**What this milestone should deliver**
-
-- replay branches as durable new runs rooted in existing checkpoint truth
-- replay-safe execution defaults for external-write and approval-sensitive seams
-- operator-visible replay provenance, diff context, and draft dataset promotion
-- asynchronous online scoring with a review queue and explicit promotion boundaries
-
-**Why now**
-
-Scoria already has durable runs, trace-first UI, trace-to-dataset promotion, eval fan-out, and operator dashboards. The next highest-leverage move is to close the operator remediation loop instead of expanding into broader agent-platform or performance-optimization bets.
+No active milestone. `v1.9 Crucible` is shipped, and the next milestone should be opened explicitly.
 
 ## Recommended Candidates
 
@@ -111,9 +98,9 @@ Scoria already has durable runs, trace-first UI, trace-to-dataset promotion, eva
 - projected-context and least-privilege defaults that remain inspectable
 - richer operator evidence for delegated role lineage
 
-**Why it is after v1.9**
+**Why it is a strong next candidate**
 
-The handoff substrate already exists, but replay and online scoring better compound Scoria's current trace/eval strengths with less risk of product-shape drift.
+The handoff substrate already exists, and `v1.9` established the replay/score operator loop it would build on. A bounded public handoff layer now compounds existing workflow truth without requiring managed-platform drift.
 
 ### 2. Tenant-scoped semantic fast path
 
@@ -127,13 +114,13 @@ The handoff substrate already exists, but replay and online scoring better compo
 - prompt/version/source-aware invalidation
 - operator-visible cache diagnostics instead of invisible magic
 
-**Why it is after v1.9**
+**Why it remains second**
 
-Semantic caching is valuable, but it is a latency/cost optimization with higher correctness and privacy risk. It should follow, not precede, the replay and scoring loop that improves operator trust.
+Semantic caching is still valuable, but it is a latency/cost optimization with higher correctness and privacy risk. It should still follow the newly shipped replay and scoring trust loop.
 
 ## Recommendation
 
-Run `$gsd-plan-phase 37` to start executing `v1.9 Crucible`.
+Run `$gsd-new-milestone` to open the next milestone when ready. If priorities remain unchanged, bounded handoff productization is the strongest starting candidate.
 
 ## Source Notes
 

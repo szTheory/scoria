@@ -1,89 +1,12 @@
 # Scoria Roadmap
 
-**Active milestone:** `v1.9 Crucible`
-**Started:** 2026-05-22
-**Theme:** Replayable debugging and online quality feedback
-**Why now:** Close the operator loop around the surfaces Scoria already owns: trace truth, replayable remediation, score overlays, and reviewable dataset promotion.
-**Archive note:** `v1.8 Vanguard` shipped on 2026-05-22. Historical roadmap: `.planning/milestones/v1.8-ROADMAP.md`
+**Active milestone:** None
+**Latest shipped milestone:** `v1.9 Crucible` on 2026-05-24
+**Historical roadmap:** `.planning/milestones/v1.9-ROADMAP.md`
+**Historical requirements:** `.planning/milestones/v1.9-REQUIREMENTS.md`
 
-## Phases
+## Current Status
 
-- [x] **Phase 37: Replay Lineage & Branch Model** - Create replay branches as durable new runs rooted in existing checkpoint truth. (completed 2026-05-24)
-- [x] **Phase 38: Replay-Safe Execution & Tool Modes** - Enforce safe replay defaults and historical-stub boundaries for external effects. (completed 2026-05-23)
-- [x] **Phase 39: Replay Operator UX & Draft Dataset Promotion** - Add replay provenance, diff context, and draft dataset promotion to the operator surface. (gap closure planned 2026-05-23) (completed 2026-05-23)
-- [x] **Phase 40: Online Scoring & Review Queue** - Sample production traces asynchronously, attach additive score evidence, and route reviewable promotion candidates into operator workflows. (verified 2026-05-24; unrelated full-suite failures remain tracked as tech debt)
-
-## Phase Details
-
-### Phase 37: Replay Lineage & Branch Model
-**Goal**: Operators can branch a new replay run from a chosen source checkpoint without mutating original run history.
-**Depends on**: Phase 36
-**Requirements**: RPLY-01
-**Plans**: 3 plans
-Plans:
-- [x] `37-01-PLAN.md` — Persist replay lineage and branch-creation truth on workflow runs.
-- [x] `37-02-PLAN.md` — Reuse the existing workflow runtime path for replay branch execution.
-- [x] `37-03-PLAN.md` — Project replay lineage through public runtime and operator surfaces.
-**Success Criteria**:
-1. Replay branch creation persists `source_run_id`, `source_checkpoint_id`, override metadata, and execution mode as durable truth.
-2. Replay runs reuse the existing workflow runtime instead of introducing a second execution engine.
-3. Replay lineage is queryable from the public run detail surface and trace explorer.
-
-### Phase 38: Replay-Safe Execution & Tool Modes
-**Goal**: Replay execution preserves operator trust by defaulting unsafe effects to explicit safe modes.
-**Depends on**: Phase 37
-**Requirements**: RPLY-02
-**Plans**: 3 plans
-Plans:
-- [ ] `38-01-PLAN.md` — Add replay-safe persistence contracts, schema fields, and resolver types.
-- [ ] `38-02-PLAN.md` — Enforce replay-safe behavior in workflow, connector, and MCP execution seams.
-- [ ] `38-03-PLAN.md` — Project replay-safe seam evidence through public runtime DTOs and tests.
-**Success Criteria**:
-1. External-write and approval-sensitive seams are blocked or historically stubbed by default during replay.
-2. Replay-safe adapters make execution mode explicit per tool/result class.
-3. Verification proves no replay path silently escapes into live side effects.
-
-### Phase 39: Replay Operator UX & Draft Dataset Promotion
-**Goal**: Operators can inspect replay provenance, compare outcomes, and promote reviewed traces into draft dataset items.
-**Depends on**: Phase 38
-**Requirements**: RPLY-03, DATA-01, DATA-02
-**Plans**: 5 plans
-Plans:
-- [x] `39-01-PLAN.md` — Add comparison-ready replay runtime projections and promotion-source contracts.
-- [x] `39-02-PLAN.md` — Render replay provenance and comparison notebook UX on the workflow page.
-- [x] `39-03-PLAN.md` — Freeze workflow-source draft promotion for open datasets and modal handoff.
-- [x] `39-04-PLAN.md` — Gate sealed baseline promotion through workflow approvals and operator confirmation.
-- [x] `39-05-PLAN.md` — Close replay promotion lineage/metadata regressions and replace synthetic coverage with runtime-driven end-to-end tests.
-**Success Criteria**:
-1. LiveView shows source checkpoint, overrides, execution mode, and original-vs-replay context clearly.
-2. Operators can promote either original or replayed traces into draft dataset items backed by frozen evidence snapshots.
-3. Sealed datasets remain immutable, and promotion into release-driving baselines requires explicit approval flow.
-**UI hint**: yes
-
-### Phase 40: Online Scoring & Review Queue
-**Goal**: Scoria can asynchronously score sampled production traces and route reviewable candidates into operator-visible queues.
-**Depends on**: Phase 39
-**Requirements**: SCOR-01, SCOR-02, SCOR-03, SCOR-04
-**Plans**: 7 plans
-Plans:
-- [x] `40-01-PLAN.md` — Lock the durable storage contract for online scoring evidence and review candidates.
-- [x] `40-02-PLAN.md` — Define the async sampler and enqueue boundary for eligible production traces.
-- [x] `40-03-PLAN.md` — Execute deterministic-first scoring and optional judge augmentation in the existing worker lane.
-- [x] `40-04-PLAN.md` — Project persisted candidates into an operator-ready review queue backend.
-- [x] `40-05-PLAN.md` — Render the queue UI and preserve workflow/runtime deep-link evidence.
-- [x] `40-06-PLAN.md` — Add open-dataset dismiss/promote actions and clear the human verification checkpoint.
-- [x] `40-07-PLAN.md` — Route sealed-baseline requests through workflow approvals and keep approval lineage visible.
-**Success Criteria**:
-1. Production trace sampling and score execution run asynchronously through Oban, with zero request-path scoring latency.
-2. Deterministic-first rules and optional judge scoring attach additive evidence with scorer version, model, and sampling provenance.
-3. Operators can triage low-quality traces, inspect score rationale, and approve or dismiss draft promotion candidates without mutating sealed datasets.
-**UI hint**: yes
-
-## Progress
-
-| Phase | Plans Complete | Status | Notes |
-|-------|----------------|--------|-------|
-| 37. Replay Lineage & Branch Model | 3/3 | Complete | Verified 2026-05-24 |
-| 38. Replay-Safe Execution & Tool Modes | 3/3 | Complete    | 2026-05-23 |
-| 39. Replay Operator UX & Draft Dataset Promotion | 5/5 | Complete   | 2026-05-23 |
-| 40. Online Scoring & Review Queue | 7/7 | Complete | Verified 2026-05-24; unrelated full-suite failures remain tracked as tech debt |
+- `v1.9 Crucible` shipped with replayable debugging, replay-safe execution, workflow-source dataset promotion, and online scoring review queues.
+- No active milestone is currently open.
+- Run `$gsd-new-milestone` to define the next milestone.

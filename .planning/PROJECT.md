@@ -12,15 +12,15 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
-- Scoria is shipped through `v1.8 Vanguard` as of 2026-05-22.
-- `v1.8 Vanguard` added resilient multi-model fallback orchestration, distributed evaluation fan-out, real-time operator dashboards, and reconciled shipped-state planning surfaces.
-- `v1.9 Crucible` is now active, focused on replayable debugging and online quality feedback.
+- Scoria is shipped through `v1.9 Crucible` as of 2026-05-24.
+- `v1.9 Crucible` added durable replay branching, replay-safe execution defaults, replay comparison and dataset promotion UX, and asynchronous online scoring review queues.
+- No active milestone is currently open.
 
 ## Next Milestone Goals
 
-- Close the operator loop around traces by turning replay and online scoring into first-class, reviewable product surfaces.
-- Keep the scope anchored to Phoenix-first adoption value, durable operator-visible truth, and boring verification.
-- Defer broad multi-agent productization, semantic caching, and any automatic mutation of sealed eval truth until the replay/score loop is proven.
+- Open the next milestone explicitly with `$gsd-new-milestone`.
+- Use the newly shipped replay -> score -> promote loop as the baseline for evaluating the next adoption-relevant capability bet.
+- Keep the next scope anchored to Phoenix-first adoption value, durable operator-visible truth, and boring verification.
 
 ## Requirements
 
@@ -37,12 +37,15 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Multi-model runtime calls automatically degrade through breaker-aware fallback chains instead of failing at the first unhealthy model. — `v1.8 Vanguard`
 - ✓ Large evaluation campaigns can fan out durably across many runtime targets through Oban-backed coordinator and worker flows. — `v1.8 Vanguard`
 - ✓ Operators can inspect model health, fallback usage, and campaign progress through the embedded dashboard surface. — `v1.8 Vanguard`
+- ✓ Operators can branch replay runs from durable checkpoint truth without mutating source history. — `v1.9 Crucible`
+- ✓ Replay defaults preserve operator trust by blocking or stubbing unsafe external effects while keeping provenance explicit. — `v1.9 Crucible`
+- ✓ Operators can compare replay vs original evidence and promote frozen workflow-source snapshots into draft datasets. — `v1.9 Crucible`
+- ✓ Production traces can be scored asynchronously and surfaced in an operator review queue with workflow/runtime deep links. — `v1.9 Crucible`
+- ✓ Draft promotion candidates remain reviewable and sealed baselines stay approval-gated instead of auto-mutating release truth. — `v1.9 Crucible`
 
 ### Active
 
-- [ ] Operator can branch a replay run from durable checkpoint truth without mutating the original run.
-- [ ] Replay defaults preserve operator trust by blocking or stubbing unsafe external effects and keeping provenance explicit.
-- [ ] Production traces can be scored asynchronously and routed into operator review and draft promotion queues without mutating sealed eval datasets.
+- None. The next milestone has not been opened yet.
 
 ### Out of Scope
 
@@ -52,28 +55,18 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Automatic mutation of sealed baseline datasets from online scoring — would collapse the distinction between observed behavior and reviewed ground truth.
 - Broad multi-agent orchestration/platform behavior — valuable, but wider than the next operator-loop milestone and more likely to create product-shape drift.
 
-## Current Milestone: v1.9 Crucible
+## Current Milestone
 
-**Goal:** Turn Scoria's existing trace, workflow, and eval substrate into a closed operator loop for replayable debugging, online scoring, and reviewable dataset promotion.
-
-**Target features:**
-- replay branches as durable new runs rooted in checkpoint truth
-- replay-safe execution defaults for external-write and approval-sensitive seams
-- replay provenance and draft dataset promotion in the LiveView operator surface
-- asynchronous online scoring with a review queue and explicit promotion boundaries
-
-**Why now:** Scoria already owns durable runs, trace-first UI, trace-to-dataset promotion, eval fan-out, and operator dashboards. Closing the replay -> score -> promote loop compounds those assets better than broader future-bet capabilities.
+No active milestone. `v1.9 Crucible` shipped on 2026-05-24; the next milestone should be defined through a fresh requirements and roadmap pass.
 
 ## Context
 
-- Scoria is shipped through `v1.8 Vanguard` as of 2026-05-22.
-- Phase 35 restored the canonical v1.8 verification chain on 2026-05-21.
-- Phase 36 reconciled the live planning and milestone-state surfaces on 2026-05-22.
-- `v1.8 Vanguard` shipped on 2026-05-22 with accepted closeout debt limited to Nyquist metadata normalization for Phases 30-32 if they re-enter audit scope.
+- Scoria is shipped through `v1.9 Crucible` as of 2026-05-24.
+- `v1.9 Crucible` closed the replay -> score -> promote operator loop with canonical verification across Phases 37 through 40.
+- `v1.9 Crucible` shipped with accepted closeout debt limited to project-level full-suite failures outside the owned milestone lanes, existing connector/compaction warnings, and known LiveView async teardown noise.
 - The repo has durable workflow truth, approval lineage, telemetry, audit seams, and a complete remote connector boundary.
 - Repo-local research and seed context reinforce the same design direction: remain embedded, keep transport separate from LiveView, treat policy and approvals as durable records, and avoid AWS-shaped platform drift.
-- Milestone discovery research on 2026-05-22 converged on replayable debugging plus online scoring as the most coherent next move because it compounds existing workflow, eval, and operator UX seams while preserving least surprise.
-- The same research explicitly deferred broad multi-agent productization and semantic caching to later milestones unless they become the highest-priority adoption bets.
+- With replay and scoring now shipped, the next milestone choice should be made explicitly between bounded delegation, performance-oriented fast paths, or another adoption-surface gap rather than carrying old assumptions forward.
 
 ## Constraints
 
@@ -93,8 +86,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | Remote connector support is stateless-first by default | This yields real value without forcing stateful session complexity or multi-node surprises into the default milestone path | — Resolved |
 | Operator/audit visibility is the primary user-facing outcome | Scoria's differentiator is evidence and governance, not merely "can connect a tool" breadth | — Resolved |
 | Browser/code-exec stays out of scope for `v1.5` | It introduces a separate privileged-execution risk class before connector policy and evidence are proven boring | — Resolved |
-| `v1.9` should prioritize replayable debugging and online scoring over semantic caching or broad handoff productization | It compounds existing trace/eval/operator surfaces with less platform-drift risk and a clearer Phoenix-first value proposition | — Pending |
-| Online scoring must never auto-mutate sealed baseline datasets | Observed production behavior is not reviewed ground truth; operator trust depends on keeping those lanes separate | — Pending |
+| `v1.9` should prioritize replayable debugging and online scoring over semantic caching or broad handoff productization | It compounds existing trace/eval/operator surfaces with less platform-drift risk and a clearer Phoenix-first value proposition | — Resolved |
+| Online scoring must never auto-mutate sealed baseline datasets | Observed production behavior is not reviewed ground truth; operator trust depends on keeping those lanes separate | — Resolved |
 
 ## Milestone History
 
@@ -107,6 +100,14 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v1.6 Flightpath`: Ecto-backed prompt registry, LiveView dataset curation, regression integration, and release gates.
 - `v1.7 Outrider`: MCP SSE boundary, asynchronous session compaction engine, and external runtime observability UX.
 - `v1.8 Vanguard`: Multi-model fallback orchestration, distributed evaluation fan-out, real-time operator dashboards, and reconciled shipped-state planning truth.
+- `v1.9 Crucible`: Replayable debugging, replay-safe execution, workflow-source dataset promotion, and online scoring review queues.
+
+<details>
+<summary>Archived v1.9 milestone context</summary>
+
+`v1.9 Crucible` targeted replay branches as durable new runs rooted in checkpoint truth, replay-safe execution defaults for external-write and approval-sensitive seams, operator-visible replay provenance with draft dataset promotion, and asynchronous online scoring with a review queue plus explicit promotion boundaries.
+
+</details>
 
 ## Evolution
 
@@ -126,4 +127,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-22 after opening v1.9 Crucible*
+*Last updated: 2026-05-24 after shipping v1.9 Crucible*

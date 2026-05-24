@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.9
-milestone_name: Crucible
-status: ready_to_close
-last_updated: "2026-05-24T10:31:30Z"
+milestone: none
+milestone_name: none
+status: shipped
+last_updated: "2026-05-24T10:34:09Z"
 last_activity: 2026-05-24
 progress:
   total_phases: 4
@@ -19,16 +19,16 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Milestone closeout readiness for `v1.9 Crucible`
+**Current Focus:** No active milestone. `v1.9 Crucible` shipped on 2026-05-24; next step is `$gsd-new-milestone` when ready.
 
 ## Current Position
 
-Phase: 40 (online-scoring-review-queue) — COMPLETE
-Plan: 7 of 7
-**Milestone:** `v1.9 Crucible`
-**Phase:** 40
-**Plan:** 7 of 7
-**Status:** Ready for milestone closeout
+Phase: None
+Plan: None
+**Milestone:** None
+**Phase:** None
+**Plan:** None
+**Status:** Shipped through `v1.9 Crucible`
 **Last activity:** 2026-05-24
 
 **Progress:**
@@ -36,11 +36,11 @@ Plan: 7 of 7
 
 ## Performance Metrics
 
-- **Completed Phases:** 36
-- **Completed Plans:** 103
-- **Total Validated Requirements:** 106
-- **Coverage:** 100% on shipped milestones through `v1.8 Vanguard`
-- **Latest Shipped Milestone:** `v1.8 Vanguard` on 2026-05-22
+- **Completed Phases:** 40
+- **Completed Plans:** 121
+- **Total Validated Requirements:** 115
+- **Coverage:** 100% on shipped milestones through `v1.9 Crucible`
+- **Latest Shipped Milestone:** `v1.9 Crucible` on 2026-05-24
 
 **Phase 31 Metrics:**
 
@@ -136,19 +136,22 @@ Plan: 7 of 7
 
 **Todos:**
 
-- Run `$gsd-complete-milestone` now that canonical verification exists for Phases 37 and 40.
+- Open the next milestone with `$gsd-new-milestone` when ready.
 
 **Blockers:**
 
-- None for milestone closeout. Unrelated full-suite `mix test` failures remain tracked as accepted tech debt for later cleanup.
+- None.
 
 ## Deferred Items
 
-Items intentionally outside `v1.8 Vanguard` by default:
+Items deferred or intentionally outside shipped milestone scope:
 
 | Category | Item | Status |
 |----------|------|--------|
-| tech debt | Normalize Nyquist frontmatter for Phases 30-32 if they re-enter audit scope | accepted at `v1.8` close |
+| tech debt | Project-level full-suite `mix test` failures outside the owned v1.9 verification lanes | accepted at `v1.9` close |
+| tech debt | Existing connector and compaction compile warnings outside the owned v1.9 surfaces | accepted at `v1.9` close |
+| tech debt | LiveView async teardown noise in the workflow/replay test lane | accepted at `v1.9` close |
 | future milestone | Hosted connector marketplace / broker behavior | deferred beyond `v1.5` |
 | future milestone | First-party browser/code-exec productization | deferred until connector policy and evidence are proven boring |
+| future milestone | Tenant-scoped semantic fast path / semantic caching | deferred until it outranks adoption and trust improvements |
 | reference | Archived planning seeds in `.planning/seeds/` | retained as background material, not active milestone work |
