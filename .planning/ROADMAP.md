@@ -12,7 +12,7 @@
 
 ## Phases
 
-- [ ] **Phase 41: Bounded Handoff Contract & Safety** - Lock the public handoff contract, same-run lineage, and projected-context guardrails as explicit shipped truth.
+- [x] **Phase 41: Bounded Handoff Contract & Safety** - Lock the public handoff contract, same-run lineage, and projected-context guardrails as explicit shipped truth. (completed 2026-05-24)
 - [ ] **Phase 42: Delegated Evidence & Adoption Story** - Make delegated lineage inspectable and keep the docs/source examples aligned with the actual handoff lane.
 - [ ] **Phase 43: Canonical Adoption Proof & Milestone Closeout** - Prove the bounded handoff lane through the default adoption verification path and decide whether any remaining handoff work is real follow-on value.
 
@@ -60,6 +60,6 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 41. Bounded Handoff Contract & Safety | 2/3 | In Progress|  |
+| 41. Bounded Handoff Contract & Safety | 3/3 | Complete   | 2026-05-24 |
 | 42. Delegated Evidence & Adoption Story | 0/3 | Not Started | — |
 | 43. Canonical Adoption Proof & Milestone Closeout | 0/2 | Not Started | — |
