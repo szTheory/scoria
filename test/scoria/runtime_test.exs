@@ -15,9 +15,101 @@ defmodule Scoria.RuntimeTest do
   test "Scoria and Scoria.Runtime expose explicit lifecycle verbs" do
     assert Code.ensure_loaded?(Scoria)
     assert function_exported?(Scoria, :start_run, 2)
+    assert function_exported?(Scoria, :start_handoff_run, 3)
     assert function_exported?(Scoria, :resume_run, 2)
     assert function_exported?(Runtime, :start_run, 2)
+    assert function_exported?(Runtime, :start_handoff_run, 3)
     assert function_exported?(Runtime, :resume_run, 2)
+  end
+
+  test "start_handoff_run creates bounded delegated lineage with a queued child step" do
+    assert {:ok, summary} =
+             Runtime.start_handoff_run(
+               %{
+                 actor_id: "actor-handoff",
+                 tenant_id: "tenant-handoff",
+                 session_id: "session-handoff"
+               },
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: %{"task" => "review", "draft_answer" => "hello"}
+             )
+
+    detail = Runtime.get_run_detail!(summary.run_id)
+    handoff = Enum.find(detail.handoffs, &(&1.delegated_role_id == "critic"))
+    child_step = Enum.find(detail.steps, &(&1.parent_step_id != nil and &1.role_id == "critic"))
+
+    assert detail.summary.status == "running"
+    assert handoff.delegated_kind == "review"
+    assert handoff.handoff_input == %{"brief" => "review draft"}
+    assert child_step.kind == "review"
+    assert child_step.projected_context["task"] == "review"
+  end
+
+  test "start_handoff_run rejects missing explicit contract inputs" do
+    identity = %{
+      actor_id: "actor-contract",
+      tenant_id: "tenant-contract",
+      session_id: "session-contract"
+    }
+
+    assert {:error, :invalid_root_role_id} =
+             Runtime.start_handoff_run(
+               identity,
+               "critic",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: %{}
+             )
+
+    assert {:error, :invalid_delegated_kind} =
+             Runtime.start_handoff_run(
+               identity,
+               "critic",
+               root_role_id: "planner",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: %{}
+             )
+
+    assert {:error, :invalid_handoff_input} =
+             Runtime.start_handoff_run(
+               identity,
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: "review draft",
+               projected_context: %{}
+             )
+
+    assert {:error, :invalid_projected_context} =
+             Runtime.start_handoff_run(
+               identity,
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: "not a map"
+             )
+  end
+
+  test "start_handoff_run rejects unsafe projected context before any durable write" do
+    assert {:error, :unsafe_projected_context} =
+             Runtime.start_handoff_run(
+               %{
+                 actor_id: "actor-unsafe",
+                 tenant_id: "tenant-unsafe",
+                 session_id: "session-unsafe"
+               },
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: %{"safe" => %{"provider_session" => %{"token" => "secret"}}}
+             )
+
+    assert Runtime.list_runs_for_session("session-unsafe") == []
   end
 
   test "start_run returns a curated public summary with canonical identity" do
@@ -170,21 +262,22 @@ defmodule Scoria.RuntimeTest do
         "tenant_id" => "tenant-1",
         "transport_kind" => "mcp_sse"
       }
-      
+
       {:ok, instance} = Runtime.register_instance(attrs)
       assert instance.tenant_id == "tenant-1"
       assert instance.first_seen_at != nil
       assert instance.last_seen_at != nil
       assert instance.terminal_offline_reason == nil
-      
+
       # Update
       Process.sleep(1000)
-      
+
       attrs_update = %{
         "id" => instance.id,
         "tenant_id" => "tenant-1",
         "transport_kind" => "mcp_sse"
       }
+
       {:ok, updated} = Runtime.register_instance(attrs_update)
       assert updated.id == instance.id
       assert updated.first_seen_at == instance.first_seen_at
@@ -194,13 +287,14 @@ defmodule Scoria.RuntimeTest do
 
   describe "mark_offline/2" do
     test "sets the terminal_offline_reason and updates last_seen_at" do
-      {:ok, instance} = Runtime.register_instance(%{
-        "tenant_id" => "tenant-1",
-        "transport_kind" => "mcp_sse"
-      })
-      
+      {:ok, instance} =
+        Runtime.register_instance(%{
+          "tenant_id" => "tenant-1",
+          "transport_kind" => "mcp_sse"
+        })
+
       Process.sleep(1000)
-      
+
       {:ok, offline} = Runtime.mark_offline(instance.id, "transport_closed")
       assert offline.terminal_offline_reason == "transport_closed"
       assert DateTime.compare(offline.last_seen_at, instance.last_seen_at) == :gt

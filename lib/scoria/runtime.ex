@@ -33,6 +33,29 @@ defmodule Scoria.Runtime do
   end
 
   @doc """
+  Starts a bounded delegated run with one explicit handoff and queued child step.
+  """
+  def start_handoff_run(identity, delegated_role_id, opts \\ []) do
+    with {:ok, %{workflow_attrs: workflow_attrs, handoff_attrs: handoff_attrs, dispatch_opts: dispatch_opts}} <-
+           Params.start_handoff(identity, delegated_role_id, opts),
+         {:ok, run} <- Workflows.create_run(workflow_attrs),
+         {:ok, step} <-
+           Workflows.create_step(run.id, %{
+             sequence: 1,
+             kind: "handoff",
+             role_id: workflow_attrs.root_role_id,
+             status: "queued"
+           }),
+         {:ok, _completed_step} <-
+           Scoria.Workflows.Runtime.execute_step(step.id,
+             handler: fn _step, _run -> {:handoff, handoff_attrs} end
+           ),
+         {:ok, _count} <- maybe_dispatch(run.id, dispatch_opts) do
+      {:ok, get_run!(run.id)}
+    end
+  end
+
+  @doc """
   Resumes an existing run by exact durable `run_id`.
   """
   def resume_run(run_id, opts \\ []) do

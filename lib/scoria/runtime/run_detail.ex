@@ -84,7 +84,8 @@ defmodule Scoria.Runtime.RunDetail do
       source_checkpoint_id: map_value(checkpoint.metadata, "source_checkpoint_id"),
       source_step_id: map_value(checkpoint.metadata, "source_step_id"),
       source_approval_id: map_value(checkpoint.metadata, "source_approval_id"),
-      source_audit_outbox_event_id: map_value(checkpoint.metadata, "source_audit_outbox_event_id"),
+      source_audit_outbox_event_id:
+        map_value(checkpoint.metadata, "source_audit_outbox_event_id"),
       replay_scope: map_value(checkpoint.metadata, "replay_scope"),
       executed_live: truthy?(map_value(checkpoint.metadata, "executed_live")),
       inserted_at: checkpoint.inserted_at
@@ -138,6 +139,9 @@ defmodule Scoria.Runtime.RunDetail do
       id: handoff.id,
       step_id: handoff.step_id,
       delegated_role_id: handoff.delegated_role_id,
+      delegated_kind: handoff.delegated_kind,
+      capability_tags: handoff.capability_tags || [],
+      handoff_input: handoff.handoff_input || %{},
       status: handoff.status,
       inserted_at: handoff.inserted_at
     }

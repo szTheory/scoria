@@ -32,6 +32,7 @@ defmodule Scoria.Workflows.RuntimeTest do
         {:handoff,
          %{
            "delegated_role_id" => "critic",
+           "delegated_kind" => "review",
            "handoff_input" => %{"brief" => "review"},
            "projected_context" => %{"task" => "review"}
          }}
@@ -359,14 +360,46 @@ defmodule Scoria.Workflows.RuntimeTest do
 
       assert {:ok, completed_step} = Runtime.execute_step(step.id, handler: {Handlers, :handoff})
 
+      [handoff] = Workflows.get_run_tree!(run.id).handoffs
       child_steps = Workflows.list_run_steps(run.id)
       assert completed_step.status == "completed"
+      assert handoff.delegated_kind == "review"
+      assert handoff.handoff_input == %{"brief" => "review"}
       assert Enum.any?(child_steps, &(&1.parent_step_id == step.id and &1.role_id == "critic"))
+      assert Enum.any?(child_steps, &(&1.parent_step_id == step.id and &1.kind == "review"))
 
       assert Enum.all?(child_steps, fn workflow_step ->
                workflow_step.projected_context == %{} or
                  Map.keys(workflow_step.projected_context) == ["task"]
              end)
+    end
+
+    test "handoff execution keeps bounded projected context failures explicit at the workflow seam" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "researcher"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "handoff",
+          role_id: "researcher",
+          status: "queued"
+        })
+
+      handler = fn _step, _run ->
+        {:handoff,
+         %{
+           "delegated_role_id" => "critic",
+           "delegated_kind" => "review",
+           "handoff_input" => %{"brief" => "review"},
+           "projected_context" => %{"safe" => %{"provider_session" => %{"token" => "secret"}}}
+         }}
+      end
+
+      assert {:ok, failed_step} = Runtime.execute_step(step.id, handler: handler)
+      assert failed_step.status == "failed"
+      assert failed_step.error_envelope["reason"] == "unsafe_projected_context"
+      assert failed_step.error_envelope["contract"] == "bounded_handoff_projected_context"
+      assert failed_step.error_envelope["message"] =~ "projected_context"
     end
   end
 
@@ -421,5 +454,4 @@ defmodule Scoria.Workflows.RuntimeTest do
       assert Enum.count(Enum.filter(checkpoints, &(&1.transition == "step_completed"))) == 1
     end
   end
-
 end

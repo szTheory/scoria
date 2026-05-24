@@ -5,6 +5,7 @@ defmodule Scoria.Workflows.Runtime do
 
   alias Decimal, as: D
   alias Scoria.Identity
+  alias Scoria.Runtime.Params
   alias Scoria.SRE.BudgetEngine
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE.Telemetry
@@ -31,11 +32,24 @@ defmodule Scoria.Workflows.Runtime do
             {:ok, {:completed, result, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, result, "completed")
               emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, result)
-              Workflows.complete_step(step.id, attach_budget_evidence(normalize_payload(result), reservation_context))
+
+              Workflows.complete_step(
+                step.id,
+                attach_budget_evidence(normalize_payload(result), reservation_context)
+              )
 
             {:ok, {:waiting_for_approval, approval_attrs, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "waiting_for_approval")
-              emit_runtime_telemetry(step, run, budget_context, "waiting_for_approval", duration_ms, %{})
+
+              emit_runtime_telemetry(
+                step,
+                run,
+                budget_context,
+                "waiting_for_approval",
+                duration_ms,
+                %{}
+              )
+
               Workflows.mark_waiting_for_approval(run.id, step.id, Map.new(approval_attrs))
 
             {:ok, {:handoff, handoff_attrs, duration_ms}} ->
@@ -51,12 +65,20 @@ defmodule Scoria.Workflows.Runtime do
             {:error, {:handler_error, envelope, duration_ms}} when is_map(envelope) ->
               reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
               emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
-              Workflows.fail_step(step.id, attach_budget_evidence(normalize_payload(envelope), reservation_context))
+
+              Workflows.fail_step(
+                step.id,
+                attach_budget_evidence(normalize_payload(envelope), reservation_context)
+              )
 
             {:error, {:handler_error, reason, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
               emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
-              Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
+
+              Workflows.fail_step(
+                step.id,
+                attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context)
+              )
 
             {:ok, {:other, other, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, other, "completed")
@@ -71,39 +93,88 @@ defmodule Scoria.Workflows.Runtime do
             {:error, {:timeout, envelope, duration_ms}} when is_map(envelope) ->
               reconcile_budget(reservation_context, budget_context, %{}, "timeout")
               emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms, %{})
-              Workflows.fail_step(step.id, attach_budget_evidence(normalize_payload(envelope), reservation_context))
+
+              Workflows.fail_step(
+                step.id,
+                attach_budget_evidence(normalize_payload(envelope), reservation_context)
+              )
 
             {:error, {:timeout, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "timeout")
               emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms, %{})
-              Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => "timeout"}, reservation_context))
+
+              Workflows.fail_step(
+                step.id,
+                attach_budget_evidence(%{"reason" => "timeout"}, reservation_context)
+              )
 
             {:error, {:execution_failed, envelope, duration_ms}} when is_map(envelope) ->
               reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
-              emit_runtime_telemetry(step, run, budget_context, "execution_failed", duration_ms, %{})
-              Workflows.fail_step(step.id, attach_budget_evidence(normalize_payload(envelope), reservation_context))
+
+              emit_runtime_telemetry(
+                step,
+                run,
+                budget_context,
+                "execution_failed",
+                duration_ms,
+                %{}
+              )
+
+              Workflows.fail_step(
+                step.id,
+                attach_budget_evidence(normalize_payload(envelope), reservation_context)
+              )
 
             {:error, {:execution_failed, reason, duration_ms}} ->
               reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
-              emit_runtime_telemetry(step, run, budget_context, "execution_failed", duration_ms, %{})
-              Workflows.fail_step(step.id, attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context))
+
+              emit_runtime_telemetry(
+                step,
+                run,
+                budget_context,
+                "execution_failed",
+                duration_ms,
+                %{}
+              )
+
+              Workflows.fail_step(
+                step.id,
+                attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context)
+              )
 
             {:error, %{status: :breaker_open} = envelope} ->
               reconcile_breaker_open_budget(reservation_context, envelope)
               emit_runtime_breaker_open(step, run, budget_context, envelope)
-              Workflows.fail_step(step.id, attach_budget_evidence(normalize_budget_envelope(envelope), reservation_context))
+
+              Workflows.fail_step(
+                step.id,
+                attach_budget_evidence(normalize_budget_envelope(envelope), reservation_context)
+              )
           end
       end
     end
   end
 
-  defp replay_execution(%{execution_mode: "replay"} = run, step, handler, timeout, opts, breaker_context) do
+  defp replay_execution(
+         %{execution_mode: "replay"} = run,
+         step,
+         handler,
+         timeout,
+         opts,
+         breaker_context
+       ) do
     seam = Keyword.get(opts, :replay_seam, %{local_classification: :pure})
     source_evidence = Keyword.get(opts, :replay_source_evidence, %{})
     approval_context = Keyword.get(opts, :replay_approval_context, %{})
     override_context = Keyword.get(opts, :replay_override_context, run.replay_overrides || %{})
 
-    case Scoria.Workflows.ReplayDisposition.resolve(run, seam, source_evidence, approval_context, override_context) do
+    case Scoria.Workflows.ReplayDisposition.resolve(
+           run,
+           seam,
+           source_evidence,
+           approval_context,
+           override_context
+         ) do
       {:historical_stub, evidence} ->
         result =
           Map.get(source_evidence, :result) ||
@@ -116,24 +187,34 @@ defmodule Scoria.Workflows.Runtime do
         {:error, {:replay_blocked, replay_blocked_envelope(evidence), 0}}
 
       {:execute_live, evidence} ->
-        case BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end) do
+        case BreakerRegistry.run(breaker_context, fn ->
+               execute_handler(handler, step, run, timeout)
+             end) do
           {:ok, {:completed, result, duration_ms}} ->
-            {:ok, {:completed, replay_result_payload(result, evidence, "replay_live"), duration_ms}}
+            {:ok,
+             {:completed, replay_result_payload(result, evidence, "replay_live"), duration_ms}}
 
           {:ok, {:waiting_for_approval, approval_attrs, duration_ms}} ->
-            {:ok, {:waiting_for_approval, replay_waiting_approval_attrs(approval_attrs, evidence), duration_ms}}
+            {:ok,
+             {:waiting_for_approval, replay_waiting_approval_attrs(approval_attrs, evidence),
+              duration_ms}}
 
           {:ok, {:handoff, handoff_attrs, duration_ms}} ->
             {:ok, {:handoff, handoff_attrs, duration_ms}}
 
           {:error, {:handler_error, reason, duration_ms}} ->
-            {:error, {:handler_error, replay_failure_envelope(reason, evidence, "replay_live"), duration_ms}}
+            {:error,
+             {:handler_error, replay_failure_envelope(reason, evidence, "replay_live"),
+              duration_ms}}
 
           {:error, {:timeout, duration_ms}} ->
-            {:error, {:timeout, replay_failure_envelope("timeout", evidence, "replay_live"), duration_ms}}
+            {:error,
+             {:timeout, replay_failure_envelope("timeout", evidence, "replay_live"), duration_ms}}
 
           {:error, {:execution_failed, reason, duration_ms}} ->
-            {:error, {:execution_failed, replay_failure_envelope(reason, evidence, "replay_live"), duration_ms}}
+            {:error,
+             {:execution_failed, replay_failure_envelope(reason, evidence, "replay_live"),
+              duration_ms}}
 
           other ->
             other
@@ -173,13 +254,26 @@ defmodule Scoria.Workflows.Runtime do
       end)
 
     case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
-      {:ok, {:ok, result}} -> {:ok, {:completed, result, elapsed_ms(started_at)}}
-      {:ok, {:waiting_for_approval, approval_attrs}} -> {:ok, {:waiting_for_approval, approval_attrs, elapsed_ms(started_at)}}
-      {:ok, {:handoff, handoff_attrs}} -> {:ok, {:handoff, handoff_attrs, elapsed_ms(started_at)}}
-      {:ok, {:error, reason}} -> {:error, {:handler_error, reason, elapsed_ms(started_at)}}
-      {:ok, other} -> {:ok, {:other, other, elapsed_ms(started_at)}}
-      nil -> {:error, {:timeout, elapsed_ms(started_at)}}
-      {:exit, reason} -> {:error, {:execution_failed, reason, elapsed_ms(started_at)}}
+      {:ok, {:ok, result}} ->
+        {:ok, {:completed, result, elapsed_ms(started_at)}}
+
+      {:ok, {:waiting_for_approval, approval_attrs}} ->
+        {:ok, {:waiting_for_approval, approval_attrs, elapsed_ms(started_at)}}
+
+      {:ok, {:handoff, handoff_attrs}} ->
+        {:ok, {:handoff, handoff_attrs, elapsed_ms(started_at)}}
+
+      {:ok, {:error, reason}} ->
+        {:error, {:handler_error, reason, elapsed_ms(started_at)}}
+
+      {:ok, other} ->
+        {:ok, {:other, other, elapsed_ms(started_at)}}
+
+      nil ->
+        {:error, {:timeout, elapsed_ms(started_at)}}
+
+      {:exit, reason} ->
+        {:error, {:execution_failed, reason, elapsed_ms(started_at)}}
     end
   end
 
@@ -204,7 +298,10 @@ defmodule Scoria.Workflows.Runtime do
           budget_context
           |> Map.get(:metadata, %{})
           |> Map.put_new("workflow_step_count", step.sequence)
-          |> Map.put_new("consecutive_failures", Map.get(run.error_envelope || %{}, "consecutive_failures", 0))
+          |> Map.put_new(
+            "consecutive_failures",
+            Map.get(run.error_envelope || %{}, "consecutive_failures", 0)
+          )
       })
     else
       {:ok, nil}
@@ -231,32 +328,47 @@ defmodule Scoria.Workflows.Runtime do
 
   defp handle_handoff(run, step, attrs) do
     delegated_role_id = Map.fetch!(attrs, "delegated_role_id")
+    delegated_kind = Map.get(attrs, "delegated_kind", "handoff")
     projected_context = Map.get(attrs, "projected_context", %{})
 
-    if Enum.any?(Map.keys(projected_context), &(&1 in ["transcript", "provider_session", "secrets", "socket_state"])) do
-      Workflows.fail_step(step.id, %{"reason" => "unsafe_projected_context"})
-    else
-      {:ok, _handoff} =
-        Workflows.create_handoff(step, %{
-          delegated_role_id: delegated_role_id,
-          capability_tags: List.wrap(Map.get(attrs, "capability_tags", [])),
-          handoff_input: Map.get(attrs, "handoff_input", %{}),
-          result_summary: %{},
-          status: "pending"
+    case Params.validate_projected_context(projected_context) do
+      :ok ->
+        {:ok, _handoff} =
+          Workflows.create_handoff(step, %{
+            delegated_role_id: delegated_role_id,
+            delegated_kind: delegated_kind,
+            capability_tags: List.wrap(Map.get(attrs, "capability_tags", [])),
+            handoff_input: Map.get(attrs, "handoff_input", %{}),
+            result_summary: %{},
+            status: "pending"
+          })
+
+        {:ok, _child_step} =
+          Workflows.create_step(run.id, %{
+            parent_step_id: step.id,
+            sequence: Workflows.next_step_sequence(run.id),
+            kind: delegated_kind,
+            role_id: delegated_role_id,
+            status: "queued",
+            handoff_input: Map.get(attrs, "handoff_input", %{}),
+            projected_context: projected_context
+          })
+
+        Workflows.complete_step(step.id, %{"handoff" => delegated_role_id}, run_status: "running")
+
+      {:error, :unsafe_projected_context} ->
+        Workflows.fail_step(step.id, %{
+          "reason" => "unsafe_projected_context",
+          "contract" => "bounded_handoff_projected_context",
+          "message" => "bounded handoff projected_context must stay narrow and host-controlled"
         })
 
-      {:ok, _child_step} =
-        Workflows.create_step(run.id, %{
-          parent_step_id: step.id,
-          sequence: Workflows.next_step_sequence(run.id),
-          kind: "handoff",
-          role_id: delegated_role_id,
-          status: "queued",
-          handoff_input: Map.get(attrs, "handoff_input", %{}),
-          projected_context: projected_context
+      {:error, :invalid_projected_context} ->
+        Workflows.fail_step(step.id, %{
+          "reason" => "invalid_projected_context",
+          "contract" => "bounded_handoff_projected_context",
+          "message" => "bounded handoff projected_context must be a map"
         })
-
-      Workflows.complete_step(step.id, %{"handoff" => delegated_role_id}, run_status: "running")
     end
   end
 
@@ -275,7 +387,10 @@ defmodule Scoria.Workflows.Runtime do
   end
 
   defp invoke_handler({module, function}, step, run), do: apply(module, function, [step, run])
-  defp invoke_handler({module, function, extra_args}, step, run), do: apply(module, function, [step, run | List.wrap(extra_args)])
+
+  defp invoke_handler({module, function, extra_args}, step, run),
+    do: apply(module, function, [step, run | List.wrap(extra_args)])
+
   defp invoke_handler(handler, step, _run) when is_function(handler, 1), do: handler.(step)
   defp invoke_handler(handler, step, run) when is_function(handler, 2), do: handler.(step, run)
 
@@ -389,15 +504,25 @@ defmodule Scoria.Workflows.Runtime do
     end
   end
 
-  defp actual_units(_budget_context, _result, outcome) when outcome in ["timeout", "execution_failed", "handler_error"], do: 0
+  defp actual_units(_budget_context, _result, outcome)
+       when outcome in ["timeout", "execution_failed", "handler_error"], do: 0
 
   defp actual_units(budget_context, result, _outcome) do
     cond do
-      is_map(result) && Map.has_key?(result, :actual_units) -> Map.fetch!(result, :actual_units)
-      is_map(result) && Map.has_key?(result, "actual_units") -> Map.fetch!(result, "actual_units")
-      is_map(result) && Map.has_key?(result, :actual_cost_usd) -> Map.fetch!(result, :actual_cost_usd)
-      is_map(result) && Map.has_key?(result, "actual_cost_usd") -> Map.fetch!(result, "actual_cost_usd")
-      true -> estimated_units(budget_context)
+      is_map(result) && Map.has_key?(result, :actual_units) ->
+        Map.fetch!(result, :actual_units)
+
+      is_map(result) && Map.has_key?(result, "actual_units") ->
+        Map.fetch!(result, "actual_units")
+
+      is_map(result) && Map.has_key?(result, :actual_cost_usd) ->
+        Map.fetch!(result, :actual_cost_usd)
+
+      is_map(result) && Map.has_key?(result, "actual_cost_usd") ->
+        Map.fetch!(result, "actual_cost_usd")
+
+      true ->
+        estimated_units(budget_context)
     end
   end
 
@@ -432,7 +557,12 @@ defmodule Scoria.Workflows.Runtime do
 
   defp emit_budget_rejection(step, run, budget_context, envelope) do
     attrs =
-      base_runtime_attrs(step, run, budget_context, Map.get(envelope, :reason_code, "budget_rejected"))
+      base_runtime_attrs(
+        step,
+        run,
+        budget_context,
+        Map.get(envelope, :reason_code, "budget_rejected")
+      )
       |> Map.put(:success, false)
 
     maybe_emit_budget(attrs, budget_context, "budget_rejected", %{})
@@ -512,8 +642,9 @@ defmodule Scoria.Workflows.Runtime do
     end
   end
 
-  defp numeric_ratio(actual, estimated) when is_number(actual) and is_number(estimated) and estimated != 0,
-    do: actual / estimated
+  defp numeric_ratio(actual, estimated)
+       when is_number(actual) and is_number(estimated) and estimated != 0,
+       do: actual / estimated
 
   defp numeric_ratio(_actual, _estimated), do: 0
 
