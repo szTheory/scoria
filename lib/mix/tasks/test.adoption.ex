@@ -6,8 +6,10 @@ defmodule Mix.Tasks.Scoria.Test.Adoption do
     "test/scoria_test.exs",
     "test/scoria/identity_doctest_test.exs",
     "test/scoria/adoption_surface_test.exs",
+    "test/scoria/handoff_example_source_test.exs",
     "test/scoria/phoenix_example_source_test.exs",
     "test/scoria/runtime_integration_test.exs",
+    "test/scoria/runtime_test.exs",
     "test/mix/tasks/scoria.install_test.exs",
     "test/mix/tasks/scoria.install_route_smoke_test.exs",
     "test/scoria/bootstrap/migration_lane_compatibility_test.exs"

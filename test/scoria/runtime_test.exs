@@ -17,9 +17,9 @@ defmodule Scoria.RuntimeTest do
     assert function_exported?(Scoria, :start_run, 2)
     assert function_exported?(Scoria, :start_handoff_run, 3)
     assert function_exported?(Scoria, :resume_run, 2)
-    assert function_exported?(Runtime, :start_run, 2)
-    assert function_exported?(Runtime, :start_handoff_run, 3)
-    assert function_exported?(Runtime, :resume_run, 2)
+    assert function_exported?(Scoria.Runtime, :start_run, 2)
+    assert function_exported?(Scoria.Runtime, :start_handoff_run, 3)
+    assert function_exported?(Scoria.Runtime, :resume_run, 2)
   end
 
   test "start_handoff_run creates bounded delegated lineage with a queued child step" do

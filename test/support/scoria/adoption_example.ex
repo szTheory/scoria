@@ -40,4 +40,24 @@ defmodule Scoria.TestSupport.AdoptionExample do
       "list_runs_for_session"
     ]
   end
+
+  def handoff_doc_fragments do
+    [
+      "Scoria.start_handoff_run(identity, \"critic\"",
+      "root_role_id: \"planner\"",
+      "delegated_kind: \"review\"",
+      "handoff_input: %{\"brief\" => \"Review the draft answer for policy and accuracy\"}",
+      "projected_context: %{",
+      "projected_context: %{}",
+      "same durable run",
+      "Broad runtime-state keys are rejected explicitly",
+      "`transcript`",
+      "`provider_session`",
+      "`session`",
+      "`secrets`",
+      "`socket_state`",
+      "handlers: %{\"review\" => {MyApp.RuntimeHandlers, :review}}",
+      "/scoria/workflows/:run_id"
+    ]
+  end
 end

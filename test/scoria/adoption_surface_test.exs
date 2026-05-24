@@ -3,6 +3,7 @@ defmodule Scoria.AdoptionSurfaceTest do
 
   @readme "README.md"
   @phoenix_example "docs/phoenix_runtime_example.md"
+  @handoff_guide "docs/bounded_handoffs.md"
   @operator_guide "docs/operator_verification.md"
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
@@ -11,6 +12,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     content = File.read!(@readme)
 
     assert content =~ "Scoria.start_run"
+    assert content =~ "Scoria.start_handoff_run"
     assert content =~ "Scoria.resume_run"
     assert content =~ "session_id"
     assert content =~ "run_id"
@@ -18,6 +20,27 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "Optional knowledge lane"
     assert File.read!(@scoria_doctest) =~ "doctest Scoria"
     assert File.read!(@identity_doctest) =~ "doctest Scoria.Identity"
+  end
+
+  test "bounded handoff guide documents the narrow public delegation lane" do
+    content = File.read!(@handoff_guide)
+
+    assert content =~ "Scoria.start_handoff_run"
+    assert content =~ "root_role_id"
+    assert content =~ "delegated_kind"
+    assert content =~ "handoff_input"
+    assert content =~ "projected_context"
+    assert content =~ "projected_context: %{}"
+    assert content =~ "queued child step"
+    assert content =~ "same durable run"
+    assert content =~ "Broad runtime-state keys are rejected explicitly"
+    assert content =~ "transcript"
+    assert content =~ "provider_session"
+    assert content =~ "session"
+    assert content =~ "secrets"
+    assert content =~ "socket_state"
+    assert content =~ "/scoria/workflows/:run_id"
+    refute content =~ "implicit payload projection"
   end
 
   test "Phoenix runtime example documents identity, readback, and approval resume" do
