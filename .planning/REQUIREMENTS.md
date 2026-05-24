@@ -7,8 +7,8 @@
 
 ### Bounded Handoff Contract
 
-- [ ] **HAND-01**: Developer can start a bounded delegated run through `Scoria.start_handoff_run/3` with explicit root role, delegated role, delegated kind, and host-supplied handoff input.
-- [ ] **HAND-02**: Delegated work remains rooted under the same durable run, with a persisted handoff step, durable handoff record, and queued child step instead of transferring root ownership.
+- [x] **HAND-01**: Developer can start a bounded delegated run through `Scoria.start_handoff_run/3` with explicit root role, delegated role, delegated kind, and host-supplied handoff input.
+- [x] **HAND-02**: Delegated work remains rooted under the same durable run, with a persisted handoff step, durable handoff record, and queued child step instead of transferring root ownership.
 
 ### Delegated Evidence
 
@@ -45,8 +45,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HAND-01 | Phase 41 | Pending |
-| HAND-02 | Phase 41 | Pending |
+| HAND-01 | Phase 41 | Complete |
+| HAND-02 | Phase 41 | Complete |
 | EVID-01 | Phase 42 | Pending |
 | SAFE-01 | Phase 41 | Pending |
 | SAFE-02 | Phase 41 | Pending |
