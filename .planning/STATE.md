@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Crucible
-status: verifying
-last_updated: "2026-05-23T19:33:14.236Z"
-last_activity: 2026-05-23
+status: ready_to_close
+last_updated: "2026-05-24T10:31:30Z"
+last_activity: 2026-05-24
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 18
-  completed_plans: 12
-  percent: 67
+  completed_plans: 18
+  percent: 100
 ---
 
 # Project State
@@ -19,20 +19,20 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 40 — online-scoring-review-queue
+**Current Focus:** Milestone closeout readiness for `v1.9 Crucible`
 
 ## Current Position
 
-Phase: 40 (online-scoring-review-queue) — EXECUTING
-Plan: 1 of 7
+Phase: 40 (online-scoring-review-queue) — COMPLETE
+Plan: 7 of 7
 **Milestone:** `v1.9 Crucible`
 **Phase:** 40
-**Plan:** 0 of 0
-**Status:** Phase complete — ready for verification
-**Last activity:** 2026-05-23
+**Plan:** 7 of 7
+**Status:** Ready for milestone closeout
+**Last activity:** 2026-05-24
 
 **Progress:**
-[███████░░░] 67%
+[██████████] 100%
 
 ## Performance Metrics
 
@@ -63,6 +63,12 @@ Plan: 1 of 7
 **Phase 40 Metrics:**
 
 - **40-01:** 66m, 1 task, 8 files
+- **40-02:** resumed in working tree, targeted lane green
+- **40-03:** resumed in working tree, targeted lane green
+- **40-04:** resumed in working tree, targeted lane green
+- **40-05:** resumed in working tree, targeted lane green
+- **40-06:** resumed in working tree, targeted lane green, checkpoint approved 2026-05-24
+- **40-07:** resumed in working tree, targeted lane green
 
 ## Accumulated Context
 
@@ -121,14 +127,20 @@ Plan: 1 of 7
 - Phase 39 closeout: user accepted automation-substituted UAT after targeted LiveView interaction tests revalidated replay UX and promotion flows, and the repo proved non-browserable in isolation without a host endpoint/server dependency.
 - Phase 40 (40-01): Kept `ai_scores.reasoning/details` as compatibility aliases while promoting `explanation`, `metadata`, and scorer provenance to the canonical online-scoring contract.
 - Phase 40 (40-01): Repaired the Phase 25 convergence migration so fresh databases materialize the typed `EvalSpec` and `EvalRun` contract required by current eval workers.
+- Phase 40 (40-03): Online scoring runs through the existing `CampaignWorker` lane, with deterministic evidence persisted before any optional judge call.
+- Phase 40 (40-03): Judge-backed online scoring appends onto deterministic score rows by feeding base score attrs through `JudgeRunner`, preserving retry idempotence.
+- Phase 40 (40-04): Review queue reads live behind `Scoria.Eval.ReviewQueue`, which owns severity ordering, deep links, and promotion context DTOs.
+- Phase 40 (40-05): Queue-selected rationale/provenance is preserved on both `/scoria/workflows/:id` and `/scoria?runtime=...` via `review_candidate_id`.
+- Phase 40 (40-06): Queue promotion reuses the shared workflow-source promotion payload builder instead of duplicating snapshot shaping in the UI.
+- Phase 40 (40-07): Sealed-baseline requests stay behind the exact `dataset_baseline_promotion` workflow approval identity, and queue detail DTOs retain approval lineage.
 
 **Todos:**
 
-- Plan and execute Phase 40 to attach additive online scoring evidence and operator review queues on top of replay-backed dataset promotion.
+- Run `$gsd-complete-milestone` now that canonical verification exists for Phases 37 and 40.
 
 **Blockers:**
 
-- None.
+- None for milestone closeout. Unrelated full-suite `mix test` failures remain tracked as accepted tech debt for later cleanup.
 
 ## Deferred Items
 

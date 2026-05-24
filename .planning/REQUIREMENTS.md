@@ -7,7 +7,7 @@
 
 ### Replayable Debugging
 
-- [ ] **RPLY-01**: Operator can branch a new replay run from a durable source run and chosen checkpoint without mutating original run history.
+- [x] **RPLY-01**: Operator can branch a new replay run from a durable source run and chosen checkpoint without mutating original run history.
 - [x] **RPLY-02**: Replay execution defaults to safe modes that block or stub external-write and approval-sensitive effects while preserving explicit replay provenance.
 - [x] **RPLY-03**: Operator can inspect replay provenance and compare replay output against the original run, including source checkpoint, overrides, and execution-mode evidence.
 
@@ -20,8 +20,8 @@
 
 - [x] **SCOR-01**: Scoria can asynchronously sample eligible production traces and attach online scoring evidence without adding latency to the request path.
 - [x] **SCOR-02**: Online scoring supports deterministic-first rules and optional judge-based scoring while storing scorer version, judge model, and sampling provenance on every score.
-- [ ] **SCOR-03**: Operators can review low-quality or policy-triggered traces in a dedicated queue with deep links back to trace evidence and scoring rationale.
-- [ ] **SCOR-04**: Draft promotion candidates created from online scoring remain reviewable and separate from sealed baseline datasets until explicitly approved.
+- [x] **SCOR-03**: Operators can review low-quality or policy-triggered traces in a dedicated queue with deep links back to trace evidence and scoring rationale.
+- [x] **SCOR-04**: Draft promotion candidates created from online scoring remain reviewable and separate from sealed baseline datasets until explicitly approved.
 
 ## v2 Requirements
 
@@ -49,15 +49,15 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RPLY-01 | Phase 37 | Pending |
+| RPLY-01 | Phase 37 | Complete |
 | RPLY-02 | Phase 38 | Complete |
 | RPLY-03 | Phase 39 | Complete |
 | DATA-01 | Phase 39 | Complete |
 | DATA-02 | Phase 39 | Complete |
 | SCOR-01 | Phase 40 | Complete |
 | SCOR-02 | Phase 40 | Complete |
-| SCOR-03 | Phase 40 | Pending |
-| SCOR-04 | Phase 40 | Pending |
+| SCOR-03 | Phase 40 | Complete |
+| SCOR-04 | Phase 40 | Complete |
 
 **Coverage:**
 - v1 requirements: 9 total
@@ -66,4 +66,4 @@
 
 ---
 *Requirements defined: 2026-05-22*
-*Last updated: 2026-05-22 after opening v1.9 Crucible*
+*Last updated: 2026-05-24 after verifying Phases 37-40 for v1.9 Crucible*

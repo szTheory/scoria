@@ -8,10 +8,10 @@
 
 ## Phases
 
-- [ ] **Phase 37: Replay Lineage & Branch Model** - Create replay branches as durable new runs rooted in existing checkpoint truth.
+- [x] **Phase 37: Replay Lineage & Branch Model** - Create replay branches as durable new runs rooted in existing checkpoint truth. (completed 2026-05-24)
 - [x] **Phase 38: Replay-Safe Execution & Tool Modes** - Enforce safe replay defaults and historical-stub boundaries for external effects. (completed 2026-05-23)
 - [x] **Phase 39: Replay Operator UX & Draft Dataset Promotion** - Add replay provenance, diff context, and draft dataset promotion to the operator surface. (gap closure planned 2026-05-23) (completed 2026-05-23)
-- [ ] **Phase 40: Online Scoring & Review Queue** - Sample production traces asynchronously, attach additive score evidence, and route reviewable promotion candidates into operator workflows.
+- [x] **Phase 40: Online Scoring & Review Queue** - Sample production traces asynchronously, attach additive score evidence, and route reviewable promotion candidates into operator workflows. (verified 2026-05-24; unrelated full-suite failures remain tracked as tech debt)
 
 ## Phase Details
 
@@ -19,6 +19,11 @@
 **Goal**: Operators can branch a new replay run from a chosen source checkpoint without mutating original run history.
 **Depends on**: Phase 36
 **Requirements**: RPLY-01
+**Plans**: 3 plans
+Plans:
+- [x] `37-01-PLAN.md` — Persist replay lineage and branch-creation truth on workflow runs.
+- [x] `37-02-PLAN.md` — Reuse the existing workflow runtime path for replay branch execution.
+- [x] `37-03-PLAN.md` — Project replay lineage through public runtime and operator surfaces.
 **Success Criteria**:
 1. Replay branch creation persists `source_run_id`, `source_checkpoint_id`, override metadata, and execution mode as durable truth.
 2. Replay runs reuse the existing workflow runtime instead of introducing a second execution engine.
@@ -59,6 +64,15 @@ Plans:
 **Goal**: Scoria can asynchronously score sampled production traces and route reviewable candidates into operator-visible queues.
 **Depends on**: Phase 39
 **Requirements**: SCOR-01, SCOR-02, SCOR-03, SCOR-04
+**Plans**: 7 plans
+Plans:
+- [x] `40-01-PLAN.md` — Lock the durable storage contract for online scoring evidence and review candidates.
+- [x] `40-02-PLAN.md` — Define the async sampler and enqueue boundary for eligible production traces.
+- [x] `40-03-PLAN.md` — Execute deterministic-first scoring and optional judge augmentation in the existing worker lane.
+- [x] `40-04-PLAN.md` — Project persisted candidates into an operator-ready review queue backend.
+- [x] `40-05-PLAN.md` — Render the queue UI and preserve workflow/runtime deep-link evidence.
+- [x] `40-06-PLAN.md` — Add open-dataset dismiss/promote actions and clear the human verification checkpoint.
+- [x] `40-07-PLAN.md` — Route sealed-baseline requests through workflow approvals and keep approval lineage visible.
 **Success Criteria**:
 1. Production trace sampling and score execution run asynchronously through Oban, with zero request-path scoring latency.
 2. Deterministic-first rules and optional judge scoring attach additive evidence with scorer version, model, and sampling provenance.
@@ -69,7 +83,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Notes |
 |-------|----------------|--------|-------|
-| 37. Replay Lineage & Branch Model | 0/0 | Planned | Start with `$gsd-plan-phase 37` |
+| 37. Replay Lineage & Branch Model | 3/3 | Complete | Verified 2026-05-24 |
 | 38. Replay-Safe Execution & Tool Modes | 3/3 | Complete    | 2026-05-23 |
 | 39. Replay Operator UX & Draft Dataset Promotion | 5/5 | Complete   | 2026-05-23 |
-| 40. Online Scoring & Review Queue | 1/7 | In Progress|  |
+| 40. Online Scoring & Review Queue | 7/7 | Complete | Verified 2026-05-24; unrelated full-suite failures remain tracked as tech debt |

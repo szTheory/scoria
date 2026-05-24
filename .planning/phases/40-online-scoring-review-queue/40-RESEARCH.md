@@ -339,22 +339,19 @@ Workflows.request_baseline_promotion(%{
 | A3 | Queue items should persist both `trace_id` and `workflow_run_id` whenever available because the current UI has separate trace and workflow surfaces. [ASSUMED] | Pitfall 3 | Medium; if one identifier can always derive the other, the queue schema can be simpler. |
 | A4 | The score evidence mismatch should be fixed by extending `Score` or by adding an adjacent score-evidence table before full Phase 40 implementation. [ASSUMED] | Summary; Pitfall 2 | High; if the repo is intentionally split elsewhere, planning around the wrong storage layer will create rework. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What durable row is the operator queue actually reading?**
-   - What we know: campaigns, runs, and scores exist, but there is no current review-item projection or table. [VERIFIED: lib/scoria/eval/eval_campaign.ex; lib/scoria/eval/eval_run.ex; lib/scoria/eval/score.ex; lib/scoria/workflows/remote_approval_projection.ex]
-   - What's unclear: whether queue state should live on a new table, on `EvalCampaignTarget`, or on a score-adjacent projection. [VERIFIED: local code inspection]
-   - Recommendation: make this the first planning decision and do not start UI work until it is locked. [ASSUMED]
+   - Resolution: the queue should read a dedicated `ai_online_score_candidates` durable row modeled by `Scoria.Eval.OnlineScoreCandidate`, with `Scoria.Eval.ReviewQueue` projecting UI DTOs from that table plus related runs/scores. This keeps review state, promotion readiness, and deep-link lineage off `EvalCampaignTarget` and out of LiveView template joins. [VERIFIED: .planning/phases/40-online-scoring-review-queue/40-01-PLAN.md; .planning/phases/40-online-scoring-review-queue/40-03-PLAN.md]
+   - Why this closes the question: `EvalCampaignTarget` remains async execution lineage, while candidate rows become operator review truth and can persist dismissal, promotion, and approval-request state separately. [VERIFIED: .planning/phases/40-online-scoring-review-queue/40-01-PLAN.md; .planning/phases/40-online-scoring-review-queue/40-04-PLAN.md]
 
 2. **How should score-level rationale be stored?**
-   - What we know: `JudgeRunner` and tests expect score fields that `Score` does not currently expose. [VERIFIED: lib/scoria/eval/judge_runner.ex; lib/scoria/eval/score.ex; test/scoria/eval/campaign_worker_test.exs]
-   - What's unclear: whether the intended fix is schema expansion, a new evidence table, or uncommitted local drift. [VERIFIED: local code inspection]
-   - Recommendation: add a Wave 0 verification slice or explicit prerequisite plan to reconcile this before Phase 40 execution. [ASSUMED]
+   - Resolution: expand `ai_scores` and `Scoria.Eval.Score` directly so every persisted score row carries `status`, `scorer_kind`, `scorer_version`, `explanation`, `judge_model`, `rubric_version`, `evidence_refs`, and `metadata`, with compatibility cleanup for any legacy `reasoning/details` naming mismatch. No second evidence table is needed for this phase. [VERIFIED: .planning/phases/40-online-scoring-review-queue/40-01-PLAN.md; .planning/REQUIREMENTS.md]
+   - Why this closes the question: Phase 40 requirements and existing judge/campaign callers already treat score rationale as row-level durable truth, so storing it on `Score` keeps downstream queue/projection logic simple and traceable. [VERIFIED: lib/scoria/eval/judge_runner.ex; test/scoria/eval/campaign_worker_test.exs; .planning/phases/40-online-scoring-review-queue/40-02-PLAN.md]
 
 3. **What makes a production trace “eligible”?**
-   - What we know: traces and spans are persisted, but there is no named sampler or eligibility boundary yet. [VERIFIED: lib/scoria/repo/trace.ex; lib/scoria/repo/span.ex]
-   - What's unclear: whether eligibility is based on attributes, workflow outcomes, tenant policy, replayability, or something else. [VERIFIED: local code inspection]
-   - Recommendation: define a narrow eligibility contract in the first plan and store the sampling rationale durably. [ASSUMED]
+   - Resolution: eligibility should be decided by an explicit off-request-path sampler boundary in Plan 40-01. The sampler runs after trace/workflow persistence completes, selects only production traces with durable `trace_id` plus workflow lineage, applies tenant/rule-based eligibility checks there, records sampler version plus sample reason/provenance on the candidate row, and only then hands the candidate to the scoring coordinator. [VERIFIED: .planning/phases/40-online-scoring-review-queue/40-01-PLAN.md; .planning/REQUIREMENTS.md]
+   - Why this closes the question: `SCOR-01` requires asynchronous sampling with zero request-path scoring latency, and the revised plan now makes eligibility selection, async trigger location, and provenance persistence explicit instead of leaving them implicit in pre-sampled facts. [VERIFIED: .planning/REQUIREMENTS.md; .planning/phases/40-online-scoring-review-queue/40-01-PLAN.md]
 
 ## Environment Availability
 
