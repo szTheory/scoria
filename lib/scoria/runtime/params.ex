@@ -266,7 +266,17 @@ defmodule Scoria.Runtime.Params do
       "cookies",
       "headers",
       "secrets"
-    ]
+    ] or
+      String.ends_with?(key, "_transcript") or
+      String.ends_with?(key, "_history") or
+      String.ends_with?(key, "_messages") or
+      String.ends_with?(key, "_cookies") or
+      String.ends_with?(key, "_headers") or
+      String.ends_with?(key, "_secrets") or
+      String.starts_with?(key, "provider_session_") or
+      String.ends_with?(key, "_provider_session") or
+      String.starts_with?(key, "socket_") or
+      String.ends_with?(key, "_socket")
   end
 
   defp canonical_value(attrs, key) when is_map(attrs) do

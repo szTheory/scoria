@@ -401,6 +401,33 @@ defmodule Scoria.Workflows.RuntimeTest do
       assert failed_step.error_envelope["contract"] == "bounded_handoff_projected_context"
       assert failed_step.error_envelope["message"] =~ "projected_context"
     end
+
+    test "handoff execution rejects non-map projected context at the workflow seam" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "researcher"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "handoff",
+          role_id: "researcher",
+          status: "queued"
+        })
+
+      handler = fn _step, _run ->
+        {:handoff,
+         %{
+           "delegated_role_id" => "critic",
+           "delegated_kind" => "review",
+           "handoff_input" => %{"brief" => "review"},
+           "projected_context" => ["not", "a", "map"]
+         }}
+      end
+
+      assert {:ok, failed_step} = Runtime.execute_step(step.id, handler: handler)
+      assert failed_step.status == "failed"
+      assert failed_step.error_envelope["reason"] == "invalid_projected_context"
+      assert failed_step.error_envelope["contract"] == "bounded_handoff_projected_context"
+    end
   end
 
   describe "exact resume and retry failed step" do

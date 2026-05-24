@@ -112,6 +112,75 @@ defmodule Scoria.RuntimeTest do
     assert Runtime.list_runs_for_session("session-unsafe") == []
   end
 
+  test "start_handoff_run rejects transcript, headers, and nested history projected context aliases" do
+    identity = %{
+      actor_id: "actor-unsafe-alias",
+      tenant_id: "tenant-unsafe-alias",
+      session_id: "session-unsafe-alias"
+    }
+
+    assert {:error, :unsafe_projected_context} =
+             Runtime.start_handoff_run(
+               identity,
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: %{
+                 "transcript" => [%{"role" => "assistant", "content" => "too much"}]
+               }
+             )
+
+    assert {:error, :unsafe_projected_context} =
+             Runtime.start_handoff_run(
+               %{identity | session_id: "session-unsafe-headers"},
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: %{"request_headers" => %{"authorization" => "secret"}}
+             )
+
+    assert {:error, :unsafe_projected_context} =
+             Runtime.start_handoff_run(
+               %{identity | session_id: "session-unsafe-nested"},
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: %{"safe" => %{"conversation_history" => ["too much state"]}}
+             )
+  end
+
+  test "start_handoff_run accepts explicit empty or narrow projected context slices" do
+    assert {:ok, empty_summary} =
+             Runtime.start_handoff_run(
+               %{actor_id: "actor-empty", tenant_id: "tenant-empty", session_id: "session-empty"},
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: %{}
+             )
+
+    assert {:ok, narrow_summary} =
+             Runtime.start_handoff_run(
+               %{
+                 actor_id: "actor-narrow",
+                 tenant_id: "tenant-narrow",
+                 session_id: "session-narrow"
+               },
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               projected_context: %{"task" => "review"}
+             )
+
+    assert Runtime.get_run_detail!(empty_summary.run_id).summary.status == "running"
+    assert Runtime.get_run_detail!(narrow_summary.run_id).summary.status == "running"
+  end
+
   test "start_run returns a curated public summary with canonical identity" do
     assert {:ok, %RunSummary{} = summary} =
              Runtime.start_run(
