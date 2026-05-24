@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: none
-status: shipped
-last_updated: "2026-05-24T10:34:09Z"
+milestone: v2.0
+milestone_name: Relay
+status: in_progress
+last_updated: "2026-05-24T12:58:38Z"
 last_activity: 2026-05-24
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 18
-  completed_plans: 18
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 8
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -19,20 +19,20 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** No active milestone. `v1.9 Crucible` shipped on 2026-05-24; next step is `$gsd-new-milestone` when ready.
+**Current Focus:** `v2.0 Relay` is active, focused on turning the existing bounded handoff/support-truth wedge into milestone-quality shipped truth.
 
 ## Current Position
 
-Phase: None
+Phase: 41
 Plan: None
-**Milestone:** None
-**Phase:** None
-**Plan:** None
-**Status:** Shipped through `v1.9 Crucible`
+**Milestone:** `v2.0 Relay`
+**Phase:** Phase 41 - Bounded Handoff Contract & Safety
+**Plan:** Not started
+**Status:** Milestone initialized; requirements and roadmap are active
 **Last activity:** 2026-05-24
 
 **Progress:**
-[██████████] 100%
+[░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Plan: None
 - **Total Validated Requirements:** 115
 - **Coverage:** 100% on shipped milestones through `v1.9 Crucible`
 - **Latest Shipped Milestone:** `v1.9 Crucible` on 2026-05-24
+- **Active Milestone:** `v2.0 Relay` with 3 planned phases and 8 planned implementation/verification plans
 
 **Phase 31 Metrics:**
 
@@ -76,6 +77,9 @@ Plan: None
 
 - Milestone activation decision for `v1.9`: prioritize replayable debugging and online scoring with reviewable dataset promotion over semantic caching and broad handoff productization.
 - Milestone activation decision for `v1.9`: online scoring remains additive evidence only; sealed baseline datasets are never auto-mutated.
+- Post-`v1.9`: public handoff productization stays narrow behind `Scoria.start_handoff_run/3` and compounds the durable workflow substrate instead of expanding into broad orchestration surface area.
+- Post-`v1.9`: projected context is the actual handoff product boundary; unsafe delegated context keys should be rejected explicitly, not left to convention.
+- Post-`v1.9`: support truth is part of productization, so docs/source checks, `mix test.adoption` env defaults, and default-path compile stability belong in the same wedge as the API work.
 - Used `Ecto.Changeset.apply_changes/1` to compute merged text payloads in-memory before running the tokenizer, avoiding partial map logic.
 - Adopted strict `Ecto.Multi` version deprecation mimicking `Scoria.Eval`.
 - Added an explicit `update_draft_template/2` for draft-only in-place changes.
@@ -136,7 +140,8 @@ Plan: None
 
 **Todos:**
 
-- Open the next milestone with `$gsd-new-milestone` when ready.
+- Start Phase 41 planning for the bounded handoff contract and projected-context safety lane.
+- Verify whether any current handoff rough edge is real adopter value or merely closeout bookkeeping during Phases 42-43.
 
 **Blockers:**
 
@@ -149,7 +154,7 @@ Items deferred or intentionally outside shipped milestone scope:
 | Category | Item | Status |
 |----------|------|--------|
 | tech debt | Project-level full-suite `mix test` failures outside the owned v1.9 verification lanes | accepted at `v1.9` close |
-| tech debt | Existing connector and compaction compile warnings outside the owned v1.9 surfaces | accepted at `v1.9` close |
+| tech debt | Project-level full-suite warning audit outside the owned adoption lane still has not been rerun after the post-`v1.9` support-truth shims | still unverified |
 | tech debt | LiveView async teardown noise in the workflow/replay test lane | accepted at `v1.9` close |
 | future milestone | Hosted connector marketplace / broker behavior | deferred beyond `v1.5` |
 | future milestone | First-party browser/code-exec productization | deferred until connector policy and evidence are proven boring |

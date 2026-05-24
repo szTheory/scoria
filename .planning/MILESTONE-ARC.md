@@ -38,6 +38,13 @@ Shipped through `v1.9 Crucible` on 2026-05-24:
 - replay branching from durable checkpoint truth with replay-safe execution defaults
 - replay comparison, workflow-source dataset promotion, and asynchronous online scoring review queues
 
+Repo-local current truth also includes an unarchived post-`v1.9` adoption wedge:
+
+- public `Scoria.start_handoff_run/3` bounded handoff API over the existing durable workflow substrate
+- projected-context defaults and unsafe-key rejection for delegated runs
+- handoff docs/source checks plus `mix test.adoption` env-default cleanup
+- thin connector/compaction/dashboard shims to keep the normal adoption lane from leaking missing-module drift
+
 ## Sequencing Principles
 
 1. Prioritize adoption prerequisites before adjacent capability expansion.
@@ -60,6 +67,7 @@ Shipped through `v1.9 Crucible` on 2026-05-24:
 | v1.7 | Outrider | shipped | Advanced ecosystem integrations and future-bet runtime surfaces |
 | v1.8 | Vanguard | shipped | Multi-model orchestration, distributed evaluations, and reconciled shipped milestone truth |
 | v1.9 | Crucible | shipped | Replayable debugging and online quality feedback |
+| v2.0 | Relay | active | Formalize and verify the bounded public handoff wedge already present in the repo |
 
 ## Latest Shipped Milestone
 
@@ -82,27 +90,25 @@ Teams can inspect, replay, score, and promote production workflow evidence throu
 
 ## Active Milestone
 
-No active milestone. `v1.9 Crucible` is shipped, and the next milestone should be opened explicitly.
+### v2.0 Relay
+
+**Status:** active
+**Priority at activation:** highest
+**Theme:** Formalize and verify the bounded public handoff lane
+
+**What this milestone is expected to deliver**
+
+- canonical milestone proof for the already-implemented `Scoria.start_handoff_run/3` lane
+- final support truth for delegated lineage, projected-context safety, and adoption-lane docs
+- an explicit answer on whether any remaining handoff work is real adopter value or merely deferable polish
+
+**Why now**
+
+The implementation wedge already exists in the repo, so the main remaining risk is support-truth and verification drift. Activating this milestone keeps Scoria from carrying an ambiguous half-shipped handoff story into the next capability bet.
 
 ## Recommended Candidates
 
-### 1. Bounded handoff productization
-
-**Status:** pending
-**Priority:** medium
-**Theme:** Public role handoffs without platform drift
-
-**What this step should deliver**
-
-- a narrow public handoff contract over existing durable workflow seams
-- projected-context and least-privilege defaults that remain inspectable
-- richer operator evidence for delegated role lineage
-
-**Why it is a strong next candidate**
-
-The handoff substrate already exists, and `v1.9` established the replay/score operator loop it would build on. A bounded public handoff layer now compounds existing workflow truth without requiring managed-platform drift.
-
-### 2. Tenant-scoped semantic fast path
+### 1. Tenant-scoped semantic fast path
 
 **Status:** pending
 **Priority:** medium
@@ -118,15 +124,30 @@ The handoff substrate already exists, and `v1.9` established the replay/score op
 
 Semantic caching is still valuable, but it is a latency/cost optimization with higher correctness and privacy risk. It should still follow the newly shipped replay and scoring trust loop.
 
+### 2. Advanced adoption examples only if handoff confusion remains
+
+**Status:** pending
+**Priority:** low
+**Theme:** Clarify capability tiering without widening the product boundary
+
+**What this step should deliver**
+
+- one stronger runtime -> handoff -> review/replay guide or example if support burden remains high
+- clearer lane-by-lane explanation of what typical Phoenix teams adopt first vs later
+
+**Why it is third**
+
+This is useful only if the new public handoff lane still feels hard to approach after verification and closeout. It should not outrank the semantic fast path unless real adopter confusion persists.
+
 ## Recommendation
 
-Run `$gsd-new-milestone` to open the next milestone when ready. If priorities remain unchanged, bounded handoff productization is the strongest starting candidate.
+Complete `v2.0 Relay` before opening another new milestone. If the bounded handoff lane closes cleanly, tenant-scoped semantic fast path remains the strongest next major candidate; if real adopter confusion remains, revisit the docs/example candidate first.
 
 ## Source Notes
 
 These priorities were informed by:
 
-- current repo state as of 2026-05-22
+- current repo state as of 2026-05-24
 - `.planning/research/milestone-options-2026-05-12.md`
 - archived seed references in `.planning/seeds/`
 - repo-local prompt research in `prompts/`
