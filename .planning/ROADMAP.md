@@ -60,6 +60,6 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 41. Bounded Handoff Contract & Safety | 1/3 | In Progress|  |
+| 41. Bounded Handoff Contract & Safety | 2/3 | In Progress|  |
 | 42. Delegated Evidence & Adoption Story | 0/3 | Not Started | — |
 | 43. Canonical Adoption Proof & Milestone Closeout | 0/2 | Not Started | — |

@@ -16,8 +16,8 @@
 
 ### Projected Context Safety
 
-- [ ] **SAFE-01**: Public bounded handoffs reject unsafe projected-context keys such as transcript/session/secrets state instead of silently accepting broad delegated context.
-- [ ] **SAFE-02**: The public handoff lane stays intentionally narrow and host-controlled, avoiding broad autonomous multi-agent platform behavior in the default Scoria surface.
+- [x] **SAFE-01**: Public bounded handoffs reject unsafe projected-context keys such as transcript/session/secrets state instead of silently accepting broad delegated context.
+- [x] **SAFE-02**: The public handoff lane stays intentionally narrow and host-controlled, avoiding broad autonomous multi-agent platform behavior in the default Scoria surface.
 
 ### Adoption Proof
 
@@ -48,8 +48,8 @@
 | HAND-01 | Phase 41 | Complete |
 | HAND-02 | Phase 41 | Complete |
 | EVID-01 | Phase 42 | Pending |
-| SAFE-01 | Phase 41 | Pending |
-| SAFE-02 | Phase 41 | Pending |
+| SAFE-01 | Phase 41 | Complete |
+| SAFE-02 | Phase 41 | Complete |
 | ADPT-01 | Phase 42 | Pending |
 | ADPT-02 | Phase 43 | Pending |
 
