@@ -33,6 +33,7 @@ defmodule ScoriaWeb.Router do
 
         live_session :scoria_dashboard do
           live("/", ScoriaWeb.OrchestratorLive, :index)
+          live("/reviews", ScoriaWeb.ReviewQueueLive, :index)
           live("/workflows/:id", ScoriaWeb.WorkflowLive.Show, :show)
           live("/prompts", ScoriaWeb.PromptLive.Index, :index)
           live("/prompts/:id/release", ScoriaWeb.PromptLive.ReleaseWorkbenchLive, :index)

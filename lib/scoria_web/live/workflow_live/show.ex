@@ -1,6 +1,7 @@
 defmodule ScoriaWeb.WorkflowLive.Show do
   use Phoenix.LiveView
 
+  alias Scoria.Eval
   alias Scoria.Runtime
   alias Scoria.SRE
   alias Scoria.Workflows
@@ -10,14 +11,17 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   @comparison_sources ~w(original replay)
 
   @impl true
-  def mount(%{"id" => run_id}, _session, socket) do
+  def mount(%{"id" => run_id} = params, _session, socket) do
+    review_candidate_id = Map.get(params, "review_candidate_id")
+
     if connected?(socket) do
       Workflows.subscribe_run(run_id)
     end
 
-    socket = 
+    socket =
       socket
       |> load_run(run_id)
+      |> assign(:review_candidate, load_review_candidate(run_id, review_candidate_id))
       |> assign_async(:compacted_memories, fn ->
         {:ok, %{compacted_memories: Runtime.list_compacted_memories_for_run(run_id)}}
       end)
@@ -162,6 +166,19 @@ defmodule ScoriaWeb.WorkflowLive.Show do
               <span class="font-mono">v<%= @baseline_notice[:dataset_version] || @baseline_notice["dataset_version"] %></span>.
             </p>
           </article>
+        </section>
+
+        <section
+          :if={@review_candidate}
+          class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm"
+        >
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Review candidate evidence</p>
+          <p class="mt-2 font-semibold text-stone-900"><%= @review_candidate.rationale %></p>
+          <div class="mt-3 flex flex-wrap gap-2 text-xs text-stone-700">
+            <span class="rounded-full border border-blue-200 bg-white px-3 py-1"><%= @review_candidate.severity %></span>
+            <span class="rounded-full border border-blue-200 bg-white px-3 py-1">trace <span class="font-mono"><%= @review_candidate.trace_id %></span></span>
+            <span class="rounded-full border border-blue-200 bg-white px-3 py-1">candidate <span class="font-mono"><%= @review_candidate.id %></span></span>
+          </div>
         </section>
 
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
@@ -366,4 +383,13 @@ defmodule ScoriaWeb.WorkflowLive.Show do
 
   defp variant_label("replay"), do: "Replay trace"
   defp variant_label(_variant), do: "Original trace"
+
+  defp load_review_candidate(_run_id, nil), do: nil
+
+  defp load_review_candidate(run_id, candidate_id) do
+    case Eval.get_review_candidate(candidate_id) do
+      %{workflow_run_id: ^run_id} = candidate -> candidate
+      _ -> nil
+    end
+  end
 end

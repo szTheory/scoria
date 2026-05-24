@@ -5,7 +5,17 @@ defmodule Scoria.Eval.OnlineScoreCandidate do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @statuses ~w(queued ready reviewing promoted dismissed superseded)
+  @statuses ~w(
+    queued
+    scored
+    needs_review
+    promotion_candidate
+    approval_requested
+    reviewing
+    promoted
+    dismissed
+    superseded
+  )
   @review_statuses ~w(pending in_review approved dismissed promoted)
 
   schema "ai_online_score_candidates" do

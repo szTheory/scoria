@@ -16,6 +16,9 @@ defmodule Scoria.Eval do
   alias Scoria.Eval.EvalSpec
   alias Scoria.Eval.EvalRun
   alias Scoria.Eval.JudgeRunner
+  alias Scoria.Eval.OnlineScoring
+  alias Scoria.Eval.OnlineScoreSampler
+  alias Scoria.Eval.ReviewQueue
   alias Scoria.Eval.Score
 
   @doc """
@@ -251,6 +254,55 @@ defmodule Scoria.Eval do
   end
 
   @doc """
+  Schedules online scoring sampling for a persisted trace on an async boundary.
+  """
+  def sample_trace_for_online_scoring(attrs, opts \\ []) when is_map(attrs) do
+    OnlineScoreSampler.schedule_sample(attrs, opts)
+  end
+
+  @doc """
+  Lists projected review-queue candidates for the operator UI.
+  """
+  def list_review_queue(filters \\ %{}) do
+    ReviewQueue.list_candidates(filters)
+  end
+
+  @doc """
+  Returns summary strip counts for the projected review queue.
+  """
+  def summarize_review_queue(filters \\ %{}) do
+    ReviewQueue.summary(filters)
+  end
+
+  @doc """
+  Returns one projected review candidate or nil.
+  """
+  def get_review_candidate(candidate_id) do
+    ReviewQueue.get_candidate(candidate_id)
+  end
+
+  @doc """
+  Dismisses one active review candidate without removing durable score evidence.
+  """
+  def dismiss_review_candidate(candidate_id) do
+    ReviewQueue.dismiss_candidate(candidate_id)
+  end
+
+  @doc """
+  Promotes one review candidate into an open dataset and records durable queue lineage.
+  """
+  def promote_review_candidate(candidate_id, attrs) when is_map(attrs) do
+    ReviewQueue.promote_candidate(candidate_id, attrs)
+  end
+
+  @doc """
+  Requests sealed-baseline approval from one review candidate and keeps approval lineage visible.
+  """
+  def request_review_candidate_baseline_approval(candidate_id, attrs) when is_map(attrs) do
+    ReviewQueue.request_baseline_approval(candidate_id, attrs)
+  end
+
+  @doc """
   Lists campaign targets in insertion order.
   """
   def list_campaign_targets(campaign_id) do
@@ -383,6 +435,13 @@ defmodule Scoria.Eval do
 
       target.status in ["failed", "cancelled"] ->
         {:error, :target_already_terminal}
+
+      online_scoring_target?(target) ->
+        OnlineScoring.execute_candidate(eval_run, %{
+          target: target,
+          eval_spec: eval_spec,
+          dataset: get_dataset!(eval_run.dataset_id)
+        })
 
       true ->
         JudgeRunner.run_existing(eval_run, %{
@@ -748,6 +807,12 @@ defmodule Scoria.Eval do
   defp reason_code({code, _detail}), do: to_string(code)
   defp reason_code(code) when is_atom(code), do: to_string(code)
   defp reason_code(code), do: inspect(code)
+
+  defp online_scoring_target?(%EvalCampaignTarget{} = target) do
+    target.metadata
+    |> Map.new()
+    |> fetch_attr(:source) == "online_scoring"
+  end
 
   defp has_scores?(eval_run_id) do
     Repo.exists?(from(score in Score, where: score.eval_run_id == ^eval_run_id))

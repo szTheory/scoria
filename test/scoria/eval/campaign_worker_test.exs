@@ -377,6 +377,49 @@ defmodule Scoria.Eval.CampaignWorkerTest do
 
       assert "has already been taken" in errors_on(changeset).dedupe_key
     end
+
+    test "online scoring policy triggers finish deterministically and mark the candidate for review" do
+      %{candidate: candidate, eval_run: eval_run, job: job} =
+        seeded_online_scoring_execution(%{sample_reason: "policy_trigger"})
+
+      assert :ok = CampaignWorker.perform(%Job{args: job.args})
+      refute_received {:orchestrator_called, _, _, _, _}
+
+      candidate = Repo.get!(OnlineScoreCandidate, candidate.id)
+      eval_run = Repo.get!(EvalRun, eval_run.id)
+      scores = Repo.all(from(score in Score, where: score.eval_run_id == ^eval_run.id))
+
+      assert candidate.status == "needs_review"
+      assert candidate.review_status == "pending"
+      assert candidate.score_status == "failed"
+      assert candidate.scorer_kind == "deterministic_rule"
+      assert candidate.score_explanation =~ "Policy trigger"
+      assert eval_run.threshold_verdict == "failed"
+      assert Enum.all?(scores, &(&1.scorer_kind == "deterministic_rule"))
+    end
+
+    test "online scoring appends judge rationale without overwriting deterministic evidence" do
+      %{candidate: candidate, eval_run: eval_run, job: job} = seeded_online_scoring_execution()
+
+      assert :ok = CampaignWorker.perform(%Job{args: job.args})
+      assert_received {:orchestrator_called, "openai:gpt-4o-mini", _prompt, _schema, _opts}
+
+      candidate = Repo.get!(OnlineScoreCandidate, candidate.id)
+      eval_run = Repo.get!(EvalRun, eval_run.id)
+      scores = Repo.all(from(score in Score, where: score.eval_run_id == ^eval_run.id))
+
+      assert candidate.status == "promotion_candidate"
+      assert candidate.review_status == "pending"
+      assert candidate.score_status == "passed"
+      assert candidate.score_explanation == "Stubbed judge verdict"
+      assert Enum.any?(scores, &(&1.scorer_kind == "deterministic_rule"))
+      assert Enum.any?(scores, &(&1.scorer_kind == "llm_judge"))
+
+      assert :ok = CampaignWorker.perform(%Job{args: job.args})
+
+      rerun_scores = Repo.all(from(score in Score, where: score.eval_run_id == ^eval_run.id))
+      assert length(rerun_scores) == length(scores)
+    end
   end
 
   defp seeded_campaign(opts \\ []) do
@@ -485,6 +528,89 @@ defmodule Scoria.Eval.CampaignWorkerTest do
       })
 
     {:ok, dataset, eval_spec, dataset_item}
+  end
+
+  defp seeded_online_scoring_execution(overrides \\ %{}) do
+    Application.put_env(:scoria, :online_scoring_module, Scoria.Eval.OnlineScoring)
+    {:ok, dataset, eval_spec, _dataset_item} = seeded_eval_contract()
+    %{trace: trace, run: run, step: step} = persisted_trace_fixture(%{"env" => "prod"})
+
+    attrs =
+      Map.merge(
+        %{
+          trace_id: trace.id,
+          tenant_id: "tenant-prod",
+          workflow_run_id: run.id,
+          workflow_step_id: step.id,
+          sample_reason: "production_sample",
+          sample_window: "2026-05-23T21",
+          sampler_version: "online-score-sampler@v1",
+          scorer: %{
+            eval_spec_id: eval_spec.id,
+            provider: "openai",
+            model: "gpt-4o-mini"
+          },
+          evidence_refs: %{
+            "trace_id" => trace.id,
+            "workflow_run_id" => run.id,
+            "workflow_step_id" => step.id
+          },
+          promotion_snapshot: %{
+            "source_variant" => "original",
+            "recorded_outcome" => %{"kind" => "result", "value" => %{"answer" => "world"}}
+          }
+        },
+        overrides
+      )
+
+    assert {:ok, %{status: :scheduled}} =
+             Eval.sample_trace_for_online_scoring(attrs, notify: self(), sandbox_repo: Repo)
+
+    assert_receive {:online_scoring_result,
+                    {:ok, %{candidate: candidate, campaign: campaign, eval_runs: [eval_run]}}},
+                   1_000
+
+    [target] = Eval.list_campaign_targets(campaign.id)
+
+    job =
+      all_enqueued(worker: CampaignWorker)
+      |> Enum.find(&(&1.args["campaign_target_id"] == target.id))
+
+    %{candidate: candidate, campaign: campaign, target: target, eval_run: eval_run, job: job, dataset: dataset}
+  end
+
+  defp persisted_trace_fixture(trace_attributes) do
+    {:ok, trace} =
+      %Trace{}
+      |> Trace.changeset(%{
+        session_id: "sess-#{System.unique_integer([:positive])}",
+        attributes: trace_attributes
+      })
+      |> Repo.insert()
+
+    {:ok, run} =
+      %Run{}
+      |> Run.changeset(%{
+        root_role_id: "assistant",
+        tenant_id: "tenant-prod",
+        session_id: trace.session_id,
+        status: "running",
+        execution_mode: "live"
+      })
+      |> Repo.insert()
+
+    {:ok, step} =
+      %Step{}
+      |> Step.changeset(%{
+        run_id: run.id,
+        sequence: 1,
+        kind: "llm_call",
+        role_id: "assistant",
+        status: "completed"
+      })
+      |> Repo.insert()
+
+    %{trace: trace, run: run, step: step}
   end
 
   defp errors_on(changeset) do

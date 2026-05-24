@@ -3,6 +3,7 @@ defmodule ScoriaWeb.OrchestratorLive do
   import Ecto.Query, warn: false
 
   alias Decimal, as: D
+  alias Scoria.Eval
   alias Scoria.Repo
 
   alias Scoria.Connectors
@@ -28,7 +29,7 @@ defmodule ScoriaWeb.OrchestratorLive do
     RuntimeDetailDrawerComponent
   }
 
-  def mount(_params, session, socket) do
+  def mount(params, session, socket) do
     tenant_id = session["tenant_id"] || "default"
 
     if connected?(socket) do
@@ -57,6 +58,8 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:trace_records, %{})
       |> assign(:replay_notice, nil)
       |> assign(:promote_notice, nil)
+      |> assign(:runtime_query, Map.get(params, "runtime"))
+      |> assign(:review_candidate, load_review_candidate(Map.get(params, "review_candidate_id")))
       |> assign(:tenant_id, tenant_id)
       |> stream(:traces, [])
 
@@ -126,7 +129,7 @@ defmodule ScoriaWeb.OrchestratorLive do
   end
 
   def handle_event("open_connector_drawer", %{"id" => connector_id}, socket) do
-    {:noreply, assign(socket, :connector_drawer, Connectors.get_connector_drawer(connector_id))}
+    {:noreply, assign(socket, :connector_drawer, connector_drawer(connector_id))}
   end
 
   def handle_event("close_connector_drawer", _, socket) do
@@ -188,10 +191,34 @@ defmodule ScoriaWeb.OrchestratorLive do
         <h1 class="text-3xl font-bold mb-6">Scoria Orchestrator</h1>
         <p class="text-gray-600 mb-8">A Phoenix-native AI Application Quality Layer.</p>
 
+        <section
+          :if={@review_candidate}
+          class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm"
+        >
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Review candidate context</p>
+          <p class="mt-2 font-semibold text-stone-900"><%= @review_candidate.rationale %></p>
+          <p class="mt-2 text-stone-700">
+            Queue-selected evidence stays visible while inspecting runtime
+            <span :if={@runtime_query} class="font-mono"><%= @runtime_query %></span>.
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2 text-xs text-stone-700">
+            <span class="rounded-full border border-blue-200 bg-white px-3 py-1"><%= @review_candidate.severity %></span>
+            <span class="rounded-full border border-blue-200 bg-white px-3 py-1">trace <span class="font-mono"><%= @review_candidate.trace_id %></span></span>
+            <span class="rounded-full border border-blue-200 bg-white px-3 py-1">workflow <span class="font-mono"><%= @review_candidate.workflow_run_id %></span></span>
+          </div>
+        </section>
+
         <div id="token-stream" class="mb-4 whitespace-pre-wrap"><%= @token_text %></div>
 
         <div class="mb-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
-          <ApprovalInboxComponent.render approvals={@approval_inbox} />
+          <%= if approval_inbox_component?() do %>
+            <ApprovalInboxComponent.render approvals={@approval_inbox} />
+          <% else %>
+            <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+              <p class="text-xs uppercase tracking-[0.24em] text-stone-500">approvals</p>
+              <h2 class="text-lg font-semibold text-stone-900">Approval inbox</h2>
+            </section>
+          <% end %>
 
           <div class="space-y-6">
             <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
@@ -251,8 +278,12 @@ defmodule ScoriaWeb.OrchestratorLive do
           </div>
         </div>
 
-        <RuntimeDetailDrawerComponent.render drawer={@runtime_drawer} />
-        <ConnectorDetailDrawerComponent.render drawer={@connector_drawer} />
+        <%= if runtime_drawer_component?() do %>
+          <RuntimeDetailDrawerComponent.render drawer={@runtime_drawer} />
+        <% end %>
+        <%= if connector_drawer_component?() do %>
+          <ConnectorDetailDrawerComponent.render drawer={@connector_drawer} />
+        <% end %>
 
         <div id="traces-list" phx-update="stream" class="space-y-4">
           <div :for={{id, trace} <- @streams.traces} id={id} class="bg-white p-4 rounded shadow">
@@ -809,6 +840,32 @@ defmodule ScoriaWeb.OrchestratorLive do
     "Could not #{status} approval through workflow-owned state: #{inspect(reason)}"
   end
 
+  defp load_review_candidate(nil), do: nil
+  defp load_review_candidate(candidate_id), do: Eval.get_review_candidate(candidate_id)
+
+  defp connector_drawer(connector_id) do
+    if function_exported?(Connectors, :get_connector_drawer, 1) do
+      Connectors.get_connector_drawer(connector_id)
+    else
+      nil
+    end
+  end
+
+  defp approval_inbox_component? do
+    Code.ensure_loaded?(ApprovalInboxComponent) and
+      function_exported?(ApprovalInboxComponent, :render, 1)
+  end
+
+  defp runtime_drawer_component? do
+    Code.ensure_loaded?(RuntimeDetailDrawerComponent) and
+      function_exported?(RuntimeDetailDrawerComponent, :render, 1)
+  end
+
+  defp connector_drawer_component? do
+    Code.ensure_loaded?(ConnectorDetailDrawerComponent) and
+      function_exported?(ConnectorDetailDrawerComponent, :render, 1)
+  end
+
   defp load_operator_surface(socket) do
     tenant_id = socket.assigns.tenant_id
 
@@ -837,7 +894,15 @@ defmodule ScoriaWeb.OrchestratorLive do
 
     socket
     |> assign(:approval_inbox, Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id}))
-    |> assign(:connector_fleet, Connectors.list_connector_fleet(%{tenant_id: tenant_id}))
+    |> assign(:connector_fleet, connector_fleet(tenant_id))
     |> assign(:runtimes, runtimes)
+  end
+
+  defp connector_fleet(tenant_id) do
+    if function_exported?(Connectors, :list_connector_fleet, 1) do
+      Connectors.list_connector_fleet(%{tenant_id: tenant_id})
+    else
+      []
+    end
   end
 end

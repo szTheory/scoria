@@ -41,12 +41,13 @@ defmodule Scoria.Eval.JudgeRunner do
   def run_existing(%EvalRun{} = eval_run, attrs) when is_map(attrs) do
     eval_spec = fetch!(attrs, :eval_spec)
     dataset = fetch!(attrs, :dataset) || Eval.get_dataset!(eval_run.dataset_id)
+    base_score_attrs = fetch(attrs, :base_score_attrs) || []
 
     if dataset.state != :sealed do
       raise ArgumentError, "live judge runs require sealed datasets"
     end
 
-    with {:ok, eval_run, scores} <- judge_dataset(eval_run, eval_spec, dataset, attrs),
+    with {:ok, eval_run, scores} <- judge_dataset(eval_run, eval_spec, dataset, attrs, base_score_attrs),
          {:ok, completed_run} <-
            Eval.complete_eval_run(eval_run, %{
              status: "completed",
@@ -57,7 +58,7 @@ defmodule Scoria.Eval.JudgeRunner do
     end
   end
 
-  defp judge_dataset(eval_run, eval_spec, dataset, attrs) do
+  defp judge_dataset(eval_run, eval_spec, dataset, attrs, base_score_attrs \\ []) do
     orchestrator_module =
       fetch(attrs, :orchestrator_module) ||
         Application.get_env(:scoria, :orchestrator_module, Scoria.Orchestrator)
@@ -80,7 +81,7 @@ defmodule Scoria.Eval.JudgeRunner do
              orchestrator_module,
              opts
            ) do
-      case Eval.replace_eval_scores(eval_run, score_attrs) do
+      case Eval.replace_eval_scores(eval_run, List.wrap(base_score_attrs) ++ score_attrs) do
         {:ok, updated_run, scores} -> {:ok, updated_run, scores}
         {:error, reason} -> {:error, reason}
       end

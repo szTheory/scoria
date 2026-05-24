@@ -31,9 +31,12 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   import Phoenix.LiveViewTest
 
   alias Scoria.Repo
+  alias Scoria.Repo.Trace
+  alias Scoria.Eval.OnlineScoreCandidate
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
   alias Scoria.Workflows.Runtime
+  alias Scoria.Workflows.{Run, Step}
 
   @endpoint ScoriaWeb.OrchestratorLiveTest.Endpoint
 
@@ -186,6 +189,22 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert html =~ "promote_retrieval"
   end
 
+  test "review candidate deep links preserve queue evidence on the runtime landing surface" do
+    candidate = review_candidate_fixture()
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, _view, html} =
+      live(conn, "/scoria?runtime=session-review&review_candidate_id=#{candidate.id}")
+
+    assert html =~ "Review candidate context"
+    assert html =~ candidate.score_explanation
+    assert html =~ candidate.trace_id
+  end
+
   test "HITL approval request renders modal and handles approve" do
     conn =
       build_conn()
@@ -283,6 +302,55 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
 
     assert rejected_event.actor_ref == "operator-live"
     assert rejected_event.redacted_refs["approval_id"] == approval.id
+  end
+
+  defp review_candidate_fixture do
+    {:ok, trace} =
+      %Trace{}
+      |> Trace.changeset(%{
+        session_id: "session-review",
+        attributes: %{"env" => "prod"}
+      })
+      |> Repo.insert()
+
+    {:ok, run} =
+      %Run{}
+      |> Run.changeset(%{
+        root_role_id: "assistant",
+        tenant_id: "tenant-review",
+        session_id: trace.session_id,
+        status: "running",
+        execution_mode: "live"
+      })
+      |> Repo.insert()
+
+    {:ok, step} =
+      %Step{}
+      |> Step.changeset(%{
+        run_id: run.id,
+        sequence: 1,
+        kind: "llm_call",
+        role_id: "assistant",
+        status: "completed"
+      })
+      |> Repo.insert()
+
+    Repo.insert!(
+      OnlineScoreCandidate.changeset(%OnlineScoreCandidate{}, %{
+        tenant_id: "tenant-review",
+        trace_id: trace.id,
+        workflow_run_id: run.id,
+        workflow_step_id: step.id,
+        dedupe_key: "tenant-review:#{trace.id}:orchestrator",
+        status: "needs_review",
+        review_status: "pending",
+        score_status: "failed",
+        score_explanation: "Queue evidence on the runtime landing surface",
+        scorer_kind: "deterministic_rule",
+        scorer_version: "policy-rules@2026.05.23",
+        sampling_metadata: %{"sample_reason" => "policy_trigger"}
+      })
+    )
   end
 
 end

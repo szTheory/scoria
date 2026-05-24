@@ -31,6 +31,9 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
+  alias Scoria.Eval.OnlineScoreCandidate
+  alias Scoria.Repo
+  alias Scoria.Repo.Trace
   alias Scoria.Workflows
 
   @endpoint ScoriaWeb.WorkflowLiveTest.Endpoint
@@ -348,5 +351,55 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     assert modal_html =~ ~s(name="promotion[notes]")
     refute modal_html =~ ~s(>%{}<)
+  end
+
+  test "workflow deep links preserve review candidate evidence on the run page" do
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", session_id: "candidate-session"})
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "tool",
+        role_id: "executor",
+        status: "completed"
+      })
+
+    {:ok, trace} =
+      %Trace{}
+      |> Trace.changeset(%{
+        session_id: "candidate-session",
+        attributes: %{"env" => "prod"}
+      })
+      |> Repo.insert()
+
+    candidate =
+      Repo.insert!(
+        OnlineScoreCandidate.changeset(%OnlineScoreCandidate{}, %{
+          tenant_id: "tenant-review",
+          trace_id: trace.id,
+          workflow_run_id: run.id,
+          workflow_step_id: step.id,
+          dedupe_key: "tenant-review:#{trace.id}:workflow",
+          status: "needs_review",
+          review_status: "pending",
+          score_status: "failed",
+          score_explanation: "Workflow page review evidence",
+          scorer_kind: "deterministic_rule",
+          scorer_version: "policy-rules@2026.05.23",
+          sampling_metadata: %{"sample_reason" => "policy_trigger"}
+        })
+      )
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, _view, html} =
+      live(conn, "/scoria/workflows/#{run.id}?review_candidate_id=#{candidate.id}")
+
+    assert html =~ "Review candidate evidence"
+    assert html =~ "Workflow page review evidence"
+    assert html =~ candidate.trace_id
   end
 end

@@ -32,6 +32,21 @@ defmodule Scoria.Eval.DatasetPromotion do
      }}
   end
 
+  def build_promotion_attrs(context, dataset_id, notes, expected_output) do
+    %{
+      dataset_id: dataset_id,
+      workflow_run_id: read_context_value(context, :workflow_run_id),
+      workflow_step_id: read_context_value(context, :workflow_step_id),
+      source_variant: read_context_value(context, :source_variant),
+      provenance: normalize_map(read_context_value(context, :provenance)),
+      checkpoint_output: normalize_map(read_context_value(context, :checkpoint_output)),
+      safety: normalize_map(read_context_value(context, :safety)),
+      promotion_snapshot: normalize_map(read_context_value(context, :promotion_snapshot)),
+      notes: notes,
+      expected_output: normalize_map(expected_output)
+    }
+  end
+
   def promote(attrs, get_dataset_fun) when is_map(attrs) and is_function(get_dataset_fun, 1) do
     attrs = normalize_map(attrs)
     ensure_required_keys!(attrs)
@@ -133,4 +148,10 @@ defmodule Scoria.Eval.DatasetPromotion do
       nested -> nested
     end)
   end
+
+  defp read_context_value(context, key) when is_map(context) do
+    Map.get(context, key, Map.get(context, to_string(key)))
+  end
+
+  defp read_context_value(_context, _key), do: nil
 end

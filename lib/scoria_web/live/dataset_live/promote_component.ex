@@ -68,7 +68,13 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
     with true <- changeset.valid?,
          {:ok, expected_output} <- decode_expected_output(get_field(changeset, :expected_output)),
          dataset_id when is_integer(dataset_id) <- get_field(changeset, :dataset_id),
-         promotion_attrs <- build_promotion_attrs(socket.assigns.promotion_context, dataset_id, get_field(changeset, :notes), expected_output),
+         promotion_attrs <-
+           Eval.DatasetPromotion.build_promotion_attrs(
+             socket.assigns.promotion_context,
+             dataset_id,
+             get_field(changeset, :notes),
+             expected_output
+           ),
          {:ok, _item} <- Eval.promote_workflow_source(promotion_attrs) do
       dataset = Eval.get_dataset!(dataset_id)
 
@@ -116,7 +122,13 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
     with true <- changeset.valid?,
          %{} = dataset <- baseline_target,
          {:ok, expected_output} <- decode_expected_output(get_field(changeset, :expected_output)),
-         request_attrs <- build_promotion_attrs(socket.assigns.promotion_context, dataset.id, get_field(changeset, :notes), expected_output),
+         request_attrs <-
+           Eval.DatasetPromotion.build_promotion_attrs(
+             socket.assigns.promotion_context,
+             dataset.id,
+             get_field(changeset, :notes),
+             expected_output
+           ),
          {:ok, _approval} <- Workflows.request_baseline_promotion(request_attrs) do
       send(
         self(),
@@ -405,21 +417,6 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
 
   defp decode_expected_output(value) do
     Jason.decode(value)
-  end
-
-  defp build_promotion_attrs(context, dataset_id, notes, expected_output) do
-    %{
-      dataset_id: dataset_id,
-      workflow_run_id: read_context_value(context, :workflow_run_id),
-      workflow_step_id: read_context_value(context, :workflow_step_id),
-      source_variant: read_context_value(context, :source_variant),
-      provenance: normalize_map(read_context_value(context, :provenance)),
-      checkpoint_output: normalize_map(read_context_value(context, :checkpoint_output)),
-      safety: normalize_map(read_context_value(context, :safety)),
-      promotion_snapshot: normalize_map(read_context_value(context, :promotion_snapshot)),
-      notes: notes,
-      expected_output: normalize_map(expected_output)
-    }
   end
 
   defp load_dataset_groups do
