@@ -56,8 +56,11 @@ created: 2026-05-25
 ## Wave 0 Requirements
 
 - [ ] Clean recompile completed with `SCORIA_DB_PORT=5432 MIX_ENV=test mix clean && SCORIA_DB_PORT=5432 MIX_ENV=test mix compile`
-- [ ] `test/scoria/runtime/semantic_fast_path_test.exs` expanded to assert `lookup_status=reject`, `lookup_reason_code`, and persisted `stale` fallthrough
-- [ ] Dedicated invalidation coverage added in `test/scoria/semantic_cache_test.exs` or a new invalidation-focused test file
+
+## Later-Wave Coverage Commitments
+
+- [ ] Plan 02 expands `test/scoria/runtime/semantic_fast_path_test.exs` to assert `lookup_status=reject`, `lookup_reason_code`, and persisted `stale` fallthrough
+- [ ] Plan 03 adds dedicated invalidation coverage in `test/scoria/semantic_cache_test.exs` or a new invalidation-focused test file
 
 ---
 
