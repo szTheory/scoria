@@ -32,8 +32,8 @@
 
 ### Packaging And Docs Truth
 
-- [ ] **ADPT-03**: Maintainer can build Scoria's publish-facing docs locally through `mix docs`, with Hex metadata, source links, and docs extras aligned to the real public package surface.
-- [ ] **ADPT-04**: Maintainer can preview the package artifact before first Hex publish and confirm the shipped file inventory includes required runtime code, migrations, README, and adoption guides.
+- [x] **ADPT-03**: Maintainer can build Scoria's publish-facing docs locally through `mix docs`, with Hex metadata, source links, and docs extras aligned to the real public package surface.
+- [x] **ADPT-04**: Maintainer can preview the package artifact before first Hex publish and confirm the shipped file inventory includes required runtime code, migrations, README, and adoption guides.
 
 ### Host-App Install Contract
 
@@ -75,8 +75,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ADPT-03 | Phase 47 | Pending |
-| ADPT-04 | Phase 47 | Pending |
+| ADPT-03 | Phase 47 | Complete |
+| ADPT-04 | Phase 47 | Complete |
 | INST-01 | Phase 48 | Pending |
 | INST-02 | Phase 48 | Pending |
 | PROOF-01 | Phase 48 | Pending |

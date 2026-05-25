@@ -8,7 +8,7 @@
 
 ## Phases
 
-- [ ] **Phase 47: Release packaging and docs truth** - Make the package surface publishable and locally provable before the first public Hex release.
+- [x] **Phase 47: Release packaging and docs truth** - Make the package surface publishable and locally provable before the first public Hex release.
 - [ ] **Phase 48: Host-app install contract and consumer proof** - Prove that a fresh Phoenix app can adopt the default lane through the public install and runtime path.
 - [ ] **Phase 49: Support truth and adoption closeout** - Align docs, task output, and verification lanes to the shipped adoption order and close the milestone with bounded proof.
 
@@ -24,9 +24,9 @@
   3. Maintainers can preview the packaged artifact locally and verify required runtime code, migrations, README, and adoption guides are included.
   4. A bounded release-preview lane fails fast when docs build or package-inventory truth drifts.
 **Plans**: 3 plans
-- [ ] `47-01-PLAN.md` — Add the real docs-build dependency and close any docs configuration drift blocking `mix docs`.
-- [ ] `47-02-PLAN.md` — Define and verify the package inventory Scoria must ship for the first public Hex release.
-- [ ] `47-03-PLAN.md` — Add a bounded release-preview verification lane covering docs build and package truth.
+- [x] `47-01-PLAN.md` — Add the real docs-build dependency and close any docs configuration drift blocking `mix docs`.
+- [x] `47-02-PLAN.md` — Define and verify the package inventory Scoria must ship for the first public Hex release.
+- [x] `47-03-PLAN.md` — Add a bounded release-preview verification lane covering docs build and package truth.
 
 ### Phase 48: Host-app install contract and consumer proof
 **Goal**: Prove that a fresh Phoenix app can adopt the default lane through the public install and runtime path.
@@ -61,7 +61,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 47. Release packaging and docs truth | 0/3 | Pending | — |
+| 47. Release packaging and docs truth | 3/3 | Complete | 2026-05-25 |
 | 48. Host-app install contract and consumer proof | 0/4 | Pending | — |
 | 49. Support truth and adoption closeout | 0/3 | Pending | — |
 
@@ -76,7 +76,6 @@
 
 ### Issues To Resolve
 
-- `mix.exs` now advertises docs configuration, but the repo still needs a real docs-build dependency and release-preview proof.
 - The installer contract is closer to truthful, but Scoria still needs fresh-host consumer proof instead of only repo-internal confidence.
 - Docs, verification guides, and task output must converge on one lane-based support story before the first public Hex release.
 

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: oss adopter onramp
 status: planning
-last_updated: "2026-05-25T16:13:25Z"
+last_updated: "2026-05-25T16:31:33Z"
 last_activity: 2026-05-25
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State
@@ -19,26 +19,26 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** `v2.2 OSS adopter onramp` planning is active from the post-`v2.1` adoption-hardened baseline
+**Current Focus:** `Phase 48` planning is next after closing the release packaging and docs truth baseline
 
 ## Current Position
 
-Phase: roadmap defined
-Plan: —
+Phase: 47 (release-packaging-and-docs-truth) — COMPLETE
+Plan: complete
 **Milestone:** `v2.2 OSS adopter onramp`
-**Phase:** Not started
-**Plan:** Not started
-**Status:** Requirements and roadmap defined on 2026-05-25
+**Phase:** Complete
+**Plan:** 3 of 3 complete
+**Status:** Phase 47 completed on 2026-05-25
 **Last activity:** 2026-05-25
 
 **Progress:**
-[░░░░░░░░░░] 0%
+[███░░░░░░░] 33%
 
 ## Performance Metrics
 
 - **Milestone Phases:** 3 planned
-- **Milestone Plans:** 0 completed
-- **Milestone Task Count:** pending phase planning
+- **Milestone Plans:** 3 completed
+- **Milestone Task Count:** 7 completed in Phase 47
 - **Coverage:** 8 active milestone requirements mapped
 - **Latest Shipped Milestone:** `v2.1 Tenant-scoped semantic fast path` on 2026-05-25
 - **Active Milestone:** `v2.2 OSS adopter onramp`
@@ -66,11 +66,11 @@ Plan: —
 
 **Todos:**
 
-- Start `Phase 47` planning with `$gsd-plan-phase 47`.
+- Start `Phase 48` planning with `$gsd-plan-phase 48`.
 
 **Blockers:**
 
-- None. The shipped `v2.1` proof remains green, and the post-ship adoption-hardening checks also passed on 2026-05-25: `mix test.adoption` (`38 tests, 0 failures`), `mix test.semantic_fast_path` (`44 tests, 0 failures`), targeted installer tests (`5 tests, 0 failures`), and targeted semantic tests (`13 tests, 0 failures`) under `SCORIA_DB_PORT=55432`.
+- None. Phase 47 closed with `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test` (`386 tests, 0 failures`, second full-suite pass after one transient rerun), `mix scoria.release_preview`, `mix docs`, `mix hex.build --unpack --output tmp/scoria-hex-preview`, and the new targeted package/release-preview task tests all green on 2026-05-25.
 
 ## Deferred Items
 
