@@ -41,6 +41,13 @@
 
 **Requirements:** `LOOK-01`, `LOOK-02`, `INVD-01`, `INVD-02`
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] `45-01-PLAN.md` — Upgrade semantic-cache compatibility truth and implement exact-first filtered lookup.
+- [ ] `45-02-PLAN.md` — Persist stage-separated runtime outcomes and compatibility-rich writeback/fallthrough behavior.
+- [ ] `45-03-PLAN.md` — Add transactional stale/invalidation transitions and proof coverage.
+
 **Success criteria:**
 1. Cache hits require semantic similarity plus prompt, policy, and source compatibility.
 2. Stale, incompatible, or rejected candidates fall through cleanly to the normal execution path.
