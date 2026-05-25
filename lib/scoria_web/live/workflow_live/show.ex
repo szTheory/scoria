@@ -5,7 +5,12 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   alias Scoria.Runtime
   alias Scoria.SRE
   alias Scoria.Workflows
-  alias ScoriaWeb.{MemoryNotebookComponent, RemoteInvocationEvidenceComponent, WorkflowDetailPanelComponent}
+  alias ScoriaWeb.{
+    DelegatedEvidenceComponent,
+    MemoryNotebookComponent,
+    RemoteInvocationEvidenceComponent,
+    WorkflowDetailPanelComponent
+  }
   alias ScoriaWeb.WorkflowTreeComponent
 
   @comparison_sources ~w(original replay)
@@ -199,6 +204,8 @@ defmodule ScoriaWeb.WorkflowLive.Show do
           />
         </div>
 
+        <DelegatedEvidenceComponent.render delegated_handoffs={@delegated_handoffs} />
+
         <.async_result :let={memories} assign={@compacted_memories}>
           <:loading>
             <div class="mt-6 flex items-center justify-center rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
@@ -262,6 +269,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     |> assign(:events, run.events)
     |> assign(:comparison_by_step, detail.comparison_by_step)
     |> assign(:replay_provenance_strip, detail.replay_provenance_strip)
+    |> assign(:delegated_handoffs, detail.delegated_handoffs)
     |> assign(:selected_source_variant, selected_source_variant)
     |> assign(:remote_invocation_evidence, SRE.remote_invocation_evidence(run_id))
     |> assign_new(:promote_step_id, fn -> nil end)

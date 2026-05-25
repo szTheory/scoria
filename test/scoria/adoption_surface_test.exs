@@ -4,6 +4,7 @@ defmodule Scoria.AdoptionSurfaceTest do
   @readme "README.md"
   @phoenix_example "docs/phoenix_runtime_example.md"
   @handoff_guide "docs/bounded_handoffs.md"
+  @gap_ledger ".planning/phases/42-delegated-evidence-adoption-story/42-GAP-LEDGER.md"
   @operator_guide "docs/operator_verification.md"
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
@@ -11,8 +12,11 @@ defmodule Scoria.AdoptionSurfaceTest do
   test "README documents the runtime-first adoption lane and optional knowledge lane" do
     content = File.read!(@readme)
 
+    assert content =~ "identity -> start -> inspect -> resume"
     assert content =~ "Scoria.start_run"
     assert content =~ "Scoria.start_handoff_run"
+    assert content =~ "Scoria.get_run_detail"
+    assert content =~ "delegated_handoffs"
     assert content =~ "Scoria.resume_run"
     assert content =~ "session_id"
     assert content =~ "run_id"
@@ -25,7 +29,10 @@ defmodule Scoria.AdoptionSurfaceTest do
   test "bounded handoff guide documents the narrow public delegation lane" do
     content = File.read!(@handoff_guide)
 
+    assert content =~ "identity -> start -> inspect -> resume"
     assert content =~ "Scoria.start_handoff_run"
+    assert content =~ "Scoria.get_run_detail"
+    assert content =~ "delegated_handoffs"
     assert content =~ "root_role_id"
     assert content =~ "delegated_kind"
     assert content =~ "handoff_input"
@@ -33,6 +40,9 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "projected_context: %{}"
     assert content =~ "queued child step"
     assert content =~ "same durable run"
+    assert content =~ "Delegated Evidence"
+    assert content =~ "No remaining adopter-facing gap"
+    assert content =~ "deferred follow-up"
     assert content =~ "Broad runtime-state keys are rejected explicitly"
     assert content =~ "transcript"
     assert content =~ "provider_session"
@@ -46,15 +56,28 @@ defmodule Scoria.AdoptionSurfaceTest do
   test "Phoenix runtime example documents identity, readback, and approval resume" do
     content = File.read!(@phoenix_example)
 
+    assert content =~ "identity -> start -> inspect -> resume"
     assert content =~ "Scoria.identity"
     assert content =~ "Scoria.start_run"
     assert content =~ "Scoria.get_run"
+    assert content =~ "Scoria.get_run_detail"
+    assert content =~ "delegated_handoffs"
     assert content =~ "Scoria.resume_run"
     assert content =~ "list_runs_for_session"
     assert content =~ "session_id"
     assert content =~ "run_id"
     assert content =~ "/scoria/workflows/:run_id"
     assert content =~ "approval"
+  end
+
+  test "phase gap ledger records the bounded handoff closeout decision explicitly" do
+    content = File.read!(@gap_ledger)
+
+    assert content =~ "no remaining adopter-facing gap"
+    assert content =~ "closeout"
+    assert content =~ "deferred follow-up"
+    refute content =~ "TBD"
+    refute content =~ "maybe later"
   end
 
   test "operator verification guide documents the core automated lane without knowledge requirements" do
@@ -64,6 +87,8 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "mix ecto.migrate"
     assert content =~ "mix test"
     assert content =~ "mix test.adoption"
+    assert content =~ "canonical ADPT-02 proof lane"
+    assert content =~ "broader repo-health context"
     assert content =~ "Scoria.start_run"
     assert content =~ "Scoria.get_run"
     assert content =~ "list_runs_for_session"

@@ -35,6 +35,7 @@ defmodule Scoria.TestSupport.AdoptionExample do
       "session_id",
       "run_id",
       "Scoria.start_run",
+      "identity -> start -> inspect -> resume",
       "Scoria.resume_run",
       "Scoria.get_run",
       "list_runs_for_session"
@@ -44,12 +45,17 @@ defmodule Scoria.TestSupport.AdoptionExample do
   def handoff_doc_fragments do
     [
       "Scoria.start_handoff_run(identity, \"critic\"",
+      "Scoria.get_run_detail(started.run_id)",
+      "delegated = detail.delegated_handoffs",
       "root_role_id: \"planner\"",
       "delegated_kind: \"review\"",
       "handoff_input: %{\"brief\" => \"Review the draft answer for policy and accuracy\"}",
       "projected_context: %{",
       "projected_context: %{}",
       "same durable run",
+      "Delegated Evidence",
+      "No remaining adopter-facing gap",
+      "deferred follow-up",
       "Broad runtime-state keys are rejected explicitly",
       "`transcript`",
       "`provider_session`",

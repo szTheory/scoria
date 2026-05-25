@@ -2,6 +2,8 @@
 
 This is the canonical Phoenix-hosted Scoria flow for the Keystone public runtime surface. It is derived from the existing runtime integration behavior in `test/scoria/runtime_integration_test.exs`, not from a separate sample app or a speculative architecture.
 
+Keep the canonical adoption order boring: `identity -> start -> inspect -> resume`.
+
 ## What this guide shows
 
 - normalize request and session context with `Scoria.identity/1`
@@ -107,6 +109,26 @@ redirect(conn, to: ~p"/scoria/workflows/#{run_id}")
 ```
 
 Treat that page as operator evidence, not as the source of your product's business truth.
+
+## Bounded handoffs branch from the same runtime lane
+
+If the core runtime path is already working and one role needs to delegate a bounded slice to another role, branch from the same identity and `run_id` model instead of starting a second onboarding path:
+
+```elixir
+{:ok, handoff_run} =
+  Scoria.start_handoff_run(identity, "critic",
+    root_role_id: "planner",
+    delegated_kind: "review",
+    handoff_input: %{"brief" => "Review the draft answer"},
+    projected_context: %{"task" => "policy review", "draft_answer" => prompt},
+    handlers: %{"review" => {MyApp.RuntimeHandlers, :review}}
+  )
+
+{:ok, detail} = Scoria.get_run_detail(handoff_run.run_id)
+delegated = detail.delegated_handoffs
+```
+
+Use `Scoria.get_run_detail/1` when the host app or support path needs the curated delegated evidence surface, and use `/scoria/workflows/:run_id` when an operator needs the same run's `Delegated Evidence` section.
 
 ## Resume after approval
 

@@ -31,6 +31,8 @@ That installs the default Phoenix lane. The operator dashboard mounts at `/scori
 
 The host app entrypoint is `Scoria`.
 
+Keep the canonical order boring: `identity -> start -> inspect -> resume`.
+
 ```elixir
 identity =
   Scoria.identity(%{
@@ -78,6 +80,26 @@ next_run.session_id == started.session_id
 next_run.run_id != started.run_id
 ```
 
+## Bounded Handoffs
+
+When the runtime-first lane is already in place and one role needs to delegate a narrow slice of work to another role, branch to the public handoff lane:
+
+```elixir
+{:ok, started} =
+  Scoria.start_handoff_run(identity, "critic",
+    root_role_id: "planner",
+    delegated_kind: "review",
+    handoff_input: %{"brief" => "Review the draft answer"},
+    projected_context: %{"task" => "policy review", "draft_answer" => draft_answer},
+    handlers: %{"review" => {MyApp.RuntimeHandlers, :review}}
+  )
+
+{:ok, detail} = Scoria.get_run_detail(started.run_id)
+delegated = detail.delegated_handoffs
+```
+
+That records delegated lineage under one durable run and publishes one curated delegated evidence projection through `Scoria.get_run_detail/1`. The same run also exposes a `Delegated Evidence` section at `/scoria/workflows/:run_id`. The full guide lives in [`docs/bounded_handoffs.md`](docs/bounded_handoffs.md).
+
 ## Verification
 
 Default Phoenix lane:
@@ -102,6 +124,8 @@ The knowledge lane does not require `pgvector`, knowledge tables, retrieval, gro
 
 For one end-to-end controller-triggered adoption story, see [`docs/phoenix_runtime_example.md`](docs/phoenix_runtime_example.md). It follows the same public facade and `session_id`/`run_id` rules proven in the runtime integration suite.
 
+For the public delegation lane, see [`docs/bounded_handoffs.md`](docs/bounded_handoffs.md).
+
 ## What Scoria Adds
 
 - OpenInference-style trace capture and redaction
@@ -111,4 +135,4 @@ For one end-to-end controller-triggered adoption story, see [`docs/phoenix_runti
 
 ## Status
 
-Scoria is actively evolving. Keystone work has already landed in the runtime, identity, and install surfaces; this phase aligns the public docs with that shipped API.
+Scoria is shipped through `v1.9 Crucible`. The runtime-first adoption lane, replay/operator loop, review queue, and bounded handoff lane are all available locally; the remaining work is mostly about finishing the highest-value adopter wedges cleanly instead of broad platform expansion.

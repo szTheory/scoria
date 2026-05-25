@@ -1,5 +1,5 @@
 defmodule Scoria.Workflows.BatchEnqueueTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use Oban.Testing, repo: Scoria.Repo
 
   alias Scoria.Workflows.BatchEnqueue

@@ -1,5 +1,5 @@
 defmodule Scoria.Runtime.InstanceTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   alias Scoria.Runtime.Instance
 
   setup do

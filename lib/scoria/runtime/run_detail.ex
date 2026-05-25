@@ -14,6 +14,7 @@ defmodule Scoria.Runtime.RunDetail do
     :events,
     :approvals,
     :handoffs,
+    :delegated_handoffs,
     :comparison_by_step,
     :replay_provenance_strip
   ]
@@ -24,6 +25,7 @@ defmodule Scoria.Runtime.RunDetail do
     :events,
     :approvals,
     :handoffs,
+    :delegated_handoffs,
     :comparison_by_step,
     :replay_provenance_strip
   ]
@@ -36,18 +38,23 @@ defmodule Scoria.Runtime.RunDetail do
           events: [item()],
           approvals: [item()],
           handoffs: [item()],
+          delegated_handoffs: [item()],
           comparison_by_step: %{optional(Ecto.UUID.t()) => map()},
           replay_provenance_strip: map()
         }
 
   def from_run_tree(%Run{} = run, opts \\ []) do
+    steps = Enum.map(run.steps, &step_item/1)
+    handoffs = Enum.map(run.handoffs, &handoff_item/1)
+
     %__MODULE__{
       summary: RunSummary.from_run(run),
-      steps: Enum.map(run.steps, &step_item/1),
+      steps: steps,
       checkpoints: Enum.map(run.checkpoints, &checkpoint_item/1),
       events: Enum.map(run.events, &event_item/1),
       approvals: Enum.map(run.approvals, &approval_item/1),
-      handoffs: Enum.map(run.handoffs, &handoff_item/1),
+      handoffs: handoffs,
+      delegated_handoffs: delegated_handoff_items(steps, handoffs),
       comparison_by_step: Keyword.get(opts, :comparison_by_step, %{}),
       replay_provenance_strip: Keyword.get(opts, :replay_provenance_strip, %{})
     }
@@ -145,6 +152,66 @@ defmodule Scoria.Runtime.RunDetail do
       status: handoff.status,
       inserted_at: handoff.inserted_at
     }
+  end
+
+  defp delegated_handoff_items(steps, handoffs) do
+    steps_by_parent =
+      Enum.group_by(steps, & &1.parent_step_id)
+
+    steps_by_id = Map.new(steps, &{&1.id, &1})
+
+    handoffs
+    |> Enum.map(fn handoff ->
+      parent_step = Map.get(steps_by_id, handoff.step_id)
+
+      child_step =
+        steps_by_parent
+        |> Map.get(handoff.step_id, [])
+        |> Enum.filter(&delegated_child_step?(&1, handoff))
+        |> Enum.sort_by(&{&1.sequence || 0, Map.get(&1, :inserted_at) || ~U[1970-01-01 00:00:00Z]})
+        |> List.first()
+
+      %{
+        id: handoff.id,
+        handoff_id: handoff.id,
+        parent_step_id: handoff.step_id,
+        parent_step_sequence: parent_step && parent_step.sequence,
+        parent_step_kind: parent_step && parent_step.kind,
+        parent_role_id: parent_step && parent_step.role_id,
+        delegated_role_id: handoff.delegated_role_id,
+        delegated_kind: handoff.delegated_kind,
+        handoff_input: handoff.handoff_input,
+        capability_tags: handoff.capability_tags,
+        child_step_id: child_step && child_step.id,
+        child_step_sequence: child_step && child_step.sequence,
+        child_step_kind: child_step && child_step.kind,
+        child_role_id: child_step && child_step.role_id,
+        child_status: child_step_status(child_step),
+        status: child_step_status(child_step),
+        projected_context: child_projected_context(child_step),
+        sequence: delegated_sequence(parent_step, child_step),
+        inserted_at: handoff.inserted_at
+      }
+    end)
+    |> Enum.sort_by(&{&1.sequence || 0, Map.get(&1, :inserted_at) || ~U[1970-01-01 00:00:00Z]})
+  end
+
+  defp delegated_child_step?(step, handoff) do
+    step.role_id == handoff.delegated_role_id and step.kind == handoff.delegated_kind
+  end
+
+  defp child_step_status(nil), do: "child_step_pending"
+  defp child_step_status(child_step), do: child_step.status
+
+  defp child_projected_context(nil), do: %{}
+  defp child_projected_context(child_step), do: child_step.projected_context || %{}
+
+  defp delegated_sequence(parent_step, child_step) do
+    cond do
+      is_integer(parent_step && parent_step.sequence) -> parent_step.sequence
+      is_integer(child_step && child_step.sequence) -> child_step.sequence
+      true -> nil
+    end
   end
 
   defp map_value(map, key) when is_map(map) do

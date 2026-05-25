@@ -12,17 +12,17 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
-- Scoria is shipped through `v1.9 Crucible` as of 2026-05-24.
-- `v1.9 Crucible` added durable replay branching, replay-safe execution defaults, replay comparison and dataset promotion UX, and asynchronous online scoring review queues.
-- `v2.0 Relay` is now the active milestone.
-- The active repo baseline already contains the bounded handoff wedge: public `Scoria.start_handoff_run/3`, delegated projected-context defaults, bounded-handoff docs, and adoption-lane support-truth cleanup.
+- Scoria is shipped through `v2.0 Relay` as of 2026-05-25.
+- `v2.0 Relay` formalized the bounded public handoff lane: explicit `Scoria.start_handoff_run/3` contract truth, narrow projected-context safety, delegated evidence surfaces, and canonical adoption proof.
+- The shipped baseline now includes a fresh green full-suite `mix test` pass instead of an accepted Relay closeout exception.
+- There is no active milestone yet; the roadmap is ready for the next selection cycle.
 
 ## Next Milestone Goals
 
-- Finish `v2.0 Relay` as a narrow bounded-handoff formalization and verification milestone.
-- Treat the already-implemented public handoff lane as the baseline, then close the remaining contract, support-truth, and proof gaps without widening the product boundary.
-- Use the replay -> score -> promote loop plus the public handoff lane as the baseline for evaluating the next adoption-relevant capability bet after `v2.0`.
+- Decide whether tenant-scoped semantic fast path now outranks any remaining adoption friction as the next major capability bet.
+- Only elevate stronger bounded-handoff examples if post-Relay evidence shows real adopter confusion instead of documentation polish preference.
 - Keep scope anchored to Phoenix-first adoption value, durable operator-visible truth, and boring verification.
+- Preserve the embedded product boundary and avoid drifting into a hosted orchestration surface.
 
 ## Requirements
 
@@ -48,11 +48,12 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-- `HAND-01`: Developers can start a bounded delegated run through `Scoria.start_handoff_run/3` with explicit root/delegated roles and durable same-run lineage. — `v2.0 Relay`
-- `HAND-02`: Delegated lineage and projected context remain inspectable through public runtime detail and the workflow surface. — `v2.0 Relay`
-- `SAFE-01`: The public handoff lane rejects unsafe projected-context keys and keeps delegation host-controlled and narrow by default. — `v2.0 Relay`
-- `ADPT-01`: Adoption docs and source-checked examples explain the bounded handoff lane as part of Scoria's normal runtime-first integration story. — `v2.0 Relay`
-- `ADPT-02`: `mix test.adoption` canonically proves the default public-runtime and bounded-handoff adoption lane without requiring optional knowledge features. — `v2.0 Relay`
+- No active milestone requirements until the next milestone is opened.
+
+### Candidate Next Requirements
+
+- `FAST-01`: Scoria can provide a tenant-scoped semantic fast path with explicit cache provenance, invalidation, and operator-visible diagnostics. — next candidate
+- `ADPT-03`: Scoria ships stronger bounded-handoff examples only if `v2.0 Relay` verification proves the current public lane still creates real adopter confusion. — contingent candidate
 
 ### Out of Scope
 
@@ -62,27 +63,26 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Automatic mutation of sealed baseline datasets from online scoring — would collapse the distinction between observed behavior and reviewed ground truth.
 - Broad multi-agent orchestration/platform behavior — valuable, but wider than the next operator-loop milestone and more likely to create product-shape drift.
 
-## Current Milestone: v2.0 Relay
+## Latest Shipped Milestone: v2.0 Relay
 
 **Goal:** Turn the already-implemented bounded handoff lane into milestone-quality shipped truth with narrow scope, explicit support truth, and canonical verification.
 
-**Target features:**
-- Public `Scoria.start_handoff_run/3` contract stays narrow, explicit, and same-run rooted.
+**Delivered:**
+- Public `Scoria.start_handoff_run/3` contract is explicit, narrow, and same-run rooted.
 - Projected-context safety and delegated-lineage visibility are durable and inspectable.
-- Adoption docs, source examples, and `mix test.adoption` prove the default handoff lane without optional feature drift.
+- Adoption docs, source examples, `mix test.adoption`, and closeout records now prove the default handoff lane without optional-feature drift.
 
-**Why now:** The implementation wedge already exists in the repo, so the highest-value next step is to formalize and verify it before opening a new net-new capability bet.
+**Why it mattered:** The implementation wedge already existed in the repo, so formalizing and verifying it removed support-truth ambiguity before the next net-new capability bet.
 
 ## Context
 
-- Scoria is shipped through `v1.9 Crucible` as of 2026-05-24.
+- Scoria is shipped through `v2.0 Relay` as of 2026-05-25.
 - `v1.9 Crucible` closed the replay -> score -> promote operator loop with canonical verification across Phases 37 through 40.
-- A post-`v1.9` working-tree pass added a public bounded handoff API, projected-context guardrails, bounded-handoff docs/source checks, and adoption-lane env-default cleanup.
-- `v2.0 Relay` intentionally skips fresh ecosystem research because the current milestone is formalizing repo-local truth rather than selecting a new capability family.
-- `v1.9 Crucible` shipped with accepted closeout debt limited to project-level full-suite failures outside the owned milestone lanes and known LiveView async teardown noise. The adoption-lane missing-module warning drift has since been addressed in the working tree.
+- `v2.0 Relay` converted the repo-local bounded handoff wedge into archived shipped truth and closed the earlier full-suite closeout exception with a fresh green baseline.
+- The next milestone decision is now between tenant-scoped semantic fast path and any evidence-backed follow-up on handoff examples.
 - The repo has durable workflow truth, approval lineage, telemetry, audit seams, and a complete remote connector boundary.
 - Repo-local research and seed context reinforce the same design direction: remain embedded, keep transport separate from LiveView, treat policy and approvals as durable records, and avoid AWS-shaped platform drift.
-- After `v2.0 Relay`, the next decision should be whether any real adopter-facing handoff gap remains or whether semantic fast paths become the next major candidate.
+- After `v2.0 Relay`, semantic fast paths remain the strongest default next candidate unless adopter evidence proves example-level handoff confusion is still the higher-value problem.
 
 ## Constraints
 
@@ -105,7 +105,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | `v1.9` should prioritize replayable debugging and online scoring over semantic caching or broad handoff productization | It compounds existing trace/eval/operator surfaces with less platform-drift risk and a clearer Phoenix-first value proposition | — Resolved |
 | Online scoring must never auto-mutate sealed baseline datasets | Observed production behavior is not reviewed ground truth; operator trust depends on keeping those lanes separate | — Resolved |
 | Post-`v1.9` public handoff work should stay narrow and ship together with docs/install/verification alignment | The real adopter value was a bounded `Scoria` lane with inspectable projected context, not broader orchestration surface area or support-truth drift | — Resolved |
-| `v2.0 Relay` should formalize current bounded handoff truth before Scoria opens another net-new capability milestone | The implementation wedge already exists; the remaining risk is proof and support-truth drift, not raw feature absence | — Active |
+| `v2.0 Relay` should formalize current bounded handoff truth before Scoria opens another net-new capability milestone | The implementation wedge already exists; the remaining risk is proof and support-truth drift, not raw feature absence | — Resolved |
 
 ## Milestone History
 
@@ -119,9 +119,10 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v1.7 Outrider`: MCP SSE boundary, asynchronous session compaction engine, and external runtime observability UX.
 - `v1.8 Vanguard`: Multi-model fallback orchestration, distributed evaluation fan-out, real-time operator dashboards, and reconciled shipped-state planning truth.
 - `v1.9 Crucible`: Replayable debugging, replay-safe execution, workflow-source dataset promotion, and online scoring review queues.
+- `v2.0 Relay`: Explicit bounded handoff contract truth, delegated evidence visibility, canonical adoption proof, and clean closeout verification.
 
 <details>
-<summary>Archived v1.9 milestone context</summary>
+<summary>Archived pre-v2.0 milestone context</summary>
 
 `v1.9 Crucible` targeted replay branches as durable new runs rooted in checkpoint truth, replay-safe execution defaults for external-write and approval-sensitive seams, operator-visible replay provenance with draft dataset promotion, and asynchronous online scoring with a review queue plus explicit promotion boundaries.
 
@@ -145,4 +146,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-24 after opening v2.0 Relay*
+*Last updated: 2026-05-25 after shipping v2.0 Relay*

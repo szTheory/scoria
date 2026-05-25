@@ -12,6 +12,17 @@ defmodule Scoria.MixProject do
     ]
   end
 
+  def cli do
+    [
+      preferred_envs: [
+        "scoria.test.adoption": :test,
+        "test.adoption": :test,
+        "scoria.test.knowledge": :test,
+        "test.knowledge": :test
+      ]
+    ]
+  end
+
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]

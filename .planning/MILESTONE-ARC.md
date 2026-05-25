@@ -1,7 +1,7 @@
 # Milestone Arc: Scoria
 
 **Created:** 2026-05-12
-**Last updated:** 2026-05-24
+**Last updated:** 2026-05-25
 **Status:** maintained planning artifact
 
 ## Purpose
@@ -23,7 +23,7 @@ The product should stay:
 
 ## Current Baseline
 
-Shipped through `v1.9 Crucible` on 2026-05-24:
+Shipped through `v2.0 Relay` on 2026-05-25:
 
 - observability and trace storage
 - MCP gateway and governance seams
@@ -37,13 +37,8 @@ Shipped through `v1.9 Crucible` on 2026-05-24:
 - resilient multi-model fallback orchestration, distributed evaluation fan-out, and real-time operator dashboards
 - replay branching from durable checkpoint truth with replay-safe execution defaults
 - replay comparison, workflow-source dataset promotion, and asynchronous online scoring review queues
-
-Repo-local current truth also includes an unarchived post-`v1.9` adoption wedge:
-
-- public `Scoria.start_handoff_run/3` bounded handoff API over the existing durable workflow substrate
-- projected-context defaults and unsafe-key rejection for delegated runs
-- handoff docs/source checks plus `mix test.adoption` env-default cleanup
-- thin connector/compaction/dashboard shims to keep the normal adoption lane from leaking missing-module drift
+- public `Scoria.start_handoff_run/3` bounded handoff API with explicit same-run lineage and projected-context safety
+- delegated evidence surfaces, runtime-first adoption proof, and a clean full-suite closeout baseline
 
 ## Sequencing Principles
 
@@ -67,51 +62,37 @@ Repo-local current truth also includes an unarchived post-`v1.9` adoption wedge:
 | v1.7 | Outrider | shipped | Advanced ecosystem integrations and future-bet runtime surfaces |
 | v1.8 | Vanguard | shipped | Multi-model orchestration, distributed evaluations, and reconciled shipped milestone truth |
 | v1.9 | Crucible | shipped | Replayable debugging and online quality feedback |
-| v2.0 | Relay | active | Formalize and verify the bounded public handoff wedge already present in the repo |
+| v2.0 | Relay | shipped | Formalized the bounded public handoff wedge, delegated evidence story, and canonical adoption proof |
 
 ## Latest Shipped Milestone
 
-### v1.9 Crucible
+### v2.0 Relay
 
 **Status:** shipped
 **Priority at close:** highest
-**Theme:** Replayable debugging and online quality feedback
+**Theme:** Formalized bounded public handoff proof and clean closeout
 
 **What shipped**
 
-- replay branches rooted in durable checkpoint truth without mutating original run history
-- replay-safe execution defaults with explicit seam-level provenance
-- replay comparison and workflow-source dataset promotion in the operator UI
-- asynchronous online scoring with a review queue and explicit approval boundaries
+- explicit bounded public handoff contract rooted under the same durable run
+- recursive projected-context safety with explicit rejection for unsafe delegated state
+- curated delegated evidence surfaces in runtime detail and workflow UI
+- runtime-first docs, checked examples, canonical `mix test.adoption` proof, and a fresh green full-suite `mix test` baseline
 
 **User-facing outcome**
 
-Teams can inspect, replay, score, and promote production workflow evidence through a single embedded operator loop without blurring observed behavior with sealed release truth.
+Teams can adopt delegated handoffs through one narrow, inspectable, Phoenix-first runtime lane without guessing about lineage ownership, projected-context safety, or how to prove the integration is working.
 
 ## Active Milestone
 
-### v2.0 Relay
-
-**Status:** active
-**Priority at activation:** highest
-**Theme:** Formalize and verify the bounded public handoff lane
-
-**What this milestone is expected to deliver**
-
-- canonical milestone proof for the already-implemented `Scoria.start_handoff_run/3` lane
-- final support truth for delegated lineage, projected-context safety, and adoption-lane docs
-- an explicit answer on whether any remaining handoff work is real adopter value or merely deferable polish
-
-**Why now**
-
-The implementation wedge already exists in the repo, so the main remaining risk is support-truth and verification drift. Activating this milestone keeps Scoria from carrying an ambiguous half-shipped handoff story into the next capability bet.
+No active milestone yet. The next candidate should be opened only after choosing between the semantic fast path and any evidence-backed handoff-example follow-up.
 
 ## Recommended Candidates
 
 ### 1. Tenant-scoped semantic fast path
 
 **Status:** pending
-**Priority:** medium
+**Priority:** highest
 **Theme:** Inspectable semantic caching for safe read-only classes of work
 
 **What this step should deliver**
@@ -120,7 +101,7 @@ The implementation wedge already exists in the repo, so the main remaining risk 
 - prompt/version/source-aware invalidation
 - operator-visible cache diagnostics instead of invisible magic
 
-**Why it remains second**
+**Why it is first**
 
 Semantic caching is still valuable, but it is a latency/cost optimization with higher correctness and privacy risk. It should still follow the newly shipped replay and scoring trust loop.
 
@@ -141,13 +122,13 @@ This is useful only if the new public handoff lane still feels hard to approach 
 
 ## Recommendation
 
-Complete `v2.0 Relay` before opening another new milestone. If the bounded handoff lane closes cleanly, tenant-scoped semantic fast path remains the strongest next major candidate; if real adopter confusion remains, revisit the docs/example candidate first.
+Open the next milestone only after confirming whether post-Relay adopter evidence still points at bounded-handoff examples. Without that evidence, tenant-scoped semantic fast path remains the strongest next major candidate.
 
 ## Source Notes
 
 These priorities were informed by:
 
-- current repo state as of 2026-05-24
+- current repo state as of 2026-05-25
 - `.planning/research/milestone-options-2026-05-12.md`
 - archived seed references in `.planning/seeds/`
 - repo-local prompt research in `prompts/`

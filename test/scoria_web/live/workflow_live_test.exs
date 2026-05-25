@@ -126,6 +126,102 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     refute html =~ "remote evidence notebook"
   end
 
+  test "workflow page renders delegated evidence from the curated runtime DTO and keeps step selection on the right rail" do
+    {:ok, run} = Workflows.create_run(%{root_role_id: "planner"})
+
+    {:ok, parent_step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "handoff",
+        role_id: "planner",
+        status: "completed"
+      })
+
+    {:ok, _handoff} =
+      Workflows.create_handoff(parent_step, %{
+        delegated_role_id: "critic",
+        delegated_kind: "review",
+        capability_tags: ["policy"],
+        handoff_input: %{"brief" => "Review the draft answer"},
+        status: "pending"
+      })
+
+    {:ok, child_step} =
+      Workflows.create_step(run.id, %{
+        parent_step_id: parent_step.id,
+        sequence: 2,
+        kind: "review",
+        role_id: "critic",
+        status: "running",
+        projected_context: %{"draft_answer" => "hello", "task" => "policy review", "tone" => "calm"}
+      })
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
+
+    assert html =~ "Delegated Evidence"
+    assert html =~ "Inspect Delegated Evidence"
+    assert html =~ "planner"
+    assert html =~ "critic"
+    assert html =~ "View full context"
+    assert html =~ "handoff input"
+    assert html =~ "projected context"
+    assert html =~ "policy"
+    assert html =~ "draft_answer"
+
+    selected_html =
+      view
+      |> element("button[phx-click='select_step'][phx-value-id='#{child_step.id}']")
+      |> render_click()
+
+    assert selected_html =~ "Role"
+    assert selected_html =~ "critic"
+    assert selected_html =~ "review"
+    assert selected_html =~ "Delegated Evidence"
+  end
+
+  test "workflow page renders delegated empty and pending states without altering the rest of the page" do
+    {:ok, empty_run} = Workflows.create_run(%{root_role_id: "executor"})
+
+    {:ok, pending_run} = Workflows.create_run(%{root_role_id: "planner"})
+
+    {:ok, parent_step} =
+      Workflows.create_step(pending_run.id, %{
+        sequence: 1,
+        kind: "handoff",
+        role_id: "planner",
+        status: "completed"
+      })
+
+    {:ok, _handoff} =
+      Workflows.create_handoff(parent_step, %{
+        delegated_role_id: "critic",
+        delegated_kind: "review",
+        handoff_input: %{"brief" => "Review the draft answer"},
+        status: "pending"
+      })
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, _empty_view, empty_html} = live(conn, "/scoria/workflows/#{empty_run.id}")
+    {:ok, _pending_view, pending_html} = live(conn, "/scoria/workflows/#{pending_run.id}")
+
+    assert empty_html =~ "No Delegated Handoffs Recorded"
+    assert empty_html =~ "Scoria.start_handoff_run/3"
+    assert empty_html =~ "Timeline"
+
+    assert pending_html =~ "child step pending"
+    assert pending_html =~ "The handoff is recorded, but delegated execution has not produced a child-step readback yet."
+    assert pending_html =~ "Trace-First Workflow Tree"
+  end
+
   test "live-only steps show the typed replay comparison empty state" do
     {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
 

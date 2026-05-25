@@ -30,8 +30,8 @@ What this proves:
 - baseline runtime defaults are present
 - the app still boots and passes its core automated checks
 
-Maintainers can keep using `mix test` as the default repo closeout lane.
-Use `mix test.adoption` as the fast focused lane when you want the same adoption-proof subset CI runs without waiting for the whole suite.
+Maintainers can keep using `mix test` as broader repo-health context.
+Use `mix test.adoption` as the canonical ADPT-02 proof lane when you want the same runtime-first bounded handoff subset CI runs without waiting for the whole suite.
 
 ## Step 2: Prove one real runtime flow
 
@@ -117,5 +117,6 @@ mix test
 mix scoria.test.knowledge
 ```
 
-Use `mix test.adoption` for fast feedback over the install, route, runtime, docs, and migration-lane guards that make up the bounded acceptance harness.
-Use `mix scoria.test.knowledge` only when you are intentionally validating the full knowledge lane.
+Use `mix test.adoption` as the canonical ADPT-02 proof lane for the install, route, runtime, docs, and migration-lane guards that make up the bounded acceptance harness.
+Use `mix test` as broader repo-health context when you want to classify failures outside the canonical proof lane.
+Use `mix scoria.test.knowledge` only when you are intentionally validating the full Optional knowledge lane.

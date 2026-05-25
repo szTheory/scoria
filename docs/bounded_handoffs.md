@@ -2,6 +2,8 @@
 
 This guide documents the narrow public delegation lane for Scoria. Use it when your Phoenix app needs one role to hand a bounded slice of work to another role without turning Scoria into a general-purpose agent platform.
 
+Start with the normal runtime lane first: `identity -> start -> inspect -> resume`. Bounded handoffs extend that same runtime-first story instead of creating a second quickstart.
+
 ## What this lane does
 
 - starts one durable run through the public `Scoria` facade
@@ -79,9 +81,10 @@ After `Scoria.start_handoff_run/3`:
 
 ```elixir
 {:ok, detail} = Scoria.get_run_detail(started.run_id)
+delegated = detail.delegated_handoffs
 ```
 
-`detail` exposes the delegated role, delegated kind, handoff input, and the parent/child same-run lineage needed to inspect the bounded lane without reading raw workflow tables.
+`detail.delegated_handoffs` exposes the delegated role, delegated kind, handoff input, bounded projected context, and the parent/child same-run lineage needed to inspect the bounded lane without reading raw workflow tables.
 
 Open:
 
@@ -89,7 +92,7 @@ Open:
 /scoria/workflows/:run_id
 ```
 
-The workflow tree will show the root handoff step and the delegated child step under the same durable run.
+The workflow page keeps the topology-first tree and selected-step rail, and now adds a run-level `Delegated Evidence` section for the curated handoff story under the same durable run.
 
 ## When to use this
 
@@ -100,3 +103,7 @@ Use bounded handoffs when:
 - you want the operator surface to show that delegated lineage clearly
 
 Do not use this lane to build a broad autonomous multi-agent platform. Keep the contract narrow and explicit.
+
+## Remaining adoption gap
+
+No remaining adopter-facing gap is required for the runtime-first bounded handoff lane in `v2.0 Relay` closeout. Richer notebook-style delegated forensics remain deferred follow-up work only if real operator confusion appears after the current `Scoria.get_run_detail/1` and `/scoria/workflows/:run_id` surfaces prove insufficient.

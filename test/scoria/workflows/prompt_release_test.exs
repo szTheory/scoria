@@ -1,5 +1,5 @@
 defmodule Scoria.Workflows.PromptReleaseTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import Ecto.Query
 
   alias Scoria.Workflows

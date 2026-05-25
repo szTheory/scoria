@@ -152,16 +152,20 @@ defmodule Scoria.Eval do
   Creates an eval spec.
   """
   def create_eval_spec(attrs \\ %{}) do
-    attrs_with_defaults =
-      attrs
-      |> put_new_attr(:entity_id, Ecto.UUID.generate())
-      |> put_new_attr(:version, 1)
-      |> put_new_attr(:is_current, true)
-      |> put_dataset_snapshot!()
+    attrs = Map.new(attrs)
 
-    %EvalSpec{}
-    |> EvalSpec.changeset(attrs_with_defaults)
-    |> Repo.insert()
+    with :ok <- validate_immutable_eval_spec_truth(attrs) do
+      attrs_with_defaults =
+        attrs
+        |> put_new_attr(:entity_id, Ecto.UUID.generate())
+        |> put_new_attr(:version, 1)
+        |> put_new_attr(:is_current, true)
+        |> put_dataset_snapshot!()
+
+      %EvalSpec{}
+      |> EvalSpec.changeset(attrs_with_defaults)
+      |> Repo.insert()
+    end
   end
 
   @doc """
@@ -860,6 +864,25 @@ defmodule Scoria.Eval do
 
         put_new_attr(attrs, :dataset_version, dataset.version)
     end
+  end
+
+  defp validate_immutable_eval_spec_truth(attrs) when is_map(attrs) do
+    if mutable_eval_spec_truth?(attrs) do
+      changeset =
+        %EvalSpec{}
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.add_error(:base, "mutable aliases are not durable eval truth")
+
+      {:error, changeset}
+    else
+      :ok
+    end
+  end
+
+  defp mutable_eval_spec_truth?(attrs) do
+    Enum.any?([:dataset_alias, :default_judge_model], fn key ->
+      Map.has_key?(attrs, key) || Map.has_key?(attrs, Atom.to_string(key))
+    end)
   end
 
   defp fetch_attr!(attrs, key) do

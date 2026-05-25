@@ -355,12 +355,12 @@ Source: `test/scoria/runtime_integration_test.exs` [VERIFIED: test/scoria/runtim
 
 All claims in this research were verified or cited from repo-local primary sources or local command output. [VERIFIED: this document’s source tags]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What exact filename should hold the canonical closeout ledger?** [VERIFIED: .planning/phases/43-canonical-adoption-proof-milestone-closeout/43-CONTEXT.md]
    - What we know: The user locked one canonical closeout artifact and explicitly left filename/naming to agent discretion. [VERIFIED: .planning/phases/43-canonical-adoption-proof-milestone-closeout/43-CONTEXT.md]
-   - What's unclear: Whether the planner should prefer `43-CLOSEOUT.md` for semantic clarity or reuse a repo convention like `43-VERIFICATION.md`. [VERIFIED: repo scan of nearby phase artifacts; .planning/phases/43-canonical-adoption-proof-milestone-closeout/43-CONTEXT.md]
-   - Recommendation: Prefer `43-CLOSEOUT.md` unless the planner needs consistency with an existing verification artifact flow. [VERIFIED: .planning/phases/43-canonical-adoption-proof-milestone-closeout/43-CONTEXT.md]
+   - Resolution: the generated Phase 43 plans now explicitly use `.planning/phases/43-canonical-adoption-proof-milestone-closeout/43-CLOSEOUT.md` as the canonical synthesis artifact, which matches the pointer-first closeout shape recommended in this research and the mapped analogs in `43-PATTERNS.md`. [VERIFIED: .planning/phases/43-canonical-adoption-proof-milestone-closeout/43-01-PLAN.md; .planning/phases/43-canonical-adoption-proof-milestone-closeout/43-02-PLAN.md; .planning/phases/43-canonical-adoption-proof-milestone-closeout/43-PATTERNS.md]
+   - Recommendation: Keep `43-CLOSEOUT.md` unless execution exposes a stronger repo-local reason to collapse the artifact into a verification report; no such reason is currently present. [VERIFIED: .planning/phases/43-canonical-adoption-proof-milestone-closeout/43-02-PLAN.md]
 
 ## Environment Availability
 

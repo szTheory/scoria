@@ -46,6 +46,124 @@ defmodule Scoria.RuntimeTest do
     assert handoff.handoff_input == %{"brief" => "review draft"}
     assert child_step.kind == "review"
     assert child_step.projected_context["task"] == "review"
+
+    assert [
+             %{
+               handoff_id: handoff_id,
+               parent_step_id: parent_step_id,
+               delegated_role_id: "critic",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               child_step_id: child_step_id,
+               child_status: "queued",
+               status: "queued",
+               projected_context: %{"task" => "review", "draft_answer" => "hello"}
+             }
+           ] = detail.delegated_handoffs
+
+    assert handoff_id == handoff.id
+    assert parent_step_id == handoff.step_id
+    assert child_step_id == child_step.id
+    assert Enum.any?(detail.handoffs, &(&1.id == handoff.id))
+    assert Enum.any?(detail.steps, &(&1.id == child_step.id))
+  end
+
+  test "get_run_detail returns an empty delegated collection for non-handoff runs" do
+    {:ok, summary} =
+      Runtime.start_run(
+        %{actor_id: "actor-empty-delegated", tenant_id: "tenant-empty-delegated", session_id: "session-empty-delegated"},
+        root_role_id: "executor"
+      )
+
+    detail = Runtime.get_run_detail!(summary.run_id)
+
+    assert detail.delegated_handoffs == []
+    assert detail.handoffs == []
+  end
+
+  test "delegated projection keeps sequence order and reports pending child lineage explicitly" do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "planner",
+        actor_id: "actor-sequenced-handoff",
+        tenant_id: "tenant-sequenced-handoff",
+        session_id: "session-sequenced-handoff"
+      })
+
+    {:ok, first_parent_step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "handoff",
+        role_id: "planner",
+        status: "completed"
+      })
+
+    {:ok, first_handoff} =
+      Workflows.create_handoff(first_parent_step, %{
+        delegated_role_id: "critic",
+        delegated_kind: "review",
+        capability_tags: ["policy"],
+        handoff_input: %{"brief" => "review first"},
+        status: "pending"
+      })
+
+    {:ok, second_parent_step} =
+      Workflows.create_step(run.id, %{
+        sequence: 2,
+        kind: "handoff",
+        role_id: "planner",
+        status: "completed"
+      })
+
+    {:ok, second_handoff} =
+      Workflows.create_handoff(second_parent_step, %{
+        delegated_role_id: "writer",
+        delegated_kind: "draft",
+        capability_tags: ["copy"],
+        handoff_input: %{"brief" => "draft second"},
+        status: "pending"
+      })
+
+    {:ok, second_child_step} =
+      Workflows.create_step(run.id, %{
+        parent_step_id: second_parent_step.id,
+        sequence: 3,
+        kind: "draft",
+        role_id: "writer",
+        status: "completed",
+        projected_context: %{"task" => "draft", "tone" => "calm"}
+      })
+
+    detail = Runtime.get_run_detail!(run.id)
+
+    assert [
+             %{
+               handoff_id: first_handoff_id,
+               parent_step_id: first_parent_step_id,
+               child_step_id: nil,
+               child_status: "child_step_pending",
+               status: "child_step_pending",
+               capability_tags: ["policy"],
+               projected_context: %{},
+               sequence: 1
+             },
+             %{
+               handoff_id: second_handoff_id,
+               parent_step_id: second_parent_step_id,
+               child_step_id: second_child_step_id,
+               child_status: "completed",
+               status: "completed",
+               capability_tags: ["copy"],
+               projected_context: %{"task" => "draft", "tone" => "calm"},
+               sequence: 2
+             }
+           ] = detail.delegated_handoffs
+
+    assert first_handoff_id == first_handoff.id
+    assert first_parent_step_id == first_parent_step.id
+    assert second_handoff_id == second_handoff.id
+    assert second_parent_step_id == second_parent_step.id
+    assert second_child_step_id == second_child_step.id
   end
 
   test "start_handoff_run rejects missing explicit contract inputs" do

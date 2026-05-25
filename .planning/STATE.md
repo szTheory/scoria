@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Relay
-status: in_progress
-last_updated: "2026-05-24T15:35:22Z"
-last_activity: 2026-05-24
+milestone: none
+milestone_name: none
+status: milestone_shipped
+last_updated: "2026-05-25T08:30:00Z"
+last_activity: 2026-05-25
 progress:
-  total_phases: 3
-  completed_phases: 1
-  total_plans: 8
-  completed_plans: 3
-  percent: 38
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 100
 ---
 
 # Project State
@@ -19,29 +19,29 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** `v2.0 Relay` is active, with Phase 41 complete and Phase 42 next.
+**Current Focus:** `v2.0 Relay` shipped; waiting for next milestone selection
 
 ## Current Position
 
-Phase: 41 complete
-Plan: 3 of 3
-**Milestone:** `v2.0 Relay`
-**Phase:** Phase 41 - Bounded Handoff Contract & Safety
-**Plan:** Complete
-**Status:** Phase 41 executed; ready for verification or Phase 42 planning
-**Last activity:** 2026-05-24
+Phase: none
+Plan: n/a
+**Milestone:** None active
+**Phase:** n/a
+**Plan:** n/a
+**Status:** `v2.0 Relay` shipped on 2026-05-25 after a fresh full-suite `mix test` pass and archived closeout
+**Last activity:** 2026-05-25
 
 **Progress:**
-[████░░░░░░] 38%
+[██████████] 100%
 
 ## Performance Metrics
 
-- **Completed Phases:** 40
-- **Completed Plans:** 121
-- **Total Validated Requirements:** 115
+- **Completed Phases:** 41
+- **Completed Plans:** 123
+- **Total Validated Requirements:** 116
 - **Coverage:** 100% on shipped milestones through `v1.9 Crucible`
-- **Latest Shipped Milestone:** `v1.9 Crucible` on 2026-05-24
-- **Active Milestone:** `v2.0 Relay` with 3 planned phases and 8 planned implementation/verification plans
+- **Latest Shipped Milestone:** `v2.0 Relay` on 2026-05-25
+- **Active Milestone:** None
 
 **Phase 31 Metrics:**
 
@@ -72,6 +72,10 @@ Plan: 3 of 3
 - **40-07:** resumed in working tree, targeted lane green
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 43.1 inserted after Phase 43: Fix full-suite failures blocking clean Relay closeout (URGENT)
 
 **Decisions:**
 
@@ -140,12 +144,12 @@ Plan: 3 of 3
 
 **Todos:**
 
-- Start Phase 41 planning for the bounded handoff contract and projected-context safety lane.
-- Verify whether any current handoff rough edge is real adopter value or merely closeout bookkeeping during Phases 42-43.
+- Choose the next milestone candidate before creating fresh requirements.
+- Start `$gsd-new-milestone` once the next capability bet is selected.
 
 **Blockers:**
 
-- None.
+- None. `mix test test/scoria/eval/offline_runner_test.exs test/scoria/eval/eval_run_persistence_test.exs test/scoria_web/live/orchestrator_live_test.exs --trace` passed `15 tests, 0 failures`, and a fresh isolated `mix test` passed `3 doctests, 344 tests, 0 failures (13 excluded)` on 2026-05-25.
 
 ## Deferred Items
 
@@ -153,7 +157,7 @@ Items deferred or intentionally outside shipped milestone scope:
 
 | Category | Item | Status |
 |----------|------|--------|
-| tech debt | Project-level full-suite `mix test` failures outside the owned v1.9 verification lanes | accepted at `v1.9` close |
+| tech debt | Project-level full-suite `mix test` failures outside the owned v1.9 verification lanes | cleared by Phase `43.1` on 2026-05-25 |
 | tech debt | Project-level full-suite warning audit outside the owned adoption lane still has not been rerun after the post-`v1.9` support-truth shims | still unverified |
 | tech debt | LiveView async teardown noise in the workflow/replay test lane | accepted at `v1.9` close |
 | future milestone | Hosted connector marketplace / broker behavior | deferred beyond `v1.5` |

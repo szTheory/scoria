@@ -1,5 +1,26 @@
 # Milestones
 
+## v2.0 Relay
+
+**Shipped:** 2026-05-25
+**Phases:** 4 | **Plans:** 11 | **Tasks:** 22
+**Theme:** Bounded public handoff proof and clean closeout
+
+### Delivered
+Scoria now ships the bounded public handoff lane as explicit, milestone-quality truth: `Scoria.start_handoff_run/3` stays same-run rooted, projected context is narrow and reject-by-default for unsafe state, delegated lineage is inspectable in runtime and workflow surfaces, and the adoption lane plus full suite close on a green verification baseline.
+
+### Key Accomplishments
+- Locked the explicit bounded handoff contract with durable delegated kind, handoff input truth, and same-run lineage.
+- Hardened recursive projected-context rejection so unsafe nested runtime/session state fails explicitly instead of slipping through.
+- Added curated delegated evidence projection and workflow UI surfaces for inspectable lineage, status, and projected context.
+- Re-aligned README, bounded handoff docs, checked source fragments, and operator wording around one runtime-first adoption story.
+- Preserved `mix test.adoption` as the canonical bounded-handoff proof lane and recorded the Relay closeout ledger against it.
+- Restored a fresh full-suite `mix test` pass before ship by fixing offline eval contract drift and sparse approval metadata crashes.
+
+**Known deferred items at close:** 0
+
+---
+
 ## v1.9 Crucible
 
 **Shipped:** 2026-05-24

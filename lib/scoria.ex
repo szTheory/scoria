@@ -43,6 +43,12 @@ defmodule Scoria do
   def start_run(identity, opts \\ []), do: Runtime.start_run(identity, opts)
 
   @doc """
+  Starts a bounded delegated run with one explicit handoff and projected context.
+  """
+  def start_handoff_run(identity, delegated_role_id, opts \\ []),
+    do: Runtime.start_handoff_run(identity, delegated_role_id, opts)
+
+  @doc """
   Resumes a run by exact durable `run_id`.
   """
   def resume_run(run_id, opts \\ []), do: Runtime.resume_run(run_id, opts)

@@ -13,6 +13,7 @@ defmodule ScoriaTest do
 
   test "exports the canonical public runtime facade" do
     assert function_exported?(Scoria, :start_run, 2)
+    assert function_exported?(Scoria, :start_handoff_run, 3)
     assert function_exported?(Scoria, :resume_run, 2)
     assert function_exported?(Scoria, :get_run, 1)
     assert function_exported?(Scoria, :get_run_detail, 1)
