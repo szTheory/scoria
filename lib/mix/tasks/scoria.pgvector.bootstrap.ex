@@ -37,7 +37,17 @@ defmodule Mix.Tasks.Scoria.Pgvector.Bootstrap do
       {:ok, metadata} ->
         metadata
 
-      {:error, message} ->
+      {:missing_extension, metadata} ->
+        raise """
+        pgvector prerequisite failed: database #{metadata.database} on #{metadata.hostname}:#{metadata.port} is reachable but does not have the vector extension enabled
+
+        Next step:
+          mix scoria.pgvector.bootstrap
+          export SCORIA_DB_PORT=#{@default_port}
+          MIX_ENV=test mix test test/scoria/knowledge_test.exs
+        """
+
+      {:connection_error, message} ->
         raise """
         pgvector prerequisite failed: #{message}
 
@@ -56,12 +66,94 @@ defmodule Mix.Tasks.Scoria.Pgvector.Bootstrap do
           "pgvector is available for #{metadata.database} on #{metadata.hostname}:#{metadata.port}"
         )
 
-      {:error, message} ->
+      {:missing_extension, metadata} ->
+        Mix.raise(
+          with_next_steps(
+            "database #{metadata.database} on #{metadata.hostname}:#{metadata.port} is reachable but does not have the vector extension enabled"
+          )
+        )
+
+      {:connection_error, message} ->
         Mix.raise(with_next_steps(message))
     end
   end
 
   defp provision_or_fail!(compose_file) do
+    case check_vector_support() do
+      {:ok, metadata} ->
+        Mix.shell().info(
+          "pgvector is available for #{metadata.database} on #{metadata.hostname}:#{metadata.port}"
+        )
+
+      {:missing_extension, metadata} ->
+        enable_vector_extension!(metadata)
+
+      {:connection_error, _message} ->
+        start_pgvector_service!(compose_file)
+
+        case check_vector_support() do
+          {:ok, metadata} ->
+            Mix.shell().info(
+              "pgvector is available for #{metadata.database} on #{metadata.hostname}:#{metadata.port}"
+            )
+
+          {:missing_extension, metadata} ->
+            enable_vector_extension!(metadata)
+
+          {:connection_error, message} ->
+            Mix.raise(with_next_steps(message))
+        end
+    end
+  end
+
+  defp check_vector_support do
+    config = Repo.config()
+    hostname = Keyword.get(config, :hostname, "localhost")
+    port = Keyword.get(config, :port, 5432)
+    database = Keyword.fetch!(config, :database)
+
+    case Ecto.Adapters.SQL.query(
+           Repo,
+           "select extname from pg_extension where extname = 'vector'",
+           []
+         ) do
+      {:ok, %{rows: [["vector"]]}} ->
+        {:ok, %{database: database, hostname: hostname, port: port}}
+
+      {:ok, %{rows: []}} ->
+        {:missing_extension, %{database: database, hostname: hostname, port: port}}
+
+      {:error, error} ->
+        {:connection_error, Exception.message(error)}
+    end
+  end
+
+  defp enable_vector_extension!(metadata) do
+    case Ecto.Adapters.SQL.query(Repo, "CREATE EXTENSION IF NOT EXISTS vector", []) do
+      {:ok, _result} ->
+        case check_vector_support() do
+          {:ok, _verified} ->
+            Mix.shell().info(
+              "Enabled pgvector for #{metadata.database} on #{metadata.hostname}:#{metadata.port}"
+            )
+
+          {:missing_extension, _} ->
+            Mix.raise(
+              with_next_steps(
+                "database #{metadata.database} on #{metadata.hostname}:#{metadata.port} is reachable but the vector extension could not be enabled"
+              )
+            )
+
+          {:connection_error, message} ->
+            Mix.raise(with_next_steps(message))
+        end
+
+      {:error, error} ->
+        Mix.raise(with_next_steps(Exception.message(error)))
+    end
+  end
+
+  defp start_pgvector_service!(compose_file) do
     unless File.exists?(compose_file) do
       Mix.raise("Missing compose asset: #{compose_file}")
     end
@@ -86,29 +178,6 @@ defmodule Mix.Tasks.Scoria.Pgvector.Bootstrap do
 
       {output, status} ->
         Mix.raise("docker compose failed (#{status}):\n#{output}")
-    end
-  end
-
-  defp check_vector_support do
-    config = Repo.config()
-    hostname = Keyword.get(config, :hostname, "localhost")
-    port = Keyword.get(config, :port, 5432)
-    database = Keyword.fetch!(config, :database)
-
-    case Ecto.Adapters.SQL.query(
-           Repo,
-           "select extname from pg_extension where extname = 'vector'",
-           []
-         ) do
-      {:ok, %{rows: [["vector"]]}} ->
-        {:ok, %{database: database, hostname: hostname, port: port}}
-
-      {:ok, %{rows: []}} ->
-        {:error,
-         "database #{database} on #{hostname}:#{port} is reachable but does not have the vector extension enabled"}
-
-      {:error, error} ->
-        {:error, Exception.message(error)}
     end
   end
 
