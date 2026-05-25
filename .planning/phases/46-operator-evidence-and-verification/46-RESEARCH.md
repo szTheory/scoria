@@ -344,17 +344,15 @@ Source: `Mix.Project.cli/0` preferred env configuration. [CITED: https://hexdocs
 
 All claims in this research were verified or cited in this session; no user confirmation is required before planning.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should Phase 46 preserve the currently working `55432` pgvector verification path or force a Wave 0 recompile to `5432` first?**
-   - What we know: `55432` is reachable, has `vector` extension `0.8.2`, and the targeted semantic/UI lane passed there; `5432` is reachable but the repo currently fails with a compile-env mismatch when that port is used. [VERIFIED: pg_isready] [VERIFIED: psql vector extension query] [VERIFIED: mix test]
-   - What's unclear: whether the planner should treat port realignment as in-scope here or inherit the Phase 45 fallback posture for immediate execution. [VERIFIED: .planning/phases/45-compatibility-and-invalidation-engine/45-00-PLAN.md]
-   - Recommendation: keep a Wave 0 environment-alignment task in the plan and choose explicitly between “recompile to `5432`” and “ship Phase 46 on the already-green `55432` lane.” [VERIFIED: mix test]
+1. **Phase 46 preserves `55432` as the explicit semantic pgvector verification lane.**
+   - Resolution: `46-00-PLAN.md` locks the proof lane to `SCORIA_DB_PORT=55432` for this phase instead of reopening the blocked `5432` path. [VERIFIED: .planning/phases/46-operator-evidence-and-verification/46-00-PLAN.md]
+   - Why: `55432` is the currently green semantic-cache path with pgvector available, while `5432` remains unsuitable for this proof lane in the current checkout. [VERIFIED: pg_isready] [VERIFIED: psql vector extension query] [VERIFIED: mix test]
 
-2. **Should semantic deep evidence live directly on `RunDetail` or in an adjacent nested struct?**
-   - What we know: `RunDetail` is already the canonical curated workflow inspection DTO and the repo has used this pattern for replay and delegated evidence. [VERIFIED: codebase grep]
-   - What's unclear: whether adding semantic evidence directly to the existing struct is the least disruptive API shape or whether a nested struct would keep future additions cleaner. [VERIFIED: codebase grep]
-   - Recommendation: plan against one curated contract either way, but decide the struct shape early so both surfaces and tests share the same field names. [VERIFIED: codebase grep]
+2. **Semantic deep evidence lives directly on `RunDetail` as `semantic_evidence`.**
+   - Resolution: `46-01-PLAN.md` extends the canonical run-detail DTO with a top-level `semantic_evidence` field rather than introducing a separate adjacent struct. [VERIFIED: .planning/phases/46-operator-evidence-and-verification/46-01-PLAN.md]
+   - Why: `RunDetail` is already the stable curated inspection contract for workflow evidence, so extending it keeps both operator surfaces on one render-ready DTO seam. [VERIFIED: codebase grep]
 
 ## Environment Availability
 
