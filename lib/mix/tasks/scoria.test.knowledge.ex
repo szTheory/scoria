@@ -6,12 +6,11 @@ defmodule Mix.Tasks.Scoria.Test.Knowledge do
   @impl Mix.Task
   def run(args) do
     Mix.Task.run("loadpaths")
+    Mix.Task.reenable("scoria.pgvector.bootstrap")
     Mix.Task.reenable("app.start")
     System.put_env("SCORIA_TEST_INCLUDE_KNOWLEDGE", "true")
 
-    Mix.Tasks.Scoria.Pgvector.Bootstrap.configure_runtime_env()
-    Mix.Task.run("app.start")
-    Mix.Tasks.Scoria.Pgvector.Bootstrap.ensure_pgvector!()
+    Mix.Task.run("scoria.pgvector.bootstrap")
 
     Scoria.TestSupport.Migrations.migrate_core!()
     Scoria.TestSupport.Migrations.migrate_knowledge!()
