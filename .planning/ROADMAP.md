@@ -61,6 +61,15 @@ Plans:
 
 **Requirements:** `EVID-01`, `PROOF-01`
 
+**Plans:** 5 plans
+
+Plans:
+- [ ] `46-00-PLAN.md` — Preserve the canonical semantic verification lane on `SCORIA_DB_PORT=55432` and scaffold `mix test.semantic_fast_path`.
+- [ ] `46-01-PLAN.md` — Project one curated semantic-evidence contract from runtime metadata plus semantic entry/event truth.
+- [ ] `46-02-PLAN.md` — Extend the runtime presence drawer with summary-first semantic evidence and deep links.
+- [ ] `46-03-PLAN.md` — Add the workflow semantic evidence notebook as the canonical deep-inspection surface.
+- [ ] `46-04-PLAN.md` — Finalize the semantic proof lane, docs, and discoverability checks around shipped operator evidence.
+
 **Success criteria:**
 1. Operators can inspect semantic cache hit, miss, stale, and rejection outcomes with provenance context.
 2. Runtime or workflow detail surfaces expose the partitioning and compatibility reasons behind each semantic outcome.
