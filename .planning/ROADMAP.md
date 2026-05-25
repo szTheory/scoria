@@ -41,9 +41,10 @@
 
 **Requirements:** `LOOK-01`, `LOOK-02`, `INVD-01`, `INVD-02`
 
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
+- [ ] `45-00-PLAN.md` — Align Phase 45 verification to the live `5432` pgvector database path before trusting tests.
 - [ ] `45-01-PLAN.md` — Upgrade semantic-cache compatibility truth and implement exact-first filtered lookup.
 - [ ] `45-02-PLAN.md` — Persist stage-separated runtime outcomes and compatibility-rich writeback/fallthrough behavior.
 - [ ] `45-03-PLAN.md` — Add transactional stale/invalidation transitions and proof coverage.

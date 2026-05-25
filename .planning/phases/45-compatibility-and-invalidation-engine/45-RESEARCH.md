@@ -292,25 +292,22 @@ Source: `Ecto.Multi.update_all/4` documentation. [CITED: https://hexdocs.pm/ecto
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
 | A1 | Freshness windows can stay lane-defaulted and conservative without a new public API in Phase 45. [ASSUMED] | Architecture Patterns / Open Questions | Medium; planner may need a config surface earlier than expected. |
-| A2 | A stable policy compatibility snapshot may be persisted as a map, a fingerprint, or both without changing the public contract as long as lookup and invalidation use the stronger-than-`policy_key` value. [ASSUMED] | Standard Stack / Open Questions | Medium; schema tasks may need revision if later phases require one exact representation. |
-| A3 | Source fingerprint aggregation will likely need to combine multiple source `(entity_id, version, digest)` facts when a cached answer cites more than one source. [ASSUMED] | Common Pitfalls / Open Questions | High; wrong aggregation could over-invalidate or under-invalidate entries. |
+| A2 | Phase 45 uses `policy_fingerprint` as the canonical persisted policy-compatibility fence, derived from normalized `PromptPolicy` fields `policy_key`, `tools_allowed`, `grounding_required`, `approval_required`, and `metadata`. [RESOLVED] | Open Questions (RESOLVED) | Low; representation is now locked for planning/execution. |
+| A3 | `source_fingerprint` is built from retrieval-run evidence by joining ordered retrieval results to `ai_knowledge_sources`, serializing `#{source_id}:#{version}:#{digest}`, sorting by retrieval `rank` then `source_id`, and hashing the ordered token list. [RESOLVED] | Open Questions (RESOLVED) | Low; aggregation is now locked for planning/execution. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What is the canonical persisted representation for policy compatibility?**
-   - What we know: `Scoria.PromptPolicy` already normalizes `policy_key`, `prompt_ref`, `prompt_version`, boolean constraints, and metadata, while current cache rows only store `policy_key`. [VERIFIED: codebase grep]
-   - What's unclear: whether the planner should prefer `policy_snapshot`, `policy_fingerprint`, or both. [ASSUMED]
-   - Recommendation: plan schema work so the row can carry a stable snapshot plus an indexed derived fingerprint if needed. [ASSUMED]
+   - Resolution: Phase 45 should treat `policy_fingerprint` as the canonical persisted compatibility fence and compute it from normalized `Scoria.PromptPolicy` fields `policy_key`, `tools_allowed`, `grounding_required`, `approval_required`, and `metadata`. [RESOLVED]
+   - Rationale: this satisfies D-17's stronger-than-`policy_key` requirement without widening the row contract into a second human-facing snapshot surface before Phase 46 needs it. The normalized prompt-policy metadata already remains available elsewhere in runtime truth, so Phase 45 only needs the stable compatibility digest on the cache entry. [VERIFIED: .planning/phases/45-compatibility-and-invalidation-engine/45-CONTEXT.md] [VERIFIED: codebase grep]
 
 2. **How should `source_fingerprint` aggregate multi-source answers?**
-   - What we know: `Scoria.Knowledge.Source` persists `version` and `digest`, and semantic cache entries already have `source_fingerprint`. [VERIFIED: codebase grep]
-   - What's unclear: which runtime evidence surface is authoritative when a response depends on multiple sources or a retrieval run. [ASSUMED]
-   - Recommendation: plan one small discovery task against existing retrieval/evidence payloads before locking the fingerprint builder. [ASSUMED]
+   - Resolution: the authoritative source-fingerprint builder for Phase 45 should use retrieval-run evidence, join ordered retrieval results to `ai_knowledge_sources`, serialize each cited source as `#{source_id}:#{version}:#{digest}`, sort by retrieval rank then `source_id`, and hash the ordered token list into one stable fingerprint. [RESOLVED]
+   - Rationale: this anchors compatibility to durable source-version and digest truth per D-16, preserves deterministic ordering for multi-source answers, and avoids lossy text snapshots or prompt-derived heuristics. [VERIFIED: .planning/phases/45-compatibility-and-invalidation-engine/45-CONTEXT.md] [VERIFIED: codebase grep]
 
 3. **Should stale marking happen eagerly or only on lookup?**
-   - What we know: current lookup excludes expired rows with `(is_nil(entry.expires_at) or entry.expires_at > now)` and does not persist a `stale` transition. [VERIFIED: codebase grep]
-   - What's unclear: whether the planner should add a lookup-time state upgrade, a background task later, or both. [ASSUMED]
-   - Recommendation: implement lookup-time stale transition now and defer background sweep machinery with the already-locked out-of-scope list. [ASSUMED]
+   - Resolution: Phase 45 should perform lookup-time stale transitions immediately when an expired candidate is encountered, marking the row `stale` with `freshness_window_elapsed` before falling through to live execution. Background sweep machinery remains deferred. [RESOLVED]
+   - Rationale: this satisfies D-11 through D-15 with explicit persisted truth now, keeps the implementation inside the existing lookup/runtime seam, and avoids adding asynchronous refresh or sweep infrastructure that the phase explicitly defers. [VERIFIED: .planning/phases/45-compatibility-and-invalidation-engine/45-CONTEXT.md] [VERIFIED: codebase grep]
 
 ## Environment Availability
 
@@ -326,7 +323,7 @@ Source: `Ecto.Multi.update_all/4` documentation. [CITED: https://hexdocs.pm/ecto
 
 **Missing dependencies with fallback:**
 - The dedicated `55432` pgvector service is not currently running, but the repo includes `mix scoria.pgvector.bootstrap` and the `5432` database is live with `vector` enabled. [VERIFIED: pg_isready] [VERIFIED: psql query] [VERIFIED: codebase grep]
-- The current compiled test artifact expects `SCORIA_DB_PORT=55432`; planner verification must either bootstrap that port or recompile against `5432`. [VERIFIED: mix test]
+- The current compiled test artifact expects `SCORIA_DB_PORT=55432`; the locked revision strategy is to recompile against `5432` before trusting any Phase 45 automated verification. [VERIFIED: mix test]
 
 ## Validation Architecture
 
@@ -335,8 +332,8 @@ Source: `Ecto.Multi.update_all/4` documentation. [CITED: https://hexdocs.pm/ecto
 |----------|-------|
 | Framework | ExUnit on Elixir `1.19.5`. [VERIFIED: test/test_helper.exs] [VERIFIED: elixir --version] |
 | Config file | `test/test_helper.exs` and `config/test.exs`. [VERIFIED: codebase grep] |
-| Quick run command | `SCORIA_DB_PORT=55432 MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/runtime/semantic_fast_path_test.exs` or recompile/use `5432` first. [VERIFIED: mix test] [VERIFIED: codebase grep] |
-| Full suite command | `SCORIA_DB_PORT=55432 MIX_ENV=test mix test` or recompile/use `5432` first. [VERIFIED: mix test] [VERIFIED: codebase grep] |
+| Quick run command | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/semantic_cache/lookup_test.exs test/scoria/semantic_cache/invalidation_test.exs test/scoria/runtime/semantic_fast_path_test.exs` after `mix clean && mix compile` on the same port. [VERIFIED: mix test] [VERIFIED: codebase grep] |
+| Full suite command | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test` after `mix clean && mix compile` on the same port. [VERIFIED: mix test] [VERIFIED: codebase grep] |
 
 ### Phase Requirements → Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
@@ -354,7 +351,7 @@ Source: `Ecto.Multi.update_all/4` documentation. [CITED: https://hexdocs.pm/ecto
 ### Wave 0 Gaps
 - [ ] `test/scoria/semantic_cache/invalidation_test.exs` or equivalent coverage in `test/scoria/semantic_cache_test.exs` for prompt/policy/source invalidation fan-out. [VERIFIED: codebase grep]
 - [ ] `test/scoria/runtime/semantic_fast_path_test.exs` coverage for `lookup_status=reject`, `lookup_reason_code`, and persisted `stale` fallthrough. [VERIFIED: codebase grep]
-- [ ] DB-port alignment step for test execution (`55432` bootstrap or `5432` recompile) before relying on automated commands. [VERIFIED: mix test]
+- [ ] DB-port alignment step for test execution: `SCORIA_DB_PORT=5432 MIX_ENV=test mix clean && SCORIA_DB_PORT=5432 MIX_ENV=test mix compile` before relying on automated commands. [VERIFIED: mix test]
 
 ## Security Domain
 
