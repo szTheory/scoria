@@ -18,7 +18,7 @@
 | Phase | Name | Goal | Requirements | Success Criteria |
 |------|------|------|--------------|------------------|
 | 44 | Semantic cache contract and persistence | 3/3 | Complete    | 2026-05-25 |
-| 45 | Compatibility and invalidation engine | Enforce compatibility checks, stale handling, and invalidation truth before reuse | LOOK-01, LOOK-02, INVD-01, INVD-02 | 4 |
+| 45 | Compatibility and invalidation engine | 4/4 | Complete   | 2026-05-25 |
 | 46 | Operator evidence and verification | Surface semantic cache outcomes to operators and prove the milestone through checked verification | EVID-01, PROOF-01 | 4 |
 
 ## Phase Details
@@ -41,10 +41,10 @@
 
 **Requirements:** `LOOK-01`, `LOOK-02`, `INVD-01`, `INVD-02`
 
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 Plans:
-- [ ] `45-00-PLAN.md` — Align Phase 45 verification to the live `5432` pgvector database path before trusting tests.
+- [x] `45-00-PLAN.md` — Align Phase 45 verification to the live `5432` pgvector database path before trusting tests. (completed 2026-05-25)
 - [ ] `45-01-PLAN.md` — Upgrade semantic-cache compatibility truth and implement exact-first filtered lookup.
 - [ ] `45-02-PLAN.md` — Persist stage-separated runtime outcomes and compatibility-rich writeback/fallthrough behavior.
 - [ ] `45-03-PLAN.md` — Add transactional stale/invalidation transitions and proof coverage.

@@ -14,13 +14,13 @@
 ### Partitioning And Lookup
 
 - [ ] **FAST-02**: Semantic cache lookups are always partitioned by `tenant_id`, with stricter actor or policy scoping when compatibility requires it.
-- [ ] **LOOK-01**: Scoria reuses a cached answer only when semantic similarity, prompt compatibility, policy compatibility, and source compatibility all pass.
-- [ ] **LOOK-02**: Cache miss, stale, or rejected outcomes fall through to the normal execution path without changing workflow truth.
+- [x] **LOOK-01**: Scoria reuses a cached answer only when semantic similarity, prompt compatibility, policy compatibility, and source compatibility all pass.
+- [x] **LOOK-02**: Cache miss, stale, or rejected outcomes fall through to the normal execution path without changing workflow truth.
 
 ### Invalidation And Freshness
 
-- [ ] **INVD-01**: Cache entries invalidate when prompt version, source fingerprint, or policy compatibility changes.
-- [ ] **INVD-02**: Developers and operators can distinguish active, stale, and invalidated cache entries with explicit reasons.
+- [x] **INVD-01**: Cache entries invalidate when prompt version, source fingerprint, or policy compatibility changes.
+- [x] **INVD-02**: Developers and operators can distinguish active, stale, and invalidated cache entries with explicit reasons.
 
 ### Operator Evidence And Proof
 
@@ -55,10 +55,10 @@
 | FAST-01 | Phase 44 | Pending |
 | SAFE-01 | Phase 44 | Pending |
 | FAST-02 | Phase 44 | Pending |
-| LOOK-01 | Phase 45 | Pending |
-| LOOK-02 | Phase 45 | Pending |
-| INVD-01 | Phase 45 | Pending |
-| INVD-02 | Phase 45 | Pending |
+| LOOK-01 | Phase 45 | Complete |
+| LOOK-02 | Phase 45 | Complete |
+| INVD-01 | Phase 45 | Complete |
+| INVD-02 | Phase 45 | Complete |
 | EVID-01 | Phase 46 | Pending |
 | PROOF-01 | Phase 46 | Pending |
 
