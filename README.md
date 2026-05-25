@@ -7,6 +7,38 @@
 
 Scoria is the Phoenix-native runtime and operator surface for identity-aware AI runs. It gives a host app one public place to normalize actor, tenant, and session identity, start durable runs, resume an exact paused run by `run_id`, and inspect operator evidence at `/scoria` without turning the dashboard into the app's source of business truth.
 
+Scoria is shipped through `v2.1 Tenant-scoped semantic fast path`. The current public shape is intentionally narrow:
+
+- a default runtime lane for durable Phoenix-hosted runs
+- a bounded handoff lane for narrow same-run delegation
+- a semantic fast path for explicitly safe read-only work
+- an optional knowledge lane for pgvector-backed retrieval and grounding
+
+If you are adopting Scoria for the first time, start with the default runtime lane and treat the others as layered additions.
+
+## Who This Is For
+
+Scoria is for Phoenix teams that want AI runtime governance, durable workflow state, operator-visible evidence, and executable verification without turning their app into a hosted agent platform.
+
+The main job-to-be-done is simple: give a Phoenix app one boring, inspectable way to start, resume, debug, and verify identity-aware AI work.
+
+## Choose Your Lane
+
+Use the narrowest lane that solves your current app problem:
+
+- **Default runtime lane**: start here for identity-aware durable runs, approvals, and operator evidence.
+- **Bounded handoff lane**: add this when one role needs to delegate a narrow slice of work to another role under the same durable run.
+- **Semantic fast-path lane**: add this when you want tenant-partitioned answer reuse for explicitly safe read-only work.
+- **Optional knowledge lane**: add this only when you are intentionally validating retrieval, citations, and grounding.
+
+Docs:
+
+- [Lane selection guide](docs/adoption_lanes.md)
+- [Phoenix runtime example](docs/phoenix_runtime_example.md)
+- [Bounded handoffs](docs/bounded_handoffs.md)
+- [Semantic fast path](docs/semantic_fast_path.md)
+- [Operator verification](docs/operator_verification.md)
+
 ## Install
 
 Add it as a GitHub dependency for now:
@@ -100,6 +132,27 @@ delegated = detail.delegated_handoffs
 
 That records delegated lineage under one durable run and publishes one curated delegated evidence projection through `Scoria.get_run_detail/1`. The same run also exposes a `Delegated Evidence` section at `/scoria/workflows/:run_id`. The full guide lives in [`docs/bounded_handoffs.md`](docs/bounded_handoffs.md).
 
+## Semantic Fast Path
+
+When the default runtime lane is already working and you want conservative answer reuse for explicitly safe read-only work, add a semantic lane instead of widening the core runtime contract:
+
+```elixir
+defmodule MyApp.AI.AccountFaqLane do
+  use Scoria.SemanticLane,
+    lane_key: "account_faq",
+    default_scope: :tenant_shared,
+    safe_read_only: true
+end
+
+{:ok, summary} =
+  Scoria.start_run(identity,
+    semantic_cache: [lane: MyApp.AI.AccountFaqLane],
+    input: "what is scoria?"
+  )
+```
+
+This keeps reuse tenant-partitioned, compatibility-aware, and operator-visible. The semantic fast path stays opt-in, falls back to the normal runtime path on `bypass`, `miss`, `reject`, or stale outcomes, and exposes evidence at `/scoria/workflows/:run_id`. The full guide lives in [`docs/semantic_fast_path.md`](docs/semantic_fast_path.md).
+
 ## Verification
 
 Default Phoenix lane:
@@ -120,6 +173,14 @@ mix scoria.test.knowledge
 
 The knowledge lane does not require `pgvector`, knowledge tables, retrieval, grounding, or `mix scoria.test.knowledge` to prove the core runtime, identity, approval, and operator-evidence path.
 
+For the bounded semantic lane:
+
+```bash
+SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
+```
+
+Use that lane only when you are intentionally validating `v2.1` semantic fast-path behavior.
+
 ## Phoenix Example
 
 For one end-to-end controller-triggered adoption story, see [`docs/phoenix_runtime_example.md`](docs/phoenix_runtime_example.md). It follows the same public facade and `session_id`/`run_id` rules proven in the runtime integration suite.
@@ -135,4 +196,4 @@ For the public delegation lane, see [`docs/bounded_handoffs.md`](docs/bounded_ha
 
 ## Status
 
-Scoria is shipped through `v1.9 Crucible`. The runtime-first adoption lane, replay/operator loop, review queue, and bounded handoff lane are all available locally; the remaining work is mostly about finishing the highest-value adopter wedges cleanly instead of broad platform expansion.
+Scoria is shipped through `v2.1 Tenant-scoped semantic fast path`. The default runtime lane, bounded handoff lane, replay/operator loop, semantic fast path, and optional knowledge lane are all available locally. The remaining work is mostly about keeping the adopter story boring and support-truth honest instead of broad platform expansion.

@@ -2,28 +2,56 @@ defmodule Scoria.AdoptionSurfaceTest do
   use ExUnit.Case, async: true
 
   @readme "README.md"
+  @lane_guide "docs/adoption_lanes.md"
   @phoenix_example "docs/phoenix_runtime_example.md"
   @handoff_guide "docs/bounded_handoffs.md"
   @gap_ledger "docs/bounded_handoffs.md"
+  @semantic_guide "docs/semantic_fast_path.md"
   @operator_guide "docs/operator_verification.md"
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
 
-  test "README documents the runtime-first adoption lane and optional knowledge lane" do
+  test "README documents the shipped lane model and optional knowledge lane" do
     content = File.read!(@readme)
 
+    assert content =~ "Scoria is shipped through `v2.1 Tenant-scoped semantic fast path`"
+    assert content =~ "Who This Is For"
+    assert content =~ "Choose Your Lane"
+    assert content =~ "Lane selection guide"
     assert content =~ "identity -> start -> inspect -> resume"
     assert content =~ "Scoria.start_run"
     assert content =~ "Scoria.start_handoff_run"
+    assert content =~ "Scoria.SemanticLane"
+    assert content =~ "semantic_cache: [lane: MyApp.AI.AccountFaqLane]"
     assert content =~ "Scoria.get_run_detail"
     assert content =~ "delegated_handoffs"
     assert content =~ "Scoria.resume_run"
     assert content =~ "session_id"
     assert content =~ "run_id"
     assert content =~ "/scoria/workflows/:run_id"
+    assert content =~ "SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path"
     assert content =~ "Optional knowledge lane"
+    assert content =~ "docs/adoption_lanes.md"
+    assert content =~ "docs/semantic_fast_path.md"
+    refute content =~ "Scoria is shipped through `v1.9 Crucible`"
     assert File.read!(@scoria_doctest) =~ "doctest Scoria"
     assert File.read!(@identity_doctest) =~ "doctest Scoria.Identity"
+  end
+
+  test "lane selection guide documents the adoption order and optional boundaries" do
+    content = File.read!(@lane_guide)
+
+    assert content =~ "Default runtime lane"
+    assert content =~ "Bounded handoff lane"
+    assert content =~ "Semantic fast-path lane"
+    assert content =~ "Optional knowledge lane"
+    assert content =~ "identity -> start -> inspect -> resume"
+    assert content =~ "Scoria.start_handoff_run/3"
+    assert content =~ "use Scoria.SemanticLane"
+    assert content =~ "mix test.adoption"
+    assert content =~ "mix test.semantic_fast_path"
+    assert content =~ "mix scoria.test.knowledge"
+    assert content =~ "Start narrow. Expand only when the current lane already feels boring."
   end
 
   test "bounded handoff guide documents the narrow public delegation lane" do
@@ -51,6 +79,31 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "socket_state"
     assert content =~ "/scoria/workflows/:run_id"
     refute content =~ "implicit payload projection"
+  end
+
+  test "semantic fast-path guide documents the conservative reuse contract" do
+    content = File.read!(@semantic_guide)
+
+    assert content =~ "Use it only after the default runtime lane already works"
+    assert content =~ "use Scoria.SemanticLane"
+    assert content =~ "default_scope: :tenant_shared"
+    assert content =~ "default_scope: :actor_scoped"
+    assert content =~ "safe_read_only: true"
+    assert content =~ "semantic_cache: [lane: MyApp.AI.AccountFaqLane]"
+    assert content =~ "tenant partitioning"
+    assert content =~ "prompt compatibility"
+    assert content =~ "policy compatibility"
+    assert content =~ "source compatibility"
+    assert content =~ "bypass"
+    assert content =~ "miss"
+    assert content =~ "reject"
+    assert content =~ "hit"
+    assert content =~ "active"
+    assert content =~ "stale"
+    assert content =~ "invalidated"
+    assert content =~ "writeback_rejected"
+    assert content =~ "mix test.semantic_fast_path"
+    assert content =~ "/scoria/workflows/:run_id"
   end
 
   test "Phoenix runtime example documents identity, readback, and approval resume" do
