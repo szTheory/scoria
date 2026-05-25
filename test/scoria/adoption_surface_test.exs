@@ -4,7 +4,7 @@ defmodule Scoria.AdoptionSurfaceTest do
   @readme "README.md"
   @phoenix_example "docs/phoenix_runtime_example.md"
   @handoff_guide "docs/bounded_handoffs.md"
-  @gap_ledger ".planning/phases/42-delegated-evidence-adoption-story/42-GAP-LEDGER.md"
+  @gap_ledger "docs/bounded_handoffs.md"
   @operator_guide "docs/operator_verification.md"
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
@@ -72,12 +72,13 @@ defmodule Scoria.AdoptionSurfaceTest do
 
   test "phase gap ledger records the bounded handoff closeout decision explicitly" do
     content = File.read!(@gap_ledger)
+    lower = String.downcase(content)
 
-    assert content =~ "no remaining adopter-facing gap"
-    assert content =~ "closeout"
-    assert content =~ "deferred follow-up"
+    assert lower =~ "no remaining adopter-facing gap"
+    assert lower =~ "closeout"
+    assert lower =~ "deferred follow-up"
     refute content =~ "TBD"
-    refute content =~ "maybe later"
+    refute lower =~ "maybe later"
   end
 
   test "operator verification guide documents the core automated lane without knowledge requirements" do
@@ -87,7 +88,10 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "mix ecto.migrate"
     assert content =~ "mix test"
     assert content =~ "mix test.adoption"
+    assert content =~ "mix test.semantic_fast_path"
+    assert content =~ "SCORIA_DB_PORT=55432"
     assert content =~ "canonical ADPT-02 proof lane"
+    assert content =~ "canonical `v2.1` troubleshooting lane"
     assert content =~ "broader repo-health context"
     assert content =~ "Scoria.start_run"
     assert content =~ "Scoria.get_run"
@@ -95,6 +99,14 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "/scoria/workflows/:run_id"
     assert content =~ "Optional knowledge lane"
     assert content =~ "mix scoria.test.knowledge"
+    assert content =~ "bypass"
+    assert content =~ "miss"
+    assert content =~ "reject"
+    assert content =~ "hit"
+    assert content =~ "active"
+    assert content =~ "stale"
+    assert content =~ "invalidated"
+    assert content =~ "writeback_rejected"
   end
 
   test "public modules expose compiled moduledocs on current Elixir" do

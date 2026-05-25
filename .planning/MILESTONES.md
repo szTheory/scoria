@@ -1,5 +1,25 @@
 # Milestones
 
+## v2.1 Tenant-scoped semantic fast path
+
+**Shipped:** 2026-05-25
+**Phases:** 3 | **Plans:** 12 | **Tasks:** 28
+**Theme:** Inspectable semantic caching for safe read-only lanes
+
+### Delivered
+Scoria now ships a tenant-scoped semantic fast path as durable, operator-visible truth: explicitly safe read-only lanes can reuse answers only when prompt, policy, source, freshness, and scope compatibility all pass, while misses, rejects, stale entries, and invalidations remain visible and fall back through the normal workflow path.
+
+### Key Accomplishments
+- Added durable semantic cache entry and event truth with explicit hit, miss, bypass, and writeback rejection outcomes.
+- Established an explicit semantic-lane contract and conservative eligibility engine for safe read-only runtime work.
+- Implemented exact-first plus compatibility-filtered semantic lookup with durable `active`, `stale`, `invalidated`, and `writeback_rejected` lifecycle states.
+- Projected semantic provenance, compatibility, and fallback evidence into runtime detail, the runtime drawer, and the workflow notebook.
+- Shipped `mix test.semantic_fast_path` as the canonical bounded proof lane and aligned operator docs/source assertions to the same semantic vocabulary.
+
+**Known deferred items at close:** 0
+
+---
+
 ## v2.0 Relay
 
 **Shipped:** 2026-05-25

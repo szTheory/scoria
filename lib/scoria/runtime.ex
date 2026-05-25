@@ -16,6 +16,8 @@ defmodule Scoria.Runtime do
   alias Ecto.NoResultsError
   alias Scoria.Repo
   alias Scoria.Runtime.{Instance, Params, ReplayComparison, RunDetail, RunSummary}
+  alias Scoria.SemanticCache
+  alias Scoria.SemanticCache.Entry
   alias Scoria.Workflows
   alias Scoria.Workflows.{Reconciler, Resume, Run}
 
@@ -25,10 +27,20 @@ defmodule Scoria.Runtime do
   def start_run(identity, opts \\ []) do
     with {:ok, %{workflow_attrs: workflow_attrs, dispatch_opts: dispatch_opts}} <-
            Params.start(identity, opts),
-         :ok <- Scoria.Runtime.ReleaseGate.check(workflow_attrs),
-         {:ok, run} <- Workflows.create_run(workflow_attrs),
-         {:ok, _count} <- maybe_dispatch(run.id, dispatch_opts) do
-      {:ok, get_run!(run.id)}
+         :ok <- Scoria.Runtime.ReleaseGate.check(workflow_attrs) do
+      case Scoria.Workflows.Runtime.prepare_semantic_fast_path(workflow_attrs) do
+        {:hit, prepared_attrs, entry} ->
+          with {:ok, run} <- Workflows.create_run(prepared_attrs),
+               {:ok, _completed_run} <- Scoria.Workflows.Runtime.complete_semantic_fast_path_hit(run, entry) do
+            {:ok, get_run!(run.id)}
+          end
+
+        {:continue, prepared_attrs} ->
+          with {:ok, run} <- Workflows.create_run(prepared_attrs),
+               {:ok, _count} <- maybe_dispatch(run.id, dispatch_opts) do
+            {:ok, get_run!(run.id)}
+          end
+      end
     end
   end
 
@@ -100,6 +112,7 @@ defmodule Scoria.Runtime do
     source_run = load_source_run(run)
 
     RunDetail.from_run_tree(run,
+      semantic_evidence: build_semantic_evidence(run),
       comparison_by_step: ReplayComparison.build(run, source_run),
       replay_provenance_strip: ReplayComparison.provenance_strip(run)
     )
@@ -179,6 +192,221 @@ defmodule Scoria.Runtime do
     do: {:ok, 0}
 
   defp maybe_dispatch(run_id, dispatch_opts), do: Reconciler.dispatch_run(run_id, dispatch_opts)
+
+  defp build_semantic_evidence(%Run{} = run) do
+    runtime_semantic = get_in(run.metadata || %{}, ["runtime", "semantic_cache"])
+    step_semantic = step_semantic_cache_result(run)
+
+    if is_map(runtime_semantic) or is_map(step_semantic) do
+      entry_id = semantic_entry_id(runtime_semantic, step_semantic)
+      candidate_entry_id = map_value(runtime_semantic, "candidate_entry_id")
+      entry = load_semantic_entry(entry_id)
+      candidate_entry = load_semantic_entry(candidate_entry_id)
+      events = semantic_events(entry, candidate_entry)
+
+      %{
+        summary: semantic_summary(runtime_semantic, step_semantic, entry, candidate_entry, run),
+        candidate: semantic_candidate(runtime_semantic, candidate_entry),
+        compatibility: semantic_compatibility(runtime_semantic, entry, candidate_entry, run),
+        provenance: semantic_provenance(runtime_semantic, step_semantic, entry, candidate_entry, run),
+        lifecycle: semantic_lifecycle(entry, candidate_entry, step_semantic),
+        events: events,
+        raw_metadata: %{
+          runtime_semantic_cache: runtime_semantic || %{},
+          step_semantic_cache: step_semantic || %{}
+        }
+      }
+    else
+      %{}
+    end
+  end
+
+  defp step_semantic_cache_result(%Run{} = run) do
+    run.steps
+    |> Enum.sort_by(&{&1.sequence || 0, &1.inserted_at || ~U[1970-01-01 00:00:00Z]})
+    |> Enum.reverse()
+    |> Enum.find_value(fn step ->
+      semantic_cache = map_value(step.result_envelope, "semantic_cache")
+
+      if is_map(semantic_cache), do: semantic_cache, else: nil
+    end)
+  end
+
+  defp semantic_entry_id(runtime_semantic, step_semantic) do
+    map_value(runtime_semantic, "entry_id") || map_value(step_semantic, "entry_id")
+  end
+
+  defp load_semantic_entry(nil), do: nil
+  defp load_semantic_entry(entry_id), do: Repo.get(Entry, entry_id)
+
+  defp semantic_events(nil, nil), do: []
+
+  defp semantic_events(entry, candidate_entry) do
+    [entry, candidate_entry]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq_by(& &1.id)
+    |> Enum.flat_map(fn semantic_entry ->
+      label =
+        if candidate_entry != nil and semantic_entry.id == candidate_entry.id and
+             (entry == nil or entry.id != candidate_entry.id) do
+          "candidate"
+        else
+          "selected"
+        end
+
+      semantic_entry.id
+      |> SemanticCache.list_events()
+      |> Enum.map(fn event ->
+        %{
+          entry_id: semantic_entry.id,
+          entry_role: label,
+          event_id: event.id,
+          event_kind: event.event_kind,
+          reason_code: event.reason_code,
+          workflow_run_id: event.workflow_run_id,
+          span_id: event.span_id,
+          metadata: event.metadata || %{},
+          inserted_at: event.inserted_at
+        }
+      end)
+    end)
+    |> Enum.sort_by(&{&1.inserted_at || ~U[1970-01-01 00:00:00Z], &1.event_id})
+  end
+
+  defp semantic_summary(runtime_semantic, step_semantic, entry, candidate_entry, run) do
+    lookup_status = map_value(runtime_semantic, "lookup_status")
+    entry_source = entry || candidate_entry
+
+    %{
+      verdict: lookup_status || map_value(step_semantic, "status") || "not_evaluated",
+      lookup_status: lookup_status,
+      eligibility_status: map_value(runtime_semantic, "eligibility_status"),
+      eligibility_reason_code: map_value(runtime_semantic, "eligibility_reason_code"),
+      lookup_reason_code: map_value(runtime_semantic, "lookup_reason_code"),
+      candidate_status: map_value(runtime_semantic, "candidate_status") || (candidate_entry && candidate_entry.status),
+      fallback_executed: lookup_status in ["bypass", "miss", "reject"],
+      fallback_outcome: fallback_outcome(lookup_status, step_semantic),
+      reason_code:
+        map_value(runtime_semantic, "lookup_reason_code") ||
+          map_value(runtime_semantic, "eligibility_reason_code") ||
+          (entry_source && entry_source.state_reason_code),
+      lane_key: semantic_lane_key(runtime_semantic, entry_source),
+      scope_kind: map_value(runtime_semantic, "scope_kind") || (entry_source && entry_source.scope_kind),
+      scope_reason: map_value(runtime_semantic, "scope_reason") || (entry_source && entry_source.scope_reason),
+      workflow_run_id: run.id
+    }
+  end
+
+  defp semantic_candidate(runtime_semantic, candidate_entry) do
+    %{
+      candidate_entry_id: map_value(runtime_semantic, "candidate_entry_id"),
+      candidate_status: map_value(runtime_semantic, "candidate_status") || (candidate_entry && candidate_entry.status),
+      state_reason_code: candidate_entry && candidate_entry.state_reason_code,
+      actor_id: candidate_entry && candidate_entry.actor_id,
+      tenant_id: candidate_entry && candidate_entry.tenant_id
+    }
+  end
+
+  defp semantic_compatibility(runtime_semantic, entry, candidate_entry, run) do
+    runtime_defaults = get_in(run.metadata || %{}, ["runtime"]) || %{}
+    entry_source = entry || candidate_entry
+
+    %{
+      prompt_ref: entry_source && entry_source.prompt_ref || Map.get(runtime_defaults, "prompt_ref"),
+      prompt_version: entry_source && entry_source.prompt_version || Map.get(runtime_defaults, "prompt_version"),
+      policy_key: entry_source && entry_source.policy_key || Map.get(runtime_defaults, "policy_key"),
+      policy_fingerprint: entry_source && entry_source.policy_fingerprint,
+      source_fingerprint: entry_source && entry_source.source_fingerprint,
+      provider: entry_source && entry_source.provider || Map.get(runtime_defaults, "provider"),
+      model: entry_source && entry_source.model || Map.get(runtime_defaults, "model"),
+      lane_key: semantic_lane_key(runtime_semantic, entry_source),
+      lane_module: map_value(runtime_semantic, "lane_module") || (entry_source && entry_source.lane_module)
+    }
+  end
+
+  defp semantic_provenance(runtime_semantic, step_semantic, entry, candidate_entry, run) do
+    entry_source = entry || candidate_entry
+
+    %{
+      entry_id: entry && entry.id,
+      candidate_entry_id: candidate_entry && candidate_entry.id,
+      origin_run_id:
+        map_value(runtime_semantic, "origin_run_id") ||
+          map_value(step_semantic, "origin_run_id") ||
+          (entry_source && entry_source.origin_run_id),
+      origin_span_id: entry_source && entry_source.origin_span_id,
+      origin_retrieval_run_id: entry_source && entry_source.origin_retrieval_run_id,
+      workflow_run_id: run.id,
+      workflow_run_href: "/workflows/#{run.id}",
+      origin_run_href: origin_run_href(runtime_semantic, step_semantic, entry_source),
+      actor_id: semantic_actor_id(runtime_semantic, entry_source),
+      tenant_id: map_value(runtime_semantic, "tenant_id") || (entry_source && entry_source.tenant_id)
+    }
+  end
+
+  defp semantic_lifecycle(entry, candidate_entry, step_semantic) do
+    entry_source = entry || candidate_entry
+
+    %{
+      status:
+        (entry_source && entry_source.status) ||
+          map_value(step_semantic, "status"),
+      state_reason_code: entry_source && entry_source.state_reason_code,
+      expires_at: entry_source && entry_source.expires_at,
+      invalidated_at: entry_source && entry_source.invalidated_at,
+      hit_count: entry_source && entry_source.hit_count,
+      last_hit_at: entry_source && entry_source.last_hit_at,
+      inserted_at: entry_source && entry_source.inserted_at,
+      updated_at: entry_source && entry_source.updated_at
+    }
+  end
+
+  defp fallback_outcome("hit", _step_semantic), do: "semantic_reuse"
+  defp fallback_outcome(status, %{} = step_semantic) when status in ["bypass", "miss", "reject"] do
+    case map_value(step_semantic, "status") do
+      "admitted" -> "live_execution_admitted"
+      "writeback_rejected" -> "live_execution_writeback_rejected"
+      _ -> "normal_runtime_path_executed"
+    end
+  end
+
+  defp fallback_outcome(status, _step_semantic) when status in ["bypass", "miss", "reject"],
+    do: "normal_runtime_path_executed"
+
+  defp fallback_outcome(_status, _step_semantic), do: nil
+
+  defp semantic_lane_key(runtime_semantic, entry_source) do
+    map_value(runtime_semantic, "lane_key") || (entry_source && entry_source.lane_key)
+  end
+
+  defp origin_run_href(runtime_semantic, step_semantic, entry_source) do
+    case map_value(runtime_semantic, "origin_run_id") ||
+           map_value(step_semantic, "origin_run_id") ||
+           (entry_source && entry_source.origin_run_id) do
+      run_id when is_binary(run_id) -> "/workflows/#{run_id}"
+      _ -> nil
+    end
+  end
+
+  defp semantic_actor_id(runtime_semantic, entry_source) do
+    case map_value(runtime_semantic, "scope_kind") || (entry_source && entry_source.scope_kind) do
+      "actor_scoped" -> map_value(runtime_semantic, "actor_id") || (entry_source && entry_source.actor_id)
+      _ -> nil
+    end
+  end
+
+  defp map_value(map, key) when is_map(map) do
+    atom_key =
+      try do
+        String.to_existing_atom(key)
+      rescue
+        ArgumentError -> nil
+      end
+
+    Map.get(map, key, atom_key && Map.get(map, atom_key))
+  end
+
+  defp map_value(_map, _key), do: nil
 
   defp load_source_run(%Run{execution_mode: "replay", source_run_id: source_run_id})
        when is_binary(source_run_id) do

@@ -2,10 +2,12 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
   use Phoenix.Component
 
   alias ScoriaWeb.ReplayEvidenceNotebookComponent
+  alias ScoriaWeb.SemanticEvidenceNotebookComponent
 
   attr :step, :map, default: nil
   attr :checkpoint, :map, default: nil
   attr :comparison, :map, default: nil
+  attr :semantic_evidence, :map, default: %{}
   attr :selected_source_variant, :string, default: "original"
   attr :selected_comparison_entry, :map, default: nil
   attr :promotion_context, :map, default: nil
@@ -52,8 +54,11 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
           selected_source_variant={@selected_source_variant}
           selected_comparison_entry={@selected_comparison_entry}
         />
+
+        <SemanticEvidenceNotebookComponent.render semantic_evidence={@semantic_evidence} />
       <% else %>
         <p class="text-sm text-stone-500">Select a step to inspect checkpoint metadata and failure reasons.</p>
+        <SemanticEvidenceNotebookComponent.render semantic_evidence={@semantic_evidence} />
       <% end %>
     </aside>
     """

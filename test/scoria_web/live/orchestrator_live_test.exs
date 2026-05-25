@@ -33,6 +33,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   alias Scoria.Repo
   alias Scoria.Repo.Trace
   alias Scoria.Eval.OnlineScoreCandidate
+  alias Scoria.Runtime.Instance
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
   alias Scoria.Workflows.Runtime
@@ -203,6 +204,77 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert html =~ "Review candidate context"
     assert html =~ candidate.score_explanation
     assert html =~ candidate.trace_id
+  end
+
+  test "runtime drawer loads semantic summary for runtimes with a current run and stays stable without one" do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "assistant",
+        tenant_id: "tenant-live",
+        session_id: "session-runtime",
+        status: "completed",
+        execution_mode: "live",
+        metadata: %{
+          "runtime" => %{
+            "semantic_cache" => %{
+              "lookup_status" => "bypass",
+              "eligibility_status" => "bypass",
+              "eligibility_reason_code" => "approval_required",
+              "lane_key" => "account_faq",
+              "scope_kind" => "tenant_shared",
+              "scope_reason" => "lane_default"
+            }
+          }
+        }
+      })
+
+    active_instance =
+      Repo.insert!(%Instance{
+      tenant_id: "tenant-live",
+      host_session_id: "session-runtime",
+      current_run_id: run.id,
+      first_seen_at: DateTime.utc_now() |> DateTime.truncate(:second),
+      last_seen_at: DateTime.utc_now() |> DateTime.truncate(:second),
+      transport_kind: "websocket"
+      })
+
+    offline_instance =
+      Repo.insert!(%Instance{
+        tenant_id: "tenant-live",
+        host_session_id: "session-empty-runtime",
+        current_run_id: nil,
+        first_seen_at: DateTime.utc_now() |> DateTime.truncate(:second),
+        last_seen_at: DateTime.utc_now() |> DateTime.truncate(:second),
+        transport_kind: "sse",
+        terminal_offline_reason: "Terminal exited"
+      })
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{"tenant_id" => "tenant-live"})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    html =
+      view
+      |> element("button[phx-click='open_runtime_drawer'][phx-value-id='#{offline_instance.id}']")
+      |> render_click()
+
+    assert html =~ "Terminal exited"
+    refute html =~ "lookup_status"
+
+    html =
+      view
+      |> element("button[phx-click='open_runtime_drawer'][phx-value-id='#{active_instance.id}']")
+      |> render_click()
+
+    assert html =~ "lookup_status"
+    assert html =~ "bypass"
+    assert html =~ "approval_required"
+    assert html =~ "lane_key"
+    assert html =~ "scope_kind"
+    assert html =~ "View workflow evidence"
   end
 
   test "HITL approval request renders modal and handles approve" do

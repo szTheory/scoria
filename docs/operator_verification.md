@@ -33,6 +33,29 @@ What this proves:
 Maintainers can keep using `mix test` as broader repo-health context.
 Use `mix test.adoption` as the canonical ADPT-02 proof lane when you want the same runtime-first bounded handoff subset CI runs without waiting for the whole suite.
 
+## Semantic fast-path troubleshooting lane
+
+When you are validating the `v2.1` semantic fast path specifically, use the bounded semantic lane instead of the broad suite:
+
+```bash
+SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
+```
+
+This is the canonical `v2.1` troubleshooting lane. It proves:
+
+- tenant partitioning and semantic lookup behavior
+- explicit fallback visibility for `bypass`, `miss`, `reject`, and `hit`
+- operator evidence projection on `/scoria` and `/scoria/workflows/:run_id`
+- lifecycle truth for `active`, `stale`, `invalidated`, and `writeback_rejected`
+
+Use the semantic nouns exactly as rendered by the product:
+
+- `hit` means Scoria reused a durable semantic entry
+- `bypass` means Scoria intentionally skipped the fast path and ran the normal runtime path
+- `miss` means the fast path evaluated cleanly but found no reusable entry, so the normal runtime path executed
+- `reject` means Scoria found a candidate entry but refused it because compatibility or freshness no longer held
+- `active`, `stale`, `invalidated`, and `writeback_rejected` are lifecycle states for the durable semantic entry itself
+
 ## Step 2: Prove one real runtime flow
 
 From your Phoenix app, start one real run through the public facade:
@@ -113,10 +136,12 @@ For repository verification and closeout, keep leaning on the existing automated
 
 ```bash
 mix test.adoption
+SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 mix test
 mix scoria.test.knowledge
 ```
 
 Use `mix test.adoption` as the canonical ADPT-02 proof lane for the install, route, runtime, docs, and migration-lane guards that make up the bounded acceptance harness.
+Use `mix test.semantic_fast_path` as the canonical `v2.1` semantic fast-path troubleshooting lane.
 Use `mix test` as broader repo-health context when you want to classify failures outside the canonical proof lane.
 Use `mix scoria.test.knowledge` only when you are intentionally validating the full Optional knowledge lane.

@@ -1,9 +1,9 @@
 ---
 phase: 45
 slug: compatibility-and-invalidation-engine
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-25
 ---
 
@@ -19,17 +19,17 @@ created: 2026-05-25
 |----------|-------|
 | **Framework** | ExUnit |
 | **Config file** | `config/test.exs` |
-| **Quick run command** | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/semantic_cache/lookup_test.exs test/scoria/semantic_cache/invalidation_test.exs test/scoria/runtime/semantic_fast_path_test.exs` |
-| **Full suite command** | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test` |
+| **Quick run command** | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/semantic_cache/lookup_test.exs test/scoria/semantic_cache/invalidation_test.exs test/scoria/runtime/semantic_fast_path_test.exs --trace` |
+| **Full suite command** | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test` |
 | **Estimated runtime** | ~60-180 seconds depending on DB/compile alignment |
 
 ---
 
 ## Sampling Rate
 
-- **After Wave 0:** Run `SCORIA_DB_PORT=5432 MIX_ENV=test mix clean && SCORIA_DB_PORT=5432 MIX_ENV=test mix compile`
-- **After every task commit:** Run the task-specific `SCORIA_DB_PORT=5432 MIX_ENV=test mix test ...` command from the table below
-- **After every plan wave:** Run `SCORIA_DB_PORT=5432 MIX_ENV=test mix test`
+- **After Wave 0:** Run `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix clean && SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix compile`
+- **After every task commit:** Run the task-specific `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test ...` command from the table below
+- **After every plan wave:** Run `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test`
 - **Before `$gsd-verify-work`:** Full suite must be green
 - **Max feedback latency:** 180 seconds
 
@@ -39,15 +39,15 @@ created: 2026-05-25
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 45-00-01 | 00 | 0 | LOOK-01 | T-45-00-01 | Recompile the repo and prove semantic-cache tests run against the live `5432` database without compile/runtime repo-port mismatch | environment | `SCORIA_DB_PORT=5432 MIX_ENV=test mix clean && SCORIA_DB_PORT=5432 MIX_ENV=test mix compile && SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/semantic_cache_test.exs --max-cases 1` | ✅ | ⬜ pending |
-| 45-01-01 | 01 | 1 | LOOK-01 | T-45-01-01 | Semantic-cache rows persist vector-backed query storage plus explicit `policy_fingerprint`, `source_fingerprint`, and state reason truth | unit | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/semantic_cache/lookup_test.exs` | ✅ | ⬜ pending |
-| 45-01-02 | 01 | 1 | LOOK-01 | T-45-01-02 | Lookup only hits after exact-first filtering plus policy/source/scope/freshness compatibility; malformed callers bypass with `query_text_missing` | unit | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/semantic_cache/lookup_test.exs` | ✅ | ⬜ pending |
-| 45-01-03 | 01 | 1 | INVD-02 | T-45-01-04 | Lookup tests preserve explicit `active`, `stale`, `invalidated`, and `writeback_rejected` truth instead of collapsing stale/incompatible rows into `:miss` | unit | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/semantic_cache/lookup_test.exs` | ✅ | ⬜ pending |
-| 45-02-01 | 02 | 2 | LOOK-01 | T-45-02-04 | Runtime metadata records `eligibility_reason_code`, `lookup_status`, and `lookup_reason_code` with distinct bypass/miss/reject/hit semantics | integration | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs` | ✅ | ⬜ pending |
-| 45-02-02 | 02 | 2 | LOOK-02 | T-45-02-02 | Reject and miss outcomes fall through to the normal workflow path while writeback stores compatibility-rich entries for future lookups | integration | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs` | ✅ | ⬜ pending |
-| 45-03-01 | 03 | 3 | INVD-01 | T-45-03-01 | Transactional invalidation helpers mutate only the intended tenant/lane slice and append explicit invalidation events | unit | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/semantic_cache/invalidation_test.exs` | ✅ | ⬜ pending |
-| 45-03-02 | 03 | 3 | INVD-01 | T-45-03-04 | Lookup-time stale marking and incompatible-candidate invalidation leave durable state truth before live fallback resumes | integration | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs test/scoria/semantic_cache/invalidation_test.exs` | ✅ | ⬜ pending |
-| 45-03-03 | 03 | 3 | INVD-02 | T-45-03-02 | Active, stale, invalidated, and writeback-rejected rows remain distinguishable with stable reason codes after fallback | unit + integration | `SCORIA_DB_PORT=5432 MIX_ENV=test mix test test/scoria/semantic_cache/invalidation_test.exs test/scoria/runtime/semantic_fast_path_test.exs` | ✅ | ⬜ pending |
+| 45-00-01 | 00 | 0 | LOOK-01 | T-45-00-01 | Recompile the repo and prove semantic-cache tests run against the trusted pgvector-backed milestone lane without compile/runtime repo-port mismatch | environment | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix clean && SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix compile && SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/semantic_cache_test.exs --max-cases 1 --trace` | ✅ | ✅ green |
+| 45-01-01 | 01 | 1 | LOOK-01 | T-45-01-01 | Semantic-cache rows persist vector-backed query storage plus explicit `policy_fingerprint`, `source_fingerprint`, and state reason truth | unit | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/semantic_cache/lookup_test.exs --trace` | ✅ | ✅ green |
+| 45-01-02 | 01 | 1 | LOOK-01 | T-45-01-02 | Lookup only hits after exact-first filtering plus policy/source/scope/freshness compatibility; malformed callers bypass with `query_text_missing` | unit | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/semantic_cache/lookup_test.exs --trace` | ✅ | ✅ green |
+| 45-01-03 | 01 | 1 | INVD-02 | T-45-01-04 | Lookup tests preserve explicit `active`, `stale`, `invalidated`, and `writeback_rejected` truth instead of collapsing stale/incompatible rows into `:miss` | unit | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/semantic_cache_test.exs test/scoria/semantic_cache/lookup_test.exs --trace` | ✅ | ✅ green |
+| 45-02-01 | 02 | 2 | LOOK-01 | T-45-02-04 | Runtime metadata records `eligibility_reason_code`, `lookup_status`, and `lookup_reason_code` with distinct bypass/miss/reject/hit semantics | integration | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs --trace` | ✅ | ✅ green |
+| 45-02-02 | 02 | 2 | LOOK-02 | T-45-02-02 | Reject and miss outcomes fall through to the normal workflow path while writeback stores compatibility-rich entries for future lookups | integration | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs --trace` | ✅ | ✅ green |
+| 45-03-01 | 03 | 3 | INVD-01 | T-45-03-01 | Transactional invalidation helpers mutate only the intended tenant/lane slice and append explicit invalidation events | unit | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/semantic_cache/invalidation_test.exs --trace` | ✅ | ✅ green |
+| 45-03-02 | 03 | 3 | INVD-01 | T-45-03-04 | Lookup-time stale marking and incompatible-candidate invalidation leave durable state truth before live fallback resumes | integration | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs test/scoria/semantic_cache/invalidation_test.exs --trace` | ✅ | ✅ green |
+| 45-03-03 | 03 | 3 | INVD-02 | T-45-03-02 | Active, stale, invalidated, and writeback-rejected rows remain distinguishable with stable reason codes after fallback | unit + integration | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/semantic_cache/invalidation_test.exs test/scoria/runtime/semantic_fast_path_test.exs --trace` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -55,12 +55,12 @@ created: 2026-05-25
 
 ## Wave 0 Requirements
 
-- [ ] Clean recompile completed with `SCORIA_DB_PORT=5432 MIX_ENV=test mix clean && SCORIA_DB_PORT=5432 MIX_ENV=test mix compile`
+- [x] Clean recompile/proof lane aligned to `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test`
 
 ## Later-Wave Coverage Commitments
 
-- [ ] Plan 02 expands `test/scoria/runtime/semantic_fast_path_test.exs` to assert `lookup_status=reject`, `lookup_reason_code`, and persisted `stale` fallthrough
-- [ ] Plan 03 adds dedicated invalidation coverage in `test/scoria/semantic_cache_test.exs` or a new invalidation-focused test file
+- [x] Plan 02 expanded `test/scoria/runtime/semantic_fast_path_test.exs` to assert `lookup_status=reject`, `lookup_reason_code`, and persisted `stale` fallthrough
+- [x] Plan 03 added dedicated invalidation coverage in `test/scoria/semantic_cache/invalidation_test.exs`
 
 ---
 
@@ -74,11 +74,11 @@ created: 2026-05-25
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 180s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 180s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved on 2026-05-25 after the semantic cache lookup/invalidation/runtime lanes passed on `55432`.

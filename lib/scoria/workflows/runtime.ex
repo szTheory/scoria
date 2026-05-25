@@ -5,13 +5,153 @@ defmodule Scoria.Workflows.Runtime do
 
   alias Decimal, as: D
   alias Scoria.Identity
+  alias Scoria.Knowledge.Embedder
   alias Scoria.Runtime.Params
+  alias Scoria.SemanticCache
+  alias Scoria.SemanticCache.Compatibility
+  alias Scoria.SemanticCache.Eligibility
+  alias Scoria.SemanticCache.Invalidation
   alias Scoria.SRE.BudgetEngine
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE.Telemetry
   alias Scoria.Workflows
 
   @default_timeout 5_000
+
+  def prepare_semantic_fast_path(workflow_attrs) when is_map(workflow_attrs) do
+    metadata = Map.get(workflow_attrs, :metadata, %{})
+    runtime = Map.get(metadata, "runtime", %{})
+    semantic_cache = Map.get(runtime, "semantic_cache")
+
+    if is_map(semantic_cache) do
+      query_text = semantic_query_text(metadata)
+      prompt_policy = Map.get(runtime, "prompt_policy", %{})
+
+      if is_nil(query_text) or String.trim(query_text) == "" do
+          {:continue, put_semantic_cache_state(workflow_attrs, %{
+             "eligibility_status" => "bypass",
+             "eligibility_reason_code" => "query_text_missing",
+             "lookup_status" => "bypass",
+             "query_text" => query_text
+           })}
+      else
+        facts = %{
+          tenant_id: Map.get(workflow_attrs, :tenant_id),
+          actor_id: Map.get(workflow_attrs, :actor_id),
+          semantic_cache: semantic_cache,
+          prompt_policy: prompt_policy,
+          policy_key: Map.get(runtime, "policy_key"),
+          prompt_ref: Map.get(runtime, "prompt_ref"),
+          prompt_version: Map.get(runtime, "prompt_version"),
+          provider: Map.get(runtime, "provider"),
+          model: Map.get(runtime, "model"),
+          personalized_tool: Map.get(semantic_cache, "personalized_tool"),
+          write_side_step_present: Map.get(semantic_cache, "write_side_step_present")
+        }
+
+        case Eligibility.evaluate(facts) do
+          {:bypass, reason_code} ->
+            {:continue, put_semantic_cache_state(workflow_attrs, %{
+               "eligibility_status" => "bypass",
+               "eligibility_reason_code" => Atom.to_string(reason_code),
+               "lookup_status" => "bypass",
+               "query_text" => query_text
+             })}
+
+          {eligibility_status, attrs} when eligibility_status in [:eligible, :eligible_actor_scoped] ->
+            lookup_attrs =
+              attrs
+              |> Map.put(:query_text, query_text)
+              |> Map.put(:prompt_version, Map.get(runtime, "prompt_version"))
+              |> Map.put(:policy_fingerprint, Compatibility.policy_fingerprint(prompt_policy))
+              |> maybe_put_source_fingerprint(semantic_cache)
+              |> maybe_put_query_embedding(query_text)
+
+            case SemanticCache.lookup(lookup_attrs) do
+              {:hit, entry} ->
+                {:hit,
+                 put_semantic_cache_state(workflow_attrs, %{
+                   "eligibility_status" => Atom.to_string(eligibility_status),
+                   "lookup_status" => "hit",
+                   "entry_id" => entry.id,
+                   "origin_run_id" => entry.origin_run_id,
+                   "candidate_status" => entry.status,
+                   "query_text" => query_text,
+                   "scope_kind" => entry.scope_kind,
+                   "scope_reason" => entry.scope_reason,
+                   "tenant_id" => entry.tenant_id,
+                   "actor_id" => entry.actor_id
+                 }),
+                 entry}
+
+              {:reject, reason_code, entry} ->
+                updated_entry =
+                  case reason_code do
+                    "entry_stale" ->
+                      case Invalidation.mark_stale(entry, "freshness_window_elapsed", %{"phase" => "45"}) do
+                        {:ok, stale_entry} -> stale_entry
+                        _ -> entry
+                      end
+
+                    reason when reason in ["prompt_version_mismatch", "policy_mismatch", "source_fingerprint_mismatch"] ->
+                      case Invalidation.invalidate_entry(entry, reason, %{"phase" => "45"}) do
+                        {:ok, invalidated_entry} -> invalidated_entry
+                        _ -> entry
+                      end
+
+                    _ ->
+                      entry
+                  end
+
+                {:continue,
+                 put_semantic_cache_state(workflow_attrs, %{
+                   "eligibility_status" => Atom.to_string(eligibility_status),
+                   "lookup_status" => "reject",
+                   "lookup_reason_code" => reason_code,
+                   "candidate_entry_id" => entry.id,
+                   "candidate_status" => updated_entry.status,
+                   "query_text" => query_text,
+                   "scope_kind" => updated_entry.scope_kind,
+                   "scope_reason" => updated_entry.scope_reason,
+                   "tenant_id" => updated_entry.tenant_id,
+                   "actor_id" => updated_entry.actor_id,
+                   "lane_key" => attrs.lane_key,
+                   "lane_module" => attrs.lane_module
+                 })}
+
+              :miss ->
+                {:continue,
+                 put_semantic_cache_state(workflow_attrs, %{
+                   "eligibility_status" => Atom.to_string(eligibility_status),
+                   "lookup_status" => "miss",
+                   "query_text" => query_text,
+                   "scope_kind" => Atom.to_string(attrs.scope_kind),
+                   "scope_reason" => attrs.scope_reason,
+                   "tenant_id" => attrs.tenant_id,
+                   "actor_id" => attrs.actor_id,
+                   "lane_key" => attrs.lane_key,
+                   "lane_module" => attrs.lane_module
+                 })}
+            end
+          end
+      end
+    else
+      {:continue, workflow_attrs}
+    end
+  end
+
+  def complete_semantic_fast_path_hit(run, entry) do
+    with {:ok, step} <- ensure_semantic_hit_step(run),
+         {:ok, _reuse} <-
+           SemanticCache.record_reuse(entry, %{
+             workflow_run_id: run.id,
+             reason_code: "semantic_cache_hit",
+             metadata: %{"origin_run_id" => entry.origin_run_id}
+           }),
+         {:ok, _completed_step} <- Workflows.complete_step(step.id, semantic_hit_result(entry)) do
+      {:ok, Workflows.get_run!(run.id)}
+    end
+  end
 
   def execute_step(step_id, opts \\ []) do
     with {:ok, _claimed} <- Workflows.claim_step(step_id) do
@@ -30,12 +170,17 @@ defmodule Scoria.Workflows.Runtime do
         {:ok, reservation_context} ->
           case replay_execution(run, step, handler, timeout, opts, breaker_context) do
             {:ok, {:completed, result, duration_ms}} ->
-              reconcile_budget(reservation_context, budget_context, result, "completed")
-              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, result)
+              normalized_result =
+                result
+                |> normalize_payload()
+                |> maybe_attach_semantic_writeback(run, step)
+
+              reconcile_budget(reservation_context, budget_context, normalized_result, "completed")
+              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, normalized_result)
 
               Workflows.complete_step(
                 step.id,
-                attach_budget_evidence(normalize_payload(result), reservation_context)
+                attach_budget_evidence(normalized_result, reservation_context)
               )
 
             {:ok, {:waiting_for_approval, approval_attrs, duration_ms}} ->
@@ -668,9 +813,230 @@ defmodule Scoria.Workflows.Runtime do
       policy_key: Map.get(metadata, "policy_key"),
       prompt_ref: Map.get(metadata, "prompt_ref"),
       prompt_version: Map.get(metadata, "prompt_version"),
-      prompt_policy: Map.get(metadata, "prompt_policy")
+      prompt_policy: Map.get(metadata, "prompt_policy"),
+      semantic_cache: Map.get(metadata, "semantic_cache")
     }
   end
+
+  defp maybe_attach_semantic_writeback(result_envelope, run, step) do
+    case semantic_writeback_context(run) do
+      %{lookup_status: "miss", eligibility_status: status} = semantic_ctx
+      when status in ["eligible", "eligible_actor_scoped"] ->
+        case semantic_writeback_reason(result_envelope) do
+          nil ->
+            with {:ok, %{entry: entry}} <-
+                   SemanticCache.admit(
+                     semantic_cache_entry_attrs(run, semantic_ctx, result_envelope, step, "active")
+                   ) do
+              Map.put(result_envelope, "semantic_cache", %{
+                "status" => "admitted",
+                "entry_id" => entry.id,
+                "origin_run_id" => run.id
+              })
+            else
+              _ -> result_envelope
+            end
+
+          reason_code ->
+            with {:ok, %{entry: entry}} <-
+                   SemanticCache.record_writeback_rejection(
+                     semantic_cache_entry_attrs(
+                       run,
+                       semantic_ctx,
+                       result_envelope,
+                       step,
+                       "writeback_rejected",
+                       reason_code
+                     )
+                   ) do
+              Map.put(result_envelope, "semantic_cache", %{
+                "status" => "writeback_rejected",
+                "entry_id" => entry.id,
+                "reason_code" => reason_code
+              })
+            else
+              _ ->
+                Map.put(result_envelope, "semantic_cache", %{
+                  "status" => "writeback_rejected",
+                  "reason_code" => reason_code
+                })
+            end
+        end
+
+      _ ->
+        result_envelope
+    end
+  end
+
+  defp semantic_writeback_context(run) do
+    run
+    |> run_runtime_defaults()
+    |> Map.get(:semantic_cache, %{})
+    |> case do
+      %{} = semantic_cache ->
+        %{
+          lookup_status: Map.get(semantic_cache, "lookup_status"),
+          eligibility_status: Map.get(semantic_cache, "eligibility_status"),
+          query_text: Map.get(semantic_cache, "query_text"),
+          lane_key: Map.get(semantic_cache, "lane_key"),
+          lane_module: Map.get(semantic_cache, "lane_module"),
+          scope_kind: Map.get(semantic_cache, "scope_kind"),
+          scope_reason: Map.get(semantic_cache, "scope_reason"),
+          tenant_id: Map.get(semantic_cache, "tenant_id"),
+          actor_id: Map.get(semantic_cache, "actor_id"),
+          source_fingerprint: semantic_cache_source_fingerprint(semantic_cache)
+        }
+
+      _ ->
+        %{}
+    end
+  end
+
+  defp semantic_writeback_reason(result_envelope) do
+    result_envelope
+    |> Map.get("semantic_cache", %{})
+    |> case do
+      %{"writeback_rejected" => reason_code} when is_binary(reason_code) -> reason_code
+      %{"writeback_rejected" => reason_code} when is_atom(reason_code) -> Atom.to_string(reason_code)
+      _ -> nil
+    end
+  end
+
+  defp semantic_cache_entry_attrs(run, semantic_ctx, result_envelope, _step, status, reason_code \\ nil) do
+    runtime_defaults = run_runtime_defaults(run)
+    policy_fingerprint = Compatibility.policy_fingerprint(runtime_defaults.prompt_policy || %{})
+    source_fingerprint = Compatibility.source_fingerprint_for_retrieval_run(Map.get(result_envelope, "retrieval_run_id"))
+    query_text = semantic_ctx.query_text
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    %{
+      tenant_id: semantic_ctx.tenant_id || run.tenant_id,
+      actor_id: semantic_actor_id(semantic_ctx),
+      scope_kind: semantic_ctx.scope_kind || "tenant_shared",
+      scope_reason: semantic_ctx.scope_reason || "lane_default",
+      lane_key: semantic_ctx.lane_key,
+      lane_module: semantic_ctx.lane_module,
+      policy_key: runtime_defaults.policy_key,
+      prompt_ref: runtime_defaults.prompt_ref,
+      prompt_version: runtime_defaults.prompt_version,
+      provider: runtime_defaults.provider,
+      model: runtime_defaults.model,
+      query_text: query_text,
+      query_embedding: query_text && Embedder.Deterministic.embed_query(query_text),
+      answer_payload: semantic_answer_payload(result_envelope),
+      evidence_refs: semantic_evidence_refs(result_envelope),
+      policy_fingerprint: policy_fingerprint,
+      source_fingerprint: source_fingerprint || semantic_ctx.source_fingerprint,
+      origin_run_id: run.id,
+      origin_span_id: Map.get(result_envelope, "span_id"),
+      origin_retrieval_run_id: Map.get(result_envelope, "retrieval_run_id"),
+      status: status,
+      expires_at: if(status == "active", do: DateTime.add(now, 900, :second), else: nil),
+      state_reason_code: if(status == "writeback_rejected", do: reason_code, else: nil),
+      metadata: semantic_metadata(result_envelope, reason_code),
+      reason_code: reason_code
+    }
+  end
+
+  defp semantic_answer_payload(%{"output" => output}) when is_map(output), do: output
+  defp semantic_answer_payload(%{"output" => output}) when is_binary(output), do: %{"answer" => output}
+  defp semantic_answer_payload(result_envelope), do: Map.drop(result_envelope, ["semantic_cache"])
+
+  defp semantic_evidence_refs(result_envelope) do
+    Map.get(result_envelope, "evidence_refs", %{})
+  end
+
+  defp semantic_metadata(result_envelope, nil), do: %{"step_result_keys" => Map.keys(result_envelope)}
+
+  defp semantic_metadata(result_envelope, reason_code) do
+    %{
+      "step_result_keys" => Map.keys(result_envelope),
+      "writeback_rejected" => reason_code
+    }
+  end
+
+  defp semantic_actor_id(%{scope_kind: "actor_scoped", actor_id: actor_id}), do: actor_id
+  defp semantic_actor_id(%{scope_kind: :actor_scoped, actor_id: actor_id}), do: actor_id
+  defp semantic_actor_id(_semantic_ctx), do: nil
+
+  defp ensure_semantic_hit_step(run) do
+    case Workflows.list_run_steps(run.id) do
+      [step | _] ->
+        {:ok, step}
+
+      [] ->
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "semantic_cache_hit",
+          role_id: run.root_role_id,
+          status: "queued",
+          projected_context: %{}
+        })
+    end
+  end
+
+  defp semantic_hit_result(entry) do
+    %{
+      "status" => "cached",
+      "output" => entry.answer_payload,
+      "semantic_cache" => %{
+        "status" => "hit",
+        "entry_id" => entry.id,
+        "origin_run_id" => entry.origin_run_id,
+        "scope_kind" => entry.scope_kind
+      }
+    }
+  end
+
+  defp put_semantic_cache_state(workflow_attrs, state) do
+    metadata = Map.get(workflow_attrs, :metadata, %{})
+    runtime = Map.get(metadata, "runtime", %{})
+    semantic_cache = Map.get(runtime, "semantic_cache", %{})
+    updated_runtime = Map.put(runtime, "semantic_cache", Map.merge(semantic_cache, state))
+
+    Map.put(workflow_attrs, :metadata, Map.put(metadata, "runtime", updated_runtime))
+  end
+
+  defp semantic_query_text(metadata) do
+    payload = Map.get(metadata, "payload")
+
+    cond do
+      is_binary(payload) ->
+        payload
+
+      is_map(payload) ->
+        Map.get(payload, "query") ||
+          Map.get(payload, :query) ||
+          Map.get(payload, "question") ||
+          Map.get(payload, :question) ||
+          Map.get(payload, "input") ||
+          Map.get(payload, :input)
+
+      true ->
+        nil
+    end
+  end
+
+  defp maybe_put_query_embedding(attrs, query_text) when is_binary(query_text),
+    do: Map.put(attrs, :query_embedding, Embedder.Deterministic.embed_query(query_text))
+
+  defp maybe_put_query_embedding(attrs, _query_text), do: attrs
+
+  defp maybe_put_source_fingerprint(attrs, semantic_cache) do
+    case semantic_cache_source_fingerprint(semantic_cache) do
+      nil -> attrs
+      source_fingerprint -> Map.put(attrs, :source_fingerprint, source_fingerprint)
+    end
+  end
+
+  defp semantic_cache_source_fingerprint(%{} = semantic_cache) do
+    metadata = Map.get(semantic_cache, "metadata", %{})
+
+    Map.get(semantic_cache, "source_fingerprint") ||
+      Map.get(metadata, "source_fingerprint")
+  end
+
+  defp semantic_cache_source_fingerprint(_semantic_cache), do: nil
 
   defp maybe_put_runtime_field(attrs, _key, nil), do: attrs
 

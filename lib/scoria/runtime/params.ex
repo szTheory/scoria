@@ -3,7 +3,7 @@ defmodule Scoria.Runtime.Params do
   Normalizes public runtime inputs into explicit start and resume contracts.
   """
 
-  alias Scoria.{Identity, Runtime.Defaults}
+  alias Scoria.{Identity, Runtime.Defaults, SemanticLane}
 
   @dispatch_keys ~w(dispatch handlers timeout budget_context breaker_context)a
   def start(identity, opts \\ []) do
@@ -12,7 +12,8 @@ defmodule Scoria.Runtime.Params do
     dispatch = dispatch_opts(opts)
     identity = Identity.normalize(identity)
 
-    with {:ok, resolved_defaults} <- Defaults.resolve(identity, opts) do
+    with {:ok, resolved_defaults} <- Defaults.resolve(identity, opts),
+         {:ok, semantic_cache} <- semantic_cache_config(opts, runtime) do
       root_role_id =
         value(opts, runtime, :root_role_id) ||
           "executor"
@@ -23,7 +24,7 @@ defmodule Scoria.Runtime.Params do
           actor_id: identity.actor_id,
           tenant_id: identity.tenant_id,
           session_id: identity.session_id,
-          metadata: start_metadata(opts, runtime, identity, resolved_defaults)
+          metadata: start_metadata(opts, runtime, identity, resolved_defaults, semantic_cache)
         }
         |> maybe_put_initial_step(initial_step(opts, runtime))
 
@@ -41,6 +42,7 @@ defmodule Scoria.Runtime.Params do
     identity = Identity.normalize(identity)
 
     with {:ok, resolved_defaults} <- Defaults.resolve(identity, opts),
+         {:ok, semantic_cache} <- semantic_cache_config(opts, runtime),
          {:ok, root_role_id} <-
            required_string(opts, runtime, :root_role_id, :invalid_root_role_id),
          {:ok, delegated_kind} <-
@@ -55,7 +57,7 @@ defmodule Scoria.Runtime.Params do
         actor_id: identity.actor_id,
         tenant_id: identity.tenant_id,
         session_id: identity.session_id,
-        metadata: start_metadata(opts, runtime, identity, resolved_defaults)
+        metadata: start_metadata(opts, runtime, identity, resolved_defaults, semantic_cache)
       }
 
       handoff_attrs = %{
@@ -101,7 +103,7 @@ defmodule Scoria.Runtime.Params do
     end)
   end
 
-  defp start_metadata(opts, runtime, identity, resolved_defaults) do
+  defp start_metadata(opts, runtime, identity, resolved_defaults, semantic_cache) do
     metadata =
       opts
       |> value(runtime, :metadata)
@@ -115,10 +117,15 @@ defmodule Scoria.Runtime.Params do
         value -> value
       end
 
+    runtime_metadata =
+      resolved_defaults
+      |> Defaults.to_metadata()
+      |> maybe_put_semantic_cache(semantic_cache)
+
     metadata
     |> maybe_put_payload(payload)
     |> maybe_put_identity_metadata(identity)
-    |> Map.put("runtime", Defaults.to_metadata(resolved_defaults))
+    |> Map.put("runtime", runtime_metadata)
   end
 
   defp initial_step(opts, runtime) do
@@ -157,6 +164,18 @@ defmodule Scoria.Runtime.Params do
   defp maybe_put_payload(metadata, nil), do: metadata
   defp maybe_put_payload(metadata, payload), do: Map.put(metadata, "payload", payload)
 
+  defp maybe_put_semantic_cache(runtime_metadata, nil), do: runtime_metadata
+
+  defp maybe_put_semantic_cache(runtime_metadata, semantic_cache) do
+    Map.put(runtime_metadata, "semantic_cache", %{
+      "lane" => semantic_cache.lane_module,
+      "lane_key" => semantic_cache.lane_key,
+      "default_scope" => Atom.to_string(semantic_cache.default_scope),
+      "safe_read_only" => semantic_cache.safe_read_only,
+      "metadata" => semantic_cache.metadata
+    })
+  end
+
   defp capability_tags(opts, runtime) do
     opts
     |> value(runtime, :capability_tags)
@@ -190,6 +209,19 @@ defmodule Scoria.Runtime.Params do
 
   defp normalize_metadata(metadata) when is_map(metadata), do: Map.new(metadata)
   defp normalize_metadata(_metadata), do: %{}
+
+  defp semantic_cache_config(opts, runtime) do
+    case value(opts, runtime, :semantic_cache) do
+      nil ->
+        {:ok, nil}
+
+      semantic_cache ->
+        semantic_cache
+        |> normalize_map()
+        |> canonical_value(:lane)
+        |> SemanticLane.describe()
+    end
+  end
 
   defp required_string(opts, runtime, key, error) do
     case value(opts, runtime, key) do

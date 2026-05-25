@@ -5,6 +5,7 @@ defmodule ScoriaWeb.OrchestratorLive do
   alias Decimal, as: D
   alias Scoria.Eval
   alias Scoria.Repo
+  alias Scoria.Runtime
 
   alias Scoria.Connectors
 
@@ -882,13 +883,16 @@ defmodule ScoriaWeb.OrchestratorLive do
     runtimes =
       Enum.map(instances, fn inst ->
         status = if inst.id in presence_ids, do: "online", else: "offline"
+        semantic = runtime_drawer_semantic(inst.current_run_id)
+
         %{
           id: inst.id,
           status: status,
           host_session_id: inst.host_session_id,
           transport_kind: inst.transport_kind,
           terminal_offline_reason: inst.terminal_offline_reason,
-          current_run_id: inst.current_run_id
+          current_run_id: inst.current_run_id,
+          semantic: semantic
         }
       end)
 
@@ -896,6 +900,32 @@ defmodule ScoriaWeb.OrchestratorLive do
     |> assign(:approval_inbox, Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id}))
     |> assign(:connector_fleet, connector_fleet(tenant_id))
     |> assign(:runtimes, runtimes)
+  end
+
+  defp runtime_drawer_semantic(nil), do: nil
+
+  defp runtime_drawer_semantic(run_id) do
+    detail = Runtime.get_run_detail!(run_id)
+    summary = detail.semantic_evidence[:summary] || %{}
+    provenance = detail.semantic_evidence[:provenance] || %{}
+
+    if map_size(summary) == 0 do
+      nil
+    else
+      %{
+        lookup_status: summary[:lookup_status],
+        fallback_outcome: summary[:fallback_outcome],
+        lane_key: summary[:lane_key],
+        scope_kind: summary[:scope_kind],
+        scope_reason: summary[:scope_reason],
+        reason_code: summary[:lookup_reason_code] || summary[:eligibility_reason_code],
+        actor_id: provenance[:actor_id],
+        workflow_href: "/workflows/#{run_id}",
+        origin_run_href: provenance[:origin_run_href]
+      }
+    end
+  rescue
+    _error -> nil
   end
 
   defp connector_fleet(tenant_id) do

@@ -34,6 +34,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   alias Scoria.Eval.OnlineScoreCandidate
   alias Scoria.Repo
   alias Scoria.Repo.Trace
+  alias Scoria.SemanticCache
   alias Scoria.Workflows
 
   @endpoint ScoriaWeb.WorkflowLiveTest.Endpoint
@@ -244,6 +245,130 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert html =~ "No Replay Comparison Available"
     assert html =~ "Promote Trace to Draft Dataset"
     assert html =~ "Original trace cannot be promoted until Scoria resolves a frozen promotion snapshot"
+  end
+
+  test "workflow page renders the semantic evidence notebook for semantic hits" do
+    assert {:ok, %{entry: entry}} =
+             SemanticCache.admit(%{
+               tenant_id: "tenant-semantic-hit",
+               lane_key: "account_faq",
+               lane_module: "Elixir.Scoria.TestLane",
+               scope_kind: "tenant_shared",
+               scope_reason: "lane_default",
+               policy_key: "default",
+               query_text: "what is scoria?",
+               query_embedding: [0.1, 0.2, 0.3],
+               answer_payload: %{"answer" => "cached answer"}
+             })
+
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "assistant",
+        tenant_id: "tenant-semantic-hit",
+        session_id: "session-semantic-hit",
+        status: "completed",
+        metadata: %{
+          "runtime" => %{
+            "semantic_cache" => %{
+              "lookup_status" => "hit",
+              "entry_id" => entry.id,
+              "origin_run_id" => "run-origin-hit",
+              "lane_key" => "account_faq",
+              "scope_kind" => "tenant_shared",
+              "scope_reason" => "lane_default"
+            }
+          }
+        }
+      })
+
+    {:ok, _step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "answer",
+        role_id: "assistant",
+        status: "completed",
+        result_envelope: %{
+          "output" => %{"answer" => "cached answer"},
+          "semantic_cache" => %{"status" => "hit", "entry_id" => entry.id}
+        }
+      })
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, _view, html} = live(conn, "/scoria/workflows/#{run.id}")
+
+    assert html =~ "semantic evidence notebook"
+    assert html =~ "Compatibility"
+    assert html =~ "Provenance"
+    assert html =~ "Lifecycle"
+    assert html =~ "lookup status"
+    assert html =~ "hit"
+    assert html =~ "active"
+  end
+
+  test "workflow page keeps rejected candidates inspectable with explicit fallback evidence" do
+    assert {:ok, %{entry: entry}} =
+             SemanticCache.admit(%{
+               tenant_id: "tenant-semantic-reject",
+               lane_key: "account_faq",
+               lane_module: "Elixir.Scoria.TestLane",
+               scope_kind: "tenant_shared",
+               scope_reason: "lane_default",
+               policy_key: "default",
+               query_text: "what is scoria?",
+               query_embedding: [0.1, 0.2, 0.3],
+               answer_payload: %{"answer" => "stale answer"}
+             })
+
+    {:ok, invalidated_entry} =
+      SemanticCache.invalidate_entry(entry, "prompt_version_mismatch", %{"phase" => "46"})
+
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "assistant",
+        tenant_id: "tenant-semantic-reject",
+        session_id: "session-semantic-reject",
+        status: "completed",
+        metadata: %{
+          "runtime" => %{
+            "semantic_cache" => %{
+              "lookup_status" => "reject",
+              "lookup_reason_code" => "prompt_version_mismatch",
+              "candidate_entry_id" => invalidated_entry.id,
+              "candidate_status" => "invalidated",
+              "lane_key" => "account_faq",
+              "scope_kind" => "tenant_shared",
+              "scope_reason" => "lane_default"
+            }
+          }
+        }
+      })
+
+    {:ok, _step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "answer",
+        role_id: "assistant",
+        status: "completed",
+        result_envelope: %{"output" => %{"answer" => "fresh answer"}}
+      })
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, _view, html} = live(conn, "/scoria/workflows/#{run.id}")
+
+    assert html =~ "semantic evidence notebook"
+    assert html =~ "Normal runtime path executed"
+    assert html =~ "invalidated"
+    assert html =~ "prompt_version_mismatch"
+    assert html =~ "Lifecycle"
+    assert html =~ "Provenance"
   end
 
   test "replay runs render provenance strip, source toggles, and durable promotion notices" do

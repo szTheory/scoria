@@ -23,7 +23,7 @@ The product should stay:
 
 ## Current Baseline
 
-Shipped through `v2.0 Relay` on 2026-05-25:
+Shipped through `v2.1 Tenant-scoped semantic fast path` on 2026-05-25:
 
 - observability and trace storage
 - MCP gateway and governance seams
@@ -39,6 +39,7 @@ Shipped through `v2.0 Relay` on 2026-05-25:
 - replay comparison, workflow-source dataset promotion, and asynchronous online scoring review queues
 - public `Scoria.start_handoff_run/3` bounded handoff API with explicit same-run lineage and projected-context safety
 - delegated evidence surfaces, runtime-first adoption proof, and a clean full-suite closeout baseline
+- tenant-scoped semantic fast-path lookup, compatibility-aware invalidation, operator-visible semantic evidence, and a named semantic proof lane
 
 ## Sequencing Principles
 
@@ -63,67 +64,40 @@ Shipped through `v2.0 Relay` on 2026-05-25:
 | v1.8 | Vanguard | shipped | Multi-model orchestration, distributed evaluations, and reconciled shipped milestone truth |
 | v1.9 | Crucible | shipped | Replayable debugging and online quality feedback |
 | v2.0 | Relay | shipped | Formalized the bounded public handoff wedge, delegated evidence story, and canonical adoption proof |
+| v2.1 | Tenant-scoped semantic fast path | shipped | Durable semantic reuse, invalidation truth, operator evidence, and a bounded semantic proof lane |
 
 ## Latest Shipped Milestone
 
-### v2.0 Relay
+### v2.1 Tenant-scoped semantic fast path
 
 **Status:** shipped
 **Priority at close:** highest
-**Theme:** Formalized bounded public handoff proof and clean closeout
+**Theme:** Inspectable semantic caching for safe read-only classes of work
 
 **What shipped**
 
-- explicit bounded public handoff contract rooted under the same durable run
-- recursive projected-context safety with explicit rejection for unsafe delegated state
-- curated delegated evidence surfaces in runtime detail and workflow UI
-- runtime-first docs, checked examples, canonical `mix test.adoption` proof, and a fresh green full-suite `mix test` baseline
+- explicit semantic-lane admission for safe read-only runtime work
+- tenant-scoped semantic reuse guarded by prompt, policy, source, freshness, and scope compatibility
+- durable `active`, `stale`, `invalidated`, and `writeback_rejected` semantic lifecycle truth
+- runtime drawer and workflow notebook surfaces that expose semantic provenance and fallback reasons
+- canonical `mix test.semantic_fast_path` proof plus aligned operator docs/source assertions
 
 **User-facing outcome**
 
-Teams can adopt delegated handoffs through one narrow, inspectable, Phoenix-first runtime lane without guessing about lineage ownership, projected-context safety, or how to prove the integration is working.
+Teams can adopt a semantic fast path through one narrow, inspectable, Phoenix-first runtime lane without guessing about tenant isolation, compatibility, invalidation, or how to prove the cache behavior is working.
 
 ## Active Milestone
 
-### v2.1 Tenant-scoped semantic fast path
+No milestone is active right now.
 
-**Status:** active
-**Priority:** highest
-**Theme:** Inspectable semantic caching for safe read-only classes of work
-
-**What this milestone should deliver**
-
-- bounded tenant-scoped semantic caching with durable hit/miss evidence
-- prompt/version/source-aware invalidation
-- operator-visible cache diagnostics instead of invisible magic
-- explicit fallback to the normal runtime path when a request is stale, incompatible, or ineligible
-
-**Why now**
-
-`v2.0 Relay` closed the adoption-proof and support-truth loop around the bounded public handoff lane on 2026-05-25. The next highest-value step is a Phoenix-first latency and cost optimization that still preserves operator trust, provenance, and tenant isolation.
+Open the next milestone only after deciding whether the highest-value follow-up is adoption clarity or deeper semantic-cache infrastructure.
 
 ## Recommended Candidates
 
-### 1. Tenant-scoped semantic fast path
-
-**Status:** active
-**Priority:** highest
-**Theme:** Inspectable semantic caching for safe read-only classes of work
-
-**What this step should deliver**
-
-- bounded tenant-scoped semantic caching with durable hit/miss evidence
-- prompt/version/source-aware invalidation
-- operator-visible cache diagnostics instead of invisible magic
-
-**Why it is first**
-
-Semantic caching is still valuable, but it is a latency/cost optimization with higher correctness and privacy risk. It should still follow the newly shipped replay and scoring trust loop.
-
-### 2. Advanced adoption examples only if handoff confusion remains
+### 1. Advanced adoption examples only if handoff confusion remains
 
 **Status:** pending
-**Priority:** low
+**Priority:** highest
 **Theme:** Clarify capability tiering without widening the product boundary
 
 **What this step should deliver**
@@ -131,13 +105,28 @@ Semantic caching is still valuable, but it is a latency/cost optimization with h
 - one stronger runtime -> handoff -> review/replay guide or example if support burden remains high
 - clearer lane-by-lane explanation of what typical Phoenix teams adopt first vs later
 
-**Why it is third**
+**Why it is first**
 
-This is useful only if the new public handoff lane still feels hard to approach after verification and closeout. It should not outrank the semantic fast path unless real adopter confusion persists.
+This remains contingent on real support evidence. It is the narrowest next step if the new public handoff lane still causes confusion.
+
+### 2. External semantic cache backends and advanced tuning
+
+**Status:** pending
+**Priority:** low
+**Theme:** Expand semantic-cache infrastructure only after the default embedded path is boring
+
+**What this step should deliver**
+
+- optional external cache backends beyond the default Ecto-native truth store
+- advanced ANN tuning and analytics controls only if operator trust remains intact
+
+**Why it is second**
+
+These are natural extensions of `v2.1`, but they widen scope and should wait until the embedded default path has proven itself boring in practice.
 
 ## Recommendation
 
-`v2.1 Tenant-scoped semantic fast path` is now the active milestone. The next candidate after it remains bounded-handoff example follow-up only if post-Relay support evidence shows the current adoption lane is still confusing.
+`v2.1 Tenant-scoped semantic fast path` is now shipped. The next candidate should be chosen deliberately: either a narrow adoption-clarity follow-up if support evidence still shows confusion, or a deeper semantic-cache follow-up only once the embedded default path stays boring.
 
 ## Source Notes
 

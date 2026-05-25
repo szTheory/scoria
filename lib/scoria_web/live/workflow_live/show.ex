@@ -198,6 +198,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
             step={@selected_step}
             checkpoint={@selected_checkpoint}
             comparison={@selected_comparison}
+            semantic_evidence={@run_detail.semantic_evidence}
             selected_source_variant={@selected_source_variant}
             selected_comparison_entry={@selected_comparison_entry}
             promotion_context={@promotion_context}

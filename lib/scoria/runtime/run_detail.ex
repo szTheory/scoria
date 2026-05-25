@@ -15,6 +15,7 @@ defmodule Scoria.Runtime.RunDetail do
     :approvals,
     :handoffs,
     :delegated_handoffs,
+    :semantic_evidence,
     :comparison_by_step,
     :replay_provenance_strip
   ]
@@ -26,6 +27,7 @@ defmodule Scoria.Runtime.RunDetail do
     :approvals,
     :handoffs,
     :delegated_handoffs,
+    :semantic_evidence,
     :comparison_by_step,
     :replay_provenance_strip
   ]
@@ -39,6 +41,7 @@ defmodule Scoria.Runtime.RunDetail do
           approvals: [item()],
           handoffs: [item()],
           delegated_handoffs: [item()],
+          semantic_evidence: map(),
           comparison_by_step: %{optional(Ecto.UUID.t()) => map()},
           replay_provenance_strip: map()
         }
@@ -55,6 +58,7 @@ defmodule Scoria.Runtime.RunDetail do
       approvals: Enum.map(run.approvals, &approval_item/1),
       handoffs: handoffs,
       delegated_handoffs: delegated_handoff_items(steps, handoffs),
+      semantic_evidence: Keyword.get(opts, :semantic_evidence, %{}),
       comparison_by_step: Keyword.get(opts, :comparison_by_step, %{}),
       replay_provenance_strip: Keyword.get(opts, :replay_provenance_strip, %{})
     }
