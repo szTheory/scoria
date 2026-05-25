@@ -1,102 +1,87 @@
 # Project Research - Stack
 
-**Milestone:** `v2.1 Tenant-scoped semantic fast path`
+**Milestone:** `v2.2 OSS adopter onramp`
 **Date:** 2026-05-25
-**Question:** What stack additions or changes are needed to add a tenant-scoped semantic fast path to Scoria without weakening provenance, privacy, or operator trust?
+**Question:** What stack additions or changes are needed to make Scoria publishable, installable, and verifiable as a serious OSS Phoenix dependency?
 
 ## Existing Scoria Assets To Reuse
 
-- `pgvector` is already a first-class dependency in [mix.exs](/Users/jon/projects/scoria/mix.exs:47).
-- `Scoria.Knowledge` already persists retrieval runs, retrieval results, citations, and grounding scores in durable Ecto-backed tables via [lib/scoria/knowledge.ex](/Users/jon/projects/scoria/lib/scoria/knowledge.ex:101).
-- The current pgvector backend already supports cosine-distance search and filter maps, but only filters by `source_id` today in [lib/scoria/knowledge/backends/pgvector.ex](/Users/jon/projects/scoria/lib/scoria/knowledge/backends/pgvector.ex:18).
-- Scoria already has durable tenant / actor / session identity and operator-facing runtime detail surfaces via [lib/scoria/runtime/params.ex](/Users/jon/projects/scoria/lib/scoria/runtime/params.ex:12), [lib/scoria/runtime/run_detail.ex](/Users/jon/projects/scoria/lib/scoria/runtime/run_detail.ex:38), and the dashboard LiveViews under `lib/scoria_web/live/`.
+- `mix.exs` now carries `:description`, `:docs`, `:package`, `:source_url`, and `:homepage_url`, which aligns with the official Hex publish metadata expectations for public packages.
+- `mix scoria.install` already mounts the router surface, injects runtime defaults, copies core migrations, and tolerates missing Tailwind config in [lib/mix/tasks/scoria.install.ex](/Users/jon/projects/scoria/lib/mix/tasks/scoria.install.ex:1).
+- The repo already exposes bounded proof tasks for the default lane and semantic lane through `mix test.adoption` and `mix test.semantic_fast_path` in [lib/mix/tasks/test.adoption.ex](/Users/jon/projects/scoria/lib/mix/tasks/test.adoption.ex:1) and [lib/mix/tasks/scoria.test.semantic_fast_path.ex](/Users/jon/projects/scoria/lib/mix/tasks/scoria.test.semantic_fast_path.ex:1).
+- Operator-facing install and verification docs already exist in [README.md](/Users/jon/projects/scoria/README.md:1), [docs/adoption_lanes.md](/Users/jon/projects/scoria/docs/adoption_lanes.md:1), and [docs/operator_verification.md](/Users/jon/projects/scoria/docs/operator_verification.md:1).
 
 ## Recommended Additions
 
-### 1. New semantic cache persistence schema
+### 1. Add a real documentation build dependency
 
-Add a dedicated Ecto-backed cache store rather than overloading retrieval tables.
+Scoria now configures `:docs` in `mix.exs`, but the repo does not currently declare `:ex_doc`.
 
-Recommended fields:
+Recommended addition:
 
-- `tenant_id` - required cache partition key
-- `actor_id` - optional stricter partition for personalized-safe lanes
-- `policy_key`
-- `prompt_ref`
-- `prompt_version`
-- `provider`
-- `model`
-- `query_text`
-- `query_embedding`
-- `answer_payload`
-- `evidence_refs`
-- `source_fingerprint`
-- `eligibility_reason`
-- `cache_status` (`eligible`, `rejected`, `hit`, `stale`, `invalidated`)
-- `expires_at`
-- `invalidated_at`
-- `last_hit_at`
-- `hit_count`
-- `metadata`
-
-Use a dedicated table so cache lifecycle and operator evidence stay explicit instead of being inferred from general retrieval rows.
-
-### 2. pgvector-backed lookup, exact-first default
-
-Use pgvector for semantic lookup, but start with exact nearest-neighbor semantics before approximate ANN defaults.
+- add `{:ex_doc, "~> 0.40", only: :dev, runtime: false}` to `deps/0`
 
 Rationale:
 
-- pgvector defaults to exact nearest-neighbor search, which preserves recall and is safer for a trust-sensitive first release.
-- Approximate HNSW / IVFFlat can be added later for scale once the admissibility and invalidation story is proven.
-- If the cache is always filtered by tenant and often by actor/policy/prompt version, correctness mistakes from approximate scans would be harder to diagnose.
+- Hex publishes docs by running `mix docs`, and the official Hex guide recommends building docs locally before publish.
+- ExDoc is the standard tool that provides `mix docs` and consumes `:source_url`, `:homepage_url`, `docs: [main: ..., extras: ...]`, and related configuration.
 
-### 3. Strong filter keys alongside vector similarity
+### 2. Add a release-preview lane before first publish
 
-The cache read path should filter on:
+Scoria needs one maintainer-facing lane that validates the package boundary before Hex publication.
 
-- `tenant_id` always
-- `actor_id` when the answer was marked personalized or actor-scoped
-- `policy_key`
-- `prompt_ref` / `prompt_version`
-- model family or runtime profile when output compatibility matters
-- non-invalidated / non-expired rows only
+Recommended lane:
 
-This follows pgvector guidance: filter columns still matter even when you have a vector index, and approximate scans with `WHERE` clauses can miss matches unless you tune scanning aggressively.
+- `mix hex.build`
+- `mix docs`
+- a package file-inventory assertion that the shipped tarball includes runtime code, migrations, docs entrypoints, and excludes test-only implementation
 
-### 4. Provenance and invalidation helpers
+Rationale:
 
-Add helper modules rather than embedding cache logic directly into `Scoria.Knowledge`:
+- Hex package quality is not only about metadata; the publish step packages a concrete file set.
+- The first publish should fail locally if docs do not build or if critical files are omitted from the package surface.
 
-- `Scoria.SemanticCache`
-- `Scoria.SemanticCache.Entry`
-- `Scoria.SemanticCache.Lookup`
-- `Scoria.SemanticCache.Invalidation`
-- `Scoria.SemanticCache.Eligibility`
+### 3. Add a canonical consumer-app fixture or generated host-app harness
 
-This keeps retrieval grounding and semantic answer reuse adjacent but not collapsed into one abstraction.
+Scoria's install contract is now closer to reality, but the current adoption proof is still mostly repo-internal.
 
-### 5. Operator UI integration via existing async LiveView patterns
+Recommended addition:
 
-Use the current operator-surface patterns:
+- a minimal Phoenix consumer app fixture or generated temporary host app harness that proves:
+  - dependency fetch
+  - `mix scoria.install`
+  - migration copy and `mix ecto.migrate`
+  - one runtime flow and operator route visibility
 
-- async load sections with `assign_async/3`
-- runtime / workflow DTO-driven rendering
-- explicit notices, hit/miss reasons, and invalidation provenance
+Rationale:
 
-Do not add a hidden middleware-only cache with no operator evidence lane.
+- This closes the difference between "our own repo tests pass" and "a fresh adopter can actually wire this into a normal Phoenix app."
+
+### 4. Keep proof helpers inside Mix-task and test-support boundaries
+
+The milestone should avoid leaking publication or verification internals into the runtime surface.
+
+Recommended module placement:
+
+- Mix tasks under `lib/mix/tasks/`
+- consumer harness helpers under `test/support` or `lib/scoria/test_support`
+- release-specific assertions in dedicated tests rather than runtime modules
+
+Rationale:
+
+- `Mix.Project` documentation explicitly warns against using Mix project metadata as runtime application configuration.
+- Publish and docs concerns belong to build/test seams, not the public Scoria runtime API.
 
 ## What Not To Add In This Milestone
 
-- No Redis-first or external cache tier as the default truth store
-- No provider prompt-cache coupling as the product primitive
-- No global cross-tenant cache
-- No silent caching for tool-backed or personalized responses
-- No ANN-only path that trades recall for speed before visibility and invalidation are proven
+- No package split into multiple Hex libraries yet
+- No hosted demo environment as a prerequisite for adoption proof
+- No semantic-cache backend expansion
+- No new runtime feature family just to make the release feel larger
+- No support story that depends on undocumented maintainer setup knowledge
 
 ## External References
 
-- pgvector official docs: https://github.com/pgvector/pgvector
-- PostgreSQL row security policies: https://www.postgresql.org/docs/current/ddl-rowsecurity.html
-- OpenAI prompt caching: https://platform.openai.com/docs/guides/prompt-caching
-- Phoenix LiveView async assigns: https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
+- Hex publish guide: https://hex.pm/docs/publish
+- Mix project configuration: https://hexdocs.pm/mix/Mix.Project.html
+- ExDoc configuration: https://hexdocs.pm/ex_doc/Mix.Tasks.Docs.html

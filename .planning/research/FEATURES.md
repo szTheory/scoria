@@ -1,104 +1,102 @@
 # Project Research - Features
 
-**Milestone:** `v2.1 Tenant-scoped semantic fast path`
+**Milestone:** `v2.2 OSS adopter onramp`
 **Date:** 2026-05-25
-**Question:** How should a semantic fast path behave in a Phoenix-first AI quality layer, and which features are table stakes versus differentiators?
+**Question:** How should a release-grade OSS adoption milestone behave for Scoria, and which features are table stakes versus differentiators?
 
-## Category 1: Cache Eligibility And Safety
-
-**Table stakes**
-
-- Limit cache reuse to explicitly safe read-only classes of work
-- Partition cached answers by tenant at minimum
-- Reject caching when provenance or personalization status is unclear
-- Make freshness and invalidation state explicit
-
-**Differentiators**
-
-- Admission rules that inspect runtime policy, tool usage, and provenance before caching
-- Durable explanations for why a request was cacheable or rejected
-
-**Research notes**
-
-Provider prompt caching is not the same thing as semantic answer caching. Provider prompt caching accelerates repeated prompt prefixes; Scoria still needs application-level truth about who can reuse which answer and why.
-
-## Category 2: Semantic Lookup And Match Policy
+## Category 1: Release Packaging And Docs
 
 **Table stakes**
 
-- Embed incoming query text and compare against stored candidate queries
-- Require threshold-based similarity before reuse
-- Bind lookup to prompt / source / policy compatibility, not just query similarity
-- Support stale / miss / hit outcomes distinctly
+- publishable Hex metadata is present and truthful
+- `mix docs` builds cleanly from repo state
+- public docs expose one clear entry path for the default runtime lane
+- the package includes migrations and required runtime assets
 
 **Differentiators**
 
-- Source-fingerprint-aware compatibility checks
-- Hybrid matching that combines semantic similarity with exact policy/runtime constraints
+- docs are lane-based, so teams understand what to adopt first versus later
+- source links and docs extras point to real maintained guides instead of stale placeholders
 
 **Research notes**
 
-The first version should bias toward false negatives over false positives. Fast misses are acceptable. Incorrect hits erode trust quickly.
+For a public Elixir package, release readiness is not just "can compile." The package metadata, docs build, and included file inventory are part of the adopter-facing surface.
 
-## Category 3: Invalidation And Freshness
+## Category 2: Host-App Install Contract
 
 **Table stakes**
 
-- Expiration / TTL support
-- Invalidate when source material changes
-- Invalidate when prompt version or policy changes
-- Never reuse rows already marked invalidated or stale
+- `mix scoria.install` works against a normal Phoenix router layout
+- copied migrations are enough to make the default lane bootable
+- Tailwind remains optional instead of a hidden install prerequisite
+- runtime defaults are injected exactly once
 
 **Differentiators**
 
-- Source-derived fingerprints that invalidate affected entries automatically
-- Explicit invalidation lineage visible to operators
+- installer output explains the next proof steps in the same lane vocabulary used by the docs
+- install behavior degrades cleanly when optional assets or optional knowledge features are absent
 
 **Research notes**
 
-Because Scoria already version-controls prompt and dataset surfaces, invalidation should align to those durable boundaries instead of ad hoc app cache clears.
+The installer is not just scaffolding convenience anymore. It is part of Scoria's product contract with a host app.
 
-## Category 4: Operator Evidence And Diagnostics
+## Category 3: Consumer-App Proof
 
 **Table stakes**
 
-- Operators can see hit / miss / stale / rejected outcomes
-- Operators can inspect which evidence and source fingerprint justified reuse
-- Operators can inspect the partition keys that constrained the cache decision
+- one fresh Phoenix app path proves dependency fetch, install, migrate, and route visibility
+- the default runtime lane is verified without first requiring pgvector or semantic-cache setup
+- proof can be run reproducibly in CI or on a maintainer machine
 
 **Differentiators**
 
-- Runtime detail strips for semantic cache provenance beside existing workflow evidence
-- Review affordances for suspicious hits or drift-prone thresholds
+- a canonical fixture or script proves the exact adoption path maintainers recommend publicly
+- bounded follow-up lanes for handoffs and semantic fast path remain additive, not mixed into the default proof
 
 **Research notes**
 
-Scoria wins by making runtime truth inspectable. A semantic fast path that hides its reasoning would feel off-brand.
+The most valuable proof is the one that mirrors a new adopter's first 15 minutes. Anything that requires repo-only context weakens support truth.
+
+## Category 4: Support Truth And Scope Guard
+
+**Table stakes**
+
+- docs name the default lane, optional knowledge lane, bounded handoff lane, and semantic fast-path lane consistently
+- each lane states prerequisites and denial/fallback behavior
+- maintainers can point support questions at one canonical verification lane per surface
+
+**Differentiators**
+
+- operator verification, README, and Mix-task output all reinforce the same adoption order
+- the package clearly separates "core adoption" from "optional advanced surfaces"
+
+**Research notes**
+
+This is where Scoria can stay boring to adopt without collapsing into a giant feature checklist. The win is clear sequencing and truthful prerequisites.
 
 ## Anti-Features
 
-- Cross-tenant reuse
-- Opaque "AI magic" cache behavior
-- Automatic reuse of answers that involved personalized tools, approvals, or mutable write-side effects
-- Treating cache hits as canonical truth without storing evidence about why the hit was allowed
+- first publish blocked on optional knowledge setup
+- docs that imply Hex publishability while `mix docs` still fails locally
+- installer flows that silently depend on Tailwind, pgvector, or repo-only assumptions
+- consumer proof that exercises internal test hooks but not a real host-app path
 
 ## Recommended Scope Shape
 
-`v2.1` should focus on:
+`v2.2` should focus on:
 
-1. safe cache admission
-2. tenant-scoped lookup
-3. prompt / source-aware invalidation
-4. operator diagnostics
+1. release packaging and docs truth
+2. install-contract closure for the default Phoenix lane
+3. a canonical consumer-app proof path
+4. support-truth alignment across docs, tasks, and verification
 
 Defer:
 
-- aggressive ANN optimization
-- actor-private long-tail personalization strategies
-- provider-specific cache integrations as first-class milestone scope
+- package-family decomposition
+- advanced examples beyond what the default adoption lane requires
+- external semantic-cache infrastructure
 
 ## External References
 
-- OpenAI prompt caching: https://platform.openai.com/docs/guides/prompt-caching
-- Anthropic prompt caching: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
-- pgvector official docs: https://github.com/pgvector/pgvector
+- Hex publish guide: https://hex.pm/docs/publish
+- ExDoc configuration: https://hexdocs.pm/ex_doc/Mix.Tasks.Docs.html

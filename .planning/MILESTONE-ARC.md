@@ -40,6 +40,7 @@ Shipped through `v2.1 Tenant-scoped semantic fast path` on 2026-05-25:
 - public `Scoria.start_handoff_run/3` bounded handoff API with explicit same-run lineage and projected-context safety
 - delegated evidence surfaces, runtime-first adoption proof, and a clean full-suite closeout baseline
 - tenant-scoped semantic fast-path lookup, compatibility-aware invalidation, operator-visible semantic evidence, and a named semantic proof lane
+- post-ship adoption hardening that made package metadata, installer behavior, and semantic proof prerequisites more truthful ahead of the next milestone
 
 ## Sequencing Principles
 
@@ -65,6 +66,7 @@ Shipped through `v2.1 Tenant-scoped semantic fast path` on 2026-05-25:
 | v1.9 | Crucible | shipped | Replayable debugging and online quality feedback |
 | v2.0 | Relay | shipped | Formalized the bounded public handoff wedge, delegated evidence story, and canonical adoption proof |
 | v2.1 | Tenant-scoped semantic fast path | shipped | Durable semantic reuse, invalidation truth, operator evidence, and a bounded semantic proof lane |
+| v2.2 | OSS adopter onramp | active | Release-grade package truth, host-app install proof, and lane-based support closure |
 
 ## Latest Shipped Milestone
 
@@ -88,26 +90,46 @@ Teams can adopt a semantic fast path through one narrow, inspectable, Phoenix-fi
 
 ## Active Milestone
 
-No milestone is active right now.
+### v2.2 OSS adopter onramp
 
-Open the next milestone only after deciding whether the highest-value follow-up is adoption clarity or deeper semantic-cache infrastructure.
+**Status:** active
+**Priority:** highest
+**Theme:** Make the default Phoenix adoption path publishable, consumer-proven, and support-truthful
+
+**What this step should deliver**
+
+- a real local docs-build lane and publish-facing package truth
+- a default-lane installer contract that is truthful about copied migrations, runtime defaults, and optional Tailwind behavior
+- a canonical consumer-app proof path for dependency -> install -> migrate -> runtime -> operator inspection
+- one lane-based support story that clearly separates default runtime, bounded handoff, semantic fast path, and optional knowledge adoption
+
+**Why now**
+
+The repo is already feature-strong. The highest-value next step is making package, install, and proof surfaces boring for a real Phoenix adopter before Scoria opens more adjacent capability work.
+
+**Non-goals**
+
+- package splitting into multiple Hex libraries
+- hosted demo or managed onboarding surfaces
+- external semantic-cache backends or ANN tuning controls
+- broader handoff-example expansion unless support evidence later demands it
 
 ## Recommended Candidates
 
 ### 1. Advanced adoption examples only if handoff confusion remains
 
 **Status:** pending
-**Priority:** highest
+**Priority:** medium
 **Theme:** Clarify capability tiering without widening the product boundary
 
 **What this step should deliver**
 
-- one stronger runtime -> handoff -> review/replay guide or example if support burden remains high
-- clearer lane-by-lane explanation of what typical Phoenix teams adopt first vs later
+- one stronger runtime -> handoff -> review or replay guide or example if support burden remains high
+- clearer lane-by-lane explanation of what typical Phoenix teams adopt first vs later once the default onramp is boring
 
-**Why it is first**
+**Why it is next**
 
-This remains contingent on real support evidence. It is the narrowest next step if the new public handoff lane still causes confusion.
+This remains contingent on real support evidence. It is a narrow follow-up only after the default OSS onramp is finished and truthful.
 
 ### 2. External semantic cache backends and advanced tuning
 
@@ -120,20 +142,23 @@ This remains contingent on real support evidence. It is the narrowest next step 
 - optional external cache backends beyond the default Ecto-native truth store
 - advanced ANN tuning and analytics controls only if operator trust remains intact
 
-**Why it is second**
+**Why it follows later**
 
-These are natural extensions of `v2.1`, but they widen scope and should wait until the embedded default path has proven itself boring in practice.
+These are natural extensions of `v2.1`, but they widen scope and should wait until the embedded default path and the fresh-adopter story both prove boring in practice.
 
 ## Recommendation
 
-`v2.1 Tenant-scoped semantic fast path` is now shipped. The next candidate should be chosen deliberately: either a narrow adoption-clarity follow-up if support evidence still shows confusion, or a deeper semantic-cache follow-up only once the embedded default path stays boring.
+`v2.2 OSS adopter onramp` is the correct active milestone after `v2.1`. Scoria should close publishability, install-contract truth, consumer proof, and support-truth alignment before reopening broader capability expansion.
 
 ## Source Notes
 
 These priorities were informed by:
 
 - current repo state as of 2026-05-25
-- `.planning/research/milestone-options-2026-05-12.md`
+- `.planning/PROJECT.md`
+- `.planning/STATE.md`
+- `.planning/research/SUMMARY.md`
 - archived seed references in `.planning/seeds/`
-- repo-local prompt research in `prompts/`
-- current official docs for OpenAI Agents SDK, LangGraph, Braintrust, Langfuse, Arize Phoenix, Jido, OpenInference, and MCP authorization
+- official Hex publishing guidance: https://hex.pm/docs/publish
+- official Mix project docs: https://hexdocs.pm/mix/Mix.Project.html
+- official ExDoc docs: https://hexdocs.pm/ex_doc/Mix.Tasks.Docs.html

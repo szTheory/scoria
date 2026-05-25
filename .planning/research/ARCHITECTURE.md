@@ -1,108 +1,114 @@
 # Project Research - Architecture
 
-**Milestone:** `v2.1 Tenant-scoped semantic fast path`
+**Milestone:** `v2.2 OSS adopter onramp`
 **Date:** 2026-05-25
-**Question:** How should a semantic fast path integrate with Scoria's existing architecture?
+**Question:** How should an OSS adopter-readiness milestone integrate with Scoria's existing architecture?
 
 ## Existing Integration Points
 
-- Retrieval and grounding already persist durable evidence in `Scoria.Knowledge`.
-- Runtime defaults and prompt policy are already normalized in `Scoria.Runtime.Defaults`.
-- Tenant / actor / session identity already enters at runtime start and handoff boundaries.
-- Operator-facing runtime detail and workflow detail surfaces already project curated evidence DTOs.
+- `Scoria` already exposes the public runtime facade that the default adoption story should prove.
+- `Mix.Tasks.Scoria.Install` is the central host-app mutation seam for router wiring, migration copy, and baseline config defaults.
+- `Mix.Tasks.Test.Adoption` already acts as the bounded proof lane for install, docs, route, and runtime-surface assertions.
+- `Scoria.TestSupport.Migrations` already contains the pattern for task-scoped setup of optional data surfaces without leaking repo lore into docs.
 
 ## Proposed Flow
 
-### 1. Request classification
+### 1. Release-surface verification
 
-At the public runtime boundary, classify whether the request is eligible for semantic fast-path evaluation.
+At maintainer time, verify that the package boundary itself is coherent:
 
-Inputs:
+- `mix.exs` metadata is complete
+- docs build through `mix docs`
+- package file inventory includes required code, migrations, README, and guides
 
-- identity (`tenant_id`, `actor_id`, `session_id`)
-- runtime defaults / prompt policy
-- request payload
-- tool / grounding / approval requirements
+### 2. Host-app installation proof
 
-Output:
+From a fresh Phoenix consumer path:
 
-- `eligible`
-- `eligible_actor_scoped`
-- `rejected`
+- add dependency
+- run `mix deps.get`
+- run `mix scoria.install`
+- run `mix ecto.migrate`
+- boot the host app and verify `/scoria` routes resolve
 
-### 2. Cache lookup
+### 3. Runtime facade proof
 
-If eligible, compute the query embedding and search the semantic cache table with:
+From that same host-app path, prove one durable run can be:
 
-- vector similarity
-- tenant filter
-- actor filter when required
-- prompt / policy compatibility filters
-- freshness / invalidation filters
+- started through `Scoria.start_run/2`
+- read back through `Scoria.get_run/1` or `Scoria.list_runs_for_session/1`
+- inspected through `/scoria/workflows/:run_id`
 
-If no acceptable match exists, continue down the normal execution path.
+### 4. Optional lane isolation
 
-### 3. Cache hit projection
+Keep bounded handoffs, semantic fast path, and the knowledge lane separate:
 
-If a match passes threshold and compatibility checks:
-
-- return the cached answer payload
-- persist durable hit evidence
-- expose cache provenance in runtime detail / operator surfaces
-
-### 4. Cache write-back
-
-After a normal successful response in an eligible lane:
-
-- derive reusable evidence refs
-- compute source fingerprint
-- persist a semantic cache entry
-
-### 5. Invalidation
-
-Invalidate affected entries when:
-
-- source versions change
-- prompt version changes
-- policy compatibility widens or narrows incompatibly
-- operators explicitly revoke bad entries
+- default lane proof must not require optional knowledge setup
+- semantic fast path retains its own named proof lane
+- docs and task output should explicitly tell adopters when they are leaving the default lane
 
 ## Recommended Boundaries
 
 ### Core
 
-- cache eligibility engine
-- cache persistence schema
-- lookup / threshold logic
-- invalidation logic
-- runtime evidence projection
+- package metadata and docs buildability
+- installer contract
+- migration-copy truth
+- default-lane consumer proof
+- support-truth docs alignment
 
 ### Companion / later
 
-- dashboard-heavy analytics beyond basic hit/miss diagnostics
-- approximate-index tuning controls
-- cross-runtime or external cache adapters
+- polished example apps beyond the canonical proof harness
+- wider demo stories for replay, handoffs, or eval operations
+- package splitting or adapter families
+
+## Capability Selection Rubric
+
+| Capability family | Route-owner expectation | Bridge frequency | Policy sensitivity | Support-matrix impact | Proof required | Package classification |
+|-------------------|-------------------------|------------------|--------------------|-----------------------|----------------|------------------------|
+| Default runtime lane adoption | High | Native screen | Medium | High | Merge-blocking | `core` |
+| Consumer-app fixture / proof harness | High | Low-frequency semantic | Low | High | Merge-blocking | `core` |
+| Bounded-handoff docs/examples | Medium | Defer | Medium | Medium | Advisory unless scope expands | `defer` |
+| Semantic-cache backend expansion | Low for this milestone | Defer | Medium | High | Not required now | `defer` |
 
 ## Packaging Ledger
 
 | Surface | Classification | Reason |
 |---------|----------------|--------|
-| `Scoria.SemanticCache` core modules | `core` | Native capability inside the embedded runtime boundary |
-| Ecto schema + migrations for semantic cache entries | `core` | Durable truth is part of the product promise |
-| Runtime / workflow diagnostic projection | `core` | Operator evidence is first-class, not optional |
-| Advanced tuning panels / cache analytics | `defer` | Useful, but not needed for first milestone proof |
-| External cache backends | `defer` | Adds operational surface area before default truth is proven |
+| Hex metadata and docs configuration | `core` | Public package trust starts here |
+| `mix scoria.install` contract | `core` | Primary host-app adoption seam |
+| Consumer-app proof fixture or harness | `core` | Closes the adopter reality gap |
+| Lane-based docs and verification guides | `core` | Support truth depends on them |
+| Advanced handoff example expansion | `defer` | Only needed if support evidence shows confusion |
+| External semantic cache backends | `defer` | Capability expansion, not adoption closure |
+
+## Proof Posture Gate
+
+- Merge-blocking hermetic proof:
+  - package metadata and docs build locally
+  - installer and adoption lanes pass
+  - consumer-app proof or equivalent harness passes
+- Advisory proof:
+  - semantic fast path remains green on its dedicated lane
+  - broader full-suite repo health remains informative but non-blocking for this milestone
+
+## Support Truth Gate
+
+- Missing Tailwind: installer skips component-content injection and says so explicitly
+- Missing optional knowledge setup: default lane still installs and proves core runtime behavior
+- Semantic fast path requested: docs route the user to `mix test.semantic_fast_path`
+- Native rebuilds required: any host-app route or asset mutation must be explicit in installer output and docs
 
 ## Build Order
 
-1. persistence schema + eligibility rules
-2. lookup path + miss fallback
-3. write-back + invalidation hooks
-4. operator-visible diagnostics and tests
+1. release metadata and docs build closure
+2. installer contract hardening and file-inventory proof
+3. consumer-app proof harness
+4. docs/support-truth alignment and closeout verification
 
 ## External References
 
-- pgvector official docs: https://github.com/pgvector/pgvector
-- PostgreSQL `CREATE POLICY`: https://www.postgresql.org/docs/17/sql-createpolicy.html
-- Phoenix LiveView async assigns: https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
-- Ecto.Multi: https://hexdocs.pm/ecto/Ecto.Multi.html
+- Hex publish guide: https://hex.pm/docs/publish
+- Mix project configuration: https://hexdocs.pm/mix/Mix.Project.html
+- ExDoc configuration: https://hexdocs.pm/ex_doc/Mix.Tasks.Docs.html

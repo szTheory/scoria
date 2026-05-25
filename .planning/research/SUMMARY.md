@@ -1,51 +1,47 @@
 # Project Research Summary
 
-**Milestone:** `v2.1 Tenant-scoped semantic fast path`
+**Milestone:** `v2.2 OSS adopter onramp`
 **Date:** 2026-05-25
 
 ## Recommendation
 
-Build the semantic fast path as a Scoria-owned, Ecto-backed, tenant-partitioned semantic cache that compounds the existing retrieval, runtime identity, and operator-evidence surfaces.
-
-Do not frame `v2.1` around provider prompt caching or a generic invisible middleware cache.
+Treat `v2.2` as adoption closure, not capability expansion: make Scoria publishable, installable in a fresh Phoenix host, and supportable through one truthful default-lane verification story.
 
 ## Stack Additions
 
-- add a dedicated semantic cache schema and service layer
-- reuse `pgvector` for query similarity
-- start exact-first or conservatively indexed
-- carry prompt / policy / source compatibility into the lookup key
-- project cache evidence into the existing LiveView operator surfaces
+- add `:ex_doc` so `mix docs` is real, not aspirational
+- add a release-preview lane for docs build and package inventory
+- add a canonical consumer-app fixture or generated host-app harness
+- keep publish/adoption helpers inside Mix-task and test-support seams
 
 ## Feature Table Stakes
 
-- tenant-scoped cache reuse
-- eligibility rules for safe read-only work
-- prompt/version/source-aware invalidation
-- explicit hit / miss / stale / rejected outcomes
-- operator-visible diagnostics and provenance
+- truthful Hex metadata and docs build
+- default-lane install contract that works without optional Tailwind or knowledge prerequisites
+- consumer proof for dependency -> install -> migrate -> runtime -> operator inspection
+- canonical lane-based support wording across README, guides, and task output
 
 ## Watch Out For
 
-- cross-tenant leaks
-- false-positive semantic hits
-- confusing provider prompt caching with application answer reuse
-- ANN tuning before trust instrumentation
-- invalidation that ignores prompt or source evolution
+- metadata claiming publishability before docs actually build
+- repo-only proof mistaken for fresh-adopter proof
+- optional knowledge or semantic lanes bleeding into the default adoption path
+- installer/docs/task-output drift
+- incorrect package file inventory at first publish
 
 ## Architecture Direction
 
-Keep the capability inside the embedded Scoria boundary:
+Keep the milestone inside the embedded Scoria boundary:
 
-- `core`: semantic cache persistence, eligibility, lookup, invalidation, evidence projection
-- `defer`: external cache backends, aggressive ANN tuning, broad analytics surfaces
+- `core`: package metadata, docs build, installer contract, consumer proof, support-truth alignment
+- `defer`: advanced handoff examples, package splits, external semantic-cache backends
 
 ## Suggested Requirement Categories
 
-1. Eligibility and partitioning
-2. Lookup and compatibility
-3. Invalidation and freshness
-4. Operator evidence and diagnostics
+1. Packaging and docs truth
+2. Host-app install contract
+3. Consumer-app proof
+4. Support-truth alignment
 
 ## Sources
 
@@ -53,10 +49,6 @@ Keep the capability inside the embedded Scoria boundary:
 - FEATURES: `.planning/research/FEATURES.md`
 - ARCHITECTURE: `.planning/research/ARCHITECTURE.md`
 - PITFALLS: `.planning/research/PITFALLS.md`
-- pgvector official docs: https://github.com/pgvector/pgvector
-- PostgreSQL row security policies: https://www.postgresql.org/docs/current/ddl-rowsecurity.html
-- PostgreSQL `CREATE POLICY`: https://www.postgresql.org/docs/17/sql-createpolicy.html
-- OpenAI prompt caching: https://platform.openai.com/docs/guides/prompt-caching
-- Anthropic prompt caching: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
-- Phoenix LiveView async assigns: https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
-- Ecto.Multi: https://hexdocs.pm/ecto/Ecto.Multi.html
+- Hex publish guide: https://hex.pm/docs/publish
+- Mix project configuration: https://hexdocs.pm/mix/Mix.Project.html
+- ExDoc configuration: https://hexdocs.pm/ex_doc/Mix.Tasks.Docs.html

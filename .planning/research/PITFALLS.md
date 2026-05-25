@@ -1,114 +1,107 @@
 # Project Research - Pitfalls
 
-**Milestone:** `v2.1 Tenant-scoped semantic fast path`
+**Milestone:** `v2.2 OSS adopter onramp`
 **Date:** 2026-05-25
-**Question:** What are the main risks when adding a semantic fast path to Scoria?
+**Question:** What are the main risks when turning Scoria's current repo state into a publishable OSS adoption story?
 
-## 1. Confusing provider prompt caching with application semantic caching
-
-**Why it happens**
-
-Provider prompt caching is easy to over-credit because it already improves latency and cost for repeated prefixes.
-
-**Why it is dangerous**
-
-It does not answer Scoria's core questions:
-
-- who is allowed to reuse an answer
-- whether the answer depended on tenant-private or actor-private state
-- whether the underlying source or prompt version changed
-
-**Prevention**
-
-- keep provider prompt caching out of the milestone's core requirement language
-- model semantic cache reuse as Scoria-owned durable state
-
-## 2. Cross-tenant or over-broad reuse
+## 1. Treating metadata as release truth when docs still do not build
 
 **Why it happens**
 
-Vector similarity can tempt teams to store one "best answer" and reuse it globally.
+Adding `:description`, `:package`, and `:docs` to `mix.exs` feels like the publish step is "done."
 
 **Why it is dangerous**
 
-This is the fastest way to create privacy and correctness failures.
+Hex publishes docs by running `mix docs`. If `:ex_doc` is missing or docs extras drift, the first real publish attempt fails at the point where trust should be highest.
 
 **Prevention**
 
-- require tenant partitioning on every cache read/write
-- add actor scoping for personalized-safe lanes
-- consider PostgreSQL row-security or equivalent invariant tests if query surfaces expand
+- add a real docs-build dependency
+- make `mix docs` part of the release-preview lane
 
-## 3. Silent false-positive hits
+## 2. Confusing repo-internal proof with adopter proof
 
 **Why it happens**
 
-Similarity thresholds look clean in isolated demos but degrade under real prompt drift and source churn.
+The repo already has strong tests and named lanes, so it is easy to assume the install story is closed.
 
 **Why it is dangerous**
 
-A wrong cache hit is harder to notice than a miss because it appears "fast and correct" until someone spots the stale or mismatched answer.
+Repo tests do not fully prove that a fresh Phoenix host app can adopt Scoria through the public path without maintainer intuition.
 
 **Prevention**
 
-- bias initial thresholds conservative
-- require prompt / source / policy compatibility gates in addition to similarity
-- expose hit reasons and evidence in operator surfaces
+- add a canonical consumer-app fixture or generated host-app harness
+- make it prove dependency fetch, install, migrate, route visibility, and one runtime flow
 
-## 4. Approximate ANN before trust instrumentation
+## 3. Letting optional lanes bleed into the default lane
 
 **Why it happens**
 
-HNSW / IVFFlat are attractive for performance and are easy to adopt prematurely.
+Scoria now includes handoffs, semantic caching, and knowledge surfaces, and docs naturally accumulate those capabilities.
 
 **Why it is dangerous**
 
-pgvector's own docs note that filtering is applied after approximate index scans, so filtered searches can miss expected matches without additional tuning.
+New adopters lose the boring path. Support truth erodes when the default lane silently depends on optional knowledge or advanced runtime setup.
 
 **Prevention**
 
-- ship exact-first or heavily constrained indexing first
-- defer ANN tuning until hit quality and invalidation behavior are measured
+- keep default runtime lane docs and proof isolated
+- route optional knowledge and semantic fast path to their own named commands
 
-## 5. Weak invalidation semantics
+## 4. Installer drift between docs, task output, and real file mutations
 
 **Why it happens**
 
-Teams often invalidate on TTL only and ignore prompt, source, or policy evolution.
+Installer behavior changes quickly during local hardening, while docs and support copy lag behind.
 
 **Why it is dangerous**
 
-Scoria already has versioned prompts, datasets, and durable operator evidence. Reusing answers across those boundaries without explicit invalidation would violate support truth.
+This creates the worst kind of OSS bug: the software works one way, the docs describe another, and maintainers answer a third way from memory.
 
 **Prevention**
 
-- fingerprint source/version inputs
-- tie entries to prompt/version/policy metadata
-- record invalidation cause explicitly
+- assert installer output and docs source against the same lane vocabulary
+- keep one verification guide as the canonical support entrypoint
 
-## 6. Cache writes for unsafe tool-backed or approval-sensitive flows
+## 5. Publishing a package with the wrong file inventory
 
 **Why it happens**
 
-A generic "cache all successful outputs" rule is simpler to implement.
+Hex defaults are generous, and maintainers often assume required files are included automatically.
 
 **Why it is dangerous**
 
-Scoria has explicit approval, replay, and workflow-owned truth seams. Unsafe caching can bypass those semantics.
+Missing migrations, guides, or docs inputs can make the first published artifact materially weaker than the repo state that looked correct locally.
 
 **Prevention**
 
-- restrict `v2.1` to safe read-only classes
-- reject write-side, approval-sensitive, or personalized-tool-backed answers by default
+- preview the built package locally
+- add tests or assertions around package file inventory for required surfaces
+
+## 6. Pulling package/release concerns into the runtime API
+
+**Why it happens**
+
+Release work touches project metadata, which can tempt code to inspect Mix project state at runtime.
+
+**Why it is dangerous**
+
+Official Mix guidance is to keep Mix project configuration out of runtime application logic. Mixing those layers creates brittle behavior in releases.
+
+**Prevention**
+
+- keep release and docs work inside Mix-task, CI, and test seams
+- continue using application config for runtime behavior
 
 ## Which Phase Should Address What
 
-- Phase 1: eligibility, partitioning, and persistence invariants
-- Phase 2: lookup compatibility and invalidation
-- Phase 3: operator diagnostics, threshold review, and support-truth proof
+- Phase 47: package/docs build closure and release-preview truth
+- Phase 48: installer contract plus consumer-app proof
+- Phase 49: support-truth alignment and milestone closeout verification
 
 ## External References
 
-- OpenAI prompt caching: https://platform.openai.com/docs/guides/prompt-caching
-- pgvector official docs: https://github.com/pgvector/pgvector
-- PostgreSQL row security policies: https://www.postgresql.org/docs/current/ddl-rowsecurity.html
+- Hex publish guide: https://hex.pm/docs/publish
+- Mix project configuration: https://hexdocs.pm/mix/Mix.Project.html
+- ExDoc configuration: https://hexdocs.pm/ex_doc/Mix.Tasks.Docs.html

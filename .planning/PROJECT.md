@@ -14,13 +14,20 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 - Scoria shipped `v2.1 Tenant-scoped semantic fast path` on 2026-05-25.
 - The product now includes a tenant-partitioned semantic fast path for explicitly safe read-only runtime lanes, with durable compatibility/invalidation truth and operator-visible semantic evidence.
-- No new milestone is active yet; the next scope should be opened through `$gsd-new-milestone`.
+- Post-`v2.1` repo-local hardening improved the OSS adoption boundary: package metadata is now Hex-ready, `mix scoria.install` copies core migrations and tolerates missing Tailwind assets, and the named semantic proof lane now prepares the retrieval-backed tables it depends on.
+- `v2.2 OSS adopter onramp` is now active and focuses on turning that reconciled repo truth into a publishable, consumer-proven Phoenix adoption story.
 
-## Next Milestone Goals
+## Current Milestone: v2.2 OSS adopter onramp
 
-- Decide whether the next milestone should stay adoption-focused (`ADPT-03`) or move deeper into semantic-cache follow-up (`FAST-03`, `FAST-04`).
-- Preserve the Phoenix-first, operator-visible product shape rather than widening into hosted cache or orchestration behavior.
-- Keep new scope gated on boring verification paths and durable support truth, following the same standard as `v2.0 Relay` and `v2.1 Tenant-scoped semantic fast path`.
+**Goal:** Turn Scoria's reconciled post-`v2.1` repo state into a release-grade OSS adoption path that a normal Phoenix team can install, verify, and trust without maintainer folklore.
+
+**Target features:**
+- publishable Hex metadata and a real local docs-build lane
+- a truthful default-lane installer contract for router wiring, copied migrations, and baseline runtime defaults
+- a canonical consumer-app proof path for dependency -> install -> migrate -> runtime -> operator inspection
+- lane-based docs and support truth that separate the default runtime lane from optional knowledge, semantic, and handoff surfaces
+
+**Why now:** The repo is already feature-strong. The highest-leverage next step is making package, install, and proof surfaces boring for a serious Phoenix adopter before opening more runtime capability.
 
 ## Requirements
 
@@ -51,21 +58,22 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-- No active milestone requirements. Start the next milestone to promote new requirements into active scope.
-
-### Candidate Next Requirements
-
-- `ADPT-03`: Scoria ships stronger bounded-handoff examples only if `v2.0 Relay` verification proves the current public lane still creates real adopter confusion. — contingent candidate
-- `FAST-03`: Scoria supports external cache backends beyond the default Ecto-native semantic cache truth store. — deferred semantic follow-up
-- `FAST-04`: Scoria exposes advanced ANN tuning and analytics controls once exact-first proof and operator trust are established. — deferred semantic follow-up
+- [ ] `ADPT-03`: Maintainer can build Scoria's publish-facing docs locally through `mix docs`, with Hex metadata, source links, and docs extras aligned to the real public package surface.
+- [ ] `ADPT-04`: Maintainer can preview the package artifact before first Hex publish and confirm the shipped file inventory includes required runtime code, migrations, README, and adoption guides.
+- [ ] `INST-01`: A Phoenix host app can run `mix scoria.install` once to mount the dashboard, copy core migrations, and inject baseline runtime defaults without duplicate or misleading mutations.
+- [ ] `INST-02`: The default Phoenix lane installs cleanly when Tailwind or optional knowledge surfaces are absent, and the installer states the skipped or optional steps explicitly.
+- [ ] `PROOF-01`: A fresh Phoenix consumer app or equivalent host-app harness can prove dependency fetch, install, migration, and `/scoria` route visibility through the public adoption path.
+- [ ] `PROOF-02`: That same consumer proof path can start one durable run through `Scoria.start_run/2`, read it back through the public runtime facade, and inspect operator evidence without enabling optional knowledge or semantic lanes.
+- [ ] `DOCS-01`: README, operator verification, and installer output describe the same lane ordering and prerequisite boundaries for default, bounded-handoff, semantic fast-path, and optional knowledge surfaces.
+- [ ] `DOCS-02`: Scoria names one canonical verification command per lane and documents denial or fallback behavior when optional prerequisites are missing.
 
 ### Out of Scope
 
-- Full hosted connector marketplace or broker behavior — would drift Scoria away from its embedded Phoenix product shape.
-- First-party browser/code-exec productization — adds a separate privileged-execution risk class before connector policy and evidence are proven boring.
-- Deep external runtime interoperability — valuable, but not ahead of making remote connector governance unsurprising in ordinary Phoenix apps.
-- Automatic mutation of sealed baseline datasets from online scoring — would collapse the distinction between observed behavior and reviewed ground truth.
-- Broad multi-agent orchestration/platform behavior — valuable, but wider than the next operator-loop milestone and more likely to create product-shape drift.
+- Full package-family decomposition into multiple Hex libraries — valuable later, but too wide for the first boring adopter closeout.
+- Hosted demo environments or managed onboarding services — would widen the product boundary before the embedded install story is fully proven.
+- Advanced bounded-handoff example expansion — defer unless real support evidence shows the shipped public lane is still confusing.
+- External semantic cache backends or ANN tuning controls — adjacent capability expansion, not the highest-leverage adoption closure.
+- Folding optional knowledge or semantic verification into the default adoption lane — would weaken the clear prerequisite boundary that this milestone is trying to strengthen.
 
 ## Latest Shipped Milestone: v2.1 Tenant-scoped semantic fast path
 
@@ -80,22 +88,19 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Context
 
-- Scoria shipped `v2.1 Tenant-scoped semantic fast path` on 2026-05-25 and has not opened the next milestone yet.
-- `v1.9 Crucible` closed the replay -> score -> promote operator loop with canonical verification across Phases 37 through 40.
-- `v2.0 Relay` converted the repo-local bounded handoff wedge into archived shipped truth and closed the earlier full-suite closeout exception with a fresh green baseline.
-- `v2.1` shipped semantic caching as Scoria-owned durable state rather than provider prompt caching or an invisible middleware trick.
-- The repo has durable workflow truth, approval lineage, telemetry, audit seams, and a complete remote connector boundary.
-- Repo-local research and seed context reinforce the same design direction: remain embedded, keep transport separate from LiveView, treat policy and approvals as durable records, and avoid AWS-shaped platform drift.
-- After `v2.1`, the next milestone decision should depend on whether adoption clarity or deeper semantic-cache infrastructure is the higher-value follow-up.
+- Scoria shipped `v2.1 Tenant-scoped semantic fast path` on 2026-05-25.
+- Post-ship adoption hardening tightened the real baseline on the same day: package metadata, installer behavior, and semantic proof setup are now more truthful than the archived `v2.1` closeout docs alone suggest.
+- Official Hex publishing guidance expects truthful package metadata, a real docs build, and a concrete packaged file set; Scoria has started that work but has not closed it yet.
+- The repo already has durable workflow truth, approval lineage, telemetry, audit seams, and a complete remote connector boundary.
+- The next milestone should assume the highest-leverage gap is boring OSS adoption closure unless real adopter pressure proves external semantic-cache infrastructure is now more urgent.
 
 ## Constraints
 
 - **Product shape**: Stay embedded and Phoenix-first — Scoria must remain a library plus dashboard surface, not a hosted connector platform.
-- **State truth**: Keep auth, grants, approvals, and evidence durable in Ecto — operator trust depends on inspectable records rather than process-local state.
-- **Security**: Default to least-privilege scopes, redaction, and approval on remote writes / exec / scope escalation.
+- **Runtime boundary**: Keep package and docs concerns inside Mix tasks, tests, and CI lanes instead of pulling Mix project metadata into runtime behavior.
 - **DX**: Keep installation and verification boring for a normal Phoenix app path; only ask the user for materially impactful security or blast-radius choices.
-- **Replay safety**: Replay must create new runs with explicit provenance and safe defaults; original run history is immutable.
-- **Eval integrity**: Online scores are annotations, not release truth; sealed datasets remain immutable until explicitly promoted.
+- **Support truth**: Default-lane docs, installer output, and proof commands must agree on prerequisites and order of adoption.
+- **Optionality**: Default-lane proof must not require pgvector, retrieval, grounding, or semantic fast-path setup.
 - **Shift-left defaults**: Push low-impact milestone decisions left inside Scoria and future GSD flows; reserve interruptions for materially consequential product or blast-radius choices.
 
 ## Key Decisions
@@ -111,6 +116,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | Post-`v1.9` public handoff work should stay narrow and ship together with docs/install/verification alignment | The real adopter value was a bounded `Scoria` lane with inspectable projected context, not broader orchestration surface area or support-truth drift | — Resolved |
 | `v2.0 Relay` should formalize current bounded handoff truth before Scoria opens another net-new capability milestone | The implementation wedge already exists; the remaining risk is proof and support-truth drift, not raw feature absence | — Resolved |
 | `v2.1` semantic caching stays Scoria-owned, tenant-partitioned, and evidence-first instead of relying on provider prompt caches or invisible global reuse | Latency wins are only acceptable if partitioning, invalidation, and operator truth remain inspectable | — Resolved |
+| Post-`v2.1` milestone selection should prioritize OSS adopter readiness over adjacent capability expansion | The repo is already feature-strong; the main remaining leverage is making package/install/proof surfaces boring for a serious Phoenix adopter | — Resolved |
+| `v2.2` should close the OSS adopter onramp before Scoria reopens broader capability expansion | Publishability, install truth, consumer proof, and support truth are now part of the product surface, not ancillary release chores | — Pending |
 
 ## Milestone History
 
@@ -126,13 +133,6 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v1.9 Crucible`: Replayable debugging, replay-safe execution, workflow-source dataset promotion, and online scoring review queues.
 - `v2.0 Relay`: Explicit bounded handoff contract truth, delegated evidence visibility, canonical adoption proof, and clean closeout verification.
 - `v2.1 Tenant-scoped semantic fast path`: Tenant-partitioned semantic reuse, compatibility-aware invalidation, operator-visible semantic evidence, and a named semantic proof lane.
-
-<details>
-<summary>Archived pre-v2.1 milestone context</summary>
-
-`v2.0 Relay` focused on formalizing the bounded public handoff wedge with explicit same-run lineage, projected-context safety, operator-visible delegated evidence, and one canonical adoption verification story.
-
-</details>
 
 ## Evolution
 
@@ -152,4 +152,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 after shipping v2.1 Tenant-scoped semantic fast path*
+*Last updated: 2026-05-25 after starting v2.2 OSS adopter onramp*
