@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: tenant-scoped semantic fast path
-status: Roadmap approved on 2026-05-25; ready to begin Phase 44 requirement execution
-last_updated: "2026-05-25T05:48:30.019Z"
+status: ready_to_plan
+last_updated: 2026-05-25T06:13:15.649Z
 last_activity: 2026-05-25
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 3
   percent: 0
+stopped_at: Phase 44 complete (3/3) — ready to discuss Phase 45
 ---
 
 # Project State
@@ -19,16 +20,16 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** `v2.1 Tenant-scoped semantic fast path`
+**Current Focus:** Phase 45 — compatibility and invalidation engine
 
 ## Current Position
 
-Phase: 44
-Plan: Not started
+Phase: 44 (semantic-cache-contract-and-persistence) — EXECUTING
+Plan: 1 of 3
 **Milestone:** `v2.1 Tenant-scoped semantic fast path`
-**Phase:** 44
+**Phase:** 45
 **Plan:** Not started
-**Status:** Roadmap approved on 2026-05-25; ready to begin Phase 44 requirement execution
+**Status:** Ready to plan
 **Last activity:** 2026-05-25
 
 **Progress:**

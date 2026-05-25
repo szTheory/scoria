@@ -17,7 +17,7 @@
 
 | Phase | Name | Goal | Requirements | Success Criteria |
 |------|------|------|--------------|------------------|
-| 44 | Semantic cache contract and persistence | Define the safe cacheable lane, tenant-partitioned persistence model, and normal-path fallback contract | FAST-01, SAFE-01, FAST-02 | 4 |
+| 44 | Semantic cache contract and persistence | 3/3 | Complete    | 2026-05-25 |
 | 45 | Compatibility and invalidation engine | Enforce compatibility checks, stale handling, and invalidation truth before reuse | LOOK-01, LOOK-02, INVD-01, INVD-02 | 4 |
 | 46 | Operator evidence and verification | Surface semantic cache outcomes to operators and prove the milestone through checked verification | EVID-01, PROOF-01 | 4 |
 
