@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: none
-status: milestone_shipped
-last_updated: "2026-05-25T08:30:00Z"
+milestone: v2.1
+milestone_name: tenant-scoped semantic fast path
+status: roadmap_ready
+last_updated: "2026-05-25T09:15:00Z"
 last_activity: 2026-05-25
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 100
+  percent: 0
 ---
 
 # Project State
@@ -19,20 +19,20 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** `v2.0 Relay` shipped; waiting for next milestone selection
+**Current Focus:** `v2.1 Tenant-scoped semantic fast path`
 
 ## Current Position
 
-Phase: none
-Plan: n/a
-**Milestone:** None active
-**Phase:** n/a
-**Plan:** n/a
-**Status:** `v2.0 Relay` shipped on 2026-05-25 after a fresh full-suite `mix test` pass and archived closeout
+Phase: 44
+Plan: Not started
+**Milestone:** `v2.1 Tenant-scoped semantic fast path`
+**Phase:** 44
+**Plan:** Not started
+**Status:** Roadmap approved on 2026-05-25; ready to begin Phase 44 requirement execution
 **Last activity:** 2026-05-25
 
 **Progress:**
-[██████████] 100%
+[░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Plan: n/a
 - **Total Validated Requirements:** 116
 - **Coverage:** 100% on shipped milestones through `v1.9 Crucible`
 - **Latest Shipped Milestone:** `v2.0 Relay` on 2026-05-25
-- **Active Milestone:** None
+- **Active Milestone:** `v2.1 Tenant-scoped semantic fast path`
 
 **Phase 31 Metrics:**
 
@@ -144,8 +144,9 @@ Plan: n/a
 
 **Todos:**
 
-- Choose the next milestone candidate before creating fresh requirements.
-- Start `$gsd-new-milestone` once the next capability bet is selected.
+- Start Phase 44 planning for semantic cache contract and persistence.
+- Preserve semantic fast-path scope as tenant-partitioned, evidence-first, and safe-read-only.
+- Keep operator diagnostics and verification in-scope rather than treating them as post-feature cleanup.
 
 **Blockers:**
 
@@ -162,7 +163,7 @@ Items deferred or intentionally outside shipped milestone scope:
 | tech debt | LiveView async teardown noise in the workflow/replay test lane | accepted at `v1.9` close |
 | future milestone | Hosted connector marketplace / broker behavior | deferred beyond `v1.5` |
 | future milestone | First-party browser/code-exec productization | deferred until connector policy and evidence are proven boring |
-| future milestone | Tenant-scoped semantic fast path / semantic caching | deferred until it outranks adoption and trust improvements |
+| future milestone | Advanced bounded-handoff examples beyond the shipped Relay lane | deferred unless post-Relay adoption evidence proves they are needed |
 | reference | Archived planning seeds in `.planning/seeds/` | retained as background material, not active milestone work |
 | Phase 41 P01 | 11 min | 2 tasks | 8 files |
 | Phase 41 P02 | 3 min | 2 tasks | 3 files |

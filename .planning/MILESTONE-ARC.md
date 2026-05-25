@@ -85,13 +85,28 @@ Teams can adopt delegated handoffs through one narrow, inspectable, Phoenix-firs
 
 ## Active Milestone
 
-No active milestone yet. The next candidate should be opened only after choosing between the semantic fast path and any evidence-backed handoff-example follow-up.
+### v2.1 Tenant-scoped semantic fast path
+
+**Status:** active
+**Priority:** highest
+**Theme:** Inspectable semantic caching for safe read-only classes of work
+
+**What this milestone should deliver**
+
+- bounded tenant-scoped semantic caching with durable hit/miss evidence
+- prompt/version/source-aware invalidation
+- operator-visible cache diagnostics instead of invisible magic
+- explicit fallback to the normal runtime path when a request is stale, incompatible, or ineligible
+
+**Why now**
+
+`v2.0 Relay` closed the adoption-proof and support-truth loop around the bounded public handoff lane on 2026-05-25. The next highest-value step is a Phoenix-first latency and cost optimization that still preserves operator trust, provenance, and tenant isolation.
 
 ## Recommended Candidates
 
 ### 1. Tenant-scoped semantic fast path
 
-**Status:** pending
+**Status:** active
 **Priority:** highest
 **Theme:** Inspectable semantic caching for safe read-only classes of work
 
@@ -122,7 +137,7 @@ This is useful only if the new public handoff lane still feels hard to approach 
 
 ## Recommendation
 
-Open the next milestone only after confirming whether post-Relay adopter evidence still points at bounded-handoff examples. Without that evidence, tenant-scoped semantic fast path remains the strongest next major candidate.
+`v2.1 Tenant-scoped semantic fast path` is now the active milestone. The next candidate after it remains bounded-handoff example follow-up only if post-Relay support evidence shows the current adoption lane is still confusing.
 
 ## Source Notes
 

@@ -12,17 +12,21 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
-- Scoria is shipped through `v2.0 Relay` as of 2026-05-25.
-- `v2.0 Relay` formalized the bounded public handoff lane: explicit `Scoria.start_handoff_run/3` contract truth, narrow projected-context safety, delegated evidence surfaces, and canonical adoption proof.
-- The shipped baseline now includes a fresh green full-suite `mix test` pass instead of an accepted Relay closeout exception.
-- There is no active milestone yet; the roadmap is ready for the next selection cycle.
+- Scoria shipped `v2.0 Relay` on 2026-05-25 with a fresh green full-suite `mix test` baseline.
+- `v2.1 Tenant-scoped semantic fast path` is now active.
+- The current milestone focuses on safe semantic answer reuse that stays tenant-partitioned, provenance-aware, and operator-visible.
 
-## Next Milestone Goals
+## Current Milestone: v2.1 Tenant-scoped semantic fast path
 
-- Decide whether tenant-scoped semantic fast path now outranks any remaining adoption friction as the next major capability bet.
-- Only elevate stronger bounded-handoff examples if post-Relay evidence shows real adopter confusion instead of documentation polish preference.
-- Keep scope anchored to Phoenix-first adoption value, durable operator-visible truth, and boring verification.
-- Preserve the embedded product boundary and avoid drifting into a hosted orchestration surface.
+**Goal:** Add a tenant-scoped semantic fast path for explicitly safe read-only runtime lanes without weakening operator trust, provenance, or Phoenix-first support truth.
+
+**Target features:**
+- bounded tenant-scoped semantic cache lookup and write-back for safe read-only classes of work
+- prompt/version/source-aware invalidation and freshness handling
+- explicit fallback to the normal runtime path on miss, stale, or ineligible requests
+- operator-visible cache diagnostics and verification proof
+
+**Why now:** After `v2.0 Relay` closed the bounded handoff support-truth wedge on 2026-05-25, the highest-priority next bet is a latency/cost optimization that compounds the existing trace, replay, scoring, and operator evidence loop without widening the product boundary.
 
 ## Requirements
 
@@ -48,11 +52,18 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-- No active milestone requirements until the next milestone is opened.
+- [ ] `FAST-01`: Developer can enable semantic fast-path evaluation only for explicitly safe read-only runtime lanes.
+- [ ] `SAFE-01`: Scoria refuses to cache or reuse answers from write-side, approval-sensitive, or personalized-tool-backed flows unless they are explicitly classified as safe.
+- [ ] `FAST-02`: Semantic cache lookups are always partitioned by `tenant_id`, with stricter actor or policy scoping when compatibility requires it.
+- [ ] `LOOK-01`: Scoria reuses a cached answer only when semantic similarity, prompt compatibility, policy compatibility, and source compatibility all pass.
+- [ ] `LOOK-02`: Cache miss, stale, or rejected outcomes fall through to the normal execution path without changing workflow truth.
+- [ ] `INVD-01`: Cache entries invalidate when prompt version, source fingerprint, or policy compatibility changes.
+- [ ] `INVD-02`: Developers and operators can distinguish active, stale, and invalidated cache entries with explicit reasons.
+- [ ] `EVID-01`: Operators can inspect cache hit, miss, stale, and rejection outcomes with provenance and partitioning context in Scoria runtime or workflow surfaces.
+- [ ] `PROOF-01`: Scoria ships a checked verification lane that proves semantic fast-path partitioning, fallback semantics, and invalidation behavior.
 
 ### Candidate Next Requirements
 
-- `FAST-01`: Scoria can provide a tenant-scoped semantic fast path with explicit cache provenance, invalidation, and operator-visible diagnostics. — next candidate
 - `ADPT-03`: Scoria ships stronger bounded-handoff examples only if `v2.0 Relay` verification proves the current public lane still creates real adopter confusion. — contingent candidate
 
 ### Out of Scope
@@ -76,13 +87,13 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Context
 
-- Scoria is shipped through `v2.0 Relay` as of 2026-05-25.
+- Scoria shipped `v2.0 Relay` on 2026-05-25 and opened `v2.1 Tenant-scoped semantic fast path` on 2026-05-25.
 - `v1.9 Crucible` closed the replay -> score -> promote operator loop with canonical verification across Phases 37 through 40.
 - `v2.0 Relay` converted the repo-local bounded handoff wedge into archived shipped truth and closed the earlier full-suite closeout exception with a fresh green baseline.
-- The next milestone decision is now between tenant-scoped semantic fast path and any evidence-backed follow-up on handoff examples.
+- `v2.1` treats semantic caching as Scoria-owned durable state, not as provider prompt caching or an invisible middleware trick.
 - The repo has durable workflow truth, approval lineage, telemetry, audit seams, and a complete remote connector boundary.
 - Repo-local research and seed context reinforce the same design direction: remain embedded, keep transport separate from LiveView, treat policy and approvals as durable records, and avoid AWS-shaped platform drift.
-- After `v2.0 Relay`, semantic fast paths remain the strongest default next candidate unless adopter evidence proves example-level handoff confusion is still the higher-value problem.
+- After `v2.0 Relay`, semantic fast paths became the active next milestone because they compound the existing trust loop without widening the hosted-runtime surface.
 
 ## Constraints
 
@@ -106,6 +117,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | Online scoring must never auto-mutate sealed baseline datasets | Observed production behavior is not reviewed ground truth; operator trust depends on keeping those lanes separate | — Resolved |
 | Post-`v1.9` public handoff work should stay narrow and ship together with docs/install/verification alignment | The real adopter value was a bounded `Scoria` lane with inspectable projected context, not broader orchestration surface area or support-truth drift | — Resolved |
 | `v2.0 Relay` should formalize current bounded handoff truth before Scoria opens another net-new capability milestone | The implementation wedge already exists; the remaining risk is proof and support-truth drift, not raw feature absence | — Resolved |
+| `v2.1` semantic caching stays Scoria-owned, tenant-partitioned, and evidence-first instead of relying on provider prompt caches or invisible global reuse | Latency wins are only acceptable if partitioning, invalidation, and operator truth remain inspectable | — Active |
 
 ## Milestone History
 
@@ -146,4 +158,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 after shipping v2.0 Relay*
+*Last updated: 2026-05-25 after opening v2.1 Tenant-scoped semantic fast path*
