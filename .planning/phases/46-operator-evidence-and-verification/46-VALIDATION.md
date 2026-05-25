@@ -19,7 +19,7 @@ created: 2026-05-25
 |----------|-------|
 | **Framework** | ExUnit on Elixir `1.19.5` |
 | **Config file** | `test/test_helper.exs`, `config/test.exs` |
-| **Quick run command** | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs test/scoria/semantic_cache/lookup_test.exs test/scoria/semantic_cache/invalidation_test.exs test/scoria_web/live/workflow_live_test.exs test/scoria_web/components/runtime_detail_drawer_component_test.exs test/mix/tasks/test.adoption_test.exs --trace` |
+| **Quick run command** | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs test/scoria/semantic_cache/lookup_test.exs test/scoria/semantic_cache/invalidation_test.exs test/scoria_web/live/orchestrator_live_test.exs test/scoria_web/live/workflow_live_test.exs test/scoria_web/components/runtime_detail_drawer_component_test.exs test/mix/tasks/test.semantic_fast_path_test.exs --trace` |
 | **Full suite command** | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test` |
 | **Estimated runtime** | ~90 seconds |
 
@@ -38,12 +38,11 @@ created: 2026-05-25
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 46-01-01 | 01 | 0 | EVID-01, PROOF-01 | T-46-01 / T-46-02 | Semantic proof only runs on the trusted pgvector-backed test path; operators do not trust lane output until the port strategy is explicit. | lane guard | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs test/scoria/semantic_cache/lookup_test.exs --trace` | ✅ | ⬜ pending |
-| 46-01-02 | 01 | 1 | EVID-01 | T-46-02 / T-46-03 | Runtime and workflow surfaces render one shared semantic-evidence contract with reason-coded fallback and scope truth. | component + LiveView | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria_web/components/runtime_detail_drawer_component_test.exs test/scoria_web/live/workflow_live_test.exs --trace` | ✅ / ⚠ expand assertions | ⬜ pending |
-| 46-01-03 | 01 | 1 | EVID-01 | T-46-01 / T-46-03 | Workflow evidence shows persisted provenance, lifecycle status, and candidate refusal truth without widening tenant or actor visibility. | DTO + LiveView | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs test/scoria_web/live/workflow_live_test.exs --trace` | ✅ / ⚠ expand assertions | ⬜ pending |
-| 46-02-01 | 02 | 2 | PROOF-01 | T-46-01 / T-46-04 | Named semantic verification lane is pinned to `:test`, bounded to the canonical file list, and remains discoverable through task tests. | mix task | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/mix/tasks/test.semantic_fast_path_test.exs --trace` | ❌ W0 | ⬜ pending |
-| 46-02-02 | 02 | 2 | PROOF-01 | T-46-04 | Partitioning, bypass, fallback, reject/stale, and invalidation semantics stay green under the named semantic lane. | integration | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path --trace` | ❌ W0 | ⬜ pending |
-| 46-03-01 | 03 | 3 | PROOF-01 | T-46-04 | Docs and support-truth references point to `mix test.semantic_fast_path` and the same runtime/workflow vocabulary used in the UI. | docs/source test | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/adoption_surface_test.exs test/mix/tasks/test.semantic_fast_path_test.exs --trace` | ⚠ partial | ⬜ pending |
+| 46-00-01 | 00 | 0 | PROOF-01 | T-46-00-01 / T-46-00-03 | Semantic proof runs only on the trusted pgvector-backed `55432` lane and exposes one canonical named command. | mix task guard | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/mix/tasks/test.semantic_fast_path_test.exs --trace` | ✅ after implementation | ⬜ pending |
+| 46-01-01 | 01 | 1 | EVID-01 | T-46-01-01 / T-46-01-03 | One curated `semantic_evidence` contract preserves fallback, scope, provenance, lifecycle, and refusal truth without UI recomputation. | DTO + runtime | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/runtime/semantic_fast_path_test.exs --trace` | ✅ / ⚠ expand assertions | ⬜ pending |
+| 46-02-01 | 02 | 2 | EVID-01 | T-46-02-01 / T-46-02-03 | Runtime surface wiring and drawer rendering prove summary-first semantic evidence plus workflow deep links. | LiveView + component | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria_web/live/orchestrator_live_test.exs test/scoria_web/components/runtime_detail_drawer_component_test.exs --trace` | ✅ / ⚠ expand assertions | ⬜ pending |
+| 46-03-01 | 03 | 2 | EVID-01 | T-46-03-01 / T-46-03-03 | Workflow notebook proves deep semantic inspection for hit, reject, stale, provenance, lifecycle, and fallback semantics. | component + LiveView | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria_web/components/semantic_evidence_notebook_component_test.exs test/scoria_web/live/workflow_live_test.exs --trace` | ❌ notebook test added by plan | ⬜ pending |
+| 46-04-01 | 04 | 3 | PROOF-01, EVID-01 | T-46-04-01 / T-46-04-03 | Final named lane proves cache semantics plus both operator surfaces, and docs/source checks keep the support story aligned. | bounded lane + docs/source | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path --trace && SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test test/scoria/adoption_surface_test.exs test/mix/tasks/test.semantic_fast_path_test.exs --trace` | ❌ W0 / partial docs | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -54,7 +53,9 @@ created: 2026-05-25
 - [ ] `lib/mix/tasks/scoria.test.semantic_fast_path.ex` — canonical bounded semantic lane task
 - [ ] `lib/mix/tasks/test.semantic_fast_path.ex` — compatibility wrapper
 - [ ] `test/mix/tasks/test.semantic_fast_path_test.exs` — file-list and discoverability assertions
+- [ ] `test/scoria_web/live/orchestrator_live_test.exs` — runtime drawer wiring assertions for semantic summary projection
 - [ ] `test/scoria_web/components/runtime_detail_drawer_component_test.exs` — semantic summary assertions
+- [ ] `test/scoria_web/components/semantic_evidence_notebook_component_test.exs` — semantic notebook component assertions
 - [ ] `test/scoria_web/live/workflow_live_test.exs` — semantic notebook assertions for hit/miss/reject/stale provenance
 - [ ] Keep the semantic verification port strategy explicit; current trusted path is `SCORIA_DB_PORT=55432`
 
