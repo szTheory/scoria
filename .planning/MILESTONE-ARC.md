@@ -1,7 +1,7 @@
 # Milestone Arc: Scoria
 
 **Created:** 2026-05-12
-**Last updated:** 2026-05-25
+**Last updated:** 2026-05-26
 **Status:** maintained planning artifact
 
 ## Purpose
@@ -23,7 +23,7 @@ The product should stay:
 
 ## Current Baseline
 
-Shipped through `v2.1 Tenant-scoped semantic fast path` on 2026-05-25:
+Shipped through `v2.2 OSS adopter onramp` on 2026-05-26:
 
 - observability and trace storage
 - MCP gateway and governance seams
@@ -40,7 +40,7 @@ Shipped through `v2.1 Tenant-scoped semantic fast path` on 2026-05-25:
 - public `Scoria.start_handoff_run/3` bounded handoff API with explicit same-run lineage and projected-context safety
 - delegated evidence surfaces, runtime-first adoption proof, and a clean full-suite closeout baseline
 - tenant-scoped semantic fast-path lookup, compatibility-aware invalidation, operator-visible semantic evidence, and a named semantic proof lane
-- post-ship adoption hardening that made package metadata, installer behavior, and semantic proof prerequisites more truthful ahead of the next milestone
+- publish-facing package/docs truth, generated-host adoption proof, and a canonical lane-based maintainer/adopter closeout chain
 
 ## Sequencing Principles
 
@@ -66,53 +66,30 @@ Shipped through `v2.1 Tenant-scoped semantic fast path` on 2026-05-25:
 | v1.9 | Crucible | shipped | Replayable debugging and online quality feedback |
 | v2.0 | Relay | shipped | Formalized the bounded public handoff wedge, delegated evidence story, and canonical adoption proof |
 | v2.1 | Tenant-scoped semantic fast path | shipped | Durable semantic reuse, invalidation truth, operator evidence, and a bounded semantic proof lane |
-| v2.2 | OSS adopter onramp | active | Release-grade package truth, host-app install proof, and lane-based support closure |
+| v2.2 | OSS adopter onramp | shipped | Release-grade package truth, host-app install proof, and lane-based support closure |
 
 ## Latest Shipped Milestone
 
-### v2.1 Tenant-scoped semantic fast path
+### v2.2 OSS adopter onramp
 
 **Status:** shipped
 **Priority at close:** highest
-**Theme:** Inspectable semantic caching for safe read-only classes of work
+**Theme:** Make the default Phoenix adoption path publishable, consumer-proven, and support-truthful
 
 **What shipped**
 
-- explicit semantic-lane admission for safe read-only runtime work
-- tenant-scoped semantic reuse guarded by prompt, policy, source, freshness, and scope compatibility
-- durable `active`, `stale`, `invalidated`, and `writeback_rejected` semantic lifecycle truth
-- runtime drawer and workflow notebook surfaces that expose semantic provenance and fallback reasons
-- canonical `mix test.semantic_fast_path` proof plus aligned operator docs/source assertions
+- a real local docs-build lane plus a bounded `mix scoria.release_preview` package/docs proof
+- a default-lane installer contract that is truthful about copied migrations, runtime defaults, unsupported routers, and optional Tailwind behavior
+- a generated-host Phoenix proof path for dependency -> install -> migrate -> runtime -> operator inspection
+- one lane-based support story that clearly separates default runtime, bounded handoff, semantic fast path, and optional knowledge adoption
 
 **User-facing outcome**
 
-Teams can adopt a semantic fast path through one narrow, inspectable, Phoenix-first runtime lane without guessing about tenant isolation, compatibility, invalidation, or how to prove the cache behavior is working.
+Teams can now adopt Scoria through a boring, executable Phoenix-first path instead of relying on maintainer lore around package surface, install steps, or verification order.
 
 ## Active Milestone
 
-### v2.2 OSS adopter onramp
-
-**Status:** active
-**Priority:** highest
-**Theme:** Make the default Phoenix adoption path publishable, consumer-proven, and support-truthful
-
-**What this step should deliver**
-
-- a real local docs-build lane and publish-facing package truth
-- a default-lane installer contract that is truthful about copied migrations, runtime defaults, and optional Tailwind behavior
-- a canonical consumer-app proof path for dependency -> install -> migrate -> runtime -> operator inspection
-- one lane-based support story that clearly separates default runtime, bounded handoff, semantic fast path, and optional knowledge adoption
-
-**Why now**
-
-The repo is already feature-strong. The highest-value next step is making package, install, and proof surfaces boring for a real Phoenix adopter before Scoria opens more adjacent capability work.
-
-**Non-goals**
-
-- package splitting into multiple Hex libraries
-- hosted demo or managed onboarding surfaces
-- external semantic-cache backends or ANN tuning controls
-- broader handoff-example expansion unless support evidence later demands it
+No active milestone. Start the next one through `$gsd-new-milestone`.
 
 ## Recommended Candidates
 
@@ -129,7 +106,7 @@ The repo is already feature-strong. The highest-value next step is making packag
 
 **Why it is next**
 
-This remains contingent on real support evidence. It is a narrow follow-up only after the default OSS onramp is finished and truthful.
+This remains contingent on real support evidence. It is the highest-leverage next candidate only if the shipped OSS onramp still leaves Phoenix teams confused about when to adopt bounded handoffs or adjacent lanes.
 
 ### 2. External semantic cache backends and advanced tuning
 
@@ -148,13 +125,13 @@ These are natural extensions of `v2.1`, but they widen scope and should wait unt
 
 ## Recommendation
 
-`v2.2 OSS adopter onramp` is the correct active milestone after `v2.1`. Scoria should close publishability, install-contract truth, consumer proof, and support-truth alignment before reopening broader capability expansion.
+Do not auto-open a new milestone from leftover `v2.2` momentum. Start the next milestone only after choosing between a support-evidence-driven adoption-example follow-up and later semantic infrastructure expansion; the current recommendation is the adoption-example path if real user confusion appears.
 
 ## Source Notes
 
 These priorities were informed by:
 
-- current repo state as of 2026-05-25
+- current repo state as of 2026-05-26
 - `.planning/PROJECT.md`
 - `.planning/STATE.md`
 - `.planning/research/SUMMARY.md`
