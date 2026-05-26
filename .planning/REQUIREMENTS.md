@@ -37,13 +37,13 @@
 
 ### Host-App Install Contract
 
-- [ ] **INST-01**: A Phoenix host app can run `mix scoria.install` once to mount the dashboard, copy core migrations, and inject baseline runtime defaults without duplicate or misleading mutations.
-- [ ] **INST-02**: The default Phoenix lane installs cleanly when Tailwind or optional knowledge surfaces are absent, and the installer states the skipped or optional steps explicitly.
+- [x] **INST-01**: A Phoenix host app can run `mix scoria.install` once to mount the dashboard, copy core migrations, and inject baseline runtime defaults without duplicate or misleading mutations.
+- [x] **INST-02**: The default Phoenix lane installs cleanly when Tailwind or optional knowledge surfaces are absent, and the installer states the skipped or optional steps explicitly.
 
 ### Consumer-App Proof
 
-- [ ] **PROOF-01**: A fresh Phoenix consumer app or equivalent host-app harness can prove dependency fetch, install, migration, and `/scoria` route visibility through the public adoption path.
-- [ ] **PROOF-02**: That same consumer proof path can start one durable run through `Scoria.start_run/2`, read it back through the public runtime facade, and inspect operator evidence without enabling optional knowledge or semantic lanes.
+- [x] **PROOF-01**: A fresh Phoenix consumer app or equivalent host-app harness can prove dependency fetch, install, migration, and `/scoria` route visibility through the public adoption path.
+- [x] **PROOF-02**: That same consumer proof path can start one durable run through `Scoria.start_run/2`, read it back through the public runtime facade, and inspect operator evidence without enabling optional knowledge or semantic lanes.
 
 ### Support-Truth Alignment
 
@@ -75,14 +75,14 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ADPT-03 | Phase 47 | Complete |
-| ADPT-04 | Phase 47 | Complete |
-| INST-01 | Phase 48 | Pending |
-| INST-02 | Phase 48 | Pending |
-| PROOF-01 | Phase 48 | Pending |
-| PROOF-02 | Phase 48 | Pending |
-| DOCS-01 | Phase 49 | Pending |
-| DOCS-02 | Phase 49 | Pending |
+| ADPT-03 | Phase 50 | Complete |
+| ADPT-04 | Phase 50 | Complete |
+| INST-01 | Phase 48 | Complete |
+| INST-02 | Phase 48 | Complete |
+| PROOF-01 | Phase 48 | Complete |
+| PROOF-02 | Phase 48 | Complete |
+| DOCS-01 | Phase 51 | Pending |
+| DOCS-02 | Phase 51 | Pending |
 
 **Coverage:**
 - v2.2 requirements: 8 total
@@ -91,4 +91,4 @@
 
 ---
 *Requirements defined: 2026-05-25*
-*Last updated: 2026-05-25 after starting v2.2 OSS adopter onramp*
+*Last updated: 2026-05-26 after Phase 47 verification backfill and Phase 50 bookkeeping repair*
