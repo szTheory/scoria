@@ -9,8 +9,10 @@
 ## Phases
 
 - [x] **Phase 47: Release packaging and docs truth** - Make the package surface publishable and locally provable before the first public Hex release.
-- [ ] **Phase 48: Host-app install contract and consumer proof** - Prove that a fresh Phoenix app can adopt the default lane through the public install and runtime path.
+- [x] **Phase 48: Host-app install contract and consumer proof** - Prove that a fresh Phoenix app can adopt the default lane through the public install and runtime path.
 - [ ] **Phase 49: Support truth and adoption closeout** - Align docs, task output, and verification lanes to the shipped adoption order and close the milestone with bounded proof.
+- [ ] **Phase 50: Release-preview CI truth and Phase 47 verification** - Restore a truthful CI-safe release-preview lane and close the missing Phase 47 verification gap.
+- [ ] **Phase 51: Default-lane verifier hardening and support-truth re-closeout** - Make the canonical adoption verifier bounded and green again, then re-close Phase 49 with executable proof.
 
 ## Phase Details
 
@@ -57,13 +59,42 @@
 - [ ] `49-02-PLAN.md` — Tighten lane-specific denial and fallback wording for bounded handoff, semantic fast path, and optional knowledge surfaces.
 - [ ] `49-03-PLAN.md` — Finalize milestone closeout verification and support-truth checks around the shipped adoption story.
 
+### Phase 50: Release-preview CI truth and Phase 47 verification
+**Goal**: Restore a truthful CI-safe release-preview lane and close the missing Phase 47 verification gap.
+**Depends on**: Phase 49
+**Requirements**: ADPT-03, ADPT-04
+**Gap Closure**: Closes v2.2 audit gaps for the broken `MIX_ENV=test mix scoria.release_preview` chain and missing Phase 47 verification evidence.
+**Success Criteria**:
+  1. `MIX_ENV=test mix scoria.release_preview` is either fully supported and green or the canonical closeout command is re-scoped so it no longer depends on dev-only tooling.
+  2. The package/docs truth lane fails for real regressions instead of environment wiring drift.
+  3. `47-VERIFICATION.md` exists and shows bounded proof for ADPT-03 and ADPT-04 in the corrected closeout lane.
+  4. Milestone bookkeeping reflects the repaired verification state instead of stale summary-only completion.
+**Plans**: 3 plans
+- [ ] `50-01-PLAN.md` — Re-scope the release-preview CI step to the supported env and lock the maintainer command contract.
+- [ ] `50-02-PLAN.md` — Re-run the bounded package/docs proofs and write `47-VERIFICATION.md`.
+- [ ] `50-03-PLAN.md` — Repair requirements and roadmap bookkeeping for the now-verified packaging/docs phase.
+
+### Phase 51: Default-lane verifier hardening and support-truth re-closeout
+**Goal**: Make the canonical adoption verifier bounded and green again, then re-close Phase 49 with executable proof.
+**Depends on**: Phase 50
+**Requirements**: DOCS-01, DOCS-02
+**Gap Closure**: Closes v2.2 audit gaps for the timed-out `MIX_ENV=test mix test.adoption` chain, support-truth drift, and missing Phase 49 verification evidence.
+**Success Criteria**:
+  1. The canonical default-lane verifier completes within its published timeout budget in the repo's supported test environment.
+  2. Generated-host proof coverage remains functionally intact inside the advertised adoption command, not only in isolated runs.
+  3. README, installer output, and verification guides name the same canonical commands and prerequisite boundaries after the verifier is stabilized.
+  4. `49-VERIFICATION.md` exists and closes DOCS-01 and DOCS-02 with executable proof.
+**Plans**: 0 plans
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 47. Release packaging and docs truth | 3/3 | Complete | 2026-05-25 |
-| 48. Host-app install contract and consumer proof | 0/4 | Pending | — |
+| 48. Host-app install contract and consumer proof | 4/4 | Complete | 2026-05-25 |
 | 49. Support truth and adoption closeout | 0/3 | Pending | — |
+| 50. Release-preview CI truth and Phase 47 verification | 2/3 | In Progress | — |
+| 51. Default-lane verifier hardening and support-truth re-closeout | 0/0 | Pending | — |
 
 ## Milestone Summary
 
@@ -78,6 +109,8 @@
 
 - The installer contract is closer to truthful, but Scoria still needs fresh-host consumer proof instead of only repo-internal confidence.
 - Docs, verification guides, and task output must converge on one lane-based support story before the first public Hex release.
+- The release-preview closeout lane must become CI-safe and re-establish Phase 47 verification instead of relying on summary-only completion.
+- The canonical adoption verifier must be bounded enough to stay green in the default test lane before support-truth can be archived.
 
 ### Deferred Work
 
