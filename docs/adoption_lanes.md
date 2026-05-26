@@ -40,6 +40,8 @@ mix test.adoption
 
 If you are not sure where to start, start here.
 
+This default lane is the first-adoption proof. You do not need pgvector, retrieval, grounding, semantic-fast-path setup, or knowledge verification before this lane is valid.
+
 ### 2. Bounded handoff lane
 
 Add this only after the default runtime lane is already working.
@@ -60,6 +62,8 @@ Key rule:
 - broad runtime-state keys such as `transcript`, `messages`, `provider_session`, `session`, and `secrets` are rejected explicitly
 
 Use this for review, critique, classification, or bounded specialist work. Do not use it to build a broad autonomous multi-agent platform by default.
+
+Validate the base runtime lane with `mix test.adoption` before you intentionally expand into `Scoria.start_handoff_run/3`.
 
 ### 3. Semantic fast-path lane
 
@@ -91,6 +95,8 @@ SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_
 
 Use this lane when latency and cost matter, but only if you can keep the work safe, tenant-scoped, and operator-visible.
 
+Semantic fast path is optional troubleshooting, not a prerequisite for first adoption.
+
 ### 4. Optional knowledge lane
 
 Add this only when you are intentionally validating retrieval, citations, and grounding.
@@ -105,10 +111,10 @@ Proof lane:
 
 ```bash
 mix scoria.pgvector.bootstrap
-mix scoria.test.knowledge
+mix test.knowledge
 ```
 
-This lane is explicitly optional. It is not required to prove the core runtime, handoff, or semantic fast-path adoption story.
+This lane is explicitly optional. It is not required to prove the core runtime, handoff, or semantic fast-path adoption story, and it is not a prerequisite for first adoption.
 
 ## A Good Default Order
 

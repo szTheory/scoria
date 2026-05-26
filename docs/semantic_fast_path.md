@@ -104,7 +104,7 @@ Use the bounded semantic proof lane when validating this feature:
 SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 ```
 
-This is the canonical `v2.1` troubleshooting lane. Use `mix test.adoption` for the broader public runtime adoption story, and use `mix scoria.test.knowledge` only when you are intentionally validating the optional knowledge lane.
+This is the canonical `v2.1` troubleshooting lane. Use `mix test.adoption` for the broader public runtime adoption story, and use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
 
 ## What this lane intentionally does not include
 

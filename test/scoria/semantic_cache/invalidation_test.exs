@@ -7,8 +7,13 @@ defmodule Scoria.SemanticCache.InvalidationTest do
   alias Scoria.SemanticCache
   alias Scoria.SemanticCache.Compatibility
   alias Scoria.SemanticCache.Entry
+  alias Scoria.TestSupport.Migrations
 
   setup do
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Scoria.Repo, fn ->
+      Migrations.migrate_knowledge!()
+    end)
+
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
     :ok

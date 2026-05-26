@@ -47,8 +47,8 @@
 
 ### Support-Truth Alignment
 
-- [ ] **DOCS-01**: README, operator verification, and installer output describe the same lane ordering and prerequisite boundaries for default, bounded-handoff, semantic fast-path, and optional knowledge surfaces.
-- [ ] **DOCS-02**: Scoria names one canonical verification command per lane and documents denial or fallback behavior when optional prerequisites are missing.
+- [x] **DOCS-01**: README, operator verification, and installer output describe the same lane ordering and prerequisite boundaries for default, bounded-handoff, semantic fast-path, and optional knowledge surfaces.
+- [x] **DOCS-02**: Scoria names one canonical verification command per lane and documents denial or fallback behavior when optional prerequisites are missing.
 
 ## Future Requirements
 
@@ -81,8 +81,8 @@
 | INST-02 | Phase 48 | Complete |
 | PROOF-01 | Phase 48 | Complete |
 | PROOF-02 | Phase 48 | Complete |
-| DOCS-01 | Phase 51 | Pending |
-| DOCS-02 | Phase 51 | Pending |
+| DOCS-01 | Phase 51 | Complete |
+| DOCS-02 | Phase 51 | Complete |
 
 **Coverage:**
 - v2.2 requirements: 8 total
@@ -91,4 +91,4 @@
 
 ---
 *Requirements defined: 2026-05-25*
-*Last updated: 2026-05-26 after Phase 47 verification backfill and Phase 50 bookkeeping repair*
+*Last updated: 2026-05-26 after Phase 49 re-closeout and Phase 51 execution*

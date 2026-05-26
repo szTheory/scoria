@@ -10,9 +10,9 @@
 
 - [x] **Phase 47: Release packaging and docs truth** - Make the package surface publishable and locally provable before the first public Hex release.
 - [x] **Phase 48: Host-app install contract and consumer proof** - Prove that a fresh Phoenix app can adopt the default lane through the public install and runtime path.
-- [ ] **Phase 49: Support truth and adoption closeout** - Align docs, task output, and verification lanes to the shipped adoption order and close the milestone with bounded proof.
-- [ ] **Phase 50: Release-preview CI truth and Phase 47 verification** - Restore a truthful CI-safe release-preview lane and close the missing Phase 47 verification gap.
-- [ ] **Phase 51: Default-lane verifier hardening and support-truth re-closeout** - Make the canonical adoption verifier bounded and green again, then re-close Phase 49 with executable proof.
+- [x] **Phase 49: Support truth and adoption closeout** - Align docs, task output, and verification lanes to the shipped adoption order and close the milestone with bounded proof. (completed 2026-05-26)
+- [x] **Phase 50: Release-preview CI truth and Phase 47 verification** - Restore a truthful CI-safe release-preview lane and close the missing Phase 47 verification gap. (completed 2026-05-26)
+- [x] **Phase 51: Default-lane verifier hardening and support-truth re-closeout** - Make the canonical adoption verifier bounded and green again, then re-close Phase 49 with executable proof. (completed 2026-05-26)
 
 ## Phase Details
 
@@ -55,9 +55,9 @@
   3. Missing optional prerequisites produce truthful denial or fallback guidance instead of silent failure or vague maintainer lore.
   4. The milestone closes on a bounded proof chain that points support questions at real green lanes.
 **Plans**: 3 plans
-- [ ] `49-01-PLAN.md` — Reconcile README, verification guides, and installer messaging around one default-lane adoption order.
-- [ ] `49-02-PLAN.md` — Tighten lane-specific denial and fallback wording for bounded handoff, semantic fast path, and optional knowledge surfaces.
-- [ ] `49-03-PLAN.md` — Finalize milestone closeout verification and support-truth checks around the shipped adoption story.
+- [x] `49-01-PLAN.md` — Reconcile README, verification guides, and installer messaging around one default-lane adoption order.
+- [x] `49-02-PLAN.md` — Tighten lane-specific denial and fallback wording for bounded handoff, semantic fast path, and optional knowledge surfaces.
+- [x] `49-03-PLAN.md` — Finalize milestone closeout verification and support-truth checks around the shipped adoption story.
 
 ### Phase 50: Release-preview CI truth and Phase 47 verification
 **Goal**: Restore a truthful CI-safe release-preview lane and close the missing Phase 47 verification gap.
@@ -84,7 +84,10 @@
   2. Generated-host proof coverage remains functionally intact inside the advertised adoption command, not only in isolated runs.
   3. README, installer output, and verification guides name the same canonical commands and prerequisite boundaries after the verifier is stabilized.
   4. `49-VERIFICATION.md` exists and closes DOCS-01 and DOCS-02 with executable proof.
-**Plans**: 0 plans
+**Plans**: 3 plans
+- [x] `51-01-PLAN.md` — Harden `mix test.adoption` with a scoped host-proof timeout and lower duplicate fresh-host harness cost without changing the public verifier.
+- [x] `51-02-PLAN.md` — Re-align README, operator verification, and installer output to the repaired default-lane verifier contract.
+- [x] `51-03-PLAN.md` — Re-run the bounded closeout chain and write `.planning/phases/49-support-truth-and-adoption-closeout/49-VERIFICATION.md`.
 
 ## Progress
 
@@ -92,9 +95,9 @@
 |-------|----------------|--------|-----------|
 | 47. Release packaging and docs truth | 3/3 | Complete | 2026-05-25 |
 | 48. Host-app install contract and consumer proof | 4/4 | Complete | 2026-05-25 |
-| 49. Support truth and adoption closeout | 0/3 | Pending | — |
-| 50. Release-preview CI truth and Phase 47 verification | 2/3 | In Progress | — |
-| 51. Default-lane verifier hardening and support-truth re-closeout | 0/0 | Pending | — |
+| 49. Support truth and adoption closeout | 3/3 | Complete | 2026-05-26 |
+| 50. Release-preview CI truth and Phase 47 verification | 3/3 | Complete    | 2026-05-26 |
+| 51. Default-lane verifier hardening and support-truth re-closeout | 3/3 | Complete | 2026-05-26 |
 
 ## Milestone Summary
 

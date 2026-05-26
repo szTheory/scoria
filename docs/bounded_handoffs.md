@@ -2,7 +2,7 @@
 
 This guide documents the narrow public delegation lane for Scoria. Use it when your Phoenix app needs one role to hand a bounded slice of work to another role without turning Scoria into a general-purpose agent platform.
 
-Start with the normal runtime lane first: `identity -> start -> inspect -> resume`. Bounded handoffs extend that same runtime-first story instead of creating a second quickstart.
+Start with the normal runtime lane first: `identity -> start -> inspect -> resume`. Validate that base lane with `mix test.adoption`, then add bounded handoffs only when you intentionally need same-run delegation. Bounded handoffs extend that same runtime-first story instead of creating a second quickstart or a separate verifier lane.
 
 ## What this lane does
 

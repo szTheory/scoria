@@ -343,17 +343,17 @@ run!(
 |---|-------|---------|---------------|
 | A1 | `180_000ms` is a reasonable starting scoped timeout budget to plan around before final measurement on the repaired harness. [ASSUMED] | Architecture Patterns | Low-to-medium: the exact number may need adjustment after batching or env normalization, but the planner still needs to reserve “minutes, not 60s.” |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What exact env string should Phase 51 publish for the repaired non-trace `mix test.adoption` rerun?**
-   - What we know: the default-lane harness and config still default to `5432`, while semantic-lane materials and recent milestone proof use `55432`. [VERIFIED: config/test.exs; test/support/scoria/host_app_proof/runner.ex; lib/mix/tasks/scoria.install.ex; docs/semantic_fast_path.md; .planning/STATE.md]
-   - What's unclear: whether the repaired canonical verifier should be recompiled/rerun against `5432`, explicitly moved to `55432`, or documented as env-sensitive with one verified command line in `49-VERIFICATION.md`. [VERIFIED: local run 2026-05-26]
-   - Recommendation: make this a Wave 0 execution decision and record the exact passing command in `49-VERIFICATION.md`; do not leave it implicit. [VERIFIED: .planning/v2.2-MILESTONE-AUDIT.md:136-142]
+   - Resolved planning answer: the target published default-lane verifier remains plain `MIX_ENV=test mix test.adoption`, with the host harness continuing to default to `localhost:5432`, `postgres`, and `postgres` unless execution proves the canonical lane truly needs additional DB env. [VERIFIED: config/test.exs; test/support/scoria/host_app_proof/runner.ex; lib/mix/tasks/scoria.install.ex]
+   - Execution rule: if the repaired verifier only passes with extra DB env such as `SCORIA_DB_PORT=55432` or explicit password overrides, that exact command line must be recorded verbatim in `49-VERIFICATION.md` and treated as support truth rather than hidden local state. [VERIFIED: .planning/v2.2-MILESTONE-AUDIT.md:136-142; .planning/phases/51-default-lane-verifier-hardening-and-support-truth-re-closeout/51-CONTEXT.md]
+   - Planning consequence: Plan 51-03 should rerun the closeout chain starting from `MIX_ENV=test mix test.adoption`, then record any proven deviations explicitly in the verification artifact instead of widening README or installer guidance speculatively. [VERIFIED: .planning/phases/51-default-lane-verifier-hardening-and-support-truth-re-closeout/51-CONTEXT.md]
 
 2. **How far should batching go inside the host runner?**
-   - What we know: the main duplication seam is multiple host `System.cmd("mix", ...)` calls, especially separate smoke invocations after host compile/setup. [VERIFIED: test/support/scoria/host_app_proof/runner.ex; local run 2026-05-26]
-   - What's unclear: whether the best first cut is only “combine route/runtime smoke” or a larger `mix do ...` host command while still preserving explicit proof logging. [VERIFIED: test/support/scoria/host_app_proof/runner.ex]
-   - Recommendation: start with the smallest structural win that keeps step visibility intact, then remeasure before considering pristine-skeleton caching. [VERIFIED: .planning/phases/51-default-lane-verifier-hardening-and-support-truth-re-closeout/51-CONTEXT.md]
+   - Resolved planning answer: the first batching cut should stop at combining the two host smoke files into one host-side `mix test ... --trace` invocation while leaving `deps.get`, `scoria.install`, `ecto.create`, and `ecto.migrate` as explicit separate proof steps. [VERIFIED: test/support/scoria/host_app_proof/runner.ex; .planning/phases/51-default-lane-verifier-hardening-and-support-truth-re-closeout/51-CONTEXT.md]
+   - Reason: this removes the clearest duplicate Mix boot without hiding the public proof sequence or weakening the fresh-host claim. Larger batching such as `mix do ...` across install/create/migrate is intentionally deferred until measurements prove the smaller change is insufficient. [VERIFIED: test/support/scoria/host_app_proof/runner.ex; local run 2026-05-26]
+   - Planning consequence: Plan 51-01 should preserve step visibility in returned proof data, keep the host fresh for every run, and treat pristine-skeleton caching as a later optimization only if this smaller batching win is not enough. [VERIFIED: .planning/phases/51-default-lane-verifier-hardening-and-support-truth-re-closeout/51-CONTEXT.md]
 
 ## Environment Availability
 

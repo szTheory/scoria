@@ -2,13 +2,20 @@ defmodule Scoria.MixProject do
   use Mix.Project
 
   def project do
+    version = "0.1.0"
+
     [
       app: :scoria,
-      version: "0.1.0",
+      version: version,
+      description: description(),
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: docs(version),
+      package: package(),
+      source_url: "https://github.com/szTheory/scoria",
+      homepage_url: "https://github.com/szTheory/scoria"
     ]
   end
 
@@ -58,8 +65,50 @@ defmodule Scoria.MixProject do
       {:req, "~> 0.5"},
       {:req_llm, "~> 1.11"},
       {:tiktoken, "~> 0.4.2"},
+      {:ex_doc, "~> 0.38", only: :dev, runtime: false},
       {:floki, ">= 0.30.0", only: :test},
       {:lazy_html, ">= 0.1.0", only: :test}
+    ]
+  end
+
+  defp description do
+    "Phoenix-native AI runtime and operator surface for durable runs, approvals, replay, evaluation, and bounded semantic reuse."
+  end
+
+  defp docs(version) do
+    [
+      main: "readme",
+      source_ref: "v#{version}",
+      extras: [
+        "README.md",
+        "docs/adoption_lanes.md",
+        "docs/phoenix_runtime_example.md",
+        "docs/bounded_handoffs.md",
+        "docs/semantic_fast_path.md",
+        "docs/operator_verification.md"
+      ]
+    ]
+  end
+
+  defp package do
+    [
+      files: [
+        "lib",
+        "priv",
+        "mix.exs",
+        ".formatter.exs",
+        "README.md",
+        "LICENSE",
+        "docs/adoption_lanes.md",
+        "docs/phoenix_runtime_example.md",
+        "docs/bounded_handoffs.md",
+        "docs/semantic_fast_path.md",
+        "docs/operator_verification.md"
+      ],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/szTheory/scoria"
+      }
     ]
   end
 end

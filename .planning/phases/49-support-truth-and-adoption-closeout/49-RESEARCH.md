@@ -309,17 +309,15 @@ end
 
 All claims in this research were verified or cited — no user confirmation needed. [VERIFIED: codebase grep] [CITED: https://hexdocs.pm/mix/main/Mix.Project.html]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should public docs mention compatibility aliases explicitly?**
+1. **RESOLVED: Should public docs mention compatibility aliases explicitly?**
    - What we know: Both `test.knowledge` and `scoria.test.knowledge` resolve today, and the locked context allows either documenting or omitting the alias. [VERIFIED: codebase grep]
-   - What's unclear: Whether explicit alias mention helps existing maintainers more than it harms first-adopter clarity. [VERIFIED: codebase grep]
-   - Recommendation: Keep public prose on canonical names only and mention aliases, if at all, in maintainer-focused notes or changelog-style copy. [VERIFIED: codebase grep]
+   - Resolution: Keep public prose on canonical names only and mention aliases, if at all, in maintainer-focused notes or changelog-style copy. [VERIFIED: codebase grep]
 
-2. **Should the installer heading stay `Optional later lanes`?**
+2. **RESOLVED: Should the installer heading stay `Optional later lanes`?**
    - What we know: The heading already encodes the intended additive posture, and the locked context allows a small retitle only if clarity improves. [VERIFIED: codebase grep]
-   - What's unclear: Whether “later” is sufficiently explicit about “not required for first adoption.” [VERIFIED: codebase grep]
-   - Recommendation: Keep the heading unless adjacent summary copy is too cramped; spend change budget on command ordering and prerequisite language first. [VERIFIED: codebase grep]
+   - Resolution: Keep the heading unless adjacent summary copy is too cramped; spend change budget on command ordering and prerequisite language first. [VERIFIED: codebase grep]
 
 ## Environment Availability
 

@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Scoria.Test.Knowledge do
   use Mix.Task
 
-  @shortdoc "Runs the explicit knowledge/full verification lane"
+  @shortdoc "Runs the canonical optional knowledge verification lane"
 
   @impl Mix.Task
   def run(args) do
@@ -23,7 +23,7 @@ end
 defmodule Mix.Tasks.Test.Knowledge do
   use Mix.Task
 
-  @shortdoc "Compatibility wrapper for the explicit Scoria knowledge verification lane"
+  @shortdoc "Compatibility wrapper for the canonical optional knowledge verification lane"
 
   @impl Mix.Task
   def run(args), do: Mix.Tasks.Scoria.Test.Knowledge.run(args)

@@ -6,6 +6,7 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
   alias Scoria.SemanticCache.Compatibility
   alias Scoria.SemanticCache
   alias Scoria.SemanticCache.Entry
+  alias Scoria.TestSupport.Migrations
   alias Scoria.Workflows
 
   defmodule AccountFaqLane do
@@ -39,6 +40,10 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
   end
 
   setup do
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Scoria.Repo, fn ->
+      Migrations.migrate_knowledge!()
+    end)
+
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
     start_supervised!(Scoria.Workflows.Reconciler)

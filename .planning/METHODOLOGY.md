@@ -24,16 +24,16 @@ Only interrupt the user when a decision changes one of these:
 **Diagnoses:** Premature questioning before Scoria has exhausted repo context, prompt-corpus guidance, established ecosystem conventions, and obvious prior-art comparisons.
 
 **Recommends:** Before asking the user to choose among implementation directions:
-- read the relevant phase artifacts, prior CONTEXT/RESEARCH files, and prompt-corpus materials under `prompts/` when they shape product posture or DX
+- read the relevant phase artifacts, prior CONTEXT/RESEARCH files, `.planning/research/*`, and relevant `prompts/*` materials when they shape product posture or DX
 - inspect current code and task surfaces to see whether the repo already implies a preferred answer
 - compare serious alternatives against idiomatic Phoenix/Plug/Ecto/LiveView library conventions and strong adjacent OSS prior art
-- return one cohesive recommendation set, not a menu, unless there is no clear winner after research
+- recommend one cohesive answer by default, not a menu, unless there is no clear winner after research
 
-Only escalate after this research pass, and then only for decisions that materially affect:
+Escalate only when there is still no clear winner after this research pass, and the decision materially affects:
 - product shape
-- security or approval boundary
-- durable truth or migration contract
+- security or policy boundary
+- durable truth
 - tenant blast radius
-- externally visible operator or adopter workflow in a way that has no clear superior default
+- externally visible operator or adopter workflow in a meaningfully different way
 
 **Apply when:** Discussing or planning phase gray areas, especially docs/support truth, public command naming, installer behavior, verification lanes, and other adopter-facing seams where least surprise and ecosystem coherence matter more than preserving every historical option.

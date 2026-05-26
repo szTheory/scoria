@@ -26,6 +26,7 @@ defmodule Mix.Tasks.Scoria.Test.SemanticFastPathTest do
     assert "test/scoria_web/components/semantic_evidence_notebook_component_test.exs" in expected_files
     assert "test/scoria_web/live/workflow_live_test.exs" in expected_files
     refute "test/scoria/adoption_surface_test.exs" in expected_files
+    refute "test/scoria/host_app_consumer_proof_test.exs" in expected_files
     assert Mix.Task.get("scoria.test.semantic_fast_path")
     assert Mix.Task.get("test.semantic_fast_path")
   end

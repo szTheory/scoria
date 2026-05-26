@@ -35,6 +35,8 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "mix test.adoption"
     assert content =~ "SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path"
     assert content =~ "mix test.knowledge"
+    assert content =~ "local proof-only timeout"
+    assert content =~ "suite-wide timeout changes"
     assert content =~ "broader repo-health context"
     assert content =~ "Optional knowledge lane"
     assert content =~ "docs/adoption_lanes.md"
@@ -160,6 +162,8 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "SCORIA_DB_PORT=55432"
     assert content =~ "canonical default-lane verifier"
     assert content =~ "fresh-host install/migrate/route/runtime smoke"
+    assert content =~ "local proof-only timeout"
+    assert content =~ "suite-wide timeout change"
     assert content =~ "canonical `v2.1` troubleshooting lane"
     assert content =~ "broader repo-health context"
     assert content =~ "Scoria.start_run"
@@ -168,6 +172,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "/scoria/workflows/:run_id"
     assert content =~ "Optional knowledge lane"
     assert content =~ "repository closeout, the canonical proof chain is exactly"
+    assert content =~ "mix scoria.release_preview\nmix test.adoption"
     assert content =~ "CI should run this lane in `MIX_ENV=dev` because ExDoc stays a dev-only tool"
     assert content =~
              "You do not need pgvector, knowledge tables, retrieval, grounding, semantic-fast-path setup, or `mix test.knowledge` to prove the core lane."
@@ -181,6 +186,22 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "invalidated"
     assert content =~ "writeback_rejected"
     refute content =~ "MIX_ENV=test mix scoria.release_preview"
+    refute Regex.match?(
+             ~r/mix scoria\.release_preview\s+mix test\.semantic_fast_path/,
+             content
+           )
+
+    refute Regex.match?(
+             ~r/mix scoria\.release_preview\s+mix test\.knowledge/,
+             content
+           )
+
+    refute Regex.match?(
+             ~r/mix scoria\.release_preview\s+mix test\s*\n(?!\.adoption)/,
+             content
+           )
+
+    refute Regex.match?(~r/```bash\s+mix test\.adoption --trace\s+```/, content)
     refute content =~ "mix scoria.test.knowledge"
     refute content =~ "pgvector, retrieval, or semantic caching before Scoria is usable"
   end

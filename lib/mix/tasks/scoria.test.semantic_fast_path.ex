@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Scoria.Test.SemanticFastPath do
   use Mix.Task
 
+  alias Scoria.TestSupport.Migrations
+
   @shortdoc "Runs the semantic fast-path verification lane"
   @semantic_fast_path_test_files [
     "test/scoria/runtime/semantic_fast_path_test.exs",
@@ -18,6 +20,8 @@ defmodule Mix.Tasks.Scoria.Test.SemanticFastPath do
   @impl Mix.Task
   def run(args) do
     Mix.Task.run("loadpaths")
+    Mix.Task.run("app.start")
+    Migrations.migrate_knowledge!()
     Mix.Task.reenable("test")
     Mix.Task.run("test", args ++ @semantic_fast_path_test_files)
   end

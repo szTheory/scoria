@@ -73,13 +73,14 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     assert output =~ "Skipped intentionally:"
     assert output =~ "Tailwind content injection installed."
     assert output =~ "Optional later lanes:"
+    assert output =~ "Default lane verifier: mix test.adoption"
     assert output =~ "mix test.adoption"
 
     assert output =~
-             ~s(SCORIA_DB_PORT="${SCORIA_DB_PORT:-5432}" SCORIA_DB_PASSWORD="${SCORIA_DB_PASSWORD:-postgres}" MIX_ENV=test mix test.semantic_fast_path)
+             "SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path"
 
     assert output =~ "mix scoria.pgvector.bootstrap"
-    assert output =~ "mix scoria.test.knowledge"
+    assert output =~ "mix test.knowledge"
   end
 
   test "mix scoria.install reruns without duplicate mutations and reports already-present state", %{
@@ -143,7 +144,8 @@ defmodule Mix.Tasks.Scoria.InstallTest do
       |> Enum.map(&Path.basename/1)
 
     assert "20260510015813_create_ai_observability_tables.exs" in copied_migrations
-    assert "20260525090000_add_semantic_cache_compatibility_fields.exs" in copied_migrations
+    refute "20260525070000_create_semantic_cache_tables.exs" in copied_migrations
+    refute "20260525090000_add_semantic_cache_compatibility_fields.exs" in copied_migrations
     assert length(copied_migrations) == length(Enum.uniq(copied_migrations))
   end
 

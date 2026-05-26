@@ -4,6 +4,10 @@ defmodule Mix.Tasks.Scoria.Install do
   @shortdoc "Installs the Scoria dashboard, core migrations, and workflow routes into a Phoenix application"
   @tailwind_glob "../deps/scoria/lib/**/*.*ex"
   @source_core_migrations Application.app_dir(:scoria, "priv/repo/migrations")
+  @optional_lane_migration_basenames MapSet.new([
+                                     "20260525070000_create_semantic_cache_tables.exs",
+                                     "20260525090000_add_semantic_cache_compatibility_fields.exs"
+                                   ])
   @runtime_config_snippet """
 
   config :scoria, Scoria.Runtime,
@@ -15,9 +19,9 @@ defmodule Mix.Tasks.Scoria.Install do
   """
   @optional_later_lanes [
     "mix test.adoption",
-    ~s(SCORIA_DB_PORT="${SCORIA_DB_PORT:-5432}" SCORIA_DB_PASSWORD="${SCORIA_DB_PASSWORD:-postgres}" MIX_ENV=test mix test.semantic_fast_path),
+    "SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path",
     "mix scoria.pgvector.bootstrap",
-    "mix scoria.test.knowledge"
+    "mix test.knowledge"
   ]
 
   def run(_args) do
@@ -126,6 +130,7 @@ defmodule Mix.Tasks.Scoria.Install do
       @source_core_migrations
       |> Path.join("*.exs")
       |> Path.wildcard()
+      |> Enum.reject(&(Path.basename(&1) in @optional_lane_migration_basenames))
       |> Enum.reduce(false, fn source_path, copied? ->
         destination_path = Path.join(destination_dir, Path.basename(source_path))
 
@@ -194,6 +199,7 @@ defmodule Mix.Tasks.Scoria.Install do
 
   defp print_summary(statuses) do
     Mix.shell().info("Scoria installed for the default Phoenix lane.")
+    Mix.shell().info("Default lane verifier: mix test.adoption")
     Mix.shell().info("")
     Mix.shell().info("Installed:")
 

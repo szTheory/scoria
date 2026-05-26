@@ -41,12 +41,12 @@ Docs:
 
 ## Install
 
-Add it as a GitHub dependency for now:
+Scoria now carries Hex-ready package metadata, but until the first Hex publish lands you should install from a tagged GitHub release:
 
 ```elixir
 def deps do
   [
-    {:scoria, github: "szTheory/scoria"}
+    {:scoria, github: "szTheory/scoria", tag: "v0.1.0"}
   ]
 end
 ```
@@ -57,7 +57,14 @@ Then mount the dashboard in your Phoenix router and run the install task:
 mix scoria.install
 ```
 
-That installs the default Phoenix lane. The operator dashboard mounts at `/scoria`.
+That installs the default Phoenix lane by:
+
+- mounting the operator dashboard at `/scoria`
+- copying Scoria's core Ecto migrations into `priv/repo/migrations`
+- injecting baseline runtime defaults into `config/runtime.exs` or `config/config.exs`
+- updating Tailwind content globs when a Tailwind config is present
+
+Tailwind is optional for the install task. If your host app uses a different asset pipeline, the default lane still installs cleanly.
 
 ## Quickstart
 
@@ -158,20 +165,23 @@ This keeps reuse tenant-partitioned, compatibility-aware, and operator-visible. 
 Default Phoenix lane:
 
 ```bash
+mix scoria.install
 mix ecto.migrate
-mix test
+mix test.adoption
 ```
 
-Then prove the core lane with one real run from your app, read it back through `Scoria.get_run/1` or `Scoria.list_runs_for_session/1`, and inspect `/scoria/workflows/:run_id` for operator evidence. The dedicated operator verification guide lives in [`docs/operator_verification.md`](docs/operator_verification.md).
+Then inspect `/scoria` and `/scoria/workflows/:run_id` for operator evidence from one real run in your app. Read it back through `Scoria.get_run/1` or `Scoria.list_runs_for_session/1`. The dedicated operator verification guide lives in [`docs/operator_verification.md`](docs/operator_verification.md).
+
+`mix test.adoption` is the canonical bounded verifier for the default lane. It carries the generated-host proof under a local proof-only timeout, so you do not need suite-wide timeout changes or a `--trace` variant to use it.
 
 Optional knowledge lane:
 
 ```bash
 mix scoria.pgvector.bootstrap
-mix scoria.test.knowledge
+mix test.knowledge
 ```
 
-The knowledge lane does not require `pgvector`, knowledge tables, retrieval, grounding, or `mix scoria.test.knowledge` to prove the core runtime, identity, approval, and operator-evidence path.
+The knowledge lane does not define first adoption. You do not need pgvector, knowledge tables, retrieval, grounding, semantic fast-path setup, or `mix test.knowledge` to prove the core runtime, identity, approval, and operator-evidence path.
 
 For the bounded semantic lane:
 
@@ -179,7 +189,9 @@ For the bounded semantic lane:
 SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 ```
 
-Use that lane only when you are intentionally validating `v2.1` semantic fast-path behavior.
+Use that lane only when you are intentionally validating `v2.1` semantic fast-path behavior. The task prepares the retrieval-backed knowledge tables it needs as part of the proof lane, so you do not need to run the full optional knowledge verification first.
+
+For broader repo-health context outside the canonical lane proofs, maintainers can still run `mix test`.
 
 ## Phoenix Example
 

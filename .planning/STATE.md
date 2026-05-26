@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: oss adopter onramp
-status: ready_to_plan
-last_updated: 2026-05-26T13:31:29.819Z
+status: ready_to_closeout
+last_updated: 2026-05-26T14:46:26Z
 last_activity: 2026-05-26
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 13
-  completed_plans: 25
-  percent: 60
-stopped_at: Phase 50 complete (3/3) — ready to discuss Phase 51
+  completed_phases: 5
+  total_plans: 16
+  completed_plans: 16
+  percent: 100
+stopped_at: Phase 51 verified — milestone v2.2 ready for closeout
 ---
 
 # Project State
@@ -20,25 +20,25 @@ stopped_at: Phase 50 complete (3/3) — ready to discuss Phase 51
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 51 — default lane verifier hardening and support truth re closeout
+**Current Focus:** Milestone `v2.2 OSS adopter onramp` — ready for closeout
 
 ## Current Position
 
-Phase: 50 (release-preview-ci-truth-and-phase-47-verification) — EXECUTING
-Plan: 1 of 3
+Phase: 51 (default-lane-verifier-hardening-and-support-truth-re-closeout) — VERIFIED
+Plan: 3 of 3
 **Milestone:** `v2.2 OSS adopter onramp`
 **Phase:** 51
-**Plan:** Not started
-**Status:** Ready to plan
+**Plan:** Complete
+**Status:** Ready for closeout
 **Last activity:** 2026-05-26
 
 **Progress:**
-[█████████░] 85%
+[██████████] 100%
 
 ## Performance Metrics
 
-- **Milestone Phases:** 3 planned
-- **Milestone Plans:** 3 completed
+- **Milestone Phases:** 5 planned
+- **Milestone Plans:** 16 completed
 - **Milestone Task Count:** 7 completed in Phase 47
 - **Coverage:** 8 active milestone requirements mapped
 - **Latest Shipped Milestone:** `v2.1 Tenant-scoped semantic fast path` on 2026-05-25
@@ -67,11 +67,11 @@ Plan: 1 of 3
 
 **Todos:**
 
-- Start `Phase 48` planning with `$gsd-plan-phase 48`.
+- None. Phase 51 verification and the milestone audit are now complete; the next workflow step is milestone closeout/archive.
 
 **Blockers:**
 
-- None. Phase 47 closed with `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test` (`386 tests, 0 failures`, second full-suite pass after one transient rerun), `mix scoria.release_preview`, `mix docs`, `mix hex.build --unpack --output tmp/scoria-hex-preview`, and the new targeted package/release-preview task tests all green on 2026-05-25.
+- None. `v2.2` now has canonical verification for Phases 47 through 51, `MIX_ENV=dev mix scoria.release_preview` is green, and `MIX_ENV=test mix test.adoption` passed with `3 doctests, 42 tests, 0 failures` on 2026-05-26.
 
 ## Deferred Items
 
