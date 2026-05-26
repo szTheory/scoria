@@ -6,13 +6,13 @@ This guide is the default Phoenix verification lane for Scoria's public runtime 
 
 You have proven the default lane when all of these are true:
 
-- `mix scoria.install` has wired the dashboard and baseline runtime defaults
-- `mix ecto.migrate` and `mix test` pass for the host app
+- `mix scoria.install` has wired the dashboard, copied core migrations, and set baseline runtime defaults
+- `mix ecto.migrate` and `mix test.adoption` pass for the host app
 - one real run starts through `Scoria.start_run/2`
 - that same run can be read back through `Scoria.get_run/1` or found via `list_runs_for_session/1`
 - `/scoria/workflows/:run_id` shows operator evidence for that exact run
 
-You do not need pgvector, knowledge tables, retrieval, grounding, or `mix scoria.test.knowledge` to prove the core lane.
+You do not need pgvector, knowledge tables, retrieval, grounding, semantic-fast-path setup, or `mix test.knowledge` to prove the core lane.
 
 ## Step 1: Install preflight
 
@@ -21,17 +21,17 @@ Run the installer and the boring baseline commands first:
 ```bash
 mix scoria.install
 mix ecto.migrate
-mix test
+mix test.adoption
 ```
 
 What this proves:
 
 - the dashboard routes mount at `/scoria`
+- the Scoria-owned core tables are available through copied host-app migrations
 - baseline runtime defaults are present
-- the app still boots and passes its core automated checks
+- the app passes the bounded default-lane adoption verifier
 
-Maintainers can keep using `mix test` as broader repo-health context.
-Use `mix test.adoption` as the canonical ADPT-02 proof lane when you want the same runtime-first bounded handoff subset CI runs without waiting for the whole suite.
+Use `mix test.adoption` as the canonical default-lane verifier when you want one bounded proof that covers installer truth, the fresh-host install/migrate/route/runtime smoke, and the repo-local adoption guards without waiting for the whole suite. Maintainers can still use `mix test` as broader repo-health context.
 
 ## Semantic fast-path troubleshooting lane
 
@@ -47,6 +47,7 @@ This is the canonical `v2.1` troubleshooting lane. It proves:
 - explicit fallback visibility for `bypass`, `miss`, `reject`, and `hit`
 - operator evidence projection on `/scoria` and `/scoria/workflows/:run_id`
 - lifecycle truth for `active`, `stale`, `invalidated`, and `writeback_rejected`
+- retrieval-backed source fingerprint checks used by the semantic lane
 
 Use the semantic nouns exactly as rendered by the product:
 
@@ -125,23 +126,40 @@ Only after the default lane is proven should you expand into the knowledge-backe
 
 ```bash
 mix scoria.pgvector.bootstrap
-mix scoria.test.knowledge
+mix test.knowledge
 ```
 
 That lane is explicitly optional. It verifies pgvector-backed retrieval and grounding behavior after the core runtime and operator surface already work.
 
-## Maintainer closeout
+## Maintainer release-preview lane
 
-For repository verification and closeout, keep leaning on the existing automated lanes:
+When you are validating Scoria's publish-facing package and docs surface, use the bounded release-preview lane:
 
 ```bash
-mix test.adoption
-SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
-mix test
-mix scoria.test.knowledge
+mix scoria.release_preview
 ```
 
-Use `mix test.adoption` as the canonical ADPT-02 proof lane for the install, route, runtime, docs, and migration-lane guards that make up the bounded acceptance harness.
-Use `mix test.semantic_fast_path` as the canonical `v2.1` semantic fast-path troubleshooting lane.
+This is the canonical maintainer proof for release packaging. It runs `mix docs` and checks an unpacked local Hex preview for the required runtime files, migrations, README, and adopter guides.
+CI should run this lane in `MIX_ENV=dev` because ExDoc stays a dev-only tool, but the maintainer-facing command contract remains plain `mix scoria.release_preview`.
+
+Keep it distinct from the other named lanes:
+
+- `mix test.adoption` proves the canonical default runtime adoption boundary
+- `mix test.semantic_fast_path` proves the bounded semantic troubleshooting lane
+- `mix test.knowledge` proves the optional knowledge lane
+
+## Maintainer closeout
+
+For repository closeout, the canonical proof chain is exactly:
+
+```bash
+mix scoria.release_preview
+mix test.adoption
+```
+
+Use `mix scoria.release_preview` as the canonical maintainer proof for docs-build and package-inventory truth before publish-facing changes merge.
+If you are wiring the lane into CI, run it under `MIX_ENV=dev` instead of presenting the job-wide test env as the supported closeout contract.
+Use `mix test.adoption` as the canonical default-lane verifier for the install, fresh-host install/migrate/route/runtime proof, docs, and migration-lane guards that make up the bounded acceptance harness.
+Use `mix test.semantic_fast_path` only for the canonical `v2.1` semantic fast-path troubleshooting lane.
+Use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
 Use `mix test` as broader repo-health context when you want to classify failures outside the canonical proof lane.
-Use `mix scoria.test.knowledge` only when you are intentionally validating the full Optional knowledge lane.

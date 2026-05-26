@@ -11,7 +11,7 @@ defmodule Scoria.AdoptionSurfaceTest do
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
 
-  test "README documents the shipped lane model and optional knowledge lane" do
+  test "README documents the shipped lane model and canonical lane hierarchy" do
     content = File.read!(@readme)
 
     assert content =~ "Scoria is shipped through `v2.1 Tenant-scoped semantic fast path`"
@@ -29,10 +29,17 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "session_id"
     assert content =~ "run_id"
     assert content =~ "/scoria/workflows/:run_id"
+    assert content =~ "Tailwind is optional for the install task."
+    assert content =~ "mix scoria.install"
+    assert content =~ "mix ecto.migrate"
+    assert content =~ "mix test.adoption"
     assert content =~ "SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path"
+    assert content =~ "mix test.knowledge"
+    assert content =~ "broader repo-health context"
     assert content =~ "Optional knowledge lane"
     assert content =~ "docs/adoption_lanes.md"
     assert content =~ "docs/semantic_fast_path.md"
+    refute content =~ "mix scoria.test.knowledge"
     refute content =~ "Scoria is shipped through `v1.9 Crucible`"
     assert File.read!(@scoria_doctest) =~ "doctest Scoria"
     assert File.read!(@identity_doctest) =~ "doctest Scoria.Identity"
@@ -50,7 +57,9 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "use Scoria.SemanticLane"
     assert content =~ "mix test.adoption"
     assert content =~ "mix test.semantic_fast_path"
-    assert content =~ "mix scoria.test.knowledge"
+    assert content =~ "mix test.knowledge"
+    refute content =~ "mix scoria.test.knowledge"
+    assert content =~ "This lane is explicitly optional."
     assert content =~ "Start narrow. Expand only when the current lane already feels boring."
   end
 
@@ -71,6 +80,8 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "Delegated Evidence"
     assert content =~ "No remaining adopter-facing gap"
     assert content =~ "deferred follow-up"
+    assert content =~ "mix test.adoption"
+    assert content =~ "separate verifier lane"
     assert content =~ "Broad runtime-state keys are rejected explicitly"
     assert content =~ "transcript"
     assert content =~ "provider_session"
@@ -103,7 +114,9 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "invalidated"
     assert content =~ "writeback_rejected"
     assert content =~ "mix test.semantic_fast_path"
+    assert content =~ "mix test.knowledge"
     assert content =~ "/scoria/workflows/:run_id"
+    refute content =~ "mix scoria.test.knowledge"
   end
 
   test "Phoenix runtime example documents identity, readback, and approval resume" do
@@ -134,16 +147,19 @@ defmodule Scoria.AdoptionSurfaceTest do
     refute lower =~ "maybe later"
   end
 
-  test "operator verification guide documents the core automated lane without knowledge requirements" do
+  test "operator verification guide documents the four-tier support hierarchy" do
     content = File.read!(@operator_guide)
 
+    assert content =~ "mix scoria.release_preview"
     assert content =~ "mix scoria.install"
     assert content =~ "mix ecto.migrate"
     assert content =~ "mix test"
     assert content =~ "mix test.adoption"
     assert content =~ "mix test.semantic_fast_path"
+    assert content =~ "mix test.knowledge"
     assert content =~ "SCORIA_DB_PORT=55432"
-    assert content =~ "canonical ADPT-02 proof lane"
+    assert content =~ "canonical default-lane verifier"
+    assert content =~ "fresh-host install/migrate/route/runtime smoke"
     assert content =~ "canonical `v2.1` troubleshooting lane"
     assert content =~ "broader repo-health context"
     assert content =~ "Scoria.start_run"
@@ -151,7 +167,11 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "list_runs_for_session"
     assert content =~ "/scoria/workflows/:run_id"
     assert content =~ "Optional knowledge lane"
-    assert content =~ "mix scoria.test.knowledge"
+    assert content =~ "repository closeout, the canonical proof chain is exactly"
+    assert content =~ "CI should run this lane in `MIX_ENV=dev` because ExDoc stays a dev-only tool"
+    assert content =~
+             "You do not need pgvector, knowledge tables, retrieval, grounding, semantic-fast-path setup, or `mix test.knowledge` to prove the core lane."
+
     assert content =~ "bypass"
     assert content =~ "miss"
     assert content =~ "reject"
@@ -160,6 +180,9 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "stale"
     assert content =~ "invalidated"
     assert content =~ "writeback_rejected"
+    refute content =~ "MIX_ENV=test mix scoria.release_preview"
+    refute content =~ "mix scoria.test.knowledge"
+    refute content =~ "pgvector, retrieval, or semantic caching before Scoria is usable"
   end
 
   test "public modules expose compiled moduledocs on current Elixir" do
