@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: oss adopter onramp
-status: planning
-last_updated: "2026-05-25T16:31:33Z"
-last_activity: 2026-05-25
+status: executing
+last_updated: "2026-05-26T04:29:24.861Z"
+last_activity: 2026-05-26
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 7
+  completed_plans: 4
   percent: 33
 ---
 
@@ -19,17 +19,17 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** `Phase 48` planning is next after closing the release packaging and docs truth baseline
+**Current Focus:** Phase 48 — host-app-install-contract-and-consumer-proof
 
 ## Current Position
 
-Phase: 47 (release-packaging-and-docs-truth) — COMPLETE
-Plan: complete
+Phase: 48 (host-app-install-contract-and-consumer-proof) — EXECUTING
+Plan: 1 of 4
 **Milestone:** `v2.2 OSS adopter onramp`
 **Phase:** Complete
 **Plan:** 3 of 3 complete
-**Status:** Phase 47 completed on 2026-05-25
-**Last activity:** 2026-05-25
+**Status:** Executing Phase 48
+**Last activity:** 2026-05-26
 
 **Progress:**
 [███░░░░░░░] 33%
