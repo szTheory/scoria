@@ -41,6 +41,12 @@ mix test.adoption
 
 If you are not sure where to start, start here.
 
+After upgrades, run `mix scoria.install --check` as a no-write verification step. See
+[Installer verification modes (upgrade-safe)](operator_verification.md#installer-verification-modes-upgrade-safe)
+for the dry-run → check → remediate → apply workflow. See
+[Check vs apply drift detection](operator_verification.md#check-vs-apply-drift-detection)
+for manifest fingerprint roles at check vs apply time.
+
 This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 ### 2. Bounded handoff lane

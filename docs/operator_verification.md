@@ -17,6 +17,34 @@ You have proven the default lane when all of these are true:
 
 This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
+## Installer verification modes (upgrade-safe)
+
+Use this workflow before and after host-app upgrades:
+
+1. `mix scoria.install --dry-run` to preview planned changes without writes.
+2. `mix scoria.install --check` to verify current state without writes.
+3. Remediate any `manual_review` entries using the printed remediation steps.
+4. `mix scoria.install` to apply planner-classified changes.
+
+`--check` never writes host files. `manual_review` entries never receive silent overwrites.
+
+Automation should parse the final check-mode trailer:
+
+`SCORIA_CHECK_RESULT status=<compliant|drift|manual_review|error> exit_code=<0|1|2>`
+
+### Check vs apply drift detection
+
+| Stage | What fingerprints mean |
+|-------|-------------------------|
+| `--check` / `--dry-run` | Live host surfaces only. Classifications and exit codes come from current disk and package desired state. |
+| Stored `.scoria/install/manifest.json` | Informational snapshot from the last successful apply. It does not drive check classification. |
+| Apply preflight | Compares each plan entry fingerprint captured at plan build time to live disk before writes. |
+| Post-apply | Manifest is rewritten as the last-applied snapshot. |
+
+Do not edit `.scoria/install/manifest.json` by hand. If apply blocks for stale fingerprints, re-run `--dry-run` and `--check` without changing managed files between check and apply.
+
+An absent manifest file is informational only. A compliant host can still exit `0` from `--check` when ownership markers and migrations are already converged.
+
 ## Step 1: Install preflight
 
 Run the installer and the boring baseline commands first:
