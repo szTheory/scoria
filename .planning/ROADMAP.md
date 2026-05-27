@@ -19,7 +19,7 @@
 | 62 | 3/3 | Complete    | 2026-05-27 |
 | 63 | 3/3 | Complete    | 2026-05-27 |
 | 64 | 1/1 | Complete    | 2026-05-27 |
-| 65 | — | Pending     | — |
+| 65 | 2/2 | Complete    | 2026-05-27 |
 
 ## Phase Details
 
