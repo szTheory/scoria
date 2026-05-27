@@ -7,6 +7,7 @@ defmodule Scoria.WarningRatchet do
 
   @live_glob "test/scoria_web/live/**/*_test.exs"
   @scoria_glob "test/scoria/**/*_test.exs"
+  @path_set_key {Scoria.WarningRatchet, :path_set}
 
   @spec high_signal_wae_paths() :: [String.t()]
   def high_signal_wae_paths do
@@ -27,8 +28,18 @@ defmodule Scoria.WarningRatchet do
   end
 
   defp path_set(cwd) do
-    high_signal_wae_paths()
-    |> Enum.map(&Path.expand(&1, cwd))
-    |> MapSet.new()
+    case :persistent_term.get(@path_set_key, nil) do
+      {^cwd, set} ->
+        set
+
+      _ ->
+        set =
+          high_signal_wae_paths()
+          |> Enum.map(&Path.expand(&1, cwd))
+          |> MapSet.new()
+
+        :persistent_term.put(@path_set_key, {cwd, set})
+        set
+    end
   end
 end

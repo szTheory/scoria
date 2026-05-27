@@ -32,4 +32,9 @@ defmodule Scoria.WarningRatchetTest do
     assert WarningRatchet.high_signal_path?(sample)
     refute WarningRatchet.high_signal_path?("test/nonexistent/path_test.exs")
   end
+
+  test "high_signal_path?/1 returns true for verification_lanes_test.exs" do
+    assert WarningRatchet.high_signal_path?("test/scoria/verification_lanes_test.exs")
+    assert length(WarningRatchet.high_signal_wae_paths()) >= 15
+  end
 end

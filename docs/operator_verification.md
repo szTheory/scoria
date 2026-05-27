@@ -230,4 +230,6 @@ MIX_ENV=test mix scoria.warning_ratchet.check
 MIX_ENV=test mix scoria.warning_ratchet.test --warnings-as-errors
 ```
 
-Preflight: empty `test/tmp/` before inventory `--write` so host-proof fixture pollution does not skew cluster counts.
+`mix scoria.warning_ratchet.check` now enforces empty `test/tmp/` before capture and automatically removes transient entries under `test/tmp/` after capture, so a follow-on `mix scoria.warning_inventory` run does not require manual cleanup between those two commands.
+
+Preflight: still run `rm -rf test/tmp/*` before inventory `--write` when you skip `warning_ratchet.check` (for example a manual inventory-only refresh) so host-proof fixture pollution does not skew cluster counts.
