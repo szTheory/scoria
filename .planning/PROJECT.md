@@ -90,10 +90,10 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Installer output stays truthful and idempotent across preview/check/apply with operator-ordered summaries and contract SSOT. — `v2.5 Installer Safety & Upgrade Confidence`
 - ✓ CI fails when `.planning/WARNING-BASELINE.md` contains expired or invalid accepted debt rows. — Phase 66 `baseline-expiry-and-inventory`
 - ✓ Maintainer can reproduce a classified full-suite warning inventory by surface/area. — Phase 66 `baseline-expiry-and-inventory`
+- ✓ Canonical compile and lane-contract surfaces remain warning-clean under warnings-as-errors. — Phase 67 `high-signal-warning-ratchet`
 
 ### Active
 
-- [ ] **WARN-05**: Canonical compile and lane-contract surfaces remain warning-clean under warnings-as-errors.
 - [ ] **WARN-06**: High-signal test surfaces pass under warnings-as-errors without new accepted debt.
 - [ ] **WARN-07**: Full `mix test --warnings-as-errors` passes in CI (or remaining debt is re-baselined with owner+expiry).
 - [ ] **CI-03**: CI preserves canonical closeout order while enforcing baseline-expiry and staged WAE gates.

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T18:14:05Z"
-last_activity: 2026-05-27 -- Completed 67-00-PLAN.md (WARN-06 infrastructure)
+last_updated: "2026-05-27T18:15:10Z"
+last_activity: 2026-05-27 -- Completed 67-01-PLAN.md (WARN-05 canonical surface guard)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 4
-  percent: 38
+  completed_plans: 5
+  percent: 50
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-27)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 67 — high-signal warning ratchet (plan 67-01 next)
+**Current focus:** Phase 67 — high-signal warning ratchet (plan 67-02 next)
 
 ## Current Position
 
 Phase: 67
-Plan: 01 (next)
+Plan: 02 (next)
 Status: Executing
-Last activity: 2026-05-27 -- Completed 67-00-PLAN.md (WARN-06 infrastructure)
+Last activity: 2026-05-27 -- Completed 67-01-PLAN.md (WARN-05 canonical surface guard)
 
 ## Performance Metrics
 
@@ -66,10 +66,15 @@ Last activity: 2026-05-27 -- Completed 67-00-PLAN.md (WARN-06 infrastructure)
 
 ## Operator Next Steps
 
-- Execute plan 67-01 (`warn-05-canonical-surface-guard`)
-- Resume file: `.planning/phases/67-high-signal-warning-ratchet/67-01-PLAN.md`
+- Execute plan 67-02 (high-signal cluster fixes)
+- Resume file: `.planning/phases/67-high-signal-warning-ratchet/67-02-PLAN.md`
 
 ### Phase 67 Decisions (67-00)
 
 - WarningRatchet paths are code SSOT from adoption files + `test/scoria` + LiveView globs — not derived from baseline JSON
 - Shared `WarningInventory.capture_output/0` backs inventory and ratchet check capture
+
+### Phase 67 Decisions (67-01)
+
+- WARN-05 maintainer proof limited to compile WAE + lane-contract tests (ratchet scope stays WARN-06)
+- Policy job must not run `scoria.warning_ratchet` until Phase 68 wiring (D-17)
