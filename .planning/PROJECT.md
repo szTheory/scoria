@@ -28,7 +28,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Check-time vs apply-time manifest fingerprint roles are documented and tested; adoption discoverability meta-tests match `adoption_test_files/0`.
 - Milestone Nyquist coverage is 5/5 compliant for phases 59–63; v2.5 audit archived at `.planning/milestones/v2.5-MILESTONE-AUDIT.md`.
 - Canonical lane truth remains in `Scoria.VerificationLanes`; closeout chain unchanged: `mix scoria.release_preview`, `mix test.adoption`, `mix test.runtime_to_handoff`.
-- Warning baseline debt is tracked with owner+expiry; `WARN-03` full-suite ratchet is the immediate next milestone.
+- Warning baseline debt is tracked with owner+expiry; Phase 66 shipped executable WARN-03 enforcement and WARN-04 inventory infrastructure.
+- CI now runs `mix scoria.warning_baseline.check` in a Postgres-free policy job before compile WAE and closeout lanes.
 
 ## Next Milestone Goals
 
@@ -87,11 +88,11 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Maintainer can run `mix scoria.install --check` with stable `0/1/2` exits and `SCORIA_CHECK_RESULT` trailer semantics. — `v2.5 Installer Safety & Upgrade Confidence`
 - ✓ Installer apply mode executes planner-led mutations with manifest-aware drift preflight and explicit manual-review blocking. — `v2.5 Installer Safety & Upgrade Confidence`
 - ✓ Installer output stays truthful and idempotent across preview/check/apply with operator-ordered summaries and contract SSOT. — `v2.5 Installer Safety & Upgrade Confidence`
+- ✓ CI fails when `.planning/WARNING-BASELINE.md` contains expired or invalid accepted debt rows. — Phase 66 `baseline-expiry-and-inventory`
+- ✓ Maintainer can reproduce a classified full-suite warning inventory by surface/area. — Phase 66 `baseline-expiry-and-inventory`
 
 ### Active
 
-- [ ] **WARN-03**: CI fails when `.planning/WARNING-BASELINE.md` contains expired debt rows.
-- [ ] **WARN-04**: Maintainer can reproduce a classified full-suite warning inventory by surface/area.
 - [ ] **WARN-05**: Canonical compile and lane-contract surfaces remain warning-clean under warnings-as-errors.
 - [ ] **WARN-06**: High-signal test surfaces pass under warnings-as-errors without new accepted debt.
 - [ ] **WARN-07**: Full `mix test --warnings-as-errors` passes in CI (or remaining debt is re-baselined with owner+expiry).
@@ -216,4 +217,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 — milestone v2.6 Warning Ratchet initialized*
+*Last updated: 2026-05-27 — Phase 66 baseline expiry and inventory complete*
