@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.5
-milestone_name: Installer Safety & Upgrade Confidence
-status: roadmap approved; ready to start phase 59
-last_updated: "2026-05-27T10:45:00.000Z"
-last_activity: 2026-05-27 — Initialized v2.5 with scoped requirements and roadmap for installer planning, drift detection, and safe apply
+milestone_name: Scope
+status: executing
+last_updated: "2026-05-27T12:46:12.668Z"
+last_activity: 2026-05-27
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
+  percent: 33
 ---
 
 # Project State
@@ -19,14 +19,14 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Execute v2.5 installer safety phases (59-61) to ship no-write planner/check contracts and manifest-aware drift-safe apply behavior
+**Current Focus:** Phase 59 — planner-contract-foundation
 
 ## Current Position
 
-Phase: 59 — Planner Contract Foundation (not started)
-Plan: Define implementation tasks for planner/check mutation-plan contract and deterministic classification semantics
-Status: Milestone initialized; ready for `/gsd-discuss-phase 59` or `/gsd-plan-phase 59`
-Last activity: 2026-05-27 — Created v2.5 requirements and roadmap with 6 requirements mapped across phases 59-61
+Phase: 60
+Plan: Not started
+Status: Executing Phase 59
+Last activity: 2026-05-27
 
 ## Performance Metrics
 

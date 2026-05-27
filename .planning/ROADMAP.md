@@ -13,13 +13,13 @@
 
 | Phase | Name | Goal | Requirements |
 |------:|------|------|--------------|
-| 59 | Planner Contract Foundation | Ship no-write planner/check contract truth with deterministic classification and exit behavior | INST-03, INST-04, INST-05 |
+| 59 | 2/2 | Complete    | 2026-05-27 |
 | 60 | Drift Classification And Safe Apply | Add manifest-aware drift detection and ensure apply uses planner truth instead of ad-hoc mutations | INST-06, INST-07 |
 | 61 | Proof And Stability Closeout | Prove idempotent, truthful output behavior across preview/check/apply while preserving v2.4 reliability guardrails | INST-08 |
 
 ## Phase Details
 
-### Phase 59 — Planner Contract Foundation
+### Phase 59: Planner Contract Foundation
 
 **Goal:** Establish one installer planning engine for preview/check semantics before any write-path changes.
 
@@ -29,7 +29,7 @@
 2. `mix scoria.install --check` returns actionable compatibility/drift diagnostics with stable non-zero semantics on unsafe states.
 3. Installer output classifies each target surface as `create`, `update`, `no-op`, or `manual-review` with rationale.
 
-### Phase 60 — Drift Classification And Safe Apply
+### Phase 60: Drift Classification And Safe Apply
 
 **Goal:** Make upgrade drift explicit and enforce planner-led apply behavior.
 
@@ -39,7 +39,7 @@
 2. Unsafe drift paths do not silently overwrite host files; installer surfaces manual remediation guidance.
 3. Apply mode executes the same planned mutations produced by preview/check modes.
 
-### Phase 61 — Proof And Stability Closeout
+### Phase 61: Proof And Stability Closeout
 
 **Goal:** Lock confidence by verifying output truth, idempotency, and guardrail stability.
 

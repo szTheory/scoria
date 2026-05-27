@@ -50,6 +50,7 @@ Explicitly excluded from this milestone.
 | INST-08 | Phase 61 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 6 total
 - Mapped to phases: 6
 - Unmapped: 0
