@@ -3,7 +3,7 @@
 Scoria is easiest to adopt when you treat it as a layered Phoenix runtime, not a platform you have to swallow whole.
 
 Start with the narrowest lane that solves your current problem. Expand only when the previous lane already feels boring in your host app.
-Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
+Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Use mix test.runtime_to_handoff as the bounded escalation proof lane when the same durable run needs narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
 
 ## The Four Lanes
 
@@ -41,7 +41,7 @@ mix test.adoption
 
 If you are not sure where to start, start here.
 
-This default lane is the first-adoption proof. You do not need pgvector, retrieval, grounding, semantic-fast-path setup, or knowledge verification before this lane is valid.
+This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 ### 2. Bounded handoff lane
 
@@ -65,6 +65,7 @@ Key rule:
 Use this for review, critique, classification, or bounded specialist work. Do not use it to build a broad autonomous multi-agent platform by default.
 
 Validate the base runtime lane with `mix test.adoption` before you intentionally expand into `Scoria.start_handoff_run/3`.
+Use `mix test.runtime_to_handoff` as the bounded runtime-to-handoff escalation verifier for the same `Scoria.get_run_detail/1` and `delegated_handoffs` readback path.
 
 ### 3. Semantic fast-path lane
 

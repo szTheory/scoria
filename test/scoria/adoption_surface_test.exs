@@ -65,7 +65,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "Start narrow. Expand only when the current lane already feels boring."
   end
 
-  test "phase 53 docs keep default-first lane wording and reject unshipped proof guidance" do
+  test "phase 54 docs keep default-first lane wording with canonical runtime-to-handoff proof guidance" do
     readme = File.read!(@readme)
     lane_guide = File.read!(@lane_guide)
     operator_guide = File.read!(@operator_guide)
@@ -74,17 +74,24 @@ defmodule Scoria.AdoptionSurfaceTest do
 
     for content <- [readme, lane_guide, operator_guide] do
       assert content =~ "Start with the default runtime lane"
-      assert content =~ "Add bounded handoff only when"
+      assert content =~ "mix test.runtime_to_handoff"
       assert content =~ "mix test.adoption"
+      assert content =~
+               "This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup."
     end
 
     assert phoenix_example =~ "Scoria.get_run_detail/1"
     assert phoenix_example =~ "delegated = detail.delegated_handoffs"
+    assert phoenix_example =~ "mix test.runtime_to_handoff"
+    assert phoenix_example =~ "mix test.adoption"
+
+    assert handoff_guide =~ "mix test.runtime_to_handoff"
+    assert handoff_guide =~ "Scoria.get_run_detail/1"
+    assert handoff_guide =~ "delegated_handoffs"
 
     for content <- [readme, lane_guide, operator_guide, phoenix_example, handoff_guide] do
-      refute content =~ "runtime-to-handoff proof"
-      refute content =~ "mix test.runtime_to_handoff"
       refute content =~ "mix test.handoff"
+      refute content =~ "mix scoria.test.handoff"
       refute content =~ "workflow_steps"
       refute content =~ "workflow_handoffs"
       refute content =~ "Repo.all"
@@ -215,10 +222,11 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "/scoria/workflows/:run_id"
     assert content =~ "Optional knowledge lane"
     assert content =~ "repository closeout, the canonical proof chain is exactly"
-    assert content =~ "mix scoria.release_preview\nmix test.adoption"
+    assert content =~ "mix scoria.release_preview\nmix test.adoption\nmix test.runtime_to_handoff"
+    assert content =~ "mix test.runtime_to_handoff"
     assert content =~ "CI should run this lane in `MIX_ENV=dev` because ExDoc stays a dev-only tool"
     assert content =~
-             "You do not need pgvector, knowledge tables, retrieval, grounding, semantic-fast-path setup, or `mix test.knowledge` to prove the core lane."
+             "This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup."
 
     assert content =~ "bypass"
     assert content =~ "miss"
@@ -238,6 +246,9 @@ defmodule Scoria.AdoptionSurfaceTest do
              ~r/mix scoria\.release_preview\s+mix test\.knowledge/,
              content
            )
+
+    refute content =~ "mix test.handoff"
+    refute content =~ "mix scoria.test.handoff"
 
     refute Regex.match?(
              ~r/mix scoria\.release_preview\s+mix test\s*\n(?!\.adoption)/,

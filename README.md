@@ -14,7 +14,7 @@ Scoria is shipped through `v2.1 Tenant-scoped semantic fast path`. The current p
 - a semantic fast path for explicitly safe read-only work
 - an optional knowledge lane for pgvector-backed retrieval and grounding
 
-Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
+Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Use mix test.runtime_to_handoff as the bounded escalation proof lane when the same durable run needs narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
 
 ## Who This Is For
 
@@ -173,6 +173,14 @@ mix test.adoption
 Then inspect `/scoria` and `/scoria/workflows/:run_id` for operator evidence from one real run in your app. Read it back through `Scoria.get_run/1` or `Scoria.list_runs_for_session/1`. The dedicated operator verification guide lives in [`docs/operator_verification.md`](docs/operator_verification.md).
 
 `mix test.adoption` is the canonical bounded verifier for the default lane. It carries the generated-host proof under a local proof-only timeout, so you do not need suite-wide timeout changes or a `--trace` variant to use it.
+
+Bounded runtime-to-handoff escalation proof lane:
+
+```bash
+mix test.runtime_to_handoff
+```
+
+This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 Optional knowledge lane:
 

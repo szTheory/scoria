@@ -1,7 +1,7 @@
 # Operator Verification
 
 This guide is the default Phoenix verification lane for Scoria's public runtime surface. The goal is simple: prove the core install, runtime, and operator-evidence path before you touch the optional knowledge lane.
-Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
+Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Use mix test.runtime_to_handoff as the bounded escalation proof lane when the same durable run needs narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
 Start here with `mix scoria.install`, `mix ecto.migrate`, and `mix test.adoption`; add this only when the default lane is stable in your host app.
 
 ## What core success means
@@ -14,7 +14,7 @@ You have proven the default lane when all of these are true:
 - that same run can be read back through `Scoria.get_run/1` or found via `list_runs_for_session/1`
 - `/scoria/workflows/:run_id` shows operator evidence for that exact run
 
-You do not need pgvector, knowledge tables, retrieval, grounding, semantic-fast-path setup, or `mix test.knowledge` to prove the core lane.
+This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 ## Step 1: Install preflight
 
@@ -148,6 +148,7 @@ CI should run this lane in `MIX_ENV=dev` because ExDoc stays a dev-only tool, bu
 Keep it distinct from the other named lanes:
 
 - `mix test.adoption` proves the canonical default runtime adoption boundary
+- `mix test.runtime_to_handoff` proves bounded runtime-to-handoff escalation through `Scoria.get_run_detail/1` and `delegated_handoffs`
 - `mix test.semantic_fast_path` proves the bounded semantic troubleshooting lane
 - `mix test.knowledge` proves the optional knowledge lane
 
@@ -158,11 +159,13 @@ For repository closeout, the canonical proof chain is exactly:
 ```bash
 mix scoria.release_preview
 mix test.adoption
+mix test.runtime_to_handoff
 ```
 
 Use `mix scoria.release_preview` as the canonical maintainer proof for docs-build and package-inventory truth before publish-facing changes merge.
 If you are wiring the lane into CI, run it under `MIX_ENV=dev` instead of presenting the job-wide test env as the supported closeout contract.
 Use `mix test.adoption` as the canonical default-lane verifier for the install, fresh-host install/migrate/route/runtime proof, docs, and migration-lane guards that make up the bounded acceptance harness.
+Use `mix test.runtime_to_handoff` as the canonical bounded escalation proof lane for runtime-to-handoff behavior and delegated evidence readback.
 Use `mix test.semantic_fast_path` only for the canonical `v2.1` semantic fast-path troubleshooting lane.
 Use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
 Use `mix test` as broader repo-health context when you want to classify failures outside the canonical proof lane.

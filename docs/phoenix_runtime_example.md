@@ -166,6 +166,18 @@ Use `Scoria.get_run_detail/1` when the host app or support path needs the curate
 
 session_id groups related host turns; run_id names one exact Scoria execution.
 
+## Runtime-to-handoff verifier
+
+When this bounded delegation branch is wired, verify it with:
+
+```bash
+mix test.runtime_to_handoff
+```
+
+Keep `mix test.adoption` as the default-lane verifier; this lane is only the bounded runtime-to-handoff escalation proof.
+
+This verifier follows the same run-detail path shown above: `Scoria.get_run_detail/1` returns `delegated_handoffs` for the run that appears on `/scoria/workflows/:run_id`.
+
 ## Resume after approval
 
 When a run pauses for approval, resume that exact run by the stored `run_id`.

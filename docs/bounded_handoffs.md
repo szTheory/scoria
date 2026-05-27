@@ -117,6 +117,16 @@ Open:
 
 The workflow page keeps the topology-first tree and selected-step rail, and now adds a run-level `Delegated Evidence` section for the curated handoff story under the same durable run.
 
+## Runtime-to-handoff verifier
+
+After the default lane is proven with `mix test.adoption`, use this bounded escalation verifier:
+
+```bash
+mix test.runtime_to_handoff
+```
+
+The verifier exercises the same delegated readback path in this guide: inspect `Scoria.get_run_detail/1`, confirm `delegated_handoffs`, and cross-check `/scoria/workflows/:run_id`.
+
 ## When to use this
 
 Use bounded handoffs when:
