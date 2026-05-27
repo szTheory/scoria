@@ -88,6 +88,7 @@ defmodule Scoria.Install.PlannerTest do
            ]
 
     assert Enum.map(plan.entries, & &1.id) == Enum.map(plan_again.entries, & &1.id)
+    assert plan.entries == Enum.sort_by(plan.entries, &{&1.order, &1.id})
   end
 
   test "missing marker ownership falls back to manual_review", %{

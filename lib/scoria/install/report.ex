@@ -11,13 +11,18 @@ defmodule Scoria.Install.Report do
     entry_lines =
       plan.entries
       |> Enum.flat_map(fn entry ->
+        remediation = remediation_payload(entry)
+
         [
           "#{entry.order}. #{entry.surface}",
           "   classification: #{classification_label(entry.classification)}",
           "   target path: #{entry.target_path}",
-          "   rationale: #{entry.rationale}",
-          ""
-        ]
+          "   rationale: #{entry.rationale}"
+        ] ++
+          human_remediation_lines(remediation) ++
+          [
+            ""
+          ]
       end)
 
     summary_lines =
@@ -84,7 +89,9 @@ defmodule Scoria.Install.Report do
   end
 
   defp normalize_entry_for_json(entry) do
-    entry
+    normalized_entry = Map.put(entry, :remediation, remediation_payload(entry))
+
+    normalized_entry
     |> Enum.map(fn {key, value} -> {key, normalize_json_value(value)} end)
     |> Enum.into(%{})
   end
@@ -95,9 +102,62 @@ defmodule Scoria.Install.Report do
     |> Enum.into(%{})
   end
 
-  defp normalize_json_value(value) when is_list(value), do: Enum.map(value, &normalize_json_value/1)
+  defp normalize_json_value(value) when is_list(value),
+    do: Enum.map(value, &normalize_json_value/1)
+
   defp normalize_json_value(value) when is_atom(value), do: Atom.to_string(value)
   defp normalize_json_value(value), do: value
+
+  defp human_remediation_lines(remediation) do
+    [
+      "   remediation:",
+      "     reason_code: #{remediation.reason_code}",
+      "     summary: #{remediation.summary}",
+      "     steps:"
+    ] ++
+      Enum.map(remediation.steps, &"       - #{&1}") ++
+      ["     verify_command: #{remediation.verify_command}"]
+  end
+
+  defp remediation_payload(entry) do
+    remediation = Map.get(entry, :remediation) || %{}
+
+    %{
+      reason_code:
+        remediation
+        |> Map.get(:reason_code)
+        |> fallback(Map.get(remediation, "reason_code"), "unknown"),
+      summary:
+        remediation
+        |> Map.get(:summary)
+        |> fallback(Map.get(remediation, "summary"), "No remediation summary provided."),
+      steps:
+        remediation
+        |> Map.get(:steps)
+        |> fallback(Map.get(remediation, "steps"), [])
+        |> normalize_steps(),
+      verify_command:
+        remediation
+        |> Map.get(:verify_command)
+        |> fallback(Map.get(remediation, "verify_command"), "mix scoria.install --check")
+    }
+  end
+
+  defp fallback(primary, secondary, default) do
+    cond do
+      present?(primary) -> primary
+      present?(secondary) -> secondary
+      true -> default
+    end
+  end
+
+  defp present?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present?(nil), do: false
+  defp present?(_), do: true
+
+  defp normalize_steps(steps) when is_list(steps), do: steps
+  defp normalize_steps(step) when is_binary(step), do: [step]
+  defp normalize_steps(_), do: []
 
   defp mode_label(:check), do: "check"
   defp mode_label(:dry_run), do: "dry_run"

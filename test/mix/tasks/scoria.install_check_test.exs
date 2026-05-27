@@ -20,6 +20,35 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
     assert_check_result(:error, 2, "SCORIA_CHECK_RESULT status=error exit_code=2")
   end
 
+  test "mix scoria.install --check renders remediation payload parity for human and json" do
+    fixture_root = build_fixture!(:manual_review)
+
+    {human_output, human_exit} =
+      System.cmd("mix", ["scoria.install", "--check"],
+        cd: fixture_root,
+        stderr_to_stdout: true,
+        env: subprocess_mix_env()
+      )
+
+    assert human_exit == 1
+    assert human_output =~ "reason_code: missing_ownership_markers"
+    assert human_output =~ "verify_command: mix scoria.install --check"
+    assert human_output =~ "SCORIA_CHECK_RESULT status=manual_review exit_code=1"
+
+    {json_output, json_exit} =
+      System.cmd("mix", ["scoria.install", "--check", "--format", "json"],
+        cd: fixture_root,
+        stderr_to_stdout: true,
+        env: subprocess_mix_env()
+      )
+
+    assert json_exit == 1
+    assert json_output =~ "\"reason_code\": \"missing_ownership_markers\""
+    assert json_output =~ "\"steps\": ["
+    assert json_output =~ "\"verify_command\": \"mix scoria.install --check\""
+    assert json_output =~ "SCORIA_CHECK_RESULT status=manual_review exit_code=1"
+  end
+
   defp assert_check_result(fixture_kind, expected_exit, trailer) do
     fixture_root = build_fixture!(fixture_kind)
 
@@ -54,7 +83,7 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
     File.cp!(Path.join(repo_root, "mix.lock"), Path.join(fixture_root, "mix.lock"))
     File.write!(app_module_path, "defmodule FixtureHost do\nend\n")
     File.write!(config_path, "import Config\n")
-    File.write!(runtime_config_path, compliant_runtime_config())
+    File.write!(runtime_config_path, runtime_config_fixture(fixture_kind))
     File.write!(router_path, router_fixture(fixture_kind))
 
     case fixture_kind do
@@ -63,10 +92,15 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
         File.mkdir_p!(assets_tailwind_path)
 
       _ ->
-        File.write!(root_tailwind_path, compliant_tailwind_config())
+        File.write!(root_tailwind_path, tailwind_fixture(fixture_kind))
     end
 
     copy_required_core_migrations!(migration_dir)
+
+    if fixture_kind == :drift do
+      remove_one_required_migration!(migration_dir)
+    end
+
     fixture_root
   end
 
@@ -100,35 +134,28 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
     ~S'''
     defmodule FixtureHostWeb.Router do
       @router """
-      import ScoriaWeb.Router
       scope "/", FixtureHostWeb do
         pipe_through :browser
         scoria_dashboard "/scoria"
       end
+      # scoria:router:start
+      import ScoriaWeb.Router
+      # scoria:router:end
       """
     end
     '''
   end
 
   defp router_fixture(:drift) do
-    ~S'''
-    defmodule FixtureHostWeb.Router do
-      @router """
-      scope "/", FixtureHostWeb do
-        pipe_through :browser
-      end
-      """
-    end
-    '''
+    router_fixture(:compliant)
   end
 
   defp router_fixture(:manual_review) do
     ~S'''
     defmodule FixtureHostWeb.Router do
       @router """
-      import ScoriaWeb.Router
-      scope "/api", FixtureHostWeb do
-        pipe_through :api
+      scope "/", FixtureHostWeb do
+        pipe_through :browser
       end
       """
     end
@@ -137,20 +164,28 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
 
   defp router_fixture(:error), do: router_fixture(:compliant)
 
-  defp compliant_runtime_config do
+  defp runtime_config_fixture(:manual_review) do
+    """
+    import Config
+    """
+  end
+
+  defp runtime_config_fixture(_fixture_kind) do
     """
     import Config
 
+    # scoria:runtime:start
     config :scoria, Scoria.Runtime,
       defaults: [
         provider: "openai",
         model: "gpt-5-mini",
         prompt_policy: [policy_key: "default"]
       ]
+    # scoria:runtime:end
     """
   end
 
-  defp compliant_tailwind_config do
+  defp tailwind_fixture(:manual_review) do
     """
     module.exports = {
       content: [
@@ -160,6 +195,21 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
         "../deps/scoria/lib/**/*.*ex"
       ]
     }
+    """
+  end
+
+  defp tailwind_fixture(_fixture_kind) do
+    """
+    // scoria:tailwind:start
+    module.exports = {
+      content: [
+        "./js/**/*.js",
+        "../lib/fixture_host_web.ex",
+        "../lib/fixture_host_web/**/*.*ex",
+        "../deps/scoria/lib/**/*.*ex"
+      ]
+    }
+    // scoria:tailwind:end
     """
   end
 
@@ -173,6 +223,15 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
     |> Enum.each(fn source_path ->
       File.cp!(source_path, Path.join(destination_dir, Path.basename(source_path)))
     end)
+  end
+
+  defp remove_one_required_migration!(destination_dir) do
+    destination_dir
+    |> Path.join("*.exs")
+    |> Path.wildcard()
+    |> Enum.sort()
+    |> List.first()
+    |> then(&File.rm!/1)
   end
 
   defp subprocess_mix_env do

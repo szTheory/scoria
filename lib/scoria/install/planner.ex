@@ -48,7 +48,7 @@ defmodule Scoria.Install.Planner do
       |> Map.put(:order, order)
       |> normalize_contract_fields(surface, id, manifest)
     end)
-    |> Enum.sort_by(& &1.order)
+    |> Enum.sort_by(&{&1.order, &1.id})
   end
 
   defp stable_id(surface, target_path) do
