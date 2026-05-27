@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T22:05:29Z"
-last_activity: 2026-05-27 -- Completed 68-01-PLAN.md (CI ratchet wiring)
+last_updated: "2026-05-27T22:15:55.065Z"
+last_activity: 2026-05-27 -- Completed 68-02-PLAN.md (host-proof p2 verified clean)
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 12
-  completed_plans: 9
-  percent: 54
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` (updated 2026-05-27)
 ## Current Position
 
 Phase: 68 (full-suite-warning-closure) — EXECUTING
-Plan: 2 of 4
-Status: Ready for 68-02
-Last activity: 2026-05-27 -- Completed 68-01-PLAN.md (CI ratchet wiring)
+Plan: 3 of 4
+Status: Ready for 68-03
+Last activity: 2026-05-27
 
 ## Performance Metrics
 
@@ -63,12 +63,18 @@ Last activity: 2026-05-27 -- Completed 68-01-PLAN.md (CI ratchet wiring)
 | tech debt | Project-level full-suite warning audit | baseline in `.planning/WARNING-BASELINE.md` | scoria-maintainers | 2026-06-07 |
 | tech debt | LiveView async teardown noise in workflow/replay tests | accepted at `v1.9` close | scoria-web-runtime | 2026-06-30 |
 | future milestone | v2.7 OSS release + docs-truth | queued after v2.6 | scoria-maintainers | — |
+| Phase 68-full-suite-warning-closure P02 | 55 | 4 tasks | 1 files |
 
 ## Operator Next Steps
 
-- Execute plan 68-02 — warning debt reduction on high-signal paths
-- Local ratchet parity: `SCORIA_DB_PORT=55432 MIX_ENV=test mix scoria.warning_ratchet.test --warnings-as-errors`
-- Resume file: `.planning/phases/68-full-suite-warning-closure/68-02-PLAN.md`
+- Execute plan 68-03 — full-suite WAE flip and baseline ledger `--write`
+- Local closeout: `SCORIA_DB_PORT=55432 MIX_ENV=test mix test.adoption --warnings-as-errors`
+- Resume file: `.planning/phases/68-full-suite-warning-closure/68-03-PLAN.md`
+
+### Phase 68 Decisions (68-02)
+
+- p2 host-proof clusters already zero at measurement — no generator/runner or overlay template edits
+- Adoption + ratchet WAE green with `SCORIA_DB_PORT=55432`; inventory `--write` deferred to 68-03
 
 ### Phase 68 Decisions (68-01)
 
