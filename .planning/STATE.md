@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T16:41:04.551Z"
-last_activity: 2026-05-27
+last_updated: "2026-05-27T16:55:23.643Z"
+last_activity: 2026-05-27 -- Phase 64 execution started
 progress:
-  total_phases: 5
+  total_phases: 7
   completed_phases: 5
-  total_plans: 13
+  total_plans: 14
   completed_plans: 13
-  percent: 100
+  percent: 71
 ---
 
 # Project State
@@ -19,14 +19,14 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 63 — Manifest Check Fingerprint Hardening
+**Current Focus:** Phase 64 — adoption-lane-discoverability-sync
 
 ## Current Position
 
-Phase: 63
-Plan: Not started
-Status: Executing Phase 63
-Last activity: 2026-05-27
+Phase: 64 (adoption-lane-discoverability-sync) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 64
+Last activity: 2026-05-27 -- Phase 64 execution started
 
 ## Performance Metrics
 
