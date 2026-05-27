@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.6
-milestone_name: Warning Ratchet
-status: planning
-last_updated: "2026-05-27T23:00:00Z"
+milestone_name: Scope
+status: Defining requirements → roadmap approved
+last_updated: "2026-05-27T17:43:59.006Z"
 last_activity: 2026-05-27 — Milestone v2.6 Warning Ratchet initialized
 progress:
-  total_phases: 4
+  total_phases: 1
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
