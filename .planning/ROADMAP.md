@@ -2,43 +2,92 @@
 
 ## Milestones
 
-- ✅ **v2.5 Installer Safety & Upgrade Confidence** — Archived roadmap: `.planning/milestones/v2.5-ROADMAP.md` (shipped 2026-05-27)
-- ✅ **v2.4 Adoption Reliability Contract** — Archived roadmap: `.planning/milestones/v2.4-ROADMAP.md` (shipped 2026-05-27)
-- 📋 **Next: Warning Ratchet** — `WARN-03` queued (`/gsd-new-milestone`)
+- ◆ **v2.6 Warning Ratchet** — Active (this file)
+- ✅ **v2.5 Installer Safety & Upgrade Confidence** — Archived: `.planning/milestones/v2.5-ROADMAP.md` (shipped 2026-05-27)
+- ✅ **v2.4 Adoption Reliability Contract** — Archived: `.planning/milestones/v2.4-ROADMAP.md` (shipped 2026-05-27)
+
+## v2.6 Scope
+
+**Goal:** Close full-suite warning debt with staged warnings-as-errors ratchet and executable baseline-expiry policy.
+
+**Requirements mapped:** 6 / 6
+
+| Phase | Name | Goal | Requirements |
+|------:|------|------|--------------|
+| 66 | Baseline Expiry And Inventory | Make warning policy executable and inventory reproducible | WARN-03, WARN-04 |
+| 67 | High-Signal Warning Ratchet | Clear warnings in compile + canonical lane + targeted high-signal tests | WARN-05, WARN-06 |
+| 68 | Full-Suite Warning Closure | Green `mix test --warnings-as-errors` in CI or honest re-baseline | WARN-07 |
+| 69 | CI Trust And Milestone Closeout | Preserve lane order; wire gates; close ledger | CI-03 |
 
 ## Phases
 
-<details>
-<summary>✅ v2.5 Installer Safety & Upgrade Confidence (Phases 59–65) — SHIPPED 2026-05-27</summary>
+- [ ] Phase 66: Baseline Expiry And Inventory (0/? plans)
+- [ ] Phase 67: High-Signal Warning Ratchet (0/? plans)
+- [ ] Phase 68: Full-Suite Warning Closure (0/? plans)
+- [ ] Phase 69: CI Trust And Milestone Closeout (0/? plans)
 
-- [x] Phase 59: Planner Contract Foundation (2/2 plans) — completed 2026-05-27
-- [x] Phase 60: Drift Classification And Safe Apply (2/2 plans) — completed 2026-05-27
-- [x] Phase 61: Proof And Stability Closeout (3/3 plans) — completed 2026-05-27
-- [x] Phase 62: Nyquist & Traceability Closeout (3/3 plans) — completed 2026-05-27
-- [x] Phase 63: Manifest Check Fingerprint Hardening (3/3 plans) — completed 2026-05-27
-- [x] Phase 64: Adoption Lane Discoverability Sync (1/1 plans) — completed 2026-05-27
-- [x] Phase 65: Phase 63 Nyquist Validation Closeout (2/2 plans) — completed 2026-05-27
+## Phase Details
 
-</details>
+### Phase 66 — Baseline Expiry And Inventory
 
-<details>
-<summary>✅ v2.4 Adoption Reliability Contract (Phases 55–58) — SHIPPED 2026-05-27</summary>
+**Goal:** Turn `.planning/WARNING-BASELINE.md` from prose policy into executable CI truth and produce a classified warning inventory.
 
-- [x] Phase 55: Lane Contract Source (1/1 plans) — completed 2026-05-27
-- [x] Phase 56: Executable Support Truth (1/1 plans) — completed 2026-05-27
-- [x] Phase 57: Warning And CI Trust (2/2 plans) — completed 2026-05-27
-- [x] Phase 58: Installer Contract Hardening (2/2 plans) — completed 2026-05-27
+**Requirements:** WARN-03, WARN-04
 
-</details>
+**Success criteria:**
+
+1. CI step fails when any baseline row is past expiry (before or alongside compile WAE).
+2. Inventory output groups known warning clusters (e.g. knowledge migration redefines, unused vars, LiveView teardown, host-proof compile) with file/area attribution.
+3. Inventory is reproducible from documented maintainer command(s) and referenced in milestone thread or phase notes.
+
+### Phase 67 — High-Signal Warning Ratchet
+
+**Goal:** Clear warnings in compile, canonical lane surfaces, and inventory-prioritized high-signal tests without destabilizing the full suite.
+
+**Requirements:** WARN-05, WARN-06
+
+**Success criteria:**
+
+1. `mix compile --warnings-as-errors` passes.
+2. `mix test --warnings-as-errors` for lane-contract + adoption surface tests passes.
+3. Targeted high-signal test paths from Phase 66 inventory pass under WAE (remaining debt explicitly listed if deferred).
+
+### Phase 68 — Full-Suite Warning Closure
+
+**Goal:** Achieve green full-suite WAE in CI or update baseline ledger with honest owner+expiry for any remaining accepted debt.
+
+**Requirements:** WARN-07
+
+**Success criteria:**
+
+1. `mix test --warnings-as-errors` passes locally and in CI.
+2. `.planning/WARNING-BASELINE.md` reflects post-ratchet truth (resolved rows removed; any remaining debt has owner+expiry).
+3. No silent regression of canonical lane warning-clean status.
+
+### Phase 69 — CI Trust And Milestone Closeout
+
+**Goal:** Wire staged gates into CI without changing canonical closeout order; close milestone traceability.
+
+**Requirements:** CI-03
+
+**Success criteria:**
+
+1. CI order remains `release_preview` → `adoption` → `runtime_to_handoff` for closeout lanes.
+2. Baseline-expiry check and full-suite WAE gate are present and documented in `.github/workflows/ci.yml`.
+3. REQUIREMENTS traceability and milestone audit artifacts updated for v2.6 closeout.
+
+## Non-Goals (v2.6)
+
+- Hex publish or README shipped-state corrections (v2.7).
+- New runtime capability families.
+- Installer planner/check/apply changes.
+- Broad LiveView refactor beyond inventory-targeted warning fixes.
 
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 | ----- | --------- | -------------- | ------ | --------- |
-| 59. Planner Contract Foundation | v2.5 | 2/2 | Complete | 2026-05-27 |
-| 60. Drift Classification And Safe Apply | v2.5 | 2/2 | Complete | 2026-05-27 |
-| 61. Proof And Stability Closeout | v2.5 | 3/3 | Complete | 2026-05-27 |
-| 62. Nyquist & Traceability Closeout | v2.5 | 3/3 | Complete | 2026-05-27 |
-| 63. Manifest Check Fingerprint Hardening | v2.5 | 3/3 | Complete | 2026-05-27 |
-| 64. Adoption Lane Discoverability Sync | v2.5 | 1/1 | Complete | 2026-05-27 |
-| 65. Phase 63 Nyquist Validation Closeout | v2.5 | 2/2 | Complete | 2026-05-27 |
+| 66. Baseline Expiry And Inventory | v2.6 | 0/? | Not started | — |
+| 67. High-Signal Warning Ratchet | v2.6 | 0/? | Not started | — |
+| 68. Full-Suite Warning Closure | v2.6 | 0/? | Not started | — |
+| 69. CI Trust And Milestone Closeout | v2.6 | 0/? | Not started | — |

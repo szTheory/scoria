@@ -129,3 +129,25 @@
 
 1. Canonical lane naming plus drift tests is the fastest way to keep support truth honest.
 2. Closeout is safer when archive artifacts are normalized immediately rather than treated as immutable snapshots.
+
+---
+
+## Milestone Next-Step Assessment (2026-05-27)
+
+**Type:** planning / product assessment (not a shipped milestone)
+
+### Findings
+
+- Scoria is **feature-strong** (~84% done for embedded Phoenix AI-ops scope) but **README understates shipped state** (v2.1 anchors enforced by drift tests until v2.7).
+- Highest-leverage next work is **maintainer trust** (`WARN-03`), then **adopter friction** (Hex + docs-truth), not new runtime families.
+- Planning artifacts had drift (`MILESTONE-ARC` through v2.2, stale installer thread); reconciled in this pass.
+
+### Confirmed Sequencing
+
+1. **v2.6** Warning Ratchet (`WARN-03`)
+2. **v2.7** OSS Release + Docs Truth
+3. Optional: semantic CI, connector guide, LiveView teardown hygiene
+
+### Key Lesson
+
+Adoption-trust phase: prove the build is as boring as the lane contracts claim before declaring OSS "done enough."

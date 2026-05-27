@@ -12,6 +12,12 @@
   "workflow": {
     "_auto_chain_active": false,
     "text_mode": true,
-    "research_before_questions": true
+    "research_before_questions": true,
+    "milestone_next_step": {
+      "adopter_lens": true,
+      "parallel_repo_research": true,
+      "retain_threads_and_retrospective": true,
+      "prompts_dir": "prompts/"
+    }
   }
 }

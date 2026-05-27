@@ -1,9 +1,9 @@
 # Thread: Warning Ratchet Follow-up (`WARN-03`)
 
 **Opened:** 2026-05-27  
-**Status:** queued-next  
+**Status:** active (v2.6 next milestone — confirmed 2026-05-27 assessment)  
 **Owner:** scoria-maintainers  
-**Priority:** immediate follow-up after installer-safety milestone
+**Priority:** highest — v2.6 Warning Ratchet
 
 ## Why This Thread Exists
 
@@ -21,11 +21,18 @@ v2.4 hardened canonical warning/CI trust, but full-suite warning ratchet remains
 2. Should baseline expiry checks be executable in CI to avoid manual drift?
 3. What staged policy best balances reliability pressure with contributor velocity?
 
-## Proposed Follow-up Scope
+## Proposed Follow-up Scope (v2.6)
 
 - Implement `WARN-03` as staged warning ratchet beyond canonical lanes.
 - Add executable baseline-expiry enforcement to reduce policy drift.
 - Keep canonical lane chain (`release_preview -> adoption -> runtime_to_handoff`) unchanged.
+
+## Staged Ratchet Decisions (assessment 2026-05-27)
+
+1. **Inventory first:** `mix compile --warnings-as-errors` + `mix test --warnings-as-errors`; classify by area.
+2. **Ratchet order:** high-signal dirs first (`lib/`, adoption lane files) — avoid all-at-once full-suite gate.
+3. **CI policy:** fail on expired rows in `.planning/WARNING-BASELINE.md` before requiring full-suite WAE green.
+4. **Non-goals for v2.6:** Hex publish, README shipped-state, semantic CI gate, connector docs (defer to v2.7+).
 
 ## Risks To Watch
 
