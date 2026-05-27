@@ -40,6 +40,21 @@ defmodule Scoria.CiPolicyContractTest do
     assert test_section =~ "postgres"
   end
 
+  test "WARN-06 documents WarningRatchet maintainer commands" do
+    operator_docs = File.read!("docs/operator_verification.md")
+
+    assert operator_docs =~ "mix scoria.warning_ratchet.test"
+    assert operator_docs =~ "mix scoria.warning_ratchet.check"
+    assert length(Scoria.WarningRatchet.high_signal_wae_paths()) > 0
+  end
+
+  test "policy job does not run warning_ratchet.test" do
+    ci_workflow = File.read!(".github/workflows/ci.yml")
+    [policy_section, _test_section] = split_jobs(ci_workflow)
+
+    refute policy_section =~ "scoria.warning_ratchet"
+  end
+
   defp split_jobs(content) do
     case :binary.match(content, "\n  test:") do
       {index, _length} ->
