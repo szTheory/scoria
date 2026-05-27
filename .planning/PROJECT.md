@@ -18,6 +18,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - A generated Phoenix host can now prove dependency fetch, install, migrate, route visibility, one durable run, readback, and operator evidence through the default lane.
 - README, operator verification, and installer output now agree on one canonical closeout chain: `MIX_ENV=dev mix scoria.release_preview` followed by `MIX_ENV=test mix test.adoption`.
 - `v2.3 Runtime-to-handoff adoption example` is open to make the bounded handoff lane easier to adopt from the now-boring default runtime path.
+- Phase 52 is complete: adopters now have a source-pinned default-run-to-bounded-handoff example using the public `Scoria` facade, bounded projected context, rejection behavior, and host/Scoria ownership wording.
 
 ## Current Milestone: v2.3 Runtime-to-handoff adoption example
 
@@ -64,11 +65,11 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ That same consumer proof path can start one durable run through `Scoria.start_run/2`, read it back through the public runtime facade, and inspect operator evidence without enabling optional knowledge or semantic lanes. — `v2.2 OSS adopter onramp`
 - ✓ README, operator verification, and installer output now describe the same lane ordering and prerequisite boundaries for default, bounded-handoff, semantic fast path, and optional knowledge surfaces. — `v2.2 OSS adopter onramp`
 - ✓ Scoria now names one canonical verification command per lane and documents denial or fallback behavior when optional prerequisites are missing. — `v2.2 OSS adopter onramp`
+- ✓ Phoenix developers can follow one example that starts with the default runtime lane and escalates into `Scoria.start_handoff_run/3` without new public API assumptions. — Phase 52 `runtime-to-handoff-example-contract`
+- ✓ The example makes bounded projected context, rejection behavior, and operator-visible delegated lineage understandable from adopter-facing docs or sample code. — Phase 52 `runtime-to-handoff-example-contract`
 
 ### Active
 
-- [ ] Phoenix developers can follow one example that starts with the default runtime lane and escalates into `Scoria.start_handoff_run/3` without new public API assumptions.
-- [ ] The example makes bounded projected context, rejection behavior, and operator-visible delegated lineage understandable from adopter-facing docs or sample code.
 - [ ] The runtime-to-handoff path is backed by an executable proof lane that remains independent of optional semantic or knowledge setup.
 
 ### Out of Scope
@@ -169,4 +170,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 after starting v2.3 Runtime-to-handoff adoption example*
+*Last updated: 2026-05-27 after completing Phase 52 runtime-to-handoff example contract*
