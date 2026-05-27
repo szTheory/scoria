@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T17:04:58.400Z"
-last_activity: 2026-05-27 -- Phase 65 planning complete
+last_updated: "2026-05-27T17:05:32.877Z"
+last_activity: 2026-05-27 -- Phase 65 execution started
 progress:
   total_phases: 7
   completed_phases: 6
@@ -19,14 +19,14 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 64 — adoption-lane-discoverability-sync
+**Current Focus:** Phase 65 — phase-63-nyquist-validation-closeout
 
 ## Current Position
 
-Phase: 65
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-27 -- Phase 65 planning complete
+Phase: 65 (phase-63-nyquist-validation-closeout) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 65
+Last activity: 2026-05-27 -- Phase 65 execution started
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ Last activity: 2026-05-27 -- Phase 65 planning complete
 - Phase 62 Plan 01 reconciled Nyquist ledgers for phases 59 and 61 from existing VERIFICATION evidence — no redundant tests added.
 - Phase 62 Plan 02 added `requirements-completed` frontmatter to all phase 60–61 SUMMARY files (INST-06/07 and INST-08) aligned to VERIFICATION evidence.
 - Phase 62 Plan 03 closed REQUIREMENTS gap row, set v2.5 audit Nyquist to compliant, and recorded `62-VERIFICATION.md` passed evidence.
+- Phase 65 complete: Phase 63 Nyquist validation ledger signed off; milestone Nyquist 5/5 (phases 59–63). Phase 64 ledger remains separate scope.
 - No active `.planning/phases/*` tree currently exists; new lessons are parked in `.planning/threads/` and should graduate into `NN-LEARNINGS.md` once the next phase starts.
 - No new public runtime API is required for Phase 52.
 - The Phase 52 example starts with `Scoria.start_run/2`, escalates through `Scoria.start_handoff_run/3`, and reads delegated detail through `Scoria.get_run_detail/1`.

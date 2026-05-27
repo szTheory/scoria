@@ -1,8 +1,8 @@
 ---
 phase: 65
 slug: phase-63-nyquist-validation-closeout
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: true
 created: 2026-05-27
 ---
@@ -37,9 +37,9 @@ created: 2026-05-27
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 65-01-01 | 01 | 1 | — | — | Phase 63 VALIDATION reflects passed verification | grep | `grep 'nyquist_compliant: true' .planning/phases/63-manifest-check-fingerprint-hardening/63-VALIDATION.md` | ✅ | ⬜ pending |
-| 65-02-01 | 02 | 2 | — | — | REQUIREMENTS gap row and audit Nyquist 5/5 updated | grep | `grep 'Phase 63 Nyquist validation ledger | Phase 65 | Complete' .planning/REQUIREMENTS.md` | ✅ | ⬜ pending |
-| 65-02-02 | 02 | 2 | — | — | Phase 65 verification artifact documents closure | file | `test -f .planning/phases/65-phase-63-nyquist-validation-closeout/65-VERIFICATION.md && grep 'status: passed' .planning/phases/65-phase-63-nyquist-validation-closeout/65-VERIFICATION.md` | ✅ | ⬜ pending |
+| 65-01-01 | 01 | 1 | — | — | Phase 63 VALIDATION reflects passed verification | grep | `grep 'nyquist_compliant: true' .planning/phases/63-manifest-check-fingerprint-hardening/63-VALIDATION.md` | ✅ | ✅ green |
+| 65-02-01 | 02 | 2 | — | — | REQUIREMENTS gap row and audit Nyquist 5/5 updated | grep | `grep 'Phase 63 Nyquist validation ledger | Phase 65 | Complete' .planning/REQUIREMENTS.md` | ✅ | ✅ green |
+| 65-02-02 | 02 | 2 | — | — | Phase 65 verification artifact documents closure | file | `test -f .planning/phases/65-phase-63-nyquist-validation-closeout/65-VERIFICATION.md && grep 'status: passed' .planning/phases/65-phase-63-nyquist-validation-closeout/65-VERIFICATION.md` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -64,11 +64,11 @@ Existing infrastructure covers all phase requirements (no new test files).
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 5s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 5s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-05-27 (Phase 65 Nyquist closeout)
