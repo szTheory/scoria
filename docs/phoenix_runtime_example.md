@@ -115,6 +115,7 @@ Treat that page as operator evidence, not as the source of your product's busine
 If the core runtime path is already working and a draft needs a bounded review, branch from the same identity and `run_id` model instead of starting a second onboarding path.
 The host app owns identity, escalation policy, prompt or draft selection, and projected-context selection.
 Scoria owns durable run creation, projected-context validation, queued delegated child creation, and curated readback through Scoria.get_run_detail/1.
+Use Scoria.start_handoff_run/3 only for that explicit bounded delegation branch.
 
 ```elixir
 def create(conn, %{"draft_answer" => draft_answer}) do

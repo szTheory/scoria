@@ -22,6 +22,10 @@ defmodule Scoria.TestSupport.AdoptionExample do
 
   def doc_fragments do
     [
+      "Scoria.identity/1",
+      "Scoria.start_run/2",
+      "Scoria.start_handoff_run/3",
+      "Scoria.get_run_detail/1",
       "actor_id: conn.assigns.current_user.id",
       "tenant_id: conn.assigns.current_account.id",
       "session_id: get_session(conn, :assistant_session_id)",
@@ -37,6 +41,8 @@ defmodule Scoria.TestSupport.AdoptionExample do
       "Scoria.start_run",
       "defp needs_bounded_review?(draft_answer) do",
       "Scoria.get_run_detail(handoff_run.run_id)",
+      "handoff_run.run_id",
+      "delegated = detail.delegated_handoffs",
       "last_scoria_handoff_run_id",
       "started.run_id != handoff_run.run_id",
       "session_id groups related host turns; run_id names one exact Scoria execution.",
@@ -49,6 +55,8 @@ defmodule Scoria.TestSupport.AdoptionExample do
 
   def handoff_doc_fragments do
     [
+      "Scoria.start_handoff_run/3",
+      "Scoria.get_run_detail/1",
       "Scoria.start_handoff_run(identity, \"critic\"",
       "Scoria.get_run_detail(started.run_id)",
       "delegated = detail.delegated_handoffs",
