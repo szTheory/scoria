@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T16:23:00Z"
-last_activity: 2026-05-27 -- Completed 62-02 SUMMARY frontmatter parity (phases 60-61 requirements-completed)
+last_updated: "2026-05-27T16:14:05Z"
+last_activity: 2026-05-27 -- Completed 62-03 milestone ledger and Phase 62 verification closeout
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
-  percent: 90
+  completed_plans: 10
+  percent: 80
 ---
 
 # Project State
@@ -19,14 +19,14 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 62 — nyquist-and-traceability-closeout
+**Current Focus:** Phase 63 — manifest-check fingerprint hardening (optional before v2.5 archive)
 
 ## Current Position
 
-Phase: 62 (nyquist-and-traceability-closeout) — EXECUTING
-Plan: 3 of 3 (62-03 next)
-Status: Executing Phase 62 — Plan 62-02 complete
-Last activity: 2026-05-27 -- Completed 62-02; phases 60-61 SUMMARY frontmatter traceability parity
+Phase: 62 (nyquist-and-traceability-closeout) — COMPLETE
+Plan: 3 of 3 (62-03 done)
+Status: Phase 62 complete — v2.5 traceability closeout; audit ready_for_archive
+Last activity: 2026-05-27 -- Completed 62-03; REQUIREMENTS gap Complete, 62-VERIFICATION passed
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Last activity: 2026-05-27 -- Completed 62-02; phases 60-61 SUMMARY frontmatter t
 - README/support wording has one notable drift risk ("shipped through v2.1" wording) that should be corrected in the upcoming docs-truth pass.
 - Phase 62 Plan 01 reconciled Nyquist ledgers for phases 59 and 61 from existing VERIFICATION evidence — no redundant tests added.
 - Phase 62 Plan 02 added `requirements-completed` frontmatter to all phase 60–61 SUMMARY files (INST-06/07 and INST-08) aligned to VERIFICATION evidence.
+- Phase 62 Plan 03 closed REQUIREMENTS gap row, set v2.5 audit Nyquist to compliant, and recorded `62-VERIFICATION.md` passed evidence.
 - No active `.planning/phases/*` tree currently exists; new lessons are parked in `.planning/threads/` and should graduate into `NN-LEARNINGS.md` once the next phase starts.
 - No new public runtime API is required for Phase 52.
 - The Phase 52 example starts with `Scoria.start_run/2`, escalates through `Scoria.start_handoff_run/3`, and reads delegated detail through `Scoria.get_run_detail/1`.
@@ -83,8 +84,8 @@ Last activity: 2026-05-27 -- Completed 62-02; phases 60-61 SUMMARY frontmatter t
 
 **Todos:**
 
-- Run `/gsd-plan-phase 62` to plan Nyquist validation and SUMMARY frontmatter parity closeout.
-- Run `/gsd-plan-phase 63` after 62 to plan manifest check fingerprint hardening.
+- Run `/gsd-plan-phase 63` for manifest check fingerprint hardening (optional before v2.5 archive).
+- Run `/gsd-complete-milestone` when ready to archive v2.5.
 - Keep `WARN-03` queued as the first follow-up milestone after v2.5 gap closure completes.
 - Preserve lane-contract, CI-order, and canonical closeout command contracts as non-negotiable constraints during v2.5 work.
 
