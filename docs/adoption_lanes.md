@@ -3,12 +3,13 @@
 Scoria is easiest to adopt when you treat it as a layered Phoenix runtime, not a platform you have to swallow whole.
 
 Start with the narrowest lane that solves your current problem. Expand only when the previous lane already feels boring in your host app.
+Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
 
 ## The Four Lanes
 
 ### 1. Default runtime lane
 
-Use this first.
+Start here.
 
 Choose it when you need:
 
@@ -44,7 +45,7 @@ This default lane is the first-adoption proof. You do not need pgvector, retriev
 
 ### 2. Bounded handoff lane
 
-Add this only after the default runtime lane is already working.
+Add this only when the default runtime lane is already working.
 
 Choose it when:
 

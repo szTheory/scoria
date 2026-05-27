@@ -1,6 +1,8 @@
 # Operator Verification
 
 This guide is the default Phoenix verification lane for Scoria's public runtime surface. The goal is simple: prove the core install, runtime, and operator-evidence path before you touch the optional knowledge lane.
+Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
+Start here with `mix scoria.install`, `mix ecto.migrate`, and `mix test.adoption`; add this only when the default lane is stable in your host app.
 
 ## What core success means
 

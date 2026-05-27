@@ -14,7 +14,7 @@ Scoria is shipped through `v2.1 Tenant-scoped semantic fast path`. The current p
 - a semantic fast path for explicitly safe read-only work
 - an optional knowledge lane for pgvector-backed retrieval and grounding
 
-If you are adopting Scoria for the first time, start with the default runtime lane and treat the others as layered additions.
+Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
 
 ## Who This Is For
 
@@ -27,7 +27,7 @@ The main job-to-be-done is simple: give a Phoenix app one boring, inspectable wa
 Use the narrowest lane that solves your current app problem:
 
 - **Default runtime lane**: start here for identity-aware durable runs, approvals, and operator evidence.
-- **Bounded handoff lane**: add this when one role needs to delegate a narrow slice of work to another role under the same durable run.
+- **Bounded handoff lane**: add this only when one role needs to delegate a narrow slice of work to another role under the same durable run.
 - **Semantic fast-path lane**: add this when you want tenant-partitioned answer reuse for explicitly safe read-only work.
 - **Optional knowledge lane**: add this only when you are intentionally validating retrieval, citations, and grounding.
 
