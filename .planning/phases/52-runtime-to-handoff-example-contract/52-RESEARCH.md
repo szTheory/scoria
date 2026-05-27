@@ -290,17 +290,17 @@ assert {:error, :unsafe_projected_context} =
 |---|-------|---------|---------------|
 | A1 | The final cohesive example can live in existing docs/tests rather than a new sample app. [ASSUMED] | Summary / Standard Stack | If a generated host app is required for product positioning, the planner would need to add a larger example artifact and more proof plumbing. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should Phase 52 create a new dedicated doc file or tighten `docs/phoenix_runtime_example.md` and `docs/bounded_handoffs.md`?**
+1. **RESOLVED: Should Phase 52 create a new dedicated doc file or tighten `docs/phoenix_runtime_example.md` and `docs/bounded_handoffs.md`?**
    - What we know: The existing docs already contain the runtime start and bounded handoff pieces. [VERIFIED: docs/phoenix_runtime_example.md:43] [VERIFIED: docs/bounded_handoffs.md:35]
    - What's unclear: The roadmap names an "example contract" but does not prescribe the artifact shape. [VERIFIED: .planning/ROADMAP.md]
-   - Recommendation: Prefer tightening existing docs plus shared fragments unless Plan 52-01 finds discoverability problems. [ASSUMED]
+   - Resolution: Phase 52 will tighten the existing docs plus shared source fragments instead of creating a new dedicated doc file, unless Plan 52-01 discovers a concrete blocker. [VERIFIED: .planning/phases/52-runtime-to-handoff-example-contract/52-01-PLAN.md]
 
-2. **Should rejection behavior be demonstrated in docs, tests, or both?**
+2. **RESOLVED: Should rejection behavior be demonstrated in docs, tests, or both?**
    - What we know: The runtime already has rejection tests and docs list unsafe keys. [VERIFIED: test/scoria/runtime_test.exs:215] [VERIFIED: docs/bounded_handoffs.md:65]
    - What's unclear: EXMP-02 says "documented or demonstrated," so either can satisfy the wording. [VERIFIED: .planning/ROADMAP.md]
-   - Recommendation: Do both narrowly: docs name the error behavior, tests assert accepted/rejected examples. [ASSUMED]
+   - Resolution: Phase 52 will do both narrowly: docs must name the accepted bounded context and `{:error, :unsafe_projected_context}` behavior, while tests assert accepted and rejected examples without expanding into a broad verification lane. [VERIFIED: .planning/phases/52-runtime-to-handoff-example-contract/52-02-PLAN.md] [VERIFIED: .planning/phases/52-runtime-to-handoff-example-contract/52-03-PLAN.md]
 
 ## Environment Availability
 
