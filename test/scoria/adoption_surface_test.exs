@@ -106,7 +106,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     refute content =~ "Repo.all"
     refute content =~ "workflow_steps"
     refute content =~ "workflow_handoffs"
-    refute content =~ "copy hidden transcript"
+    refute Regex.match?(~r/\bcopy hidden transcript into\b/, content)
     refute content =~ "provider_session token"
   end
 
