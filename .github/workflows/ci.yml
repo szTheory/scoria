@@ -109,6 +109,9 @@ jobs:
       - name: Run runtime-to-handoff proof lane
         run: mix test.runtime_to_handoff
 
+      - name: Run high-signal warning ratchet
+        run: mix scoria.warning_ratchet.test --warnings-as-errors
+
       - name: Run tests
         run: mix test
 
