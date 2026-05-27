@@ -61,7 +61,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 52. Runtime-to-handoff example contract | 3/3 | Complete   | 2026-05-27 |
+| 52. Runtime-to-handoff example contract | 3/3 | Complete    | 2026-05-27 |
 | 53. Operator evidence and lane guidance | 0/3 | Ready | — |
 | 54. Executable proof and closeout truth | 0/3 | Blocked on Phase 53 | — |
 
