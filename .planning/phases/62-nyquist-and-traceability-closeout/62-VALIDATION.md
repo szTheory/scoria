@@ -1,8 +1,8 @@
 ---
 phase: 62
 slug: nyquist-and-traceability-closeout
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: true
 created: 2026-05-27
 ---
@@ -37,12 +37,12 @@ created: 2026-05-27
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 62-01-01 | 01 | 1 | — | — | Phase 59 VALIDATION reflects passed verification | grep | `grep 'nyquist_compliant: true' .planning/phases/59-planner-contract-foundation/59-VALIDATION.md` | ✅ | ⬜ pending |
-| 62-01-02 | 01 | 1 | — | — | Phase 61 VALIDATION reflects passed verification | grep | `grep 'nyquist_compliant: true' .planning/phases/61-proof-and-stability-closeout/61-VALIDATION.md` | ✅ | ⬜ pending |
-| 62-02-01 | 02 | 2 | — | — | Phase 60 summaries declare INST-06/07 completion | grep | `grep -c 'requirements-completed' .planning/phases/60-drift-classification-and-safe-apply/60-0*-SUMMARY.md \| tail -1` expects `2` | ✅ | ⬜ pending |
-| 62-02-02 | 02 | 2 | — | — | Phase 61 summaries declare INST-08 completion | grep | `grep -c 'requirements-completed' .planning/phases/61-proof-and-stability-closeout/61-0*-SUMMARY.md \| tail -1` expects `3` | ✅ | ⬜ pending |
-| 62-03-01 | 03 | 3 | — | — | REQUIREMENTS gap row and audit Nyquist table updated | grep | `grep 'Phase 62' .planning/REQUIREMENTS.md` shows Complete | ✅ | ⬜ pending |
-| 62-03-02 | 03 | 3 | — | — | Phase 62 verification artifact documents closure | file | `test -f .planning/phases/62-nyquist-and-traceability-closeout/62-VERIFICATION.md` | ✅ | ⬜ pending |
+| 62-01-01 | 01 | 1 | — | — | Phase 59 VALIDATION reflects passed verification | grep | `grep 'nyquist_compliant: true' .planning/phases/59-planner-contract-foundation/59-VALIDATION.md` | ✅ | ✅ green |
+| 62-01-02 | 01 | 1 | — | — | Phase 61 VALIDATION reflects passed verification | grep | `grep 'nyquist_compliant: true' .planning/phases/61-proof-and-stability-closeout/61-VALIDATION.md` | ✅ | ✅ green |
+| 62-02-01 | 02 | 2 | — | — | Phase 60 summaries declare INST-06/07 completion | grep | `grep -c 'requirements-completed' .planning/phases/60-drift-classification-and-safe-apply/60-0*-SUMMARY.md \| tail -1` expects `2` | ✅ | ✅ green |
+| 62-02-02 | 02 | 2 | — | — | Phase 61 summaries declare INST-08 completion | grep | `grep -c 'requirements-completed' .planning/phases/61-proof-and-stability-closeout/61-0*-SUMMARY.md \| tail -1` expects `3` | ✅ | ✅ green |
+| 62-03-01 | 03 | 3 | — | — | REQUIREMENTS gap row and audit Nyquist table updated | grep | `grep 'Phase 62' .planning/REQUIREMENTS.md` shows Complete | ✅ | ✅ green |
+| 62-03-02 | 03 | 3 | — | — | Phase 62 verification artifact documents closure | file | `test -f .planning/phases/62-nyquist-and-traceability-closeout/62-VERIFICATION.md` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -64,11 +64,11 @@ Existing infrastructure covers all phase requirements.
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 5s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 5s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-05-27 (Phase 62 traceability closeout)
