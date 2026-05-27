@@ -1,0 +1,79 @@
+# Runtime-to-handoff adoption example (v2.3) Requirements
+
+**Status:** Active
+**Defined:** 2026-05-27
+**Last updated:** 2026-05-27
+
+## Core Value
+
+Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
+
+## Scope Rules
+
+- **IN SCOPE:** One runtime-to-handoff adopter example, bounded projected-context guidance, operator evidence inspection, lane-boundary support truth, and executable proof.
+- **OUT OF SCOPE:** New public runtime APIs unless a blocking gap is discovered, broad handoff example catalogs, hosted onboarding, package-family decomposition, external semantic cache backends, and optional knowledge or semantic setup in the default proof path.
+- **CONSTRAINTS:** Stay embedded and Phoenix-first, preserve `Scoria.start_run/2` and `Scoria.start_handoff_run/3` as the intended adopter-facing surface, and keep the proof independent of pgvector, retrieval, grounding, or semantic fast-path prerequisites.
+
+## Requirements
+
+### Adoption Example
+
+- [ ] **EXMP-01:** Phoenix developer can follow one adopter-facing example that starts a default Scoria run and escalates into `Scoria.start_handoff_run/3` without needing maintainer folklore.
+- [ ] **EXMP-02:** The example shows the bounded projected-context shape, including what can be passed safely and what Scoria rejects or excludes by default.
+
+### Operator Evidence
+
+- [ ] **EVID-01:** Operator can inspect the default run, delegated handoff lineage, projected-context summary, and delegated outcome from the existing Scoria operator surfaces.
+
+### Support Truth
+
+- [ ] **DOCS-01:** README, operator verification, or adopter guide wording explains when a Phoenix team should stay on the default runtime lane versus escalate into bounded handoff.
+- [ ] **DOCS-02:** The example and support surfaces name the canonical verification command for the runtime-to-handoff path and describe missing-prerequisite or denial behavior truthfully.
+
+### Executable Proof
+
+- [ ] **PROOF-01:** A bounded test or Mix proof lane verifies the runtime-to-handoff example path end to end.
+- [ ] **PROOF-02:** The proof lane verifies that the example does not require optional semantic fast-path, knowledge, retrieval, or hosted onboarding setup.
+
+## Future Requirements
+
+### Advanced Adoption Examples
+
+- **EXMP-03:** Scoria ships additional examples for review, replay, semantic fast path, or knowledge lanes after the first runtime-to-handoff example proves useful.
+- **EXMP-04:** Scoria provides a broader lane-comparison matrix only if support evidence shows the narrow example still leaves adopters confused.
+
+### Semantic Infrastructure
+
+- **FAST-03:** Scoria supports external cache backends beyond the default Ecto-native semantic cache truth store.
+- **FAST-04:** Scoria exposes advanced ANN tuning and analytics controls once exact-first proof and operator trust are established.
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| New hosted demo or managed onboarding flow | Would widen Scoria beyond the embedded Phoenix product boundary before the example path is proven. |
+| Package-family decomposition | Valuable later, but unrelated to clarifying runtime-to-handoff adoption. |
+| External semantic cache backends or tuning | Lower-priority capability expansion after `v2.1`, not part of the current adopter-support question. |
+| Optional knowledge or semantic setup in the proof path | Would hide prerequisites inside the default runtime-to-handoff story and weaken support truth. |
+| Broad example catalog | One canonical path should prove the shape before Scoria adds more examples. |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| EXMP-01 | Phase 52 | Pending |
+| EXMP-02 | Phase 52 | Pending |
+| EVID-01 | Phase 53 | Pending |
+| DOCS-01 | Phase 53 | Pending |
+| DOCS-02 | Phase 54 | Pending |
+| PROOF-01 | Phase 54 | Pending |
+| PROOF-02 | Phase 54 | Pending |
+
+**Coverage:**
+- Active requirements: 7 total
+- Mapped to phases: 7
+- Unmapped: 0
+
+---
+*Requirements defined: 2026-05-27*
+*Last updated: 2026-05-27 after starting v2.3*

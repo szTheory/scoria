@@ -1,7 +1,7 @@
 # Milestone Arc: Scoria
 
 **Created:** 2026-05-12
-**Last updated:** 2026-05-26
+**Last updated:** 2026-05-27
 **Status:** maintained planning artifact
 
 ## Purpose
@@ -67,6 +67,7 @@ Shipped through `v2.2 OSS adopter onramp` on 2026-05-26:
 | v2.0 | Relay | shipped | Formalized the bounded public handoff wedge, delegated evidence story, and canonical adoption proof |
 | v2.1 | Tenant-scoped semantic fast path | shipped | Durable semantic reuse, invalidation truth, operator evidence, and a bounded semantic proof lane |
 | v2.2 | OSS adopter onramp | shipped | Release-grade package truth, host-app install proof, and lane-based support closure |
+| v2.3 | Runtime-to-handoff adoption example | active | One executable path from default runtime adoption into bounded handoff with operator evidence |
 
 ## Latest Shipped Milestone
 
@@ -89,13 +90,28 @@ Teams can now adopt Scoria through a boring, executable Phoenix-first path inste
 
 ## Active Milestone
 
-No active milestone. Start the next one through `$gsd-new-milestone`.
+### v2.3 Runtime-to-handoff adoption example
+
+**Status:** active
+**Started:** 2026-05-27
+**Theme:** Clarify capability tiering without widening the product boundary
+
+**What this step should deliver**
+
+- one executable runtime -> handoff example using the existing public runtime surface
+- clear projected-context and denial/fallback guidance for the bounded handoff lane
+- operator evidence inspection that shows default run truth, delegated lineage, and delegated outcome
+- a bounded proof lane that verifies the example without optional semantic or knowledge prerequisites
+
+**Why it is active**
+
+`v2.2` made first adoption executable. `v2.3` now reduces the next support risk: adopters need to understand when and how to graduate from the default runtime lane into bounded handoffs without treating handoff as a hidden first-adoption requirement.
 
 ## Recommended Candidates
 
 ### 1. Advanced adoption examples only if handoff confusion remains
 
-**Status:** pending
+**Status:** active as `v2.3 Runtime-to-handoff adoption example`
 **Priority:** medium
 **Theme:** Clarify capability tiering without widening the product boundary
 
@@ -106,7 +122,7 @@ No active milestone. Start the next one through `$gsd-new-milestone`.
 
 **Why it is next**
 
-This remains contingent on real support evidence. It is the highest-leverage next candidate only if the shipped OSS onramp still leaves Phoenix teams confused about when to adopt bounded handoffs or adjacent lanes.
+This is now active in a narrow form: one runtime-to-handoff example with executable proof. Broader examples stay deferred until this path proves useful.
 
 ### 2. External semantic cache backends and advanced tuning
 
@@ -125,7 +141,7 @@ These are natural extensions of `v2.1`, but they widen scope and should wait unt
 
 ## Recommendation
 
-Do not auto-open a new milestone from leftover `v2.2` momentum. Start the next milestone only after choosing between a support-evidence-driven adoption-example follow-up and later semantic infrastructure expansion; the current recommendation is the adoption-example path if real user confusion appears.
+Keep `v2.3` narrow. Do not use the adoption-example milestone to pull in hosted onboarding, package-family decomposition, broad example catalogs, or semantic infrastructure expansion.
 
 ## Source Notes
 

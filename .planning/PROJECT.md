@@ -17,13 +17,18 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `mix scoria.install` is now a truthful host-app contract with explicit mutation reporting, copied-migration boundaries, and clean Tailwind-absent behavior.
 - A generated Phoenix host can now prove dependency fetch, install, migrate, route visibility, one durable run, readback, and operator evidence through the default lane.
 - README, operator verification, and installer output now agree on one canonical closeout chain: `MIX_ENV=dev mix scoria.release_preview` followed by `MIX_ENV=test mix test.adoption`.
-- No active milestone is open. The next milestone should be chosen through fresh planning rather than implicitly extending `v2.2`.
+- `v2.3 Runtime-to-handoff adoption example` is open to make the bounded handoff lane easier to adopt from the now-boring default runtime path.
 
-## Next Milestone Goals
+## Current Milestone: v2.3 Runtime-to-handoff adoption example
 
-- Prefer a narrow follow-up only if real adopter evidence says the shipped lane hierarchy is still confusing.
-- Keep adjacent capability expansion behind the now-shipped adoption baseline instead of reopening infra work by default.
-- Start the next milestone with `$gsd-new-milestone` so requirements and roadmap scope are defined from a clean post-ship state.
+**Goal:** Give Phoenix adopters one executable, support-truthful path from a default Scoria run into a bounded handoff with inspectable projected context and operator evidence.
+
+**Target features:**
+- A focused runtime-to-handoff example or guide that starts from the default lane and escalates through `Scoria.start_handoff_run/3`.
+- Clear projected-context and lane-boundary wording that explains what is safe to pass, what is rejected, and when a team should stay on the default lane.
+- Executable proof that the example path works without turning semantic, knowledge, hosted onboarding, or package-family work into hidden prerequisites.
+
+**Why now:** `v2.2` made first adoption executable. The next risk is not missing runtime power; it is whether a normal Phoenix team can recognize when and how to graduate from the default run lane into bounded handoffs without maintainer folklore.
 
 ## Requirements
 
@@ -62,13 +67,15 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-- None. Start the next milestone with `$gsd-new-milestone`.
+- [ ] Phoenix developers can follow one example that starts with the default runtime lane and escalates into `Scoria.start_handoff_run/3` without new public API assumptions.
+- [ ] The example makes bounded projected context, rejection behavior, and operator-visible delegated lineage understandable from adopter-facing docs or sample code.
+- [ ] The runtime-to-handoff path is backed by an executable proof lane that remains independent of optional semantic or knowledge setup.
 
 ### Out of Scope
 
 - Full package-family decomposition into multiple Hex libraries — valuable later, but too wide for the first boring adopter closeout.
 - Hosted demo environments or managed onboarding services — would widen the product boundary before the embedded install story is fully proven.
-- Advanced bounded-handoff example expansion — defer unless real support evidence shows the shipped public lane is still confusing.
+- Broad bounded-handoff example expansion beyond one runtime-to-handoff path — too wide until one canonical example proves useful.
 - External semantic cache backends or ANN tuning controls — adjacent capability expansion, not the highest-leverage adoption closure.
 - Folding optional knowledge or semantic verification into the default adoption lane — would weaken the clear prerequisite boundary that this milestone is trying to strengthen.
 
@@ -90,7 +97,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - The repo now has two named proof surfaces for adopters and maintainers: `mix scoria.release_preview` and `mix test.adoption`.
 - Optional semantic and knowledge lanes remain explicitly outside the default adoption path.
 - The repo already has durable workflow truth, approval lineage, telemetry, audit seams, bounded handoffs, and tenant-scoped semantic evidence.
-- The next milestone should be chosen from fresh adopter evidence rather than from unfinished `v2.2` cleanup assumptions.
+- `v2.3` should stay narrow: one runtime-to-handoff adopter example with executable proof, not a new runtime capability family.
 
 ## Constraints
 
@@ -116,6 +123,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | `v2.1` semantic caching stays Scoria-owned, tenant-partitioned, and evidence-first instead of relying on provider prompt caches or invisible global reuse | Latency wins are only acceptable if partitioning, invalidation, and operator truth remain inspectable | — Resolved |
 | Post-`v2.1` milestone selection should prioritize OSS adopter readiness over adjacent capability expansion | The repo is already feature-strong; the main remaining leverage is making package/install/proof surfaces boring for a serious Phoenix adopter | — Resolved |
 | `v2.2` should close the OSS adopter onramp before Scoria reopens broader capability expansion | Publishability, install truth, consumer proof, and support truth are now part of the product surface, not ancillary release chores | — Resolved |
+| `v2.3` should clarify the runtime-to-handoff adoption path before adding new capability families | The default onramp is now executable; the next likely support risk is lane escalation and bounded-handoff comprehension | — Pending |
 
 ## Milestone History
 
@@ -132,6 +140,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v2.0 Relay`: Explicit bounded handoff contract truth, delegated evidence visibility, canonical adoption proof, and clean closeout verification.
 - `v2.1 Tenant-scoped semantic fast path`: Tenant-partitioned semantic reuse, compatibility-aware invalidation, operator-visible semantic evidence, and a named semantic proof lane.
 - `v2.2 OSS adopter onramp`: Publish-facing package truth, generated-host adoption proof, and canonical lane-based support closure.
+- `v2.3 Runtime-to-handoff adoption example`: Active milestone to make the bounded handoff lane adoptable from the default runtime path with executable proof.
 
 ## Archived Planning Notes
 
@@ -160,4 +169,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 after shipping v2.2 OSS adopter onramp*
+*Last updated: 2026-05-27 after starting v2.3 Runtime-to-handoff adoption example*

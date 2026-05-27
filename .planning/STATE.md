@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: none
-status: awaiting_next_milestone
-last_updated: 2026-05-26T15:00:00Z
-last_activity: 2026-05-26
+milestone: v2.3
+milestone_name: Runtime-to-handoff adoption example
+status: active
+last_updated: 2026-05-27T00:00:00Z
+last_activity: 2026-05-27
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 9
   completed_plans: 0
   percent: 0
-stopped_at: v2.2 archived and shipped; awaiting next milestone selection
+stopped_at: v2.3 initialized; ready to plan Phase 52
 ---
 
 # Project State
@@ -20,17 +20,17 @@ stopped_at: v2.2 archived and shipped; awaiting next milestone selection
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** No active milestone; ready for `$gsd-new-milestone`
+**Current Focus:** v2.3 Runtime-to-handoff adoption example
 
 ## Current Position
 
-Phase: milestone boundary
-Plan: archive complete
-**Milestone:** none
-**Phase:** —
+Phase: 52 - Runtime-to-handoff example contract
+Plan: not planned
+**Milestone:** v2.3 Runtime-to-handoff adoption example
+**Phase:** 52
 **Plan:** —
-**Status:** Awaiting next milestone
-**Last activity:** 2026-05-26
+**Status:** Ready for `$gsd-plan-phase 52`
+**Last activity:** 2026-05-27
 
 **Progress:**
 [----------] 0%
@@ -42,7 +42,8 @@ Plan: archive complete
 - **Archived Milestone Plans:** 16 complete
 - **Archived Milestone Task Count:** 35 total
 - **Coverage:** 8 shipped milestone requirements satisfied
-- **Active Milestone:** none
+- **Active Milestone:** `v2.3 Runtime-to-handoff adoption example`
+- **Active Milestone Scope:** 3 phases, 9 planned plans, 7 active requirements
 
 ## Accumulated Context
 
@@ -52,6 +53,7 @@ Plan: archive complete
 - Phases `44-46` shipped `v2.1 Tenant-scoped semantic fast path` with archived roadmap and requirements ledgers.
 - Phases `47-51` shipped `v2.2 OSS adopter onramp` with archived roadmap and requirements ledgers.
 - Scoria now has a publishable package/docs lane, a truthful installer contract, a generated-host consumer proof, and a bounded default-lane verifier.
+- `v2.3` activates the adoption-example follow-up candidate: one executable runtime-to-handoff path before any broader capability expansion.
 
 **Decisions:**
 
@@ -64,14 +66,15 @@ Plan: archive complete
 - `mix scoria.install` now needs to be treated as a host-app contract that copies core migrations, wires defaults, and degrades cleanly when optional Tailwind assets are absent.
 - Semantic proof lanes must prepare their own optional knowledge or retrieval tables instead of leaking hidden setup assumptions into the support story.
 - `v2.2` closed publishability, consumer proof, and support-truth alignment before Scoria reopens broader capability work.
+- `v2.3` should clarify lane escalation through one runtime-to-handoff example backed by executable proof, not by broad docs-only guidance.
 
 **Todos:**
 
-- Open the next milestone with `$gsd-new-milestone` when the next priority is clear.
+- Plan Phase 52 with `$gsd-plan-phase 52`.
 
 **Blockers:**
 
-- None. `v2.2` shipped with canonical verification for Phases 47 through 51, `MIX_ENV=dev mix scoria.release_preview` passed, and `MIX_ENV=test mix test.adoption` passed with `3 doctests, 42 tests, 0 failures` on 2026-05-26.
+- None. `v2.3` starts from a clean `v2.2` archive with `main` aligned to `origin/main`.
 
 ## Deferred Items
 
@@ -82,6 +85,7 @@ Items deferred or intentionally outside active milestone scope:
 | tech debt | Project-level full-suite warning audit outside the owned adoption lane still has not been rerun after the post-`v1.9` support-truth shims | still unverified |
 | tech debt | LiveView async teardown noise in the workflow/replay test lane | accepted at `v1.9` close |
 | future milestone | Advanced bounded-handoff examples beyond the shipped Relay lane | deferred unless real adopter evidence proves the current lane is still confusing |
+| active milestone | One runtime-to-handoff adoption example | active in `v2.3` |
 | future milestone | External semantic cache backends and advanced tuning | deferred until the embedded default semantic lane and default OSS onramp both prove boring in practice |
 | future milestone | Package-family decomposition into multiple Hex libraries | deferred beyond the first OSS adopter closeout |
 | future milestone | Hosted demo or managed onboarding surfaces | deferred to preserve the embedded Phoenix product shape |
