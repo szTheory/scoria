@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Runtime-to-handoff adoption example
 status: planning
-last_updated: "2026-05-27T07:17:54.624Z"
+last_updated: "2026-05-27T07:38:17.908Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 3
@@ -78,6 +78,7 @@ Plan: 1 of 3
 - The bounded handoff guide now states the host/Scoria ownership boundary immediately under the core contract.
 - Unsafe projected context is documented as `{:error, :unsafe_projected_context}` before durable delegated run creation.
 - The hidden-transcript refutation rejects prescriptive transfer wording without contradicting the required non-copy safety sentence.
+- Phase 53 UI design contract is approved in `.planning/phases/53-operator-evidence-and-lane-guidance/53-UI-SPEC.md`; planning should use the delegated evidence anchor, default-lane empty state, curated DTO boundary, and lane wording contract from that file.
 
 **Todos:**
 
