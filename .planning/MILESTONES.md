@@ -1,5 +1,21 @@
 # Milestones
 
+## v2.4 Adoption Reliability Contract (Shipped: 2026-05-27)
+
+**Phases completed:** 4 phases, 6 plans, 10 requirements
+
+**Key accomplishments:**
+
+- Added one canonical lane contract source (`Scoria.VerificationLanes`) for command, env, prerequisite, and exclusion truth across all verification lanes.
+- Bound docs drift guards and lane task tests to canonical lane-contract nouns and boundary wording.
+- Cleared release-preview warning debt while enforcing warnings-as-errors and introducing an owner+expiry warning baseline ledger.
+- Enforced canonical closeout ordering and warning gates in CI (`release_preview -> adoption -> runtime_to_handoff`).
+- Hardened installer browser-scope support for list-form `pipe_through` while preserving idempotent, truthful install behavior.
+
+**Known deferred items at close:** 0 (open-artifact audit clear at closeout)
+
+---
+
 ## v2.3 Runtime-to-handoff adoption example
 
 **Shipped:** 2026-05-27

@@ -35,18 +35,57 @@
 
 ---
 
+## Milestone: v2.4 — Adoption Reliability Contract
+
+**Shipped:** 2026-05-27
+**Phases:** 4 | **Plans:** 6 | **Sessions:** 6
+
+### What Was Built
+- Canonical lane contract source for command/env/prerequisite/exclusion truth across release-preview, adoption, runtime-to-handoff, semantic fast-path, and knowledge lanes.
+- Executable docs/support drift guards tied to lane-contract commands and boundary wording.
+- Warning-trust baseline closure with docs warnings-as-errors plus owner/expiry debt ledger.
+- CI lane-order and warning-gate enforcement before broad suite execution.
+- Installer browser-scope hardening for list-form `pipe_through` variants with idempotent behavior preserved.
+
+### What Worked
+- Shared lane-contract nouns made docs, tests, and CI updates mechanically consistent.
+- Canonical lane commands remained fast to verify through bounded test surfaces.
+- Backfilled phase summaries/verification/validation quickly restored audit determinism.
+
+### What Was Inefficient
+- Running archive automation before verification backfill created a temporary stale milestone entry.
+- Closeout metadata required manual normalization after phase artifacts were reconstructed.
+
+### Patterns Established
+- Keep lane contracts source-driven and imported by every drift-sensitive surface.
+- Treat warning baseline ownership/expiry as a first-class milestone outcome.
+- Archive phase artifacts only after verification tables and requirement checkboxes are reconciled.
+
+### Key Lessons
+1. Milestone closeout should enforce "audit pass first, archive second" to avoid stale historical records.
+2. Canonical closeout ordering is best guarded in both CI workflow YAML and test assertions.
+
+### Cost Observations
+- Model mix: not tracked in this repo-local closeout
+- Sessions: 6 plan summaries captured for v2.4
+- Notable: bounded lane contracts kept verification time low while still enforcing cross-surface truth
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v2.4 | 6 | 4 | Added canonical lane-contract source and enforced warning/lane-order reliability contracts across docs/tests/CI/installer |
 | v2.3 | 9 | 3 | Added canonical runtime-to-handoff proof lane and aligned docs/tests/CI to one support-truth contract |
 
 ### Cumulative Quality
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v2.4 | canonical closeout chain green (`release_preview`, `test.adoption`, `test.runtime_to_handoff`) plus contract suites | requirement audit 10/10 | none |
 | v2.3 | `mix test.adoption` + `mix test.runtime_to_handoff` green at closeout | requirement audit 7/7 | none |
 
 ### Top Lessons (Verified Across Milestones)

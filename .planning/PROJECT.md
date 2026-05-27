@@ -12,20 +12,21 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
-- Scoria shipped `v2.3 Runtime-to-handoff adoption example` on 2026-05-27.
-- The product now has a publish-facing docs and package proof lane through `mix scoria.release_preview`.
-- `mix scoria.install` is now a truthful host-app contract with explicit mutation reporting, copied-migration boundaries, and clean Tailwind-absent behavior.
-- A generated Phoenix host can now prove dependency fetch, install, migrate, route visibility, one durable run, readback, and operator evidence through the default lane.
-- README and operator verification now agree with CI on one canonical closeout chain: `mix scoria.release_preview`, `mix test.adoption`, and `mix test.runtime_to_handoff`.
-- `v2.3 Runtime-to-handoff adoption example` is complete: operator evidence, lane guidance, canonical runtime-to-handoff proof lane, and closeout verification ledger are all shipped.
-- Phase 52 is complete: adopters now have a source-pinned default-run-to-bounded-handoff example using the public `Scoria` facade, bounded projected context, rejection behavior, and host/Scoria ownership wording.
-- Phase 53 is complete: `/scoria/workflows/:run_id` delegated evidence copy now treats default-lane runs as valid first adoption, and docs/tests pin the default-to-handoff escalation contract.
+- Scoria shipped `v2.4 Adoption Reliability Contract` on 2026-05-27.
+- Canonical lane truth now lives in one source (`Scoria.VerificationLanes`) shared by docs, drift tests, lane tasks, and CI ordering assertions.
+- Release-preview and compile warning policy is now explicit and enforced in canonical closeout lanes.
+- Warning baseline debt is tracked with owner+expiry so accepted warning debt cannot drift silently.
+- Installer behavior is hardened for list-form browser `pipe_through` scopes while keeping idempotent and truthful output semantics.
+- Closeout proof remains executable through one canonical chain: `mix scoria.release_preview`, `mix test.adoption`, `mix test.runtime_to_handoff`.
 
-## Next Milestone Goals
+## Next Milestone (Planning)
 
-- Start from `/gsd-new-milestone` and re-derive active requirements from current adopter evidence.
-- Keep the default runtime lane boring while expanding only high-signal follow-up work.
-- Continue enforcing one canonical proof lane per adoption tier with executable docs/source drift guards.
+**Goal:** Start the next milestone from explicit scope definition, keeping adoption reliability gains stable while selecting the highest-leverage follow-up.
+
+**Immediate goals:**
+- Define the next requirement set via `/gsd-new-milestone`.
+- Decide whether to prioritize installer plan/apply semantics (`INST-03`, `INST-04`) or warning-budget ratchet (`WARN-03`).
+- Preserve lane-contract, CI-order, and warning-baseline guardrails as non-negotiable defaults.
 
 ## Requirements
 
@@ -66,10 +67,17 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Operators can inspect default runs, delegated lineage, projected-context summaries, and delegated outcome through curated runtime and workflow evidence surfaces. — Phase 53 `operator-evidence-and-lane-guidance`
 - ✓ README and adopter/operator guides now state when to stay on the default runtime lane versus when to escalate into bounded handoff. — Phase 53 `operator-evidence-and-lane-guidance`
 - ✓ The runtime-to-handoff path is backed by an executable proof lane that remains independent of optional semantic or knowledge setup. — Phase 54 `executable-proof-and-closeout-truth`
+- ✓ Canonical lane contract source now defines release-preview, adoption, runtime-to-handoff, semantic fast-path, and optional knowledge lanes with one command/env/prerequisite/exclusion schema. — `v2.4 Adoption Reliability Contract`
+- ✓ Adoption/support drift tests now consume lane-contract command and boundary nouns, and unsupported alias regressions remain blocked. — `v2.4 Adoption Reliability Contract`
+- ✓ Release-preview/docs warning policy now runs warning-clean with remaining debt tracked in a scoped owner+expiry baseline ledger. — `v2.4 Adoption Reliability Contract`
+- ✓ CI now enforces warning gates and canonical lane ordering for release-preview, adoption, and runtime-to-handoff proofs. — `v2.4 Adoption Reliability Contract`
+- ✓ Installer contract remains idempotent while supporting root browser scopes that use list-form `pipe_through`. — `v2.4 Adoption Reliability Contract`
 
 ### Active
 
-- None.
+- [ ] Installer `--dry-run` / `--check` plan/apply semantics become a first-class host-app safety lane.
+- [ ] Installer manifest-based drift detection and upgrade-safe mutation plans are scoped without widening runtime boundaries.
+- [ ] Full-suite warning budget ratchet is defined and enforced beyond the canonical closeout lanes.
 
 ### Out of Scope
 
@@ -79,25 +87,26 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - External semantic cache backends or ANN tuning controls — adjacent capability expansion, not the highest-leverage adoption closure.
 - Folding optional knowledge or semantic verification into the default adoption lane — would weaken the clear prerequisite boundary that this milestone is trying to strengthen.
 
-## Latest Shipped Milestone: v2.3 Runtime-to-handoff adoption example
+## Latest Shipped Milestone: v2.4 Adoption Reliability Contract
 
-**Goal:** Give Phoenix adopters one executable, support-truthful path from a default Scoria run into a bounded handoff with inspectable projected context and operator evidence.
+**Goal:** Keep adopter and maintainer verification truth boring by pinning lane contracts across docs, tests, CI, warnings, and installer behavior.
 
 **Delivered:**
-- One adopter-facing runtime-to-handoff example now starts on `Scoria.start_run/2` and escalates through `Scoria.start_handoff_run/3` with bounded projected context.
-- Operator evidence surfaces now show default lane, delegated lineage, projected context summary, and delegated outcome with default-lane-safe empty states.
-- Support docs and tests now agree on canonical runtime-to-handoff verification via `mix test.runtime_to_handoff`.
-- CI and operator closeout now share one executable command chain with captured verification evidence.
+- Added one machine-readable lane contract that defines command/env/prerequisite/exclusion truth for release-preview, adoption, runtime-to-handoff, semantic fast-path, and optional knowledge lanes.
+- Bound support/docs drift guards to canonical lane commands and boundary wording so alias regressions and wording drift fail fast.
+- Enforced warning trust with docs warnings-as-errors in release preview plus owner/expiry warning baseline tracking.
+- Enforced CI warning gates and canonical closeout order before broad suite execution.
+- Hardened installer browser-scope patching for list-form `pipe_through` syntax while preserving idempotent output behavior.
 
-**Why it mattered:** Scoria now closes the lane-escalation ambiguity that remained after `v2.2`; adopters can move from default run to bounded handoff without hidden prerequisites or folklore.
+**Why it mattered:** Scoria now has one executable reliability contract across docs, tests, CI, and installer surfaces, reducing support-truth drift and closeout ambiguity.
 
 ## Context
 
-- Scoria shipped `v2.3 Runtime-to-handoff adoption example` on 2026-05-27.
-- The repo now has three named proof surfaces for maintainers and adopters: `mix scoria.release_preview`, `mix test.adoption`, and `mix test.runtime_to_handoff`.
-- Optional semantic and knowledge lanes remain explicitly outside the default adoption path.
-- The repo already has durable workflow truth, approval lineage, telemetry, audit seams, bounded handoffs, and tenant-scoped semantic evidence.
-- The next milestone should stay evidence-driven: only expand beyond the current lane boundaries when support signals justify it.
+- Scoria shipped `v2.4 Adoption Reliability Contract` on 2026-05-27.
+- The canonical closeout chain remains `mix scoria.release_preview`, `mix test.adoption`, and `mix test.runtime_to_handoff`.
+- Optional semantic and knowledge lanes remain explicit extensions, not default-lane prerequisites.
+- Warning baseline debt is now tracked with explicit owner+expiry metadata for follow-up.
+- Next milestone planning starts from the archived v2.4 reliability baseline.
 
 ## Constraints
 
@@ -124,6 +133,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | Post-`v2.1` milestone selection should prioritize OSS adopter readiness over adjacent capability expansion | The repo is already feature-strong; the main remaining leverage is making package/install/proof surfaces boring for a serious Phoenix adopter | — Resolved |
 | `v2.2` should close the OSS adopter onramp before Scoria reopens broader capability expansion | Publishability, install truth, consumer proof, and support truth are now part of the product surface, not ancillary release chores | — Resolved |
 | `v2.3` should clarify the runtime-to-handoff adoption path before adding new capability families | The default onramp was executable in `v2.2`; the next likely support risk was lane escalation and bounded-handoff comprehension | — Resolved |
+| `v2.4` should prioritize adoption reliability contracts over net-new capability expansion | Existing lanes already deliver value; highest leverage is keeping docs, CI, warnings, and installer behavior in lock-step truth | — Resolved |
+| Next milestone should preserve v2.4 reliability contracts while selecting one focused expansion axis | Reliability contract closure is now shipped; follow-up scope should be narrow and requirement-led | — Active |
 
 ## Milestone History
 
@@ -141,6 +152,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v2.1 Tenant-scoped semantic fast path`: Tenant-partitioned semantic reuse, compatibility-aware invalidation, operator-visible semantic evidence, and a named semantic proof lane.
 - `v2.2 OSS adopter onramp`: Publish-facing package truth, generated-host adoption proof, and canonical lane-based support closure.
 - `v2.3 Runtime-to-handoff adoption example`: Default-to-handoff adopter example, operator evidence alignment, canonical runtime-to-handoff proof lane, and closeout ledger.
+- `v2.4 Adoption Reliability Contract`: Canonical lane contract source, drift-proof docs checks, warning-policy enforcement, CI lane-order trust, and installer list-form hardening.
 
 ## Archived Planning Notes
 
@@ -169,4 +181,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 after v2.3 milestone completion*
+*Last updated: 2026-05-27 after v2.4 milestone completion*
