@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.6
-milestone_name: Scope
-status: Defining requirements → roadmap approved
-last_updated: "2026-05-27T17:43:59.006Z"
-last_activity: 2026-05-27 — Milestone v2.6 Warning Ratchet initialized
+milestone_name: Warning Ratchet
+status: Phase 66 context gathered — ready for planning
+last_updated: "2026-05-27T23:59:00Z"
+last_activity: 2026-05-27 — Phase 66 discuss-phase context captured
 progress:
-  total_phases: 1
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-05-27)
 
 ## Current Position
 
-Phase: Not started (defining requirements complete; ready for Phase 66)
+Phase: 66 — Baseline Expiry And Inventory (context gathered)
 Plan: —
-Status: Defining requirements → roadmap approved
-Last activity: 2026-05-27 — Milestone v2.6 Warning Ratchet initialized
+Status: Ready for `/gsd-plan-phase 66`
+Last activity: 2026-05-27 — Phase 66 discuss-phase context captured
 
 ## Performance Metrics
 
@@ -66,5 +66,5 @@ Last activity: 2026-05-27 — Milestone v2.6 Warning Ratchet initialized
 
 ## Operator Next Steps
 
-- `/gsd-discuss-phase 66` — gather context for baseline expiry + inventory
-- `/gsd-plan-phase 66` — plan directly
+- `/gsd-plan-phase 66` — plan baseline expiry + inventory implementation
+- Resume file: `.planning/phases/66-baseline-expiry-and-inventory/66-CONTEXT.md`
