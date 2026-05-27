@@ -16,7 +16,7 @@ Requirements for milestone `v2.6 Warning Ratchet`.
 
 - [x] **WARN-05**: `mix compile --warnings-as-errors` and canonical lane-contract tests remain green without regression.
 - [x] **WARN-06**: High-signal test surfaces (`test/scoria/`, adoption lane tests, core workflow/replay LiveView tests targeted by inventory) pass under `--warnings-as-errors`.
-- [ ] **WARN-07**: CI runs `mix test --warnings-as-errors` and passes, or remaining debt is explicitly re-baselined in `.planning/WARNING-BASELINE.md` with owner and renewed expiry.
+- [x] **WARN-07**: CI runs `mix test --warnings-as-errors` and passes, or remaining debt is explicitly re-baselined in `.planning/WARNING-BASELINE.md` with owner and renewed expiry.
 
 ### CI Trust
 
@@ -50,7 +50,7 @@ Deferred beyond `v2.6`:
 | WARN-04 | Phase 66 | Complete |
 | WARN-05 | Phase 67 | Complete |
 | WARN-06 | Phase 67 | Complete |
-| WARN-07 | Phase 68 | Pending |
+| WARN-07 | Phase 68 | Complete |
 | CI-03 | Phase 69 | Pending |
 
 **Coverage:**
