@@ -99,6 +99,8 @@ Semantic status colors:
 | Layout | Keep delegated cards in the existing neutral evidence panel. Use a two-column preview at medium width and up; allow full-width stacking on small screens. |
 | Data boundary | Render only curated `detail.delegated_handoffs` data from `Scoria.get_run_detail/1`; do not expose raw workflow table names or internal query paths. |
 
+Primary focal point: the `Delegated Evidence` section header and `Inspect Delegated Evidence` anchor. Secondary hierarchy is delegated status, same-run lineage, then projected-context preview.
+
 ---
 
 ## Copywriting Contract
@@ -142,11 +144,11 @@ Docs wording requirements:
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-05-27
