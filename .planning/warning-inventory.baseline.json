@@ -1,0 +1,10 @@
+{
+  "clusters": {
+    "knowledge_migration_redefine": 2,
+    "test_unused_binding": 2,
+    "unclassified_compile": 4
+  },
+  "generated_at": "2026-05-27T18:13:56.713139Z",
+  "git_sha": "60ca8043838ac8b1f00473a60d4e21f417698765",
+  "schema_version": "1.0"
+}

@@ -161,7 +161,7 @@ defmodule Mix.Tasks.Scoria.WarningInventory do
 
     File.write!(
       "tmp/warning-inventory/latest.json",
-      Jason.encode!(Map.put(metadata, "rows", rows), pretty: true)
+      Jason.encode!(Map.put(metadata, "rows", json_encode_rows(rows)), pretty: true)
     )
 
     Mix.shell().info("==> Wrote .planning/warning-inventory.baseline.json")
@@ -180,6 +180,20 @@ defmodule Mix.Tasks.Scoria.WarningInventory do
       end)
       |> Enum.join("\n")
 
+    phase_67_queue = """
+    ## Phase 67 — Fixed vs Deferred
+
+    | Cluster | Action | Owner | Expiry / Notes |
+    |---------|--------|-------|----------------|
+    | :test_unused_binding | fix | @scoria-core | Phase 67 plan 67-03/67-04 |
+    | :test_dead_default_args | fix | @scoria-core | Phase 67 plan 67-03/67-04 |
+    | :knowledge_migration_redefine | fix | @scoria-core | migrate-once + scoped ignore_module_conflict (D-11) |
+    | :unclassified_compile | fix | @scoria-core | zero in high-signal scope; classify or fix code |
+    | :host_proof_generated_compile | defer | @scoria-core | p2 guard only; overlay stays in priv/ |
+    | :host_overlay_test_path | defer | @scoria-core | p2 guard only; no CI adoption WAE in Phase 67 |
+    | :liveview_async_teardown | defer | @scoria-web-runtime | p4 baselined until 2026-06-30 |
+    """
+
     """
     # Warning Inventory
 
@@ -192,8 +206,27 @@ defmodule Mix.Tasks.Scoria.WarningInventory do
     | Cluster | Count | Ratchet Tier |
     |---------|------:|--------------|
     #{queue}
+
+    #{phase_67_queue}
     """
   end
+
+  defp json_encode_rows(rows) do
+    Enum.map(rows, fn row ->
+      Map.new(row, fn {key, value} ->
+        {Atom.to_string(key), json_encode_value(value)}
+      end)
+    end)
+  end
+
+  defp json_encode_value(value) when is_atom(value), do: Atom.to_string(value)
+
+  defp json_encode_value(value) when is_list(value) do
+    Enum.map(value, &json_encode_value/1)
+  end
+
+  defp json_encode_value({a, b, c}) when is_atom(a), do: [Atom.to_string(a), b, c]
+  defp json_encode_value(value), do: value
 
   defp git_sha do
     case System.cmd("git", ["rev-parse", "HEAD"], stderr_to_stdout: true) do

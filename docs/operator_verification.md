@@ -206,3 +206,17 @@ Maintainers enforce accepted warning debt expiry and capture classified inventor
 - `mix scoria.warning_baseline.check` — fails when accepted rows in `.planning/WARNING-BASELINE.md` are expired or invalid
 - `mix scoria.warning_inventory` — capture-mode inventory of compiler warnings (no WAE)
 - `mix scoria.warning_inventory --write --scope full` — writes cluster-count JSON and human summary for Phase 67 ratchet ordering
+
+### WARN-06 high-signal ratchet
+
+Maintainers verify high-signal warning-as-errors scope before Phase 68 CI wiring:
+
+```bash
+mix scoria.warning_baseline.check
+rm -rf test/tmp/*
+MIX_ENV=test mix scoria.warning_inventory --write --scope full
+MIX_ENV=test mix scoria.warning_ratchet.check
+MIX_ENV=test mix scoria.warning_ratchet.test --warnings-as-errors
+```
+
+Preflight: empty `test/tmp/` before inventory `--write` so host-proof fixture pollution does not skew cluster counts.
