@@ -160,7 +160,7 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.ReviewQueueLiveTest.Endpoint)
   end
 
-  defp candidate_fixture(overrides \\ %{}) do
+  defp candidate_fixture(overrides) do
     %{trace: trace, run: run, step: step} = workflow_trace_fixture()
 
     attrs =
