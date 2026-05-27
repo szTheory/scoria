@@ -17,8 +17,9 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `mix scoria.install` is now a truthful host-app contract with explicit mutation reporting, copied-migration boundaries, and clean Tailwind-absent behavior.
 - A generated Phoenix host can now prove dependency fetch, install, migrate, route visibility, one durable run, readback, and operator evidence through the default lane.
 - README, operator verification, and installer output now agree on one canonical closeout chain: `MIX_ENV=dev mix scoria.release_preview` followed by `MIX_ENV=test mix test.adoption`.
-- `v2.3 Runtime-to-handoff adoption example` is open to make the bounded handoff lane easier to adopt from the now-boring default runtime path.
+- `v2.3 Runtime-to-handoff adoption example` is in closeout: operator evidence and lane guidance are now complete, with executable proof-lane follow-through still active.
 - Phase 52 is complete: adopters now have a source-pinned default-run-to-bounded-handoff example using the public `Scoria` facade, bounded projected context, rejection behavior, and host/Scoria ownership wording.
+- Phase 53 is complete: `/scoria/workflows/:run_id` delegated evidence copy now treats default-lane runs as valid first adoption, and docs/tests pin the default-to-handoff escalation contract.
 
 ## Current Milestone: v2.3 Runtime-to-handoff adoption example
 
@@ -67,6 +68,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Scoria now names one canonical verification command per lane and documents denial or fallback behavior when optional prerequisites are missing. — `v2.2 OSS adopter onramp`
 - ✓ Phoenix developers can follow one example that starts with the default runtime lane and escalates into `Scoria.start_handoff_run/3` without new public API assumptions. — Phase 52 `runtime-to-handoff-example-contract`
 - ✓ The example makes bounded projected context, rejection behavior, and operator-visible delegated lineage understandable from adopter-facing docs or sample code. — Phase 52 `runtime-to-handoff-example-contract`
+- ✓ Operators can inspect default runs, delegated lineage, projected-context summaries, and delegated outcome through curated runtime and workflow evidence surfaces. — Phase 53 `operator-evidence-and-lane-guidance`
+- ✓ README and adopter/operator guides now state when to stay on the default runtime lane versus when to escalate into bounded handoff. — Phase 53 `operator-evidence-and-lane-guidance`
 
 ### Active
 
@@ -170,4 +173,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 after completing Phase 52 runtime-to-handoff example contract*
+*Last updated: 2026-05-27 after completing Phase 53 operator evidence and lane guidance*
