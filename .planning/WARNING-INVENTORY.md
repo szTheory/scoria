@@ -4,6 +4,17 @@ Generated: 2026-05-27T19:11:53.625377Z
 Git SHA: 078901ac472f5107a597221c77bd70d87f70dccb
 Scope: full
 
+## Phase 68-02 Measurement (2026-05-27)
+
+Full scope after `rm -rf test/tmp/*` (`MIX_ENV=test mix scoria.warning_inventory --scope full --format table`):
+
+| Cluster | Count |
+|---------|------:|
+| :host_proof_generated_compile | 0 |
+| :host_overlay_test_path | 0 |
+
+**Outcome:** p2 already clean at measurement — targeted support/overlay code fixes skipped (68-02-02/03).
+
 ## Phase 67 Ratchet Queue
 
 | Cluster | Count | Ratchet Tier |
