@@ -233,3 +233,26 @@ MIX_ENV=test mix scoria.warning_ratchet.test --warnings-as-errors
 `mix scoria.warning_ratchet.check` now enforces empty `test/tmp/` before capture and automatically removes transient entries under `test/tmp/` after capture, so a follow-on `mix scoria.warning_inventory` run does not require manual cleanup between those two commands.
 
 Preflight: still run `rm -rf test/tmp/*` before inventory `--write` when you skip `warning_ratchet.check` (for example a manual inventory-only refresh) so host-proof fixture pollution does not skew cluster counts.
+
+### WARN-07 CI warning gates (staged)
+
+CI preserves behavioral lane commands unchanged:
+
+- `mix test.adoption` — default runtime lane (behavior)
+- `mix test.runtime_to_handoff` — escalation lane (behavior)
+
+CI enforces adoption-file compile warnings via the high-signal ratchet bridge (not a second `mix test.adoption --warnings-as-errors` invocation):
+
+```bash
+mix scoria.warning_ratchet.test --warnings-as-errors
+```
+
+Ratchet paths include `Mix.Tasks.Scoria.Test.Adoption.adoption_test_files/0` plus `test/scoria/**/*_test.exs` and `test/scoria_web/live/**/*_test.exs` (`Scoria.WarningRatchet.high_signal_wae_paths/0`).
+
+Maintainer adopter-parity debug command (local only until full WARN-07 closeout):
+
+```bash
+MIX_ENV=test mix test.adoption --warnings-as-errors
+```
+
+If the ratchet step fails in CI, run the same command locally with pgvector Postgres on port 55432 (`SCORIA_DB_PORT=55432`).

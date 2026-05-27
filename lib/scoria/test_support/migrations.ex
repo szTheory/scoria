@@ -32,12 +32,21 @@ defmodule Scoria.TestSupport.Migrations do
   end
 
   def ensure_knowledge_migrated! do
-    if :persistent_term.get(@knowledge_migrated_key, false) do
+    if :persistent_term.get(@knowledge_migrated_key, false) && knowledge_tables_exist?() do
       :ok
     else
       migrate_knowledge!()
       :persistent_term.put(@knowledge_migrated_key, true)
       :ok
+    end
+  end
+
+  defp knowledge_tables_exist? do
+    case Repo.query(
+           "select exists (select 1 from information_schema.tables where table_schema = current_schema() and table_name = 'ai_knowledge_sources')"
+         ) do
+      {:ok, %{rows: [[true]]}} -> true
+      _ -> false
     end
   end
 

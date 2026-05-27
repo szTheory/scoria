@@ -17,6 +17,8 @@ defmodule Mix.Tasks.Scoria.WarningRatchet.Test do
       Mix.raise("warning ratchet test requires MIX_ENV=test")
     end
 
+    Scoria.WarningInventory.cleanup_transient_tmp!()
+
     paths = Scoria.WarningRatchet.high_signal_wae_paths()
 
     test_args =
@@ -27,6 +29,16 @@ defmodule Mix.Tasks.Scoria.WarningRatchet.Test do
       end
 
     Mix.Task.run("loadpaths")
+    Mix.Task.run("compile")
+
+    for module <- [
+          Scoria.TestSupport.HostInstallFixtures,
+          Scoria.TestSupport.HostAppProof.Generator,
+          Scoria.TestSupport.HostAppProof.Runner
+        ] do
+      Code.ensure_compiled!(module)
+    end
+
     Mix.Task.reenable("test")
     Mix.Task.run("test", test_args)
   end
