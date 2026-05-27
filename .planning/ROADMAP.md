@@ -14,7 +14,7 @@
 | Phase | Name | Goal | Requirements |
 |------:|------|------|--------------|
 | 59 | 2/2 | Complete    | 2026-05-27 |
-| 60 | Drift Classification And Safe Apply | Add manifest-aware drift detection and ensure apply uses planner truth instead of ad-hoc mutations | INST-06, INST-07 |
+| 60 | 2/2 | Complete    | 2026-05-27 |
 | 61 | Proof And Stability Closeout | Prove idempotent, truthful output behavior across preview/check/apply while preserving v2.4 reliability guardrails | INST-08 |
 
 ## Phase Details
