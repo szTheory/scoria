@@ -1,5 +1,5 @@
 ---
-status: resolved
+status: complete
 phase: 60-drift-classification-and-safe-apply
 source: [60-VERIFICATION.md]
 started: 2026-05-27T13:52:04Z

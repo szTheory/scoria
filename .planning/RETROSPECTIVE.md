@@ -72,12 +72,48 @@
 
 ---
 
+## Milestone: v2.5 — Installer Safety & Upgrade Confidence
+
+**Shipped:** 2026-05-27
+**Phases:** 7 | **Plans:** 16 | **Sessions:** 16
+
+### What Was Built
+- Planner-driven `mix scoria.install --dry-run` and `--check` with deterministic no-write surfaces and stable tri-state exits.
+- Manifest-aware drift detection and planner-led apply preflight for managed router/config/migration surfaces.
+- `Scoria.Install.Contract` SSOT with mode equivalence, B-cycle idempotency, and operator-ordered summaries.
+- Nyquist/traceability closeout (phases 59–63), manifest fingerprint documentation, and adoption discoverability parity.
+
+### What Worked
+- Gap-closure phases (62–65) closed audit debt without expanding installer runtime scope.
+- Subprocess-backed install tests and `HostInstallFixtures` kept planner/apply proofs deterministic.
+- Fixing UAT frontmatter to `status: complete` cleared milestone-close artifact audits immediately.
+
+### What Was Inefficient
+- `status: resolved` on UAT files still counted as open gaps until frontmatter matched audit expectations.
+- Gap-closure table in REQUIREMENTS lagged phase completion (Phase 64 Pending while shipped).
+
+### Patterns Established
+- Treat installer planner artifact as SSOT across dry-run, check, and apply; never merge misleading stored fingerprints at check time.
+- Run `audit-open` before milestone close; UAT files must use `status: complete`.
+
+### Key Lessons
+1. Milestone-close artifact audits are strict about frontmatter vocabulary — align status tokens with tooling, not human semantics.
+2. Installer safety closes host-mutation surprise; warning ratchet (`WARN-03`) is now the highest-leverage follow-up.
+
+### Cost Observations
+- Model mix: not tracked in this repo-local closeout
+- Sessions: 16 plan summaries captured for v2.5
+- Notable: artifact-only closeout phases (62, 65) kept archive prep fast without redundant test runs
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v2.5 | 16 | 7 | Shipped planner/check no-write contracts, manifest-aware drift-safe apply, and installer contract SSOT with Nyquist closeout |
 | v2.4 | 6 | 4 | Added canonical lane-contract source and enforced warning/lane-order reliability contracts across docs/tests/CI/installer |
 | v2.3 | 9 | 3 | Added canonical runtime-to-handoff proof lane and aligned docs/tests/CI to one support-truth contract |
 
@@ -85,6 +121,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v2.5 | adoption lane (77 tests) + installer contract suites + `verification_lanes_test` green at closeout | requirement audit 6/6 (`INST-03`–`INST-08`) | none |
 | v2.4 | canonical closeout chain green (`release_preview`, `test.adoption`, `test.runtime_to_handoff`) plus contract suites | requirement audit 10/10 | none |
 | v2.3 | `mix test.adoption` + `mix test.runtime_to_handoff` green at closeout | requirement audit 7/7 | none |
 

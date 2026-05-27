@@ -1,5 +1,25 @@
 # Milestones
 
+## v2.5 Installer Safety & Upgrade Confidence (Shipped: 2026-05-27)
+
+**Phases completed:** 7 phases, 16 plans, 17 tasks
+
+**Key accomplishments:**
+
+- `mix scoria.install --dry-run` now uses a deterministic pure planner contract that classifies router, tailwind, migrations, and runtime config without mutating host files.
+- `mix scoria.install --check` now emits deterministic compatibility status with stable trailer output and enforced `0/1/2` exits while remaining no-write.
+- Phases 59 and 61 VALIDATION ledgers now match passed VERIFICATION evidence with nyquist_compliant: true and all per-task rows green.
+- Phase 60–61 SUMMARY files now carry `requirements-completed` frontmatter aligned to VERIFICATION evidence, matching the phase 59 traceability pattern.
+- v2.5 traceability tech debt closed: REQUIREMENTS gap row Complete, audit Nyquist compliant, and Phase 62 VERIFICATION records artifact-only closeout evidence.
+- Removed misleading manifest fingerprint merge and exposed honest manifest metadata on the planner artifact.
+- Exposed manifest check vs apply roles in human, JSON, and mix help without changing tri-state semantics.
+- Documented check vs apply fingerprint semantics for operators and locked them with integration tests.
+- Adoption lane discoverability `expected_files` now mirrors `adoption_test_files/0`, closing v2.5 audit gap `adoption-lane-discoverability-drift`.
+- Phase 63 Nyquist validation ledger reconciled — 10 green task rows, wave_0_complete, audit trail from 63-VERIFICATION.md
+- Milestone Nyquist ledger 5/5 — REQUIREMENTS gap Complete, audit compliant, 65-VERIFICATION passed
+
+---
+
 ## v2.4 Adoption Reliability Contract (Shipped: 2026-05-27)
 
 **Phases completed:** 4 phases, 6 plans, 10 requirements

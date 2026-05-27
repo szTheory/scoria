@@ -1,5 +1,5 @@
 ---
-status: resolved
+status: complete
 phase: 61-proof-and-stability-closeout
 source: 61-01-SUMMARY.md, 61-02-SUMMARY.md, 61-03-SUMMARY.md
 started: 2026-05-27T15:46:16Z

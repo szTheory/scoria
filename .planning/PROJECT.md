@@ -12,27 +12,19 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
-- Scoria shipped `v2.4 Adoption Reliability Contract` on 2026-05-27.
-- Milestone `v2.5 Installer Safety & Upgrade Confidence` is active; Nyquist validation and SUMMARY traceability gaps are closed (Phase 62 complete, 2026-05-27).
-- Phase `59 planner-contract-foundation` is complete: planner-driven `--dry-run`/`--check` contracts now provide deterministic no-write surfaces with stable check trailer and exit semantics.
-- Phase `62 nyquist-and-traceability-closeout` is complete: phases 59–61 VALIDATION ledgers are Nyquist-compliant, SUMMARY frontmatter includes `requirements-completed`, and v2.5 audit status is `ready_for_archive`.
-- Phase `64 adoption-lane-discoverability-sync` is complete: adoption discoverability `expected_files` matches `adoption_test_files/0`; v2.5 audit gap `adoption-lane-discoverability-drift` closed.
-- Phase 65 complete: Phase 63 Nyquist validation ledger signed off; milestone Nyquist 5/5 (phases 59–63). Phase 64 ledger remains separate scope.
-- Canonical lane truth now lives in one source (`Scoria.VerificationLanes`) shared by docs, drift tests, lane tasks, and CI ordering assertions.
-- Release-preview and compile warning policy is now explicit and enforced in canonical closeout lanes.
-- Warning baseline debt is tracked with owner+expiry so accepted warning debt cannot drift silently.
-- Installer behavior is hardened for list-form browser `pipe_through` scopes while keeping idempotent and truthful output semantics.
-- Closeout proof remains executable through one canonical chain: `mix scoria.release_preview`, `mix test.adoption`, `mix test.runtime_to_handoff`.
+- Scoria shipped `v2.5 Installer Safety & Upgrade Confidence` on 2026-05-27.
+- Installer preview/check/apply now share one planner artifact: `--dry-run` and `--check` are no-write, tri-state exits are stable, and apply enforces manifest-aware drift preflight.
+- `Scoria.Install.Contract` is the operator-output SSOT; mode equivalence and B-cycle idempotency proofs guard preview/check/apply alignment.
+- Check-time vs apply-time manifest fingerprint roles are documented and tested; adoption discoverability meta-tests match `adoption_test_files/0`.
+- Milestone Nyquist coverage is 5/5 compliant for phases 59–63; v2.5 audit archived at `.planning/milestones/v2.5-MILESTONE-AUDIT.md`.
+- Canonical lane truth remains in `Scoria.VerificationLanes`; closeout chain unchanged: `mix scoria.release_preview`, `mix test.adoption`, `mix test.runtime_to_handoff`.
+- Warning baseline debt is tracked with owner+expiry; `WARN-03` full-suite ratchet is the immediate next milestone.
 
-## Current Milestone: v2.5 Installer Safety & Upgrade Confidence
+## Next Milestone Goals
 
-**Goal:** Make host-app installer mutations predictable, inspectable, and low-surprise by shipping no-write planning/check contracts plus manifest-aware drift classification before broader warning-ratchet follow-up.
+**Queued:** Warning Ratchet (`WARN-03`) — full-suite warning baseline ratchet to closure with owner+expiry enforcement.
 
-**Target features:**
-- `mix scoria.install --dry-run` and `--check` expose a truthful no-write mutation plan with deterministic exit semantics.
-- Installer drift and manifest classification make stale router/config/migration surfaces explicit before apply.
-- Apply mode reuses planner truth so preview/check/apply outputs stay aligned and idempotent.
-- Existing lane-contract, warning policy, and CI-order guarantees remain stable while `WARN-03` stays queued next.
+**Preserve:** v2.4 lane contracts, CI closeout order, and v2.5 installer planner/check/apply truth across docs, tests, and CI.
 
 ## Requirements
 
@@ -81,12 +73,14 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Installer `--dry-run` now uses a deterministic planner contract that reports per-surface classification and rationale without host writes. — Phase 59 `planner-contract-foundation`
 - ✓ Installer `--check` now uses deterministic tri-state semantics (`0/1/2`) and emits one stable machine trailer line for CI parsing. — Phase 59 `planner-contract-foundation`
 - ✓ Planner/check coverage now includes subprocess status/trailer assertions and no-write regression checks that keep v2.4 lane guardrails green. — Phase 59 `planner-contract-foundation`
+- ✓ Maintainer can run `mix scoria.install --dry-run` for a deterministic no-write mutation plan with per-surface classification. — `v2.5 Installer Safety & Upgrade Confidence`
+- ✓ Maintainer can run `mix scoria.install --check` with stable `0/1/2` exits and `SCORIA_CHECK_RESULT` trailer semantics. — `v2.5 Installer Safety & Upgrade Confidence`
+- ✓ Installer apply mode executes planner-led mutations with manifest-aware drift preflight and explicit manual-review blocking. — `v2.5 Installer Safety & Upgrade Confidence`
+- ✓ Installer output stays truthful and idempotent across preview/check/apply with operator-ordered summaries and contract SSOT. — `v2.5 Installer Safety & Upgrade Confidence`
 
 ### Active
 
-- [ ] Installer drift detection uses manifest-aware upgrade planning so stale router/config/migration surfaces are explicit before apply.
-- [ ] Apply mode reuses planner outputs so installation writes are predictable, reviewable, and idempotent.
-- [ ] `WARN-03` full-suite warning ratchet remains queued-next and starts immediately after installer safety closes.
+- [ ] `WARN-03` full-suite warning ratchet runs to closure with owner+expiry enforcement (immediate next milestone).
 
 ### Out of Scope
 
@@ -98,28 +92,26 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Net-new runtime capability families during installer-safety scope — lowers focus while installer mutation risk remains the highest adopter trust gap.
 - A broad installer engine rewrite beyond plan/check + drift-safe apply — too wide for the next milestone's leverage target.
 
-## Latest Shipped Milestone: v2.4 Adoption Reliability Contract
+## Latest Shipped Milestone: v2.5 Installer Safety & Upgrade Confidence
 
-**Goal:** Keep adopter and maintainer verification truth boring by pinning lane contracts across docs, tests, CI, warnings, and installer behavior.
+**Goal:** Make host-app installer mutations predictable, inspectable, and drift-safe before applying writes.
 
 **Delivered:**
-- Added one machine-readable lane contract that defines command/env/prerequisite/exclusion truth for release-preview, adoption, runtime-to-handoff, semantic fast-path, and optional knowledge lanes.
-- Bound support/docs drift guards to canonical lane commands and boundary wording so alias regressions and wording drift fail fast.
-- Enforced warning trust with docs warnings-as-errors in release preview plus owner/expiry warning baseline tracking.
-- Enforced CI warning gates and canonical closeout order before broad suite execution.
-- Hardened installer browser-scope patching for list-form `pipe_through` syntax while preserving idempotent output behavior.
+- Planner-driven `--dry-run` and `--check` with deterministic no-write surfaces and stable tri-state exit semantics.
+- Manifest-aware drift detection and planner-led apply preflight gates for managed router/config/migration surfaces.
+- `Scoria.Install.Contract` SSOT, mode equivalence proofs, and B-cycle idempotency across preview/check/apply.
+- Nyquist and traceability closeout for phases 59–63; adoption discoverability meta-tests aligned with lane file list.
 
-**Why it mattered:** Scoria now has one executable reliability contract across docs, tests, CI, and installer surfaces, reducing support-truth drift and closeout ambiguity.
+**Why it mattered:** Adopters can inspect and trust installer mutations before apply, closing the highest remaining host-app surprise risk after v2.4 reliability contracts.
 
 ## Context
 
-- Scoria shipped `v2.4 Adoption Reliability Contract` on 2026-05-27.
+- Scoria shipped `v2.5 Installer Safety & Upgrade Confidence` on 2026-05-27 (~63k LOC Elixir across `lib/` and `test/`).
 - The canonical closeout chain remains `mix scoria.release_preview`, `mix test.adoption`, and `mix test.runtime_to_handoff`.
 - Optional semantic and knowledge lanes remain explicit extensions, not default-lane prerequisites.
-- Warning baseline debt is now tracked with explicit owner+expiry metadata for follow-up.
-- Next milestone planning starts from the archived v2.4 reliability baseline.
-- Milestone-next-step assessment places Scoria in a strong-but-not-near-done band; remaining leverage is installer upgrade trust and warning-ratchet closure, not capability breadth.
-- README/support wording still carries one drift risk ("shipped through v2.1") that should be corrected in the next docs-truth pass.
+- Warning baseline expiry (`2026-06-07`) makes `WARN-03` the immediate next milestone.
+- Next milestone planning starts from the archived v2.5 installer-safety baseline.
+- README/support wording still carries one drift risk ("shipped through v2.1") that should be corrected in the upcoming docs-truth pass.
 
 ## Constraints
 
@@ -148,8 +140,9 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | `v2.3` should clarify the runtime-to-handoff adoption path before adding new capability families | The default onramp was executable in `v2.2`; the next likely support risk was lane escalation and bounded-handoff comprehension | — Resolved |
 | `v2.4` should prioritize adoption reliability contracts over net-new capability expansion | Existing lanes already deliver value; highest leverage is keeping docs, CI, warnings, and installer behavior in lock-step truth | — Resolved |
 | Next milestone should preserve v2.4 reliability contracts while selecting one focused expansion axis | Reliability contract closure is now shipped; follow-up scope should be narrow and requirement-led | — Active |
-| Next milestone should prioritize installer safety + upgrade confidence (`INST-03`, `INST-04`) before warning ratchet work | Host-app mutation surprise remains the highest adopter-trust risk after v2.4, and installer contracts are the narrowest high-leverage wedge | — Active |
+| Next milestone should prioritize installer safety + upgrade confidence (`INST-03`, `INST-04`) before warning ratchet work | Host-app mutation surprise remains the highest adopter-trust risk after v2.4, and installer contracts are the narrowest high-leverage wedge | ✓ Good — shipped v2.5 |
 | `WARN-03` should execute immediately after installer safety milestone closeout | Warning debt remains important, but installer plan/apply + drift contracts are a bigger first-order adoption risk reducer | — Active |
+| Check-time manifest fingerprints are live-host-only; apply-time freshness gate uses stored manifest | Honest operator contract avoids misleading stored-fingerprint merge at check | ✓ Good — shipped Phase 63 |
 
 ## Milestone History
 
@@ -168,8 +161,16 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v2.2 OSS adopter onramp`: Publish-facing package truth, generated-host adoption proof, and canonical lane-based support closure.
 - `v2.3 Runtime-to-handoff adoption example`: Default-to-handoff adopter example, operator evidence alignment, canonical runtime-to-handoff proof lane, and closeout ledger.
 - `v2.4 Adoption Reliability Contract`: Canonical lane contract source, drift-proof docs checks, warning-policy enforcement, CI lane-order trust, and installer list-form hardening.
+- `v2.5 Installer Safety & Upgrade Confidence`: Planner/check no-write contracts, manifest-aware drift-safe apply, installer contract SSOT, Nyquist closeout, and adoption discoverability parity.
 
 ## Archived Planning Notes
+
+<details>
+<summary>Pre-ship v2.5 framing</summary>
+
+`v2.5` focused on installer mutation confidence: no-write planner/check, manifest-aware drift classification, truthful idempotent apply, and audit gap closure (Nyquist, manifest fingerprint, adoption discoverability). Archived in `.planning/milestones/v2.5-ROADMAP.md`, `.planning/milestones/v2.5-REQUIREMENTS.md`, and `.planning/milestones/v2.5-MILESTONE-AUDIT.md`.
+
+</details>
 
 <details>
 <summary>Pre-ship v2.2 framing</summary>
@@ -196,4 +197,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 after completing Phase 65 phase-63-nyquist-validation-closeout*
+*Last updated: 2026-05-27 after v2.5 milestone*
