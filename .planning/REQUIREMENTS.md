@@ -56,7 +56,7 @@ Explicitly excluded from this milestone.
 | Nyquist validation + SUMMARY frontmatter parity (phases 59–61) | Phase 62 | Complete |
 | Manifest check fingerprint integration hardening (INST-07 partial) | Phase 63 | Complete |
 | Adoption lane discoverability sync (integration drift) | Phase 64 | Pending |
-| Phase 63 Nyquist validation ledger | Phase 65 | Pending |
+| Phase 63 Nyquist validation ledger | Phase 65 | Complete |
 
 **Coverage:**
 
