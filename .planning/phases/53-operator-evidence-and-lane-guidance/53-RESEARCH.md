@@ -309,17 +309,17 @@ refute content =~ "workflow_handoffs"
 |---|-------|---------|---------------|
 | A1 | No new dependency installation is needed for Phase 53 beyond the existing locked project stack. [ASSUMED] | Standard Stack | If wrong, planner may omit an install/setup task for a hidden docs or UI tool. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should the UI add a stronger default-lane-valid empty-state sentence or only adjust existing copy?** [ASSUMED]
+1. **Should the UI add a stronger default-lane-valid empty-state sentence or only adjust existing copy?** [RESOLVED]
    - What we know: D-03 requires the empty state to reinforce that normal default-lane runs are valid. [VERIFIED: 53-CONTEXT.md]
-   - What's unclear: The exact UI copy is explicitly planner/executor discretion. [VERIFIED: 53-CONTEXT.md]
-   - Recommendation: Plan a small copy-only acceptance check in `test/scoria_web/live/workflow_live_test.exs`. [VERIFIED: existing test pattern]
+   - Resolution: Add the stronger default-lane-valid empty-state sentence from `53-UI-SPEC.md`: "This run stayed on the default runtime lane. No bounded handoff is required for first adoption; use `Scoria.start_handoff_run/3` only when a same-run delegation needs narrow projected context." [VERIFIED: 53-UI-SPEC.md]
+   - Plan impact: `53-01-PLAN.md` should include a copy-only acceptance check in `test/scoria_web/live/workflow_live_test.exs` that pins the default-lane-valid empty state. [VERIFIED: existing test pattern]
 
-2. **Should `docs/operator_verification.md` get a bounded-handoff decision subsection in Phase 53?** [ASSUMED]
+2. **Should `docs/operator_verification.md` get a bounded-handoff decision subsection in Phase 53?** [RESOLVED]
    - What we know: DOCS-01 can be satisfied through README, operator verification, or adopter guide wording. [VERIFIED: .planning/REQUIREMENTS.md]
-   - What's unclear: The planner may choose minimal wording across all docs or a dedicated operator subsection. [VERIFIED: 53-CONTEXT.md]
-   - Recommendation: Add a concise default-to-handoff decision point without naming a new proof command. [VERIFIED: 53-CONTEXT.md]
+   - Resolution: Add a concise default-to-handoff decision point in `docs/operator_verification.md` and keep README/adopter-guide wording aligned. The wording must say to start with the default runtime lane, add bounded handoff only for same-run delegation with narrow projected context and operator-visible delegated lineage, and avoid naming any new Phase 54 proof command. [VERIFIED: 53-CONTEXT.md, 53-UI-SPEC.md]
+   - Plan impact: `53-02-PLAN.md` should cover `docs/operator_verification.md`, `README.md`, `docs/adoption_lanes.md`, `docs/phoenix_runtime_example.md`, and `docs/bounded_handoffs.md` with a docs-invariant verification path. [VERIFIED: 53-CONTEXT.md]
 
 ## Environment Availability
 
