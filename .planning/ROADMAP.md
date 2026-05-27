@@ -15,7 +15,9 @@
 |------:|------|------|--------------|
 | 59 | 2/2 | Complete    | 2026-05-27 |
 | 60 | 2/2 | Complete    | 2026-05-27 |
-| 61 | Proof And Stability Closeout | Prove idempotent, truthful output behavior across preview/check/apply while preserving v2.4 reliability guardrails | INST-08 |
+| 61 | 3/3 | Complete    | 2026-05-27 |
+| 62 | Nyquist & Traceability Closeout | Pending | — |
+| 63 | Manifest Check Fingerprint Hardening | Pending | INST-07 (integration hardening) |
 
 ## Phase Details
 
@@ -48,6 +50,36 @@
 1. Preview/check/apply summaries remain truthful and consistent for installed, skipped, and manual-review paths.
 2. Installer contract tests cover planner/apply equivalence and drift-report behavior across representative host shapes.
 3. Existing lane contract, warning policy, and CI order guarantees remain green after installer-safety changes.
+
+### Phase 62: Nyquist & Traceability Closeout
+
+**Goal:** Close Nyquist validation gaps and restore traceability parity across phases 59–61 before milestone archive.
+
+**Depends on:** Phase 61
+
+**Gap Closure:** Closes v2.5 audit tech debt for stale `VALIDATION.md` rows (phases 59, 61), missing `requirements-completed` SUMMARY frontmatter (phases 60–61), and milestone ledger parity after audit corrections.
+
+**Success criteria:**
+
+1. Phases 59 and 61 have Nyquist-compliant `VALIDATION.md` artifacts with task rows matching passed verification.
+2. Phase 60–61 SUMMARY files include `requirements-completed` frontmatter aligned to VERIFICATION evidence.
+3. REQUIREMENTS.md traceability and phase artifacts agree on v2.5 closure state.
+
+### Phase 63: Manifest Check Fingerprint Hardening
+
+**Goal:** Close the partial manifest integration gap by documenting and optionally hardening check-time fingerprint semantics.
+
+**Depends on:** Phase 62
+
+**Requirements:** INST-07 (integration hardening — requirement already satisfied; closes audit integration partial)
+
+**Gap Closure:** Closes v2.5 audit integration gap `manifest-check-fingerprint` and underdocumented manifest fingerprint role at check vs apply time.
+
+**Success criteria:**
+
+1. Check-time vs apply-time manifest fingerprint behavior is documented for operators and maintainers.
+2. Planner check path uses stored manifest fingerprints where appropriate, or documents an explicit live-host-only contract with rationale.
+3. Targeted tests cover the chosen check-time fingerprint contract without regressing apply-time freshness gates.
 
 ## Non-Goals (v2.5)
 

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T15:29:45.549Z"
+last_updated: "2026-05-27T18:00:00.000Z"
 last_activity: 2026-05-27
 progress:
-  total_phases: 3
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 67
+  total_phases: 5
+  completed_phases: 3
+  total_plans: 7
+  completed_plans: 7
+  percent: 60
 ---
 
 # Project State
@@ -19,13 +19,13 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 61 — proof-and-stability-closeout
+**Current Focus:** Phase 62 — nyquist-and-traceability-closeout
 
 ## Current Position
 
-Phase: 61
+Phase: 62
 Plan: Not started
-Status: Ready for planning (context gathered)
+Status: Gap closure — Nyquist & traceability closeout (post-audit)
 Last activity: 2026-05-27
 
 ## Performance Metrics
@@ -34,7 +34,7 @@ Last activity: 2026-05-27
 - **Archived Milestone Artifacts:** roadmap, requirements, audit, and phase directories archived under `.planning/milestones/`
 - **Milestone Scope Shipped (v2.4):** 4 phases, 6 plans, 10 requirements
 - **Coverage (v2.4):** 10/10 milestone requirements satisfied (per `.planning/milestones/v2.4-MILESTONE-AUDIT.md`)
-- **Active Milestone:** `v2.5 Installer Safety & Upgrade Confidence` (6 requirements, 3 phases)
+- **Active Milestone:** `v2.5 Installer Safety & Upgrade Confidence` (6 requirements, 5 phases including 2 gap-closure phases)
 
 ## Accumulated Context
 
@@ -81,9 +81,9 @@ Last activity: 2026-05-27
 
 **Todos:**
 
-- Run `/gsd-plan-phase 61` to plan INST-08 proof and guardrail closeout.
-- Execute Phase 61 plans: fixture harness, operator projection, B-cycle idempotency, minimal docs + `Install.Contract`.
-- Keep `WARN-03` queued as the first follow-up milestone after v2.5 closes.
+- Run `/gsd-plan-phase 62` to plan Nyquist validation and SUMMARY frontmatter parity closeout.
+- Run `/gsd-plan-phase 63` after 62 to plan manifest check fingerprint hardening.
+- Keep `WARN-03` queued as the first follow-up milestone after v2.5 gap closure completes.
 - Preserve lane-contract, CI-order, and canonical closeout command contracts as non-negotiable constraints during v2.5 work.
 
 **Blockers:**
