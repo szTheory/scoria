@@ -19,13 +19,13 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 60 — drift-classification-and-safe-apply
+**Current Focus:** Phase 61 — proof-and-stability-closeout
 
 ## Current Position
 
 Phase: 61
 Plan: Not started
-Status: Executing Phase 60
+Status: Ready for planning (context gathered)
 Last activity: 2026-05-27
 
 ## Performance Metrics
@@ -81,8 +81,8 @@ Last activity: 2026-05-27
 
 **Todos:**
 
-- Run `/gsd-discuss-phase 59` to lock implementation approach and acceptance criteria.
-- Implement planner/check contracts for `INST-03` through `INST-05` in Phase 59.
+- Run `/gsd-plan-phase 61` to plan INST-08 proof and guardrail closeout.
+- Execute Phase 61 plans: fixture harness, operator projection, B-cycle idempotency, minimal docs + `Install.Contract`.
 - Keep `WARN-03` queued as the first follow-up milestone after v2.5 closes.
 - Preserve lane-contract, CI-order, and canonical closeout command contracts as non-negotiable constraints during v2.5 work.
 
