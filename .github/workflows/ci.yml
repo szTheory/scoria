@@ -71,6 +71,9 @@ jobs:
       - name: Run adoption closure lane
         run: mix test.adoption
 
+      - name: Run runtime-to-handoff proof lane
+        run: mix test.runtime_to_handoff
+
       - name: Run tests
         run: mix test
 
