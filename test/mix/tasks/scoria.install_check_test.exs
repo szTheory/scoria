@@ -1,11 +1,9 @@
 defmodule Mix.Tasks.Scoria.InstallCheckTest do
   use ExUnit.Case, async: false
 
+  alias Scoria.TestSupport.HostInstallFixtures
+
   @tmp_dir "test/tmp/install_check"
-  @optional_lane_migration_basenames MapSet.new([
-                                       "20260525070000_create_semantic_cache_tables.exs",
-                                       "20260525090000_add_semantic_cache_compatibility_fields.exs"
-                                     ])
 
   setup do
     File.mkdir_p!(@tmp_dir)
@@ -21,13 +19,13 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
   end
 
   test "mix scoria.install --check renders remediation payload parity for human and json" do
-    fixture_root = build_fixture!(:manual_review)
+    fixture = HostInstallFixtures.build!(:manual_review, tmp_parent: @tmp_dir)
 
     {human_output, human_exit} =
       System.cmd("mix", ["scoria.install", "--check"],
-        cd: fixture_root,
+        cd: fixture.root,
         stderr_to_stdout: true,
-        env: subprocess_mix_env()
+        env: HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
       )
 
     assert human_exit == 1
@@ -37,9 +35,9 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
 
     {json_output, json_exit} =
       System.cmd("mix", ["scoria.install", "--check", "--format", "json"],
-        cd: fixture_root,
+        cd: fixture.root,
         stderr_to_stdout: true,
-        env: subprocess_mix_env()
+        env: HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
       )
 
     assert json_exit == 1
@@ -47,200 +45,235 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
     assert json_output =~ "\"steps\": ["
     assert json_output =~ "\"verify_command\": \"mix scoria.install --check\""
     assert json_output =~ "SCORIA_CHECK_RESULT status=manual_review exit_code=1"
+
+    assert_remediation_contract!(human_output, json_output)
   end
 
-  defp assert_check_result(fixture_kind, expected_exit, trailer) do
-    fixture_root = build_fixture!(fixture_kind)
+  test "mix scoria.install --check remediation output avoids operator panic artifacts" do
+    fixture = HostInstallFixtures.build!(:manual_review, tmp_parent: @tmp_dir)
 
     {output, exit_code} =
       System.cmd("mix", ["scoria.install", "--check"],
-        cd: fixture_root,
+        cd: fixture.root,
         stderr_to_stdout: true,
-        env: subprocess_mix_env()
+        env: HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
+      )
+
+    assert exit_code == 1
+    refute output =~ "** ("
+    refute output =~ "undefinedFunctionError"
+    refute output =~ "(CompileError)"
+  end
+
+  test "mix scoria.install --dry-run and --check bodies match for compliant host" do
+    fixture = HostInstallFixtures.build!(:compliant, tmp_parent: @tmp_dir)
+    env = HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
+
+    {dry_run_output, dry_run_exit} =
+      System.cmd("mix", ["scoria.install", "--dry-run"],
+        cd: fixture.root,
+        stderr_to_stdout: true,
+        env: env
+      )
+
+    {check_output, check_exit} =
+      System.cmd("mix", ["scoria.install", "--check"],
+        cd: fixture.root,
+        stderr_to_stdout: true,
+        env: env
+      )
+
+    assert dry_run_exit == 0
+    assert check_exit == 0
+
+    assert normalize_plan_body(dry_run_output) == normalize_plan_body(check_output)
+  end
+
+  test "mix scoria.install --check optional_surface_absent reports skipped and creates no tailwind files" do
+    fixture = HostInstallFixtures.build!(:optional_surface_absent, tmp_parent: @tmp_dir)
+
+    {output, exit_code} =
+      System.cmd("mix", ["scoria.install", "--check"],
+        cd: fixture.root,
+        stderr_to_stdout: true,
+        env: HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
+      )
+
+    assert exit_code == 0
+    assert output =~ "skipped:"
+    assert output =~ "SCORIA_CHECK_RESULT status=compliant exit_code=0"
+    refute File.exists?(Path.join(fixture.root, "tailwind.config.js"))
+    refute File.exists?(Path.join(fixture.root, "assets/tailwind.config.js"))
+  end
+
+  test "mix scoria.install --check ignores tampered manifest fingerprints for tri-state" do
+    fixture = HostInstallFixtures.build!(:compliant, tmp_parent: @tmp_dir)
+    env = HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
+    manifest_path = Path.join(fixture.root, ".scoria/install/manifest.json")
+
+    {baseline_output, baseline_exit} =
+      System.cmd("mix", ["scoria.install", "--check"],
+        cd: fixture.root,
+        stderr_to_stdout: true,
+        env: env
+      )
+
+    assert baseline_exit == 0
+    assert baseline_output =~ "SCORIA_CHECK_RESULT status=compliant exit_code=0"
+
+    {_apply_output, apply_exit} =
+      System.cmd("mix", ["scoria.install"],
+        cd: fixture.root,
+        stderr_to_stdout: true,
+        env: env
+      )
+
+    assert apply_exit == 0
+    assert File.exists?(manifest_path)
+
+    tamper_manifest_fingerprints!(manifest_path, "deadbeef")
+
+    {tampered_output, tampered_exit} =
+      System.cmd("mix", ["scoria.install", "--check", "--format", "json"],
+        cd: fixture.root,
+        stderr_to_stdout: true,
+        env: env
+      )
+
+    assert tampered_exit == baseline_exit
+    assert tampered_output =~ "SCORIA_CHECK_RESULT status=compliant exit_code=0"
+
+    payload = decode_check_json!(tampered_output)
+    assert payload["manifest"]["present"] == true
+    assert payload["manifest"]["check_role"] == "informational"
+
+    Enum.each(payload["entries"], fn entry ->
+      assert entry["fingerprint"] != "deadbeef"
+
+      if Map.has_key?(entry, "manifest_fingerprint") do
+        assert entry["manifest_fingerprint"] == "deadbeef"
+      end
+    end)
+  end
+
+  test "mix scoria.install --check compliant host without manifest is exit 0" do
+    fixture = HostInstallFixtures.build!(:compliant, tmp_parent: @tmp_dir)
+    env = HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
+    manifest_path = Path.join(fixture.root, ".scoria/install/manifest.json")
+    File.rm(manifest_path)
+
+    {output, exit_code} =
+      System.cmd("mix", ["scoria.install", "--check"],
+        cd: fixture.root,
+        stderr_to_stdout: true,
+        env: env
+      )
+
+    assert exit_code == 0
+    assert output =~ "Install manifest not found"
+    assert output =~ "live host surfaces only"
+    assert output =~ "SCORIA_CHECK_RESULT status=compliant exit_code=0"
+  end
+
+  test "mix scoria.install --check blocks non_root_browser_only with manual_review and zero writes" do
+    fixture = HostInstallFixtures.build!(:non_root_browser_only, tmp_parent: @tmp_dir)
+    before = HostInstallFixtures.snapshot_host_files(fixture)
+
+    {output, exit_code} =
+      System.cmd("mix", ["scoria.install"],
+        cd: fixture.root,
+        stderr_to_stdout: true,
+        env: HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
+      )
+
+    after_snapshot = HostInstallFixtures.snapshot_host_files(fixture)
+
+    assert exit_code == 1
+    assert output =~ "SCORIA_CHECK_RESULT status=manual_review exit_code=1"
+    assert after_snapshot.router == before.router
+    assert after_snapshot.runtime_config == before.runtime_config
+    assert after_snapshot.migration_files == before.migration_files
+  end
+
+  defp assert_check_result(fixture_kind, expected_exit, trailer) do
+    fixture = HostInstallFixtures.build!(fixture_kind, tmp_parent: @tmp_dir)
+
+    {output, exit_code} =
+      System.cmd("mix", ["scoria.install", "--check"],
+        cd: fixture.root,
+        stderr_to_stdout: true,
+        env: HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
       )
 
     assert exit_code == expected_exit
     assert output =~ trailer
   end
 
-  defp build_fixture!(fixture_kind) do
-    fixture_root = Path.join(@tmp_dir, "#{fixture_kind}-#{System.unique_integer([:positive])}")
-    repo_root = File.cwd!()
-    migration_dir = Path.join([fixture_root, "priv", "repo", "migrations"])
-    router_path = Path.join([fixture_root, "lib", "fixture_host_web", "router.ex"])
-    runtime_config_path = Path.join([fixture_root, "config", "runtime.exs"])
-    config_path = Path.join([fixture_root, "config", "config.exs"])
-    app_module_path = Path.join([fixture_root, "lib", "fixture_host.ex"])
-    root_tailwind_path = Path.join(fixture_root, "tailwind.config.js")
-    assets_tailwind_path = Path.join([fixture_root, "assets", "tailwind.config.js"])
+  defp assert_remediation_contract!(human_output, json_output) do
+    assert human_output =~ "summary: Router is unmanaged because ownership markers are missing."
+    assert human_output =~ "scoria:router:start"
+    refute String.trim(human_output) == ""
 
-    File.mkdir_p!(Path.dirname(router_path))
-    File.mkdir_p!(Path.dirname(runtime_config_path))
-    File.mkdir_p!(migration_dir)
-    File.mkdir_p!(Path.dirname(app_module_path))
+    payload = decode_check_json!(json_output)
+    router_entry = Enum.find(payload["entries"], &(&1["surface"] == "router"))
 
-    File.write!(Path.join(fixture_root, "mix.exs"), fixture_mix_exs(repo_root))
-    File.cp!(Path.join(repo_root, "mix.lock"), Path.join(fixture_root, "mix.lock"))
-    File.write!(app_module_path, "defmodule FixtureHost do\nend\n")
-    File.write!(config_path, "import Config\n")
-    File.write!(runtime_config_path, runtime_config_fixture(fixture_kind))
-    File.write!(router_path, router_fixture(fixture_kind))
+    assert router_entry
+    remediation = router_entry["remediation"]
 
-    case fixture_kind do
-      :error ->
-        File.mkdir_p!(Path.dirname(assets_tailwind_path))
-        File.mkdir_p!(assets_tailwind_path)
+    assert remediation["summary"] =~ "ownership markers are missing"
+    assert length(remediation["steps"]) >= 1
+    assert Enum.all?(remediation["steps"], &String.contains?(human_output, &1))
+    assert Enum.any?(remediation["steps"], &String.contains?(&1, "scoria:router:start"))
+    assert remediation["verify_command"] == "mix scoria.install --check"
+  end
 
-      _ ->
-        File.write!(root_tailwind_path, tailwind_fixture(fixture_kind))
+  defp decode_check_json!(output) do
+    json_body =
+      output
+      |> String.split("SCORIA_CHECK_RESULT")
+      |> hd()
+      |> String.trim()
+
+    Jason.decode!(json_body)
+  end
+
+  defp normalize_plan_body(output) do
+    output
+    |> extract_plan_section()
+    |> String.replace(~r/mode: (dry_run|check)/, "mode: preview")
+    |> String.replace(
+      ~r/Install manifest (not found|present)[^\n]*/,
+      "Install manifest context."
+    )
+    |> String.split("SCORIA_CHECK_RESULT")
+    |> hd()
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+  end
+
+  defp tamper_manifest_fingerprints!(manifest_path, fingerprint) do
+    manifest =
+      manifest_path
+      |> File.read!()
+      |> Jason.decode!()
+
+    tampered_entries =
+      manifest["entries"]
+      |> Enum.map(fn {id, entry} ->
+        {id, Map.put(entry, "fingerprint", fingerprint)}
+      end)
+      |> Enum.into(%{})
+
+    manifest
+    |> Map.put("entries", tampered_entries)
+    |> Jason.encode!(pretty: true)
+    |> then(&File.write!(manifest_path, &1))
+  end
+
+  defp extract_plan_section(output) do
+    case String.split(output, "Scoria install plan", parts: 2) do
+      [_prefix, rest] -> "Scoria install plan" <> rest
+      _ -> output
     end
-
-    copy_required_core_migrations!(migration_dir)
-
-    if fixture_kind == :drift do
-      remove_one_required_migration!(migration_dir)
-    end
-
-    fixture_root
-  end
-
-  defp fixture_mix_exs(repo_root) do
-    """
-    defmodule FixtureHost.MixProject do
-      use Mix.Project
-
-      def project do
-        [
-          app: :fixture_host,
-          version: "0.1.0",
-          deps: deps()
-        ]
-      end
-
-      def application do
-        [extra_applications: [:logger]]
-      end
-
-      defp deps do
-        [
-          {:scoria, path: #{inspect(repo_root)}}
-        ]
-      end
-    end
-    """
-  end
-
-  defp router_fixture(:compliant) do
-    ~S'''
-    defmodule FixtureHostWeb.Router do
-      @router """
-      scope "/", FixtureHostWeb do
-        pipe_through :browser
-        scoria_dashboard "/scoria"
-      end
-      # scoria:router:start
-      import ScoriaWeb.Router
-      # scoria:router:end
-      """
-    end
-    '''
-  end
-
-  defp router_fixture(:drift) do
-    router_fixture(:compliant)
-  end
-
-  defp router_fixture(:manual_review) do
-    ~S'''
-    defmodule FixtureHostWeb.Router do
-      @router """
-      scope "/", FixtureHostWeb do
-        pipe_through :browser
-      end
-      """
-    end
-    '''
-  end
-
-  defp router_fixture(:error), do: router_fixture(:compliant)
-
-  defp runtime_config_fixture(:manual_review) do
-    """
-    import Config
-    """
-  end
-
-  defp runtime_config_fixture(_fixture_kind) do
-    """
-    import Config
-
-    # scoria:runtime:start
-    config :scoria, Scoria.Runtime,
-      defaults: [
-        provider: "openai",
-        model: "gpt-5-mini",
-        prompt_policy: [policy_key: "default"]
-      ]
-    # scoria:runtime:end
-    """
-  end
-
-  defp tailwind_fixture(:manual_review) do
-    """
-    module.exports = {
-      content: [
-        "./js/**/*.js",
-        "../lib/fixture_host_web.ex",
-        "../lib/fixture_host_web/**/*.*ex",
-        "../deps/scoria/lib/**/*.*ex"
-      ]
-    }
-    """
-  end
-
-  defp tailwind_fixture(_fixture_kind) do
-    """
-    // scoria:tailwind:start
-    module.exports = {
-      content: [
-        "./js/**/*.js",
-        "../lib/fixture_host_web.ex",
-        "../lib/fixture_host_web/**/*.*ex",
-        "../deps/scoria/lib/**/*.*ex"
-      ]
-    }
-    // scoria:tailwind:end
-    """
-  end
-
-  defp copy_required_core_migrations!(destination_dir) do
-    source_dir = Application.app_dir(:scoria, "priv/repo/migrations")
-
-    source_dir
-    |> Path.join("*.exs")
-    |> Path.wildcard()
-    |> Enum.reject(&(Path.basename(&1) in @optional_lane_migration_basenames))
-    |> Enum.each(fn source_path ->
-      File.cp!(source_path, Path.join(destination_dir, Path.basename(source_path)))
-    end)
-  end
-
-  defp remove_one_required_migration!(destination_dir) do
-    destination_dir
-    |> Path.join("*.exs")
-    |> Path.wildcard()
-    |> Enum.sort()
-    |> List.first()
-    |> then(&File.rm!/1)
-  end
-
-  defp subprocess_mix_env do
-    repo_root = File.cwd!()
-
-    [
-      {"MIX_ENV", "test"},
-      {"MIX_BUILD_PATH", Path.join(repo_root, "_build/test")},
-      {"MIX_DEPS_PATH", Path.join(repo_root, "deps")}
-    ]
   end
 end
