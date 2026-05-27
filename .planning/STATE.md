@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Runtime-to-handoff adoption example
-status: ready_to_plan
-last_updated: 2026-05-27T07:08:11.062Z
+status: planning
+last_updated: "2026-05-27T07:17:54.624Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 3
@@ -11,7 +11,6 @@ progress:
   total_plans: 3
   completed_plans: 3
   percent: 33
-stopped_at: Phase 52 complete (3/3) — ready to discuss Phase 53
 ---
 
 # Project State
