@@ -13,8 +13,13 @@
 
 | Surface | Warning Debt | Reason | Owner | Expires |
 |--------|--------------|--------|-------|---------|
-| full-suite (non-canonical) | Project-level warning audit has not been rerun after post-`v1.9` support-truth shims | Kept out of canonical lane scope for `v2.4`; tracked for follow-up reliability sweep | scoria-maintainers | 2026-06-07 |
-| workflow/replay LiveView tests | Async teardown noise | Known legacy noise accepted at `v1.9` close; still outside canonical lane closeout contract | scoria-web-runtime | 2026-06-30 |
+
+## Resolved During v2.6
+
+| Surface | Resolved Debt | Resolution Date |
+|--------|----------------|-----------------|
+| full-suite (non-canonical) | Project-level warning audit; full mix test --warnings-as-errors green in CI | 2026-05-27 |
+| workflow/replay LiveView tests | Async teardown noise cleared via render_async sweep | 2026-05-27 |
 
 ## Resolved During v2.4
 
