@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T18:55:28Z"
-last_activity: 2026-05-27 -- Completed 67-02-PLAN.md (WARN-06 adoption host-proof slice)
+last_updated: "2026-05-27T19:01:24Z"
+last_activity: 2026-05-27 -- Completed 67-03-PLAN.md (WARN-06 scoria unit test slice)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
-  percent: 63
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-27)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 67 — high-signal warning ratchet (plan 67-03 next)
+**Current focus:** Phase 67 — high-signal warning ratchet (plan 67-04 next)
 
 ## Current Position
 
 Phase: 67
-Plan: 03 (next)
+Plan: 04 (next)
 Status: Executing
-Last activity: 2026-05-27 -- Completed 67-02-PLAN.md (WARN-06 adoption host-proof slice)
+Last activity: 2026-05-27 -- Completed 67-03-PLAN.md (WARN-06 scoria unit test slice)
 
 ## Performance Metrics
 
@@ -66,8 +66,8 @@ Last activity: 2026-05-27 -- Completed 67-02-PLAN.md (WARN-06 adoption host-proo
 
 ## Operator Next Steps
 
-- Execute plan 67-03 (test/scoria p3 cluster fixes)
-- Resume file: `.planning/phases/67-high-signal-warning-ratchet/67-03-PLAN.md`
+- Execute plan 67-04 (LiveView p3 cluster fixes + Phase 67 closeout inventory)
+- Resume file: `.planning/phases/67-high-signal-warning-ratchet/67-04-PLAN.md`
 
 ### Phase 67 Decisions (67-00)
 
@@ -78,6 +78,11 @@ Last activity: 2026-05-27 -- Completed 67-02-PLAN.md (WARN-06 adoption host-proo
 
 - WARN-05 maintainer proof limited to compile WAE + lane-contract tests (ratchet scope stays WARN-06)
 - Policy job must not run `scoria.warning_ratchet` until Phase 68 wiring (D-17)
+
+### Phase 67 Decisions (67-03)
+
+- test/scoria non-live p3 debt cleared via inventory row targeting; live-path rows deferred to 67-04
+- Dead default args fixed by removing unused defaults, not `_` prefix silencing
 
 ### Phase 67 Decisions (67-02)
 
