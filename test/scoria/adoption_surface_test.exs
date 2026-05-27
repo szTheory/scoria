@@ -65,6 +65,33 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "Start narrow. Expand only when the current lane already feels boring."
   end
 
+  test "phase 53 docs keep default-first lane wording and reject unshipped proof guidance" do
+    readme = File.read!(@readme)
+    lane_guide = File.read!(@lane_guide)
+    operator_guide = File.read!(@operator_guide)
+    phoenix_example = File.read!(@phoenix_example)
+    handoff_guide = File.read!(@handoff_guide)
+
+    for content <- [readme, lane_guide, operator_guide] do
+      assert content =~ "Start with the default runtime lane"
+      assert content =~ "Add bounded handoff only when"
+      assert content =~ "mix test.adoption"
+    end
+
+    assert phoenix_example =~ "Scoria.get_run_detail/1"
+    assert phoenix_example =~ "delegated = detail.delegated_handoffs"
+
+    for content <- [readme, lane_guide, operator_guide, phoenix_example, handoff_guide] do
+      refute content =~ "runtime-to-handoff proof"
+      refute content =~ "mix test.runtime_to_handoff"
+      refute content =~ "mix test.handoff"
+      refute content =~ "workflow_steps"
+      refute content =~ "workflow_handoffs"
+      refute content =~ "Repo.all"
+      refute content =~ "Scoria.Workflows.create_run"
+    end
+  end
+
   test "bounded handoff guide documents the narrow public delegation lane" do
     content = File.read!(@handoff_guide)
 
