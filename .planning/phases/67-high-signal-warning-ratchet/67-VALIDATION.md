@@ -3,7 +3,7 @@ phase: 67
 slug: high-signal-warning-ratchet
 status: draft
 nyquist_compliant: false
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-05-27
 ---
 
@@ -42,8 +42,8 @@ created: 2026-05-27
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 67-00-01 | 00 | 0 | WARN-06 | T-67-00-01 | Inventory preflight rejects polluted test/tmp | unit | `MIX_ENV=test mix test test/scoria/warning_ratchet_test.exs` | ❌ W0 | ⬜ pending |
-| 67-00-02 | 00 | 0 | WARN-06 | — | WarningRatchet paths non-empty, sorted | unit | same | ❌ W0 | ⬜ pending |
+| 67-00-01 | 00 | 0 | WARN-06 | T-67-00-01 | Inventory preflight rejects polluted test/tmp | unit | `MIX_ENV=test mix test test/scoria/warning_ratchet_test.exs` | ✅ W0 | ✅ green |
+| 67-00-02 | 00 | 0 | WARN-06 | — | WarningRatchet paths non-empty, sorted | unit | same | ✅ W0 | ✅ green |
 | 67-01-01 | 01 | 1 | WARN-05 | T-67-01-01 | Compile WAE holds | integration | compile + lane WAE | ✅ | ⬜ pending |
 | 67-02-01 | 02 | 2 | WARN-06 | T-67-02-01 | Overlay not under test/support | unit | ratchet or dedicated test | ❌ W0 | ⬜ pending |
 | 67-03-01 | 03 | 3 | WARN-06 | — | test/scoria p3 clusters zero in inventory | integration | scoped WAE + inventory | ✅ | ⬜ pending |
@@ -55,10 +55,10 @@ created: 2026-05-27
 
 ## Wave 0 Requirements
 
-- [ ] `test/scoria/warning_ratchet_test.exs` — WarningRatchet path SSOT tests
-- [ ] `lib/scoria/warning_ratchet.ex` — path list module
-- [ ] `lib/mix/tasks/scoria.warning_ratchet.test.ex` — scoped WAE runner
-- [ ] `lib/mix/tasks/scoria.warning_ratchet.check.ex` — unclassified high-signal gate (optional split from test)
+- [x] `test/scoria/warning_ratchet_test.exs` — WarningRatchet path SSOT tests
+- [x] `lib/scoria/warning_ratchet.ex` — path list module
+- [x] `lib/mix/tasks/scoria.warning_ratchet.test.ex` — scoped WAE runner
+- [x] `lib/mix/tasks/scoria.warning_ratchet.check.ex` — unclassified high-signal gate (optional split from test)
 
 *Wave 0 completes with plan 67-00.*
 

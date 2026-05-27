@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T18:09:26.647Z"
-last_activity: 2026-05-27 -- Phase 67 planning complete
+last_updated: "2026-05-27T18:14:05Z"
+last_activity: 2026-05-27 -- Completed 67-00-PLAN.md (WARN-06 infrastructure)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 3
-  percent: 25
+  completed_plans: 4
+  percent: 38
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-27)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 66 — baseline-expiry-and-inventory
+**Current focus:** Phase 67 — high-signal warning ratchet (plan 67-01 next)
 
 ## Current Position
 
 Phase: 67
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-27 -- Phase 67 planning complete
+Plan: 01 (next)
+Status: Executing
+Last activity: 2026-05-27 -- Completed 67-00-PLAN.md (WARN-06 infrastructure)
 
 ## Performance Metrics
 
@@ -66,5 +66,10 @@ Last activity: 2026-05-27 -- Phase 67 planning complete
 
 ## Operator Next Steps
 
-- `/gsd-plan-phase 66` — plan baseline expiry + inventory implementation
-- Resume file: `.planning/phases/66-baseline-expiry-and-inventory/66-CONTEXT.md`
+- Execute plan 67-01 (`warn-05-canonical-surface-guard`)
+- Resume file: `.planning/phases/67-high-signal-warning-ratchet/67-01-PLAN.md`
+
+### Phase 67 Decisions (67-00)
+
+- WarningRatchet paths are code SSOT from adoption files + `test/scoria` + LiveView globs — not derived from baseline JSON
+- Shared `WarningInventory.capture_output/0` backs inventory and ratchet check capture
