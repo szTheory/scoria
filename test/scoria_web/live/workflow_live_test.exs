@@ -166,6 +166,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     assert html =~ "Delegated Evidence"
     assert html =~ "Inspect Delegated Evidence"
+    assert html =~ ~s(href="#delegated-evidence")
+    assert length(Regex.scan(~r/id="delegated-evidence"/, html)) == 1
     assert html =~ "planner"
     assert html =~ "critic"
     assert html =~ "View full context"
@@ -215,7 +217,9 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     {:ok, _pending_view, pending_html} = live(conn, "/scoria/workflows/#{pending_run.id}")
 
     assert empty_html =~ "No Delegated Handoffs Recorded"
-    assert empty_html =~ "Scoria.start_handoff_run/3"
+    assert empty_html =~
+             "This run stayed on the default runtime lane. No bounded handoff is required for first adoption; use Scoria.start_handoff_run/3 only when a same-run delegation needs narrow projected context."
+
     assert empty_html =~ "Timeline"
 
     assert pending_html =~ "child step pending"
