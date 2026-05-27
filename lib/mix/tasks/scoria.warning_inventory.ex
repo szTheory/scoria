@@ -104,7 +104,7 @@ defmodule Mix.Tasks.Scoria.WarningInventory do
   defp apply_scope(rows, _scope), do: rows
 
   defp render(rows, "json", metadata) do
-    payload = Map.put(metadata, "rows", rows)
+    payload = Map.put(metadata, "rows", json_encode_rows(rows))
     Mix.shell().info(Jason.encode!(payload, pretty: true))
   end
 
