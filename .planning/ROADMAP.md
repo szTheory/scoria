@@ -18,6 +18,8 @@
 | 61 | 3/3 | Complete    | 2026-05-27 |
 | 62 | 3/3 | Complete    | 2026-05-27 |
 | 63 | 3/3 | Complete    | 2026-05-27 |
+| 64 | — | Pending     | — |
+| 65 | — | Pending     | — |
 
 ## Phase Details
 
@@ -80,6 +82,36 @@
 1. Check-time vs apply-time manifest fingerprint behavior is documented for operators and maintainers.
 2. Planner check path uses stored manifest fingerprints where appropriate, or documents an explicit live-host-only contract with rationale.
 3. Targeted tests cover the chosen check-time fingerprint contract without regressing apply-time freshness gates.
+
+### Phase 64: Adoption Lane Discoverability Sync
+
+**Goal:** Align adoption lane discoverability meta-tests with the live file list so isolation runs match runtime lane behavior.
+
+**Depends on:** Phase 63
+
+**Requirements:** INST-08 (integration hardening — discoverability parity)
+
+**Gap Closure:** Closes v2.5 audit integration gap `adoption-lane-discoverability-drift`.
+
+**Success criteria:**
+
+1. `test/mix/tasks/test.adoption_test.exs` `expected_files` matches `Mix.Tasks.Scoria.Test.Adoption.adoption_test_files/0`.
+2. `mix test test/mix/tasks/test.adoption_test.exs` passes in isolation.
+3. `mix test.adoption` lane remains green after sync.
+
+### Phase 65: Phase 63 Nyquist Validation Closeout
+
+**Goal:** Sign off Phase 63 Nyquist validation ledger so milestone Nyquist coverage is fully compliant before archive.
+
+**Depends on:** Phase 64
+
+**Gap Closure:** Closes v2.5 audit tech debt for draft `63-VALIDATION.md` (`nyquist_compliant: false`).
+
+**Success criteria:**
+
+1. `63-VALIDATION.md` task rows match passed verification evidence.
+2. Phase 63 marked Nyquist-compliant (`nyquist_compliant: true`, `wave_0_complete: true`).
+3. Milestone Nyquist ledger shows 5/5 compliant phases.
 
 ## Non-Goals (v2.5)
 

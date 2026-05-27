@@ -54,15 +54,17 @@ Explicitly excluded from this milestone.
 | Item | Phase | Status |
 |------|-------|--------|
 | Nyquist validation + SUMMARY frontmatter parity (phases 59–61) | Phase 62 | Complete |
-| Manifest check fingerprint integration hardening (INST-07 partial) | Phase 63 | Pending |
+| Manifest check fingerprint integration hardening (INST-07 partial) | Phase 63 | Complete |
+| Adoption lane discoverability sync (integration drift) | Phase 64 | Pending |
+| Phase 63 Nyquist validation ledger | Phase 65 | Pending |
 
 **Coverage:**
 
 - v1 requirements: 6 total
 - Mapped to phases: 6
 - Unmapped: 0
-- Gap closure phases: 2 (audit tech debt + integration hardening)
+- Gap closure phases: 4 (audit tech debt + integration hardening + discoverability + Nyquist)
 
 ---
 *Requirements defined: 2026-05-27*
-*Last updated: 2026-05-27 after v2.5 gap closure phase planning*
+*Last updated: 2026-05-27 after v2.5 post-audit gap closure planning*
