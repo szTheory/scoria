@@ -234,25 +234,27 @@ MIX_ENV=test mix scoria.warning_ratchet.test --warnings-as-errors
 
 Preflight: still run `rm -rf test/tmp/*` before inventory `--write` when you skip `warning_ratchet.check` (for example a manual inventory-only refresh) so host-proof fixture pollution does not skew cluster counts.
 
-### WARN-07 CI warning gates (staged)
+### WARN-07 CI warning gates (full suite)
 
 CI preserves behavioral lane commands unchanged:
 
 - `mix test.adoption` — default runtime lane (behavior)
 - `mix test.runtime_to_handoff` — escalation lane (behavior)
 
-CI enforces adoption-file compile warnings via the high-signal ratchet bridge (not a second `mix test.adoption --warnings-as-errors` invocation):
+CI enforces compiler warnings across the full default test suite after closeout lanes:
 
 ```bash
-mix scoria.warning_ratchet.test --warnings-as-errors
+mix test --warnings-as-errors
 ```
+
+The high-signal ratchet bridge (`mix scoria.warning_ratchet.test --warnings-as-errors`) remains available for maintainer pre-flip debugging and WARN-06 scope checks; it is no longer a separate CI step after Phase 68-03 closeout.
 
 Ratchet paths include `Mix.Tasks.Scoria.Test.Adoption.adoption_test_files/0` plus `test/scoria/**/*_test.exs` and `test/scoria_web/live/**/*_test.exs` (`Scoria.WarningRatchet.high_signal_wae_paths/0`).
 
-Maintainer adopter-parity debug command (local only until full WARN-07 closeout):
+Maintainer adopter-parity debug command:
 
 ```bash
 MIX_ENV=test mix test.adoption --warnings-as-errors
 ```
 
-If the ratchet step fails in CI, run the same command locally with pgvector Postgres on port 55432 (`SCORIA_DB_PORT=55432`).
+Local full-suite closeout uses pgvector Postgres on port 55432 (`SCORIA_DB_PORT=55432`).

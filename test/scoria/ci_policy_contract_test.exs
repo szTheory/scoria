@@ -49,13 +49,18 @@ defmodule Scoria.CiPolicyContractTest do
     assert length(Scoria.WarningRatchet.high_signal_wae_paths()) > 0
   end
 
-  test "test job runs warning ratchet after runtime_to_handoff and before broad mix test" do
+  test "test job runs full suite WAE after runtime_to_handoff and before knowledge lane" do
     ci_workflow = File.read!(".github/workflows/ci.yml")
+    [_policy_section, test_section] = split_jobs(ci_workflow)
     runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
 
-    assert ci_workflow =~ @ratchet_wae
-    assert index_of(ci_workflow, runtime_to_handoff) < index_of(ci_workflow, @ratchet_wae)
-    assert index_of(ci_workflow, @ratchet_wae) < index_of(ci_workflow, "run: mix test\n")
+    assert test_section =~ "run: mix test --warnings-as-errors"
+    refute test_section =~ "mix scoria.warning_ratchet.test --warnings-as-errors"
+    assert index_of(test_section, runtime_to_handoff) <
+             index_of(test_section, "run: mix test --warnings-as-errors")
+
+    assert index_of(test_section, "run: mix test --warnings-as-errors") <
+             index_of(test_section, "mix test.knowledge")
   end
 
   test "policy job does not run warning_ratchet.test" do
