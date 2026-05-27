@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Scoria.InstallTest do
   @tmp_dir "test/tmp/installer"
 
   setup do
+    repo_root = File.cwd!()
     Mix.shell(Mix.Shell.Process)
     Mix.Task.reenable("scoria.install")
     File.mkdir_p!(@tmp_dir)
@@ -48,11 +49,19 @@ defmodule Mix.Tasks.Scoria.InstallTest do
 
     File.write!(router_path, router_content)
     File.write!(tailwind_path, tailwind_content)
+    File.write!(Path.join([@tmp_dir, "config", "config.exs"]), "import Config\n")
     File.write!(config_path, "import Config\n")
+    File.write!(Path.join([@tmp_dir, "lib", "dummy_host.ex"]), "defmodule DummyHost do\nend\n")
+    write_host_mix_project!(@tmp_dir, repo_root)
+    File.cp!(Path.join(repo_root, "mix.lock"), Path.join(@tmp_dir, "mix.lock"))
 
     on_exit(fn -> File.rm_rf!(@tmp_dir) end)
 
-    {:ok, router_path: router_path, tailwind_path: tailwind_path, config_path: config_path}
+    {:ok,
+     router_path: router_path,
+     tailwind_path: tailwind_path,
+     config_path: config_path,
+     repo_root: repo_root}
   end
 
   test "mix scoria.install reports installed skipped and optional lanes truthfully on first install",
@@ -168,6 +177,26 @@ defmodule Mix.Tasks.Scoria.InstallTest do
       )
 
     assert second_output == first_output
+  end
+
+  test "mix scoria.install --check does not mutate host files", %{
+    router_path: router_path,
+    tailwind_path: tailwind_path,
+    config_path: config_path,
+    repo_root: repo_root
+  } do
+    before_snapshot = snapshot_host_files(router_path, tailwind_path, config_path)
+
+    {output, exit_code} = run_check_subprocess(@tmp_dir, repo_root)
+
+    after_snapshot = snapshot_host_files(router_path, tailwind_path, config_path)
+
+    assert exit_code in [0, 1, 2]
+    assert output =~ "SCORIA_CHECK_RESULT status="
+    assert after_snapshot.router == before_snapshot.router
+    assert after_snapshot.tailwind == before_snapshot.tailwind
+    assert after_snapshot.runtime_config == before_snapshot.runtime_config
+    assert after_snapshot.migration_files == before_snapshot.migration_files
   end
 
   test "mix scoria.install --dry-run prints classification, target path, and rationale for every surface",
@@ -380,6 +409,14 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     end)
   end
 
+  defp run_check_subprocess(fixture_root, repo_root) do
+    System.cmd("mix", ["scoria.install", "--check"],
+      cd: fixture_root,
+      stderr_to_stdout: true,
+      env: subprocess_mix_env(repo_root)
+    )
+  end
+
   defp snapshot_host_files(router_path, tailwind_path, config_path) do
     %{
       router: File.read!(router_path),
@@ -404,5 +441,42 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     after
       0 -> messages
     end
+  end
+
+  defp subprocess_mix_env(repo_root) do
+    [
+      {"MIX_ENV", "test"},
+      {"MIX_BUILD_PATH", Path.join(repo_root, "_build/test")},
+      {"MIX_DEPS_PATH", Path.join(repo_root, "deps")}
+    ]
+  end
+
+  defp write_host_mix_project!(tmp_dir, repo_root) do
+    File.write!(
+      Path.join(tmp_dir, "mix.exs"),
+      """
+      defmodule DummyHost.MixProject do
+        use Mix.Project
+
+        def project do
+          [
+            app: :dummy_host,
+            version: "0.1.0",
+            deps: deps()
+          ]
+        end
+
+        def application do
+          [extra_applications: [:logger]]
+        end
+
+        defp deps do
+          [
+            {:scoria, path: #{inspect(repo_root)}}
+          ]
+        end
+      end
+      """
+    )
   end
 end
