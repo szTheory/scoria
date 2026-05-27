@@ -77,3 +77,9 @@ Plan 52 implementation must preserve this shape:
 - `lib/scoria.ex` already exposes the public facade needed for the example.
 - `lib/scoria/runtime/params.ex` already rejects unsafe projected-context keys before durable handoff creation.
 - `lib/scoria/runtime/run_detail.ex` already exposes curated delegated handoff readback through the public detail DTO.
+
+## Baseline Quick Verification
+
+Command: `MIX_ENV=test mix test test/scoria/adoption_surface_test.exs test/scoria/handoff_example_source_test.exs`
+
+Baseline docs/source quick verification passed before Phase 52 implementation.
