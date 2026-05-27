@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Scoria.Install do
   use Mix.Task
   alias Scoria.Install.Planner
+  alias Scoria.Install.Report
   alias Scoria.VerificationLanes
 
   @shortdoc "Installs the Scoria dashboard, core migrations, and workflow routes into a Phoenix application"
@@ -48,15 +49,10 @@ defmodule Mix.Tasks.Scoria.Install do
             mode: :dry_run
           )
 
-        print_plan(plan, format)
+        print_report(plan, format, :dry_run)
 
       opts[:check] ->
-        plan =
-          Planner.build(router_path, tailwind_path, config_path,
-            mode: :check
-          )
-
-        print_plan(plan, format)
+        run_check_mode(router_path, tailwind_path, config_path, format)
 
       router_path ->
         statuses = do_run(router_path, tailwind_path, config_path)
@@ -251,68 +247,53 @@ defmodule Mix.Tasks.Scoria.Install do
     end)
   end
 
-  defp print_plan(plan, "json"), do: print_json_plan(plan)
+  defp run_check_mode(router_path, tailwind_path, config_path, format) do
+    {plan, result} =
+      try do
+        plan =
+          Planner.build(router_path, tailwind_path, config_path,
+            mode: :check
+          )
 
-  defp print_plan(plan, "human") do
-    Mix.shell().info("Scoria install plan (mode: #{plan.mode})")
-    Mix.shell().info("")
-
-    Enum.each(plan.entries, fn entry ->
-      Mix.shell().info("#{entry.order}. #{entry.surface}")
-      Mix.shell().info("   classification: #{classification_label(entry.classification)}")
-      Mix.shell().info("   target path: #{entry.target_path}")
-      Mix.shell().info("   rationale: #{entry.rationale}")
-      Mix.shell().info("")
-    end)
-
-    Mix.shell().info("Summary:")
-    Mix.shell().info("  create: #{plan.summary.create}")
-    Mix.shell().info("  update: #{plan.summary.update}")
-    Mix.shell().info("  no-op: #{plan.summary.no_op}")
-    Mix.shell().info("  manual-review: #{plan.summary.manual_review}")
-  end
-
-  defp print_json_plan(plan) do
-    plan_json = normalize_plan_for_json(plan)
-
-    json_payload =
-      if Code.ensure_loaded?(Jason) do
-        Jason.encode!(plan_json, pretty: true)
-      else
-        inspect(plan_json, pretty: true)
+        {plan, Report.check_result(plan)}
+      rescue
+        error ->
+          {check_error_plan(error), Report.check_result(error)}
       end
 
-    Mix.shell().info(json_payload)
+    print_report(plan, format, :check)
+
+    exit_code = result.exit_code
+    Mix.shell().info(Report.trailer_line(result))
+    System.halt(exit_code)
   end
 
-  defp normalize_plan_for_json(plan) do
+  defp print_report(plan, "human", mode) do
+    Mix.shell().info(Report.render_human(plan, mode))
+  end
+
+  defp print_report(plan, "json", mode) do
+    Mix.shell().info(Report.render_json(plan, mode))
+  end
+
+  defp check_error_plan(error) do
     %{
-      schema_version: plan.schema_version,
-      mode: plan.mode,
-      entries: Enum.map(plan.entries, &normalize_entry_for_json/1),
-      summary: plan.summary
+      schema_version: 1,
+      mode: :check,
+      entries: [
+        %{
+          id: "check:error",
+          surface: :check,
+          target_path: "n/a",
+          classification: :manual_review,
+          rationale: "Check mode failed before planner output was available.",
+          evidence: %{error: Exception.message(error)},
+          order: 1
+        }
+      ],
+      summary: %{create: 0, update: 0, no_op: 0, manual_review: 1}
     }
   end
-
-  defp normalize_entry_for_json(entry) do
-    entry
-    |> Enum.map(fn {key, value} -> {key, normalize_json_value(value)} end)
-    |> Enum.into(%{})
-  end
-
-  defp normalize_json_value(value) when is_map(value) do
-    value
-    |> Enum.map(fn {key, nested_value} -> {key, normalize_json_value(nested_value)} end)
-    |> Enum.into(%{})
-  end
-
-  defp normalize_json_value(value) when is_list(value), do: Enum.map(value, &normalize_json_value/1)
-  defp normalize_json_value(value) when is_atom(value), do: Atom.to_string(value)
-  defp normalize_json_value(value), do: value
-
-  defp classification_label(:no_op), do: "no-op"
-  defp classification_label(:manual_review), do: "manual-review"
-  defp classification_label(classification), do: Atom.to_string(classification)
 
   defp ensure_valid_args!([], []), do: :ok
 
