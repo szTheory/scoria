@@ -14,6 +14,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 - Scoria shipped `v2.4 Adoption Reliability Contract` on 2026-05-27.
 - Milestone `v2.5 Installer Safety & Upgrade Confidence` is now initialized with installer plan/check + drift-safe apply as the active wedge.
+- Phase `59 planner-contract-foundation` is complete: planner-driven `--dry-run`/`--check` contracts now provide deterministic no-write surfaces with stable check trailer and exit semantics.
 - Canonical lane truth now lives in one source (`Scoria.VerificationLanes`) shared by docs, drift tests, lane tasks, and CI ordering assertions.
 - Release-preview and compile warning policy is now explicit and enforced in canonical closeout lanes.
 - Warning baseline debt is tracked with owner+expiry so accepted warning debt cannot drift silently.
@@ -74,10 +75,12 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Release-preview/docs warning policy now runs warning-clean with remaining debt tracked in a scoped owner+expiry baseline ledger. — `v2.4 Adoption Reliability Contract`
 - ✓ CI now enforces warning gates and canonical lane ordering for release-preview, adoption, and runtime-to-handoff proofs. — `v2.4 Adoption Reliability Contract`
 - ✓ Installer contract remains idempotent while supporting root browser scopes that use list-form `pipe_through`. — `v2.4 Adoption Reliability Contract`
+- ✓ Installer `--dry-run` now uses a deterministic planner contract that reports per-surface classification and rationale without host writes. — Phase 59 `planner-contract-foundation`
+- ✓ Installer `--check` now uses deterministic tri-state semantics (`0/1/2`) and emits one stable machine trailer line for CI parsing. — Phase 59 `planner-contract-foundation`
+- ✓ Planner/check coverage now includes subprocess status/trailer assertions and no-write regression checks that keep v2.4 lane guardrails green. — Phase 59 `planner-contract-foundation`
 
 ### Active
 
-- [ ] Installer `--dry-run` / `--check` semantics expose a host-safe mutation plan before writing files.
 - [ ] Installer drift detection uses manifest-aware upgrade planning so stale router/config/migration surfaces are explicit before apply.
 - [ ] Apply mode reuses planner outputs so installation writes are predictable, reviewable, and idempotent.
 - [ ] `WARN-03` full-suite warning ratchet remains queued-next and starts immediately after installer safety closes.
@@ -190,4 +193,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 after starting milestone v2.5 Installer Safety & Upgrade Confidence*
+*Last updated: 2026-05-27 after completing Phase 59 planner-contract-foundation*
