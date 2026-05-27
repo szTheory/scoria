@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T17:49:25.427Z"
-last_activity: 2026-05-27 -- Phase 66 planning complete
+last_updated: "2026-05-27T17:54:24.002Z"
+last_activity: 2026-05-27
 progress:
-  total_phases: 1
-  completed_phases: 0
+  total_phases: 4
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 3
+  percent: 25
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-27)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** **v2.6 Warning Ratchet** — staged full-suite WAE ratchet + executable baseline expiry (phases 66–69).
+**Current focus:** Phase 66 — baseline-expiry-and-inventory
 
 ## Current Position
 
-Phase: 66 — Baseline Expiry And Inventory (context gathered)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-27 -- Phase 66 planning complete
+Phase: 67
+Plan: Not started
+Status: Executing Phase 66
+Last activity: 2026-05-27
 
 ## Performance Metrics
 

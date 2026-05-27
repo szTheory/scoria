@@ -14,14 +14,14 @@
 
 | Phase | Name | Goal | Requirements |
 |------:|------|------|--------------|
-| 66 | Baseline Expiry And Inventory | Make warning policy executable and inventory reproducible | WARN-03, WARN-04 |
+| 66 | 3/3 | Complete    | 2026-05-27 |
 | 67 | High-Signal Warning Ratchet | Clear warnings in compile + canonical lane + targeted high-signal tests | WARN-05, WARN-06 |
 | 68 | Full-Suite Warning Closure | Green `mix test --warnings-as-errors` in CI or honest re-baseline | WARN-07 |
 | 69 | CI Trust And Milestone Closeout | Preserve lane order; wire gates; close ledger | CI-03 |
 
 ## Phases
 
-- [ ] Phase 66: Baseline Expiry And Inventory (0/? plans)
+- [x] Phase 66: Baseline Expiry And Inventory (0/? plans) (completed 2026-05-27)
 - [ ] Phase 67: High-Signal Warning Ratchet (0/? plans)
 - [ ] Phase 68: Full-Suite Warning Closure (0/? plans)
 - [ ] Phase 69: CI Trust And Milestone Closeout (0/? plans)

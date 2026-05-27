@@ -9,8 +9,8 @@ Requirements for milestone `v2.6 Warning Ratchet`.
 
 ### Baseline Policy
 
-- [ ] **WARN-03**: CI fails when any accepted-debt row in `.planning/WARNING-BASELINE.md` is past its expiry date.
-- [ ] **WARN-04**: Maintainer can run a documented inventory path that classifies full-suite compiler warnings by surface/area (directory, lane, or test group).
+- [x] **WARN-03**: CI fails when any accepted-debt row in `.planning/WARNING-BASELINE.md` is past its expiry date.
+- [x] **WARN-04**: Maintainer can run a documented inventory path that classifies full-suite compiler warnings by surface/area (directory, lane, or test group).
 
 ### Staged Warning Ratchet
 
@@ -46,8 +46,8 @@ Deferred beyond `v2.6`:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WARN-03 | Phase 66 | Pending |
-| WARN-04 | Phase 66 | Pending |
+| WARN-03 | Phase 66 | Complete |
+| WARN-04 | Phase 66 | Complete |
 | WARN-05 | Phase 67 | Pending |
 | WARN-06 | Phase 67 | Pending |
 | WARN-07 | Phase 68 | Pending |
