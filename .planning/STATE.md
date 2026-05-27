@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T13:11:56.298Z"
-last_activity: 2026-05-27
+last_updated: "2026-05-27T13:27:55.834Z"
+last_activity: 2026-05-27 -- Phase 60 execution started
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 2
+  total_plans: 4
   completed_plans: 2
   percent: 33
 ---
@@ -19,14 +19,14 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 59 — planner-contract-foundation
+**Current Focus:** Phase 60 — drift-classification-and-safe-apply
 
 ## Current Position
 
-Phase: 60
-Plan: Not started
-Status: Executing Phase 59
-Last activity: 2026-05-27
+Phase: 60 (drift-classification-and-safe-apply) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 60
+Last activity: 2026-05-27 -- Phase 60 execution started
 
 ## Performance Metrics
 
