@@ -1,4 +1,15 @@
 defmodule Scoria.Install.Manifest do
+  @moduledoc """
+  Persists and loads `.scoria/install/manifest.json` as the last-applied install snapshot.
+
+  The manifest is written after a successful apply. `load/1` is informational for the
+  planner and report surfaces only — it is not a check-time drift baseline.
+
+  `validate_freshness/2` runs at apply time: it compares each plan entry's live
+  `:fingerprint` (captured when the plan was built) to the current disk fingerprint.
+  It does not read the stored manifest file for that gate.
+  """
+
   @schema_version 1
   @manifest_relative_path Path.join([".scoria", "install", "manifest.json"])
 
