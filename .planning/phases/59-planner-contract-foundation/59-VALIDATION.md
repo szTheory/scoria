@@ -1,9 +1,9 @@
 ---
 phase: 59
 slug: planner-contract-foundation
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-27
 ---
 
@@ -38,10 +38,10 @@ created: 2026-05-27
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 59-01-01 | 01 | 1 | INST-03 | — | `--dry-run` performs no host writes and returns deterministic ordered plan entries | integration | `mix test test/mix/tasks/scoria.install_test.exs` | ✅ | ⬜ pending |
-| 59-01-02 | 01 | 1 | INST-05 | — | every managed surface is classified as `create`/`update`/`no-op`/`manual-review` with rationale and target path | integration | `mix test test/mix/tasks/scoria.install_test.exs` | ✅ | ⬜ pending |
-| 59-02-01 | 02 | 2 | INST-04 | — | `--check` maps compliant/unsafe/error scenarios to stable exit codes `0/1/2` and emits stable trailer line | integration | `mix test test/mix/tasks/scoria.install_test.exs` | ✅ | ⬜ pending |
-| 59-02-02 | 02 | 2 | INST-03, INST-04, INST-05 | — | planner/check contract remains truthful without regressing existing installer/adoption reliability tests | full-suite | `mix test` | ✅ | ⬜ pending |
+| 59-01-01 | 01 | 1 | INST-03 | — | `--dry-run` performs no host writes and returns deterministic ordered plan entries | integration | `mix test test/mix/tasks/scoria.install_test.exs` | ✅ | ✅ green |
+| 59-01-02 | 01 | 1 | INST-05 | — | every managed surface is classified as `create`/`update`/`no-op`/`manual-review` with rationale and target path | integration | `mix test test/mix/tasks/scoria.install_test.exs` | ✅ | ✅ green |
+| 59-02-01 | 02 | 2 | INST-04 | — | `--check` maps compliant/unsafe/error scenarios to stable exit codes `0/1/2` and emits stable trailer line | integration | `mix test test/mix/tasks/scoria.install_test.exs` | ✅ | ✅ green |
+| 59-02-02 | 02 | 2 | INST-03, INST-04, INST-05 | — | planner/check contract remains truthful without regressing existing installer/adoption reliability tests | full-suite | `mix test` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -63,11 +63,18 @@ Existing infrastructure covers all phase requirements.
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-05-27 (Phase 62 traceability closeout)
+
+## Validation Audit 2026-05-27
+| Metric | Count |
+|--------|-------|
+| Gaps found | 4 stale pending rows |
+| Resolved | 4 (reconciled to 59-VERIFICATION.md) |
+| Escalated | 0 |
