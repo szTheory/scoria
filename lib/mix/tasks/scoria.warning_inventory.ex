@@ -34,7 +34,7 @@ defmodule Mix.Tasks.Scoria.WarningInventory do
       if quiet? do
         ""
       else
-        capture_output()
+        WarningInventory.capture_output()
       end
 
     parsed = WarningInventory.parse_output(output)
@@ -92,20 +92,6 @@ defmodule Mix.Tasks.Scoria.WarningInventory do
         "Note: pgvector may be unavailable locally; knowledge cluster counts can be incomplete."
       )
     end
-  end
-
-  defp capture_output do
-    Mix.shell().info("==> Capturing compile + test warning output")
-
-    {output, _status} =
-      System.cmd(
-        "mix",
-        ["do", "compile", "--force", "+", "test"],
-        env: [{"MIX_ENV", "test"}],
-        stderr_to_stdout: true
-      )
-
-    output
   end
 
   defp runtime_log_rows(output) do

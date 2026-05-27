@@ -135,6 +135,26 @@ defmodule Scoria.WarningInventory do
     Enum.frequencies_by(rows, & &1.cluster_id)
   end
 
+  @doc """
+  Captures compile + test warning output for inventory and ratchet checks.
+
+  Runs in capture mode (no WAE) so warnings can be measured even when the suite fails.
+  """
+  @spec capture_output() :: String.t()
+  def capture_output do
+    Mix.shell().info("==> Capturing compile + test warning output")
+
+    {output, _status} =
+      System.cmd(
+        "mix",
+        ["do", "compile", "--force", "+", "test"],
+        env: [{"MIX_ENV", "test"}],
+        stderr_to_stdout: true
+      )
+
+    output
+  end
+
   defp parse_lines([], acc), do: acc
 
   defp parse_lines([line | rest], acc) do
