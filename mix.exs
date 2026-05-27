@@ -29,7 +29,8 @@ defmodule Scoria.MixProject do
         "scoria.test.semantic_fast_path": :test,
         "test.semantic_fast_path": :test,
         "scoria.test.knowledge": :test,
-        "test.knowledge": :test
+        "test.knowledge": :test,
+        "scoria.warning_inventory": :test
       ]
     ]
   end
@@ -83,6 +84,7 @@ defmodule Scoria.MixProject do
       source_ref: "v#{version}",
       extras: [
         "README.md",
+        "LICENSE",
         "docs/adoption_lanes.md",
         "docs/phoenix_runtime_example.md",
         "docs/bounded_handoffs.md",

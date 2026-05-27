@@ -198,3 +198,11 @@ Use `mix test.runtime_to_handoff` as the canonical bounded escalation proof lane
 Use `mix test.semantic_fast_path` only for the canonical `v2.1` semantic fast-path troubleshooting lane.
 Use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
 Use `mix test` as broader repo-health context when you want to classify failures outside the canonical proof lane.
+
+## Warning baseline and inventory
+
+Maintainers enforce accepted warning debt expiry and capture classified inventory outside the adopter closeout lanes.
+
+- `mix scoria.warning_baseline.check` — fails when accepted rows in `.planning/WARNING-BASELINE.md` are expired or invalid
+- `mix scoria.warning_inventory` — capture-mode inventory of compiler warnings (no WAE)
+- `mix scoria.warning_inventory --write --scope full` — writes cluster-count JSON and human summary for Phase 67 ratchet ordering
