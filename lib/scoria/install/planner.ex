@@ -1,4 +1,12 @@
 defmodule Scoria.Install.Planner do
+  @moduledoc """
+  Builds install plans from live host surface analyzers.
+
+  `--check` and `--dry-run` classify drift from current disk and package desired
+  state only. Stored manifest fingerprints never override entry `:fingerprint`.
+  `manifest_state` and optional per-entry `manifest_fingerprint` are reporting-only.
+  """
+
   alias Scoria.Install.Manifest
   alias Scoria.Install.Surface.Migrations
   alias Scoria.Install.Surface.Router
@@ -11,6 +19,8 @@ defmodule Scoria.Install.Planner do
     mode = Keyword.get(opts, :mode, :dry_run)
     project_root = project_root(router_path, tailwind_path, config_path)
     manifest = Manifest.load(project_root)
+    manifest_path = Manifest.path(project_root)
+    manifest_state = if File.exists?(manifest_path), do: :present, else: :absent
 
     entries =
       [
@@ -25,7 +35,9 @@ defmodule Scoria.Install.Planner do
       schema_version: 1,
       mode: mode,
       entries: entries,
-      summary: summarize(entries)
+      summary: summarize(entries),
+      manifest_state: manifest_state,
+      manifest_path: manifest_path
     }
   end
 
@@ -114,7 +126,7 @@ defmodule Scoria.Install.Planner do
     |> Map.put_new(:operation, operation_from_classification(entry.classification))
     |> Map.put_new(:ownership_mode, ownership_mode_for_surface(surface))
     |> Map.put_new(:manifest_key, id)
-    |> Map.put_new(:fingerprint, manifest_entry[:fingerprint] || "unavailable")
+    |> maybe_put_manifest_fingerprint(manifest_entry)
     |> Map.put_new(:drift, %{reason_code: reason_code_for_classification(entry.classification)})
     |> Map.put_new(
       :remediation,
@@ -141,4 +153,23 @@ defmodule Scoria.Install.Planner do
   defp reason_code_for_classification(:no_op), do: "planned_no_op"
   defp reason_code_for_classification(:manual_review), do: "planned_manual_review"
   defp reason_code_for_classification(_), do: "planned_unknown"
+
+  defp maybe_put_manifest_fingerprint(entry, manifest_entry) do
+    case manifest_fingerprint_value(manifest_entry) do
+      nil -> entry
+      value -> Map.put(entry, :manifest_fingerprint, value)
+    end
+  end
+
+  defp manifest_fingerprint_value(manifest_entry) when is_map(manifest_entry) do
+    value = manifest_entry[:fingerprint] || manifest_entry["fingerprint"]
+
+    cond do
+      is_nil(value) -> nil
+      value == "unavailable" -> nil
+      true -> value
+    end
+  end
+
+  defp manifest_fingerprint_value(_), do: nil
 end
