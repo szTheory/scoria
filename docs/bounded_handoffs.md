@@ -14,6 +14,12 @@ Start with the normal runtime lane first: `identity -> start -> inspect -> resum
 
 ## Core contract
 
+## Host and Scoria ownership boundary
+
+The host app owns identity, escalation policy, prompt or draft selection, and projected-context selection.
+Scoria owns durable run creation, projected-context validation, queued delegated child creation, and curated readback through `Scoria.get_run_detail/1`.
+Scoria does not copy hidden transcript, provider session, socket assigns, cookies, headers, or secrets into the handoff.
+
 Use `Scoria.start_handoff_run/3` when you already know:
 
 - `root_role_id`: the root role that is delegating
@@ -74,6 +80,20 @@ Broad runtime-state keys are rejected explicitly, including:
 - `socket_state`
 
 Narrow host-controlled slices such as `%{"task" => "review"}` and `projected_context: %{}` remain valid.
+
+Rejected projected context returns a runtime error before Scoria creates the delegated run:
+
+```elixir
+assert {:error, :unsafe_projected_context} =
+         Scoria.start_handoff_run(identity, "critic",
+           root_role_id: "planner",
+           delegated_kind: "review",
+           handoff_input: %{"brief" => "Review the draft answer for policy and accuracy"},
+           projected_context: %{"request_headers" => %{"authorization" => "secret"}}
+         )
+```
+
+Scoria rejects the call with `{:error, :unsafe_projected_context}` before creating a durable delegated run.
 
 ## Inspecting delegated lineage
 
