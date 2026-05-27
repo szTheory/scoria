@@ -63,13 +63,14 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 |-------------|-------|--------|
 | EXMP-01 | Phase 52 | Complete |
 | EXMP-02 | Phase 52 | Complete |
-| EVID-01 | Phase 53 | Pending |
-| DOCS-01 | Phase 53 | Pending |
+| EVID-01 | Phase 53 | Complete |
+| DOCS-01 | Phase 53 | Complete |
 | DOCS-02 | Phase 54 | Pending |
 | PROOF-01 | Phase 54 | Pending |
 | PROOF-02 | Phase 54 | Pending |
 
 **Coverage:**
+
 - Active requirements: 7 total
 - Mapped to phases: 7
 - Unmapped: 0

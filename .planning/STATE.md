@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.3
-milestone_name: Runtime-to-handoff adoption example
-status: executing
-last_updated: "2026-05-27T07:58:12.904Z"
+milestone_name: milestone
+status: planning
+last_updated: "2026-05-27T08:06:06.895Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 3
-  percent: 33
+  completed_plans: 6
+  percent: 67
 ---
 
 # Project State
@@ -19,16 +19,16 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 53 — operator evidence and lane guidance
+**Current Focus:** Phase 53 — operator-evidence-and-lane-guidance
 
 ## Current Position
 
-Phase: 53 (operator-evidence-and-lane-guidance) — READY
+Phase: 53 (operator-evidence-and-lane-guidance) — EXECUTING
 Plan: 1 of 3
 **Milestone:** v2.3 Runtime-to-handoff adoption example
-**Phase:** 53
+**Phase:** 54
 **Plan:** Not started
-**Status:** Ready to execute
+**Status:** Ready to plan
 **Last activity:** 2026-05-27
 
 **Progress:**
