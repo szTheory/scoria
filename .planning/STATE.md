@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Runtime-to-handoff adoption example
-status: active
-last_updated: 2026-05-27T00:00:00Z
+status: executing
+last_updated: "2026-05-27T06:47:02.374Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 9
-  completed_plans: 0
-  percent: 0
-stopped_at: v2.3 initialized; ready to plan Phase 52
+  total_plans: 3
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -20,20 +19,20 @@ stopped_at: v2.3 initialized; ready to plan Phase 52
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** v2.3 Runtime-to-handoff adoption example
+**Current Focus:** Phase 52 — runtime-to-handoff-example-contract
 
 ## Current Position
 
-Phase: 52 - Runtime-to-handoff example contract
-Plan: not planned
+Phase: 52 (runtime-to-handoff-example-contract) — EXECUTING
+Plan: 2 of 3
 **Milestone:** v2.3 Runtime-to-handoff adoption example
 **Phase:** 52
-**Plan:** —
-**Status:** Ready for `$gsd-plan-phase 52`
+**Plan:** 2
+**Status:** Ready for Plan 52-02
 **Last activity:** 2026-05-27
 
 **Progress:**
-[----------] 0%
+[███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -44,6 +43,7 @@ Plan: not planned
 - **Coverage:** 8 shipped milestone requirements satisfied
 - **Active Milestone:** `v2.3 Runtime-to-handoff adoption example`
 - **Active Milestone Scope:** 3 phases, 9 planned plans, 7 active requirements
+- **Phase 52 Plan 01:** Completed in 2m04s across 2 tasks and 2 files
 
 ## Accumulated Context
 
@@ -67,10 +67,13 @@ Plan: not planned
 - Semantic proof lanes must prepare their own optional knowledge or retrieval tables instead of leaking hidden setup assumptions into the support story.
 - `v2.2` closed publishability, consumer proof, and support-truth alignment before Scoria reopens broader capability work.
 - `v2.3` should clarify lane escalation through one runtime-to-handoff example backed by executable proof, not by broad docs-only guidance.
+- No new public runtime API is required for Phase 52.
+- The Phase 52 example starts with `Scoria.start_run/2`, escalates through `Scoria.start_handoff_run/3`, and reads delegated detail through `Scoria.get_run_detail/1`.
+- The host app owns escalation policy; Scoria owns durable execution, projected-context rejection, and curated readback.
 
 **Todos:**
 
-- Plan Phase 52 with `$gsd-plan-phase 52`.
+- Execute Plan 52-02.
 
 **Blockers:**
 

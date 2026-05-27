@@ -18,8 +18,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Adoption Example
 
-- [ ] **EXMP-01:** Phoenix developer can follow one adopter-facing example that starts a default Scoria run and escalates into `Scoria.start_handoff_run/3` without needing maintainer folklore.
-- [ ] **EXMP-02:** The example shows the bounded projected-context shape, including what can be passed safely and what Scoria rejects or excludes by default.
+- [x] **EXMP-01:** Phoenix developer can follow one adopter-facing example that starts a default Scoria run and escalates into `Scoria.start_handoff_run/3` without needing maintainer folklore.
+- [x] **EXMP-02:** The example shows the bounded projected-context shape, including what can be passed safely and what Scoria rejects or excludes by default.
 
 ### Operator Evidence
 
@@ -61,8 +61,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EXMP-01 | Phase 52 | Pending |
-| EXMP-02 | Phase 52 | Pending |
+| EXMP-01 | Phase 52 | Complete |
+| EXMP-02 | Phase 52 | Complete |
 | EVID-01 | Phase 53 | Pending |
 | DOCS-01 | Phase 53 | Pending |
 | DOCS-02 | Phase 54 | Pending |
