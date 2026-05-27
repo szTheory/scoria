@@ -1,0 +1,59 @@
+defmodule Scoria.CiPolicyContractTest do
+  use ExUnit.Case, async: true
+
+  alias Scoria.VerificationLanes
+
+  @baseline_check "mix scoria.warning_baseline.check"
+  @compile_wae "mix compile --warnings-as-errors"
+  @lane_contract "test/scoria/verification_lanes_test.exs"
+
+  test "policy job runs warning baseline check before compile WAE" do
+    ci_workflow = File.read!(".github/workflows/ci.yml")
+
+    assert ci_workflow =~ @baseline_check
+    assert index_of(ci_workflow, @baseline_check) < index_of(ci_workflow, @compile_wae)
+    assert index_of(ci_workflow, @compile_wae) < index_of(ci_workflow, @lane_contract)
+  end
+
+  test "test job depends on policy and preserves closeout chain order" do
+    ci_workflow = File.read!(".github/workflows/ci.yml")
+
+    release_preview = VerificationLanes.ci_command(:release_preview)
+    adoption = VerificationLanes.ci_command(:adoption)
+    runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
+
+    assert ci_workflow =~ "needs: policy"
+    assert ci_workflow =~ release_preview
+    assert ci_workflow =~ adoption
+    assert ci_workflow =~ runtime_to_handoff
+
+    assert index_of(ci_workflow, release_preview) < index_of(ci_workflow, adoption)
+    assert index_of(ci_workflow, adoption) < index_of(ci_workflow, runtime_to_handoff)
+  end
+
+  test "postgres service is configured only for the test job" do
+    ci_workflow = File.read!(".github/workflows/ci.yml")
+    [policy_section, test_section] = split_jobs(ci_workflow)
+
+    refute policy_section =~ "services:"
+    assert test_section =~ "services:"
+    assert test_section =~ "postgres"
+  end
+
+  defp split_jobs(content) do
+    case :binary.match(content, "\n  test:") do
+      {index, _length} ->
+        [String.slice(content, 0, index), String.slice(content, index, byte_size(content))]
+
+      :nomatch ->
+        flunk("expected policy and test jobs in ci.yml")
+    end
+  end
+
+  defp index_of(content, needle) do
+    case :binary.match(content, needle) do
+      {index, _length} -> index
+      :nomatch -> flunk("Expected to find #{inspect(needle)} in content")
+    end
+  end
+end

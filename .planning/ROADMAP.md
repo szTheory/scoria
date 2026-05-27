@@ -28,7 +28,7 @@
 
 ## Phase Details
 
-### Phase 66 — Baseline Expiry And Inventory
+### Phase 66: Baseline Expiry And Inventory
 
 **Goal:** Turn `.planning/WARNING-BASELINE.md` from prose policy into executable CI truth and produce a classified warning inventory.
 
@@ -40,7 +40,7 @@
 2. Inventory output groups known warning clusters (e.g. knowledge migration redefines, unused vars, LiveView teardown, host-proof compile) with file/area attribution.
 3. Inventory is reproducible from documented maintainer command(s) and referenced in milestone thread or phase notes.
 
-### Phase 67 — High-Signal Warning Ratchet
+### Phase 67: High-Signal Warning Ratchet
 
 **Goal:** Clear warnings in compile, canonical lane surfaces, and inventory-prioritized high-signal tests without destabilizing the full suite.
 
@@ -52,7 +52,7 @@
 2. `mix test --warnings-as-errors` for lane-contract + adoption surface tests passes.
 3. Targeted high-signal test paths from Phase 66 inventory pass under WAE (remaining debt explicitly listed if deferred).
 
-### Phase 68 — Full-Suite Warning Closure
+### Phase 68: Full-Suite Warning Closure
 
 **Goal:** Achieve green full-suite WAE in CI or update baseline ledger with honest owner+expiry for any remaining accepted debt.
 
@@ -64,7 +64,7 @@
 2. `.planning/WARNING-BASELINE.md` reflects post-ratchet truth (resolved rows removed; any remaining debt has owner+expiry).
 3. No silent regression of canonical lane warning-clean status.
 
-### Phase 69 — CI Trust And Milestone Closeout
+### Phase 69: CI Trust And Milestone Closeout
 
 **Goal:** Wire staged gates into CI without changing canonical closeout order; close milestone traceability.
 
