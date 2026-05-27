@@ -1,12 +1,21 @@
 defmodule Scoria.Install.Report do
+  alias Scoria.Install.Contract
+  alias Scoria.Install.Manifest
+
   @summary_order [:create, :update, :no_op, :manual_review]
+  @operator_summary_order Contract.operator_summary_keys()
 
   def check_result(plan) do
     do_check_result(plan)
   end
 
+  def project_operator_summary(entries, mode) when is_list(entries) do
+    Contract.project_summary(entries, mode)
+  end
+
   def render_human(plan, mode) do
     mode_label = mode_label(mode)
+    operator_summary = project_operator_summary(plan.entries, mode)
 
     entry_lines =
       plan.entries
@@ -31,21 +40,34 @@ defmodule Scoria.Install.Report do
         "  #{classification_label(key)}: #{Map.get(plan.summary, key, 0)}"
       end)
 
+    operator_summary_lines =
+      @operator_summary_order
+      |> Enum.map(fn key ->
+        "  #{operator_summary_label(key)}: #{Map.get(operator_summary, key, 0)}"
+      end)
+
     [
       "Scoria install plan (mode: #{mode_label})",
       "",
+      manifest_context_line(plan),
+      "",
       entry_lines,
       "Summary:",
-      summary_lines
+      summary_lines,
+      "",
+      "Operator summary:",
+      operator_summary_lines
     ]
     |> List.flatten()
     |> Enum.join("\n")
   end
 
   def render_json(plan, mode) do
+    operator_summary = project_operator_summary(plan.entries, mode)
+
     payload =
       plan
-      |> normalize_plan_for_json()
+      |> normalize_plan_for_json(operator_summary)
       |> Map.put(:mode, mode_label(mode))
 
     if Code.ensure_loaded?(Jason) do
@@ -56,7 +78,7 @@ defmodule Scoria.Install.Report do
   end
 
   def trailer_line(%{status: status, exit_code: exit_code}) do
-    "SCORIA_CHECK_RESULT status=#{status} exit_code=#{exit_code}"
+    "#{Contract.trailer_prefix()} status=#{status} exit_code=#{exit_code}"
   end
 
   defp do_check_result(%{entries: entries}) when is_list(entries) do
@@ -79,13 +101,43 @@ defmodule Scoria.Install.Report do
 
   defp do_check_result(_), do: %{status: :error, exit_code: 2}
 
-  defp normalize_plan_for_json(plan) do
+  defp normalize_plan_for_json(plan, operator_summary) do
     %{
-      schema_version: plan.schema_version,
+      schema_version: Contract.schema_version(),
       mode: mode_label(plan.mode),
       entries: Enum.map(plan.entries, &normalize_entry_for_json/1),
-      summary: normalize_json_value(plan.summary)
+      summary: normalize_json_value(plan.summary),
+      summary_operator: normalize_json_value(operator_summary)
     }
+    |> maybe_put_manifest_json(plan)
+  end
+
+  defp maybe_put_manifest_json(payload, plan) do
+    case Map.get(plan, :manifest_state) do
+      nil ->
+        payload
+
+      state ->
+        Map.put(payload, :manifest, %{
+          present: state == :present,
+          path: Map.get(plan, :manifest_path, ""),
+          schema_version: Manifest.schema_version(),
+          check_role: Contract.manifest_check_role(),
+          apply_role: Contract.manifest_apply_role()
+        })
+    end
+  end
+
+  defp manifest_context_line(%{manifest_state: :absent}) do
+    "Install manifest not found — check inspected live host surfaces only. First successful apply writes .scoria/install/manifest.json."
+  end
+
+  defp manifest_context_line(%{manifest_state: :present, manifest_path: path}) when is_binary(path) do
+    "Install manifest present at #{path} — informational snapshot only; check used live surface fingerprints."
+  end
+
+  defp manifest_context_line(_plan) do
+    "Install manifest not found — check inspected live host surfaces only. First successful apply writes .scoria/install/manifest.json."
   end
 
   defp normalize_entry_for_json(entry) do
@@ -139,7 +191,7 @@ defmodule Scoria.Install.Report do
       verify_command:
         remediation
         |> Map.get(:verify_command)
-        |> fallback(Map.get(remediation, "verify_command"), "mix scoria.install --check")
+        |> fallback(Map.get(remediation, "verify_command"), Contract.default_verify_command())
     }
   end
 
@@ -168,4 +220,6 @@ defmodule Scoria.Install.Report do
   defp classification_label(:no_op), do: "no-op"
   defp classification_label(:manual_review), do: "manual-review"
   defp classification_label(classification), do: Atom.to_string(classification)
+
+  defp operator_summary_label(key), do: Atom.to_string(key)
 end
