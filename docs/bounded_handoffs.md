@@ -5,7 +5,7 @@ This guide documents the narrow public delegation lane for Scoria. Use it when y
 Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
 Keep the normal runtime order `identity -> start -> inspect -> resume` and branch to handoff only when that explicit delegation contract is needed.
 Bounded handoffs are added only after `mix test.adoption` proves the normal runtime lane.
-They extend the same runtime-first story instead of creating a separate verifier lane.
+They extend the same runtime-first story through one canonical verifier lane: `mix test.runtime_to_handoff`.
 
 ## What this lane does
 

@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: milestone
-status: completed
-last_updated: "2026-05-27T08:48:17.292Z"
-last_activity: 2026-05-27
+status: Awaiting next milestone
+last_updated: "2026-05-27T09:07:16.677Z"
+last_activity: 2026-05-27 — Milestone v2.3 completed and archived
 progress:
   total_phases: 3
   completed_phases: 3
@@ -19,33 +19,22 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 54 — executable-proof-and-closeout-truth
+**Current Focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 54 (executable-proof-and-closeout-truth) — EXECUTING
-Plan: 1 of 3
-**Milestone:** v2.3 Runtime-to-handoff adoption example
-**Phase:** 54
-**Plan:** Not started
-**Status:** Milestone complete
-**Last activity:** 2026-05-27
-
-**Progress:**
-[███░░░░░░░] 33%
+Phase: Milestone v2.3 complete (archived)
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-27 — Milestone v2.3 completed and archived
 
 ## Performance Metrics
 
-- **Latest Shipped Milestone:** `v2.2 OSS adopter onramp` on 2026-05-26
-- **Archived Milestone Phases:** 5 complete
-- **Archived Milestone Plans:** 16 complete
-- **Archived Milestone Task Count:** 35 total
-- **Coverage:** 8 shipped milestone requirements satisfied
-- **Active Milestone:** `v2.3 Runtime-to-handoff adoption example`
-- **Active Milestone Scope:** 3 phases, 9 planned plans, 7 active requirements
-- **Phase 52 Plan 01:** Completed in 2m04s across 2 tasks and 2 files
-- **Phase 52 Plan 02:** Completed in 3m05s across 3 tasks and 4 files
-- **Phase 52 Plan 03:** Completed in 3m33s across 3 tasks and 4 files
+- **Latest Shipped Milestone:** `v2.3 Runtime-to-handoff adoption example` on 2026-05-27
+- **Archived Milestone Artifacts:** roadmap, requirements, audit, and phase directories archived under `.planning/milestones/`
+- **Milestone Scope Shipped:** 3 phases, 9 plans, 20 tasks
+- **Coverage:** 7/7 milestone requirements satisfied (per `.planning/milestones/v2.3-MILESTONE-AUDIT.md`)
+- **Active Milestone:** none (awaiting `/gsd-new-milestone`)
 
 ## Accumulated Context
 
@@ -55,7 +44,7 @@ Plan: 1 of 3
 - Phases `44-46` shipped `v2.1 Tenant-scoped semantic fast path` with archived roadmap and requirements ledgers.
 - Phases `47-51` shipped `v2.2 OSS adopter onramp` with archived roadmap and requirements ledgers.
 - Scoria now has a publishable package/docs lane, a truthful installer contract, a generated-host consumer proof, and a bounded default-lane verifier.
-- `v2.3` activates the adoption-example follow-up candidate: one executable runtime-to-handoff path before any broader capability expansion.
+- `v2.3` shipped the adoption-example lane: default runtime -> bounded handoff with executable proof and support-truth alignment.
 
 **Decisions:**
 
@@ -78,11 +67,11 @@ Plan: 1 of 3
 - The bounded handoff guide now states the host/Scoria ownership boundary immediately under the core contract.
 - Unsafe projected context is documented as `{:error, :unsafe_projected_context}` before durable delegated run creation.
 - The hidden-transcript refutation rejects prescriptive transfer wording without contradicting the required non-copy safety sentence.
-- Phase 53 UI design contract is approved in `.planning/phases/53-operator-evidence-and-lane-guidance/53-UI-SPEC.md`; planning should use the delegated evidence anchor, default-lane empty state, curated DTO boundary, and lane wording contract from that file.
+- Phase 53 UI design contract is archived in `.planning/milestones/v2.3-phases/53-operator-evidence-and-lane-guidance/53-UI-SPEC.md` with delegated evidence anchor and default-lane empty-state guidance.
 
 **Todos:**
 
-- Plan Phase 53-01.
+- Start the next milestone definition flow with `/gsd-new-milestone`.
 
 **Blockers:**
 
@@ -97,9 +86,13 @@ Items deferred or intentionally outside active milestone scope:
 | tech debt | Project-level full-suite warning audit outside the owned adoption lane still has not been rerun after the post-`v1.9` support-truth shims | still unverified |
 | tech debt | LiveView async teardown noise in the workflow/replay test lane | accepted at `v1.9` close |
 | future milestone | Advanced bounded-handoff examples beyond the shipped Relay lane | deferred unless real adopter evidence proves the current lane is still confusing |
-| active milestone | One runtime-to-handoff adoption example | active in `v2.3` |
+| shipped milestone | One runtime-to-handoff adoption example | shipped in `v2.3` |
 | future milestone | External semantic cache backends and advanced tuning | deferred until the embedded default semantic lane and default OSS onramp both prove boring in practice |
 | future milestone | Package-family decomposition into multiple Hex libraries | deferred beyond the first OSS adopter closeout |
 | future milestone | Hosted demo or managed onboarding surfaces | deferred to preserve the embedded Phoenix product shape |
 | tech debt | `mix scoria.release_preview` still warns that `README.md` references `LICENSE` and `Scoria.Knowledge.Source.t()` is undefined/private in generated docs | accepted at `v2.2` close |
 | reference | Archived planning seeds in `.planning/seeds/` | retained as background material, not active milestone work |
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd:new-milestone

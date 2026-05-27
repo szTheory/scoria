@@ -127,7 +127,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "{:error, :unsafe_projected_context}"
     assert content =~ "before creating a durable delegated run"
     assert content =~ "mix test.adoption"
-    assert content =~ "separate verifier lane"
+    assert content =~ "one canonical verifier lane"
     assert content =~ "Broad runtime-state keys are rejected explicitly"
     assert content =~ "transcript"
     assert content =~ "provider_session"
