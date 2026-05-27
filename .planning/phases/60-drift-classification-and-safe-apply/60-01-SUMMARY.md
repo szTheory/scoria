@@ -1,3 +1,11 @@
+---
+phase: 60-drift-classification-and-safe-apply
+plan: 01
+status: complete
+requirements-completed: [INST-06, INST-07]
+completed: 2026-05-27
+---
+
 # Plan 60-01 Summary
 
 ## Scope
