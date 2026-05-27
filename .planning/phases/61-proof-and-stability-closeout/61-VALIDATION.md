@@ -1,8 +1,8 @@
 ---
 phase: 61
 slug: proof-and-stability-closeout
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: true
 created: 2026-05-27
 ---
@@ -41,13 +41,13 @@ created: 2026-05-27
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 61-01-01 | 01 | 1 | INST-08 | T-61-01 | Operator projection never mislabels `manual_review` as actionable write bucket. | unit | `MIX_ENV=test mix test test/scoria/install/report_test.exs` | ❌ W0 | ⬜ pending |
-| 61-01-02 | 01 | 1 | INST-08 | T-61-02 | JSON adds `summary_operator` additively; planner summary keys unchanged; schema_version string `"1.0"`. | unit | `MIX_ENV=test mix test test/scoria/install/report_test.exs` | ❌ W0 | ⬜ pending |
-| 61-02-01 | 02 | 2 | INST-08 | T-61-03 | Shared fixture harness replaces duplicate builders; six fixture classes build successfully. | integration | `MIX_ENV=test mix test test/mix/tasks/scoria.install_check_test.exs` | ❌ W0 | ⬜ pending |
-| 61-02-02 | 02 | 2 | INST-08 | T-61-04 | dry_run/check plan bodies identical; B-cycle proves idempotency with zero preview writes. | integration | `MIX_ENV=test mix test test/mix/tasks/scoria.install_test.exs` | ✅ | ⬜ pending |
-| 61-02-03 | 02 | 2 | INST-08 | T-61-05 | optional_surface_absent → skipped operator count; tri-state trailers unchanged. | integration | `MIX_ENV=test mix test test/mix/tasks/scoria.install_check_test.exs` | ✅ | ⬜ pending |
-| 61-03-01 | 03 | 3 | INST-08 | — | Docs and adoption pins match Install.Contract SSOT. | integration | `MIX_ENV=test mix test test/scoria/adoption_surface_test.exs` | ✅ | ⬜ pending |
-| 61-03-02 | 03 | 3 | INST-08 | — | v2.4 closeout chain green; VerificationLanes order unchanged. | integration | `MIX_ENV=test mix test test/scoria/verification_lanes_test.exs && MIX_ENV=test mix test.adoption` | ✅ | ⬜ pending |
+| 61-01-01 | 01 | 1 | INST-08 | T-61-01 | Operator projection never mislabels `manual_review` as actionable write bucket. | unit | `MIX_ENV=test mix test test/scoria/install/report_test.exs` | ✅ | ✅ green |
+| 61-01-02 | 01 | 1 | INST-08 | T-61-02 | JSON adds `summary_operator` additively; planner summary keys unchanged; schema_version string `"1.0"`. | unit | `MIX_ENV=test mix test test/scoria/install/report_test.exs` | ✅ | ✅ green |
+| 61-02-01 | 02 | 2 | INST-08 | T-61-03 | Shared fixture harness replaces duplicate builders; six fixture classes build successfully. | integration | `MIX_ENV=test mix test test/mix/tasks/scoria.install_check_test.exs` | ✅ | ✅ green |
+| 61-02-02 | 02 | 2 | INST-08 | T-61-04 | dry_run/check plan bodies identical; B-cycle proves idempotency with zero preview writes. | integration | `MIX_ENV=test mix test test/mix/tasks/scoria.install_test.exs` | ✅ | ✅ green |
+| 61-02-03 | 02 | 2 | INST-08 | T-61-05 | optional_surface_absent → skipped operator count; tri-state trailers unchanged. | integration | `MIX_ENV=test mix test test/mix/tasks/scoria.install_check_test.exs` | ✅ | ✅ green |
+| 61-03-01 | 03 | 3 | INST-08 | — | Docs and adoption pins match Install.Contract SSOT. | integration | `MIX_ENV=test mix test test/scoria/adoption_surface_test.exs` | ✅ | ✅ green |
+| 61-03-02 | 03 | 3 | INST-08 | — | v2.4 closeout chain green; VerificationLanes order unchanged. | integration | `MIX_ENV=test mix test test/scoria/verification_lanes_test.exs && MIX_ENV=test mix test.adoption` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -55,8 +55,8 @@ created: 2026-05-27
 
 ## Wave 0 Requirements
 
-- [ ] `test/scoria/install/report_test.exs` — projection unit tests for Plan 61-01
-- [ ] `test/support/scoria/host_install_fixtures.ex` — shared harness for Plan 61-02
+- [x] `test/scoria/install/report_test.exs` — projection unit tests for Plan 61-01
+- [x] `test/support/scoria/host_install_fixtures.ex` — shared harness for Plan 61-02
 
 ---
 
@@ -70,11 +70,18 @@ created: 2026-05-27
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 180s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 180s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-05-27 (Phase 62 traceability closeout)
+
+## Validation Audit 2026-05-27
+| Metric | Count |
+|--------|-------|
+| Gaps found | 7 stale pending rows + 2 unchecked W0 |
+| Resolved | 7 + 2 |
+| Escalated | 0 |
