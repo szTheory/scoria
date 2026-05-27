@@ -1,5 +1,6 @@
 defmodule Scoria.AdoptionSurfaceTest do
   use ExUnit.Case, async: true
+  alias Scoria.VerificationLanes
 
   @readme "README.md"
   @lane_guide "docs/adoption_lanes.md"
@@ -10,6 +11,13 @@ defmodule Scoria.AdoptionSurfaceTest do
   @operator_guide "docs/operator_verification.md"
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
+  @release_preview_command VerificationLanes.command(:release_preview)
+  @default_lane_command VerificationLanes.command(:adoption)
+  @runtime_to_handoff_command VerificationLanes.command(:runtime_to_handoff)
+  @semantic_fast_path_command VerificationLanes.command(:semantic_fast_path)
+  @knowledge_lane_command VerificationLanes.command(:knowledge)
+  @default_boundary_sentence VerificationLanes.boundary_sentence(:adoption)
+  @closeout_chain VerificationLanes.closeout_chain()
 
   test "README documents the shipped lane model and canonical lane hierarchy" do
     content = File.read!(@readme)
@@ -32,9 +40,9 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "Tailwind is optional for the install task."
     assert content =~ "mix scoria.install"
     assert content =~ "mix ecto.migrate"
-    assert content =~ "mix test.adoption"
-    assert content =~ "SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path"
-    assert content =~ "mix test.knowledge"
+    assert content =~ @default_lane_command
+    assert content =~ @semantic_fast_path_command
+    assert content =~ @knowledge_lane_command
     assert content =~ "local proof-only timeout"
     assert content =~ "suite-wide timeout changes"
     assert content =~ "broader repo-health context"
@@ -57,9 +65,9 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "identity -> start -> inspect -> resume"
     assert content =~ "Scoria.start_handoff_run/3"
     assert content =~ "use Scoria.SemanticLane"
-    assert content =~ "mix test.adoption"
-    assert content =~ "mix test.semantic_fast_path"
-    assert content =~ "mix test.knowledge"
+    assert content =~ @default_lane_command
+    assert content =~ @semantic_fast_path_command
+    assert content =~ @knowledge_lane_command
     refute content =~ "mix scoria.test.knowledge"
     assert content =~ "This lane is explicitly optional."
     assert content =~ "Start narrow. Expand only when the current lane already feels boring."
@@ -74,18 +82,17 @@ defmodule Scoria.AdoptionSurfaceTest do
 
     for content <- [readme, lane_guide, operator_guide] do
       assert content =~ "Start with the default runtime lane"
-      assert content =~ "mix test.runtime_to_handoff"
-      assert content =~ "mix test.adoption"
-      assert content =~
-               "This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup."
+      assert content =~ @runtime_to_handoff_command
+      assert content =~ @default_lane_command
+      assert content =~ @default_boundary_sentence
     end
 
     assert phoenix_example =~ "Scoria.get_run_detail/1"
     assert phoenix_example =~ "delegated = detail.delegated_handoffs"
-    assert phoenix_example =~ "mix test.runtime_to_handoff"
-    assert phoenix_example =~ "mix test.adoption"
+    assert phoenix_example =~ @runtime_to_handoff_command
+    assert phoenix_example =~ @default_lane_command
 
-    assert handoff_guide =~ "mix test.runtime_to_handoff"
+    assert handoff_guide =~ @runtime_to_handoff_command
     assert handoff_guide =~ "Scoria.get_run_detail/1"
     assert handoff_guide =~ "delegated_handoffs"
 
@@ -126,7 +133,7 @@ defmodule Scoria.AdoptionSurfaceTest do
 
     assert content =~ "{:error, :unsafe_projected_context}"
     assert content =~ "before creating a durable delegated run"
-    assert content =~ "mix test.adoption"
+    assert content =~ @default_lane_command
     assert content =~ "one canonical verifier lane"
     assert content =~ "Broad runtime-state keys are rejected explicitly"
     assert content =~ "transcript"
@@ -165,8 +172,8 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "stale"
     assert content =~ "invalidated"
     assert content =~ "writeback_rejected"
-    assert content =~ "mix test.semantic_fast_path"
-    assert content =~ "mix test.knowledge"
+    assert content =~ @semantic_fast_path_command
+    assert content =~ @knowledge_lane_command
     assert content =~ "/scoria/workflows/:run_id"
     refute content =~ "mix scoria.test.knowledge"
   end
@@ -202,13 +209,13 @@ defmodule Scoria.AdoptionSurfaceTest do
   test "operator verification guide documents the four-tier support hierarchy" do
     content = File.read!(@operator_guide)
 
-    assert content =~ "mix scoria.release_preview"
+    assert content =~ @release_preview_command
     assert content =~ "mix scoria.install"
     assert content =~ "mix ecto.migrate"
     assert content =~ "mix test"
-    assert content =~ "mix test.adoption"
-    assert content =~ "mix test.semantic_fast_path"
-    assert content =~ "mix test.knowledge"
+    assert content =~ @default_lane_command
+    assert content =~ @semantic_fast_path_command
+    assert content =~ @knowledge_lane_command
     assert content =~ "SCORIA_DB_PORT=55432"
     assert content =~ "canonical default-lane verifier"
     assert content =~ "fresh-host install/migrate/route/runtime smoke"
@@ -222,11 +229,13 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "/scoria/workflows/:run_id"
     assert content =~ "Optional knowledge lane"
     assert content =~ "repository closeout, the canonical proof chain is exactly"
-    assert content =~ "mix scoria.release_preview\nmix test.adoption\nmix test.runtime_to_handoff"
-    assert content =~ "mix test.runtime_to_handoff"
-    assert content =~ "CI should run this lane in `MIX_ENV=dev` because ExDoc stays a dev-only tool"
+    assert content =~ @closeout_chain
+    assert content =~ @runtime_to_handoff_command
+
     assert content =~
-             "This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup."
+             "CI should run this lane in `MIX_ENV=dev` because ExDoc stays a dev-only tool"
+
+    assert content =~ @default_boundary_sentence
 
     assert content =~ "bypass"
     assert content =~ "miss"
@@ -237,6 +246,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "invalidated"
     assert content =~ "writeback_rejected"
     refute content =~ "MIX_ENV=test mix scoria.release_preview"
+
     refute Regex.match?(
              ~r/mix scoria\.release_preview\s+mix test\.semantic_fast_path/,
              content
@@ -258,6 +268,43 @@ defmodule Scoria.AdoptionSurfaceTest do
     refute Regex.match?(~r/```bash\s+mix test\.adoption --trace\s+```/, content)
     refute content =~ "mix scoria.test.knowledge"
     refute content =~ "pgvector, retrieval, or semantic caching before Scoria is usable"
+  end
+
+  test "operator verification guide documents upgrade-safe installer modes" do
+    operator_guide = File.read!(@operator_guide)
+    lane_guide = File.read!(@lane_guide)
+
+    assert operator_guide =~ "Installer verification modes (upgrade-safe)"
+    assert operator_guide =~ "mix scoria.install --dry-run"
+    assert operator_guide =~ "mix scoria.install --check"
+    assert operator_guide =~ "SCORIA_CHECK_RESULT"
+    assert operator_guide =~ "never writes"
+    assert operator_guide =~ "Check vs apply drift detection"
+    assert operator_guide =~ "Live host surfaces only"
+
+    assert lane_guide =~ "operator_verification.md"
+    assert lane_guide =~ "Check vs apply"
+    assert lane_guide =~ "--check"
+  end
+
+  test "mix scoria.install task documents three modes and upgrade-safe verification" do
+    assert {:docs_v1, _, :elixir, _, moduledoc, _, _} = Code.fetch_docs(Mix.Tasks.Scoria.Install)
+
+    assert moduledoc not in [nil, :none]
+
+    moduledoc_text =
+      case moduledoc do
+        %{"en" => text} -> text
+        text when is_binary(text) -> text
+      end
+
+    assert moduledoc_text =~ "three verification modes"
+    assert moduledoc_text =~ "--dry-run"
+    assert moduledoc_text =~ "--check"
+    assert moduledoc_text =~ "never writes host files"
+    assert moduledoc_text =~ "SCORIA_CHECK_RESULT"
+    assert moduledoc_text =~ "mix scoria.install --check"
+    assert moduledoc_text =~ "docs/operator_verification.md"
   end
 
   test "public modules expose compiled moduledocs on current Elixir" do
