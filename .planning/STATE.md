@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: planning-next
-milestone_name: pending
-status: v2.4 archived and tagged-ready
-last_updated: "2026-05-27T09:59:00.000Z"
-last_activity: 2026-05-27 — Completed v2.4 archival backfill and finalized milestone closeout records
+milestone: v2.5
+milestone_name: Installer Safety & Upgrade Confidence
+status: roadmap approved; ready to start phase 59
+last_updated: "2026-05-27T10:45:00.000Z"
+last_activity: 2026-05-27 — Initialized v2.5 with scoped requirements and roadmap for installer planning, drift detection, and safe apply
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -19,32 +19,36 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Define next milestone requirements via `/gsd-new-milestone`
+**Current Focus:** Execute v2.5 installer safety phases (59-61) to ship no-write planner/check contracts and manifest-aware drift-safe apply behavior
 
 ## Current Position
 
-Phase: Milestone v2.4 complete and archived
-Plan: —
-Status: Ready for next milestone definition
-Last activity: 2026-05-27 — Completed v2.4 archival backfill and finalized milestone closeout records
+Phase: 59 — Planner Contract Foundation (not started)
+Plan: Define implementation tasks for planner/check mutation-plan contract and deterministic classification semantics
+Status: Milestone initialized; ready for `/gsd-discuss-phase 59` or `/gsd-plan-phase 59`
+Last activity: 2026-05-27 — Created v2.5 requirements and roadmap with 6 requirements mapped across phases 59-61
 
 ## Performance Metrics
 
 - **Latest Shipped Milestone:** `v2.4 Adoption Reliability Contract` on 2026-05-27
 - **Archived Milestone Artifacts:** roadmap, requirements, audit, and phase directories archived under `.planning/milestones/`
-- **Milestone Scope Shipped:** 4 phases, 6 plans, 10 requirements
-- **Coverage:** 10/10 milestone requirements satisfied (per `.planning/milestones/v2.4-MILESTONE-AUDIT.md`)
-- **Active Milestone:** none (next milestone definition pending)
+- **Milestone Scope Shipped (v2.4):** 4 phases, 6 plans, 10 requirements
+- **Coverage (v2.4):** 10/10 milestone requirements satisfied (per `.planning/milestones/v2.4-MILESTONE-AUDIT.md`)
+- **Active Milestone:** `v2.5 Installer Safety & Upgrade Confidence` (6 requirements, 3 phases)
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
+- Milestone `v2.5 Installer Safety & Upgrade Confidence` is initialized with requirements `INST-03` through `INST-08` mapped to phases 59-61.
+- Phase 59 starts the no-write planner/check contract; phase 60 adds manifest-aware drift + safe apply; phase 61 closes proof and guardrail stability.
+- `WARN-03` remains intentionally deferred as the immediate next milestone once installer safety closes.
 - Phase `43.1` was inserted after Phase `43` to restore a clean `v2.0 Relay` closeout baseline.
 - Phases `44-46` shipped `v2.1 Tenant-scoped semantic fast path` with archived roadmap and requirements ledgers.
 - Phases `47-51` shipped `v2.2 OSS adopter onramp` with archived roadmap and requirements ledgers.
 - Scoria now has a publishable package/docs lane, a truthful installer contract, a generated-host consumer proof, and a bounded default-lane verifier.
 - `v2.3` shipped the adoption-example lane: default runtime -> bounded handoff with executable proof and support-truth alignment.
+- Milestone-next-step assessment places Scoria in a "strong but meaningful wedges remain" band; remaining leverage is adoption safety/upgrade trust, not net-new capability breadth.
 
 **Decisions:**
 
@@ -60,6 +64,10 @@ Last activity: 2026-05-27 — Completed v2.4 archival backfill and finalized mil
 - `v2.3` should clarify lane escalation through one runtime-to-handoff example backed by executable proof, not by broad docs-only guidance.
 - `v2.4` should prioritize one executable reliability contract across lane docs, tests, CI, warnings, and installer behavior before reopening capability expansion.
 - Next milestone should preserve v2.4 reliability contracts while scoping one focused expansion axis.
+- Next milestone should be `Installer Safety & Upgrade Confidence` (`INST-03`, `INST-04`) before `WARN-03`; highest leverage is reducing host-app mutation surprise and upgrade drift risk.
+- `WARN-03` remains queued next (immediately after installer safety), not a replacement for installer safety work.
+- README/support wording has one notable drift risk ("shipped through v2.1" wording) that should be corrected in the upcoming docs-truth pass.
+- No active `.planning/phases/*` tree currently exists; new lessons are parked in `.planning/threads/` and should graduate into `NN-LEARNINGS.md` once the next phase starts.
 - No new public runtime API is required for Phase 52.
 - The Phase 52 example starts with `Scoria.start_run/2`, escalates through `Scoria.start_handoff_run/3`, and reads delegated detail through `Scoria.get_run_detail/1`.
 - The host app owns escalation policy; Scoria owns durable execution, projected-context rejection, and curated readback.
@@ -73,11 +81,21 @@ Last activity: 2026-05-27 — Completed v2.4 archival backfill and finalized mil
 
 **Todos:**
 
-- Run `/gsd-new-milestone` to define the next requirement set.
+- Run `/gsd-discuss-phase 59` to lock implementation approach and acceptance criteria.
+- Implement planner/check contracts for `INST-03` through `INST-05` in Phase 59.
+- Keep `WARN-03` queued as the first follow-up milestone after v2.5 closes.
+- Preserve lane-contract, CI-order, and canonical closeout command contracts as non-negotiable constraints during v2.5 work.
 
 **Blockers:**
 
-- None known for the scoped `v2.4` reliability contract.
+- Warning baseline expiry for full-suite warning debt is near-term (`2026-06-07`) and should be handled promptly in the warning-ratchet follow-up milestone.
+- Installer currently has no shipped planner/check + manifest drift contract; upgrade mutation risk remains until phases 59-61 land.
+
+## Active Threads
+
+- `.planning/threads/2026-05-27-installer-safety-upgrade-confidence.md` — primary open investigation for next milestone requirements and proof shape.
+- `.planning/threads/2026-05-27-warning-ratchet-followup.md` — queued-next warning-ratchet scope and baseline-expiry enforcement track.
+- `.planning/threads/2026-05-27-milestone-assessment-learnings.md` — lessons + graduation candidates to promote into next phase `NN-LEARNINGS.md`.
 
 ## Deferred Items
 
@@ -97,4 +115,4 @@ Items deferred or intentionally outside active milestone scope:
 
 ## Operator Next Steps
 
-- Start the next milestone with `/gsd-new-milestone`.
+- Start execution with `/gsd-discuss-phase 59`.

@@ -13,20 +13,22 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 ## Current State
 
 - Scoria shipped `v2.4 Adoption Reliability Contract` on 2026-05-27.
+- Milestone `v2.5 Installer Safety & Upgrade Confidence` is now initialized with installer plan/check + drift-safe apply as the active wedge.
 - Canonical lane truth now lives in one source (`Scoria.VerificationLanes`) shared by docs, drift tests, lane tasks, and CI ordering assertions.
 - Release-preview and compile warning policy is now explicit and enforced in canonical closeout lanes.
 - Warning baseline debt is tracked with owner+expiry so accepted warning debt cannot drift silently.
 - Installer behavior is hardened for list-form browser `pipe_through` scopes while keeping idempotent and truthful output semantics.
 - Closeout proof remains executable through one canonical chain: `mix scoria.release_preview`, `mix test.adoption`, `mix test.runtime_to_handoff`.
 
-## Next Milestone (Planning)
+## Current Milestone: v2.5 Installer Safety & Upgrade Confidence
 
-**Goal:** Start the next milestone from explicit scope definition, keeping adoption reliability gains stable while selecting the highest-leverage follow-up.
+**Goal:** Make host-app installer mutations predictable, inspectable, and low-surprise by shipping no-write planning/check contracts plus manifest-aware drift classification before broader warning-ratchet follow-up.
 
-**Immediate goals:**
-- Define the next requirement set via `/gsd-new-milestone`.
-- Decide whether to prioritize installer plan/apply semantics (`INST-03`, `INST-04`) or warning-budget ratchet (`WARN-03`).
-- Preserve lane-contract, CI-order, and warning-baseline guardrails as non-negotiable defaults.
+**Target features:**
+- `mix scoria.install --dry-run` and `--check` expose a truthful no-write mutation plan with deterministic exit semantics.
+- Installer drift and manifest classification make stale router/config/migration surfaces explicit before apply.
+- Apply mode reuses planner truth so preview/check/apply outputs stay aligned and idempotent.
+- Existing lane-contract, warning policy, and CI-order guarantees remain stable while `WARN-03` stays queued next.
 
 ## Requirements
 
@@ -75,9 +77,10 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-- [ ] Installer `--dry-run` / `--check` plan/apply semantics become a first-class host-app safety lane.
-- [ ] Installer manifest-based drift detection and upgrade-safe mutation plans are scoped without widening runtime boundaries.
-- [ ] Full-suite warning budget ratchet is defined and enforced beyond the canonical closeout lanes.
+- [ ] Installer `--dry-run` / `--check` semantics expose a host-safe mutation plan before writing files.
+- [ ] Installer drift detection uses manifest-aware upgrade planning so stale router/config/migration surfaces are explicit before apply.
+- [ ] Apply mode reuses planner outputs so installation writes are predictable, reviewable, and idempotent.
+- [ ] `WARN-03` full-suite warning ratchet remains queued-next and starts immediately after installer safety closes.
 
 ### Out of Scope
 
@@ -86,6 +89,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Broad bounded-handoff example expansion beyond one runtime-to-handoff path — too wide until one canonical example proves useful.
 - External semantic cache backends or ANN tuning controls — adjacent capability expansion, not the highest-leverage adoption closure.
 - Folding optional knowledge or semantic verification into the default adoption lane — would weaken the clear prerequisite boundary that this milestone is trying to strengthen.
+- Net-new runtime capability families during installer-safety scope — lowers focus while installer mutation risk remains the highest adopter trust gap.
+- A broad installer engine rewrite beyond plan/check + drift-safe apply — too wide for the next milestone's leverage target.
 
 ## Latest Shipped Milestone: v2.4 Adoption Reliability Contract
 
@@ -107,6 +112,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Optional semantic and knowledge lanes remain explicit extensions, not default-lane prerequisites.
 - Warning baseline debt is now tracked with explicit owner+expiry metadata for follow-up.
 - Next milestone planning starts from the archived v2.4 reliability baseline.
+- Milestone-next-step assessment places Scoria in a strong-but-not-near-done band; remaining leverage is installer upgrade trust and warning-ratchet closure, not capability breadth.
+- README/support wording still carries one drift risk ("shipped through v2.1") that should be corrected in the next docs-truth pass.
 
 ## Constraints
 
@@ -135,6 +142,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | `v2.3` should clarify the runtime-to-handoff adoption path before adding new capability families | The default onramp was executable in `v2.2`; the next likely support risk was lane escalation and bounded-handoff comprehension | — Resolved |
 | `v2.4` should prioritize adoption reliability contracts over net-new capability expansion | Existing lanes already deliver value; highest leverage is keeping docs, CI, warnings, and installer behavior in lock-step truth | — Resolved |
 | Next milestone should preserve v2.4 reliability contracts while selecting one focused expansion axis | Reliability contract closure is now shipped; follow-up scope should be narrow and requirement-led | — Active |
+| Next milestone should prioritize installer safety + upgrade confidence (`INST-03`, `INST-04`) before warning ratchet work | Host-app mutation surprise remains the highest adopter-trust risk after v2.4, and installer contracts are the narrowest high-leverage wedge | — Active |
+| `WARN-03` should execute immediately after installer safety milestone closeout | Warning debt remains important, but installer plan/apply + drift contracts are a bigger first-order adoption risk reducer | — Active |
 
 ## Milestone History
 
@@ -181,4 +190,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 after v2.4 milestone completion*
+*Last updated: 2026-05-27 after starting milestone v2.5 Installer Safety & Upgrade Confidence*

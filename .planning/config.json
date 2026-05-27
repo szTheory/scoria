@@ -1,5 +1,7 @@
 {
   "workflow": {
-    "_auto_chain_active": false
+    "_auto_chain_active": false,
+    "text_mode": true,
+    "research_before_questions": true
   }
 }
