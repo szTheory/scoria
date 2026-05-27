@@ -65,4 +65,16 @@ defmodule Scoria.Install.PlannerTest do
       assert Map.has_key?(entry, :order)
     end)
   end
+
+  test "build keeps deterministic surface order and stable ids", %{
+    router_path: router_path,
+    tailwind_path: tailwind_path,
+    config_path: config_path
+  } do
+    plan = Planner.build(router_path, tailwind_path, config_path, mode: :dry_run)
+    plan_again = Planner.build(router_path, tailwind_path, config_path, mode: :dry_run)
+
+    assert Enum.map(plan.entries, & &1.surface) == [:router, :tailwind, :migrations, :runtime_config]
+    assert Enum.map(plan.entries, & &1.id) == Enum.map(plan_again.entries, & &1.id)
+  end
 end

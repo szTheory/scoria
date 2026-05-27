@@ -1,5 +1,6 @@
 defmodule Mix.Tasks.Scoria.InstallTest do
   use ExUnit.Case, async: false
+  alias Scoria.VerificationLanes
 
   @tmp_dir "test/tmp/installer"
 
@@ -54,11 +55,12 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     {:ok, router_path: router_path, tailwind_path: tailwind_path, config_path: config_path}
   end
 
-  test "mix scoria.install reports installed skipped and optional lanes truthfully on first install", %{
-    router_path: router_path,
-    tailwind_path: tailwind_path,
-    config_path: config_path
-  } do
+  test "mix scoria.install reports installed skipped and optional lanes truthfully on first install",
+       %{
+         router_path: router_path,
+         tailwind_path: tailwind_path,
+         config_path: config_path
+       } do
     output =
       capture_install_run(%{
         router_path: router_path,
@@ -74,20 +76,20 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     assert output =~ "Tailwind content injection installed."
     assert output =~ "Optional later lanes:"
     assert output =~ "Default lane verifier: mix test.adoption"
-    assert output =~ "mix test.adoption"
+    assert output =~ VerificationLanes.command(:adoption)
 
-    assert output =~
-             "SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path"
+    assert output =~ VerificationLanes.command(:semantic_fast_path)
 
     assert output =~ "mix scoria.pgvector.bootstrap"
-    assert output =~ "mix test.knowledge"
+    assert output =~ VerificationLanes.command(:knowledge)
   end
 
-  test "mix scoria.install reruns without duplicate mutations and reports already-present state", %{
-    router_path: router_path,
-    tailwind_path: tailwind_path,
-    config_path: config_path
-  } do
+  test "mix scoria.install reruns without duplicate mutations and reports already-present state",
+       %{
+         router_path: router_path,
+         tailwind_path: tailwind_path,
+         config_path: config_path
+       } do
     capture_install_run(%{
       router_path: router_path,
       tailwind_path: tailwind_path,
@@ -114,6 +116,83 @@ defmodule Mix.Tasks.Scoria.InstallTest do
 
     updated_config = File.read!(config_path)
     assert length(String.split(updated_config, "config :scoria, Scoria.Runtime")) == 2
+  end
+
+  test "mix scoria.install --dry-run does not mutate host files", %{
+    router_path: router_path,
+    tailwind_path: tailwind_path,
+    config_path: config_path
+  } do
+    before_snapshot = snapshot_host_files(router_path, tailwind_path, config_path)
+
+    capture_install_run(
+      %{
+        router_path: router_path,
+        tailwind_path: tailwind_path,
+        config_path: config_path
+      },
+      ["--dry-run"]
+    )
+
+    after_snapshot = snapshot_host_files(router_path, tailwind_path, config_path)
+
+    assert after_snapshot.router == before_snapshot.router
+    assert after_snapshot.tailwind == before_snapshot.tailwind
+    assert after_snapshot.runtime_config == before_snapshot.runtime_config
+    assert after_snapshot.migration_files == before_snapshot.migration_files
+  end
+
+  test "mix scoria.install --dry-run output is deterministic across repeated runs", %{
+    router_path: router_path,
+    tailwind_path: tailwind_path,
+    config_path: config_path
+  } do
+    first_output =
+      capture_install_run(
+        %{
+          router_path: router_path,
+          tailwind_path: tailwind_path,
+          config_path: config_path
+        },
+        ["--dry-run"]
+      )
+
+    second_output =
+      capture_install_run(
+        %{
+          router_path: router_path,
+          tailwind_path: tailwind_path,
+          config_path: config_path
+        },
+        ["--dry-run"]
+      )
+
+    assert second_output == first_output
+  end
+
+  test "mix scoria.install --dry-run prints classification, target path, and rationale for every surface",
+       %{
+         router_path: router_path,
+         tailwind_path: tailwind_path,
+         config_path: config_path
+       } do
+    output =
+      capture_install_run(
+        %{
+          router_path: router_path,
+          tailwind_path: tailwind_path,
+          config_path: config_path
+        },
+        ["--dry-run"]
+      )
+
+    assert output =~ "1. router"
+    assert output =~ "2. tailwind"
+    assert output =~ "3. migrations"
+    assert output =~ "4. runtime_config"
+    assert length(Regex.scan(~r/classification:/, output)) == 4
+    assert length(Regex.scan(~r/target path:/, output)) == 4
+    assert length(Regex.scan(~r/rationale:/, output)) == 4
   end
 
   test "mix scoria.install injects router tailwind and baseline runtime config once", %{
@@ -159,6 +238,78 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     assert File.read!(tailwind_path) =~ "\"../deps/scoria/lib/**/*.*ex\""
   end
 
+  test "mix scoria.install patches root browser scope when pipe_through uses a browser list", %{
+    router_path: router_path,
+    tailwind_path: tailwind_path,
+    config_path: config_path
+  } do
+    File.write!(
+      router_path,
+      """
+      defmodule DummyHostWeb.Router do
+        use DummyHostWeb, :router
+
+        pipeline :browser do
+          plug :accepts, ["html"]
+        end
+
+        scope "/", DummyHostWeb do
+          pipe_through [:browser, :set_actor]
+
+          get "/", PageController, :home
+        end
+      end
+      """
+    )
+
+    output =
+      capture_install_run(%{
+        router_path: router_path,
+        tailwind_path: tailwind_path,
+        config_path: config_path
+      })
+
+    updated_router = File.read!(router_path)
+    assert updated_router =~ "scoria_dashboard \"/scoria\""
+    assert output =~ "Router import and /scoria dashboard mount installed."
+  end
+
+  test "mix scoria.install patches root browser scope when pipe_through list uses call syntax", %{
+    router_path: router_path,
+    tailwind_path: tailwind_path,
+    config_path: config_path
+  } do
+    File.write!(
+      router_path,
+      """
+      defmodule DummyHostWeb.Router do
+        use DummyHostWeb, :router
+
+        pipeline :browser do
+          plug :accepts, ["html"]
+        end
+
+        scope "/", DummyHostWeb do
+          pipe_through([:browser, :set_actor])
+
+          get "/", PageController, :home
+        end
+      end
+      """
+    )
+
+    output =
+      capture_install_run(%{
+        router_path: router_path,
+        tailwind_path: tailwind_path,
+        config_path: config_path
+      })
+
+    updated_router = File.read!(router_path)
+    assert updated_router =~ "scoria_dashboard \"/scoria\""
+    assert output =~ "Router import and /scoria dashboard mount installed."
+  end
+
   test "mix scoria.install keeps the default lane installable when tailwind is absent", %{
     router_path: router_path,
     tailwind_path: tailwind_path,
@@ -170,7 +321,9 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     assert File.read!(router_path) =~ "scoria_dashboard \"/scoria\""
     assert File.read!(config_path) =~ "config :scoria, Scoria.Runtime"
     assert output =~ "Skipped intentionally:"
-    assert output =~ "Tailwind config not found; skipped intentionally. Default lane still installable."
+
+    assert output =~
+             "Tailwind config not found; skipped intentionally. Default lane still installable."
 
     copied_migrations =
       Path.join([@tmp_dir, "priv", "repo", "migrations", "*.exs"])
@@ -216,15 +369,32 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     assert File.read!(config_path) == "import Config\n"
   end
 
-  defp capture_install_run(_paths) do
+  defp capture_install_run(_paths, args \\ []) do
     File.cd!(@tmp_dir, fn ->
       Mix.Task.reenable("scoria.install")
-      Mix.Tasks.Scoria.Install.run([])
+      Mix.Tasks.Scoria.Install.run(args)
 
       collect_shell_messages([])
       |> Enum.reverse()
       |> Enum.map_join("\n", fn {level, message} -> "[#{level}] #{message}" end)
     end)
+  end
+
+  defp snapshot_host_files(router_path, tailwind_path, config_path) do
+    %{
+      router: File.read!(router_path),
+      tailwind: File.read!(tailwind_path),
+      runtime_config: File.read!(config_path),
+      migration_files: migration_basenames()
+    }
+  end
+
+  defp migration_basenames do
+    @tmp_dir
+    |> Path.join("priv/repo/migrations/*.exs")
+    |> Path.wildcard()
+    |> Enum.map(&Path.basename/1)
+    |> Enum.sort()
   end
 
   defp collect_shell_messages(messages) do
