@@ -29,7 +29,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Milestone Nyquist coverage is 5/5 compliant for phases 59–63; v2.5 audit archived at `.planning/milestones/v2.5-MILESTONE-AUDIT.md`.
 - Canonical lane truth remains in `Scoria.VerificationLanes`; closeout chain unchanged: `mix scoria.release_preview`, `mix test.adoption`, `mix test.runtime_to_handoff`.
 - Warning baseline debt is tracked with owner+expiry; Phase 66 shipped executable WARN-03 enforcement and WARN-04 inventory infrastructure.
-- CI now runs `mix scoria.warning_baseline.check` in a Postgres-free policy job before compile WAE and closeout lanes.
+- Phase 67 shipped high-signal ratchet WAE; Phase 68 closed WARN-07 with green full-suite `mix test --warnings-as-errors` locally and in CI.
+- CI now runs `mix scoria.warning_baseline.check` in a Postgres-free policy job before compile WAE and closeout lanes; test job enforces full-suite WAE after closeout lanes.
 
 ## Next Milestone Goals
 
@@ -91,11 +92,11 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ CI fails when `.planning/WARNING-BASELINE.md` contains expired or invalid accepted debt rows. — Phase 66 `baseline-expiry-and-inventory`
 - ✓ Maintainer can reproduce a classified full-suite warning inventory by surface/area. — Phase 66 `baseline-expiry-and-inventory`
 - ✓ Canonical compile and lane-contract surfaces remain warning-clean under warnings-as-errors. — Phase 67 `high-signal-warning-ratchet`
+- ✓ High-signal test surfaces pass under warnings-as-errors without new accepted debt. — Phase 67 `high-signal-warning-ratchet` (WARN-06)
+- ✓ Full `mix test --warnings-as-errors` passes in CI with baseline ledger closed. — Phase 68 `full-suite-warning-closure` (WARN-07)
 
 ### Active
 
-- [ ] **WARN-06**: High-signal test surfaces pass under warnings-as-errors without new accepted debt.
-- [ ] **WARN-07**: Full `mix test --warnings-as-errors` passes in CI (or remaining debt is re-baselined with owner+expiry).
 - [ ] **CI-03**: CI preserves canonical closeout order while enforcing baseline-expiry and staged WAE gates.
 
 ### Out of Scope
@@ -217,4 +218,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 — Phase 66 baseline expiry and inventory complete*
+*Last updated: 2026-05-27 — Phase 68 full-suite warning closure complete (WARN-07)*
