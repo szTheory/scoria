@@ -9,7 +9,7 @@
 
 ## Phases
 
-- [ ] **Phase 52: Runtime-to-handoff example contract** - Define and build the narrow adopter-facing path from `Scoria.start_run/2` into `Scoria.start_handoff_run/3`.
+- [x] **Phase 52: Runtime-to-handoff example contract** - Define and build the narrow adopter-facing path from `Scoria.start_run/2` into `Scoria.start_handoff_run/3`. (completed 2026-05-27)
 - [ ] **Phase 53: Operator evidence and lane guidance** - Make the delegated lineage and projected-context evidence easy to inspect and explain when adopters should escalate lanes.
 - [ ] **Phase 54: Executable proof and closeout truth** - Back the example with a bounded proof lane and align support surfaces to the verified command.
 
@@ -27,7 +27,7 @@
 **Plans**: 3 plans
 - [x] `52-01-PLAN.md` — Inspect current runtime, handoff, docs, and test-support seams to choose the smallest adopter-facing example shape.
 - [x] `52-02-PLAN.md` — Implement the runtime-to-handoff example path using the existing public runtime facade.
-- [ ] `52-03-PLAN.md` — Document projected-context safety, rejection behavior, and the host-app ownership boundary for the example.
+- [x] `52-03-PLAN.md` — Document projected-context safety, rejection behavior, and the host-app ownership boundary for the example.
 
 ### Phase 53: Operator evidence and lane guidance
 **Goal**: Make the delegated lineage and projected-context evidence easy to inspect and explain when adopters should escalate lanes.
@@ -61,8 +61,8 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 52. Runtime-to-handoff example contract | 2/3 | In Progress | — |
-| 53. Operator evidence and lane guidance | 0/3 | Blocked on Phase 52 | — |
+| 52. Runtime-to-handoff example contract | 3/3 | Complete   | 2026-05-27 |
+| 53. Operator evidence and lane guidance | 0/3 | Ready | — |
 | 54. Executable proof and closeout truth | 0/3 | Blocked on Phase 53 | — |
 
 ## Milestone Notes

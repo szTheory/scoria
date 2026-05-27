@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Runtime-to-handoff adoption example
-status: Ready for Plan 52-03
-last_updated: "2026-05-27T06:54:13.192Z"
+status: Ready for Phase 53
+last_updated: "2026-05-27T07:01:16.970Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 67
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State
@@ -19,20 +19,20 @@ progress:
 
 **Name:** Scoria
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Current Focus:** Phase 52 — runtime-to-handoff-example-contract
+**Current Focus:** Phase 53 — operator evidence and lane guidance
 
 ## Current Position
 
-Phase: 52 (runtime-to-handoff-example-contract) — EXECUTING
-Plan: 3 of 3
+Phase: 53 (operator-evidence-and-lane-guidance) — READY
+Plan: 1 of 3
 **Milestone:** v2.3 Runtime-to-handoff adoption example
-**Phase:** 52
-**Plan:** 3
-**Status:** Ready for Plan 52-03
+**Phase:** 53
+**Plan:** 1
+**Status:** Ready for Phase 53
 **Last activity:** 2026-05-27
 
 **Progress:**
-[███████░░░] 67%
+[███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Plan: 3 of 3
 - **Active Milestone Scope:** 3 phases, 9 planned plans, 7 active requirements
 - **Phase 52 Plan 01:** Completed in 2m04s across 2 tasks and 2 files
 - **Phase 52 Plan 02:** Completed in 3m05s across 3 tasks and 4 files
+- **Phase 52 Plan 03:** Completed in 3m33s across 3 tasks and 4 files
 
 ## Accumulated Context
 
@@ -74,10 +75,13 @@ Plan: 3 of 3
 - The Phoenix runtime example now starts a default run before bounded review handoff.
 - The host app owns the escalation predicate; Scoria receives only the explicit handoff contract.
 - The handoff run is persisted and inspected through `handoff_run.run_id`, not the host `session_id`.
+- The bounded handoff guide now states the host/Scoria ownership boundary immediately under the core contract.
+- Unsafe projected context is documented as `{:error, :unsafe_projected_context}` before durable delegated run creation.
+- The hidden-transcript refutation rejects prescriptive transfer wording without contradicting the required non-copy safety sentence.
 
 **Todos:**
 
-- Execute Plan 52-03.
+- Plan Phase 53-01.
 
 **Blockers:**
 
