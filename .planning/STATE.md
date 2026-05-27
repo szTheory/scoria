@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Runtime-to-handoff adoption example
-status: executing
-last_updated: "2026-05-27T06:47:02.374Z"
+status: Ready for Plan 52-03
+last_updated: "2026-05-27T06:54:13.192Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -24,15 +24,15 @@ progress:
 ## Current Position
 
 Phase: 52 (runtime-to-handoff-example-contract) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 **Milestone:** v2.3 Runtime-to-handoff adoption example
 **Phase:** 52
-**Plan:** 2
-**Status:** Ready for Plan 52-02
+**Plan:** 3
+**Status:** Ready for Plan 52-03
 **Last activity:** 2026-05-27
 
 **Progress:**
-[███░░░░░░░] 33%
+[███████░░░] 67%
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Plan: 2 of 3
 - **Active Milestone:** `v2.3 Runtime-to-handoff adoption example`
 - **Active Milestone Scope:** 3 phases, 9 planned plans, 7 active requirements
 - **Phase 52 Plan 01:** Completed in 2m04s across 2 tasks and 2 files
+- **Phase 52 Plan 02:** Completed in 3m05s across 3 tasks and 4 files
 
 ## Accumulated Context
 
@@ -70,10 +71,13 @@ Plan: 2 of 3
 - No new public runtime API is required for Phase 52.
 - The Phase 52 example starts with `Scoria.start_run/2`, escalates through `Scoria.start_handoff_run/3`, and reads delegated detail through `Scoria.get_run_detail/1`.
 - The host app owns escalation policy; Scoria owns durable execution, projected-context rejection, and curated readback.
+- The Phoenix runtime example now starts a default run before bounded review handoff.
+- The host app owns the escalation predicate; Scoria receives only the explicit handoff contract.
+- The handoff run is persisted and inspected through `handoff_run.run_id`, not the host `session_id`.
 
 **Todos:**
 
-- Execute Plan 52-02.
+- Execute Plan 52-03.
 
 **Blockers:**
 

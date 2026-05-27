@@ -26,7 +26,7 @@
   4. Rejected or excluded projected-context inputs are documented or demonstrated with truthful behavior.
 **Plans**: 3 plans
 - [x] `52-01-PLAN.md` — Inspect current runtime, handoff, docs, and test-support seams to choose the smallest adopter-facing example shape.
-- [ ] `52-02-PLAN.md` — Implement the runtime-to-handoff example path using the existing public runtime facade.
+- [x] `52-02-PLAN.md` — Implement the runtime-to-handoff example path using the existing public runtime facade.
 - [ ] `52-03-PLAN.md` — Document projected-context safety, rejection behavior, and the host-app ownership boundary for the example.
 
 ### Phase 53: Operator evidence and lane guidance
@@ -61,7 +61,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 52. Runtime-to-handoff example contract | 1/3 | In Progress | — |
+| 52. Runtime-to-handoff example contract | 2/3 | In Progress | — |
 | 53. Operator evidence and lane guidance | 0/3 | Blocked on Phase 52 | — |
 | 54. Executable proof and closeout truth | 0/3 | Blocked on Phase 53 | — |
 
