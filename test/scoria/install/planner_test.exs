@@ -60,6 +60,12 @@ defmodule Scoria.Install.PlannerTest do
       assert Map.has_key?(entry, :surface)
       assert Map.has_key?(entry, :target_path)
       assert Map.has_key?(entry, :classification)
+      assert Map.has_key?(entry, :operation)
+      assert Map.has_key?(entry, :ownership_mode)
+      assert Map.has_key?(entry, :manifest_key)
+      assert Map.has_key?(entry, :fingerprint)
+      assert Map.has_key?(entry, :drift)
+      assert Map.has_key?(entry, :remediation)
       assert Map.has_key?(entry, :rationale)
       assert Map.has_key?(entry, :evidence)
       assert Map.has_key?(entry, :order)
@@ -74,7 +80,31 @@ defmodule Scoria.Install.PlannerTest do
     plan = Planner.build(router_path, tailwind_path, config_path, mode: :dry_run)
     plan_again = Planner.build(router_path, tailwind_path, config_path, mode: :dry_run)
 
-    assert Enum.map(plan.entries, & &1.surface) == [:router, :tailwind, :migrations, :runtime_config]
+    assert Enum.map(plan.entries, & &1.surface) == [
+             :router,
+             :tailwind,
+             :migrations,
+             :runtime_config
+           ]
+
     assert Enum.map(plan.entries, & &1.id) == Enum.map(plan_again.entries, & &1.id)
+  end
+
+  test "missing marker ownership falls back to manual_review", %{
+    router_path: router_path,
+    tailwind_path: tailwind_path,
+    config_path: config_path
+  } do
+    plan = Planner.build(router_path, tailwind_path, config_path, mode: :check)
+
+    plan.entries
+    |> Enum.filter(&(&1.ownership_mode == :marker_region))
+    |> Enum.each(fn entry ->
+      assert entry.classification == :manual_review
+      assert entry.operation == :manual_review
+      assert entry.drift.reason_code == "missing_ownership_markers"
+      assert entry.remediation.reason_code == "missing_ownership_markers"
+      assert entry.remediation.verify_command == "mix scoria.install --check"
+    end)
   end
 end

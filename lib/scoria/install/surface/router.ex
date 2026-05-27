@@ -1,5 +1,8 @@
 defmodule Scoria.Install.Surface.Router do
   @default_target "lib/*_web/router.ex"
+  @start_marker "# scoria:router:start"
+  @end_marker "# scoria:router:end"
+  @verify_command "mix scoria.install --check"
 
   def analyze(router_path, _opts \\ []) do
     cond do
@@ -7,6 +10,26 @@ defmodule Scoria.Install.Surface.Router do
         %{
           target_path: @default_target,
           classification: :manual_review,
+          operation: :manual_review,
+          ownership_mode: :marker_region,
+          manifest_key: "router:default",
+          fingerprint: "missing",
+          drift: %{
+            reason_code: "router_target_missing",
+            marker_state: :missing,
+            import_present?: false,
+            mount_present?: false,
+            browser_scope_found?: false
+          },
+          remediation:
+            remediation(
+              "router_target_missing",
+              "Router file could not be discovered automatically.",
+              [
+                "Locate your Phoenix router file and re-run `mix scoria.install --check`.",
+                "If your router lives in a non-standard location, run from that app root."
+              ]
+            ),
           rationale: "Router file could not be discovered automatically.",
           evidence: %{found?: false, ambiguous?: true}
         }
@@ -15,6 +38,26 @@ defmodule Scoria.Install.Surface.Router do
         %{
           target_path: router_path,
           classification: :manual_review,
+          operation: :manual_review,
+          ownership_mode: :marker_region,
+          manifest_key: "router:#{router_path}",
+          fingerprint: "missing",
+          drift: %{
+            reason_code: "router_target_missing",
+            marker_state: :missing,
+            import_present?: false,
+            mount_present?: false,
+            browser_scope_found?: false
+          },
+          remediation:
+            remediation(
+              "router_target_missing",
+              "Router path does not exist on disk.",
+              [
+                "Confirm the router path and restore the file.",
+                "Re-run `mix scoria.install --check` once the router exists."
+              ]
+            ),
           rationale: "Router path does not exist on disk.",
           evidence: %{found?: false, ambiguous?: true}
         }
@@ -28,39 +71,148 @@ defmodule Scoria.Install.Surface.Router do
     import_present? = String.contains?(content, "import ScoriaWeb.Router")
     mount_present? = Regex.match?(~r/scoria_dashboard\s+"\/scoria"/, content)
     browser_scope_found? = browser_scope_available?(content)
+    marker_state = marker_state(content)
+    fingerprint = fingerprint(content)
 
-    cond do
-      import_present? and mount_present? ->
-        %{
-          target_path: router_path,
-          classification: :no_op,
-          rationale: "Router import and dashboard mount are already present.",
-          evidence: %{import_present?: true, mount_present?: true}
-        }
+    base_entry = %{
+      target_path: router_path,
+      ownership_mode: :marker_region,
+      manifest_key: "router:#{router_path}",
+      fingerprint: fingerprint,
+      evidence: %{
+        import_present?: import_present?,
+        mount_present?: mount_present?,
+        browser_scope_found?: browser_scope_found?,
+        marker_state: marker_state
+      }
+    }
 
-      browser_scope_found? ->
-        %{
-          target_path: router_path,
-          classification: :update,
-          rationale: "Root browser scope is patchable and Scoria route wiring is incomplete.",
-          evidence: %{
-            import_present?: import_present?,
-            mount_present?: mount_present?,
-            browser_scope_found?: true
-          }
-        }
+    case marker_state do
+      :owned ->
+        cond do
+          import_present? and mount_present? ->
+            base_entry
+            |> Map.put(:classification, :no_op)
+            |> Map.put(:operation, :none)
+            |> Map.put(:rationale, "Router managed region is already in sync.")
+            |> Map.put(:drift, %{
+              reason_code: "managed_region_current",
+              marker_state: marker_state,
+              import_present?: import_present?,
+              mount_present?: mount_present?,
+              browser_scope_found?: browser_scope_found?
+            })
+            |> Map.put(
+              :remediation,
+              remediation(
+                "managed_region_current",
+                "No router changes are required.",
+                ["No action required; ownership markers already match managed content."]
+              )
+            )
 
-      true ->
-        %{
-          target_path: router_path,
-          classification: :manual_review,
-          rationale: "No unambiguous root browser scope was found for safe patching.",
-          evidence: %{
-            import_present?: import_present?,
-            mount_present?: mount_present?,
-            browser_scope_found?: false
-          }
-        }
+          browser_scope_found? ->
+            base_entry
+            |> Map.put(:classification, :update)
+            |> Map.put(:operation, :patch_managed_region)
+            |> Map.put(
+              :rationale,
+              "Managed router region is owned but drifted from expected content."
+            )
+            |> Map.put(:drift, %{
+              reason_code: "managed_region_drift",
+              marker_state: marker_state,
+              import_present?: import_present?,
+              mount_present?: mount_present?,
+              browser_scope_found?: browser_scope_found?
+            })
+            |> Map.put(
+              :remediation,
+              remediation(
+                "managed_region_drift",
+                "Router managed region needs a safe update.",
+                [
+                  "Run `mix scoria.install` to patch the managed router region.",
+                  "Review the router diff before committing."
+                ]
+              )
+            )
+
+          true ->
+            base_entry
+            |> Map.put(:classification, :manual_review)
+            |> Map.put(:operation, :manual_review)
+            |> Map.put(:rationale, "Managed router region exists but cannot be patched safely.")
+            |> Map.put(:drift, %{
+              reason_code: "managed_region_unpatchable",
+              marker_state: marker_state,
+              import_present?: import_present?,
+              mount_present?: mount_present?,
+              browser_scope_found?: browser_scope_found?
+            })
+            |> Map.put(
+              :remediation,
+              remediation(
+                "managed_region_unpatchable",
+                "Router ownership is present but topology is not safe for automatic edits.",
+                [
+                  "Restore a root browser scope with `pipe_through :browser`.",
+                  "Keep Scoria router markers around the managed region before retrying."
+                ]
+              )
+            )
+        end
+
+      :missing ->
+        base_entry
+        |> Map.put(:classification, :manual_review)
+        |> Map.put(:operation, :manual_review)
+        |> Map.put(
+          :rationale,
+          "Missing router ownership markers prevent safe automatic adoption."
+        )
+        |> Map.put(:drift, %{
+          reason_code: "missing_ownership_markers",
+          marker_state: marker_state,
+          import_present?: import_present?,
+          mount_present?: mount_present?,
+          browser_scope_found?: browser_scope_found?
+        })
+        |> Map.put(
+          :remediation,
+          remediation(
+            "missing_ownership_markers",
+            "Router is unmanaged because ownership markers are missing.",
+            [
+              "Wrap the Scoria-managed router region with `# scoria:router:start` and `# scoria:router:end`.",
+              "Ensure the region contains `import ScoriaWeb.Router` and `scoria_dashboard \"/scoria\"`."
+            ]
+          )
+        )
+
+      :ambiguous ->
+        base_entry
+        |> Map.put(:classification, :manual_review)
+        |> Map.put(:operation, :manual_review)
+        |> Map.put(:rationale, "Router ownership markers are ambiguous and cannot be trusted.")
+        |> Map.put(:drift, %{
+          reason_code: "ambiguous_ownership_markers",
+          marker_state: marker_state,
+          import_present?: import_present?,
+          mount_present?: mount_present?,
+          browser_scope_found?: browser_scope_found?
+        })
+        |> Map.put(
+          :remediation,
+          remediation(
+            "ambiguous_ownership_markers",
+            "Router markers are incomplete or duplicated.",
+            [
+              "Fix marker pairing so there is one `# scoria:router:start` and one matching end marker.",
+              "Re-run the installer check after marker cleanup."
+            ]
+          )
+        )
     end
   end
 
@@ -109,5 +261,37 @@ defmodule Scoria.Install.Surface.Router do
       end
 
     {:in_root_scope, depth + delta}
+  end
+
+  defp marker_state(content) do
+    start_count = marker_count(content, @start_marker)
+    end_count = marker_count(content, @end_marker)
+
+    cond do
+      start_count == 1 and end_count == 1 -> :owned
+      start_count == 0 and end_count == 0 -> :missing
+      true -> :ambiguous
+    end
+  end
+
+  defp marker_count(content, marker) do
+    content
+    |> String.split(marker)
+    |> length()
+    |> Kernel.-(1)
+  end
+
+  defp fingerprint(content) do
+    :crypto.hash(:sha256, content)
+    |> Base.encode16(case: :lower)
+  end
+
+  defp remediation(reason_code, summary, steps) do
+    %{
+      reason_code: reason_code,
+      summary: summary,
+      steps: steps,
+      verify_command: @verify_command
+    }
   end
 end

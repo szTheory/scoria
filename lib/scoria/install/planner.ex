@@ -1,4 +1,5 @@
 defmodule Scoria.Install.Planner do
+  alias Scoria.Install.Manifest
   alias Scoria.Install.Surface.Migrations
   alias Scoria.Install.Surface.Router
   alias Scoria.Install.Surface.RuntimeConfig
@@ -9,6 +10,7 @@ defmodule Scoria.Install.Planner do
   def build(router_path, tailwind_path, config_path, opts \\ []) do
     mode = Keyword.get(opts, :mode, :dry_run)
     project_root = project_root(router_path, tailwind_path, config_path)
+    manifest = Manifest.load(project_root)
 
     entries =
       [
@@ -17,7 +19,7 @@ defmodule Scoria.Install.Planner do
         {:migrations, Migrations.analyze(project_root, opts)},
         {:runtime_config, RuntimeConfig.analyze(config_path, opts)}
       ]
-      |> annotate_entries()
+      |> annotate_entries(manifest)
 
     %{
       schema_version: 1,
@@ -27,7 +29,7 @@ defmodule Scoria.Install.Planner do
     }
   end
 
-  defp annotate_entries(entries) do
+  defp annotate_entries(entries, manifest) do
     order_index =
       @surface_order
       |> Enum.with_index(1)
@@ -37,12 +39,14 @@ defmodule Scoria.Install.Planner do
     |> Enum.map(fn {surface, entry} ->
       order = Map.fetch!(order_index, surface)
       target_path = entry.target_path || "unresolved"
+      id = stable_id(surface, target_path)
 
       entry
-      |> Map.put(:id, stable_id(surface, target_path))
+      |> Map.put(:id, id)
       |> Map.put(:surface, surface)
       |> Map.put(:target_path, target_path)
       |> Map.put(:order, order)
+      |> normalize_contract_fields(surface, id, manifest)
     end)
     |> Enum.sort_by(& &1.order)
   end
@@ -102,4 +106,39 @@ defmodule Scoria.Install.Planner do
       _ -> Path.dirname(expanded)
     end
   end
+
+  defp normalize_contract_fields(entry, surface, id, manifest) do
+    manifest_entry = Manifest.entry_for(manifest, id) || %{}
+
+    entry
+    |> Map.put_new(:operation, operation_from_classification(entry.classification))
+    |> Map.put_new(:ownership_mode, ownership_mode_for_surface(surface))
+    |> Map.put_new(:manifest_key, id)
+    |> Map.put_new(:fingerprint, manifest_entry[:fingerprint] || "unavailable")
+    |> Map.put_new(:drift, %{reason_code: reason_code_for_classification(entry.classification)})
+    |> Map.put_new(
+      :remediation,
+      %{
+        reason_code: reason_code_for_classification(entry.classification),
+        summary: entry.rationale || "See entry rationale for details.",
+        steps: [],
+        verify_command: "mix scoria.install --check"
+      }
+    )
+  end
+
+  defp operation_from_classification(:create), do: :create
+  defp operation_from_classification(:update), do: :update
+  defp operation_from_classification(:no_op), do: :none
+  defp operation_from_classification(:manual_review), do: :manual_review
+  defp operation_from_classification(_), do: :manual_review
+
+  defp ownership_mode_for_surface(:migrations), do: :structural_set
+  defp ownership_mode_for_surface(_), do: :marker_region
+
+  defp reason_code_for_classification(:create), do: "planned_create"
+  defp reason_code_for_classification(:update), do: "planned_update"
+  defp reason_code_for_classification(:no_op), do: "planned_no_op"
+  defp reason_code_for_classification(:manual_review), do: "planned_manual_review"
+  defp reason_code_for_classification(_), do: "planned_unknown"
 end
