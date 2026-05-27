@@ -207,6 +207,17 @@ Maintainers enforce accepted warning debt expiry and capture classified inventor
 - `mix scoria.warning_inventory` — capture-mode inventory of compiler warnings (no WAE)
 - `mix scoria.warning_inventory --write --scope full` — writes cluster-count JSON and human summary for Phase 67 ratchet ordering
 
+### WARN-05 canonical compile and lane-contract surfaces
+
+Maintainers verify compile WAE and canonical lane-contract tests remain warning-clean before cluster-fix work:
+
+```bash
+MIX_ENV=test mix compile --warnings-as-errors
+MIX_ENV=test mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs
+```
+
+These are the canonical WARN-05 maintainer proof commands (p0 compile + p1 lane-contract WAE).
+
 ### WARN-06 high-signal ratchet
 
 Maintainers verify high-signal warning-as-errors scope before Phase 68 CI wiring:
