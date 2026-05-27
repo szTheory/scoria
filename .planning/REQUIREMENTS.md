@@ -53,7 +53,7 @@ Explicitly excluded from this milestone.
 
 | Item | Phase | Status |
 |------|-------|--------|
-| Nyquist validation + SUMMARY frontmatter parity (phases 59–61) | Phase 62 | Pending |
+| Nyquist validation + SUMMARY frontmatter parity (phases 59–61) | Phase 62 | Complete |
 | Manifest check fingerprint integration hardening (INST-07 partial) | Phase 63 | Pending |
 
 **Coverage:**
