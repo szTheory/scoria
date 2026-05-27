@@ -285,7 +285,7 @@ defmodule Mix.Tasks.Scoria.InstallTest do
   defp subprocess_mix_env(repo_root) do
     [
       {"MIX_ENV", "test"},
-      {"MIX_BUILD_PATH", Path.join(repo_root, "_build/test")},
+      {"MIX_BUILD_PATH", Path.join(repo_root, "_build/install_subprocess")},
       {"MIX_DEPS_PATH", Path.join(repo_root, "deps")}
     ]
   end

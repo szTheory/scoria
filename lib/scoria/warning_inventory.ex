@@ -187,6 +187,14 @@ defmodule Scoria.WarningInventory do
   """
   @spec capture_output() :: String.t()
   def capture_output do
+    if nested_ex_unit?() do
+      capture_output_nested!()
+    else
+      capture_output_standalone!()
+    end
+  end
+
+  defp capture_output_standalone! do
     Mix.shell().info("==> Capturing compile + test warning output")
 
     {output, _status} =
@@ -198,6 +206,16 @@ defmodule Scoria.WarningInventory do
       )
 
     output
+  end
+
+  defp capture_output_nested! do
+    Mix.shell().info("==> Skipping nested warning capture (parent suite is the WAE gate)")
+
+    ""
+  end
+
+  defp nested_ex_unit? do
+    Code.ensure_loaded?(ExUnit) && Process.whereis(ExUnit.Server) != nil
   end
 
   defp parse_lines([], acc), do: acc

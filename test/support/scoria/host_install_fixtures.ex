@@ -54,7 +54,7 @@ defmodule Scoria.TestSupport.HostInstallFixtures do
   def subprocess_mix_env(repo_root \\ File.cwd!()) do
     [
       {"MIX_ENV", "test"},
-      {"MIX_BUILD_PATH", Path.join(repo_root, "_build/test")},
+      {"MIX_BUILD_PATH", Path.join(repo_root, "_build/install_subprocess")},
       {"MIX_DEPS_PATH", Path.join(repo_root, "deps")}
     ]
   end
