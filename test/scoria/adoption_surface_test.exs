@@ -82,6 +82,16 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "Delegated Evidence"
     assert content =~ "No remaining adopter-facing gap"
     assert content =~ "deferred follow-up"
+    assert content =~ "Host and Scoria ownership boundary"
+
+    assert content =~
+             "The host app owns identity, escalation policy, prompt or draft selection, and projected-context selection."
+
+    assert content =~
+             "Scoria owns durable run creation, projected-context validation, queued delegated child creation, and curated readback through `Scoria.get_run_detail/1`."
+
+    assert content =~ "{:error, :unsafe_projected_context}"
+    assert content =~ "before creating a durable delegated run"
     assert content =~ "mix test.adoption"
     assert content =~ "separate verifier lane"
     assert content =~ "Broad runtime-state keys are rejected explicitly"
@@ -92,6 +102,12 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "socket_state"
     assert content =~ "/scoria/workflows/:run_id"
     refute content =~ "implicit payload projection"
+    refute content =~ "Scoria.Workflows.create_run"
+    refute content =~ "Repo.all"
+    refute content =~ "workflow_steps"
+    refute content =~ "workflow_handoffs"
+    refute content =~ "copy hidden transcript"
+    refute content =~ "provider_session token"
   end
 
   test "semantic fast-path guide documents the conservative reuse contract" do
