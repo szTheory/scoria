@@ -15,6 +15,17 @@ Full scope after `rm -rf test/tmp/*` (`MIX_ENV=test mix scoria.warning_inventory
 
 **Outcome:** p2 already clean at measurement — targeted support/overlay code fixes skipped (68-02-02/03).
 
+## Phase 68-02 Closeout (2026-05-27)
+
+Verified with `SCORIA_DB_PORT=55432`:
+
+- `mix scoria.warning_baseline.check` — pass
+- `MIX_ENV=test mix test.adoption --warnings-as-errors` — pass (12 adoption files)
+- `MIX_ENV=test mix scoria.warning_ratchet.test --warnings-as-errors` — pass
+- Full inventory — 0 clusters; p2 host-proof clusters remain at zero
+
+Ledger `--write` deferred to plan 68-03.
+
 ## Phase 67 Ratchet Queue
 
 | Cluster | Count | Ratchet Tier |
