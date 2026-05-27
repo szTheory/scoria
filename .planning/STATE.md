@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T18:00:00.000Z"
-last_activity: 2026-05-27
+last_updated: "2026-05-27T16:11:43Z"
+last_activity: 2026-05-27 -- Completed 62-01 Nyquist reconciliation (phases 59 and 61 VALIDATION)
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
-  percent: 60
+  total_plans: 10
+  completed_plans: 8
+  percent: 80
 ---
 
 # Project State
@@ -23,10 +23,10 @@ progress:
 
 ## Current Position
 
-Phase: 62
-Plan: Not started
-Status: Gap closure — Nyquist & traceability closeout (post-audit)
-Last activity: 2026-05-27
+Phase: 62 (nyquist-and-traceability-closeout) — EXECUTING
+Plan: 2 of 3 (62-02 next)
+Status: Executing Phase 62 — Plan 62-01 complete
+Last activity: 2026-05-27 -- Completed 62-01; phases 59 and 61 VALIDATION Nyquist-compliant
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Last activity: 2026-05-27
 - Next milestone should be `Installer Safety & Upgrade Confidence` (`INST-03`, `INST-04`) before `WARN-03`; highest leverage is reducing host-app mutation surprise and upgrade drift risk.
 - `WARN-03` remains queued next (immediately after installer safety), not a replacement for installer safety work.
 - README/support wording has one notable drift risk ("shipped through v2.1" wording) that should be corrected in the upcoming docs-truth pass.
+- Phase 62 Plan 01 reconciled Nyquist ledgers for phases 59 and 61 from existing VERIFICATION evidence — no redundant tests added.
 - No active `.planning/phases/*` tree currently exists; new lessons are parked in `.planning/threads/` and should graduate into `NN-LEARNINGS.md` once the next phase starts.
 - No new public runtime API is required for Phase 52.
 - The Phase 52 example starts with `Scoria.start_run/2`, escalates through `Scoria.start_handoff_run/3`, and reads delegated detail through `Scoria.get_run_detail/1`.

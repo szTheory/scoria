@@ -16,7 +16,7 @@
 | 59 | 2/2 | Complete    | 2026-05-27 |
 | 60 | 2/2 | Complete    | 2026-05-27 |
 | 61 | 3/3 | Complete    | 2026-05-27 |
-| 62 | Nyquist & Traceability Closeout | Pending | — |
+| 62 | 1/3 | In Progress | 2026-05-27 |
 | 63 | Manifest Check Fingerprint Hardening | Pending | INST-07 (integration hardening) |
 
 ## Phase Details
