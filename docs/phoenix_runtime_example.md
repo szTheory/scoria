@@ -112,23 +112,58 @@ Treat that page as operator evidence, not as the source of your product's busine
 
 ## Bounded handoffs branch from the same runtime lane
 
-If the core runtime path is already working and one role needs to delegate a bounded slice to another role, branch from the same identity and `run_id` model instead of starting a second onboarding path:
+If the core runtime path is already working and a draft needs a bounded review, branch from the same identity and `run_id` model instead of starting a second onboarding path.
+
+The host app owns this escalation decision. Scoria only receives the explicit handoff contract you pass to `Scoria.start_handoff_run/3`.
 
 ```elixir
-{:ok, handoff_run} =
-  Scoria.start_handoff_run(identity, "critic",
-    root_role_id: "planner",
-    delegated_kind: "review",
-    handoff_input: %{"brief" => "Review the draft answer"},
-    projected_context: %{"task" => "policy review", "draft_answer" => prompt},
-    handlers: %{"review" => {MyApp.RuntimeHandlers, :review}}
-  )
+def create(conn, %{"draft_answer" => draft_answer}) do
+  identity =
+    Scoria.identity(%{
+      actor_id: conn.assigns.current_user.id,
+      tenant_id: conn.assigns.current_account.id,
+      session_id: get_session(conn, :assistant_session_id),
+      metadata: %{"channel" => "web"}
+    })
 
-{:ok, detail} = Scoria.get_run_detail(handoff_run.run_id)
-delegated = detail.delegated_handoffs
+  {:ok, started} = Scoria.start_run(identity, root_role_id: "executor")
+
+  conn = put_session(conn, :last_scoria_run_id, started.run_id)
+
+  if needs_bounded_review?(draft_answer) do
+    {:ok, handoff_run} =
+      Scoria.start_handoff_run(identity, "critic",
+        root_role_id: "planner",
+        delegated_kind: "review",
+        handoff_input: %{"brief" => "Review the draft answer for policy and accuracy"},
+        projected_context: %{
+          "task" => "policy-and-accuracy review",
+          "draft_answer" => draft_answer
+        },
+        handlers: %{"review" => {MyApp.RuntimeHandlers, :review}}
+      )
+
+    conn = put_session(conn, :last_scoria_handoff_run_id, handoff_run.run_id)
+
+    {:ok, detail} = Scoria.get_run_detail(handoff_run.run_id)
+    delegated = detail.delegated_handoffs
+
+    started.run_id != handoff_run.run_id
+
+    redirect(conn, to: ~p"/assistant/runs/#{handoff_run.run_id}")
+  else
+    redirect(conn, to: ~p"/assistant/runs/#{started.run_id}")
+  end
+end
+
+defp needs_bounded_review?(draft_answer) do
+  String.contains?(draft_answer, "policy")
+end
 ```
 
 Use `Scoria.get_run_detail/1` when the host app or support path needs the curated delegated evidence surface, and use `/scoria/workflows/:run_id` when an operator needs the same run's `Delegated Evidence` section.
+
+session_id groups related host turns; run_id names one exact Scoria execution.
 
 ## Resume after approval
 
@@ -181,7 +216,7 @@ After wiring the flow:
 
 - LiveView-first orchestration
 - background-job-first orchestration
-- direct use of `Scoria.Workflows` as the normal app entrypoint
+- direct workflow internals as the normal app entrypoint
 - pgvector or the knowledge lane just to prove the runtime path
 
 Use the public `Scoria` facade first. Expand into advanced runtime or knowledge features only after this core lane is working.
