@@ -68,24 +68,7 @@ defmodule Mix.Tasks.Scoria.WarningInventory do
   end
 
   defp preflight! do
-    if Mix.env() != :test do
-      Mix.raise("warning inventory requires MIX_ENV=test")
-    end
-
-    tmp_dir = Path.join(["test", "tmp"])
-
-    case File.ls(tmp_dir) do
-      {:ok, []} ->
-        :ok
-
-      {:ok, entries} ->
-        Mix.raise(
-          "test/tmp contains #{length(entries)} entries; clean installer fixture pollution before running warning inventory"
-        )
-
-      {:error, :enoent} ->
-        :ok
-    end
+    WarningInventory.ensure_clean_tmp!()
 
     unless pgvector_available?() do
       Mix.shell().info(

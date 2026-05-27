@@ -136,6 +136,51 @@ defmodule Scoria.WarningInventory do
   end
 
   @doc """
+  Ensures `test/tmp/` is empty before warning inventory or ratchet capture runs.
+  """
+  @spec ensure_clean_tmp!() :: :ok
+  def ensure_clean_tmp! do
+    if Mix.env() != :test do
+      Mix.raise("warning inventory requires MIX_ENV=test")
+    end
+
+    tmp_dir = Path.join(["test", "tmp"])
+
+    case File.ls(tmp_dir) do
+      {:ok, []} ->
+        :ok
+
+      {:ok, entries} ->
+        Mix.raise(
+          "test/tmp contains #{length(entries)} entries; clean installer fixture pollution before running warning inventory"
+        )
+
+      {:error, :enoent} ->
+        :ok
+    end
+  end
+
+  @doc """
+  Removes transient entries under `test/tmp/` after ratchet capture (not the directory itself).
+  """
+  @spec cleanup_transient_tmp!() :: :ok
+  def cleanup_transient_tmp! do
+    tmp_dir = Path.join(["test", "tmp"])
+
+    case File.ls(tmp_dir) do
+      {:ok, entries} ->
+        for entry <- entries do
+          File.rm_rf!(Path.join(tmp_dir, entry))
+        end
+
+        :ok
+
+      {:error, :enoent} ->
+        :ok
+    end
+  end
+
+  @doc """
   Captures compile + test warning output for inventory and ratchet checks.
 
   Runs in capture mode (no WAE) so warnings can be measured even when the suite fails.

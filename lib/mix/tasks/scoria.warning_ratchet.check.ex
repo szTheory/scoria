@@ -12,34 +12,40 @@ defmodule Mix.Tasks.Scoria.WarningRatchet.Check do
       Mix.raise("warning ratchet check requires MIX_ENV=test")
     end
 
-    output = WarningInventory.capture_output()
+    WarningInventory.ensure_clean_tmp!()
 
-    offenders =
-      output
-      |> WarningInventory.parse_output()
-      |> WarningInventory.classify()
-      |> Enum.filter(fn row ->
-        row.cluster_id == :unclassified_compile and WarningRatchet.high_signal_path?(row.file)
-      end)
+    try do
+      output = WarningInventory.capture_output()
 
-    if offenders == [] do
-      Mix.shell().info("==> WARN-06 high-signal unclassified check passed")
-      exit({:shutdown, 0})
-    end
+      offenders =
+        output
+        |> WarningInventory.parse_output()
+        |> WarningInventory.classify()
+        |> Enum.filter(fn row ->
+          row.cluster_id == :unclassified_compile and WarningRatchet.high_signal_path?(row.file)
+        end)
 
-    lines =
-      for row <- Enum.sort_by(offenders, &{&1.file, &1.line}) do
-        "- #{row.file}:#{row.line} #{row.message}"
+      if offenders == [] do
+        Mix.shell().info("==> WARN-06 high-signal unclassified check passed")
+        exit({:shutdown, 0})
       end
 
-    Mix.raise("""
-    WARN-06 high-signal paths contain unclassified compile warnings:
+      lines =
+        for row <- Enum.sort_by(offenders, &{&1.file, &1.line}) do
+          "- #{row.file}:#{row.line} #{row.message}"
+        end
 
-    #{Enum.join(lines, "\n")}
+      Mix.raise("""
+      WARN-06 high-signal paths contain unclassified compile warnings:
 
-    Remediation:
-    - add a Cluster.match/1 rule or fix the code in the same change
-    - do not baseline unclassified warnings in high-signal scope
-    """)
+      #{Enum.join(lines, "\n")}
+
+      Remediation:
+      - add a Cluster.match/1 rule or fix the code in the same change
+      - do not baseline unclassified warnings in high-signal scope
+      """)
+    after
+      WarningInventory.cleanup_transient_tmp!()
+    end
   end
 end
