@@ -16,6 +16,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Milestone `v2.5 Installer Safety & Upgrade Confidence` is active; Nyquist validation and SUMMARY traceability gaps are closed (Phase 62 complete, 2026-05-27).
 - Phase `59 planner-contract-foundation` is complete: planner-driven `--dry-run`/`--check` contracts now provide deterministic no-write surfaces with stable check trailer and exit semantics.
 - Phase `62 nyquist-and-traceability-closeout` is complete: phases 59–61 VALIDATION ledgers are Nyquist-compliant, SUMMARY frontmatter includes `requirements-completed`, and v2.5 audit status is `ready_for_archive`.
+- Phase `64 adoption-lane-discoverability-sync` is complete: adoption discoverability `expected_files` matches `adoption_test_files/0`; v2.5 audit gap `adoption-lane-discoverability-drift` closed.
 - Canonical lane truth now lives in one source (`Scoria.VerificationLanes`) shared by docs, drift tests, lane tasks, and CI ordering assertions.
 - Release-preview and compile warning policy is now explicit and enforced in canonical closeout lanes.
 - Warning baseline debt is tracked with owner+expiry so accepted warning debt cannot drift silently.
@@ -194,4 +195,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 after completing Phase 62 nyquist-and-traceability-closeout*
+*Last updated: 2026-05-27 after completing Phase 64 adoption-lane-discoverability-sync*
