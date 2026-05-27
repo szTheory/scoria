@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-27T19:01:24Z"
-last_activity: 2026-05-27 -- Completed 67-03-PLAN.md (WARN-06 scoria unit test slice)
+last_updated: "2026-05-27T19:17:30Z"
+last_activity: 2026-05-27 -- Completed 67-04-PLAN.md (WARN-06 LiveView slice + Phase 67 closeout)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
-  percent: 88
+  completed_plans: 8
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-27)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 67 — high-signal warning ratchet (plan 67-04 next)
+**Current focus:** Phase 68 — full-suite warning closure (Phase 67 complete)
 
 ## Current Position
 
-Phase: 67
-Plan: 04 (next)
-Status: Executing
-Last activity: 2026-05-27 -- Completed 67-03-PLAN.md (WARN-06 scoria unit test slice)
+Phase: 68 (next)
+Plan: —
+Status: Ready
+Last activity: 2026-05-27 -- Completed 67-04-PLAN.md (WARN-06 LiveView slice + Phase 67 closeout)
 
 ## Performance Metrics
 
@@ -66,8 +66,14 @@ Last activity: 2026-05-27 -- Completed 67-03-PLAN.md (WARN-06 scoria unit test s
 
 ## Operator Next Steps
 
-- Execute plan 67-04 (LiveView p3 cluster fixes + Phase 67 closeout inventory)
-- Resume file: `.planning/phases/67-high-signal-warning-ratchet/67-04-PLAN.md`
+- Plan Phase 68 — wire `mix scoria.warning_ratchet.test --warnings-as-errors` into CI test job; pursue full-suite WAE (WARN-07)
+- Resume file: `.planning/phases/68-full-suite-warning-closure/` (when planned)
+
+### Phase 67 Decisions (67-04)
+
+- LiveView p3 debt cleared via same minimal patterns as 67-03 (remove dead defaults / unused bindings)
+- VerificationLanes SSOT committed — unblocks adoption surface and warning inventory lane attribution
+- Phase 67 inventory closeout: zero clusters; p2/p4 debt explicitly deferred for Phase 68
 
 ### Phase 67 Decisions (67-00)
 
