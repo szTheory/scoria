@@ -11,7 +11,7 @@ defmodule Scoria.SemanticCache.InvalidationTest do
 
   setup do
     Ecto.Adapters.SQL.Sandbox.unboxed_run(Scoria.Repo, fn ->
-      Migrations.migrate_knowledge!()
+      Migrations.ensure_knowledge_migrated!()
     end)
 
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
