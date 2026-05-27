@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Scope
 status: completed
-last_updated: "2026-05-27T16:15:53.911Z"
+last_updated: "2026-05-27T16:31:09.323Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 5
