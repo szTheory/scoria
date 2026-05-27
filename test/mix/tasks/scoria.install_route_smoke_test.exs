@@ -79,16 +79,17 @@ defmodule Mix.Tasks.Scoria.InstallRouteSmokeTest do
   } do
     result = Mix.Tasks.Scoria.Install.do_run(router_path, tailwind_path, config_path)
     assert result.exit_code == 0
-    Code.compile_string(File.read!(router_path))
 
-    assert Phoenix.Router.route_info(DummyHostInstall.Router, "GET", "/scoria", nil).plug ==
-             Phoenix.LiveView.Plug
+    with_compiled_modules!(File.read!(router_path), fn ->
+      assert Phoenix.Router.route_info(DummyHostInstall.Router, "GET", "/scoria", nil).plug ==
+               Phoenix.LiveView.Plug
 
-    assert Phoenix.Router.route_info(DummyHostInstall.Router, "GET", "/scoria/workflows/123", nil).plug ==
-             Phoenix.LiveView.Plug
+      assert Phoenix.Router.route_info(DummyHostInstall.Router, "GET", "/scoria/workflows/123", nil).plug ==
+               Phoenix.LiveView.Plug
 
-    assert Phoenix.Router.route_info(DummyHostInstall.Router, "GET", "/admin/scoria", nil) ==
-             :error
+      assert Phoenix.Router.route_info(DummyHostInstall.Router, "GET", "/admin/scoria", nil) ==
+               :error
+    end)
   end
 
   test "non-root browser scope topology blocks apply and leaves dashboard routes absent", %{
@@ -105,14 +106,25 @@ defmodule Mix.Tasks.Scoria.InstallRouteSmokeTest do
     assert result.status == :manual_review
     assert result.exit_code == 1
     assert before_router == after_router
+    refute after_router =~ "scoria_dashboard"
+    refute after_router =~ ~s("/scoria")
+  end
 
-    Code.compile_string(after_router)
+  defp with_compiled_modules!(source, fun) when is_function(fun, 0) do
+    compiled = Code.compile_string(source)
 
-    assert Phoenix.Router.route_info(DummyHostInstall.TopologyRouter, "GET", "/scoria", nil) ==
-             :error
+    try do
+      fun.()
+    after
+      purge_compiled!(compiled)
+    end
+  end
 
-    assert Phoenix.Router.route_info(DummyHostInstall.TopologyRouter, "GET", "/admin/scoria", nil) ==
-             :error
+  defp purge_compiled!(compiled) do
+    for {mod, _} <- compiled do
+      :code.purge(mod)
+      :code.delete(mod)
+    end
   end
 
   defp non_root_browser_scope_router do

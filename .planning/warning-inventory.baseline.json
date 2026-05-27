@@ -1,10 +1,9 @@
 {
   "clusters": {
-    "knowledge_migration_redefine": 2,
-    "test_unused_binding": 2,
-    "unclassified_compile": 4
+    "test_dead_default_args": 2,
+    "test_unused_binding": 2
   },
-  "generated_at": "2026-05-27T18:13:56.713139Z",
-  "git_sha": "60ca8043838ac8b1f00473a60d4e21f417698765",
+  "generated_at": "2026-05-27T18:25:05.152755Z",
+  "git_sha": "f00a650ccc01dad2896faeee3092d9834d7a9be4",
   "schema_version": "1.0"
 }

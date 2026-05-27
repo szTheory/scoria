@@ -20,6 +20,8 @@ defmodule Scoria.WarningInventory.Cluster do
   def match(%{file: file, message: message, signal_kind: signal_kind}) do
     cond do
       knowledge_migration_redefine?(file, message) -> :knowledge_migration_redefine
+      test_unused_import?(file, message) -> :test_unused_import
+      install_fixture_undefined_ref?(file, message) -> :install_fixture_undefined_ref
       test_unused_binding?(file, message) -> :test_unused_binding
       test_dead_default_args?(file, message) -> :test_dead_default_args
       host_overlay_test_path?(file) -> :host_overlay_test_path
@@ -32,7 +34,8 @@ defmodule Scoria.WarningInventory.Cluster do
 
   defp knowledge_migration_redefine?(file, message) do
     String.contains?(file, "priv/repo/knowledge_migrations/") or
-      String.contains?(String.downcase(message), "redefining module")
+      (String.contains?(String.downcase(message), "redefining module") and
+         String.contains?(file, "knowledge_migrations"))
   end
 
   defp test_unused_binding?(file, message) do
@@ -41,7 +44,16 @@ defmodule Scoria.WarningInventory.Cluster do
 
   defp test_dead_default_args?(file, message) do
     test_file?(file) and
-      Regex.match?(~r/default arguments .* never used/u, message)
+      Regex.match?(~r/default (arguments|values) .* never used/u, message)
+  end
+
+  defp test_unused_import?(file, message) do
+    test_file?(file) and Regex.match?(~r/unused import/u, message)
+  end
+
+  defp install_fixture_undefined_ref?(file, message) do
+    test_file?(file) and String.contains?(file, "install") and
+      Regex.match?(~r/is undefined \(module .* is not available|is undefined or private/u, message)
   end
 
   defp host_proof_generated_compile?(file) do
