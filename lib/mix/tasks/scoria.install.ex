@@ -1,4 +1,47 @@
 defmodule Mix.Tasks.Scoria.Install do
+  @moduledoc """
+  Installs Scoria through planner-led safe apply with three verification modes.
+
+  ## Modes
+
+  * **Default apply** — `mix scoria.install` runs the planner and applies only
+    planner-classified create/update operations. `manual_review` entries never
+    receive silent overwrites.
+  * **`--dry-run`** — builds and prints the install plan without writing host files.
+  * **`--check`** — builds the install plan, prints it, and exits with a tri-state
+    result. `--check` never writes host files.
+
+  ## Exit codes and automation trailer
+
+  | Result | Exit code | Trailer status |
+  |--------|-----------|----------------|
+  | Compliant (all surfaces converged) | 0 | `compliant` |
+  | Drift or manual review required | 1 | `drift` or `manual_review` |
+  | Planner/check failure | 2 | `error` |
+
+  Check mode prints a machine-parseable trailer as the final line:
+
+      SCORIA_CHECK_RESULT status=<status> exit_code=<code>
+
+  Post-upgrade verification:
+
+      #{Scoria.Install.Contract.default_verify_command()}
+
+  See `docs/operator_verification.md` for the upgrade-safe dry-run → check →
+  remediate → apply workflow.
+
+  ## Apply freshness
+
+  Apply compares each plan entry fingerprint captured at plan build time to the
+  live disk fingerprint before writes (`Scoria.Install.Manifest.validate_freshness/2`).
+  The stored `.scoria/install/manifest.json` file is not the apply gate input. If
+  apply blocks for stale fingerprints, re-run `--dry-run` and `--check` without
+  editing managed files between check and apply.
+
+  See `docs/operator_verification.md` for the **Check vs apply drift detection**
+  subsection.
+  """
+
   use Mix.Task
   alias Scoria.Install.ApplyExecutor
   alias Scoria.Install.Planner
