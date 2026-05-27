@@ -3,6 +3,7 @@ defmodule Scoria.PackageSurfaceTest do
 
   @docs_extras [
     "README.md",
+    "LICENSE",
     "docs/adoption_lanes.md",
     "docs/phoenix_runtime_example.md",
     "docs/bounded_handoffs.md",

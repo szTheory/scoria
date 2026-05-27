@@ -1,9 +1,6 @@
 {
-  "clusters": {
-    "test_dead_default_args": 1,
-    "test_unused_binding": 2
-  },
-  "generated_at": "2026-05-27T19:01:21.429677Z",
-  "git_sha": "689868b26ee52d2cffea05095f145ebf300b7965",
+  "clusters": {},
+  "generated_at": "2026-05-27T19:11:53.625377Z",
+  "git_sha": "078901ac472f5107a597221c77bd70d87f70dccb",
   "schema_version": "1.0"
 }
