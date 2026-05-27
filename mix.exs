@@ -24,6 +24,8 @@ defmodule Scoria.MixProject do
       preferred_envs: [
         "scoria.test.adoption": :test,
         "test.adoption": :test,
+        "scoria.test.runtime_to_handoff": :test,
+        "test.runtime_to_handoff": :test,
         "scoria.test.semantic_fast_path": :test,
         "test.semantic_fast_path": :test,
         "scoria.test.knowledge": :test,
