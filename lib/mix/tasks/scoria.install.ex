@@ -1,13 +1,15 @@
 defmodule Mix.Tasks.Scoria.Install do
   use Mix.Task
+  alias Scoria.Install.Planner
+  alias Scoria.VerificationLanes
 
   @shortdoc "Installs the Scoria dashboard, core migrations, and workflow routes into a Phoenix application"
   @tailwind_glob "../deps/scoria/lib/**/*.*ex"
   @source_core_migrations Application.app_dir(:scoria, "priv/repo/migrations")
   @optional_lane_migration_basenames MapSet.new([
-                                     "20260525070000_create_semantic_cache_tables.exs",
-                                     "20260525090000_add_semantic_cache_compatibility_fields.exs"
-                                   ])
+                                       "20260525070000_create_semantic_cache_tables.exs",
+                                       "20260525090000_add_semantic_cache_compatibility_fields.exs"
+                                     ])
   @runtime_config_snippet """
 
   config :scoria, Scoria.Runtime,
@@ -17,14 +19,20 @@ defmodule Mix.Tasks.Scoria.Install do
       prompt_policy: [policy_key: "default"]
     ]
   """
+  @switches [dry_run: :boolean, check: :boolean, format: :string]
   @optional_later_lanes [
-    "mix test.adoption",
-    "SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path",
+    VerificationLanes.command(:adoption),
+    VerificationLanes.command(:semantic_fast_path),
     "mix scoria.pgvector.bootstrap",
-    "mix test.knowledge"
+    VerificationLanes.command(:knowledge)
   ]
 
-  def run(_args) do
+  def run(args) do
+    {opts, argv, invalid} = OptionParser.parse(args, strict: @switches)
+    ensure_valid_args!(argv, invalid)
+    ensure_valid_mode_flags!(opts)
+    format = parse_format!(opts)
+
     router_paths = Path.wildcard("lib/*_web/router.ex")
     tailwind_paths = ["assets/tailwind.config.js", "tailwind.config.js"]
     config_paths = ["config/runtime.exs", "config/config.exs"]
@@ -33,11 +41,29 @@ defmodule Mix.Tasks.Scoria.Install do
     tailwind_path = Enum.find(tailwind_paths, &File.exists?/1)
     config_path = Enum.find(config_paths, &File.exists?/1)
 
-    if router_path do
-      statuses = do_run(router_path, tailwind_path, config_path)
-      print_summary(statuses)
-    else
-      Mix.shell().error("Could not find router.ex")
+    cond do
+      opts[:dry_run] ->
+        plan =
+          Planner.build(router_path, tailwind_path, config_path,
+            mode: :dry_run
+          )
+
+        print_plan(plan, format)
+
+      opts[:check] ->
+        plan =
+          Planner.build(router_path, tailwind_path, config_path,
+            mode: :check
+          )
+
+        print_plan(plan, format)
+
+      router_path ->
+        statuses = do_run(router_path, tailwind_path, config_path)
+        print_summary(statuses)
+
+      true ->
+        Mix.shell().error("Could not find router.ex")
     end
   end
 
@@ -65,8 +91,11 @@ defmodule Mix.Tasks.Scoria.Install do
       if content =~ "import ScoriaWeb.Router" do
         {content, :already_present}
       else
-        {Regex.replace(~r/(defmodule .*?\.Router do\n)/, content, "\\1  import ScoriaWeb.Router\n"),
-         :installed}
+        {Regex.replace(
+           ~r/(defmodule .*?\.Router do\n)/,
+           content,
+           "\\1  import ScoriaWeb.Router\n"
+         ), :installed}
       end
 
     {content, mount_status} =
@@ -222,6 +251,103 @@ defmodule Mix.Tasks.Scoria.Install do
     end)
   end
 
+  defp print_plan(plan, "json"), do: print_json_plan(plan)
+
+  defp print_plan(plan, "human") do
+    Mix.shell().info("Scoria install plan (mode: #{plan.mode})")
+    Mix.shell().info("")
+
+    Enum.each(plan.entries, fn entry ->
+      Mix.shell().info("#{entry.order}. #{entry.surface}")
+      Mix.shell().info("   classification: #{classification_label(entry.classification)}")
+      Mix.shell().info("   target path: #{entry.target_path}")
+      Mix.shell().info("   rationale: #{entry.rationale}")
+      Mix.shell().info("")
+    end)
+
+    Mix.shell().info("Summary:")
+    Mix.shell().info("  create: #{plan.summary.create}")
+    Mix.shell().info("  update: #{plan.summary.update}")
+    Mix.shell().info("  no-op: #{plan.summary.no_op}")
+    Mix.shell().info("  manual-review: #{plan.summary.manual_review}")
+  end
+
+  defp print_json_plan(plan) do
+    plan_json = normalize_plan_for_json(plan)
+
+    json_payload =
+      if Code.ensure_loaded?(Jason) do
+        Jason.encode!(plan_json, pretty: true)
+      else
+        inspect(plan_json, pretty: true)
+      end
+
+    Mix.shell().info(json_payload)
+  end
+
+  defp normalize_plan_for_json(plan) do
+    %{
+      schema_version: plan.schema_version,
+      mode: plan.mode,
+      entries: Enum.map(plan.entries, &normalize_entry_for_json/1),
+      summary: plan.summary
+    }
+  end
+
+  defp normalize_entry_for_json(entry) do
+    entry
+    |> Enum.map(fn {key, value} -> {key, normalize_json_value(value)} end)
+    |> Enum.into(%{})
+  end
+
+  defp normalize_json_value(value) when is_map(value) do
+    value
+    |> Enum.map(fn {key, nested_value} -> {key, normalize_json_value(nested_value)} end)
+    |> Enum.into(%{})
+  end
+
+  defp normalize_json_value(value) when is_list(value), do: Enum.map(value, &normalize_json_value/1)
+  defp normalize_json_value(value) when is_atom(value), do: Atom.to_string(value)
+  defp normalize_json_value(value), do: value
+
+  defp classification_label(:no_op), do: "no-op"
+  defp classification_label(:manual_review), do: "manual-review"
+  defp classification_label(classification), do: Atom.to_string(classification)
+
+  defp ensure_valid_args!([], []), do: :ok
+
+  defp ensure_valid_args!(argv, invalid) do
+    invalid_switches =
+      invalid
+      |> Enum.map(fn {switch, value} -> "--#{switch}=#{value}" end)
+
+    unsupported_args = invalid_switches ++ argv
+
+    raise Mix.Error,
+          "Unsupported arguments: #{Enum.join(unsupported_args, ", ")}. " <>
+            "Supported options: --dry-run, --check, --format (human|json)."
+  end
+
+  defp ensure_valid_mode_flags!(opts) do
+    if opts[:dry_run] && opts[:check] do
+      raise Mix.Error, "Choose either --dry-run or --check, not both."
+    end
+  end
+
+  defp parse_format!(opts) do
+    format =
+      opts
+      |> Keyword.get(:format, "human")
+      |> to_string()
+      |> String.downcase()
+
+    if format in ["human", "json"] do
+      format
+    else
+      raise Mix.Error, "Unsupported --format #{inspect(format)}. Supported values: human, json."
+    end
+  end
+
   defp installed_lines(statuses) do
     [
       status_line(
@@ -313,7 +439,8 @@ defmodule Mix.Tasks.Scoria.Install do
   end
 
   defp browser_pipe_through_line?(line) do
-    line == "pipe_through :browser" or line == "pipe_through(:browser)"
+    Regex.match?(~r/^pipe_through\s*\(?\s*:browser\s*\)?$/, line) or
+      Regex.match?(~r/^pipe_through\s*\(?\s*\[[^\]]*:browser[^\]]*\]\s*\)?$/, line)
   end
 
   defp update_scope_depth({:in_root_scope, depth}, line) do
