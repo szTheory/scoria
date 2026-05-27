@@ -120,6 +120,8 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
       # Test 3
       assert render(view) =~ "Draft blocked"
+
+      render_async(view)
     end
   end
 
@@ -127,6 +129,8 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
     test "Approval CTA is disabled if prerequisites are missing", %{conn: conn, draft: draft} do
       {:ok, view, _html} = live(conn, "/scoria/prompts/#{draft.id}/release")
       assert has_element?(view, "button[disabled]", "Request Release")
+
+      render_async(view)
     end
 
     test "Clicking Approve Prompt Release triggers approval and updates UI", %{conn: conn, draft: draft, active: active, spec: spec} do
@@ -170,7 +174,9 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
       view |> element("button", "Confirm Approval") |> render_click()
       assert render(view) =~ "Prompt Release Approved."
-      end
+
+      render_async(view)
+    end
 
     test "Reject CTA records a rejection and remains on the page", %{conn: conn, draft: draft} do
       alias Scoria.Workflows.PromptRelease
@@ -183,5 +189,8 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
       view |> element("button", "Confirm Rejection") |> render_click()
       assert render(view) =~ "Prompt Release Rejected."
-      end  end
+
+      render_async(view)
+    end
+  end
 end

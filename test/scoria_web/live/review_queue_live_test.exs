@@ -97,6 +97,8 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     assert html =~ "/scoria/workflows/#{second.workflow_run_id}?review_candidate_id=#{second.id}"
     assert html =~ "/scoria?runtime="
     assert html =~ "Inspect one scored candidate at a time before promoting or dismissing it."
+
+    render_async(view)
   end
 
   test "queue actions dismiss, promote, and request baseline approval from the detail rail", %{open_dataset: open_dataset, sealed_dataset: sealed_dataset} do
@@ -152,6 +154,8 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
 
     assert dismissed_html =~ "Candidate dismissed"
     refute dismissed_html =~ "Dismiss this"
+
+    render_async(view)
   end
 
   defp test_conn do
