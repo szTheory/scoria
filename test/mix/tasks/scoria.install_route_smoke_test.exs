@@ -86,5 +86,58 @@ defmodule Mix.Tasks.Scoria.InstallRouteSmokeTest do
 
     assert Phoenix.Router.route_info(DummyHostInstall.Router, "GET", "/scoria/workflows/123", nil).plug ==
              Phoenix.LiveView.Plug
+
+    assert Phoenix.Router.route_info(DummyHostInstall.Router, "GET", "/admin/scoria", nil) ==
+             :error
+  end
+
+  test "non-root browser scope topology blocks apply and leaves dashboard routes absent", %{
+    router_path: router_path,
+    tailwind_path: tailwind_path,
+    config_path: config_path
+  } do
+    File.write!(router_path, non_root_browser_scope_router())
+    before_router = File.read!(router_path)
+
+    result = Mix.Tasks.Scoria.Install.do_run(router_path, tailwind_path, config_path)
+    after_router = File.read!(router_path)
+
+    assert result.status == :manual_review
+    assert result.exit_code == 1
+    assert before_router == after_router
+
+    Code.compile_string(after_router)
+
+    assert Phoenix.Router.route_info(DummyHostInstall.TopologyRouter, "GET", "/scoria", nil) ==
+             :error
+
+    assert Phoenix.Router.route_info(DummyHostInstall.TopologyRouter, "GET", "/admin/scoria", nil) ==
+             :error
+  end
+
+  defp non_root_browser_scope_router do
+    """
+    defmodule DummyHostInstall.TopologyRouter do
+      use Phoenix.Router
+      import Plug.Conn
+
+      # scoria:router:start
+      import ScoriaWeb.Router
+      # scoria:router:end
+
+      pipeline :browser do
+        plug :accepts, ["html"]
+        plug :fetch_session
+      end
+
+      scope "/" do
+        get "/", PageController, :home
+      end
+
+      scope "/admin" do
+        pipe_through(:browser)
+      end
+    end
+    """
   end
 end

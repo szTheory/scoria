@@ -16,7 +16,11 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     File.mkdir_p!(Path.dirname(router_path))
     File.mkdir_p!(Path.dirname(config_path))
     File.mkdir_p!(Path.join([fixture_root, "priv", "repo", "migrations"]))
-    File.write!(Path.join([fixture_root, "lib", "dummy_host.ex"]), "defmodule DummyHost do\nend\n")
+
+    File.write!(
+      Path.join([fixture_root, "lib", "dummy_host.ex"]),
+      "defmodule DummyHost do\nend\n"
+    )
 
     File.write!(router_path, unmanaged_router())
     File.write!(tailwind_path, unmanaged_tailwind())
@@ -95,6 +99,31 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     assert result.status == :compliant
     assert actionable_surfaces == MapSet.new([:router, :migrations, :runtime_config])
     assert changed_surfaces(before_snapshot, after_snapshot) == actionable_surfaces
+  end
+
+  test "mix scoria.install apply avoids router writes when only non-root scope has browser pipeline",
+       ctx do
+    write_owned_managed_files!(ctx)
+    File.write!(ctx.router_path, owned_router_with_non_root_browser_scope())
+
+    before_snapshot = snapshot_host_files(ctx)
+    plan = Planner.build(ctx.router_path, ctx.tailwind_path, ctx.config_path, mode: :apply)
+    router_entry = Enum.find(plan.entries, &(&1.surface == :router))
+
+    assert router_entry.classification == :manual_review
+    assert router_entry.operation == :manual_review
+    assert router_entry.drift.reason_code == "managed_region_unpatchable"
+
+    result = ApplyExecutor.run(plan, project_root: ctx.fixture_root)
+    after_snapshot = snapshot_host_files(ctx)
+
+    assert result.exit_code == 1
+    assert result.status == :manual_review
+    assert after_snapshot == before_snapshot
+
+    assert Enum.any?(result.blockers, fn blocker ->
+             blocker.surface == :router and blocker.reason_code == "managed_region_unpatchable"
+           end)
   end
 
   test "mix scoria.install blocks stale planner fingerprints before writes", ctx do
@@ -211,6 +240,31 @@ defmodule Mix.Tasks.Scoria.InstallTest do
       scope "/", DummyHostWeb do
         pipe_through :browser
         get "/", PageController, :home
+      end
+    end
+    """
+  end
+
+  defp owned_router_with_non_root_browser_scope do
+    """
+    defmodule DummyHostWeb.Router do
+      use DummyHostWeb, :router
+
+      # scoria:router:start
+      import ScoriaWeb.Router
+      # scoria:router:end
+
+      pipeline :browser do
+        plug :accepts, ["html"]
+      end
+
+      scope "/", DummyHostWeb do
+        get "/", PageController, :home
+      end
+
+      scope "/admin", DummyHostWeb do
+        pipe_through :browser
+        get "/dashboard", AdminController, :index
       end
     end
     """

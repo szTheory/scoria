@@ -107,7 +107,15 @@ defmodule Scoria.Install.ApplyExecutor do
 
   defp patch_managed_region!(%{surface: :router, target_path: target_path}) do
     content = File.read!(target_path)
-    updated = replace_managed_region!(content, @router_start_marker, @router_end_marker, "import ScoriaWeb.Router")
+
+    updated =
+      replace_managed_region!(
+        content,
+        @router_start_marker,
+        @router_end_marker,
+        "import ScoriaWeb.Router"
+      )
+
     final_content = ensure_dashboard_mount!(updated, target_path)
     File.write!(target_path, final_content)
   end
@@ -199,7 +207,10 @@ defmodule Scoria.Install.ApplyExecutor do
         })
       end)
 
-    Manifest.write!(project_root, %{schema_version: Manifest.schema_version(), entries: manifest_entries})
+    Manifest.write!(project_root, %{
+      schema_version: Manifest.schema_version(),
+      entries: manifest_entries
+    })
   end
 
   defp blocked_entry_payload(entry) do
@@ -218,7 +229,8 @@ defmodule Scoria.Install.ApplyExecutor do
 
   defp infer_project_root(_plan), do: nil
 
-  defp infer_entry_root(%{surface: :migrations, target_path: target_path}) when is_binary(target_path) do
+  defp infer_entry_root(%{surface: :migrations, target_path: target_path})
+       when is_binary(target_path) do
     target_path |> Path.dirname() |> Path.dirname() |> Path.dirname()
   end
 
@@ -357,7 +369,7 @@ defmodule Scoria.Install.ApplyExecutor do
   end
 
   defp root_scope_line?(line) do
-    String.starts_with?(line, "scope \"/\"") and String.ends_with?(line, "do")
+    Regex.match?(~r/^scope\s*(?:\(\s*)?"\/"\s*(?:,\s*.*)?(?:\s*\))?\s*do$/, line)
   end
 
   defp browser_pipe_through_line?(line) do
@@ -373,7 +385,10 @@ defmodule Scoria.Install.ApplyExecutor do
         true -> 0
       end
 
-    {:in_root_scope, depth + delta}
+    case depth + delta do
+      next_depth when next_depth <= 0 -> :error
+      next_depth -> {:in_root_scope, next_depth}
+    end
   end
 
   defp replace_managed_region!(content, start_marker, end_marker, replacement_body) do
@@ -406,7 +421,10 @@ defmodule Scoria.Install.ApplyExecutor do
         content,
         fn _, start, inner, ending ->
           inner_trimmed = String.trim_trailing(inner)
-          separator = if String.ends_with?(inner_trimmed, ",") or inner_trimmed == "", do: "", else: ","
+
+          separator =
+            if String.ends_with?(inner_trimmed, ",") or inner_trimmed == "", do: "", else: ","
+
           "#{start}#{inner}#{separator}\n    \"#{@tailwind_glob}\"\n  #{ending}"
         end
       )

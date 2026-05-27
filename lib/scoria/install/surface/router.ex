@@ -244,7 +244,7 @@ defmodule Scoria.Install.Surface.Router do
   end
 
   defp root_scope_line?(line) do
-    String.starts_with?(line, "scope \"/\"") and String.ends_with?(line, "do")
+    Regex.match?(~r/^scope\s*(?:\(\s*)?"\/"\s*(?:,\s*.*)?(?:\s*\))?\s*do$/, line)
   end
 
   defp browser_pipe_through_line?(line) do
@@ -260,7 +260,10 @@ defmodule Scoria.Install.Surface.Router do
         true -> 0
       end
 
-    {:in_root_scope, depth + delta}
+    case depth + delta do
+      next_depth when next_depth <= 0 -> :error
+      next_depth -> {:in_root_scope, next_depth}
+    end
   end
 
   defp marker_state(content) do

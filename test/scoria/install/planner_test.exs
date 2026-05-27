@@ -108,4 +108,45 @@ defmodule Scoria.Install.PlannerTest do
       assert entry.remediation.verify_command == "mix scoria.install --check"
     end)
   end
+
+  test "planner marks router manual_review when only non-root scope has browser pipeline", %{
+    router_path: router_path,
+    tailwind_path: tailwind_path,
+    config_path: config_path
+  } do
+    File.write!(router_path, owned_router_with_non_root_browser_scope())
+
+    plan = Planner.build(router_path, tailwind_path, config_path, mode: :check)
+    router_entry = Enum.find(plan.entries, &(&1.surface == :router))
+
+    assert router_entry.classification == :manual_review
+    assert router_entry.operation == :manual_review
+    assert router_entry.drift.reason_code == "managed_region_unpatchable"
+    assert router_entry.evidence.browser_scope_found? == false
+  end
+
+  defp owned_router_with_non_root_browser_scope do
+    """
+    defmodule DummyHostWeb.Router do
+      use DummyHostWeb, :router
+
+      # scoria:router:start
+      import ScoriaWeb.Router
+      # scoria:router:end
+
+      pipeline :browser do
+        plug :accepts, ["html"]
+      end
+
+      scope "/", DummyHostWeb do
+        get "/", PageController, :home
+      end
+
+      scope "/admin", DummyHostWeb do
+        pipe_through :browser
+        get "/", AdminController, :index
+      end
+    end
+    """
+  end
 end
