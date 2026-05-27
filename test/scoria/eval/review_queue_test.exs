@@ -77,7 +77,7 @@ defmodule Scoria.Eval.ReviewQueueTest do
     assert detail.promotion_context.checkpoint_output["recorded_outcome"]["value"]["answer"] == "ready"
   end
 
-  defp candidate_fixture(overrides \\ %{}) do
+  defp candidate_fixture(overrides) do
     %{trace: trace, run: run, step: step} = workflow_trace_fixture()
 
     attrs =
