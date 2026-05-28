@@ -18,8 +18,8 @@ Requirements for milestone `v2.7 OSS Release + Docs Truth`. Docs truth merges be
 
 ### Hex Publish
 
-- [ ] **HEX-01**: First Hex publish at semver `0.1.0` with git tag `v0.1.0`; release-please (or equivalent szTheory release automation) and publish workflow runs the same test topology as PR CI before `mix hex.publish`.
-- [ ] **HEX-02**: CHANGELOG for `0.1.0`, GitHub release at `v0.1.0`, Hex badge on README, and coordinated flip of README install snippet plus `package_surface_test` from pre-publish GitHub-only to Hex-primary with GitHub tag fallback.
+- [x] **HEX-01**: First Hex publish at semver `0.1.0` with git tag `v0.1.0`; release-please (or equivalent szTheory release automation) and publish workflow runs the same test topology as PR CI before `mix hex.publish`.
+- [x] **HEX-02**: CHANGELOG for `0.1.0`, GitHub release at `v0.1.0`, Hex badge on README, and coordinated flip of README install snippet plus `package_surface_test` from pre-publish GitHub-only to Hex-primary with GitHub tag fallback.
 
 ## Future Requirements
 
@@ -49,8 +49,8 @@ Deferred beyond `v2.7`:
 | DOCS-03 | Phase 70 | Complete |
 | DOCS-04 | Phase 70 | Complete |
 | INST-DX-01 | Phase 70 | Complete |
-| HEX-01 | Phase 71, Phase 72 | Pending |
-| HEX-02 | Phase 71, Phase 72 | Pending |
+| HEX-01 | Phase 71, Phase 72 | Complete |
+| HEX-02 | Phase 71, Phase 72 | Complete |
 
 **Coverage:**
 

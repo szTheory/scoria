@@ -16,7 +16,7 @@
 | Phase | Name | Goal | Requirements |
 |------:|------|------|--------------|
 | 70 | 3/3 | Complete    | 2026-05-28 |
-| 71 | 1/4 | In Progress|  |
+| 71 | 4/4 | Complete    | 2026-05-28 |
 | 72 | Hex Publish Closeout | `mix hex.publish`, tag, README/package_surface flip, milestone audit | HEX-01, HEX-02 |
 
 **Sequencing rule:** Phase 70 merges before Phase 72 publish — never ship HexDocs with stale v2.1 narrative.
@@ -24,7 +24,7 @@
 ## Phases
 
 - [x] Phase 70: Docs Truth Foundation (0/3 plans) (completed 2026-05-28)
-- [ ] Phase 71: Release Infrastructure (0/? plans)
+- [x] Phase 71: Release Infrastructure (0/? plans) (completed 2026-05-28)
 - [ ] Phase 72: Hex Publish Closeout (0/? plans)
 
 ## Phase Details
