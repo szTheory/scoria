@@ -14,6 +14,7 @@ defmodule Scoria.RuntimeTest do
 
   test "Scoria and Scoria.Runtime expose explicit lifecycle verbs" do
     assert Code.ensure_loaded?(Scoria)
+    assert Code.ensure_loaded?(Scoria.Runtime)
     assert function_exported?(Scoria, :start_run, 2)
     assert function_exported?(Scoria, :start_handoff_run, 3)
     assert function_exported?(Scoria, :resume_run, 2)
@@ -297,6 +298,66 @@ defmodule Scoria.RuntimeTest do
 
     assert Runtime.get_run_detail!(empty_summary.run_id).summary.status == "running"
     assert Runtime.get_run_detail!(narrow_summary.run_id).summary.status == "running"
+  end
+
+  test "runtime-to-handoff adopter example starts default run before bounded handoff" do
+    identity =
+      Scoria.identity(%{
+        actor_id: "actor-example",
+        tenant_id: "tenant-example",
+        session_id: "session-example"
+      })
+
+    draft_answer = "Ship the concise answer."
+
+    assert {:ok, started} = Scoria.start_run(identity, root_role_id: "executor")
+
+    assert {:ok, handoff_run} =
+             Scoria.start_handoff_run(identity, "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "Review the draft answer for policy and accuracy"},
+               projected_context: %{
+                 "task" => "policy-and-accuracy review",
+                 "draft_answer" => draft_answer
+               }
+             )
+
+    assert started.session_id == handoff_run.session_id
+    assert started.run_id != handoff_run.run_id
+
+    assert {:ok, detail} = Scoria.get_run_detail(handoff_run.run_id)
+
+    assert [
+             %{
+               delegated_role_id: "critic",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "Review the draft answer for policy and accuracy"},
+               projected_context: %{
+                 "task" => "policy-and-accuracy review",
+                 "draft_answer" => "Ship the concise answer."
+               }
+             }
+           ] = detail.delegated_handoffs
+  end
+
+  test "runtime-to-handoff adopter example rejects host session state in projected context" do
+    identity =
+      Scoria.identity(%{
+        actor_id: "actor-example-rejected",
+        tenant_id: "tenant-example-rejected",
+        session_id: "session-example-rejected"
+      })
+
+    assert {:error, :unsafe_projected_context} =
+             Scoria.start_handoff_run(identity, "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "Review the draft answer for policy and accuracy"},
+               projected_context: %{"session" => %{"id" => "host-session-1"}}
+             )
+
+    assert Scoria.list_runs_for_session("session-example-rejected") == []
   end
 
   test "start_run returns a curated public summary with canonical identity" do

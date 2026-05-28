@@ -2,7 +2,10 @@
 
 This guide documents the narrow public delegation lane for Scoria. Use it when your Phoenix app needs one role to hand a bounded slice of work to another role without turning Scoria into a general-purpose agent platform.
 
-Start with the normal runtime lane first: `identity -> start -> inspect -> resume`. Validate that base lane with `mix test.adoption`, then add bounded handoffs only when you intentionally need same-run delegation. Bounded handoffs extend that same runtime-first story instead of creating a second quickstart or a separate verifier lane.
+Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
+Keep the normal runtime order `identity -> start -> inspect -> resume` and branch to handoff only when that explicit delegation contract is needed.
+Bounded handoffs are added only after `mix test.adoption` proves the normal runtime lane.
+They extend the same runtime-first story through one canonical verifier lane: `mix test.runtime_to_handoff`.
 
 ## What this lane does
 
@@ -13,6 +16,12 @@ Start with the normal runtime lane first: `identity -> start -> inspect -> resum
 - leaves the same run visible at `/scoria/workflows/:run_id`
 
 ## Core contract
+
+## Host and Scoria ownership boundary
+
+The host app owns identity, escalation policy, prompt or draft selection, and projected-context selection.
+Scoria owns durable run creation, projected-context validation, queued delegated child creation, and curated readback through `Scoria.get_run_detail/1`.
+Scoria does not copy hidden transcript, provider session, socket assigns, cookies, headers, or secrets into the handoff.
 
 Use `Scoria.start_handoff_run/3` when you already know:
 
@@ -75,6 +84,20 @@ Broad runtime-state keys are rejected explicitly, including:
 
 Narrow host-controlled slices such as `%{"task" => "review"}` and `projected_context: %{}` remain valid.
 
+Rejected projected context returns a runtime error before Scoria creates the delegated run:
+
+```elixir
+assert {:error, :unsafe_projected_context} =
+         Scoria.start_handoff_run(identity, "critic",
+           root_role_id: "planner",
+           delegated_kind: "review",
+           handoff_input: %{"brief" => "Review the draft answer for policy and accuracy"},
+           projected_context: %{"request_headers" => %{"authorization" => "secret"}}
+         )
+```
+
+Scoria rejects the call with `{:error, :unsafe_projected_context}` before creating a durable delegated run.
+
 ## Inspecting delegated lineage
 
 After `Scoria.start_handoff_run/3`:
@@ -93,6 +116,16 @@ Open:
 ```
 
 The workflow page keeps the topology-first tree and selected-step rail, and now adds a run-level `Delegated Evidence` section for the curated handoff story under the same durable run.
+
+## Runtime-to-handoff verifier
+
+After the default lane is proven with `mix test.adoption`, use this bounded escalation verifier:
+
+```bash
+mix test.runtime_to_handoff
+```
+
+The verifier exercises the same delegated readback path in this guide: inspect `Scoria.get_run_detail/1`, confirm `delegated_handoffs`, and cross-check `/scoria/workflows/:run_id`.
 
 ## When to use this
 

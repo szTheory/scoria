@@ -1,0 +1,6 @@
+    warning: default arguments in function connect/2 are never used
+    │
+  8 │   defp connect(socket \\ nil, opts \\ []) do
+    │        ~
+    │
+    └─ test/scoria_web/live/replay_live_test.exs:8:8

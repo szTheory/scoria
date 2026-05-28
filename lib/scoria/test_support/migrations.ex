@@ -25,18 +25,45 @@ defmodule Scoria.TestSupport.Migrations do
   @core_migrations Path.join(@repo_priv, "migrations")
   @knowledge_migrations Path.join(@repo_priv, "knowledge_migrations")
   @knowledge_source "schema_migrations_knowledge"
+  @knowledge_migrated_key {:scoria_test_support, :knowledge_migrated}
 
   def migrate_core! do
     migrate!([@core_migrations])
   end
 
-  def migrate_knowledge! do
-    {:ok, _, _} =
-      Ecto.Migrator.with_repo(KnowledgeMigrationRepo, fn repo ->
-        Ecto.Migrator.run(repo, [@knowledge_migrations], :up, all: true, log: false)
-      end)
+  def ensure_knowledge_migrated! do
+    if :persistent_term.get(@knowledge_migrated_key, false) && knowledge_tables_exist?() do
+      :ok
+    else
+      migrate_knowledge!()
+      :persistent_term.put(@knowledge_migrated_key, true)
+      :ok
+    end
+  end
 
-    :ok
+  defp knowledge_tables_exist? do
+    case Repo.query(
+           "select exists (select 1 from information_schema.tables where table_schema = current_schema() and table_name = 'ai_knowledge_sources')"
+         ) do
+      {:ok, %{rows: [[true]]}} -> true
+      _ -> false
+    end
+  end
+
+  def migrate_knowledge! do
+    previous = Code.get_compiler_option(:ignore_module_conflict)
+    Code.put_compiler_option(:ignore_module_conflict, true)
+
+    try do
+      {:ok, _, _} =
+        Ecto.Migrator.with_repo(KnowledgeMigrationRepo, fn repo ->
+          Ecto.Migrator.run(repo, [@knowledge_migrations], :up, all: true, log: false)
+        end)
+
+      :ok
+    after
+      Code.put_compiler_option(:ignore_module_conflict, previous)
+    end
   end
 
   def core_migrations_path, do: @core_migrations

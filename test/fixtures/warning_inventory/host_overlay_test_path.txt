@@ -1,0 +1,6 @@
+    warning: module HostAppProofSmoke is not loaded
+    │
+  5 │   use HostAppProofSmoke
+    │   ~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ test/support/scoria/host_app_proof/overlay/test/host_route_smoke_test.exs:5:3

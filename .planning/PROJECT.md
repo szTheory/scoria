@@ -10,20 +10,32 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
+## Current Milestone: v2.7 OSS Release + Docs Truth
+
+**Goal:** Ship docs that honestly reflect v2.5+ capability, then publish `0.1.0` on Hex at git tag `v0.1.0` — without weakening v2.4 lane contracts, v2.5 installer truth, or v2.6 CI gates.
+
+**Target features:**
+- DOCS-03 / DOCS-04: Capability-based shipped banner, README install upgrade path, `adoption_surface_test` alignment, maintainer semantic-lane doc boundary
+- INST-DX-01: `mix scoria.test.install_contract` maintainer task committed and documented (not a closeout lane)
+- HEX-01 / HEX-02: release-please + publish workflow, CHANGELOG, coordinated Hex/README/package_surface_test flip at `0.1.0`
+
+**Explicitly deferred:** SEM-CI-01 (semantic lane in PR CI) — document local maintainer command only
+
 ## Current State
 
-- Scoria shipped `v2.2 OSS adopter onramp` on 2026-05-26.
-- The product now has a publish-facing docs and package proof lane through `mix scoria.release_preview`.
-- `mix scoria.install` is now a truthful host-app contract with explicit mutation reporting, copied-migration boundaries, and clean Tailwind-absent behavior.
-- A generated Phoenix host can now prove dependency fetch, install, migrate, route visibility, one durable run, readback, and operator evidence through the default lane.
-- README, operator verification, and installer output now agree on one canonical closeout chain: `MIX_ENV=dev mix scoria.release_preview` followed by `MIX_ENV=test mix test.adoption`.
-- No active milestone is open. The next milestone should be chosen through fresh planning rather than implicitly extending `v2.2`.
+- Phase 70 Docs Truth Foundation complete (2026-05-28): README uses capability-based shipped truth; install_contract maintainer lane committed; CI gate map documents semantic local-only boundary and version namespaces.
+- Scoria shipped `v2.6 Warning Ratchet` on 2026-05-28.
+- CI policy→test topology: `mix scoria.warning_baseline.check` → compile WAE → lane-contract WAE (policy job); closeout lanes → full-suite WAE → knowledge (test job).
+- Warning inventory and ratchet maintainer paths (`mix scoria.warning_inventory`, `mix scoria.warning_ratchet.*`) classify and clear debt by surface; baseline ledger empty (`"clusters": {}`).
+- Full-suite `mix test --warnings-as-errors` is green locally; `mix scoria.test.ci_trust` bundles Phase 69 contract verification.
+- Installer preview/check/apply truth from v2.5 remains SSOT; canonical lane order unchanged.
+- Milestone archives: `.planning/milestones/v2.6-ROADMAP.md`, `v2.6-REQUIREMENTS.md`, `v2.6-MILESTONE-AUDIT.md`.
 
 ## Next Milestone Goals
 
-- Prefer a narrow follow-up only if real adopter evidence says the shipped lane hierarchy is still confusing.
-- Keep adjacent capability expansion behind the now-shipped adoption baseline instead of reopening infra work by default.
-- Start the next milestone with `$gsd-new-milestone` so requirements and roadmap scope are defined from a clean post-ship state.
+**Active planning target (v2.7):** OSS Release + Docs Truth — Hex publish, README/shipped-state honesty, preserve lane and installer contracts.
+
+**Preserve:** v2.4 lane contracts, CI closeout order, v2.5 installer planner/check/apply truth, and v2.6 warning-ratchet CI gates.
 
 ## Requirements
 
@@ -59,38 +71,71 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ That same consumer proof path can start one durable run through `Scoria.start_run/2`, read it back through the public runtime facade, and inspect operator evidence without enabling optional knowledge or semantic lanes. — `v2.2 OSS adopter onramp`
 - ✓ README, operator verification, and installer output now describe the same lane ordering and prerequisite boundaries for default, bounded-handoff, semantic fast path, and optional knowledge surfaces. — `v2.2 OSS adopter onramp`
 - ✓ Scoria now names one canonical verification command per lane and documents denial or fallback behavior when optional prerequisites are missing. — `v2.2 OSS adopter onramp`
+- ✓ Phoenix developers can follow one example that starts with the default runtime lane and escalates into `Scoria.start_handoff_run/3` without new public API assumptions. — Phase 52 `runtime-to-handoff-example-contract`
+- ✓ The example makes bounded projected context, rejection behavior, and operator-visible delegated lineage understandable from adopter-facing docs or sample code. — Phase 52 `runtime-to-handoff-example-contract`
+- ✓ Operators can inspect default runs, delegated lineage, projected-context summaries, and delegated outcome through curated runtime and workflow evidence surfaces. — Phase 53 `operator-evidence-and-lane-guidance`
+- ✓ README and adopter/operator guides now state when to stay on the default runtime lane versus when to escalate into bounded handoff. — Phase 53 `operator-evidence-and-lane-guidance`
+- ✓ The runtime-to-handoff path is backed by an executable proof lane that remains independent of optional semantic or knowledge setup. — Phase 54 `executable-proof-and-closeout-truth`
+- ✓ Canonical lane contract source now defines release-preview, adoption, runtime-to-handoff, semantic fast-path, and optional knowledge lanes with one command/env/prerequisite/exclusion schema. — `v2.4 Adoption Reliability Contract`
+- ✓ Adoption/support drift tests now consume lane-contract command and boundary nouns, and unsupported alias regressions remain blocked. — `v2.4 Adoption Reliability Contract`
+- ✓ Release-preview/docs warning policy now runs warning-clean with remaining debt tracked in a scoped owner+expiry baseline ledger. — `v2.4 Adoption Reliability Contract`
+- ✓ CI now enforces warning gates and canonical lane ordering for release-preview, adoption, and runtime-to-handoff proofs. — `v2.4 Adoption Reliability Contract`
+- ✓ Installer contract remains idempotent while supporting root browser scopes that use list-form `pipe_through`. — `v2.4 Adoption Reliability Contract`
+- ✓ Installer `--dry-run` now uses a deterministic planner contract that reports per-surface classification and rationale without host writes. — Phase 59 `planner-contract-foundation`
+- ✓ Installer `--check` now uses deterministic tri-state semantics (`0/1/2`) and emits one stable machine trailer line for CI parsing. — Phase 59 `planner-contract-foundation`
+- ✓ Planner/check coverage now includes subprocess status/trailer assertions and no-write regression checks that keep v2.4 lane guardrails green. — Phase 59 `planner-contract-foundation`
+- ✓ Maintainer can run `mix scoria.install --dry-run` for a deterministic no-write mutation plan with per-surface classification. — `v2.5 Installer Safety & Upgrade Confidence`
+- ✓ Maintainer can run `mix scoria.install --check` with stable `0/1/2` exits and `SCORIA_CHECK_RESULT` trailer semantics. — `v2.5 Installer Safety & Upgrade Confidence`
+- ✓ Installer apply mode executes planner-led mutations with manifest-aware drift preflight and explicit manual-review blocking. — `v2.5 Installer Safety & Upgrade Confidence`
+- ✓ Installer output stays truthful and idempotent across preview/check/apply with operator-ordered summaries and contract SSOT. — `v2.5 Installer Safety & Upgrade Confidence`
+- ✓ CI fails when `.planning/WARNING-BASELINE.md` contains expired or invalid accepted debt rows. — Phase 66 `baseline-expiry-and-inventory`
+- ✓ Maintainer can reproduce a classified full-suite warning inventory by surface/area. — Phase 66 `baseline-expiry-and-inventory`
+- ✓ Canonical compile and lane-contract surfaces remain warning-clean under warnings-as-errors. — Phase 67 `high-signal-warning-ratchet`
+- ✓ High-signal test surfaces pass under warnings-as-errors without new accepted debt. — Phase 67 `high-signal-warning-ratchet` (WARN-06)
+- ✓ Full `mix test --warnings-as-errors` passes in CI with baseline ledger closed. — Phase 68 `full-suite-warning-closure` (WARN-07)
+- ✓ CI preserves canonical closeout order with Postgres-free policy job first and full-suite WAE after closeout lanes. — `v2.6` Phase 69 (CI-03)
+- ✓ README and support docs use capability-based shipped truth with upgrade-safe install guidance; `adoption_surface_test` guards via `AdopterDocContract`. — Phase 70 (DOCS-03)
+- ✓ Maintainer docs clarify semantic lane local-only (not PR CI) and planning-milestone vs Hex semver namespaces. — Phase 70 (DOCS-04)
+- ✓ `mix scoria.test.install_contract` runs deep installer contract proofs as maintainer-only task with adoption-lane boundary tests. — Phase 70 (INST-DX-01)
 
 ### Active
 
-- None. Start the next milestone with `$gsd-new-milestone`.
+- [ ] **HEX-01**: First Hex publish at `0.1.0` / `v0.1.0` with release-please and publish CI mirroring PR test topology (v2.7).
+- [ ] **HEX-02**: CHANGELOG, GitHub release, Hex badge, coordinated README + `package_surface_test` Hex-first flip (v2.7).
 
 ### Out of Scope
 
 - Full package-family decomposition into multiple Hex libraries — valuable later, but too wide for the first boring adopter closeout.
 - Hosted demo environments or managed onboarding services — would widen the product boundary before the embedded install story is fully proven.
-- Advanced bounded-handoff example expansion — defer unless real support evidence shows the shipped public lane is still confusing.
+- Broad bounded-handoff example expansion beyond one runtime-to-handoff path — too wide until one canonical example proves useful.
 - External semantic cache backends or ANN tuning controls — adjacent capability expansion, not the highest-leverage adoption closure.
 - Folding optional knowledge or semantic verification into the default adoption lane — would weaken the clear prerequisite boundary that this milestone is trying to strengthen.
+- Net-new runtime capability families until `WARN-03` and v2.7 OSS/docs closeout — feature-strong; remaining leverage is adoption and maintainer trust, not breadth.
+- A broad installer engine rewrite beyond plan/check + drift-safe apply — too wide for the next milestone's leverage target.
+- Connector adoption guides without explicit embedded-boundary framing — risks hosted-connector-platform drift; defer or keep narrow after v2.7.
+- Combining `WARN-03` with Hex publish, semantic CI gate, or connector docs in one milestone — dilutes focus; sequence v2.6 then v2.7.
+- SEM-CI-01 semantic lane in PR CI — deferred from v2.7; document maintainer command only (research 2026-05-28).
+- Knowledge WAE in default CI closeout — deferred (Phase 69 D-17); optional lane stays optional.
 
-## Latest Shipped Milestone: v2.2 OSS adopter onramp
+## Latest Shipped Milestone: v2.6 Warning Ratchet
 
-**Goal:** Turn Scoria's reconciled post-`v2.1` repo state into a release-grade OSS adoption path that a normal Phoenix team can install, verify, and trust without maintainer folklore.
+**Goal:** Close full-suite warning debt with staged warnings-as-errors ratchet and executable baseline-expiry policy.
 
 **Delivered:**
-- Publish-facing Hex metadata, docs build, package inventory, and a bounded `mix scoria.release_preview` lane are now executable truth.
-- The installer contract now reports installed/skipped/optional actions explicitly and protects default-lane hosts from optional migration drift.
-- A generated-host harness now proves dependency fetch, install, migrate, route visibility, one durable run, readback, and operator evidence on the default lane.
-- README, operator verification, and installer output now converge on one canonical support hierarchy and one canonical closeout chain.
+- Executable `mix scoria.warning_baseline.check` in CI policy job (WARN-03).
+- Classified warning inventory path and maintainer ratchet tasks (WARN-04, WARN-06).
+- Green compile, lane-contract, high-signal, and full-suite WAE (WARN-05, WARN-06, WARN-07).
+- CI gate map and contract-tested policy→test topology without reordering closeout lanes (CI-03).
 
-**Why it mattered:** Scoria is now much closer to a boring OSS adoption surface for a normal Phoenix team. Package, install, and verification seams are part of the product boundary, not maintainer folklore.
+**Why it mattered:** Maintainer trust now matches executable CI truth — warning debt cannot silently expire or regress past canonical lanes.
 
 ## Context
 
-- Scoria shipped `v2.2 OSS adopter onramp` on 2026-05-26.
-- The repo now has two named proof surfaces for adopters and maintainers: `mix scoria.release_preview` and `mix test.adoption`.
-- Optional semantic and knowledge lanes remain explicitly outside the default adoption path.
-- The repo already has durable workflow truth, approval lineage, telemetry, audit seams, bounded handoffs, and tenant-scoped semantic evidence.
-- The next milestone should be chosen from fresh adopter evidence rather than from unfinished `v2.2` cleanup assumptions.
+- Scoria shipped `v2.6 Warning Ratchet` on 2026-05-28 (~63k+ LOC Elixir across `lib/` and `test/`).
+- CI: policy job (baseline + compile WAE + lane-contract) → test job (closeout → full WAE → knowledge).
+- Baseline ledger empty; `mix scoria.test.ci_trust` verifies Phase 69 contracts locally.
+- Next milestone: v2.7 OSS publish + docs-truth (README shipped-state drift remains).
+- Archives: `.planning/milestones/v2.6-*`
 
 ## Constraints
 
@@ -116,6 +161,14 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | `v2.1` semantic caching stays Scoria-owned, tenant-partitioned, and evidence-first instead of relying on provider prompt caches or invisible global reuse | Latency wins are only acceptable if partitioning, invalidation, and operator truth remain inspectable | — Resolved |
 | Post-`v2.1` milestone selection should prioritize OSS adopter readiness over adjacent capability expansion | The repo is already feature-strong; the main remaining leverage is making package/install/proof surfaces boring for a serious Phoenix adopter | — Resolved |
 | `v2.2` should close the OSS adopter onramp before Scoria reopens broader capability expansion | Publishability, install truth, consumer proof, and support truth are now part of the product surface, not ancillary release chores | — Resolved |
+| `v2.3` should clarify the runtime-to-handoff adoption path before adding new capability families | The default onramp was executable in `v2.2`; the next likely support risk was lane escalation and bounded-handoff comprehension | — Resolved |
+| `v2.4` should prioritize adoption reliability contracts over net-new capability expansion | Existing lanes already deliver value; highest leverage is keeping docs, CI, warnings, and installer behavior in lock-step truth | — Resolved |
+| Next milestone should preserve v2.4 reliability contracts while selecting one focused expansion axis | Reliability contract closure is now shipped; follow-up scope should be narrow and requirement-led | ✓ Good — v2.6 WARN-03 selected |
+| Next milestone should prioritize installer safety + upgrade confidence (`INST-03`, `INST-04`) before warning ratchet work | Host-app mutation surprise remains the highest adopter-trust risk after v2.4, and installer contracts are the narrowest high-leverage wedge | ✓ Good — shipped v2.5 |
+| `WARN-03` should execute immediately after installer safety milestone closeout | Warning debt remains important, but installer plan/apply + drift contracts are a bigger first-order adoption risk reducer | ✓ Good — shipped v2.6 |
+| No new runtime families until `WARN-03` and v2.7 OSS/docs closeout | Repo is ~84% done for embedded scope; highest leverage is warning trust + Hex/docs truth, not capability expansion | — Active (v2.7 next) |
+| Milestone sequencing: v2.6 WARN-03 → v2.7 Hex/docs-truth → optional semantic CI / connector guide | Confirmed by milestone next-step assessment 2026-05-27 | ✓ Good — v2.6 shipped |
+| Check-time manifest fingerprints are live-host-only; apply-time freshness gate uses stored manifest | Honest operator contract avoids misleading stored-fingerprint merge at check | ✓ Good — shipped Phase 63 |
 
 ## Milestone History
 
@@ -132,8 +185,26 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v2.0 Relay`: Explicit bounded handoff contract truth, delegated evidence visibility, canonical adoption proof, and clean closeout verification.
 - `v2.1 Tenant-scoped semantic fast path`: Tenant-partitioned semantic reuse, compatibility-aware invalidation, operator-visible semantic evidence, and a named semantic proof lane.
 - `v2.2 OSS adopter onramp`: Publish-facing package truth, generated-host adoption proof, and canonical lane-based support closure.
+- `v2.3 Runtime-to-handoff adoption example`: Default-to-handoff adopter example, operator evidence alignment, canonical runtime-to-handoff proof lane, and closeout ledger.
+- `v2.4 Adoption Reliability Contract`: Canonical lane contract source, drift-proof docs checks, warning-policy enforcement, CI lane-order trust, and installer list-form hardening.
+- `v2.5 Installer Safety & Upgrade Confidence`: Planner/check no-write contracts, manifest-aware drift-safe apply, installer contract SSOT, Nyquist closeout, and adoption discoverability parity.
+- `v2.6 Warning Ratchet`: Executable baseline expiry, classified inventory, staged high-signal ratchet, full-suite WAE in CI, CI-03 gate map and contract tests.
 
 ## Archived Planning Notes
+
+<details>
+<summary>Pre-ship v2.6 framing</summary>
+
+`v2.6` closed warning debt with policy→test CI topology, inventory/ratchet maintainer paths, and full-suite WAE without changing closeout lane order. Archived in `.planning/milestones/v2.6-ROADMAP.md`, `.planning/milestones/v2.6-REQUIREMENTS.md`, and `.planning/milestones/v2.6-MILESTONE-AUDIT.md`.
+
+</details>
+
+<details>
+<summary>Pre-ship v2.5 framing</summary>
+
+`v2.5` focused on installer mutation confidence: no-write planner/check, manifest-aware drift classification, truthful idempotent apply, and audit gap closure (Nyquist, manifest fingerprint, adoption discoverability). Archived in `.planning/milestones/v2.5-ROADMAP.md`, `.planning/milestones/v2.5-REQUIREMENTS.md`, and `.planning/milestones/v2.5-MILESTONE-AUDIT.md`.
+
+</details>
 
 <details>
 <summary>Pre-ship v2.2 framing</summary>
@@ -160,4 +231,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 after shipping v2.2 OSS adopter onramp*
+*Last updated: 2026-05-28 — Phase 70 complete*

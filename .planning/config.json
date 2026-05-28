@@ -1,5 +1,23 @@
 {
+  "model_profile": "inherit",
+  "model_overrides": {
+    "gsd-planner": "composer-2.5-fast",
+    "gsd-executor": "composer-2.5-fast",
+    "gsd-verifier": "composer-2.5-fast",
+    "gsd-phase-researcher": "composer-2.5-fast",
+    "gsd-plan-checker": "composer-2.5-fast",
+    "gsd-debugger": "composer-2.5-fast",
+    "gsd-codebase-mapper": "composer-2.5-fast"
+  },
   "workflow": {
-    "_auto_chain_active": false
+    "_auto_chain_active": false,
+    "text_mode": true,
+    "research_before_questions": true,
+    "milestone_next_step": {
+      "adopter_lens": true,
+      "parallel_repo_research": true,
+      "retain_threads_and_retrospective": true,
+      "prompts_dir": "prompts/"
+    }
   }
 }

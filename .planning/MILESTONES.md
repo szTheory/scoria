@@ -1,5 +1,89 @@
 # Milestones
 
+## v2.6 Warning Ratchet (Shipped: 2026-05-28)
+
+**Phases completed:** 4 phases, 15 plans, 35 tasks
+
+**Key accomplishments:**
+
+- Executable WARN-03 baseline expiry enforcement via Scoria.WarningBaseline and mix scoria.warning_baseline.check.
+- WARN-03 wired into GitHub Actions via policy/test job split with contract-tested ordering.
+- WARN-04 maintainer inventory path with hybrid cluster classification and write artifacts for Phase 67.
+- WARN-06 infrastructure: WarningRatchet path SSOT, scoped ratchet Mix tasks, and committed inventory with Phase 67 fix/defer queue
+- WARN-05 compile and lane-contract WAE verified green; operator docs and CI policy contract guard WarningRatchet SSOT without expanding policy job scope
+- Knowledge redefine cluster cleared via migrate-once migrator; host-proof overlay guarded under priv/; adoption-lane compile warnings fixed with inventory refresh
+- Removed dead default args from review queue unit test; test/scoria non-live p3 inventory clusters at zero with ratchet check green
+- LiveView p3 inventory clusters at zero; WARN-06 ratchet.test green with final inventory and Phase 67 verification evidence
+- Shared test/tmp preflight and post-capture cleanup for ratchet.check, unified JSON inventory encoding for tuple dedupe_key rows, and cwd-memoized high-signal path membership.
+- Staged high-signal WAE gate in CI test job after runtime_to_handoff, with gate-order contracts and operator docs mapping ratchet to adoption paths — without full-suite WAE until plan 68-03.
+- p2 host-proof warning clusters verified at zero via full inventory and adoption/ratchet WAE closeout — no support or overlay code changes required before 68-03 full-suite attempt.
+- WARN-07 closed: CI runs `mix test --warnings-as-errors` after closeout lanes; baseline ledger empty; LiveView render_async sweep and installer build isolation made full suite green.
+- CI-03 documentation bundle ships maintainer CI gate map, commented ci.yml topology, README link, contract-test doc anchor, and planning prose aligned to Phase 68 executable CI — with zero step reorder.
+- Symmetric `test/tmp` lifecycle in `warning_ratchet.test` and subprocess ratchet-check integration test restore maintainer ratchet→inventory trust from 68-REVIEW WR-01/WR-02.
+- CI-03 verification ledger and v2.6 milestone audit; `mix scoria.test.ci_trust` local parity attestation at closeout.
+
+**Known deferred items at close:** 0 (open-artifact audit clear at closeout)
+
+---
+
+## v2.5 Installer Safety & Upgrade Confidence (Shipped: 2026-05-27)
+
+**Phases completed:** 7 phases, 16 plans, 17 tasks
+
+**Key accomplishments:**
+
+- `mix scoria.install --dry-run` now uses a deterministic pure planner contract that classifies router, tailwind, migrations, and runtime config without mutating host files.
+- `mix scoria.install --check` now emits deterministic compatibility status with stable trailer output and enforced `0/1/2` exits while remaining no-write.
+- Phases 59 and 61 VALIDATION ledgers now match passed VERIFICATION evidence with nyquist_compliant: true and all per-task rows green.
+- Phase 60–61 SUMMARY files now carry `requirements-completed` frontmatter aligned to VERIFICATION evidence, matching the phase 59 traceability pattern.
+- v2.5 traceability tech debt closed: REQUIREMENTS gap row Complete, audit Nyquist compliant, and Phase 62 VERIFICATION records artifact-only closeout evidence.
+- Removed misleading manifest fingerprint merge and exposed honest manifest metadata on the planner artifact.
+- Exposed manifest check vs apply roles in human, JSON, and mix help without changing tri-state semantics.
+- Documented check vs apply fingerprint semantics for operators and locked them with integration tests.
+- Adoption lane discoverability `expected_files` now mirrors `adoption_test_files/0`, closing v2.5 audit gap `adoption-lane-discoverability-drift`.
+- Phase 63 Nyquist validation ledger reconciled — 10 green task rows, wave_0_complete, audit trail from 63-VERIFICATION.md
+- Milestone Nyquist ledger 5/5 — REQUIREMENTS gap Complete, audit compliant, 65-VERIFICATION passed
+
+---
+
+## v2.4 Adoption Reliability Contract (Shipped: 2026-05-27)
+
+**Phases completed:** 4 phases, 6 plans, 10 requirements
+
+**Key accomplishments:**
+
+- Added one canonical lane contract source (`Scoria.VerificationLanes`) for command, env, prerequisite, and exclusion truth across all verification lanes.
+- Bound docs drift guards and lane task tests to canonical lane-contract nouns and boundary wording.
+- Cleared release-preview warning debt while enforcing warnings-as-errors and introducing an owner+expiry warning baseline ledger.
+- Enforced canonical closeout ordering and warning gates in CI (`release_preview -> adoption -> runtime_to_handoff`).
+- Hardened installer browser-scope support for list-form `pipe_through` while preserving idempotent, truthful install behavior.
+
+**Known deferred items at close:** 0 (open-artifact audit clear at closeout)
+
+---
+
+## v2.3 Runtime-to-handoff adoption example
+
+**Shipped:** 2026-05-27
+
+**Phases completed:** 3 phases, 9 plans, 20 tasks
+
+**Key accomplishments:**
+
+- Runtime-to-handoff example contract using the existing Scoria public facade, with projected-context safety boundaries and a passing docs/source baseline.
+- Phoenix runtime guide and DB-backed tests now prove the public-facade path from a default Scoria run into a bounded handoff with curated delegated readback.
+- Bounded handoff docs now pin host-owned projected-context selection, Scoria-owned validation/readback, and unsafe context rejection before durable delegated run creation.
+- Delegated evidence now presents the approved default-lane empty-state contract while retaining curated pending-state and populated delegated lineage behavior.
+- Adopter-facing docs now consistently describe default runtime as first adoption and bounded handoff as explicit same-run escalation, with unchanged public API boundaries.
+- Phase 53 now has executable drift guards that fail when docs regress default-first lane wording, expose internals, or drop key public facade/readback fragments.
+- Added an executable runtime-to-handoff verification lane with enforceable bounded-file and no-optional-prereq contracts.
+- Aligned README, support guides, and drift tests on one canonical runtime-to-handoff command contract with explicit lane-boundary truth.
+- Finalized closeout truth by aligning CI and operator command order, then capturing executed evidence for all Phase 54 requirements.
+
+**Known deferred items at close:** 3 (Nyquist validation ledgers remain partial; see `.planning/milestones/v2.3-MILESTONE-AUDIT.md`)
+
+---
+
 ## v2.1 Tenant-scoped semantic fast path
 
 **Shipped:** 2026-05-25
@@ -7,9 +91,11 @@
 **Theme:** Inspectable semantic caching for safe read-only lanes
 
 ### Delivered
+
 Scoria now ships a tenant-scoped semantic fast path as durable, operator-visible truth: explicitly safe read-only lanes can reuse answers only when prompt, policy, source, freshness, and scope compatibility all pass, while misses, rejects, stale entries, and invalidations remain visible and fall back through the normal workflow path.
 
 ### Key Accomplishments
+
 - Added durable semantic cache entry and event truth with explicit hit, miss, bypass, and writeback rejection outcomes.
 - Established an explicit semantic-lane contract and conservative eligibility engine for safe read-only runtime work.
 - Implemented exact-first plus compatibility-filtered semantic lookup with durable `active`, `stale`, `invalidated`, and `writeback_rejected` lifecycle states.
@@ -27,9 +113,11 @@ Scoria now ships a tenant-scoped semantic fast path as durable, operator-visible
 **Theme:** Bounded public handoff proof and clean closeout
 
 ### Delivered
+
 Scoria now ships the bounded public handoff lane as explicit, milestone-quality truth: `Scoria.start_handoff_run/3` stays same-run rooted, projected context is narrow and reject-by-default for unsafe state, delegated lineage is inspectable in runtime and workflow surfaces, and the adoption lane plus full suite close on a green verification baseline.
 
 ### Key Accomplishments
+
 - Locked the explicit bounded handoff contract with durable delegated kind, handoff input truth, and same-run lineage.
 - Hardened recursive projected-context rejection so unsafe nested runtime/session state fails explicitly instead of slipping through.
 - Added curated delegated evidence projection and workflow UI surfaces for inspectable lineage, status, and projected context.
@@ -48,9 +136,11 @@ Scoria now ships the bounded public handoff lane as explicit, milestone-quality 
 **Theme:** Replayable debugging and online quality feedback
 
 ### Delivered
+
 Scoria now ships a closed operator remediation loop: durable replay branches, replay-safe execution, replay comparison and dataset promotion from workflow evidence, plus asynchronous online scoring that routes reviewable candidates into an embedded operator queue.
 
 ### Key Accomplishments
+
 - Added durable replay-branch lineage rooted in checkpoint truth without mutating source run history.
 - Enforced replay-safe seam behavior with explicit blocked, historical-stub, and replay-live provenance across workflow, connector, and MCP boundaries.
 - Shipped replay comparison UX and frozen workflow-source draft promotion through the existing LiveView operator surface.
@@ -69,9 +159,11 @@ Scoria now ships a closed operator remediation loop: durable replay branches, re
 **Theme:** Multi-model orchestration and distributed evaluations
 
 ### Delivered
+
 Scoria now ships resilient multi-model routing with ETS-backed breaker truth, distributed evaluation campaign fan-out through Oban, and a real-time operator dashboard that makes fallback and campaign progress visible without leaving Phoenix.
 
 ### Key Accomplishments
+
 - Established isolated `system`, `inference`, and `evals` queues plus batch enqueue primitives for high-volume background work.
 - Added circuit breakers, bounded retries, and fallback-chain orchestration across summarization and judge flows.
 - Built durable eval campaign, target, and run lineage with coordinator fan-out and worker rollups.
@@ -90,9 +182,11 @@ Scoria now ships resilient multi-model routing with ETS-backed breaker truth, di
 **Theme:** Advanced ecosystem integrations and future-bet runtime surfaces
 
 ### Delivered
+
 Scoria now supports out-of-process multi-runtime integration capabilities (using MCP over HTTP/SSE) and an asynchronous memory compaction engine via Oban. This allows Scoria to orchestrate external runtimes, efficiently manage long-running session history without context bloat, and track agent presence visually via Phoenix LiveView.
 
 ### Key Accomplishments
+
 - Established an HTTP/SSE boundary implementing the MCP Server specification.
 - Built an asynchronous Oban-backed memory compaction worker tracking `compacted_memories`.
 - Wired external agent health liveliness natively via Phoenix Presence.
@@ -109,9 +203,11 @@ Scoria now supports out-of-process multi-runtime integration capabilities (using
 **Theme:** Release gates, prompt lifecycle, and evaluation operations
 
 ### Objectives
+
 Provide a unified prompt lifecycle and evaluation operations suite. Operators should be able to turn traces into datasets, developers should be able to run offline VCR-backed ExUnit evals, and organizations should be able to enforce release gates before a prompt goes live.
 
 ### Scope
+
 - **Ecto-backed Prompt Registry:** Immutable versioning and lifecycle for prompts.
 - **Trace-to-Dataset Curation:** Elevate real traces into baseline datasets via the dashboard.
 - **CI/CD Regression & Evals:** Integration with `mix test`, ExUnit, and VCR cassettes.
@@ -126,9 +222,11 @@ Provide a unified prompt lifecycle and evaluation operations suite. Operators sh
 **Theme:** Tool and MCP connector productization
 
 ### Delivered
+
 Scoria now productizes remote MCP connector adoption as an embedded Phoenix capability with stateless-first defaults, policy-backed tool scopes, workflow-owned approvals, and operator-grade audit visibility.
 
 ### Key Accomplishments
+
 - Established the Scoria-owned remote connector boundary with durable connector records, boring discovery defaults, and auth/grant storage.
 - Enforced dual-plane policy, stable local tool identity, and stateless-first invocation defaults.
 - Extended Scoria's workflow-owned approval and evidence model into remote connector scenarios with operator-grade visibility.
@@ -145,9 +243,11 @@ Scoria now productizes remote MCP connector adoption as an embedded Phoenix capa
 **Theme:** Embedded app defaults, identity, and public runtime surface
 
 ### Delivered
+
 Scoria now ships a Phoenix-facing runtime surface with canonical actor, tenant, and session identity, a public `Scoria` lifecycle API, predictable defaults and install ergonomics, adoption docs aligned to real runtime behavior, and executable guardrails that keep the public integration story from drifting.
 
 ### Key Accomplishments
+
 - Added one canonical runtime identity contract and propagated it across workflows, approvals, telemetry, and audit evidence.
 - Promoted `Scoria` into the public runtime facade for start, resume, inspect, and session-aware run access.
 - Added documented provider/model/prompt-policy defaults with identity-aware composition and boring install defaults.
@@ -163,9 +263,11 @@ Scoria now ships a Phoenix-facing runtime surface with canonical actor, tenant, 
 **Phases:** 4 | **Plans:** 13
 
 ### Delivered
+
 A Phoenix-native "AI Application Quality Layer" providing deep observability, continuous evaluation, and secure governance tailored for Elixir and Phoenix applications.
 
 ### Key Accomplishments
+
 - Implemented Core Observability using Ecto and Telemetry
 - Built MCP Gateway & Tool Governance with isolated OTP execution
 - Created LiveView Operator UX with token coalescing and HITL approval modals
@@ -180,18 +282,22 @@ A Phoenix-native "AI Application Quality Layer" providing deep observability, co
 **Theme:** Durable Agent Workflows & Handoffs
 
 ### Objectives
+
 Build a lightweight, OTP-native agent loop capable of managing complex state machines, subagent handoffs, and durable pauses for long-running workflows or operator approval.
 
 ### Delivered
+
 Scoria now ships a durable workflow layer with Ecto-backed checkpointing, root-owned delegated handoffs, supervised recovery semantics, and a trace-first workflow visualizer inside the dashboard surface.
 
 ### Scope
+
 - **Durable Checkpoints:** Persist the `RunState` into Ecto natively so workflows can survive BEAM restarts, timeout limits, and operator approval delays.
 - **Handoffs & Subagents:** First-class support for an agent to cleanly delegate to another `MyAI.Agent` with specialized tools.
 - **Jido Integration (Optional):** Provide an adapter to map `Jido` v2 pure-functional decisions/directives into Scoria's observable trace and checkpoint engine.
 - **LiveView Workflow Visualizer:** A visual representation of the agent graph/state machine in the admin dashboard.
 
 ### Key Accomplishments
+
 - Added durable workflow tables and transactional lifecycle APIs.
 - Added supervised runtime execution, exact resume, and retry-failed-step support.
 - Added a workflow LiveView under the existing dashboard router surface.
@@ -206,12 +312,15 @@ Scoria now ships a durable workflow layer with Ecto-backed checkpointing, root-o
 **Theme:** Advanced RAG, Citations & Knowledge Grounding
 
 ### Objectives
+
 Provide batteries-included RAG primitives that natively integrate with the Scoria trace tree and Eval Workbench.
 
 ### Delivered
+
 Scoria now ships a durable knowledge layer with pgvector-backed retrieval, provenance-preserving citations, deterministic grounding checks, and trace-first evidence projection inside the dashboard surface.
 
 ### Scope
+
 - **Vector Index & Chunking Abstractions:** Clean behaviors for embedding models and chunking strategies.
 - **pgvector Integration:** An out-of-the-box Ecto/pgvector adapter to store and query embeddings natively.
 - **First-Class Citations:** Ensure the trace explicitly captures "Retrieval" spans, linking the model's generated output back to specific `Chunks` via `Citation` metadata.
@@ -219,6 +328,7 @@ Scoria now ships a durable knowledge layer with pgvector-backed retrieval, prove
 - **Scrypath Synergy (Optional):** First-class integration with `Scrypath` as a native retrieval engine. Scoria wraps Scrypath queries in `RETRIEVER` spans so they remain observable and evaluable without forcing external vector databases.
 
 ### Key Accomplishments
+
 - Added explicit pgvector bootstrap and a shared knowledge test scaffold.
 - Built durable corpus, retrieval, citation, and grounding schemas behind `Scoria.Knowledge`.
 - Kept Scrypath optional behind a retrieval normalization boundary.
@@ -236,18 +346,22 @@ Scoria now ships a durable knowledge layer with pgvector-backed retrieval, prove
 **Theme:** SRE, Circuit Breakers & Ecosystem Synergy
 
 ### Objectives
+
 Harden Scoria into a production-grade control plane with proactive governance, circuit breakers, and deep `szTheory` ecosystem integration.
 
 ### Scope
+
 - **Circuit Breakers & Budgets:** Introduce configurable token and cost budgets per tenant/user that trip guardrails when exceeded.
 - **Parapet SLO Integration:** Define SLOs for latency, cost, and eval pass rates for the upcoming `Parapet` SRE layer.
 - **Threadline Audit Export:** Clean integration to export sensitive `ToolApproval` and MCP access events into immutable audit logs.
 - **Automated Regression Alerts:** Automatically trigger incident workflows via `Chimeway`/`Mailglass` when a CI gate dips below the baseline.
 
 ### Delivered
+
 Scoria now ships a durable SRE layer with explicit budget reservations and reconciliation, external-effect circuit breakers, runtime and incident telemetry, workflow-owned audit lineage, durable incident and delivery routing, and trace-first operator evidence inside the existing dashboard surface.
 
 ### Key Accomplishments
+
 - Closed the breaker-open reservation gap at both workflow and MCP execution seams.
 - Restored audited approval handling and durable delivery production on the real incident path.
 - Wired live execution and incident lifecycle telemetry while keeping the knowledge lane explicit behind `mix test.knowledge`.

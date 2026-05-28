@@ -36,6 +36,7 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
     patch_mix_exs!(host_root, repo_root)
     patch_test_config!(host_root, app_name)
     copy_overlay!(host_root)
+    patch_host_install_surfaces!(host_root)
 
     %{
       app_name: app_name,
@@ -48,7 +49,7 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
   end
 
   def copy_overlay!(host_root) do
-    source_root = Path.join([repo_root(), "test", "support", "scoria", "host_app_proof", "overlay", "test"])
+    source_root = Path.join([repo_root(), "priv", "host_app_proof", "overlay", "test"])
     destination_root = Path.join(host_root, "test")
     File.mkdir_p!(destination_root)
 
@@ -65,6 +66,62 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
       Regex.replace(~r/(defp deps do\s*\n\s*\[)/, content, "\\1\n      {:scoria, path: #{inspect(repo_root)}},")
 
     File.write!(mix_exs, patched)
+  end
+
+  defp patch_host_install_surfaces!(host_root) do
+    host_root
+    |> Path.join("lib/*_web/router.ex")
+    |> Path.wildcard()
+    |> List.first()
+    |> case do
+      nil -> :ok
+      router_path -> patch_router_markers!(router_path)
+    end
+
+    runtime_path = Path.join(host_root, "config/runtime.exs")
+
+    if File.exists?(runtime_path) do
+      patch_runtime_markers!(runtime_path)
+    end
+  end
+
+  defp patch_router_markers!(router_path) do
+    content = File.read!(router_path)
+
+    if String.contains?(content, "# scoria:router:start") do
+      :ok
+    else
+      patched =
+        Regex.replace(
+          ~r/(use \w+Web, :router\n)/,
+          content,
+          "\\1\n  # scoria:router:start\n  # scoria:router:end\n"
+        )
+
+      if patched == content do
+        raise "Could not seed router ownership markers in #{router_path}"
+      end
+
+      File.write!(router_path, patched)
+    end
+  end
+
+  defp patch_runtime_markers!(runtime_path) do
+    content = File.read!(runtime_path)
+
+    if String.contains?(content, "# scoria:runtime:start") do
+      :ok
+    else
+      File.write!(
+        runtime_path,
+        content <>
+          """
+
+          # scoria:runtime:start
+          # scoria:runtime:end
+          """
+      )
+    end
   end
 
   defp patch_test_config!(host_root, app_name) do

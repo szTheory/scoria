@@ -4,75 +4,21 @@ on:
   push:
     branches:
       - main
+      - 'release-please--**'
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# PR and release-please branch CI entrypoint — executable jobs live in ci-verify.yml.
+# Two-job topology: policy (fail cheap, no Postgres) → test (canonical closeout + full WAE).
+# Maintainer narrative: docs/operator_verification.md — CI gate map (maintainers).
+# Release-please branches and workflow_dispatch reuse the same verify bar as main.
+# Lane order SSOT: Scoria.VerificationLanes + test/scoria/ci_policy_contract_test.exs.
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: scoria_test
-        ports:
-          - 55432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d scoria_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
-    env:
-      MIX_ENV: test
-      SCORIA_DB_HOST: localhost
-      SCORIA_DB_PORT: 55432
-      SCORIA_DB_USERNAME: postgres
-      SCORIA_DB_PASSWORD: postgres
-      SCORIA_DB_NAME: scoria_test
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Erlang and Elixir
-        uses: erlef/setup-beam@v1
-        with:
-          otp-version: "27"
-          elixir-version: "1.19"
-
-      - name: Restore deps cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-
-
-      - name: Install dependencies
-        run: mix deps.get
-
-      - name: Run release preview lane
-        run: MIX_ENV=dev mix scoria.release_preview
-
-      - name: Prepare database
-        run: |
-          mix ecto.create
-          mix ecto.migrate
-
-      - name: Run adoption closure lane
-        run: mix test.adoption
-
-      - name: Run tests
-        run: mix test
-
-      - name: Run knowledge lane
-        run: mix test.knowledge
+  verify:
+    uses: ./.github/workflows/ci-verify.yml

@@ -120,6 +120,8 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
       # Test 3
       assert render(view) =~ "Draft blocked"
+
+      render_async(view)
     end
   end
 
@@ -127,9 +129,11 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
     test "Approval CTA is disabled if prerequisites are missing", %{conn: conn, draft: draft} do
       {:ok, view, _html} = live(conn, "/scoria/prompts/#{draft.id}/release")
       assert has_element?(view, "button[disabled]", "Request Release")
+
+      render_async(view)
     end
 
-    test "Clicking Approve Prompt Release triggers approval and updates UI", %{conn: conn, draft: draft, active: active, dataset: dataset, spec: spec} do
+    test "Clicking Approve Prompt Release triggers approval and updates UI", %{conn: conn, draft: draft, active: active, spec: spec} do
       # Create complete aligned EvalRuns
       {:ok, active_run} = Eval.create_eval_run(%{
         eval_spec_id: spec.id,
@@ -170,16 +174,11 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
       view |> element("button", "Confirm Approval") |> render_click()
       assert render(view) =~ "Prompt Release Approved."
-      end
 
-      test "Reject CTA records a rejection and remains on the page", %{conn: conn, draft: draft} do
-      {:ok, view, _html} = live(conn, "/scoria/prompts/#{draft.id}/release")
+      render_async(view)
+    end
 
-      # We need an eval run for request release to be enabled in the view
-      # Actually, wait, the test doesn't create eval runs for the Reject CTA test?
-      # If it's disabled, request_release is disabled.
-      # But wait, rejection is enabled even if runs are missing? Yes, in the view.
-      # Let's just create an approval directly for the reject test so we don't have to setup runs.
+    test "Reject CTA records a rejection and remains on the page", %{conn: conn, draft: draft} do
       alias Scoria.Workflows.PromptRelease
       {:ok, _} = PromptRelease.start_release_workflow(draft.id, "admin-1")
 
@@ -190,5 +189,8 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
       view |> element("button", "Confirm Rejection") |> render_click()
       assert render(view) =~ "Prompt Release Rejected."
-      end  end
+
+      render_async(view)
+    end
+  end
 end

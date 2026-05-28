@@ -1,7 +1,7 @@
 # Milestone Arc: Scoria
 
 **Created:** 2026-05-12
-**Last updated:** 2026-05-26
+**Last updated:** 2026-05-27
 **Status:** maintained planning artifact
 
 ## Purpose
@@ -23,7 +23,7 @@ The product should stay:
 
 ## Current Baseline
 
-Shipped through `v2.2 OSS adopter onramp` on 2026-05-26:
+Shipped through **`v2.5 Installer Safety & Upgrade Confidence`** on **2026-05-27**:
 
 - observability and trace storage
 - MCP gateway and governance seams
@@ -38,9 +38,12 @@ Shipped through `v2.2 OSS adopter onramp` on 2026-05-26:
 - replay branching from durable checkpoint truth with replay-safe execution defaults
 - replay comparison, workflow-source dataset promotion, and asynchronous online scoring review queues
 - public `Scoria.start_handoff_run/3` bounded handoff API with explicit same-run lineage and projected-context safety
-- delegated evidence surfaces, runtime-first adoption proof, and a clean full-suite closeout baseline
+- delegated evidence surfaces, runtime-first adoption proof, and canonical runtime-to-handoff proof lane
 - tenant-scoped semantic fast-path lookup, compatibility-aware invalidation, operator-visible semantic evidence, and a named semantic proof lane
-- publish-facing package/docs truth, generated-host adoption proof, and a canonical lane-based maintainer/adopter closeout chain
+- publish-facing package/docs truth, generated-host adoption proof, and canonical lane-based maintainer/adopter closeout chain
+- planner-driven installer `--dry-run` / `--check`, manifest-aware drift-safe apply, and `Scoria.Install.Contract` SSOT
+
+**Done estimate (2026-05-27 assessment):** ~84% for embedded Phoenix AI-ops scope — feature-strong; remaining leverage is maintainer/adopter trust (warnings, Hex, docs-truth), not net-new runtime families.
 
 ## Sequencing Principles
 
@@ -48,7 +51,7 @@ Shipped through `v2.2 OSS adopter onramp` on 2026-05-26:
 2. Prefer milestones that make existing power easier to use in Phoenix apps over milestones that only add more raw surface area.
 3. Keep Scoria embedded and boundary-driven; do not drift into a hosted runtime product.
 4. Promote milestones that improve installability, public API clarity, and operator trust.
-5. Close the trace -> replay -> score -> promote loop before moving on to broader future-bet capability families.
+5. Close warning and release-truth gaps before reopening capability expansion.
 
 ## Milestone Ledger
 
@@ -67,75 +70,80 @@ Shipped through `v2.2 OSS adopter onramp` on 2026-05-26:
 | v2.0 | Relay | shipped | Formalized the bounded public handoff wedge, delegated evidence story, and canonical adoption proof |
 | v2.1 | Tenant-scoped semantic fast path | shipped | Durable semantic reuse, invalidation truth, operator evidence, and a bounded semantic proof lane |
 | v2.2 | OSS adopter onramp | shipped | Release-grade package truth, host-app install proof, and lane-based support closure |
+| v2.3 | Runtime-to-handoff adoption example | shipped | Default-to-handoff example, operator evidence, runtime-to-handoff proof lane |
+| v2.4 | Adoption Reliability Contract | shipped | Canonical lane contracts, warning baseline, CI lane-order enforcement |
+| v2.5 | Installer Safety & Upgrade Confidence | shipped | Planner/check no-write, drift-safe apply, installer contract SSOT |
+| v2.6 | Warning Ratchet | **active** | `WARN-03`–`WARN-07` staged WAE ratchet + executable baseline expiry |
+| v2.7 | OSS Release + Docs Truth | queued | Hex publish, README shipped-state, drift-test alignment |
 
 ## Latest Shipped Milestone
 
-### v2.2 OSS adopter onramp
+### v2.5 Installer Safety & Upgrade Confidence
 
-**Status:** shipped
-**Priority at close:** highest
-**Theme:** Make the default Phoenix adoption path publishable, consumer-proven, and support-truthful
+**Status:** shipped (2026-05-27)
+**Theme:** Make host-app installer mutations predictable, inspectable, and drift-safe before applying writes
 
 **What shipped**
 
-- a real local docs-build lane plus a bounded `mix scoria.release_preview` package/docs proof
-- a default-lane installer contract that is truthful about copied migrations, runtime defaults, unsupported routers, and optional Tailwind behavior
-- a generated-host Phoenix proof path for dependency -> install -> migrate -> runtime -> operator inspection
-- one lane-based support story that clearly separates default runtime, bounded handoff, semantic fast path, and optional knowledge adoption
+- planner-driven `--dry-run` and `--check` with deterministic no-write surfaces and stable tri-state exits
+- manifest-aware drift detection and planner-led apply preflight
+- `Scoria.Install.Contract` SSOT, mode equivalence proofs, Nyquist closeout (phases 59–65)
 
 **User-facing outcome**
 
-Teams can now adopt Scoria through a boring, executable Phoenix-first path instead of relying on maintainer lore around package surface, install steps, or verification order.
+Adopters can inspect and trust installer mutations before apply, closing the highest remaining host-app surprise risk after v2.4 reliability contracts.
 
 ## Active Milestone
 
-No active milestone. Start the next one through `$gsd-new-milestone`.
+### v2.6 Warning Ratchet (`WARN-03`)
 
-## Recommended Candidates
-
-### 1. Advanced adoption examples only if handoff confusion remains
-
-**Status:** pending
-**Priority:** medium
-**Theme:** Clarify capability tiering without widening the product boundary
+**Status:** active (initialized 2026-05-27; phases 66–69)
+**Theme:** Staged full-suite warning governance with executable baseline policy
 
 **What this step should deliver**
 
-- one stronger runtime -> handoff -> review or replay guide or example if support burden remains high
-- clearer lane-by-lane explanation of what typical Phoenix teams adopt first vs later once the default onramp is boring
+- inventory and staged ratchet of full-suite warnings (high-signal areas first)
+- executable CI check that fails on expired rows in `.planning/WARNING-BASELINE.md`
+- unchanged canonical closeout order: `release_preview` → `adoption` → `runtime_to_handoff`
 
 **Why it is next**
 
-This remains contingent on real support evidence. It is the highest-leverage next candidate only if the shipped OSS onramp still leaves Phoenix teams confused about when to adopt bounded handoffs or adjacent lanes.
+v2.5 closed installer trust. Canonical lanes are warning-clean; full-suite debt expires 2026-06-07. Maintainer trust requires WAE honesty before declaring OSS "done."
 
-### 2. External semantic cache backends and advanced tuning
+## Queued Milestones
 
-**Status:** pending
-**Priority:** low
-**Theme:** Expand semantic-cache infrastructure only after the default embedded path is boring
+### v2.7 OSS Release + Docs Truth
+
+**Status:** queued after v2.6
+**Theme:** Remove the largest remaining adopter friction — Hex install path and shipped-state honesty
 
 **What this step should deliver**
 
-- optional external cache backends beyond the default Ecto-native truth store
-- advanced ANN tuning and analytics controls only if operator trust remains intact
+- first Hex publish (or documented release process with aligned version tags)
+- README and support docs reflecting v2.5+ shipped capability
+- coordinated update of `adoption_surface_test` shipped-state assertions (currently require v2.1 wording)
 
-**Why it follows later**
+### Optional follow-ups (not sequenced as milestones yet)
 
-These are natural extensions of `v2.1`, but they widen scope and should wait until the embedded default path and the fresh-adopter story both prove boring in practice.
+- semantic lane in CI (without widening closeout order unless deliberate)
+- narrow `docs/remote_connectors.md` with embedded-boundary framing
+- LiveView async teardown hygiene (WARNING-BASELINE expiry 2026-06-30)
+
+## Deferred / Out of Arc
+
+- new runtime capability families until v2.6 + v2.7 close
+- package-family Hex split, hosted onboarding, broad handoff example catalogs
+- external semantic cache backends and advanced tuning
 
 ## Recommendation
 
-Do not auto-open a new milestone from leftover `v2.2` momentum. Start the next milestone only after choosing between a support-evidence-driven adoption-example follow-up and later semantic infrastructure expansion; the current recommendation is the adoption-example path if real user confusion appears.
+Run `/gsd-new-milestone` for **v2.6 Warning Ratchet only**. Do not combine with Hex publish, semantic CI, or connector docs. After v2.6 ships, open v2.7 for OSS/docs-truth. Then mostly stop on feature milestones unless support burden proves otherwise.
 
 ## Source Notes
 
 These priorities were informed by:
 
-- current repo state as of 2026-05-26
-- `.planning/PROJECT.md`
-- `.planning/STATE.md`
-- `.planning/research/SUMMARY.md`
-- archived seed references in `.planning/seeds/`
-- official Hex publishing guidance: https://hex.pm/docs/publish
-- official Mix project docs: https://hexdocs.pm/mix/Mix.Project.html
-- official ExDoc docs: https://hexdocs.pm/ex_doc/Mix.Tasks.Docs.html
+- milestone next-step assessment 2026-05-27
+- `.planning/PROJECT.md`, `.planning/STATE.md`, `.planning/MILESTONES.md`
+- `.planning/threads/2026-05-27-warning-ratchet-followup.md`
+- `.planning/WARNING-BASELINE.md`

@@ -80,12 +80,14 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
 
-    {:ok, _view, html} = live(conn, "/scoria/workflows/#{run.id}")
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
     assert html =~ "Workflow Run"
     assert html =~ run.id
     assert html =~ "running"
     assert html =~ "tool"
+
+    render_async(view)
   end
 
   test "run page renders lifecycle badges and responds to run and step updates without owning truth" do
@@ -112,6 +114,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     assert render(view) =~ "completed"
     assert render(view) =~ "step_completed"
+
+    render_async(view)
   end
 
   test "run page hides the remote invocation evidence notebook when no approvals are projected" do
@@ -122,9 +126,11 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
 
-    {:ok, _view, html} = live(conn, "/scoria/workflows/#{run.id}")
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
     refute html =~ "remote evidence notebook"
+
+    render_async(view)
   end
 
   test "workflow page renders delegated evidence from the curated runtime DTO and keeps step selection on the right rail" do
@@ -166,6 +172,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     assert html =~ "Delegated Evidence"
     assert html =~ "Inspect Delegated Evidence"
+    assert html =~ ~s(href="#delegated-evidence")
+    assert length(Regex.scan(~r/id="delegated-evidence"/, html)) == 1
     assert html =~ "planner"
     assert html =~ "critic"
     assert html =~ "View full context"
@@ -183,6 +191,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert selected_html =~ "critic"
     assert selected_html =~ "review"
     assert selected_html =~ "Delegated Evidence"
+
+    render_async(view)
   end
 
   test "workflow page renders delegated empty and pending states without altering the rest of the page" do
@@ -211,16 +221,21 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
 
-    {:ok, _empty_view, empty_html} = live(conn, "/scoria/workflows/#{empty_run.id}")
-    {:ok, _pending_view, pending_html} = live(conn, "/scoria/workflows/#{pending_run.id}")
+    {:ok, empty_view, empty_html} = live(conn, "/scoria/workflows/#{empty_run.id}")
+    {:ok, pending_view, pending_html} = live(conn, "/scoria/workflows/#{pending_run.id}")
 
     assert empty_html =~ "No Delegated Handoffs Recorded"
-    assert empty_html =~ "Scoria.start_handoff_run/3"
+    assert empty_html =~
+             "This run stayed on the default runtime lane. No bounded handoff is required for first adoption; use Scoria.start_handoff_run/3 only when a same-run delegation needs narrow projected context."
+
     assert empty_html =~ "Timeline"
 
     assert pending_html =~ "child step pending"
     assert pending_html =~ "The handoff is recorded, but delegated execution has not produced a child-step readback yet."
     assert pending_html =~ "Trace-First Workflow Tree"
+
+    render_async(empty_view)
+    render_async(pending_view)
   end
 
   test "live-only steps show the typed replay comparison empty state" do
@@ -240,11 +255,13 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
 
-    {:ok, _view, html} = live(conn, "/scoria/workflows/#{run.id}")
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
     assert html =~ "No Replay Comparison Available"
     assert html =~ "Promote Trace to Draft Dataset"
     assert html =~ "Original trace cannot be promoted until Scoria resolves a frozen promotion snapshot"
+
+    render_async(view)
   end
 
   test "workflow page renders the semantic evidence notebook for semantic hits" do
@@ -298,7 +315,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
 
-    {:ok, _view, html} = live(conn, "/scoria/workflows/#{run.id}")
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
     assert html =~ "semantic evidence notebook"
     assert html =~ "Compatibility"
@@ -307,6 +324,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert html =~ "lookup status"
     assert html =~ "hit"
     assert html =~ "active"
+
+    render_async(view)
   end
 
   test "workflow page keeps rejected candidates inspectable with explicit fallback evidence" do
@@ -361,7 +380,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
 
-    {:ok, _view, html} = live(conn, "/scoria/workflows/#{run.id}")
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
     assert html =~ "semantic evidence notebook"
     assert html =~ "Normal runtime path executed"
@@ -369,6 +388,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert html =~ "prompt_version_mismatch"
     assert html =~ "Lifecycle"
     assert html =~ "Provenance"
+
+    render_async(view)
   end
 
   test "replay runs render provenance strip, source toggles, and durable promotion notices" do
@@ -484,6 +505,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert promoted_html =~ "Draft QA"
     assert promoted_html =~ "Baseline approval requested"
     assert promoted_html =~ "Release QA"
+
+    render_async(view)
   end
 
   test "promotion modal starts with a blank notes field" do
@@ -572,6 +595,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     assert modal_html =~ ~s(name="promotion[notes]")
     refute modal_html =~ ~s(>%{}<)
+
+    render_async(view)
   end
 
   test "workflow deep links preserve review candidate evidence on the run page" do
@@ -616,11 +641,13 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
 
-    {:ok, _view, html} =
+    {:ok, view, html} =
       live(conn, "/scoria/workflows/#{run.id}?review_candidate_id=#{candidate.id}")
 
     assert html =~ "Review candidate evidence"
     assert html =~ "Workflow page review evidence"
     assert html =~ candidate.trace_id
+
+    render_async(view)
   end
 end

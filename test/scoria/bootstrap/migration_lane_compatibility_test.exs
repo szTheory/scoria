@@ -37,6 +37,7 @@ defmodule Scoria.Bootstrap.MigrationLaneCompatibilityTest do
       assert migration_recorded?("schema_migrations", @knowledge_version)
 
       if pgvector_available?() do
+        # D-11: explicit double-call proves migrate_knowledge!/0 idempotency (not ensure_knowledge_migrated!/0).
         assert :ok = Migrations.migrate_knowledge!()
         assert table_exists?("ai_knowledge_sources")
         assert table_exists?("ai_knowledge_chunks")

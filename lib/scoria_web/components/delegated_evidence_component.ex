@@ -22,9 +22,7 @@ defmodule ScoriaWeb.DelegatedEvidenceComponent do
       <div :if={@delegated_handoffs == []} class="mt-4 rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-5">
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">No Delegated Handoffs Recorded</p>
         <p class="mt-2 text-sm text-stone-600">
-          This run has no bounded delegated handoff yet. Start with the normal runtime flow, or inspect the workflow tree after
-          <span class="font-mono text-stone-900">Scoria.start_handoff_run/3</span>
-          records a handoff and child step under the same run.
+          This run stayed on the default runtime lane. No bounded handoff is required for first adoption; use Scoria.start_handoff_run/3 only when a same-run delegation needs narrow projected context.
         </p>
       </div>
 

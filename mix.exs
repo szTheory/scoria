@@ -1,18 +1,18 @@
 defmodule Scoria.MixProject do
   use Mix.Project
 
-  def project do
-    version = "0.1.0"
+  @version "0.1.0"
 
+  def project do
     [
       app: :scoria,
-      version: version,
+      version: @version,
       description: description(),
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      docs: docs(version),
+      docs: docs(),
       package: package(),
       source_url: "https://github.com/szTheory/scoria",
       homepage_url: "https://github.com/szTheory/scoria"
@@ -24,10 +24,17 @@ defmodule Scoria.MixProject do
       preferred_envs: [
         "scoria.test.adoption": :test,
         "test.adoption": :test,
+        "scoria.test.runtime_to_handoff": :test,
+        "test.runtime_to_handoff": :test,
         "scoria.test.semantic_fast_path": :test,
         "test.semantic_fast_path": :test,
         "scoria.test.knowledge": :test,
-        "test.knowledge": :test
+        "test.knowledge": :test,
+        "scoria.warning_inventory": :test,
+        "scoria.test.ci_trust": :test,
+        "test.ci_trust": :test,
+        "scoria.test.install_contract": :test,
+        "test.install_contract": :test
       ]
     ]
   end
@@ -75,12 +82,13 @@ defmodule Scoria.MixProject do
     "Phoenix-native AI runtime and operator surface for durable runs, approvals, replay, evaluation, and bounded semantic reuse."
   end
 
-  defp docs(version) do
+  defp docs do
     [
       main: "readme",
-      source_ref: "v#{version}",
+      source_ref: "v#{@version}",
       extras: [
         "README.md",
+        "LICENSE",
         "docs/adoption_lanes.md",
         "docs/phoenix_runtime_example.md",
         "docs/bounded_handoffs.md",
@@ -92,11 +100,13 @@ defmodule Scoria.MixProject do
 
   defp package do
     [
+      name: "scoria",
       files: [
         "lib",
         "priv",
         "mix.exs",
         ".formatter.exs",
+        "CHANGELOG.md",
         "README.md",
         "LICENSE",
         "docs/adoption_lanes.md",

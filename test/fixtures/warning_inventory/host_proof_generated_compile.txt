@@ -1,0 +1,6 @@
+    warning: function helper/0 is unused
+    │
+  3 │   defp helper, do: :ok
+    │        ~
+    │
+    └─ test/support/scoria/host_app_proof/generated/host_consumer.ex:3:8

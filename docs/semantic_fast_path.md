@@ -1,6 +1,6 @@
 # Semantic Fast Path
 
-This guide documents the `v2.1` semantic fast path for Scoria.
+This guide documents the tenant-scoped semantic fast path for Scoria.
 
 Use it only after the default runtime lane already works in your Phoenix app. The semantic fast path is an optimization layer for explicitly safe read-only work, not a replacement runtime.
 
@@ -104,11 +104,11 @@ Use the bounded semantic proof lane when validating this feature:
 SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 ```
 
-This is the canonical `v2.1` troubleshooting lane. Use `mix test.adoption` for the broader public runtime adoption story, and use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
+This is the canonical semantic fast-path troubleshooting lane. Use `mix test.adoption` for the broader public runtime adoption story, and use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
 
 ## What this lane intentionally does not include
 
-The shipped `v2.1` scope does not include:
+The semantic fast path scope does not include:
 
 - external semantic cache backends
 - advanced ANN tuning or analytics controls
