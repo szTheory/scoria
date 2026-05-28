@@ -267,7 +267,7 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 
 1. `mix scoria.warning_baseline.check` — baseline expiry before compile
 2. `mix compile --warnings-as-errors` — compile WAE
-3. Lane-contract WAE: `mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
+3. Lane-contract WAE: `mix test --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
 
 **Test job closeout (Postgres on 55432):**
 
@@ -277,14 +277,14 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 4. `mix test --warnings-as-errors` — full-suite WAE after closeout lanes
 5. `mix test.knowledge` — optional knowledge lane (behavior, not WAE)
 
-**Local parity:** set `SCORIA_DB_PORT=55432` for the test job database; use `MIX_ENV=dev` only for `mix scoria.release_preview`.
+**Local parity:** set `SCORIA_DB_PORT=55432` for the test job database; use `MIX_ENV=dev` only for `mix scoria.release_preview`. Run `mix scoria.test.ci_trust` for the full Phase 69 maintainer trust bundle (policy contracts + ratchet hygiene integration); add `--fast` for policy-parity only (~30s).
 
 **Ratchet is maintainer-only:** `mix scoria.warning_ratchet.test` and `mix scoria.warning_ratchet.check` are WARN-06 debugger commands — they are **not** CI steps after Phase 68.
 
 **When CI fails, run the matching maintainer command next:**
 
 - Policy: `warning_baseline.check` failed → inspect `.planning/WARNING-BASELINE.md` expiry rows, then `mix scoria.warning_baseline.check` locally
-- Policy: compile WAE failed → `MIX_ENV=test mix compile --warnings-as-errors` and fix compiler warnings
+- Policy: compile WAE failed → `mix compile --warnings-as-errors` and fix compiler warnings
 - Policy: lane-contract WAE failed → `MIX_ENV=test mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
 - Test: adoption or runtime_to_handoff failed → reproduce with `SCORIA_DB_PORT=55432 mix test.adoption` or `mix test.runtime_to_handoff`
 - Test: full-suite WAE failed → `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors` after closeout lanes pass

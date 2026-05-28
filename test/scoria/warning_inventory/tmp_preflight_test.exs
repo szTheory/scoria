@@ -48,6 +48,15 @@ defmodule Scoria.WarningInventory.TmpPreflightTest do
     Mix.Tasks.Scoria.WarningInventory.run(["--quiet", "--format", "table"])
   end
 
+  test "warning_ratchet.test task mirrors check tmp lifecycle (WR-01)" do
+    source = File.read!("lib/mix/tasks/scoria.warning_ratchet.test.ex")
+
+    assert source =~ "Scoria.WarningInventory.ensure_clean_tmp!()"
+    assert source =~ "Scoria.WarningInventory.cleanup_transient_tmp!()"
+    assert source =~ "after"
+    assert index_of(source, "ensure_clean_tmp!()") < index_of(source, "cleanup_transient_tmp!()")
+  end
+
   test "mix scoria.warning_inventory --format json does not raise on encode" do
     WarningInventory.cleanup_transient_tmp!()
 
@@ -65,5 +74,12 @@ defmodule Scoria.WarningInventory.TmpPreflightTest do
       |> Enum.join("\n")
 
     assert Jason.decode!(json)
+  end
+
+  defp index_of(content, needle) do
+    case :binary.match(content, needle) do
+      {index, _length} -> index
+      :nomatch -> flunk("Expected to find #{inspect(needle)} in content")
+    end
   end
 end

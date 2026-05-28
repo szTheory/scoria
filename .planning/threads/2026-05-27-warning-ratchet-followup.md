@@ -1,7 +1,7 @@
 # Thread: Warning Ratchet Follow-up (`WARN-03`)
 
 **Opened:** 2026-05-27  
-**Status:** active (v2.6 next milestone — confirmed 2026-05-27 assessment)  
+**Status:** archived (superseded — shipped v2.6)
 **Owner:** scoria-maintainers  
 **Priority:** highest — v2.6 Warning Ratchet
 
@@ -39,3 +39,13 @@ v2.4 hardened canonical warning/CI trust, but full-suite warning ratchet remains
 - Overly strict ratchet can create noisy failures with low signal.
 - Leaving baseline expiry manual can silently weaken warning policy trust.
 - Coupling this too tightly with installer work could dilute milestone focus.
+
+## Resolution
+
+Shipped v2.6 Warning Ratchet milestone (phases 66–69).
+
+- **Phases:** 66 Baseline Expiry And Inventory, 67 High-Signal Ratchet, 68 Full-Suite Warning Closure, 69 CI Trust And Milestone Closeout
+- **Requirements:** WARN-03, WARN-04, WARN-05, WARN-06, WARN-07, CI-03
+- **Evidence:** `mix scoria.test.ci_trust`, `.planning/milestones/v2.6-MILESTONE-AUDIT.md`
+
+**v2.7 follow-up (deferred):** Hex publish, README docs-truth, optional knowledge WAE in CI — see Phase 69 CONTEXT deferred section.

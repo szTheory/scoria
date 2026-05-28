@@ -30,7 +30,9 @@ defmodule Scoria.MixProject do
         "test.semantic_fast_path": :test,
         "scoria.test.knowledge": :test,
         "test.knowledge": :test,
-        "scoria.warning_inventory": :test
+        "scoria.warning_inventory": :test,
+        "scoria.test.ci_trust": :test,
+        "test.ci_trust": :test
       ]
     ]
   end
