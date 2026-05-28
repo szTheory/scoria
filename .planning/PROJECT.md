@@ -23,6 +23,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- Phase 70 Docs Truth Foundation complete (2026-05-28): README uses capability-based shipped truth; install_contract maintainer lane committed; CI gate map documents semantic local-only boundary and version namespaces.
 - Scoria shipped `v2.6 Warning Ratchet` on 2026-05-28.
 - CI policy→test topology: `mix scoria.warning_baseline.check` → compile WAE → lane-contract WAE (policy job); closeout lanes → full-suite WAE → knowledge (test job).
 - Warning inventory and ratchet maintainer paths (`mix scoria.warning_inventory`, `mix scoria.warning_ratchet.*`) classify and clear debt by surface; baseline ledger empty (`"clusters": {}`).
@@ -93,12 +94,12 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ High-signal test surfaces pass under warnings-as-errors without new accepted debt. — Phase 67 `high-signal-warning-ratchet` (WARN-06)
 - ✓ Full `mix test --warnings-as-errors` passes in CI with baseline ledger closed. — Phase 68 `full-suite-warning-closure` (WARN-07)
 - ✓ CI preserves canonical closeout order with Postgres-free policy job first and full-suite WAE after closeout lanes. — `v2.6` Phase 69 (CI-03)
+- ✓ README and support docs use capability-based shipped truth with upgrade-safe install guidance; `adoption_surface_test` guards via `AdopterDocContract`. — Phase 70 (DOCS-03)
+- ✓ Maintainer docs clarify semantic lane local-only (not PR CI) and planning-milestone vs Hex semver namespaces. — Phase 70 (DOCS-04)
+- ✓ `mix scoria.test.install_contract` runs deep installer contract proofs as maintainer-only task with adoption-lane boundary tests. — Phase 70 (INST-DX-01)
 
 ### Active
 
-- [ ] **DOCS-03**: README and support docs use capability-based shipped truth (v2.5+ installer, v2.6 CI); `adoption_surface_test` updated (v2.7).
-- [ ] **DOCS-04**: Maintainer docs clarify semantic lane local-only (not PR CI) and planning-milestone vs Hex semver namespaces (v2.7).
-- [ ] **INST-DX-01**: `mix scoria.test.install_contract` committed with adoption-lane boundary and operator doc mention (v2.7).
 - [ ] **HEX-01**: First Hex publish at `0.1.0` / `v0.1.0` with release-please and publish CI mirroring PR test topology (v2.7).
 - [ ] **HEX-02**: CHANGELOG, GitHub release, Hex badge, coordinated README + `package_surface_test` Hex-first flip (v2.7).
 
