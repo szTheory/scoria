@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.6
-milestone_name: Warning Ratchet
-status: awaiting_next_milestone
-last_updated: "2026-05-28T11:32:23.681Z"
-last_activity: 2026-05-28 — Milestone v2.6 completed and archived
+milestone: v2.7
+milestone_name: OSS Release + Docs Truth
+status: defining_requirements
+last_updated: "2026-05-28T12:00:00.000Z"
+last_activity: 2026-05-28 — Milestone v2.7 started
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,79 +21,56 @@ See: `.planning/PROJECT.md` (updated 2026-05-28)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Planning v2.7 OSS Release + Docs Truth
+**Current focus:** v2.7 OSS Release + Docs Truth — docs truth first, then Hex publish at 0.1.0
 
 ## Current Position
 
-Phase: Milestone v2.6 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-28 — Milestone v2.6 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-28 — Milestone v2.7 started
 
 ## Performance Metrics
 
 - **Latest Shipped Milestone:** `v2.6 Warning Ratchet` on 2026-05-28
-- **Next Milestone:** `v2.7 OSS Release + Docs Truth` (HEX-01, DOCS-03)
-- **Baseline expiry pressure:** cleared; baseline ledger empty at v2.6 closeout
+- **Current Milestone:** `v2.7 OSS Release + Docs Truth`
+- **Hex semver target:** `0.1.0` at git tag `v0.1.0` (distinct from GSD milestone tags `v2.x`)
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- `v2.5` shipped planner/check no-write contracts, manifest-aware drift-safe apply, installer contract SSOT (phases 59–65).
-- **v2.6 (shipped):** WARN-03–CI-03 complete; milestone archived 2026-05-28.
-- **v2.7 (next):** first Hex publish + README/shipped-state docs-truth.
-- `v2.4` lane contracts and CI closeout order remain non-negotiable.
+- **v2.6 (shipped):** WARN-03–CI-03 complete; full-suite WAE in CI; milestone archived 2026-05-28.
+- **v2.7 (active):** docs truth → release infra → Hex publish + coordinated README/test flip.
+- **Deferred from v2.7:** SEM-CI-01 (semantic lane in PR CI) — document maintainer command only.
+- **Preserve:** v2.4 lane contracts, v2.5 installer planner/check/apply, v2.6 warning-ratchet CI topology.
 
-### Evidence (Phase 68 closeout)
+### Research decisions (2026-05-28)
 
-- `mix compile --warnings-as-errors` — pass
-- `mix test --warnings-as-errors` — pass (457 tests, SCORIA_DB_PORT=55432)
-- CI test job — `mix test --warnings-as-errors` after closeout lanes
+- Capability-based shipped banner (not milestone codenames) for adopter docs.
+- Docs truth merges before `mix hex.publish` — avoid public HexDocs with stale v2.1 narrative.
+- release-please + publish workflow mirroring full CI test topology (szTheory pattern).
+- `mix scoria.test.install_contract` — maintainer lane for deep installer proofs (Phase 70).
+
+### Evidence (v2.6 closeout baseline)
+
+- `mix scoria.test.ci_trust` — local Phase 69 contract verification
 - `.planning/warning-inventory.baseline.json` — `"clusters": {}`
+- `.planning/milestones/v2.6-MILESTONE-AUDIT.md` — passed; remote CI attestation pending (Phase 71 gate-zero)
 
 ## Active Threads
 
-- `.planning/threads/2026-05-27-warning-ratchet-followup.md` — primary execution scope
-- `.planning/phases/68-full-suite-warning-closure/68-VERIFICATION.md` — WARN-07 evidence
+- Uncommitted WIP: `scoria.test.install_contract`, adoption lane boundary test — fold into Phase 70
 
 ## Deferred Items
 
-| Category | Item | Status | Owner | Expires |
-|----------|------|--------|-------|---------|
-| future milestone | v2.7 OSS release + docs-truth | queued after v2.6 | scoria-maintainers | — |
-| Phase 69 P01 | 6 | 2 tasks | 2 files |
-| Phase 69 P02 | 12 min | 3 tasks | 5 files |
+| Category | Item | Status | Owner |
+|----------|------|--------|-------|
+| v2.7 | SEM-CI-01 semantic lane in PR CI | deferred — document only | scoria-maintainers |
+| v2.7+ | Knowledge WAE in CI | deferred (Phase 69 D-17) | scoria-maintainers |
+| v2.6 carryover | Remote GitHub Actions green attestation | Phase 71 gate-zero | scoria-maintainers |
 
 ## Operator Next Steps
 
-- Run `/gsd-new-milestone` to define v2.7 requirements and roadmap
-- Preserve v2.6 CI gates: `mix scoria.test.ci_trust`, policy→test topology in `ci.yml`
-
-### Phase 69 Decisions (69-01)
-
-- `warning_ratchet.test` mirrors check tmp lifecycle: `ensure_clean_tmp!` → work → `cleanup_transient_tmp!` in `after` (WR-01)
-- Ratchet integration test uses subprocess `mix scoria.warning_ratchet.check` to avoid nested ExUnit capture skip (WR-02)
-
-### Phase 69 Decisions (69-00)
-
-- CI gate map in `docs/operator_verification.md` only — no `docs/ci.md` duplicate (D-05)
-- `ci.yml` comments-only; step order unchanged for contract tests
-- CI-03 checkbox deferred to 69-02 verification (D-09)
-
-### Phase 68 Decisions (68-03)
-
-- WARN-07 Path A: full WAE green; baseline Accepted rows → Resolved During v2.6
-- CI ratchet bridge removed; `mix test --warnings-as-errors` is production gate
-- Installer subprocess `MIX_BUILD_PATH=_build/install_subprocess` preserves test/support beams
-- Nested `WarningInventory.capture_output/0` skips subprocess when ExUnit parent runs WAE
-
-### Phase 68 Decisions (68-02)
-
-- p2 host-proof clusters already zero at measurement — no generator/runner or overlay template edits
-- Adoption + ratchet WAE green with `SCORIA_DB_PORT=55432`
-
-### Phase 68 Decisions (68-01)
-
-- Staged ratchet was interim bridge until 68-03 flip (superseded)
-- Policy job excludes ratchet task (D-17)
+- `/gsd-discuss-phase 70` or `/gsd-plan-phase 70` after roadmap approval
+- Sequence: Phase 70 docs → Phase 71 release prep → Phase 72 publish

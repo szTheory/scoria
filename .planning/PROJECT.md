@@ -10,14 +10,16 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: v2.7 OSS Release + Docs Truth (planned)
+## Current Milestone: v2.7 OSS Release + Docs Truth
 
-**Goal:** First Hex publish and README/support docs that honestly reflect v2.5+ shipped capability without weakening lane contracts.
+**Goal:** Ship docs that honestly reflect v2.5+ capability, then publish `0.1.0` on Hex at git tag `v0.1.0` — without weakening v2.4 lane contracts, v2.5 installer truth, or v2.6 CI gates.
 
 **Target features:**
-- HEX-01: Release process and version-tag alignment for first Hex publish
-- DOCS-03: README and `adoption_surface_test` shipped-state assertions aligned to v2.5+ truth
-- Optional SEM-CI-01 semantic lane in CI without widening default closeout order
+- DOCS-03 / DOCS-04: Capability-based shipped banner, README install upgrade path, `adoption_surface_test` alignment, maintainer semantic-lane doc boundary
+- INST-DX-01: `mix scoria.test.install_contract` maintainer task committed and documented (not a closeout lane)
+- HEX-01 / HEX-02: release-please + publish workflow, CHANGELOG, coordinated Hex/README/package_surface_test flip at `0.1.0`
+
+**Explicitly deferred:** SEM-CI-01 (semantic lane in PR CI) — document local maintainer command only
 
 ## Current State
 
@@ -94,8 +96,11 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-- [ ] **HEX-01**: First Hex publish with release process and version-tag alignment (v2.7).
-- [ ] **DOCS-03**: README and support docs reflect v2.5+ shipped capability; `adoption_surface_test` shipped-state assertions updated (v2.7).
+- [ ] **DOCS-03**: README and support docs use capability-based shipped truth (v2.5+ installer, v2.6 CI); `adoption_surface_test` updated (v2.7).
+- [ ] **DOCS-04**: Maintainer docs clarify semantic lane local-only (not PR CI) and planning-milestone vs Hex semver namespaces (v2.7).
+- [ ] **INST-DX-01**: `mix scoria.test.install_contract` committed with adoption-lane boundary and operator doc mention (v2.7).
+- [ ] **HEX-01**: First Hex publish at `0.1.0` / `v0.1.0` with release-please and publish CI mirroring PR test topology (v2.7).
+- [ ] **HEX-02**: CHANGELOG, GitHub release, Hex badge, coordinated README + `package_surface_test` Hex-first flip (v2.7).
 
 ### Out of Scope
 
@@ -108,6 +113,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - A broad installer engine rewrite beyond plan/check + drift-safe apply — too wide for the next milestone's leverage target.
 - Connector adoption guides without explicit embedded-boundary framing — risks hosted-connector-platform drift; defer or keep narrow after v2.7.
 - Combining `WARN-03` with Hex publish, semantic CI gate, or connector docs in one milestone — dilutes focus; sequence v2.6 then v2.7.
+- SEM-CI-01 semantic lane in PR CI — deferred from v2.7; document maintainer command only (research 2026-05-28).
+- Knowledge WAE in default CI closeout — deferred (Phase 69 D-17); optional lane stays optional.
 
 ## Latest Shipped Milestone: v2.6 Warning Ratchet
 
@@ -223,4 +230,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-28 after v2.6 milestone*
+*Last updated: 2026-05-28 — Milestone v2.7 started*
