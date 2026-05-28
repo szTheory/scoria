@@ -30,18 +30,40 @@ defmodule Scoria.WarningInventory.TmpPreflightTest do
   end
 
   @tag timeout: :infinity
-  test "ratchet check cleans test/tmp so inventory preflight passes afterward" do
+  test "ratchet check subprocess cleans test/tmp so inventory preflight passes afterward" do
     WarningInventory.cleanup_transient_tmp!()
 
-    try do
-      Mix.Tasks.Scoria.WarningRatchet.Check.run([])
-    catch
-      :exit, {:shutdown, 0} -> :ok
-      :exit, reason -> flunk("unexpected exit from ratchet check: #{inspect(reason)}")
-    end
+    {output, exit_status} =
+      System.cmd("mix", ["scoria.warning_ratchet.check"],
+        env: [{"MIX_ENV", "test"}],
+        cd: File.cwd!(),
+        stderr_to_stdout: true
+      )
+
+    assert exit_status == 0,
+           "ratchet check failed: #{output}"
 
     assert File.ls(@tmp_dir) in [{:ok, []}, {:error, :enoent}]
 
     Mix.Tasks.Scoria.WarningInventory.run(["--quiet", "--format", "table"])
+  end
+
+  test "mix scoria.warning_inventory --format json does not raise on encode" do
+    WarningInventory.cleanup_transient_tmp!()
+
+    output =
+      ExUnit.CaptureIO.capture_io(fn ->
+        Mix.Tasks.Scoria.WarningInventory.run(["--format", "json", "--quiet"])
+      end)
+
+    assert output =~ "\"rows\""
+
+    json =
+      output
+      |> String.split("\n")
+      |> Enum.drop_while(&(not String.starts_with?(String.trim_leading(&1), "{")))
+      |> Enum.join("\n")
+
+    assert Jason.decode!(json)
   end
 end
