@@ -77,7 +77,7 @@ Each task was committed atomically:
 4. **Task 69-00-04: Contract test anchor for operator CI gate map** - `4d4a1c5` (test)
 5. **Task 69-00-05: Sync CI-03 prose in REQUIREMENTS, PROJECT, ROADMAP** - `30a6aae` (docs)
 
-**Plan metadata:** `93dad7b` (docs: complete ci-trust-docs plan)
+**Plan metadata:** `a19dcd1` (docs: complete ci-trust-docs plan)
 
 ## Files Created/Modified
 
