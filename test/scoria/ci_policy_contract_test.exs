@@ -21,24 +21,38 @@ defmodule Scoria.CiPolicyContractTest do
     assert ci_verify =~ "postgres"
   end
 
-  test "release-please.yml uses ci-verify and disables publish in phase 71" do
+  test "release-please.yml uses ci-verify and enables publish-hex for Phase 72" do
     release_please = File.read!(".github/workflows/release-please.yml")
 
     assert release_please =~ "googleapis/release-please-action"
     assert release_please =~ "ci-verify.yml"
     assert release_please =~ "publish-hex"
-    assert release_please =~ "if: false"
+    assert release_please =~ "release_created"
+    assert release_please =~ "mix hex.publish --dry-run --yes"
+    assert release_please =~ "mix hex.publish --yes"
+    assert release_please =~ "HEX_API_KEY"
     refute release_please =~ "sync_release_summary"
+
+    publish_hex_section =
+      release_please
+      |> String.split("publish-hex:")
+      |> Enum.at(1, "")
+      |> String.split("\n  verify:")
+      |> hd()
+
+    refute publish_hex_section =~ "if: false"
   end
 
-  test "hex-publish.yml supports workflow_dispatch recovery with verify" do
+  test "hex-publish.yml supports workflow_dispatch recovery with verify and publish" do
     hex_publish = File.read!(".github/workflows/hex-publish.yml")
 
     assert hex_publish =~ "workflow_dispatch"
     assert hex_publish =~ "tag:"
     assert hex_publish =~ "release_version"
     assert hex_publish =~ "ci-verify.yml"
-    refute Regex.match?(~r/^\s+run: mix hex\.publish --yes/m, hex_publish)
+    assert hex_publish =~ "needs.verify.result == 'success'"
+    assert Regex.match?(~r/^\s+run: mix hex\.publish --yes/m, hex_publish)
+    refute hex_publish =~ "sync_release_summary"
   end
 
   test "release-please bootstrap config uses manifest 0.0.0" do
