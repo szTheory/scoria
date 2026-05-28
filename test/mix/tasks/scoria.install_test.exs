@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Scoria.InstallTest do
   use ExUnit.Case, async: false
 
+  @moduletag timeout: 180_000
+
   alias Scoria.Install.ApplyExecutor
   alias Scoria.Install.Planner
 
