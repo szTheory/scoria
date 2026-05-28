@@ -1,0 +1,94 @@
+# Lightweight post-publish smoke: Hex index + consumer deps.get in a clean project.
+
+name: Post Publish Smoke
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published tag (e.g. v0.1.0)'
+        required: false
+        type: string
+      version:
+        description: 'Semver without v prefix (e.g. 0.1.0)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: post-publish-smoke-${{ github.event.release.tag_name || github.event.inputs.tag || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Hex consumer smoke
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+      RELEASE_VERSION: ${{ github.event.inputs.version || github.event.release.tag_name }}
+    steps:
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          raw="${RELEASE_VERSION:-}"
+          raw="${raw#v}"
+          if [ -z "$raw" ]; then
+            echo "Could not resolve release version" >&2
+            exit 1
+          fi
+          echo "version=${raw}" >> "$GITHUB_OUTPUT"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Wait for Hex.pm index
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 36); do
+            if curl -fsS "https://hex.pm/api/packages/scoria/releases/${VERSION}" | grep -q '"version"'; then
+              echo "Hex.pm lists scoria ${VERSION}"
+              exit 0
+            fi
+            echo "Waiting for Hex index... (${i}/36)"
+            sleep 10
+          done
+          exit 1
+
+      - name: Consumer deps.get smoke
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          mix new smoke_hex --sup
+          cd smoke_hex
+          elixir -e '
+            version = System.get_env("VERSION")
+            mix_path = "mix.exs"
+            content = File.read!(mix_path)
+            entry = "      {:scoria, \"~> 0.1\", hex: :scoria},\n"
+            updated = String.replace(content, ~r/(defp deps do\n\s*\[\n)/, "\\1" <> entry, global: false)
+            File.write!(mix_path, updated)
+          '
+          mix deps.get
+          mix compile --warnings-as-errors
+
+      - name: Summary
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          {
+            echo "## Post-publish smoke passed"
+            echo "- Version: ${VERSION}"
+            echo "- Tag: ${RELEASE_TAG:-n/a}"
+            echo "- Consumer deps.get + compile: success"
+          } >> "$GITHUB_STEP_SUMMARY"

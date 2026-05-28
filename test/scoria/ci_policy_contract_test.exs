@@ -43,6 +43,41 @@ defmodule Scoria.CiPolicyContractTest do
     refute publish_hex_section =~ "if: false"
   end
 
+  test "release-please.yml includes preflight and publish hardening" do
+    release_please = File.read!(".github/workflows/release-please.yml")
+
+    assert release_please =~ "Detect already-tagged release PR"
+    assert release_please =~ "Skip if version already on Hex"
+    assert release_please =~ "Wait for Hex.pm index"
+    assert release_please =~ "gate-ci-green"
+  end
+
+  test "release-pr-automerge.yml guards release PR merges" do
+    automerge = File.read!(".github/workflows/release-pr-automerge.yml")
+
+    assert automerge =~ "release-please--branches--main"
+    assert automerge =~ "autorelease: pending"
+    assert automerge =~ "do-not-merge"
+    assert automerge =~ "verify / policy"
+    assert automerge =~ "verify / test"
+  end
+
+  test "ci-verify.yml prepares knowledge migrations before semantic cache" do
+    ci_verify = File.read!(@ci_verify)
+
+    assert ci_verify =~ "mix ecto.migrate --to 20260511000300"
+    assert ci_verify =~ "Scoria.TestSupport.Migrations.migrate_knowledge!()"
+    assert ci_verify =~ "mix ecto.migrate"
+  end
+
+  test "hex-publish.yml recovery includes ci gate and idempotency" do
+    hex_publish = File.read!(".github/workflows/hex-publish.yml")
+
+    assert hex_publish =~ "gate-ci-green"
+    assert hex_publish =~ "Skip if version already on Hex"
+    assert hex_publish =~ "Wait for Hex.pm index"
+  end
+
   test "hex-publish.yml supports workflow_dispatch recovery with verify and publish" do
     hex_publish = File.read!(".github/workflows/hex-publish.yml")
 

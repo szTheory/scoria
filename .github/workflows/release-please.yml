@@ -1,8 +1,6 @@
 # Release Please opens/updates a Release PR from conventional commits on main.
 # When merged, it creates the GitHub Release + v* tag; verify runs the same bar as PR CI.
 # Maintainer guide: docs/operator_verification.md#hex-release--recovery-maintainers
-# Phase 72: enable publish-hex with HEX_API_KEY after first successful verify on tag.
-# Optional RELEASE_PLEASE_TOKEN if GITHUB_TOKEN cannot open Release PRs or chain-trigger CI.
 
 name: Release Please
 
@@ -16,6 +14,7 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
+  actions: read
 
 concurrency:
   group: release-please-${{ github.workflow }}-${{ github.ref }}
@@ -29,13 +28,51 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
       version: ${{ steps.release.outputs.version }}
+      sha: ${{ steps.release.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Detect already-tagged release PR
+        id: release-preflight
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+
+          pr_number=""
+          if [[ "${COMMIT_MESSAGE:-}" =~ Merge\ pull\ request\ #([0-9]+) ]]; then
+            pr_number="${BASH_REMATCH[1]}"
+          fi
+
+          if [ -z "$pr_number" ]; then
+            echo "No merge PR number in head commit; running release-please."
+            echo "should_run=true" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          expected_tag="v$(jq -r '.["."]' .release-please-manifest.json)"
+          if gh release view "$expected_tag" >/dev/null 2>&1; then
+            echo "GitHub release $expected_tag already exists; skipping release-please rerun."
+            echo "should_run=false" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          labels=$(gh pr view "$pr_number" --json labels --jq '.labels[].name' 2>/dev/null || true)
+          if grep -qx 'autorelease: tagged' <<<"$labels"; then
+            echo "Release PR #$pr_number is already tagged; skipping release-please rerun."
+            echo "should_run=false" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Release PR #$pr_number not fully published yet; running release-please."
+          echo "should_run=true" >>"$GITHUB_OUTPUT"
+
       - name: Run Release Please
         id: release
+        if: ${{ steps.release-preflight.outputs.should_run == 'true' }}
         uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
@@ -48,13 +85,97 @@ jobs:
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
     uses: ./.github/workflows/ci-verify.yml
 
+  gate-ci-green:
+    name: Verify CI green on release SHA
+    runs-on: ubuntu-latest
+    needs: [release-please, verify]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    steps:
+      - name: Wait for ci.yml success on tagged SHA
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = '${{ needs.release-please.outputs.sha }}';
+            const tag = '${{ needs.release-please.outputs.tag_name }}';
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const requiredChecks = ['verify / policy', 'verify / test'];
+            let ciDispatched = false;
+
+            for (let attempt = 1; attempt <= 40; attempt++) {
+              const { data } = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'ci.yml',
+                head_sha: sha,
+                per_page: 10
+              });
+
+              const runs = data.workflow_runs
+                .filter((run) => run.head_sha === sha)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+              if (runs.length === 0) {
+                core.info(`No ci.yml run yet for ${sha} (${attempt}/40).`);
+                if (attempt === 3 && !ciDispatched && tag) {
+                  await github.rest.actions.createWorkflowDispatch({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    workflow_id: 'ci.yml',
+                    ref: tag
+                  });
+                  ciDispatched = true;
+                }
+                await sleep(30000);
+                continue;
+              }
+
+              const latest = runs[0];
+              if (latest.status !== 'completed') {
+                core.info(`ci.yml ${latest.status} (${attempt}/40): ${latest.html_url}`);
+                await sleep(30000);
+                continue;
+              }
+
+              const jobs = await github.paginate(
+                github.rest.actions.listJobsForWorkflowRun,
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: latest.id,
+                  per_page: 100
+                }
+              );
+
+              const blocking = requiredChecks.filter((name) => {
+                const job = jobs.find((j) => j.name === name);
+                return !job || (job.conclusion !== 'success' && job.conclusion !== 'skipped');
+              });
+
+              if (blocking.length === 0) {
+                core.info(`Required CI jobs succeeded on ${sha}: ${latest.html_url}`);
+                return;
+              }
+
+              if (latest.conclusion === 'success') {
+                core.info(`Run succeeded but jobs pending registration (${attempt}/40): ${blocking.join(', ')}`);
+              } else {
+                core.info(`ci.yml conclusion ${latest.conclusion}; blocking: ${blocking.join(', ')} (${attempt}/40)`);
+              }
+
+              await sleep(30000);
+            }
+
+            core.setFailed(`Timed out waiting for green ci.yml on release SHA ${sha}`);
+
   publish-hex:
     name: Publish to Hex.pm
-    needs: [release-please, verify]
+    needs: [release-please, verify, gate-ci-green]
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      RELEASE_VERSION: ${{ needs.release-please.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -76,14 +197,39 @@ jobs:
           mix compile --warnings-as-errors
 
       - name: Verify release version in mix.exs
-        run: grep -n "@version \"${{ needs.release-please.outputs.version }}\"" mix.exs
+        run: grep -n "@version \"${RELEASE_VERSION}\"" mix.exs
+
+      - name: Skip if version already on Hex
+        id: idempotency
+        run: |
+          if mix hex.info scoria "${RELEASE_VERSION}" 2>/dev/null | grep -q "Released:"; then
+            echo "Version ${RELEASE_VERSION} already on Hex — skipping publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Dry run Hex publish
+        if: steps.idempotency.outputs.skip != 'true'
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         run: mix hex.publish --dry-run --yes
 
       - name: Publish to Hex
+        if: steps.idempotency.outputs.skip != 'true'
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         run: mix hex.publish --yes
+
+      - name: Wait for Hex.pm index
+        if: steps.idempotency.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 36); do
+            if curl -fsS "https://hex.pm/api/packages/scoria/releases/${RELEASE_VERSION}" | grep -q '"version"'; then
+              echo "Hex.pm lists scoria ${RELEASE_VERSION}"
+              exit 0
+            fi
+            echo "Waiting for Hex index... (${i}/36)"
+            sleep 10
+          done
+          echo "Timed out waiting for Hex.pm to index scoria ${RELEASE_VERSION}"
+          exit 1

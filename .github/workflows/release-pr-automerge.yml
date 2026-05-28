@@ -1,0 +1,153 @@
+# Merge Release Please PRs after CI succeeds on the release branch.
+
+name: Release PR Auto-Merge
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      head_sha:
+        description: 'Optional PR head SHA to merge (defaults to open release PR head)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  automerge:
+    name: Merge release PR
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       startsWith(github.event.workflow_run.head_branch, 'release-please--'))
+    steps:
+      - name: Resolve target SHA and branch
+        id: target
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          INPUT_SHA: ${{ github.event.inputs.head_sha }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -n "${INPUT_SHA:-}" ]; then
+              echo "sha=${INPUT_SHA}" >> "$GITHUB_OUTPUT"
+              echo "branch=release-please--branches--main" >> "$GITHUB_OUTPUT"
+            else
+              pr_json=$(gh pr list \
+                --head release-please--branches--main \
+                --state open \
+                --label "autorelease: pending" \
+                --json headRefOid,files \
+                -R "${{ github.repository }}")
+              head_oid=$(echo "$pr_json" | jq -r '.[0].headRefOid // empty')
+              if [ -z "$head_oid" ]; then
+                echo "No open release PR to merge."
+                exit 0
+              fi
+              echo "sha=${head_oid}" >> "$GITHUB_OUTPUT"
+              echo "branch=release-please--branches--main" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "sha=${RUN_SHA}" >> "$GITHUB_OUTPUT"
+            echo "branch=${RUN_BRANCH}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify CI verify jobs succeeded on target SHA
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = '${{ steps.target.outputs.sha }}';
+            const required = ['verify / policy', 'verify / test'];
+            const { data } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+              filter: 'all'
+            });
+
+            for (const name of required) {
+              const runs = data.check_runs
+                .filter((run) => run.name === name)
+                .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+              const latest = runs[0];
+              if (!latest || latest.conclusion !== 'success') {
+                core.setFailed(`${name} must succeed on ${sha} (found: ${latest?.conclusion ?? 'missing'})`);
+                return;
+              }
+            }
+
+      - name: Find and merge release PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          HEAD_BRANCH: ${{ steps.target.outputs.branch }}
+          HEAD_SHA: ${{ steps.target.outputs.sha }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          pr_json=$(gh pr list \
+            --head "$HEAD_BRANCH" \
+            --state open \
+            --json number,title,labels,headRefOid,files \
+            -R "$REPOSITORY")
+
+          count=$(echo "$pr_json" | jq 'length')
+          if [ "$count" -eq 0 ]; then
+            echo "No open PR for head branch $HEAD_BRANCH — already merged or closed."
+            exit 0
+          fi
+
+          pr_number=$(echo "$pr_json" | jq -r '.[0].number')
+          title=$(echo "$pr_json" | jq -r '.[0].title')
+          head_oid=$(echo "$pr_json" | jq -r '.[0].headRefOid')
+          labels=$(echo "$pr_json" | jq -r '.[0].labels[].name' | tr '\n' ' ')
+          actual_files=$(echo "$pr_json" | jq -r '.[0].files[].path' | sort | paste -sd ',' -)
+          expected_files=".release-please-manifest.json,CHANGELOG.md,mix.exs"
+
+          if [ "$head_oid" != "$HEAD_SHA" ]; then
+            echo "PR #$pr_number head ($head_oid) does not match target SHA ($HEAD_SHA) — skipping stale run."
+            exit 0
+          fi
+
+          if echo "$labels" | grep -q 'do-not-merge'; then
+            echo "PR #$pr_number has do-not-merge label — skipping."
+            exit 0
+          fi
+
+          if [[ ! "$title" =~ ^chore\(main\):\ release\ 0\.[0-9]+\.[0-9]+$ ]]; then
+            echo "PR #$pr_number title does not match release PR pattern: $title"
+            exit 1
+          fi
+
+          if ! grep -q 'autorelease: pending' <<<"$labels"; then
+            echo "PR #$pr_number missing autorelease: pending label — skipping."
+            exit 0
+          fi
+
+          if [ "$actual_files" != "$expected_files" ]; then
+            echo "Release PR changed unexpected files."
+            echo "Expected: $expected_files"
+            echo "Actual:   $actual_files"
+            exit 1
+          fi
+
+          echo "Merging release PR #$pr_number ($title)"
+          gh pr merge "$pr_number" --squash -R "$REPOSITORY" || \
+            gh pr merge "$pr_number" --squash --admin -R "$REPOSITORY"
+
+      - name: Bootstrap CI on main after merge
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run ci.yml --ref main -R "${{ github.repository }}" || true
+          gh workflow run release-please.yml --ref main -R "${{ github.repository }}" || true

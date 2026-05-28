@@ -1,0 +1,77 @@
+# One-shot auto-merge for the Phase 72 integration PR (publish enablement).
+# Disable or remove after phase-72-hex-publish-enablement merges to main.
+
+name: Integration PR Auto-Merge
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    name: Merge integration PR
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'phase-72-hex-publish-enablement'
+    steps:
+      - name: Verify CI verify jobs on PR head
+        id: checks
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = '${{ github.event.workflow_run.head_sha }}';
+            const required = ['verify / policy', 'verify / test'];
+            const { data } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+              filter: 'all'
+            });
+
+            for (const name of required) {
+              const runs = data.check_runs
+                .filter((run) => run.name === name)
+                .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+              const latest = runs[0];
+              if (!latest || latest.conclusion !== 'success') {
+                core.setFailed(`${name} must succeed on ${sha}`);
+                return;
+              }
+            }
+
+      - name: Merge integration PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          pr_json=$(gh pr list \
+            --head phase-72-hex-publish-enablement \
+            --state open \
+            --json number,headRefOid,mergeable \
+            -R "$REPOSITORY")
+
+          count=$(echo "$pr_json" | jq 'length')
+          if [ "$count" -eq 0 ]; then
+            echo "Integration PR already merged or closed."
+            exit 0
+          fi
+
+          pr_number=$(echo "$pr_json" | jq -r '.[0].number')
+          head_oid=$(echo "$pr_json" | jq -r '.[0].headRefOid')
+
+          if [ "$head_oid" != "$HEAD_SHA" ]; then
+            echo "Stale automerge run for PR #$pr_number — skipping."
+            exit 0
+          fi
+
+          gh pr merge "$pr_number" --squash -R "$REPOSITORY" || \
+            gh pr merge "$pr_number" --squash --admin -R "$REPOSITORY"

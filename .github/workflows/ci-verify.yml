@@ -105,6 +105,8 @@ jobs:
       - name: Prepare database
         run: |
           mix ecto.create
+          mix ecto.migrate --to 20260511000300
+          mix eval 'Scoria.TestSupport.Migrations.migrate_knowledge!()'
           mix ecto.migrate
 
       - name: Run adoption closure lane

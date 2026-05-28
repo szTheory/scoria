@@ -1,8 +1,7 @@
 # Manual recovery when publish-hex failed/skipped after a tag exists.
-# Default path: Release Please merge → publish-hex (Phase 72).
+# Default path: Release Please merge → publish-hex in release-please.yml.
 # Maintainer guide: docs/operator_verification.md#hex-release--recovery-maintainers
-# Run with: gh workflow run hex-publish.yml --ref <tag> -f tag=<tag> -f release_version=<semver>
-# Phase 71: verify-only; publish job disabled until HEX_API_KEY is configured.
+# Run with: gh workflow run hex-publish.yml -f tag=v0.1.0 -f release_version=0.1.0
 
 name: Hex publish (manual recovery)
 
@@ -17,46 +16,171 @@ on:
         description: 'Expected @version in mix.exs at that tag (e.g. 0.1.0).'
         required: true
         type: string
+      dry_run:
+        description: 'Run mix hex.publish --dry-run only'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: read
+
+concurrency:
+  group: hex-publish-recovery-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
 
 jobs:
+  gate-ci-green:
+    name: Verify CI green on release ref
+    runs-on: ubuntu-latest
+    outputs:
+      checkout_ref: ${{ steps.validate.outputs.checkout_ref }}
+      sha: ${{ steps.validate.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate ref and resolve SHA
+        id: validate
+        run: |
+          set -euo pipefail
+          ref="${{ github.event.inputs.tag }}"
+
+          if [[ "$ref" =~ ^[0-9a-f]{40}$ ]]; then
+            git cat-file -e "${ref}^{commit}"
+            echo "checkout_ref=$ref" >> "$GITHUB_OUTPUT"
+            echo "sha=$ref" >> "$GITHUB_OUTPUT"
+          elif git show-ref --verify --quiet "refs/tags/$ref"; then
+            sha="$(git rev-list -n 1 "$ref")"
+            echo "checkout_ref=$ref" >> "$GITHUB_OUTPUT"
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag must be a 40-character commit SHA or an existing git tag" >&2
+            exit 1
+          fi
+
+      - name: Wait for ci.yml success on release SHA
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = '${{ steps.validate.outputs.sha }}';
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const required = ['verify / policy', 'verify / test'];
+
+            for (let attempt = 1; attempt <= 20; attempt++) {
+              const { data } = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'ci.yml',
+                head_sha: sha,
+                per_page: 10
+              });
+
+              const runs = data.workflow_runs
+                .filter((run) => run.head_sha === sha && run.status === 'completed')
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+              if (runs.length === 0) {
+                core.info(`No completed ci.yml run for ${sha} (${attempt}/20)`);
+                await sleep(30000);
+                continue;
+              }
+
+              const jobs = await github.paginate(
+                github.rest.actions.listJobsForWorkflowRun,
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: runs[0].id,
+                  per_page: 100
+                }
+              );
+
+              const blocking = required.filter((name) => {
+                const job = jobs.find((j) => j.name === name);
+                return !job || (job.conclusion !== 'success' && job.conclusion !== 'skipped');
+              });
+
+              if (blocking.length === 0 && runs[0].conclusion === 'success') {
+                core.info(`CI green on ${sha}: ${runs[0].html_url}`);
+                return;
+              }
+
+              await sleep(30000);
+            }
+
+            core.setFailed(`Timed out waiting for green ci.yml on ${sha}`);
+
   verify:
     name: CI Verify
+    needs: gate-ci-green
     uses: ./.github/workflows/ci-verify.yml
 
   publish:
     name: Publish to Hex.pm
-    needs: verify
+    needs: [gate-ci-green, verify]
     if: ${{ needs.verify.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      RELEASE_VERSION: ${{ github.event.inputs.release_version }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ needs.gate-ci-green.outputs.checkout_ref }}
 
       - uses: erlef/setup-beam@v1
         with:
           version-file: .tool-versions
           version-type: strict
 
+      - name: Install Hex + Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
       - name: Verify release version in mix.exs
-        run: grep -n "@version \"${{ inputs.release_version }}\"" mix.exs
+        run: grep -n "@version \"${RELEASE_VERSION}\"" mix.exs
 
       - name: Fetch deps and compile
         run: |
           mix deps.get
           mix compile --warnings-as-errors
 
+      - name: Skip if version already on Hex
+        id: idempotency
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          if mix hex.info scoria "${RELEASE_VERSION}" 2>/dev/null | grep -q "Released:"; then
+            echo "Version ${RELEASE_VERSION} already on Hex — skipping publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Dry run Hex publish
+        if: github.event.inputs.dry_run == 'true' || steps.idempotency.outputs.skip != 'true'
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         run: mix hex.publish --dry-run --yes
 
       - name: Publish to Hex
+        if: github.event.inputs.dry_run != 'true' && steps.idempotency.outputs.skip != 'true'
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         run: mix hex.publish --yes
+
+      - name: Wait for Hex.pm index
+        if: github.event.inputs.dry_run != 'true' && steps.idempotency.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 36); do
+            if curl -fsS "https://hex.pm/api/packages/scoria/releases/${RELEASE_VERSION}" | grep -q '"version"'; then
+              echo "Hex.pm lists scoria ${RELEASE_VERSION}"
+              exit 0
+            fi
+            echo "Waiting for Hex index... (${i}/36)"
+            sleep 10
+          done
+          exit 1
