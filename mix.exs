@@ -100,11 +100,13 @@ defmodule Scoria.MixProject do
 
   defp package do
     [
+      name: "scoria",
       files: [
         "lib",
         "priv",
         "mix.exs",
         ".formatter.exs",
+        "CHANGELOG.md",
         "README.md",
         "LICENSE",
         "docs/adoption_lanes.md",
