@@ -16,7 +16,7 @@
 | Phase | Name | Goal | Requirements |
 |------:|------|------|--------------|
 | 70 | 3/3 | Complete    | 2026-05-28 |
-| 71 | Release Infrastructure | CHANGELOG, release-please, publish workflow prep, v2.6 attestation | HEX-01, HEX-02 |
+| 71 | 1/4 | In Progress|  |
 | 72 | Hex Publish Closeout | `mix hex.publish`, tag, README/package_surface flip, milestone audit | HEX-01, HEX-02 |
 
 **Sequencing rule:** Phase 70 merges before Phase 72 publish — never ship HexDocs with stale v2.1 narrative.

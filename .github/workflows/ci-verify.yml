@@ -1,0 +1,121 @@
+name: CI Verify
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+# Reusable CI SSOT: policy (fail cheap, no Postgres) → test (canonical closeout + full WAE).
+# Consumed by ci.yml, release-please verify, and hex-publish recovery workflows.
+# Maintainer narrative: docs/operator_verification.md — CI gate map (maintainers).
+# Executable order SSOT: Scoria.VerificationLanes + test/scoria/ci_policy_contract_test.exs.
+
+jobs:
+  # policy: baseline expiry + compile WAE + lane-contract tests (no Postgres)
+  policy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          elixir-version: "1.19"
+
+      - name: Check warning baseline expiry
+        run: mix scoria.warning_baseline.check
+
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile with warnings as errors
+        run: mix compile --warnings-as-errors
+
+      - name: Verify lane-contract tests with warnings as errors
+        run: mix test --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs
+
+  # test: release_preview → closeout lanes → full-suite WAE → knowledge lane
+  test:
+    runs-on: ubuntu-latest
+    needs: policy
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scoria_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d scoria_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MIX_ENV: test
+      SCORIA_DB_HOST: localhost
+      SCORIA_DB_PORT: 55432
+      SCORIA_DB_USERNAME: postgres
+      SCORIA_DB_PASSWORD: postgres
+      SCORIA_DB_NAME: scoria_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          elixir-version: "1.19"
+
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run release preview lane
+        run: MIX_ENV=dev mix scoria.release_preview
+
+      - name: Prepare database
+        run: |
+          mix ecto.create
+          mix ecto.migrate
+
+      - name: Run adoption closure lane
+        run: mix test.adoption
+
+      - name: Run runtime-to-handoff proof lane
+        run: mix test.runtime_to_handoff
+
+      - name: Verify maintainer ratchet hygiene chain
+        run: MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs
+
+      - name: Run tests
+        run: mix test --warnings-as-errors
+
+      - name: Run knowledge lane
+        run: mix test.knowledge
