@@ -1,0 +1,63 @@
+# Manual recovery when publish-hex failed/skipped after a tag exists.
+# Default path: Release Please merge → publish-hex (Phase 72).
+# Maintainer guide: docs/operator_verification.md#hex-release--recovery-maintainers
+# Run with: gh workflow run hex-publish.yml --ref <tag> -f tag=<tag> -f release_version=<semver>
+# Phase 71: verify-only; publish job disabled until HEX_API_KEY is configured.
+
+name: Hex publish (manual recovery)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to verify and publish (e.g. v0.1.0).'
+        required: true
+        type: string
+      release_version:
+        description: 'Expected @version in mix.exs at that tag (e.g. 0.1.0).'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: CI Verify
+    uses: ./.github/workflows/ci-verify.yml
+
+  publish:
+    name: Publish to Hex.pm
+    needs: verify
+    if: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Verify release version in mix.exs
+        run: grep -n "@version \"${{ inputs.release_version }}\"" mix.exs
+
+      - name: Fetch deps and compile
+        run: |
+          mix deps.get
+          mix compile --warnings-as-errors
+
+      # Phase 72: enable job and uncomment after HEX_API_KEY is configured
+      # - name: Dry run Hex publish
+      #   env:
+      #     HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+      #   run: mix hex.publish --dry-run --yes
+      #
+      # - name: Publish to Hex
+      #   env:
+      #     HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+      #   run: mix hex.publish --yes
