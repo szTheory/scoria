@@ -1,9 +1,9 @@
 # Phase 69 — CI-03 Trust And Milestone Closeout Verification
 
-**Verified:** 2026-05-28T01:39:00Z  
-**Git SHA:** 8f63d9d4ab8b6f3280427fdd50ba06e54920b1d6  
+**Verified:** 2026-05-27T12:00:00Z (audit re-run)  
+**Git SHA:** b31be7b82290dc072ca58c47f5de2265ee9a002d  
 **Requirement:** CI-03  
-**Status:** `passed`
+**Status:** `human_needed`
 
 ## Phase Goal
 
@@ -11,7 +11,7 @@ Close CI-03 and v2.6 traceability: maintainer CI gate map, ratchet maintainer hy
 
 ## Summary
 
-Phase 69 documents executable CI topology (policy→test), remediates 68-REVIEW WR-01/WR-02 maintainer hygiene, and records local command evidence for CI-03 contract tests. Full-suite WAE and closeout chain remain unchanged from Phase 68. Remote GitHub Actions confirmation is deferred to Task 69-02-04 (human checkpoint).
+Phase 69 documents executable CI topology (policy→test), remediates 68-REVIEW WR-01/WR-02 maintainer hygiene, and records local command evidence for CI-03 contract tests. Full-suite WAE and closeout chain remain unchanged from Phase 68. **Remote GitHub Actions attestation (Task 69-02-04) and thread archive remain pending** — phase automated scope is complete; overall status is `human_needed` until remote CI is recorded.
 
 ## CI-03 traceability table (D-07)
 
@@ -41,7 +41,7 @@ Additional contracts: `postgres service is configured only for the test job`; `W
 | ci.yml intent comments, no reorder (D-03) | `.github/workflows/ci.yml` header + per-job comments |
 | README ≤2 lines to gate map (D-04) | `README.md` links to operator anchor |
 | Contract test doc anchor (D-06) | `CI-03 documents CI gate map for maintainers` — pass |
-| CI-03 prose without staged ratchet (D-08, D-09) | REQUIREMENTS/PROJECT/ROADMAP aligned |
+| CI-03 prose without staged ratchet (D-08, D-09) | REQUIREMENTS/PROJECT/ROADMAP aligned; no `staged WAE` in REQUIREMENTS |
 
 ### Plan 69-01 — Ratchet maintainer hygiene (2/2)
 
@@ -50,18 +50,18 @@ Additional contracts: `postgres service is configured only for the test job`; `W
 | WR-01 tmp symmetry in `warning_ratchet.test` | `ensure_clean_tmp!` + `cleanup_transient_tmp!` in after |
 | WR-02 subprocess ratchet→inventory integration | `System.cmd("mix", ["scoria.warning_ratchet.check"], ...)` in tmp_preflight_test |
 
-### Plan 69-02 — Milestone closeout (4/4)
+### Plan 69-02 — Milestone closeout (3/4 automated; 1 human pending)
 
 | Must-have | Verified |
 |-----------|----------|
 | 69-VERIFICATION.md with CI-03 table | This file |
 | v2.6-MILESTONE-AUDIT.md | `.planning/milestones/v2.6-MILESTONE-AUDIT.md` |
-| REQUIREMENTS/PROJECT/ROADMAP sync | Task 69-02-03 |
-| Human verification section for remote CI | Below — pending push |
+| REQUIREMENTS/PROJECT/ROADMAP sync | `[x] **CI-03**`; ROADMAP `69 \| 3/3 \| Complete` |
+| Human verification: remote CI + thread archive | **Pending** — Task 69-02-04 |
 
-**Phase 69 must-haves: 11 / 11** (100% for automated scope)
+**Phase 69 must-haves: 10 / 11** (automated scope 100%; human checkpoint open)
 
-## Command Evidence (2026-05-28 audit-time, D-14)
+## Command Evidence (2026-05-27 audit re-run, D-14)
 
 ### `mix scoria.warning_baseline.check`
 
@@ -86,12 +86,7 @@ Exit code: 0
 
 ### `MIX_ENV=test mix test test/scoria/warning_inventory/tmp_preflight_test.exs`
 
-```
-Finished in 283.4 seconds (0.00s async, 283.4s sync)
-4 tests, 0 failures
-```
-
-Exit code: 0
+Prior audit (2026-05-28, SHA `8f63d9d4`): 4 tests, 0 failures (~283s). Not re-run this audit (long-running); WR-02 subprocess pattern verified in codebase.
 
 ## CI Contract
 
@@ -103,22 +98,30 @@ Exit code: 0
 
 ## Deviations from Plan
 
-None blocking CI-03 or phase goal.
+None blocking CI-03 automated deliverables.
 
 ## Gaps
 
-None blocking local verification. Remote CI attestation pending human checkpoint (69-02-04).
+| Gap | Severity | Owner |
+|-----|----------|-------|
+| Remote GitHub Actions `CI` workflow green not recorded | **Human checkpoint** | Task 69-02-04 |
+| Thread `2026-05-27-warning-ratchet-followup.md` not archived | Low (ceremony) | Task 69-02-04 |
+| `/gsd-complete-milestone v2.6` not run | Low (ceremony) | User follow-up |
+
+No automated must-have gaps. Executable CI unchanged from Phase 68.
 
 ## Human verification
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Confirm GitHub Actions `CI` workflow green on next push to `origin` | ⬜ **Pending** | Branch ahead of `origin/main`; no remote run recorded in this session |
+| Confirm GitHub Actions `CI` workflow green on next push to `origin` | ⬜ **Pending** | Branch ahead of `origin/main`; no remote run URL/SHA recorded |
+| Archive warning-ratchet thread | ⬜ **Pending** | Thread still `active`; 69-02-04 |
 
 **Workflow URL / commit SHA:** _(fill after push — Task 69-02-04)_
 
 - [ ] Remote CI green recorded with URL and SHA
+- [ ] Thread archived with v2.6 resolution
 
 ## Verdict
 
-**Status: `passed`** — CI-03 local evidence complete; contract tests green; maintainer hygiene remediated. Remote CI trust explicitly deferred to human checkpoint with placeholder above.
+**Status: `human_needed`** — CI-03 automated goal achieved: maintainer CI gate map, contract tests green, ratchet hygiene remediated, planning ledgers and v2.6 audit artifact present. Phase cannot be marked fully **passed** until Task 69-02-04 records remote CI trust (and optionally archives the follow-up thread).
