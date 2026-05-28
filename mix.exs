@@ -32,7 +32,9 @@ defmodule Scoria.MixProject do
         "test.knowledge": :test,
         "scoria.warning_inventory": :test,
         "scoria.test.ci_trust": :test,
-        "test.ci_trust": :test
+        "test.ci_trust": :test,
+        "scoria.test.install_contract": :test,
+        "test.install_contract": :test
       ]
     ]
   end
