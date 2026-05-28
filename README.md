@@ -4,6 +4,8 @@
 
 Maintainer CI topology: see [operator verification — CI gate map](docs/operator_verification.md#ci-gate-map-maintainers).
 
+Maintainers: Hex release & recovery — [operator guide](docs/operator_verification.md#hex-release--recovery-maintainers).
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Elixir](https://img.shields.io/badge/Elixir-1.19%2B-4B275F.svg)](https://elixir-lang.org/)
 [![Phoenix](https://img.shields.io/badge/Phoenix-1.7%2B-FD4F00.svg)](https://www.phoenixframework.org/)

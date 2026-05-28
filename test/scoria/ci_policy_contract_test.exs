@@ -118,6 +118,19 @@ defmodule Scoria.CiPolicyContractTest do
              index_of(test_section, "mix test.knowledge")
   end
 
+  test "operator guide documents Hex release section and README links anchor" do
+    operator_docs = File.read!("docs/operator_verification.md")
+    readme = File.read!("README.md")
+
+    assert operator_docs =~ "## Hex release & recovery"
+    assert operator_docs =~ "hex-release--recovery-maintainers"
+    assert operator_docs =~ "HEX_API_KEY"
+    assert operator_docs =~ "hex-publish.yml"
+    assert operator_docs =~ "release-please--"
+    assert operator_docs =~ "default_workflow_permissions=write"
+    assert readme =~ "hex-release--recovery-maintainers"
+  end
+
   test "CI-03 documents CI gate map for maintainers" do
     operator_docs = File.read!("docs/operator_verification.md")
 

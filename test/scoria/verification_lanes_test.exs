@@ -51,7 +51,7 @@ defmodule Scoria.VerificationLanesTest do
   end
 
   test "ci lane ordering follows the canonical closeout chain" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
+    ci_workflow = File.read!(".github/workflows/ci-verify.yml")
     release_preview = VerificationLanes.ci_command(:release_preview)
     adoption = VerificationLanes.ci_command(:adoption)
     runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
