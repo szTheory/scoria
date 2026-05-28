@@ -1,0 +1,91 @@
+# Release Please opens/updates a Release PR from conventional commits on main.
+# When merged, it creates the GitHub Release + v* tag; verify runs the same bar as PR CI.
+# Maintainer guide: docs/operator_verification.md#hex-release--recovery-maintainers
+# Phase 72: enable publish-hex with HEX_API_KEY after first successful verify on tag.
+# Optional RELEASE_PLEASE_TOKEN if GITHUB_TOKEN cannot open Release PRs or chain-trigger CI.
+
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  verify:
+    name: CI Verify
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    uses: ./.github/workflows/ci-verify.yml
+
+  publish-hex:
+    name: Publish to Hex.pm
+    needs: [release-please, verify]
+  # Phase 72: set if: needs.release-please.outputs.release_created == 'true'
+    if: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Install Hex + Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Fetch deps and compile
+        run: |
+          mix deps.get
+          mix compile --warnings-as-errors
+
+      - name: Verify release version in mix.exs
+        run: grep -n "@version \"${{ needs.release-please.outputs.version }}\"" mix.exs
+
+      # Phase 72: uncomment after HEX_API_KEY is configured
+      # - name: Dry run Hex publish
+      #   env:
+      #     HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+      #   run: mix hex.publish --dry-run --yes
+      #
+      # - name: Publish to Hex
+      #   env:
+      #     HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+      #   run: mix hex.publish --yes
