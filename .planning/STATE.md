@@ -21,7 +21,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-28)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 71 — release-infrastructure
+**Current focus:** Phase 72 — hex-publish-closeout
 
 ## Current Position
 
@@ -56,7 +56,7 @@ Last activity: 2026-05-28
 
 - `mix scoria.test.ci_trust` — local Phase 69 contract verification
 - `.planning/warning-inventory.baseline.json` — `"clusters": {}`
-- `.planning/milestones/v2.6-MILESTONE-AUDIT.md` — passed; remote CI attestation pending (Phase 71 gate-zero)
+- `.planning/milestones/v2.6-MILESTONE-AUDIT.md` — passed; gate-zero waiver approved Phase 71 (remote CI URL deferred to Phase 72 publish)
 
 ## Active Threads
 
@@ -68,7 +68,7 @@ Last activity: 2026-05-28
 |----------|------|--------|-------|
 | v2.7 | SEM-CI-01 semantic lane in PR CI | deferred — document only | scoria-maintainers |
 | v2.7+ | Knowledge WAE in CI | deferred (Phase 69 D-17) | scoria-maintainers |
-| v2.6 carryover | Remote GitHub Actions green attestation | Phase 71 gate-zero | scoria-maintainers |
+| v2.6 carryover | Remote GitHub Actions green attestation | Phase 72 publish commit (non-waivable) | scoria-maintainers |
 
 ## Operator Next Steps
 

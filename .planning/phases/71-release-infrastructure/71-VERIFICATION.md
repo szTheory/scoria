@@ -1,8 +1,9 @@
 ---
 phase: 71-release-infrastructure
-status: human_needed
+status: passed
 updated: 2026-05-28
 score: 5/5
+gate_zero_approved: 2026-05-28
 ---
 
 # Phase 71 Goal Verification
@@ -15,7 +16,7 @@ score: 5/5
 | release-please + ci-verify on release | pass | `release-please.yml`, `release-please-config.json` |
 | hex-publish recovery documented | pass | `hex-publish.yml`, operator guide Hex section |
 | Hex name 404 + .tool-versions | pass | curl 404; `.tool-versions` OTP 27 / Elixir 1.19 |
-| Gate-zero attestation or waiver | human_needed | `waiver_id: gate-zero-71` — remote CI URL pending |
+| Gate-zero attestation or waiver | pass (waiver approved) | `waiver_id: gate-zero-71`; human approved 2026-05-28 |
 
 ## Automated checks
 
@@ -45,6 +46,9 @@ score: 5/5
 | Field | Value |
 |-------|-------|
 | `waiver_id` | `gate-zero-71` |
-| `deferred_to` | Phase 72 publish commit |
+| `status` | **approved** (2026-05-28) |
+| `deferred_to` | Phase 72 publish commit (remote CI URL required at publish) |
 | Local evidence | `mix scoria.test.ci_trust` exit 0 (2026-05-28) |
 | Audit reference | `.planning/milestones/v2.6-MILESTONE-AUDIT.md` |
+
+Remote CI URL on integration PR remains recommended before Phase 72 but does not block Phase 71 closeout.
