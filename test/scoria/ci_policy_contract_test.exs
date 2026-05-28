@@ -3,15 +3,36 @@ defmodule Scoria.CiPolicyContractTest do
 
   alias Scoria.VerificationLanes
 
+  @ci_verify ".github/workflows/ci-verify.yml"
+  @ci_entry ".github/workflows/ci.yml"
   @baseline_check "mix scoria.warning_baseline.check"
   @compile_wae "mix compile --warnings-as-errors"
   @ci_policy_contract "test/scoria/ci_policy_contract_test.exs"
   @lane_contract "test/scoria/verification_lanes_test.exs"
   @ratchet_wae "mix scoria.warning_ratchet.test --warnings-as-errors"
 
+  test "ci-verify.yml is reusable workflow_call SSOT" do
+    ci_verify = File.read!(@ci_verify)
+
+    assert ci_verify =~ "workflow_call"
+    assert ci_verify =~ @baseline_check
+    assert ci_verify =~ "MIX_ENV=dev mix scoria.release_preview"
+    assert ci_verify =~ "services:"
+    assert ci_verify =~ "postgres"
+  end
+
+  test "ci.yml delegates to ci-verify and extends triggers" do
+    ci_entry = File.read!(@ci_entry)
+
+    assert ci_entry =~ "uses: ./.github/workflows/ci-verify.yml"
+    assert ci_entry =~ "release-please--"
+    assert ci_entry =~ "workflow_dispatch"
+    refute ci_entry =~ "\n  policy:"
+  end
+
   test "policy job runs warning baseline check before compile WAE" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
-    [policy_section, _test_section] = split_jobs(ci_workflow)
+    ci_verify = File.read!(@ci_verify)
+    [policy_section, _test_section] = split_jobs(ci_verify)
 
     assert policy_section =~ @baseline_check
     assert index_of(policy_section, @baseline_check) < index_of(policy_section, @compile_wae)
@@ -20,24 +41,24 @@ defmodule Scoria.CiPolicyContractTest do
   end
 
   test "test job depends on policy and preserves closeout chain order" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
+    ci_verify = File.read!(@ci_verify)
 
     release_preview = VerificationLanes.ci_command(:release_preview)
     adoption = VerificationLanes.ci_command(:adoption)
     runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
 
-    assert ci_workflow =~ "needs: policy"
-    assert ci_workflow =~ release_preview
-    assert ci_workflow =~ adoption
-    assert ci_workflow =~ runtime_to_handoff
+    assert ci_verify =~ "needs: policy"
+    assert ci_verify =~ release_preview
+    assert ci_verify =~ adoption
+    assert ci_verify =~ runtime_to_handoff
 
-    assert index_of(ci_workflow, release_preview) < index_of(ci_workflow, adoption)
-    assert index_of(ci_workflow, adoption) < index_of(ci_workflow, runtime_to_handoff)
+    assert index_of(ci_verify, release_preview) < index_of(ci_verify, adoption)
+    assert index_of(ci_verify, adoption) < index_of(ci_verify, runtime_to_handoff)
   end
 
   test "postgres service is configured only for the test job" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
-    [policy_section, test_section] = split_jobs(ci_workflow)
+    ci_verify = File.read!(@ci_verify)
+    [policy_section, test_section] = split_jobs(ci_verify)
 
     refute policy_section =~ "services:"
     assert test_section =~ "services:"
@@ -53,8 +74,8 @@ defmodule Scoria.CiPolicyContractTest do
   end
 
   test "test job runs full suite WAE after runtime_to_handoff and before knowledge lane" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
-    [_policy_section, test_section] = split_jobs(ci_workflow)
+    ci_verify = File.read!(@ci_verify)
+    [_policy_section, test_section] = split_jobs(ci_verify)
     runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
 
     assert test_section =~ "run: mix test --warnings-as-errors"
@@ -79,16 +100,16 @@ defmodule Scoria.CiPolicyContractTest do
   end
 
   test "policy job does not run warning_ratchet.test" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
-    [policy_section, _test_section] = split_jobs(ci_workflow)
+    ci_verify = File.read!(@ci_verify)
+    [policy_section, _test_section] = split_jobs(ci_verify)
 
     refute policy_section =~ "scoria.warning_ratchet"
     refute policy_section =~ @ratchet_wae
   end
 
   test "ci.yml has workflow header comment block before jobs" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
-    [header, _rest] = String.split(ci_workflow, "\njobs:", parts: 2)
+    ci_entry = File.read!(@ci_entry)
+    [header, _rest] = String.split(ci_entry, "\njobs:", parts: 2)
 
     comment_lines =
       header
@@ -96,16 +117,17 @@ defmodule Scoria.CiPolicyContractTest do
       |> Enum.filter(&String.starts_with?(&1, "#"))
 
     assert length(comment_lines) >= 5
+    assert header =~ "ci-verify"
     assert header =~ "policy"
     assert header =~ "test"
   end
 
-  test "ci.yml documents per-job intent comments for policy and test" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
-    [policy_section, _test_section] = split_jobs(ci_workflow)
+  test "ci-verify.yml documents per-job intent comments for policy and test" do
+    ci_verify = File.read!(@ci_verify)
+    [policy_section, _test_section] = split_jobs(ci_verify)
 
     assert policy_section =~ "# policy:"
-    assert ci_workflow =~ "# test:"
+    assert ci_verify =~ "# test:"
   end
 
   test "operator CI gate map documents topology, parity, ratchet, and failure diagnosis" do
@@ -135,16 +157,16 @@ defmodule Scoria.CiPolicyContractTest do
   end
 
   test "ci.yml triggers on push and pull_request to main" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
+    ci_entry = File.read!(@ci_entry)
 
-    assert ci_workflow =~ "push:"
-    assert ci_workflow =~ "pull_request:"
-    assert ci_workflow =~ "- main"
+    assert ci_entry =~ "push:"
+    assert ci_entry =~ "pull_request:"
+    assert ci_entry =~ "- main"
   end
 
   test "policy job runs ci_policy_contract_test in lane-contract step" do
-    ci_workflow = File.read!(".github/workflows/ci.yml")
-    [policy_section, _test_section] = split_jobs(ci_workflow)
+    ci_verify = File.read!(@ci_verify)
+    [policy_section, _test_section] = split_jobs(ci_verify)
     lane_step = lane_contract_step(policy_section)
 
     assert lane_step =~ @ci_policy_contract
@@ -152,14 +174,11 @@ defmodule Scoria.CiPolicyContractTest do
     assert index_of(lane_step, @ci_policy_contract) < index_of(lane_step, @lane_contract)
   end
 
-  test "69-VERIFICATION.md records CI-03 traceability" do
-    verification =
-      File.read!(
-        ".planning/phases/69-ci-trust-and-milestone-closeout/69-VERIFICATION.md"
-      )
+  test "v2.6 milestone audit records CI-03 traceability" do
+    audit = File.read!(".planning/milestones/v2.6-MILESTONE-AUDIT.md")
 
-    assert verification =~ "CI-03 traceability"
-    assert verification =~ "ci_policy_contract_test"
+    assert audit =~ "CI-03"
+    assert audit =~ "ci_policy_contract_test"
   end
 
   test "v2.6 milestone audit documents CI closeout contract" do
@@ -169,14 +188,14 @@ defmodule Scoria.CiPolicyContractTest do
     assert audit =~ "policy"
   end
 
-  test "planning ledgers mark CI-03 and phase 69 complete" do
-    requirements = File.read!(".planning/REQUIREMENTS.md")
+  test "planning ledgers mark phase 69 complete" do
     roadmap = File.read!(".planning/ROADMAP.md")
+    milestones = File.read!(".planning/MILESTONES.md")
 
-    assert requirements =~ "[x] **CI-03**"
     assert roadmap =~ "69"
-    assert roadmap =~ "3/3"
     assert roadmap =~ "Complete"
+    assert milestones =~ "CI-03"
+    assert milestones =~ "v2.6 Warning Ratchet"
   end
 
   defp lane_contract_step(policy_section) do
@@ -192,7 +211,7 @@ defmodule Scoria.CiPolicyContractTest do
         [String.slice(content, 0, index), String.slice(content, index, byte_size(content))]
 
       :nomatch ->
-        flunk("expected policy and test jobs in ci.yml")
+        flunk("expected policy and test jobs in ci-verify.yml")
     end
   end
 
