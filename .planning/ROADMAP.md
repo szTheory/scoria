@@ -23,7 +23,7 @@
 
 ## Phases
 
-- [ ] Phase 70: Docs Truth Foundation (0/? plans)
+- [ ] Phase 70: Docs Truth Foundation (0/3 plans)
 - [ ] Phase 71: Release Infrastructure (0/? plans)
 - [ ] Phase 72: Hex Publish Closeout (0/? plans)
 
