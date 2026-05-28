@@ -72,6 +72,10 @@ defmodule Scoria.CiPolicyContractTest do
     assert operator_docs =~ "CI gate map"
     assert operator_docs =~ "policy"
     assert operator_docs =~ "needs: policy" or operator_docs =~ "`policy`"
+    assert operator_docs =~ "Not in PR CI"
+    assert operator_docs =~ "mix test.semantic_fast_path"
+    assert operator_docs =~ "Version namespaces"
+    assert operator_docs =~ "mix scoria.test.install_contract"
   end
 
   test "policy job does not run warning_ratchet.test" do

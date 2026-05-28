@@ -1,5 +1,6 @@
 defmodule Scoria.AdoptionSurfaceTest do
   use ExUnit.Case, async: true
+  alias Scoria.AdopterDocContract
   alias Scoria.VerificationLanes
 
   @readme "README.md"
@@ -22,7 +23,6 @@ defmodule Scoria.AdoptionSurfaceTest do
   test "README documents the shipped lane model and canonical lane hierarchy" do
     content = File.read!(@readme)
 
-    assert content =~ "Scoria is shipped through `v2.1 Tenant-scoped semantic fast path`"
     assert content =~ "Who This Is For"
     assert content =~ "Choose Your Lane"
     assert content =~ "Lane selection guide"
@@ -53,6 +53,36 @@ defmodule Scoria.AdoptionSurfaceTest do
     refute content =~ "Scoria is shipped through `v1.9 Crucible`"
     assert File.read!(@scoria_doctest) =~ "doctest Scoria"
     assert File.read!(@identity_doctest) =~ "doctest Scoria.Identity"
+  end
+
+  test "README shipped truth is capability-based" do
+    content = File.read!(@readme)
+    lower = String.downcase(content)
+
+    for noun <- AdopterDocContract.shipped_capability_nouns() do
+      assert lower =~ String.downcase(noun),
+             "expected README to mention capability noun #{inspect(noun)}"
+    end
+
+    for marker <- AdopterDocContract.upgrade_safe_install_markers() do
+      assert content =~ marker,
+             "expected README to include upgrade-safe marker #{inspect(marker)}"
+    end
+
+    for refute <-
+          AdopterDocContract.milestone_banner_refutes() ++
+            AdopterDocContract.readme_maintainer_command_refutes() do
+      refute content =~ refute,
+             "expected README not to contain #{inspect(refute)}"
+    end
+  end
+
+  test "operator guide documents install_contract maintainer proofs" do
+    operator_guide = File.read!(@operator_guide)
+    readme = File.read!(@readme)
+
+    assert operator_guide =~ "mix scoria.test.install_contract"
+    refute readme =~ "mix scoria.test.install_contract"
   end
 
   test "lane selection guide documents the adoption order and optional boundaries" do
@@ -221,7 +251,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "fresh-host install/migrate/route/runtime smoke"
     assert content =~ "local proof-only timeout"
     assert content =~ "suite-wide timeout change"
-    assert content =~ "canonical `v2.1` troubleshooting lane"
+    assert content =~ "canonical semantic fast-path troubleshooting lane"
     assert content =~ "broader repo-health context"
     assert content =~ "Scoria.start_run"
     assert content =~ "Scoria.get_run"
