@@ -102,6 +102,9 @@ jobs:
       - name: Run release preview lane
         run: MIX_ENV=dev mix scoria.release_preview
 
+      - name: Install phx_new archive for host consumer proof
+        run: mix archive.install hex phx_new --force
+
       - name: Prepare database
         run: |
           mix ecto.create

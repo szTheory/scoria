@@ -16,7 +16,7 @@ defmodule Scoria.CiPolicyContractTest do
 
     assert ci_verify =~ "workflow_call"
     assert ci_verify =~ @baseline_check
-    assert ci_verify =~ "MIX_ENV=dev mix scoria.release_preview"
+    assert ci_verify =~ "mix archive.install hex phx_new"
     assert ci_verify =~ "services:"
     assert ci_verify =~ "postgres"
   end
