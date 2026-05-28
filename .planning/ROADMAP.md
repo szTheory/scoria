@@ -15,7 +15,7 @@
 
 | Phase | Name | Goal | Requirements |
 |------:|------|------|--------------|
-| 70 | Docs Truth Foundation | Capability-based adopter docs + install_contract maintainer lane | DOCS-03, DOCS-04, INST-DX-01 |
+| 70 | 3/3 | Complete   | 2026-05-28 |
 | 71 | Release Infrastructure | CHANGELOG, release-please, publish workflow prep, v2.6 attestation | HEX-01, HEX-02 |
 | 72 | Hex Publish Closeout | `mix hex.publish`, tag, README/package_surface flip, milestone audit | HEX-01, HEX-02 |
 
@@ -23,7 +23,7 @@
 
 ## Phases
 
-- [ ] Phase 70: Docs Truth Foundation (0/3 plans)
+- [x] Phase 70: Docs Truth Foundation (0/3 plans) (completed 2026-05-28)
 - [ ] Phase 71: Release Infrastructure (0/? plans)
 - [ ] Phase 72: Hex Publish Closeout (0/? plans)
 
