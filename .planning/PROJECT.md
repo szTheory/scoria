@@ -10,33 +10,29 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: v2.6 Warning Ratchet
+## Current Milestone: v2.7 OSS Release + Docs Truth (planned)
 
-**Goal:** Close full-suite warning debt with staged warnings-as-errors ratchet and executable baseline-expiry policy so maintainer trust matches canonical lane truth.
+**Goal:** First Hex publish and README/support docs that honestly reflect v2.5+ shipped capability without weakening lane contracts.
 
 **Target features:**
-- Executable CI check that fails on expired rows in `.planning/WARNING-BASELINE.md`
-- Reproducible warning inventory classified by surface/area
-- Staged high-signal ratchet (`lib/`, canonical lane tests) before full-suite `mix test --warnings-as-errors`
-- CI full-suite WAE gate without changing closeout lane order
+- HEX-01: Release process and version-tag alignment for first Hex publish
+- DOCS-03: README and `adoption_surface_test` shipped-state assertions aligned to v2.5+ truth
+- Optional SEM-CI-01 semantic lane in CI without widening default closeout order
 
 ## Current State
 
-- Scoria shipped `v2.5 Installer Safety & Upgrade Confidence` on 2026-05-27.
-- Installer preview/check/apply now share one planner artifact: `--dry-run` and `--check` are no-write, tri-state exits are stable, and apply enforces manifest-aware drift preflight.
-- `Scoria.Install.Contract` is the operator-output SSOT; mode equivalence and B-cycle idempotency proofs guard preview/check/apply alignment.
-- Check-time vs apply-time manifest fingerprint roles are documented and tested; adoption discoverability meta-tests match `adoption_test_files/0`.
-- Milestone Nyquist coverage is 5/5 compliant for phases 59–63; v2.5 audit archived at `.planning/milestones/v2.5-MILESTONE-AUDIT.md`.
-- Canonical lane truth remains in `Scoria.VerificationLanes`; closeout chain unchanged: `mix scoria.release_preview`, `mix test.adoption`, `mix test.runtime_to_handoff`.
-- Warning baseline debt is tracked with owner+expiry; Phase 66 shipped executable WARN-03 enforcement and WARN-04 inventory infrastructure.
-- Phase 67 shipped high-signal ratchet WAE; Phase 68 closed WARN-07 with green full-suite `mix test --warnings-as-errors` locally and in CI.
-- CI now runs `mix scoria.warning_baseline.check` in a Postgres-free policy job before compile WAE and closeout lanes; test job enforces full-suite WAE after closeout lanes.
+- Scoria shipped `v2.6 Warning Ratchet` on 2026-05-28.
+- CI policy→test topology: `mix scoria.warning_baseline.check` → compile WAE → lane-contract WAE (policy job); closeout lanes → full-suite WAE → knowledge (test job).
+- Warning inventory and ratchet maintainer paths (`mix scoria.warning_inventory`, `mix scoria.warning_ratchet.*`) classify and clear debt by surface; baseline ledger empty (`"clusters": {}`).
+- Full-suite `mix test --warnings-as-errors` is green locally; `mix scoria.test.ci_trust` bundles Phase 69 contract verification.
+- Installer preview/check/apply truth from v2.5 remains SSOT; canonical lane order unchanged.
+- Milestone archives: `.planning/milestones/v2.6-ROADMAP.md`, `v2.6-REQUIREMENTS.md`, `v2.6-MILESTONE-AUDIT.md`.
 
 ## Next Milestone Goals
 
-**Queued (v2.7):** OSS Release + Docs Truth — first Hex publish, README/shipped-state honesty (update `adoption_surface_test` assertions together), preserve lane contracts.
+**Active planning target (v2.7):** OSS Release + Docs Truth — Hex publish, README/shipped-state honesty, preserve lane and installer contracts.
 
-**Preserve:** v2.4 lane contracts, CI closeout order, and v2.5 installer planner/check/apply truth across docs, tests, and CI.
+**Preserve:** v2.4 lane contracts, CI closeout order, v2.5 installer planner/check/apply truth, and v2.6 warning-ratchet CI gates.
 
 ## Requirements
 
@@ -94,10 +90,12 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Canonical compile and lane-contract surfaces remain warning-clean under warnings-as-errors. — Phase 67 `high-signal-warning-ratchet`
 - ✓ High-signal test surfaces pass under warnings-as-errors without new accepted debt. — Phase 67 `high-signal-warning-ratchet` (WARN-06)
 - ✓ Full `mix test --warnings-as-errors` passes in CI with baseline ledger closed. — Phase 68 `full-suite-warning-closure` (WARN-07)
+- ✓ CI preserves canonical closeout order with Postgres-free policy job first and full-suite WAE after closeout lanes. — `v2.6` Phase 69 (CI-03)
 
 ### Active
 
-- [x] **CI-03**: CI preserves canonical closeout order (`release_preview` → `adoption` → `runtime_to_handoff`) in the Postgres test job, runs a Postgres-free policy job first (baseline expiry, `mix compile --warnings-as-errors`, lane-contract WAE), and enforces full-suite `mix test --warnings-as-errors` after closeout lanes and before `mix test.knowledge`.
+- [ ] **HEX-01**: First Hex publish with release process and version-tag alignment (v2.7).
+- [ ] **DOCS-03**: README and support docs reflect v2.5+ shipped capability; `adoption_surface_test` shipped-state assertions updated (v2.7).
 
 ### Out of Scope
 
@@ -111,26 +109,25 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Connector adoption guides without explicit embedded-boundary framing — risks hosted-connector-platform drift; defer or keep narrow after v2.7.
 - Combining `WARN-03` with Hex publish, semantic CI gate, or connector docs in one milestone — dilutes focus; sequence v2.6 then v2.7.
 
-## Latest Shipped Milestone: v2.5 Installer Safety & Upgrade Confidence
+## Latest Shipped Milestone: v2.6 Warning Ratchet
 
-**Goal:** Make host-app installer mutations predictable, inspectable, and drift-safe before applying writes.
+**Goal:** Close full-suite warning debt with staged warnings-as-errors ratchet and executable baseline-expiry policy.
 
 **Delivered:**
-- Planner-driven `--dry-run` and `--check` with deterministic no-write surfaces and stable tri-state exit semantics.
-- Manifest-aware drift detection and planner-led apply preflight gates for managed router/config/migration surfaces.
-- `Scoria.Install.Contract` SSOT, mode equivalence proofs, and B-cycle idempotency across preview/check/apply.
-- Nyquist and traceability closeout for phases 59–63; adoption discoverability meta-tests aligned with lane file list.
+- Executable `mix scoria.warning_baseline.check` in CI policy job (WARN-03).
+- Classified warning inventory path and maintainer ratchet tasks (WARN-04, WARN-06).
+- Green compile, lane-contract, high-signal, and full-suite WAE (WARN-05, WARN-06, WARN-07).
+- CI gate map and contract-tested policy→test topology without reordering closeout lanes (CI-03).
 
-**Why it mattered:** Adopters can inspect and trust installer mutations before apply, closing the highest remaining host-app surprise risk after v2.4 reliability contracts.
+**Why it mattered:** Maintainer trust now matches executable CI truth — warning debt cannot silently expire or regress past canonical lanes.
 
 ## Context
 
-- Scoria shipped `v2.5 Installer Safety & Upgrade Confidence` on 2026-05-27 (~63k LOC Elixir across `lib/` and `test/`).
-- The canonical closeout chain remains `mix scoria.release_preview`, `mix test.adoption`, and `mix test.runtime_to_handoff`.
-- Optional semantic and knowledge lanes remain explicit extensions, not default-lane prerequisites.
-- Warning baseline expiry (`2026-06-07`) makes `WARN-03` the immediate next milestone.
-- Next milestone planning starts from the archived v2.5 installer-safety baseline.
-- README/support wording still carries one drift risk ("shipped through v2.1") that should be corrected in the upcoming docs-truth pass.
+- Scoria shipped `v2.6 Warning Ratchet` on 2026-05-28 (~63k+ LOC Elixir across `lib/` and `test/`).
+- CI: policy job (baseline + compile WAE + lane-contract) → test job (closeout → full WAE → knowledge).
+- Baseline ledger empty; `mix scoria.test.ci_trust` verifies Phase 69 contracts locally.
+- Next milestone: v2.7 OSS publish + docs-truth (README shipped-state drift remains).
+- Archives: `.planning/milestones/v2.6-*`
 
 ## Constraints
 
@@ -160,9 +157,9 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | `v2.4` should prioritize adoption reliability contracts over net-new capability expansion | Existing lanes already deliver value; highest leverage is keeping docs, CI, warnings, and installer behavior in lock-step truth | — Resolved |
 | Next milestone should preserve v2.4 reliability contracts while selecting one focused expansion axis | Reliability contract closure is now shipped; follow-up scope should be narrow and requirement-led | ✓ Good — v2.6 WARN-03 selected |
 | Next milestone should prioritize installer safety + upgrade confidence (`INST-03`, `INST-04`) before warning ratchet work | Host-app mutation surprise remains the highest adopter-trust risk after v2.4, and installer contracts are the narrowest high-leverage wedge | ✓ Good — shipped v2.5 |
-| `WARN-03` should execute immediately after installer safety milestone closeout | Warning debt remains important, but installer plan/apply + drift contracts are a bigger first-order adoption risk reducer | — Active (v2.6 next) |
-| No new runtime families until `WARN-03` and v2.7 OSS/docs closeout | Repo is ~84% done for embedded scope; highest leverage is warning trust + Hex/docs truth, not capability expansion | — Active |
-| Milestone sequencing: v2.6 WARN-03 → v2.7 Hex/docs-truth → optional semantic CI / connector guide | Confirmed by milestone next-step assessment 2026-05-27 | — Active |
+| `WARN-03` should execute immediately after installer safety milestone closeout | Warning debt remains important, but installer plan/apply + drift contracts are a bigger first-order adoption risk reducer | ✓ Good — shipped v2.6 |
+| No new runtime families until `WARN-03` and v2.7 OSS/docs closeout | Repo is ~84% done for embedded scope; highest leverage is warning trust + Hex/docs truth, not capability expansion | — Active (v2.7 next) |
+| Milestone sequencing: v2.6 WARN-03 → v2.7 Hex/docs-truth → optional semantic CI / connector guide | Confirmed by milestone next-step assessment 2026-05-27 | ✓ Good — v2.6 shipped |
 | Check-time manifest fingerprints are live-host-only; apply-time freshness gate uses stored manifest | Honest operator contract avoids misleading stored-fingerprint merge at check | ✓ Good — shipped Phase 63 |
 
 ## Milestone History
@@ -183,8 +180,16 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v2.3 Runtime-to-handoff adoption example`: Default-to-handoff adopter example, operator evidence alignment, canonical runtime-to-handoff proof lane, and closeout ledger.
 - `v2.4 Adoption Reliability Contract`: Canonical lane contract source, drift-proof docs checks, warning-policy enforcement, CI lane-order trust, and installer list-form hardening.
 - `v2.5 Installer Safety & Upgrade Confidence`: Planner/check no-write contracts, manifest-aware drift-safe apply, installer contract SSOT, Nyquist closeout, and adoption discoverability parity.
+- `v2.6 Warning Ratchet`: Executable baseline expiry, classified inventory, staged high-signal ratchet, full-suite WAE in CI, CI-03 gate map and contract tests.
 
 ## Archived Planning Notes
+
+<details>
+<summary>Pre-ship v2.6 framing</summary>
+
+`v2.6` closed warning debt with policy→test CI topology, inventory/ratchet maintainer paths, and full-suite WAE without changing closeout lane order. Archived in `.planning/milestones/v2.6-ROADMAP.md`, `.planning/milestones/v2.6-REQUIREMENTS.md`, and `.planning/milestones/v2.6-MILESTONE-AUDIT.md`.
+
+</details>
 
 <details>
 <summary>Pre-ship v2.5 framing</summary>
@@ -218,4 +223,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 — Phase 68 full-suite warning closure complete (WARN-07)*
+*Last updated: 2026-05-28 after v2.6 milestone*

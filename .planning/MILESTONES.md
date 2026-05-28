@@ -1,5 +1,31 @@
 # Milestones
 
+## v2.6 Warning Ratchet (Shipped: 2026-05-28)
+
+**Phases completed:** 4 phases, 15 plans, 35 tasks
+
+**Key accomplishments:**
+
+- Executable WARN-03 baseline expiry enforcement via Scoria.WarningBaseline and mix scoria.warning_baseline.check.
+- WARN-03 wired into GitHub Actions via policy/test job split with contract-tested ordering.
+- WARN-04 maintainer inventory path with hybrid cluster classification and write artifacts for Phase 67.
+- WARN-06 infrastructure: WarningRatchet path SSOT, scoped ratchet Mix tasks, and committed inventory with Phase 67 fix/defer queue
+- WARN-05 compile and lane-contract WAE verified green; operator docs and CI policy contract guard WarningRatchet SSOT without expanding policy job scope
+- Knowledge redefine cluster cleared via migrate-once migrator; host-proof overlay guarded under priv/; adoption-lane compile warnings fixed with inventory refresh
+- Removed dead default args from review queue unit test; test/scoria non-live p3 inventory clusters at zero with ratchet check green
+- LiveView p3 inventory clusters at zero; WARN-06 ratchet.test green with final inventory and Phase 67 verification evidence
+- Shared test/tmp preflight and post-capture cleanup for ratchet.check, unified JSON inventory encoding for tuple dedupe_key rows, and cwd-memoized high-signal path membership.
+- Staged high-signal WAE gate in CI test job after runtime_to_handoff, with gate-order contracts and operator docs mapping ratchet to adoption paths — without full-suite WAE until plan 68-03.
+- p2 host-proof warning clusters verified at zero via full inventory and adoption/ratchet WAE closeout — no support or overlay code changes required before 68-03 full-suite attempt.
+- WARN-07 closed: CI runs `mix test --warnings-as-errors` after closeout lanes; baseline ledger empty; LiveView render_async sweep and installer build isolation made full suite green.
+- CI-03 documentation bundle ships maintainer CI gate map, commented ci.yml topology, README link, contract-test doc anchor, and planning prose aligned to Phase 68 executable CI — with zero step reorder.
+- Symmetric `test/tmp` lifecycle in `warning_ratchet.test` and subprocess ratchet-check integration test restore maintainer ratchet→inventory trust from 68-REVIEW WR-01/WR-02.
+- CI-03 verification ledger and v2.6 milestone audit; `mix scoria.test.ci_trust` local parity attestation at closeout.
+
+**Known deferred items at close:** 0 (open-artifact audit clear at closeout)
+
+---
+
 ## v2.5 Installer Safety & Upgrade Confidence (Shipped: 2026-05-27)
 
 **Phases completed:** 7 phases, 16 plans, 17 tasks

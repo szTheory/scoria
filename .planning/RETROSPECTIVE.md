@@ -2,6 +2,40 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v2.6 — Warning Ratchet
+
+**Shipped:** 2026-05-28
+**Phases:** 4 | **Plans:** 15
+
+### What Was Built
+- Executable baseline expiry (`mix scoria.warning_baseline.check`) in a Postgres-free CI policy job.
+- Classified warning inventory and maintainer ratchet paths before full-suite WAE flip.
+- Green full-suite `mix test --warnings-as-errors` with empty baseline ledger.
+- CI gate map and contract tests documenting policy→test topology without reordering closeout lanes.
+
+### What Worked
+- Staged ratchet (compile → high-signal → full suite) avoided noisy all-at-once CI failures.
+- `mix scoria.test.ci_trust` automated Phase 69 verification and reduced ceremony UAT to three handoff checks.
+- Policy/test job split shifted cheap failures left before Postgres allocation.
+
+### What Was Inefficient
+- Phase 69 Nyquist validation ledger lagged behind VERIFICATION until closeout.
+- Remote CI attestation depended on branch protection model while local main was many commits ahead of origin.
+
+### Patterns Established
+- Keep CI topology SSOT in contract tests + `Scoria.VerificationLanes`, narrative in operator docs only.
+- Use `mix scoria.milestone.archive_thread` for repeatable planning-thread closeout metadata.
+
+### Key Lessons
+1. Inventory-first ratchet beats flipping full-suite WAE before cluster attribution exists.
+2. Maintainer-only ratchet tasks stay out of CI policy job; full WAE belongs after closeout lanes.
+
+### Cost Observations
+- Model mix: not tracked in this repo-local closeout
+- Notable: tmp_preflight integration test (~283s) is the long pole for `mix scoria.test.ci_trust`
+
+---
+
 ## Milestone: v2.3 — Runtime-to-handoff adoption example
 
 **Shipped:** 2026-05-27

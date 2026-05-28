@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.6
-milestone_name: Scope
-status: checkpoint
-last_updated: "2026-05-28T01:40:31.894Z"
-last_activity: 2026-05-28
+milestone_name: Warning Ratchet
+status: awaiting_next_milestone
+last_updated: "2026-05-28T11:32:23.681Z"
+last_activity: 2026-05-28 — Milestone v2.6 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
@@ -17,33 +17,32 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-05-27)
+See: `.planning/PROJECT.md` (updated 2026-05-28)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 69 — ci-trust-and-milestone-closeout
+**Current focus:** Planning v2.7 OSS Release + Docs Truth
 
 ## Current Position
 
-Phase: 69 (ci-trust-and-milestone-closeout) — CHECKPOINT
-Plan: 3 of 3 (69-02 automated tasks complete)
-Status: Task 69-02-04 — human remote CI confirmation pending
-Last activity: 2026-05-28 — Completed 69-02-01…03; stopped at manual checkpoint
-Resume: `.planning/phases/69-ci-trust-and-milestone-closeout/69-02-PLAN.md` Task 69-02-04
+Phase: Milestone v2.6 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-28 — Milestone v2.6 completed and archived
 
 ## Performance Metrics
 
-- **Latest Shipped Milestone:** `v2.5 Installer Safety & Upgrade Confidence` on 2026-05-27
-- **Active Milestone:** `v2.6 Warning Ratchet` (phases 66–69)
-- **Baseline expiry pressure:** cleared (full-suite + LiveView rows resolved 2026-05-27)
+- **Latest Shipped Milestone:** `v2.6 Warning Ratchet` on 2026-05-28
+- **Next Milestone:** `v2.7 OSS Release + Docs Truth` (HEX-01, DOCS-03)
+- **Baseline expiry pressure:** cleared; baseline ledger empty at v2.6 closeout
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
 - `v2.5` shipped planner/check no-write contracts, manifest-aware drift-safe apply, installer contract SSOT (phases 59–65).
-- **v2.6 (active):** WARN-03–CI-03 complete locally; remote CI attestation + `/gsd-complete-milestone v2.6` pending Task 69-02-04.
-- **v2.7 (queued):** first Hex publish + README/shipped-state docs-truth.
+- **v2.6 (shipped):** WARN-03–CI-03 complete; milestone archived 2026-05-28.
+- **v2.7 (next):** first Hex publish + README/shipped-state docs-truth.
 - `v2.4` lane contracts and CI closeout order remain non-negotiable.
 
 ### Evidence (Phase 68 closeout)
@@ -68,9 +67,7 @@ Resume: `.planning/phases/69-ci-trust-and-milestone-closeout/69-02-PLAN.md` Task
 
 ## Operator Next Steps
 
-- Execute Phase 69 — CI Trust And Milestone Closeout (CI-03)
-- Local closeout: `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors`
-- Resume file: `.planning/phases/69-ci-trust-and-milestone-closeout/` (when planned)
+- Start the next milestone with /gsd:new-milestone
 
 ### Phase 69 Decisions (69-01)
 

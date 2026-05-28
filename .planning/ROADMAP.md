@@ -2,86 +2,29 @@
 
 ## Milestones
 
-- ◆ **v2.6 Warning Ratchet** — Active (this file)
+- 📋 **v2.7 OSS Release + Docs Truth** — Planned (next)
+- ✅ **v2.6 Warning Ratchet** — Archived: `.planning/milestones/v2.6-ROADMAP.md` (shipped 2026-05-28)
 - ✅ **v2.5 Installer Safety & Upgrade Confidence** — Archived: `.planning/milestones/v2.5-ROADMAP.md` (shipped 2026-05-27)
 - ✅ **v2.4 Adoption Reliability Contract** — Archived: `.planning/milestones/v2.4-ROADMAP.md` (shipped 2026-05-27)
 
-## v2.6 Scope
-
-**Goal:** Close full-suite warning debt with staged warnings-as-errors ratchet and executable baseline-expiry policy.
-
-**Requirements mapped:** 6 / 6
-
-| Phase | Name | Goal | Requirements |
-|------:|------|------|--------------|
-| 66 | Baseline Expiry And Inventory | Executable baseline expiry + classified inventory | WARN-03, WARN-04 |
-| 67 | High-Signal Warning Ratchet (5/5) | Clear warnings in compile + canonical lane + targeted high-signal tests | WARN-05, WARN-06 |
-| 68 | Full-Suite Warning Closure | Green full-suite WAE in CI | WARN-07 |
-| 69 | 3/3 | Complete   | 2026-05-28 |
-
 ## Phases
 
-- [x] Phase 66: Baseline Expiry And Inventory (3/3 plans) (completed 2026-05-27)
-- [x] Phase 67: High-Signal Warning Ratchet (5/5 plans) (completed 2026-05-27)
-- [x] Phase 68: Full-Suite Warning Closure (4/4 plans) (completed 2026-05-27)
-- [x] Phase 69: CI Trust And Milestone Closeout (3/3 plans) (completed 2026-05-28)
+<details>
+<summary>✅ v2.6 Warning Ratchet (Phases 66–69) — SHIPPED 2026-05-28</summary>
 
-## Phase Details
+- [x] Phase 66: Baseline Expiry And Inventory (3/3 plans) — completed 2026-05-27
+- [x] Phase 67: High-Signal Warning Ratchet (5/5 plans) — completed 2026-05-27
+- [x] Phase 68: Full-Suite Warning Closure (4/4 plans) — completed 2026-05-27
+- [x] Phase 69: CI Trust And Milestone Closeout (3/3 plans) — completed 2026-05-28
 
-### Phase 66: Baseline Expiry And Inventory
+Full phase details: `.planning/milestones/v2.6-ROADMAP.md`
 
-**Goal:** Turn `.planning/WARNING-BASELINE.md` from prose policy into executable CI truth and produce a classified warning inventory.
+</details>
 
-**Requirements:** WARN-03, WARN-04
+### 📋 v2.7 OSS Release + Docs Truth (Planned)
 
-**Success criteria:**
-
-1. CI step fails when any baseline row is past expiry (before or alongside compile WAE).
-2. Inventory output groups known warning clusters (e.g. knowledge migration redefines, unused vars, LiveView teardown, host-proof compile) with file/area attribution.
-3. Inventory is reproducible from documented maintainer command(s) and referenced in milestone thread or phase notes.
-
-### Phase 67: High-Signal Warning Ratchet
-
-**Goal:** Clear warnings in compile, canonical lane surfaces, and inventory-prioritized high-signal tests without destabilizing the full suite.
-
-**Requirements:** WARN-05, WARN-06
-
-**Success criteria:**
-
-1. `mix compile --warnings-as-errors` passes.
-2. `mix test --warnings-as-errors` for lane-contract + adoption surface tests passes.
-3. Targeted high-signal test paths from Phase 66 inventory pass under WAE (remaining debt explicitly listed if deferred).
-
-### Phase 68: Full-Suite Warning Closure
-
-**Goal:** Achieve green full-suite WAE in CI or update baseline ledger with honest owner+expiry for any remaining accepted debt.
-
-**Requirements:** WARN-07
-
-**Success criteria:**
-
-1. `mix test --warnings-as-errors` passes locally and in CI.
-2. `.planning/WARNING-BASELINE.md` reflects post-ratchet truth (resolved rows removed; any remaining debt has owner+expiry).
-3. No silent regression of canonical lane warning-clean status.
-
-### Phase 69: CI Trust And Milestone Closeout
-
-**Goal:** Document CI trust and close v2.6 traceability (executable CI unchanged).
-
-**Requirements:** CI-03
-
-**Success criteria:**
-
-1. CI order remains `release_preview` → `adoption` → `runtime_to_handoff` for closeout lanes.
-2. Baseline-expiry check and full-suite WAE gate are present and documented in `.github/workflows/ci.yml`.
-3. REQUIREMENTS traceability and milestone audit artifacts updated for v2.6 closeout.
-
-## Non-Goals (v2.6)
-
-- Hex publish or README shipped-state corrections (v2.7).
-- New runtime capability families.
-- Installer planner/check/apply changes.
-- Broad LiveView refactor beyond inventory-targeted warning fixes.
+- Hex publish (HEX-01), README/shipped-state docs-truth (DOCS-03)
+- Preserve v2.4 lane contracts and v2.5 installer truth; optional semantic CI (SEM-CI-01)
 
 ## Progress
 
