@@ -9,12 +9,12 @@ Requirements for milestone `v2.7 OSS Release + Docs Truth`. Docs truth merges be
 
 ### Docs Truth
 
-- [ ] **DOCS-03**: README and support docs use a capability-based shipped banner (not internal milestone codenames) reflecting v2.5+ installer safety and v2.6 CI trust; `adoption_surface_test` guards updated accordingly.
-- [ ] **DOCS-04**: Maintainer docs state semantic fast-path is a local troubleshooting lane (not PR CI) and explain planning milestones (`v2.x`) vs Hex semver (`0.1.0`) once each for adopters.
+- [x] **DOCS-03**: README and support docs use a capability-based shipped banner (not internal milestone codenames) reflecting v2.5+ installer safety and v2.6 CI trust; `adoption_surface_test` guards updated accordingly.
+- [x] **DOCS-04**: Maintainer docs state semantic fast-path is a local troubleshooting lane (not PR CI) and explain planning milestones (`v2.x`) vs Hex semver (`0.1.0`) once each for adopters.
 
 ### Maintainer DX
 
-- [ ] **INST-DX-01**: `mix scoria.test.install_contract` runs deep installer contract proofs as a maintainer-only task; adoption lane file list excludes those tests; task documented in operator verification.
+- [x] **INST-DX-01**: `mix scoria.test.install_contract` runs deep installer contract proofs as a maintainer-only task; adoption lane file list excludes those tests; task documented in operator verification.
 
 ### Hex Publish
 
@@ -46,9 +46,9 @@ Deferred beyond `v2.7`:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DOCS-03 | Phase 70 | Pending |
-| DOCS-04 | Phase 70 | Pending |
-| INST-DX-01 | Phase 70 | Pending |
+| DOCS-03 | Phase 70 | Complete |
+| DOCS-04 | Phase 70 | Complete |
+| INST-DX-01 | Phase 70 | Complete |
 | HEX-01 | Phase 71, Phase 72 | Pending |
 | HEX-02 | Phase 71, Phase 72 | Pending |
 

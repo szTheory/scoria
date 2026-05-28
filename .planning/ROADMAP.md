@@ -15,7 +15,7 @@
 
 | Phase | Name | Goal | Requirements |
 |------:|------|------|--------------|
-| 70 | 3/3 | Complete   | 2026-05-28 |
+| 70 | 3/3 | Complete    | 2026-05-28 |
 | 71 | Release Infrastructure | CHANGELOG, release-please, publish workflow prep, v2.6 attestation | HEX-01, HEX-02 |
 | 72 | Hex Publish Closeout | `mix hex.publish`, tag, README/package_surface flip, milestone audit | HEX-01, HEX-02 |
 
