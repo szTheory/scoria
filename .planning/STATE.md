@@ -70,6 +70,11 @@ Last activity: 2026-05-28 — Completed 69-01-PLAN.md (ratchet maintainer hygien
 - Local closeout: `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors`
 - Resume file: `.planning/phases/69-ci-trust-and-milestone-closeout/` (when planned)
 
+### Phase 69 Decisions (69-01)
+
+- `warning_ratchet.test` mirrors check tmp lifecycle: `ensure_clean_tmp!` → work → `cleanup_transient_tmp!` in `after` (WR-01)
+- Ratchet integration test uses subprocess `mix scoria.warning_ratchet.check` to avoid nested ExUnit capture skip (WR-02)
+
 ### Phase 69 Decisions (69-00)
 
 - CI gate map in `docs/operator_verification.md` only — no `docs/ci.md` duplicate (D-05)

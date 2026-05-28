@@ -65,6 +65,8 @@ Each task was committed atomically:
 1. **Task 69-01-01: Symmetric tmp hygiene in warning_ratchet.test (WR-01)** - `7faa881` (fix)
 2. **Task 69-01-02: Subprocess ratchet→inventory integration test (WR-02)** - `3b8ad66` (test)
 
+**Plan metadata:** `86ab6cd` (docs: complete ratchet-maintainer-hygiene plan)
+
 ## Files Created/Modified
 
 - `lib/mix/tasks/scoria.warning_ratchet.test.ex` — ensure → try/after cleanup symmetry with check task
