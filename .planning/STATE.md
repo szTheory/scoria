@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v2.7
 milestone_name: OSS Release + Docs Truth
-status: defining_requirements
-last_updated: "2026-05-28T12:00:00.000Z"
-last_activity: 2026-05-28 — Milestone v2.7 started
+status: ready_for_planning
+last_updated: "2026-05-28T12:05:00.000Z"
+last_activity: 2026-05-28 — Milestone v2.7 roadmap created
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-05-28)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 70 — Docs Truth Foundation (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-28 — Milestone v2.7 started
+Status: Ready for planning
+Last activity: 2026-05-28 — Milestone v2.7 roadmap created
 
 ## Performance Metrics
 
