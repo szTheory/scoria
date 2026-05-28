@@ -8,7 +8,6 @@ defmodule Mix.Tasks.Scoria.Test.AdoptionTest do
     expected_files = [
       "test/scoria_test.exs",
       "test/scoria/identity_doctest_test.exs",
-      "test/scoria/verification_lanes_test.exs",
       "test/scoria/adoption_surface_test.exs",
       "test/scoria/handoff_example_source_test.exs",
       "test/scoria/phoenix_example_source_test.exs",
@@ -17,11 +16,7 @@ defmodule Mix.Tasks.Scoria.Test.AdoptionTest do
       "test/scoria/runtime_test.exs",
       "test/scoria/host_app_consumer_proof_test.exs",
       "test/mix/tasks/scoria.install_test.exs",
-      "test/mix/tasks/scoria.install_check_test.exs",
       "test/mix/tasks/scoria.install_route_smoke_test.exs",
-      "test/scoria/install/planner_test.exs",
-      "test/scoria/install/report_test.exs",
-      "test/scoria/install/mode_equivalence_test.exs",
       "test/scoria/bootstrap/migration_lane_compatibility_test.exs"
     ]
 
