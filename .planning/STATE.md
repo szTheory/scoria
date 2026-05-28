@@ -21,13 +21,13 @@ See: `.planning/PROJECT.md` (updated 2026-05-28)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 70 — docs-truth-foundation
+**Current focus:** Phase 71 — release-infrastructure
 
 ## Current Position
 
 Phase: 71
 Plan: Not started
-Status: Executing Phase 70
+Status: Phase 71 context gathered — ready for plan
 Last activity: 2026-05-28
 
 ## Performance Metrics
