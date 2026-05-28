@@ -1,18 +1,18 @@
 defmodule Scoria.MixProject do
   use Mix.Project
 
-  def project do
-    version = "0.1.0"
+  @version "0.1.0"
 
+  def project do
     [
       app: :scoria,
-      version: version,
+      version: @version,
       description: description(),
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      docs: docs(version),
+      docs: docs(),
       package: package(),
       source_url: "https://github.com/szTheory/scoria",
       homepage_url: "https://github.com/szTheory/scoria"
@@ -82,10 +82,10 @@ defmodule Scoria.MixProject do
     "Phoenix-native AI runtime and operator surface for durable runs, approvals, replay, evaluation, and bounded semantic reuse."
   end
 
-  defp docs(version) do
+  defp docs do
     [
       main: "readme",
-      source_ref: "v#{version}",
+      source_ref: "v#{@version}",
       extras: [
         "README.md",
         "LICENSE",
