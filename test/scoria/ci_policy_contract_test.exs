@@ -90,11 +90,13 @@ defmodule Scoria.CiPolicyContractTest do
     refute hex_publish =~ "sync_release_summary"
   end
 
-  test "release-please bootstrap config uses manifest 0.0.0" do
+  test "release-please bootstrap config keeps pre-ship or release PR manifest" do
     manifest = File.read!(".release-please-manifest.json")
     config = File.read!("release-please-config.json")
 
-    assert manifest =~ "0.0.0"
+    assert manifest =~ ~r/"\."\s*:\s*"(0\.0\.0|0\.1\.0)"/,
+           "manifest must stay 0.0.0 on main pre-ship or bump to 0.1.0 on the Release PR"
+
     assert config =~ "release-as"
     assert config =~ "0.1.0"
     assert config =~ "bootstrap-sha"

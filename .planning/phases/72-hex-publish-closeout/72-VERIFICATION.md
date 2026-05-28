@@ -23,13 +23,13 @@ Phase 71 gate-zero waiver (`gate-zero-71`) is closed by this attestation on the 
 
 ## Publish commit CI
 
-*(pending — record green `ci-verify` on merge commit `197c929` after main CI completes)*
-
 | Field | Value |
 |-------|-------|
-| CI run URL | *(pending)* |
-| policy job | *(pending)* |
-| test job | *(pending)* |
+| Date | 2026-05-28 |
+| Merge commit SHA | `197c92939a7fa250febd7f18f7c505c109a17370` |
+| CI run URL | https://github.com/szTheory/scoria/actions/runs/26600574013 |
+| policy job | success |
+| test job | success |
 
 ## Publish evidence
 
