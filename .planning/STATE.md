@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.7
-milestone_name: OSS Release + Docs Truth
-status: ready_for_planning
-last_updated: "2026-05-28T12:05:00.000Z"
+milestone_name: Scope
+status: planning
+last_updated: "2026-05-28T13:33:54.176Z"
 last_activity: 2026-05-28 — Milestone v2.7 roadmap created
 progress:
   total_phases: 3
