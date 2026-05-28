@@ -63,6 +63,14 @@ defmodule Scoria.CiPolicyContractTest do
              index_of(test_section, "mix test.knowledge")
   end
 
+  test "CI-03 documents CI gate map for maintainers" do
+    operator_docs = File.read!("docs/operator_verification.md")
+
+    assert operator_docs =~ "CI gate map"
+    assert operator_docs =~ "policy"
+    assert operator_docs =~ "needs: policy" or operator_docs =~ "`policy`"
+  end
+
   test "policy job does not run warning_ratchet.test" do
     ci_workflow = File.read!(".github/workflows/ci.yml")
     [policy_section, _test_section] = split_jobs(ci_workflow)
