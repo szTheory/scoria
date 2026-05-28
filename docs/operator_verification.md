@@ -261,7 +261,7 @@ Local full-suite closeout uses pgvector Postgres on port 55432 (`SCORIA_DB_PORT=
 
 ### CI gate map (maintainers)
 
-GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **`test`** (`needs: policy`, pgvector Postgres on port 55432) for canonical closeout. Executable order lives in `.github/workflows/ci.yml`, `Scoria.VerificationLanes`, and `test/scoria/ci_policy_contract_test.exs` — this section explains topology and local parity only.
+GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **`test`** (`needs: policy`, pgvector Postgres on port 55432) for canonical closeout. Executable jobs live in `.github/workflows/ci-verify.yml` (reusable SSOT); `.github/workflows/ci.yml` is the PR entrypoint. Lane order is also enforced by `Scoria.VerificationLanes` and `test/scoria/ci_policy_contract_test.exs` — this section explains topology and local parity only.
 
 **Policy job (fail cheap, no database):**
 
@@ -299,6 +299,77 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 - Policy: lane-contract WAE failed → `MIX_ENV=test mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
 - Test: adoption or runtime_to_handoff failed → reproduce with `SCORIA_DB_PORT=55432 mix test.adoption` or `mix test.runtime_to_handoff`
 - Test: full-suite WAE failed → `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors` after closeout lanes pass
+
+## Hex release & recovery (maintainers) {#hex-release--recovery-maintainers}
+
+Maintainer-only release operations for the first Hex publish at semver `0.1.0` / git tag `v0.1.0`. Adopter install guidance stays in README and [CHANGELOG.md](../CHANGELOG.md) — see the **Planning milestones vs Hex releases** preamble there for how `v2.x` planning tranches relate to Hex semver.
+
+### Version namespaces
+
+- **Hex / git:** `0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}` on [hex.pm](https://hex.pm/packages/scoria) after Phase 72.
+- **Planning:** `v2.x` rows in [`.planning/MILESTONES.md`](../.planning/MILESTONES.md) are internal delivery tranches — not a second install axis.
+
+### HEX_API_KEY
+
+Generate an API-scoped key locally, then store it as a repository secret (never commit the key value):
+
+```bash
+mix hex.user key generate scoria-ci --api
+gh secret set HEX_API_KEY --repo szTheory/scoria
+```
+
+If the package later gains an `organization:` field in `mix.exs`, use the matching Hex org key workflow.
+
+### GitHub workflow permissions
+
+Before the first Release Please run on `main`, set workflow permissions so release-please can open PRs and chain CI:
+
+```bash
+gh api -X PUT /repos/szTheory/scoria/actions/permissions/workflow \
+  -f default_workflow_permissions=write \
+  -F can_approve_pull_request_reviews=true
+```
+
+### RELEASE_PLEASE_TOKEN (optional)
+
+Set `RELEASE_PLEASE_TOKEN` to a fine-grained PAT when `GITHUB_TOKEN` cannot open Release PRs or when pushes to `release-please--**` branches must trigger required checks. Otherwise `github.token` suffices.
+
+### Default path (Release Please)
+
+1. Push conventional commits to `main` → `.github/workflows/release-please.yml` opens/updates a Release PR.
+2. Confirm CI is green on the `release-please--**` branch (same `ci-verify.yml` bar as PR CI).
+3. Review the Release PR — it must target **`0.1.0`** for the first publish (not `0.1.1`, `0.2.0`, or `1.0.0`).
+4. **Phase 71:** do **not** merge the Release PR or run production `mix hex.publish`.
+5. **Phase 72:** merge the Release PR → tag `v0.1.0` → enable `publish-hex` with `HEX_API_KEY`.
+
+### Manual recovery (`hex-publish.yml`)
+
+When `publish-hex` failed or was skipped but the git tag exists and the version is **not** already on hex.pm:
+
+```bash
+gh workflow run hex-publish.yml \
+  --ref v0.1.0 \
+  -f tag=v0.1.0 \
+  -f release_version=0.1.0
+```
+
+Always pass `--ref` matching the tag so `ci-verify.yml` runs against that tree. After recovery, sync `.release-please-manifest.json` if the registry version advanced without a matching manifest bump.
+
+**Do not** re-publish a version already listed on hex.pm.
+
+### Phase 71 boundary
+
+- No production `mix hex.publish` in Phase 71 (`publish-hex` jobs use `if: false`).
+- Record Release PR version target (`0.1.0`) in `71-VERIFICATION.md` after `main` receives release infra; do not merge until Phase 72.
+
+### Executable SSOT
+
+| Workflow | Role |
+|----------|------|
+| `.github/workflows/ci-verify.yml` | Reusable policy → test verify bar |
+| `.github/workflows/ci.yml` | PR / `release-please--**` triggers |
+| `.github/workflows/release-please.yml` | Release PR automation |
+| `.github/workflows/hex-publish.yml` | Manual recovery (`workflow_dispatch`) |
 
 ## Installer contract proofs (maintainers)
 
