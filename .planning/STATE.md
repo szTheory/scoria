@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Scope
 status: executing
-last_updated: "2026-05-28T01:24:44.122Z"
-last_activity: 2026-05-28 -- Phase 69 planning complete
+last_updated: "2026-05-28T01:27:02.111Z"
+last_activity: 2026-05-28
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 15
-  completed_plans: 12
-  percent: 75
+  completed_plans: 13
+  percent: 87
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-27)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 69 — CI Trust And Milestone Closeout
+**Current focus:** Phase 69 — ci-trust-and-milestone-closeout
 
 ## Current Position
 
-Phase: 69
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-28 -- Phase 69 planning complete
+Phase: 69 (ci-trust-and-milestone-closeout) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute 69-01-PLAN.md
+Last activity: 2026-05-28 -- Completed 69-00-PLAN.md (CI trust docs)
 
 ## Performance Metrics
 
@@ -68,6 +68,12 @@ Last activity: 2026-05-28 -- Phase 69 planning complete
 - Execute Phase 69 — CI Trust And Milestone Closeout (CI-03)
 - Local closeout: `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors`
 - Resume file: `.planning/phases/69-ci-trust-and-milestone-closeout/` (when planned)
+
+### Phase 69 Decisions (69-00)
+
+- CI gate map in `docs/operator_verification.md` only — no `docs/ci.md` duplicate (D-05)
+- `ci.yml` comments-only; step order unchanged for contract tests
+- CI-03 checkbox deferred to 69-02 verification (D-09)
 
 ### Phase 68 Decisions (68-03)
 
