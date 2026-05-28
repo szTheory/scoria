@@ -20,7 +20,7 @@ Requirements for milestone `v2.6 Warning Ratchet`.
 
 ### CI Trust
 
-- [ ] **CI-03**: CI preserves canonical closeout order (`release_preview` → `adoption` → `runtime_to_handoff`) while running baseline-expiry and staged WAE checks before the broad test gate.
+- [ ] **CI-03**: CI preserves canonical closeout order (`release_preview` → `adoption` → `runtime_to_handoff`) in the Postgres test job, runs a Postgres-free policy job first (baseline expiry, `mix compile --warnings-as-errors`, lane-contract WAE), and enforces full-suite `mix test --warnings-as-errors` after closeout lanes and before `mix test.knowledge`.
 
 ## Future Requirements
 

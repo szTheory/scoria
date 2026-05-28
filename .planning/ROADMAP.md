@@ -17,7 +17,7 @@
 | 66 | Baseline Expiry And Inventory | Executable baseline expiry + classified inventory | WARN-03, WARN-04 |
 | 67 | High-Signal Warning Ratchet (5/5) | Clear warnings in compile + canonical lane + targeted high-signal tests | WARN-05, WARN-06 |
 | 68 | 4/4 | Complete    | 2026-05-27 |
-| 69 | CI Trust And Milestone Closeout | Preserve lane order; wire gates; close ledger | CI-03 |
+| 69 | CI Trust And Milestone Closeout | Document CI trust; close v2.6 traceability | CI-03 |
 
 ## Phases
 
@@ -66,7 +66,7 @@
 
 ### Phase 69: CI Trust And Milestone Closeout
 
-**Goal:** Wire staged gates into CI without changing canonical closeout order; close milestone traceability.
+**Goal:** Document CI trust and close v2.6 traceability (executable CI unchanged).
 
 **Requirements:** CI-03
 
