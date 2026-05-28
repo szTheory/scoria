@@ -14,6 +14,7 @@ defmodule Scoria.RuntimeTest do
 
   test "Scoria and Scoria.Runtime expose explicit lifecycle verbs" do
     assert Code.ensure_loaded?(Scoria)
+    assert Code.ensure_loaded?(Scoria.Runtime)
     assert function_exported?(Scoria, :start_run, 2)
     assert function_exported?(Scoria, :start_handoff_run, 3)
     assert function_exported?(Scoria, :resume_run, 2)
