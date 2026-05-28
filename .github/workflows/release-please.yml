@@ -51,8 +51,7 @@ jobs:
   publish-hex:
     name: Publish to Hex.pm
     needs: [release-please, verify]
-  # Phase 72: set if: needs.release-please.outputs.release_created == 'true'
-    if: false
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -79,13 +78,12 @@ jobs:
       - name: Verify release version in mix.exs
         run: grep -n "@version \"${{ needs.release-please.outputs.version }}\"" mix.exs
 
-      # Phase 72: uncomment after HEX_API_KEY is configured
-      # - name: Dry run Hex publish
-      #   env:
-      #     HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-      #   run: mix hex.publish --dry-run --yes
-      #
-      # - name: Publish to Hex
-      #   env:
-      #     HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-      #   run: mix hex.publish --yes
+      - name: Dry run Hex publish
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: mix hex.publish --dry-run --yes
+
+      - name: Publish to Hex
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: mix hex.publish --yes

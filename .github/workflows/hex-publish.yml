@@ -29,7 +29,7 @@ jobs:
   publish:
     name: Publish to Hex.pm
     needs: verify
-    if: false
+    if: ${{ needs.verify.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,13 +51,12 @@ jobs:
           mix deps.get
           mix compile --warnings-as-errors
 
-      # Phase 72: enable job and uncomment after HEX_API_KEY is configured
-      # - name: Dry run Hex publish
-      #   env:
-      #     HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-      #   run: mix hex.publish --dry-run --yes
-      #
-      # - name: Publish to Hex
-      #   env:
-      #     HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-      #   run: mix hex.publish --yes
+      - name: Dry run Hex publish
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: mix hex.publish --dry-run --yes
+
+      - name: Publish to Hex
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: mix hex.publish --yes
