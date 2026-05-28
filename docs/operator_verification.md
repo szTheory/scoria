@@ -67,13 +67,13 @@ The bounded verifier carries the slow generated-host proof under a local proof-o
 
 ## Semantic fast-path troubleshooting lane
 
-When you are validating the `v2.1` semantic fast path specifically, use the bounded semantic lane instead of the broad suite:
+When you are validating the semantic fast path specifically, use the bounded semantic lane instead of the broad suite:
 
 ```bash
 SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 ```
 
-This is the canonical `v2.1` troubleshooting lane. It proves:
+This is the canonical semantic fast-path troubleshooting lane. It proves:
 
 - tenant partitioning and semantic lookup behavior
 - explicit fallback visibility for `bypass`, `miss`, `reject`, and `hit`
@@ -195,7 +195,7 @@ Use `mix scoria.release_preview` as the canonical maintainer proof for docs-buil
 If you are wiring the lane into CI, run it under `MIX_ENV=dev` instead of presenting the job-wide test env as the supported closeout contract.
 Use `mix test.adoption` as the canonical default-lane verifier for the install, fresh-host install/migrate/route/runtime proof, docs, and migration-lane guards that make up the bounded acceptance harness.
 Use `mix test.runtime_to_handoff` as the canonical bounded escalation proof lane for runtime-to-handoff behavior and delegated evidence readback.
-Use `mix test.semantic_fast_path` only for the canonical `v2.1` semantic fast-path troubleshooting lane.
+Use `mix test.semantic_fast_path` only for the canonical semantic fast-path troubleshooting lane.
 Use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
 Use `mix test` as broader repo-health context when you want to classify failures outside the canonical proof lane.
 
@@ -277,6 +277,17 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 4. `mix test --warnings-as-errors` — full-suite WAE after closeout lanes
 5. `mix test.knowledge` — optional knowledge lane (behavior, not WAE)
 
+**Verification lanes in PR CI**
+
+| Lane | Command | In PR CI? | Notes |
+|------|---------|-----------|-------|
+| Default runtime | mix test.adoption | Yes | PR closeout lane 3 |
+| Runtime-to-handoff | mix test.runtime_to_handoff | Yes | PR closeout lane 3 |
+| Semantic fast-path | mix test.semantic_fast_path | Not in PR CI | Local maintainer command; see [Semantic fast-path troubleshooting lane](#semantic-fast-path-troubleshooting-lane); SEM-CI-01 deferred; semantic tests still run via full-suite WAE |
+| Optional knowledge | mix test.knowledge | Yes | After full-suite WAE |
+
+**Version namespaces:** Hex/git releases use semver (`0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}`). Planning milestones (`v2.x` in `.planning/`) are internal shipped-work tranches, not a second installable version axis.
+
 **Local parity:** set `SCORIA_DB_PORT=55432` for the test job database; use `MIX_ENV=dev` only for `mix scoria.release_preview`. Run `mix scoria.test.ci_trust` for the full Phase 69 maintainer trust bundle (policy contracts + ratchet hygiene integration); add `--fast` for policy-parity only (~30s).
 
 **Ratchet is maintainer-only:** `mix scoria.warning_ratchet.test` and `mix scoria.warning_ratchet.check` are WARN-06 debugger commands — they are **not** CI steps after Phase 68.
@@ -288,3 +299,15 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 - Policy: lane-contract WAE failed → `MIX_ENV=test mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
 - Test: adoption or runtime_to_handoff failed → reproduce with `SCORIA_DB_PORT=55432 mix test.adoption` or `mix test.runtime_to_handoff`
 - Test: full-suite WAE failed → `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors` after closeout lanes pass
+
+## Installer contract proofs (maintainers)
+
+Deep installer contract proofs live outside the adoption closeout lanes:
+
+```bash
+mix scoria.test.install_contract
+```
+
+(`mix test.install_contract` is a compatibility alias.)
+
+This maintainer bundle runs report, mode_equivalence, install, install_check, and planner tests. It is **not** a PR CI step, **not** in the adoption closeout chain, and **not** documented in the README.
