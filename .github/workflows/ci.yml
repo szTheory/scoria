@@ -11,7 +11,15 @@ on:
 permissions:
   contents: read
 
+# Two-job CI topology: policy (fail cheap, no Postgres) → test (canonical closeout + full WAE).
+# Executable order SSOT: Scoria.VerificationLanes + test/scoria/ci_policy_contract_test.exs.
+# Maintainer narrative (topology, local parity, failure diagnosis):
+#   docs/operator_verification.md — CI gate map (maintainers).
+# Policy job: baseline expiry, compile WAE, lane-contract WAE — no database service.
+# Test job: release_preview (dev) → ecto → closeout lanes → full-suite WAE → knowledge lane.
+
 jobs:
+  # policy: baseline expiry + compile WAE + lane-contract tests (no Postgres)
   policy:
     runs-on: ubuntu-latest
 
@@ -46,6 +54,7 @@ jobs:
       - name: Verify lane-contract tests with warnings as errors
         run: mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs
 
+  # test: release_preview → closeout lanes → full-suite WAE → knowledge lane
   test:
     runs-on: ubuntu-latest
     needs: policy
