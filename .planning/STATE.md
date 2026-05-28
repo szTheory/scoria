@@ -67,7 +67,8 @@ Last activity: 2026-05-28 — Milestone v2.6 completed and archived
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd:new-milestone
+- Run `/gsd-new-milestone` to define v2.7 requirements and roadmap
+- Preserve v2.6 CI gates: `mix scoria.test.ci_trust`, policy→test topology in `ci.yml`
 
 ### Phase 69 Decisions (69-01)
 
