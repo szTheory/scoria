@@ -257,7 +257,10 @@ defmodule Scoria.CiPolicyContractTest do
   end
 
   defp lane_contract_step(policy_section) do
-    case Regex.run(~r/- name: Verify lane-contract tests with warnings as errors\n\s+run: (.+)/, policy_section) do
+    case Regex.run(
+           ~r/- name: Verify lane-contract tests with warnings as errors\n(?:\s+env:\n(?:\s+.+\n)+)?\s+run: (.+)/,
+           policy_section
+         ) do
       [_, run_line] -> run_line
       _ -> flunk("expected lane-contract step in policy job")
     end

@@ -45,6 +45,8 @@ jobs:
         run: mix compile --warnings-as-errors
 
       - name: Verify lane-contract tests with warnings as errors
+        env:
+          SCORIA_LANE_CONTRACT_ONLY: "true"
         run: mix test --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs
 
   # test: release_preview → closeout lanes → full-suite WAE → knowledge lane
