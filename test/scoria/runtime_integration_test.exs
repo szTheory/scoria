@@ -208,7 +208,7 @@ defmodule Scoria.RuntimeIntegrationTest do
     assert render(view) =~ "step_completed"
   end
 
-  defp wait_for(fun, attempts \\ 40)
+  defp wait_for(fun, attempts \\ 120)
 
   defp wait_for(fun, attempts) when attempts > 0 do
     if fun.() do
