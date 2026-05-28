@@ -21,6 +21,37 @@ defmodule Scoria.CiPolicyContractTest do
     assert ci_verify =~ "postgres"
   end
 
+  test "release-please.yml uses ci-verify and disables publish in phase 71" do
+    release_please = File.read!(".github/workflows/release-please.yml")
+
+    assert release_please =~ "googleapis/release-please-action"
+    assert release_please =~ "ci-verify.yml"
+    assert release_please =~ "publish-hex"
+    assert release_please =~ "if: false"
+    refute release_please =~ "sync_release_summary"
+  end
+
+  test "hex-publish.yml supports workflow_dispatch recovery with verify" do
+    hex_publish = File.read!(".github/workflows/hex-publish.yml")
+
+    assert hex_publish =~ "workflow_dispatch"
+    assert hex_publish =~ "tag:"
+    assert hex_publish =~ "release_version"
+    assert hex_publish =~ "ci-verify.yml"
+    refute Regex.match?(~r/^\s+run: mix hex\.publish --yes/m, hex_publish)
+  end
+
+  test "release-please bootstrap config uses manifest 0.0.0" do
+    manifest = File.read!(".release-please-manifest.json")
+    config = File.read!("release-please-config.json")
+
+    assert manifest =~ "0.0.0"
+    assert config =~ "release-as"
+    assert config =~ "0.1.0"
+    assert config =~ "bootstrap-sha"
+    assert config =~ "changelog-path"
+  end
+
   test "ci.yml delegates to ci-verify and extends triggers" do
     ci_entry = File.read!(@ci_entry)
 
