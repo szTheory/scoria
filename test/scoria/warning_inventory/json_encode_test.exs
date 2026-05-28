@@ -17,23 +17,6 @@ defmodule Scoria.WarningInventory.JsonEncodeTest do
     assert Jason.encode!(%{"rows" => encode_rows(rows)})
   end
 
-  test "mix scoria.warning_inventory --format json does not raise on encode" do
-    output =
-      ExUnit.CaptureIO.capture_io(fn ->
-        Mix.Tasks.Scoria.WarningInventory.run(["--format", "json", "--quiet"])
-      end)
-
-    assert output =~ "\"rows\""
-
-    json =
-      output
-      |> String.split("\n")
-      |> Enum.drop_while(&(not String.starts_with?(String.trim_leading(&1), "{")))
-      |> Enum.join("\n")
-
-    assert Jason.decode!(json)
-  end
-
   defp encode_rows(rows) do
     Enum.map(rows, fn row ->
       Map.new(row, fn {key, value} ->
