@@ -10,12 +10,13 @@ Maintainer CI topology: see [operator verification — CI gate map](docs/operato
 
 Scoria is the Phoenix-native runtime and operator surface for identity-aware AI runs. It gives a host app one public place to normalize actor, tenant, and session identity, start durable runs, resume an exact paused run by `run_id`, and inspect operator evidence at `/scoria` without turning the dashboard into the app's source of business truth.
 
-Scoria is shipped through `v2.1 Tenant-scoped semantic fast path`. The current public shape is intentionally narrow:
+Scoria is a Phoenix-native runtime with a narrow public surface — **start with the default runtime**, add lanes only when needed:
 
-- a default runtime lane for durable Phoenix-hosted runs
-- a bounded handoff lane for narrow same-run delegation
-- a semantic fast path for explicitly safe read-only work
-- an optional knowledge lane for pgvector-backed retrieval and grounding
+- **Default runtime** — durable runs, approvals, operator evidence
+- **Bounded handoff** — narrow same-run delegation, projected context, visible lineage
+- **Semantic fast path** — opt-in, tenant-partitioned reuse for explicitly safe read-only work
+- **Optional knowledge** — pgvector retrieval/grounding when chosen
+- **Upgrade-safe install** — `mix scoria.install` with plan/check/apply paths
 
 Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Use mix test.runtime_to_handoff as the bounded escalation proof lane when the same durable run needs narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
 
@@ -68,6 +69,21 @@ That installs the default Phoenix lane by:
 - updating Tailwind content globs when a Tailwind config is present
 
 Tailwind is optional for the install task. If your host app uses a different asset pipeline, the default lane still installs cleanly.
+
+### Upgrading or re-running install
+
+When upgrading Scoria or re-running install on an existing host app:
+
+1. Run `mix scoria.install --dry-run` to preview planned changes without writes.
+2. Run `mix scoria.install --check` to verify current state without writes.
+3. Remediate any `manual_review` entries using the printed remediation steps.
+4. Run `mix scoria.install` to apply planner-classified changes.
+
+- `--dry-run` and `--check` are no-write modes — they never modify host files.
+- `manual_review` entries never receive silent overwrites.
+- Apply blocks if managed files drift between check and apply — re-run preview and check before applying.
+
+See [Installer verification modes (upgrade-safe)](docs/operator_verification.md#installer-verification-modes-upgrade-safe) for `SCORIA_CHECK_RESULT`, exit codes, and drift detection details.
 
 ## Quickstart
 
@@ -200,7 +216,7 @@ For the bounded semantic lane:
 SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 ```
 
-Use that lane only when you are intentionally validating `v2.1` semantic fast-path behavior. The task prepares the retrieval-backed knowledge tables it needs as part of the proof lane, so you do not need to run the full optional knowledge verification first.
+Use that lane only when you are intentionally validating semantic fast-path behavior. The task prepares the retrieval-backed knowledge tables it needs as part of the proof lane, so you do not need to run the full optional knowledge verification first.
 
 For broader repo-health context outside the canonical lane proofs, maintainers can still run `mix test`.
 
@@ -219,4 +235,4 @@ For the public delegation lane, see [`docs/bounded_handoffs.md`](docs/bounded_ha
 
 ## Status
 
-Scoria is shipped through `v2.1 Tenant-scoped semantic fast path`. The default runtime lane, bounded handoff lane, replay/operator loop, semantic fast path, and optional knowledge lane are all available locally. The remaining work is mostly about keeping the adopter story boring and support-truth honest instead of broad platform expansion.
+Hex package metadata is ready. The first Hex publish will be `0.1.0` from a tagged GitHub release (`v0.1.0`).
