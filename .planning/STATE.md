@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Scope
-status: executing
-last_updated: "2026-05-28T01:33:48.156Z"
+status: checkpoint
+last_updated: "2026-05-28T01:40:31.894Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 15
-  completed_plans: 14
-  percent: 93
+  completed_plans: 15
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,11 @@ See: `.planning/PROJECT.md` (updated 2026-05-27)
 
 ## Current Position
 
-Phase: 69 (ci-trust-and-milestone-closeout) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute 69-02-PLAN.md
-Last activity: 2026-05-28 — Completed 69-01-PLAN.md (ratchet maintainer hygiene)
+Phase: 69 (ci-trust-and-milestone-closeout) — CHECKPOINT
+Plan: 3 of 3 (69-02 automated tasks complete)
+Status: Task 69-02-04 — human remote CI confirmation pending
+Last activity: 2026-05-28 — Completed 69-02-01…03; stopped at manual checkpoint
+Resume: `.planning/phases/69-ci-trust-and-milestone-closeout/69-02-PLAN.md` Task 69-02-04
 
 ## Performance Metrics
 
@@ -41,7 +42,7 @@ Last activity: 2026-05-28 — Completed 69-01-PLAN.md (ratchet maintainer hygien
 ### Roadmap Evolution
 
 - `v2.5` shipped planner/check no-write contracts, manifest-aware drift-safe apply, installer contract SSOT (phases 59–65).
-- **v2.6 (active):** WARN-03–WARN-07 complete through Phase 68; Phase 69 milestone closeout remains.
+- **v2.6 (active):** WARN-03–CI-03 complete locally; remote CI attestation + `/gsd-complete-milestone v2.6` pending Task 69-02-04.
 - **v2.7 (queued):** first Hex publish + README/shipped-state docs-truth.
 - `v2.4` lane contracts and CI closeout order remain non-negotiable.
 
@@ -63,6 +64,7 @@ Last activity: 2026-05-28 — Completed 69-01-PLAN.md (ratchet maintainer hygien
 |----------|------|--------|-------|---------|
 | future milestone | v2.7 OSS release + docs-truth | queued after v2.6 | scoria-maintainers | — |
 | Phase 69 P01 | 6 | 2 tasks | 2 files |
+| Phase 69 P02 | 12 min | 3 tasks | 5 files |
 
 ## Operator Next Steps
 

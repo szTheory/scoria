@@ -17,7 +17,7 @@
 | 66 | Baseline Expiry And Inventory | Executable baseline expiry + classified inventory | WARN-03, WARN-04 |
 | 67 | High-Signal Warning Ratchet (5/5) | Clear warnings in compile + canonical lane + targeted high-signal tests | WARN-05, WARN-06 |
 | 68 | Full-Suite Warning Closure | Green full-suite WAE in CI | WARN-07 |
-| 69 | 3/3 | Complete | 2026-05-28 |
+| 69 | 3/3 | Complete   | 2026-05-28 |
 
 ## Phases
 
