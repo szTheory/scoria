@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.10
 milestone_name: Hex Consumer Proof & Upgrade Smoke
 status: executing
-last_updated: "2026-05-29T21:32:23.087Z"
-last_activity: 2026-05-29 -- Completed 80-01 baseline fixture + contract APIs -- Completed 80-01 baseline fixture + contract APIs
+last_updated: "2026-05-29T21:34:07.760Z"
+last_activity: 2026-05-29 -- Completed 80-02 runner upgrade orchestration
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
-  percent: 40
+  completed_plans: 8
+  percent: 44
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 ## Current Position
 
 Phase: 80 (upgrade-smoke-in-adoption-lane) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute 80-02
-Last activity: 2026-05-29 -- Completed 80-01 baseline fixture + contract APIs
+Plan: 3 of 3
+Status: Ready to execute 80-03
+Last activity: 2026-05-29 -- Completed 80-02 runner upgrade orchestration
 
 ## Performance Metrics
 
@@ -37,7 +37,7 @@ Last activity: 2026-05-29 -- Completed 80-01 baseline fixture + contract APIs
 - **Hex release:** `0.1.0` at git tag `v0.1.0` — https://hex.pm/packages/scoria
 - **Phase 78 progress:** 3/3 plans complete
 - **Phase 79 progress:** 3/3 plans complete
-- **Phase 80 progress:** 1/3 plans complete
+- **Phase 80 progress:** 2/3 plans complete
 
 ## Accumulated Context
 
@@ -67,6 +67,11 @@ Last activity: 2026-05-29 -- Completed 80-01 baseline fixture + contract APIs
 - Baseline stamp fingerprint + git SHA drift guard via baseline_package_fingerprint/0 (D-51, 80-01)
 - SCORIA_HEX_BASELINE_UNPACK_ROOT maintainer-only env override — never CI (D-52, 80-01)
 - same_semver_content_upgrade?/0 asserts HEAD fingerprint differs from baseline fixture (D-54, 80-01)
+- run_upgrade_proof!/2 separate from run_full_proof!/1 — two-phase baseline then upgrade (D-57, 80-02)
+- expected_upgrade_steps/1 flat baseline++upgrade list for exact assertion (D-58, 80-02)
+- bump_dep runs deps.clean scoria after mix.exs repoint (D-59, 80-02)
+- Installer check steps pin expect_exit and expect_trailer (D-60, 80-02)
+- MANIFEST includes baseline_unpack, current_unpack, upgrade_phase; preserve uses host_upgrade (D-67, D-62, 80-02)
 
 ### Evidence
 
@@ -74,6 +79,7 @@ Last activity: 2026-05-29 -- Completed 80-01 baseline fixture + contract APIs
 - `.planning/phases/79-tarball-consumer-overlay-proof/79-03-SUMMARY.md` — plan 79-03 complete
 - `.planning/phases/79-tarball-consumer-overlay-proof/79-02-SUMMARY.md` — plan 79-02 complete
 - `.planning/phases/79-tarball-consumer-overlay-proof/79-01-SUMMARY.md` — plan 79-01 complete
+- `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-02-SUMMARY.md` — plan 80-02 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-01-SUMMARY.md` — plan 80-01 complete
 - `.planning/REQUIREMENTS.md` — HEX-CONSUMER-01 Complete (78, 79)
 
@@ -81,10 +87,10 @@ Last activity: 2026-05-29 -- Completed 80-01 baseline fixture + contract APIs
 
 | Category | Item | Status |
 |----------|------|--------|
-| Phase 80 | Upgrade smoke — Wave 2 runner orchestration | next |
+| Phase 80 | Upgrade test + adoption lane wiring (80-03) | next |
 | Phase 82 | DOCS-HEX-01 prose sweep + drift pins | queued |
 | v2.11+ | Orchestrator live wiring | queued |
 
 ## Operator Next Steps
 
-- `/gsd-execute-phase 80` — continue with 80-02 runner upgrade orchestration
+- `/gsd-execute-phase 80` — continue with 80-03 upgrade test and adoption lane wiring

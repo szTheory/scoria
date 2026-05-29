@@ -59,7 +59,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. Overlay smokes pass after upgrade without host regeneration.
 4. Migration ordering bugs on existing schema are caught (not greenfield-only).
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 | Wave | Plans | Focus |
 |------|-------|-------|
@@ -67,7 +67,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 | 2 | 80-02 | Runner upgrade orchestration + installer trailer assertions |
 | 3 | 80-03 | Upgrade test + adoption lane + closeout ceremony |
 
-*Wave 2 blocked on Wave 1; Wave 3 blocked on Waves 1–2.*
+*Wave 3 blocked on Waves 1–2 (Wave 2 complete).*
 
 ---
 
@@ -109,7 +109,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 |-------|------|--------------|--------|
 | 78 | 3/3 | Complete    | 2026-05-29 |
 | 79 | 3/3 | Complete    | 2026-05-29 |
-| 80 | 1/3 | In Progress|  |
+| 80 | 2/3 | In Progress|  |
 | 81 | Post-publish registry gate | HEX-REGISTRY-01 | Pending |
 | 82 | Docs truth + milestone closeout | DOCS-HEX-01 | Pending |
 
