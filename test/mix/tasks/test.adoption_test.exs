@@ -15,6 +15,7 @@ defmodule Mix.Tasks.Scoria.Test.AdoptionTest do
       "test/scoria/runtime_integration_test.exs",
       "test/scoria/runtime_test.exs",
       "test/scoria/host_app_consumer_proof_test.exs",
+      "test/scoria/host_app_upgrade_proof_test.exs",
       "test/mix/tasks/scoria.install_test.exs",
       "test/mix/tasks/scoria.install_route_smoke_test.exs",
       "test/scoria/bootstrap/migration_lane_compatibility_test.exs"
