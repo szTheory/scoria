@@ -309,14 +309,14 @@ defmodule Scoria.CiPolicyContractTest do
     assert audit =~ "policy"
   end
 
-  test "planning ledgers mark phase 69 complete" do
+  test "planning ledgers reflect v2.9 adoption journey milestone" do
     roadmap = File.read!(".planning/ROADMAP.md")
     milestones = File.read!(".planning/MILESTONES.md")
 
-    assert roadmap =~ "69"
-    assert roadmap =~ "Complete"
-    assert milestones =~ "CI-03"
-    assert milestones =~ "v2.6 Warning Ratchet"
+    assert roadmap =~ "v2.9"
+    assert roadmap =~ "74"
+    assert roadmap =~ "SupportJourney"
+    assert milestones =~ "v2.8 CI Hardening"
   end
 
   defp lane_contract_step(policy_section) do

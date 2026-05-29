@@ -1,0 +1,6 @@
+{
+  "persona": "Support Ops Lead",
+  "company": "Acme Corp",
+  "tenant_id": "acme-corp",
+  "scenario": "Triage a billing dispute, escalate to billing specialist when refund needs approval, inspect operator evidence in Scoria."
+}

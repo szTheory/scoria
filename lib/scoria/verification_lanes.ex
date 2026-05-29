@@ -59,6 +59,15 @@ defmodule Scoria.VerificationLanes do
       env: :test,
       prerequisites: ["mix scoria.pgvector.bootstrap"],
       exclusions: []
+    },
+    %{
+      id: :support_copilot_gallery,
+      name: "Support copilot gallery lane",
+      command: "mix scoria.test.support_copilot",
+      ci_command: "mix scoria.test.support_copilot",
+      env: :test,
+      prerequisites: ["mix test.adoption"],
+      exclusions: @no_optional_setup_exclusions ++ ["merge-blocking closeout"]
     }
   ]
   @lane_by_id Map.new(@lanes, &{&1.id, &1})

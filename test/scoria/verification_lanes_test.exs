@@ -11,7 +11,8 @@ defmodule Scoria.VerificationLanesTest do
              :adoption,
              :runtime_to_handoff,
              :semantic_fast_path,
-             :knowledge
+             :knowledge,
+             :support_copilot_gallery
            ]
 
     for lane <- VerificationLanes.all() do
@@ -48,6 +49,12 @@ defmodule Scoria.VerificationLanesTest do
     assert VerificationLanes.boundary_sentence(:adoption) == expected_sentence
     assert VerificationLanes.boundary_sentence(:runtime_to_handoff) == expected_sentence
     assert VerificationLanes.boundary_sentence(:release_preview) == nil
+  end
+
+  test "support copilot gallery lane stays advisory outside closeout order" do
+    refute :support_copilot_gallery in VerificationLanes.closeout_order()
+    assert VerificationLanes.command(:support_copilot_gallery) == "mix scoria.test.support_copilot"
+    assert VerificationLanes.prerequisites(:support_copilot_gallery) == ["mix test.adoption"]
   end
 
   test "ci lane ordering follows the canonical closeout chain" do

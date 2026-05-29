@@ -1,5 +1,21 @@
 # Milestones
 
+## v2.8 CI Hardening & Post-Ship Hygiene (Shipped: 2026-05-29)
+
+**Phases completed:** 1 phase (thin commit closeout), 3 requirements
+
+**Key accomplishments:**
+
+- Semantic fast-path WAE in PR CI after closeout lanes without widening `closeout_order/0` (SEM-CI-01).
+- `mix test.knowledge --warnings-as-errors` added to CI test job after full-suite WAE (CI-KNOW-01).
+- `mix scoria.warning_inventory.check_baseline` in policy job with empty-clusters enforcement (CI-INV-01).
+- Post-publish smoke workflow checkout fix; v2.7 smoke attestation closed at v2.8.
+- Operator gate map and `docs/connector_adoption.md` updated for v2.8 CI topology.
+
+**Known deferred items at close:** 0 (open-artifact audit clear at closeout). Phase 73 planning directory optional tech debt.
+
+---
+
 ## v2.6 Warning Ratchet (Shipped: 2026-05-28)
 
 **Phases completed:** 4 phases, 15 plans, 35 tasks

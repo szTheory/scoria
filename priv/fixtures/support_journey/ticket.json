@@ -1,0 +1,10 @@
+{
+  "id": "TKT-1042",
+  "customer": "Jordan Lee",
+  "email": "jordan.lee@example.com",
+  "subject": "Duplicate charge on Pro plan",
+  "plan": "Pro",
+  "amount_cents": 4900,
+  "status": "open",
+  "opened_at": "2026-05-28T14:22:00Z"
+}

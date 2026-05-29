@@ -1,7 +1,7 @@
 # Thread: Milestone Assessment Learnings And Graduation Candidates
 
 **Captured:** 2026-05-27  
-**Status:** open (promote on first v2.6 phase start)  
+**Status:** archived (promoted to v2.9 assessment thread 2026-05-29)  
 **Source:** milestone-next-step assessment pass (implemented 2026-05-27)
 
 ## Assessment Outcome

@@ -1,122 +1,58 @@
-# Roadmap: Scoria
+# Roadmap — Milestone v2.9 Adoption Journey & Reference Demo
 
-## Milestones
+**Milestone:** v2.9  
+**Phases:** 74–77 (continuing from v2.8 phase 73)  
+**Last updated:** 2026-05-29
 
-- ✅ **v2.8 CI Hardening & Post-Ship Hygiene** — Shipped 2026-05-29 (requirements: `.planning/milestones/v2.8-REQUIREMENTS.md`)
-- ✅ **v2.7 OSS Release + Docs Truth** — Shipped 2026-05-29 (audit: `.planning/milestones/v2.7-MILESTONE-AUDIT.md`)
-- ✅ **v2.6 Warning Ratchet** — Archived: `.planning/milestones/v2.6-ROADMAP.md` (shipped 2026-05-28)
-- ✅ **v2.5 Installer Safety & Upgrade Confidence** — Archived: `.planning/milestones/v2.5-ROADMAP.md` (shipped 2026-05-27)
-- ✅ **v2.4 Adoption Reliability Contract** — Archived: `.planning/milestones/v2.4-ROADMAP.md` (shipped 2026-05-27)
+## Overview
 
-## v2.8 Scope
+Battle-test Scoria through a realistic support-copilot domain: shared journey fixtures, extended merge-blocking host-proof overlay, committed gallery app, and advisory CI lane — without weakening v2.4–v2.8 lane contracts.
 
-**Goal:** Close deferred CI trust items from v2.6/v2.7 without reordering default closeout lanes.
+| Phase | Name | Goal | Requirements |
+|-------|------|------|--------------|
+| 74 | Journey fixture foundation | `SupportJourney` SSOT + source contract tests | JOURN-01, JOURN-02 |
+| 75 | Host-proof overlay expansion | Resume + handoff smokes in generated host | HOST-01, HOST-02 |
+| 76 | Support copilot example app | Committed gallery with seeds + host UI | GALL-01, GALL-02 |
+| 77 | Gallery CI + docs closeout | Advisory lane, README, operator docs | CI-GALL-01, DOCS-GALL-01 |
 
-| Phase | Name | Status | Completed |
-|------:|------|--------|-----------|
-| 73 | CI Hardening Closeout | Complete | 2026-05-29 |
+## Phase 74: Journey fixture foundation
 
-**Requirements:** SEM-CI-01, CI-KNOW-01, CI-INV-01 (see `.planning/milestones/v2.8-REQUIREMENTS.md`)
-
----
-
-## v2.7 Scope
-
-**Goal:** Docs truth first, then first Hex publish at `0.1.0` / `v0.1.0` — without weakening v2.4 lane contracts, v2.5 installer truth, or v2.6 CI gates.
-
-**Requirements mapped:** 5 / 5
-
-| Phase | Name | Plans | Status | Completed |
-|------:|------|-------|--------|-----------|
-| 70 | Docs Truth Foundation | 3/3 | Complete | 2026-05-28 |
-| 71 | Release Infrastructure | 4/4 | Complete | 2026-05-28 |
-| 72 | Hex Publish Closeout | 4/4 | Complete | 2026-05-29 |
-
-**Sequencing rule:** Phase 70 merges before Phase 72 publish — never ship HexDocs with stale v2.1 narrative.
-
-## Phases
-
-- [x] Phase 73: CI Hardening Closeout (completed 2026-05-29)
-- [x] Phase 70: Docs Truth Foundation (0/3 plans) (completed 2026-05-28)
-- [x] Phase 71: Release Infrastructure (0/? plans) (completed 2026-05-28)
-- [x] Phase 72: Hex Publish Closeout (4/4 plans) (completed 2026-05-29)
-
-## Phase Details
-
-### Phase 70: Docs Truth Foundation
-
-**Goal:** Align README and support docs with v2.5+ shipped capability using capability-based truth (not milestone codenames); commit install_contract maintainer lane; document semantic local-only boundary.
-
-**Requirements:** DOCS-03, DOCS-04, INST-DX-01
-
-**Depends on:** v2.6 shipped baseline (lane contracts, installer SSOT, CI topology)
+**Goal:** Establish `Scoria.SupportJourney` as the single source of truth for adoption journey identities, seed data, handler contracts, and doc fragments.
 
 **Success criteria:**
+1. `lib/scoria/support_journey.ex` and `priv/fixtures/support_journey/` ship with the package.
+2. `test/scoria/support_journey_source_test.exs` pins fragments against docs.
+3. `AdoptionExample` delegates shared constants to `SupportJourney` where appropriate.
 
-1. README shipped banner lists capabilities (default runtime, bounded handoff, semantic fast path, optional knowledge, upgrade-safe install) — no `Scoria is shipped through vX.Y` milestone codenames.
-2. README Install section documents `--check` / `--dry-run` upgrade path with link to operator verification installer modes.
-3. `adoption_surface_test` asserts capability nouns and refutes milestone-banner pattern; maintainer-only commands absent from README.
-4. `mix scoria.test.install_contract` committed with `mix.exs` preferred_envs; adoption lane file list excludes deep installer contract tests; operator verification documents maintainer command.
-5. CI gate map includes explicit "not in PR CI" row for `mix test.semantic_fast_path` and one-line planning-milestone vs Hex semver explanation.
+## Phase 75: Host-proof overlay expansion
 
-**Non-goals:** Hex publish, README Hex dep flip, release-please workflows, CI topology changes.
-
----
-
-### Phase 71: Release Infrastructure
-
-**Goal:** Prepare szTheory-standard release automation and maintainer runbook without publishing to Hex yet.
-
-**Requirements:** HEX-01, HEX-02 (prep portions)
-
-**Depends on:** Phase 70 merged (docs truth on main)
+**Goal:** Extend merge-blocking generated-host proof to cover approve→resume and bounded handoff journeys.
 
 **Success criteria:**
+1. Overlay runtime smoke proves `resume_run` completion using `SupportJourney` identities.
+2. New `host_handoff_smoke_test.exs` proves delegated evidence on workflow page.
+3. `mix test.adoption` remains green; `closeout_order/0` unchanged.
 
-1. `CHANGELOG.md` exists with milestone-vs-semver preamble and `[0.1.0]` section summarizing capability through v2.6.
-2. `release-please-config.json`, manifest baseline, and `.github/workflows/release-please.yml` added; publish job mirrors PR CI test topology (policy + full test job steps).
-3. Manual recovery `hex-publish.yml` documented; `HEX_API_KEY` setup noted in operator verification maintainer section.
-4. Hex name availability recorded (`scoria` on hex.pm); `.tool-versions` aligned with CI OTP 27 / Elixir 1.19.
-5. v2.6 remote CI green attestation recorded (69-02-04 carryover) or explicit gate-zero waiver in phase verification.
+## Phase 76: Support copilot example app
 
-**Non-goals:** `mix hex.publish` to production registry, README Hex badge, package_surface_test flip.
-
----
-
-### Phase 72: Hex Publish Closeout
-
-**Goal:** Publish `0.1.0` on Hex at git tag `v0.1.0` with coordinated adopter-facing flip and milestone closeout.
-
-**Requirements:** HEX-01, HEX-02 (closeout portions)
-
-**Depends on:** Phase 71 merged; release-please Release PR reviewed
+**Goal:** Ship `examples/support_copilot/` as a human-clickable gallery with realistic support-domain seeds.
 
 **Success criteria:**
+1. Adopter can `cd examples/support_copilot && mix setup && mix phx.server`.
+2. Gallery tests prove default-lane and handoff happy paths with LiveView assertions.
+3. Gallery imports `SupportJourney` fixtures — no duplicated handler logic.
 
-1. `https://hex.pm/packages/scoria` shows `0.1.0`; git tag `v0.1.0` and GitHub Release exist with CHANGELOG body.
-2. README primary install is `{:scoria, "~> 0.1"}` with GitHub tag fallback; Hex badge added.
-3. `package_surface_test` asserts Hex-first install story (flip from pre-publish GitHub-only guard).
-4. `mix scoria.release_preview` and full CI green on publish commit; HexDocs `source_ref` links resolve.
-5. v2.7 milestone audit artifact written; REQUIREMENTS traceability marked complete; `release-as: "0.1.0"` pin removed post-publish if used.
+## Phase 77: Gallery CI + docs closeout
 
-**Non-goals:** SEM-CI-01, knowledge WAE in CI, new runtime features, semver `2.7.0`.
+**Goal:** Wire advisory CI lane and document the gallery in README and operator verification.
 
-## Non-Goals (v2.7)
+**Success criteria:**
+1. `mix scoria.test.support_copilot` runs gallery subprocess proof + contract tests.
+2. CI runs gallery lane after closeout lanes (advisory, non-blocking).
+3. README gallery section and operator verification updated with drift guards.
 
-- SEM-CI-01 semantic lane in PR CI (document local command only in Phase 70).
-- Knowledge WAE in default CI closeout.
-- New runtime capability families or connector guide expansion.
-- Package-family Hex decomposition.
-- Broad README restructure beyond capability banner + install upgrade paragraph.
+## Prior milestones (archived)
 
-## Progress
-
-| Phase | Milestone | Plans Complete | Status | Completed |
-| ----- | --------- | -------------- | ------ | --------- |
-| 70. Docs Truth Foundation | v2.7 | 0/? | Not started | — |
-| 71. Release Infrastructure | v2.7 | 0/? | Not started | — |
-| 72. Hex Publish Closeout | v2.7 | 4/4 | Complete | 2026-05-29 |
-
-## Traceability
-
-See `.planning/REQUIREMENTS.md` for requirement checkboxes and phase mapping.
+- ✅ **v2.8 CI Hardening & Post-Ship Hygiene** — `.planning/milestones/v2.8-*`
+- ✅ **v2.7 OSS Release + Docs Truth** — `.planning/milestones/v2.7-*`
+- ✅ **v2.6 Warning Ratchet** — `.planning/milestones/v2.6-*`

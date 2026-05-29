@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.8
-milestone_name: CI Hardening & Post-Ship Hygiene
-status: milestone_complete
-last_updated: "2026-05-29T12:00:00Z"
-last_activity: 2026-05-29 -- v2.8 CI hardening; post-publish smoke; connector adoption doc
+milestone: v2.9
+milestone_name: Adoption Journey & Reference Demo
+status: planning
+last_updated: "2026-05-29T18:00:00.000Z"
+last_activity: 2026-05-29 — Milestone v2.9 started
 progress:
-  total_phases: 1
-  completed_phases: 1
+  total_phases: 4
+  completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 100
+  percent: 0
 ---
 
 # Project State
@@ -21,41 +21,43 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v2.8 complete — CI hardening shipped; Hex `0.1.0` on main
+**Current focus:** v2.9 Adoption Journey & Reference Demo — shared fixtures, host-proof overlay, support copilot gallery
 
 ## Current Position
 
-Phase: 73 (complete)
-Status: Milestone v2.8 closed
-Last activity: 2026-05-29 -- SEM-CI-01, CI-KNOW-01, CI-INV-01 in ci-verify; post-publish smoke attested
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-29 — Milestone v2.9 started
 
 ## Performance Metrics
 
 - **Latest Shipped Milestone:** `v2.8 CI Hardening & Post-Ship Hygiene` on 2026-05-29
 - **Hex release:** `0.1.0` at git tag `v0.1.0` — https://hex.pm/packages/scoria
-- **Previous:** `v2.7 OSS Release + Docs Truth` (2026-05-29)
+- **Active milestone:** v2.9 Adoption Journey & Reference Demo
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- **v2.8 (shipped):** Semantic lane WAE, knowledge WAE, inventory baseline policy gate; `docs/connector_adoption.md`.
+- **v2.9 (active):** SupportJourney SSOT, host-proof overlay expansion, `examples/support_copilot/` gallery, advisory `mix scoria.test.support_copilot`.
+- **v2.8 (shipped):** Semantic lane WAE, knowledge WAE, inventory baseline policy gate.
 - **v2.7 (shipped):** Docs truth → release infra → Hex publish + README flip.
-- **v2.6 (shipped):** WARN-03–CI-03; full-suite WAE in CI.
 
 ### Evidence
 
-- `.planning/phases/72-hex-publish-closeout/72-VERIFICATION.md` — integration, publish, smoke
-- `.planning/milestones/v2.8-REQUIREMENTS.md` — SEM-CI-01, CI-KNOW-01, CI-INV-01
-- `mix scoria.test.ci_trust` — policy + ratchet hygiene contracts
+- `.planning/threads/2026-05-29-adoption-journey-assessment.md` — v2.9 scope decision
+- `.planning/REQUIREMENTS.md` — JOURN/HOST/GALL/CI-GALL requirements
+- `.planning/ROADMAP.md` — Phases 74–77
 
 ## Deferred Items
 
 | Category | Item | Status |
 |----------|------|--------|
-| v2.9+ | Next milestone scope | open — planning |
+| v2.10+ | Hex consumer proof | queued |
+| v2.11+ | Orchestrator live wiring | queued |
 
 ## Operator Next Steps
 
-- Plan v2.9 in `.planning/ROADMAP.md` when ready
-- Routine releases: release-please on `main`; monitor `post-publish-smoke.yml` after each Hex publish
+- `/gsd-plan-phase 74` — journey fixture foundation
+- `/gsd-discuss-phase 74` — optional context gathering before planning

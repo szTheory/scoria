@@ -2,6 +2,40 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v2.8 — CI Hardening & Post-Ship Hygiene
+
+**Shipped:** 2026-05-29
+**Phases:** 1 | **Plans:** 0 (commit closeout)
+
+### What Was Built
+- Semantic fast-path WAE in PR CI after closeout lanes (SEM-CI-01).
+- Knowledge WAE lane (`mix test.knowledge --warnings-as-errors`) in CI (CI-KNOW-01).
+- Warning inventory baseline policy gate in CI policy job (CI-INV-01).
+- Post-publish smoke workflow checkout fix and operator gate map update.
+
+### What Worked
+- Thin commit closeout for a single hygiene phase avoided planning overhead for three well-scoped CI requirements.
+- Contract tests (`ci_policy_contract_test`, `verification_lanes_test`, `baseline_check_test`) provided closeout evidence without a formal phase directory.
+- Deferring SEM-CI-01/CI-KNOW-01 to v2.8 kept v2.7 focused on Hex publish.
+
+### What Was Inefficient
+- No Phase 73 planning directory — evidence scattered across commits and CI contracts.
+- Three follow-up test stabilization commits after primary closeout (`6cd6118`, `0e95f52`, `4450cd1`).
+
+### Patterns Established
+- Optional lanes (semantic, knowledge) stay after closeout/full WAE — never in `closeout_order/0`.
+- Inventory baseline gate belongs in policy job alongside baseline expiry for cheap failure-left.
+
+### Key Lessons
+1. Commit-driven closeout works for single-phase CI hygiene when contract tests are the SSOT.
+2. Milestone audit before archive catches planning-artifact gaps without blocking functional ship.
+
+### Cost Observations
+- Model mix: not tracked in this repo-local closeout
+- Notable: 5 commits over ~9 hours including post-closeout test fixes
+
+---
+
 ## Milestone: v2.6 — Warning Ratchet
 
 **Shipped:** 2026-05-28
