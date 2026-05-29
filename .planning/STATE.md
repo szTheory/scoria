@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v2.10
 milestone_name: Hex Consumer Proof & Upgrade Smoke
-status: executing
-last_updated: "2026-05-29T21:45:00Z"
+status: ready_to_plan
+last_updated: 2026-05-29T21:45:11.614Z
 last_activity: 2026-05-29 -- Completed 80-03 upgrade test and adoption lane closeout
 progress:
   total_phases: 5
@@ -11,6 +11,7 @@ progress:
   total_plans: 9
   completed_plans: 9
   percent: 60
+stopped_at: Phase 80 complete (3/3) — ready to discuss Phase 81
 ---
 
 # Project State
@@ -21,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 81 — post-publish registry gate
+**Current focus:** Phase 81 — post publish registry gate
 
 ## Current Position
 
-Phase: 81 (post-publish-registry-gate) — READY
-Plan: TBD via `/gsd-plan-phase 81`
-Status: Phase 80 complete; ready to plan Phase 81
-Last activity: 2026-05-29 -- Completed 80-03 upgrade test and adoption lane closeout
+Phase: 81
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-29
 
 ## Performance Metrics
 

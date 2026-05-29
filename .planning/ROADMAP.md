@@ -109,7 +109,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 |-------|------|--------------|--------|
 | 78 | 3/3 | Complete    | 2026-05-29 |
 | 79 | 3/3 | Complete    | 2026-05-29 |
-| 80 | 2/3 | In Progress|  |
+| 80 | 3/3 | Complete    | 2026-05-29 |
 | 81 | Post-publish registry gate | HEX-REGISTRY-01 | Pending |
 | 82 | Docs truth + milestone closeout | DOCS-HEX-01 | Pending |
 
