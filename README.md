@@ -198,6 +198,8 @@ mix ecto.migrate
 mix test.adoption
 ```
 
+Adoption closeout in CI exercises Scoria via a `mix hex.build --unpack` tarball (`{:scoria, path: unpack_root}`), not a monorepo root `path:` — see `Scoria.HexConsumerContract` and `SCORIA_HEX_UNPACK_ROOT` in maintainer CI.
+
 Then inspect `/scoria` and `/scoria/workflows/:run_id` for operator evidence from one real run in your app. Read it back through `Scoria.get_run/1` or `Scoria.list_runs_for_session/1`. The dedicated operator verification guide lives in [`docs/operator_verification.md`](docs/operator_verification.md).
 
 `mix test.adoption` is the canonical bounded verifier for the default lane. It carries the generated-host proof under a local proof-only timeout, so you do not need suite-wide timeout changes or a `--trace` variant to use it.

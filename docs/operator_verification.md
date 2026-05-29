@@ -65,6 +65,12 @@ What this proves:
 Use `mix test.adoption` as the canonical default-lane verifier when you want one bounded proof that covers installer truth, the fresh-host install/migrate/route/runtime smoke, and the repo-local adoption guards without waiting for the whole suite. Maintainers can still use `mix test` as broader repo-health context.
 The bounded verifier carries the slow generated-host proof under a local proof-only timeout; support guidance should not widen that into a suite-wide timeout change or a `mix test.adoption --trace` contract.
 
+### Tarball consumer proof and failure triage (maintainers)
+
+Merge-blocking `mix test.adoption` includes a generated Phoenix host that consumes Scoria via a `mix hex.build --unpack` tarball (`run_full_proof!/1` in `Scoria.TestSupport.HostAppProof.Runner`) — not a monorepo root `path:` dep. For fast local iteration on that proof alone, run `MIX_ENV=test mix test --only host_proof`.
+
+When the tarball overlay proof fails, inspect the structured triage raise (step, command, host paths, unpack context). Set `SCORIA_PRESERVE_HOST=1` to skip automatic host cleanup for disk inspection. A workspace failure snapshot is written to `tmp/scoria-host-proof-last-failure/` (with `MANIFEST.txt`) before re-raise; CI uploads artifact `scoria-host-proof-last-failure` when the adoption closeout lane fails.
+
 ## Semantic fast-path troubleshooting lane
 
 When you are validating the semantic fast path specifically, use the bounded semantic lane instead of the broad suite:
