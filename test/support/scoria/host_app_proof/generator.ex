@@ -1,6 +1,8 @@
 defmodule Scoria.TestSupport.HostAppProof.Generator do
   @moduledoc false
 
+  alias Scoria.HexConsumerContract
+
   @host_module "ScoriaHostProof"
   @overlay_test_dir "priv/host_app_proof/overlay/test"
 
@@ -69,6 +71,26 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
       dep_mode: dep_mode,
       unpack_root: Keyword.get(opts, :unpack_root)
     }
+  end
+
+  def bump_unpack_dep!(host, new_unpack_root) do
+    mix_exs = Path.join(host.root, "mix.exs")
+    content = File.read!(mix_exs)
+    dep_line = HexConsumerContract.tarball_dep_snippet(new_unpack_root) <> ","
+
+    patched =
+      Regex.replace(
+        ~r/\{:scoria,\s*path:\s*[^}]+\},/,
+        content,
+        dep_line
+      )
+
+    if patched == content do
+      raise "could not find {:scoria, path: ...} dep line in #{mix_exs}"
+    end
+
+    File.write!(mix_exs, patched)
+    Map.put(host, :unpack_root, new_unpack_root)
   end
 
   def copy_overlay!(host_root) do
