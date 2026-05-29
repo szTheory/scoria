@@ -2,6 +2,41 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v2.9 — Adoption Journey & Reference Demo
+
+**Shipped:** 2026-05-29
+**Phases:** 6 | **Plans:** 3 formal + PR #4 bulk delivery
+
+### What Was Built
+- `Scoria.SupportJourney` SSOT with shared identities, seeds, handler contracts, and doc fragments.
+- Extended merge-blocking host-proof overlay (resume + handoff smokes).
+- `examples/support_copilot/` reference gallery with advisory CI lane `mix scoria.test.support_copilot`.
+- Multi-surface adopter doc drift guards and CI ordering contract for gallery-after-knowledge.
+
+### What Worked
+- Phased hybrid model: overlay merge-blocking, gallery advisory — preserved v2.4–v2.8 lane contracts.
+- Milestone audit → inserted closure phases (77.1, 77.2) closed gaps without reopening shipped code.
+- `SupportJourney` as spine prevented identity/fragment drift across overlay, gallery, and docs.
+
+### What Was Inefficient
+- Phases 74–77 shipped without planning artifacts; retroactive VERIFICATION ledgers required phase 77.2.
+- Large PR #4 mixed feature delivery with planning contract fixes.
+
+### Patterns Established
+- `adopter_doc_surfaces/0` maps doc paths to scoped fragment lists for parameterized drift tests.
+- Advisory gallery lane ordering asserted via `ci_policy_contract_test` + `VerificationLanes.ci_command/1` SSOT.
+
+### Key Lessons
+1. Run milestone audit before archive; insert decimal phases for audit gaps rather than accepting partials.
+2. Commit-driven delivery works for feature phases when contract tests are SSOT; still budget retroactive ledgers.
+3. Gallery remains outside closeout — local pgvector prerequisite is acceptable for advisory lane.
+
+### Cost Observations
+- Model mix: not tracked
+- Notable: PR #4 merge + 2 inserted phases (77.1, 77.2) same day as audit re-run
+
+---
+
 ## Milestone: v2.8 — CI Hardening & Post-Ship Hygiene
 
 **Shipped:** 2026-05-29

@@ -1,5 +1,22 @@
 # Milestones
 
+## v2.9 Adoption Journey & Reference Demo (Shipped: 2026-05-29)
+
+**Phases completed:** 6 phases (74–77.2), 3 formal plans + PR #4 commit-driven delivery, 8 requirements
+
+**Key accomplishments:**
+
+- `Scoria.SupportJourney` fixture SSOT ships with package (`priv/fixtures/support_journey/`, source contract tests).
+- Merge-blocking host-proof overlay proves resume and bounded handoff using shared journey identities.
+- Committed `examples/support_copilot/` gallery with default-lane and handoff LiveView journey tests.
+- Advisory `mix scoria.test.support_copilot` lane documented and excluded from `closeout_order/0`.
+- Multi-surface drift guards pin README, operator verification, and gallery guide via `adopter_doc_surfaces/0`.
+- CI contract test asserts gallery lane runs after knowledge WAE in `ci-verify.yml`.
+
+**Known deferred items at close:** 2 queued in STATE.md (Hex consumer proof v2.10+, orchestrator live v2.11+). Residual tech debt: unused `lookup_support_ticket`, browser gallery smoke, optional Nyquist validation ledgers.
+
+---
+
 ## v2.8 CI Hardening & Post-Ship Hygiene (Shipped: 2026-05-29)
 
 **Phases completed:** 1 phase (thin commit closeout), 3 requirements
