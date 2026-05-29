@@ -2,7 +2,7 @@
 
 **Milestone:** v2.9  
 **Phases:** 74–77.2 (continuing from v2.8 phase 73)  
-**Last updated:** 2026-05-29 (77.2-01: retroactive VERIFICATION.md for phases 74–77)
+**Last updated:** 2026-05-29 (77.2-02: CI contract test for gallery-after-knowledge ordering)
 
 ## Overview
 
