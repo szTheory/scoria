@@ -10,7 +10,14 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
     |> Enum.sort()
   end
 
-  def create_host!(opts \\ []) do
+  def create_host!(opts) do
+    dep_mode = Keyword.fetch!(opts, :dep_mode)
+
+    unless dep_mode in [:hex_tarball, :path] do
+      raise ArgumentError,
+            "dep_mode must be :hex_tarball or :path, got: #{inspect(dep_mode)}"
+    end
+
     suffix = System.unique_integer([:positive]) |> Integer.to_string()
     app_name = "scoria_host_proof_#{suffix}"
     working_root = Path.join(System.tmp_dir!(), "scoria-host-proof-#{suffix}")
@@ -38,7 +45,14 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
     )
 
     register_cleanup(opts, working_root)
-    patch_mix_exs!(host_root, repo_root)
+
+    patch_mix_exs!(
+      host_root,
+      dep_mode: dep_mode,
+      unpack_root: Keyword.get(opts, :unpack_root),
+      repo_root: repo_root
+    )
+
     patch_test_config!(host_root, app_name)
     copy_overlay!(host_root)
     patch_host_install_surfaces!(host_root)
@@ -64,12 +78,24 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
     end
   end
 
-  defp patch_mix_exs!(host_root, repo_root) do
+  defp patch_mix_exs!(host_root, opts) do
     mix_exs = Path.join(host_root, "mix.exs")
     content = File.read!(mix_exs)
 
+    dep_line =
+      case Keyword.fetch!(opts, :dep_mode) do
+        :path ->
+          repo_root = Keyword.fetch!(opts, :repo_root)
+          "{:scoria, path: #{inspect(repo_root)}},"
+
+        :hex_tarball ->
+          unpack_root = Keyword.fetch!(opts, :unpack_root)
+          {:scoria, path: unpack_root} = Scoria.HexConsumerContract.tarball_dep_tuple(unpack_root)
+          "{:scoria, path: #{inspect(unpack_root)}},"
+      end
+
     patched =
-      Regex.replace(~r/(defp deps do\s*\n\s*\[)/, content, "\\1\n      {:scoria, path: #{inspect(repo_root)}},")
+      Regex.replace(~r/(defp deps do\s*\n\s*\[)/, content, "\\1\n      #{dep_line}")
 
     File.write!(mix_exs, patched)
   end
