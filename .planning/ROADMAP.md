@@ -41,7 +41,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. `VerificationLanes.closeout_order/0` unchanged; no new closeout lane added.
 4. CI timeout and sandbox patterns from v2.9 preserved (no new flake regressions).
 
-**Plans:** TBD via `/gsd-plan-phase 79`
+**Plans:** 1/3 plans executed
 
 ---
 
@@ -98,7 +98,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 78 | 3/3 | Complete    | 2026-05-29 |
-| 79 | Tarball consumer overlay proof | HEX-CONSUMER-01 | Pending |
+| 79 | Tarball consumer overlay proof | HEX-CONSUMER-01 | In Progress |
 | 80 | Upgrade smoke in adoption lane | HEX-UPGRADE-01 | Pending |
 | 81 | Post-publish registry gate | HEX-REGISTRY-01 | Pending |
 | 82 | Docs truth + milestone closeout | DOCS-HEX-01 | Pending |

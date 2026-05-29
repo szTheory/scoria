@@ -69,7 +69,7 @@ Each task was committed atomically:
 2. **Task 79-01-02: Add Runner.expected_steps/1 derived SSOT helper** - `68b0bbe` (feat)
 3. **Task 79-01-03: Switch consumer test to run_full_proof! with derived steps and :host_proof tag** - `d1d589d` (feat)
 
-**Plan metadata:** pending (docs commit follows)
+**Plan metadata:** `b4a89e0` (docs: complete plan)
 
 ## Files Created/Modified
 
