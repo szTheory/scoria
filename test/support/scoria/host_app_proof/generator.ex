@@ -64,7 +64,10 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
       db_name: "#{app_name}_test",
       root: host_root,
       repo_root: repo_root,
-      overlay_tests: overlay_tests
+      overlay_tests: overlay_tests,
+      working_root: working_root,
+      dep_mode: dep_mode,
+      unpack_root: Keyword.get(opts, :unpack_root)
     }
   end
 
