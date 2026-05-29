@@ -189,6 +189,17 @@ defmodule Scoria.CiPolicyContractTest do
              index_of(test_section, "mix test.knowledge --warnings-as-errors")
   end
 
+  test "test job runs support copilot gallery lane after knowledge WAE and outside closeout order" do
+    ci_verify = File.read!(@ci_verify)
+    [_policy_section, test_section] = split_jobs(ci_verify)
+    gallery_cmd = VerificationLanes.ci_command(:support_copilot_gallery)
+    knowledge_cmd = "mix test.knowledge --warnings-as-errors"
+
+    assert test_section =~ gallery_cmd
+    assert index_of(test_section, knowledge_cmd) < index_of(test_section, gallery_cmd)
+    refute :support_copilot_gallery in VerificationLanes.closeout_order()
+  end
+
   test "operator guide documents Hex release section and README links anchor" do
     operator_docs = File.read!("docs/operator_verification.md")
     readme = File.read!("README.md")
