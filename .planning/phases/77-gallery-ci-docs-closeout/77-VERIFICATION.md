@@ -32,6 +32,7 @@ Shipped in PR #4 — https://github.com/szTheory/scoria/pull/4 (merge `bd2f2c66e
 
 - `MIX_ENV=test mix test test/scoria/support_copilot_gallery_test.exs test/scoria/verification_lanes_test.exs` — verification_lanes: 5 tests, 0 failures; gallery subprocess requires pgvector locally (passes in CI)
 - `rg 'mix scoria.test.support_copilot' .github/workflows/ci-verify.yml` — advisory step after knowledge WAE
+- `MIX_ENV=test mix test test/scoria/ci_policy_contract_test.exs` — `"test job runs support copilot gallery lane after knowledge WAE and outside closeout order"` asserts knowledge WAE precedes gallery in test job section
 
 ## Human Verification
 
@@ -39,4 +40,4 @@ None required — retroactive ledger documenting shipped PR #4 evidence.
 
 ## Gaps
 
-Gallery-after-knowledge ordering present in `ci-verify.yml` and operator docs but not yet asserted in `ci_policy_contract_test.exs` — deferred to plan 77.2-02.
+None — gallery-after-knowledge ordering contract covered by `ci_policy_contract_test.exs` (plan 77.2-02).
