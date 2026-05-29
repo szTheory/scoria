@@ -71,7 +71,7 @@ Each task was committed atomically:
 3. **Task 78-03-03: Rewire host_app_consumer_proof_test for tarball route proof** - `3792e82` (test)
 4. **Task 78-03-04: Wire SCORIA_HEX_UNPACK_ROOT in ci-verify.yml test job** - `57ce686` (feat)
 
-**Plan metadata:** pending (docs commit follows)
+**Plan metadata:** `5fdff81` (docs: complete plan); STATE/ROADMAP update follows
 
 ## Files Created/Modified
 
