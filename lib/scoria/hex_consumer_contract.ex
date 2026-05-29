@@ -16,6 +16,9 @@ defmodule Scoria.HexConsumerContract do
   @cache_parent "tmp/scoria-hex-consumer"
   @stamp_file ".scoria-hex-consumer.stamp"
   @lock_file ".build.lock"
+  @baseline_fixture_rel "test/fixtures/hex_consumer/scoria-0.1.0-unpack"
+  @baseline_stamp_rel "test/fixtures/hex_consumer/.scoria-hex-baseline.stamp"
+  @baseline_git_sha "49f2d60018c4c79fbc09969116526c48454a8e84"
 
   @doc """
   Application atom for Scoria Hex package identity.
@@ -38,6 +41,63 @@ defmodule Scoria.HexConsumerContract do
   Baseline upgrade version hook for Phase 80 committed fixture (0.1.0).
   """
   def baseline_upgrade_version, do: @baseline_upgrade_version
+
+  @doc """
+  Resolve the committed v0.1.0 baseline unpack root for upgrade smoke proof.
+
+  Phase 80 content-revision upgrade uses this frozen fixture; Phase 81 covers
+  live registry semver bumps. Resolution order: `SCORIA_HEX_BASELINE_UNPACK_ROOT`
+  env override (maintainer only — never set in CI), else committed fixture path.
+  """
+  def baseline_unpack_root! do
+    case System.get_env("SCORIA_HEX_BASELINE_UNPACK_ROOT") do
+      nil -> default_baseline_unpack_root!()
+      env_path -> env_override_root!(env_path)
+    end
+  end
+
+  @doc """
+  Content hash of the committed v0.1.0 baseline fixture package inventory.
+
+  Mirrors `package_fingerprint/0` but reads version and package files from the
+  frozen fixture tree. Phase 80 content-revision guard; Phase 81 uses registry semver.
+  """
+  def baseline_package_fingerprint do
+    fixture_root = baseline_unpack_root!()
+    version = @baseline_upgrade_version
+    package_files = fixture_package_files!(fixture_root)
+
+    hash_lines =
+      package_files
+      |> Enum.flat_map(&fixture_path_hash_lines(&1, fixture_root))
+      |> Enum.sort()
+
+    payload = Enum.join([version | hash_lines], "\n")
+
+    :crypto.hash(:sha256, payload)
+    |> Base.encode16(case: :lower)
+    |> String.slice(0, 12)
+  end
+
+  @doc """
+  True when HEAD tarball fingerprint differs from the committed v0.1.0 baseline.
+
+  Phase 80 same-semver content-revision upgrade signal. Phase 81 covers registry
+  semver bumps when `0.1.x+1` publishes.
+  """
+  def same_semver_content_upgrade? do
+    baseline_package_fingerprint() != package_fingerprint()
+  end
+
+  @doc """
+  Git SHA for the v0.1.0 tag recorded in the baseline fixture stamp.
+  """
+  def baseline_git_sha, do: @baseline_git_sha
+
+  @doc """
+  Relative path to the baseline drift stamp file.
+  """
+  def baseline_stamp_rel, do: @baseline_stamp_rel
 
   @doc """
   Adopter-facing Hex dep tuple for generated host mix.exs or README guards.
@@ -217,6 +277,56 @@ defmodule Scoria.HexConsumerContract do
 
     File.write!(Path.join(cache_dir, @stamp_file), fp)
     Path.expand(unpack_root!(cache_dir))
+  end
+
+  defp default_baseline_unpack_root! do
+    fixture_root = Path.expand(@baseline_fixture_rel, File.cwd!())
+    unpack_root!(fixture_root) |> Path.expand()
+  end
+
+  defp fixture_package_files!(fixture_root) do
+    mix_exs_path = Path.join(fixture_root, "mix.exs")
+
+    unless File.regular?(mix_exs_path) do
+      Mix.raise("baseline fixture missing mix.exs at #{fixture_root}")
+    end
+
+    mix_exs_path
+    |> File.read!()
+    |> parse_fixture_package_files!()
+  end
+
+  defp parse_fixture_package_files!(mix_exs_content) do
+    case Regex.run(~r/files:\s*\[\s*(.*?)\s*\]/s, mix_exs_content) do
+      [_, files_block] ->
+        ~r/"([^"]+)"/
+        |> Regex.scan(files_block)
+        |> Enum.map(&Enum.at(&1, 1))
+
+      _ ->
+        Mix.raise("could not parse package files from baseline fixture mix.exs")
+    end
+  end
+
+  defp fixture_path_hash_lines(relative_path, fixture_root) do
+    absolute_path = Path.join(fixture_root, relative_path)
+
+    unless File.exists?(absolute_path) do
+      Mix.raise("missing baseline package file: #{relative_path}")
+    end
+
+    if File.regular?(absolute_path) do
+      [hash_line(relative_path, absolute_path)]
+    else
+      absolute_path
+      |> Path.join("**/*")
+      |> Path.wildcard()
+      |> Enum.filter(&File.regular?/1)
+      |> Enum.map(fn path ->
+        rel = Path.relative_to(path, fixture_root)
+        hash_line(rel, path)
+      end)
+    end
   end
 
   defp package_path_hash_lines(relative_path) do
