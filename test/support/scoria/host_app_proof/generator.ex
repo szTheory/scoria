@@ -7,9 +7,18 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
   @overlay_test_dir "priv/host_app_proof/overlay/test"
 
   def overlay_test_files do
-    Path.wildcard(Path.join([repo_root(), @overlay_test_dir, "*.exs"]))
+    overlay_test_files_from(repo_root())
+  end
+
+  def overlay_test_files_from(source_root) do
+    Path.wildcard(Path.join([source_root, @overlay_test_dir, "*.exs"]))
     |> Enum.map(&Path.basename/1)
     |> Enum.sort()
+  end
+
+  def refresh_overlay!(host, source_root \\ repo_root()) do
+    copy_overlay!(host.root, source_root)
+    Map.put(host, :overlay_tests, overlay_test_files_from(source_root))
   end
 
   def create_host!(opts) do
@@ -56,10 +65,13 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
     )
 
     patch_test_config!(host_root, app_name)
-    copy_overlay!(host_root)
+
+    overlay_source = Keyword.get(opts, :overlay_source, repo_root())
+    copy_overlay!(host_root, overlay_source)
     patch_host_install_surfaces!(host_root)
 
-    overlay_tests = overlay_test_files()
+    overlay_tests = overlay_test_files_from(overlay_source)
+    upgrade_overlay_tests = overlay_test_files()
 
     %{
       app_name: app_name,
@@ -67,6 +79,7 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
       root: host_root,
       repo_root: repo_root,
       overlay_tests: overlay_tests,
+      upgrade_overlay_tests: upgrade_overlay_tests,
       working_root: working_root,
       dep_mode: dep_mode,
       unpack_root: Keyword.get(opts, :unpack_root)
@@ -93,14 +106,18 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
     Map.put(host, :unpack_root, new_unpack_root)
   end
 
-  def copy_overlay!(host_root) do
-    source_root = Path.join([repo_root(), "priv", "host_app_proof", "overlay", "test"])
+  def copy_overlay!(host_root, source_root) do
+    source_root = overlay_source_root(source_root)
     destination_root = Path.join(host_root, "test")
     File.mkdir_p!(destination_root)
 
     for source <- Path.wildcard(Path.join(source_root, "*.exs")) do
       File.cp!(source, Path.join(destination_root, Path.basename(source)))
     end
+  end
+
+  defp overlay_source_root(source_root) do
+    Path.join([source_root, "priv", "host_app_proof", "overlay", "test"])
   end
 
   defp patch_mix_exs!(host_root, opts) do

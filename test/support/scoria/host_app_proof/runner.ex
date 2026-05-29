@@ -18,9 +18,8 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
   end
 
   def scoria_install_check_pre_apply!(host) do
-    scoria_install_check!(host,
-      expect_exit: 1,
-      expect_trailer: "SCORIA_CHECK_RESULT status=drift exit_code=1"
+    run_mix!(host, :scoria_install_check_pre_apply, ["scoria.install", "--check"],
+      accept_check_results: [:drift, :compliant]
     )
   end
 
@@ -92,27 +91,28 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
   end
 
   def expected_upgrade_steps(host) do
-    overlays = overlay_step_atoms(host)
+    baseline_overlays = overlay_step_atoms(host.overlay_tests)
+    upgrade_overlays = overlay_step_atoms(Map.get(host, :upgrade_overlay_tests, host.overlay_tests))
 
     baseline =
       [:deps_get, :scoria_install, :ecto_create, :ecto_migrate] ++
-        overlays ++
+        baseline_overlays ++
         [:scoria_install_check]
 
     upgrade =
       [:bump_dep, :deps_get, :scoria_install_dry_run, :scoria_install_check_pre_apply,
-       :scoria_install, :ecto_migrate, :scoria_install_check] ++ overlays
+       :scoria_install, :ecto_migrate, :scoria_install_check] ++ upgrade_overlays
 
     baseline ++ upgrade
   end
 
   def expected_steps(host) do
     install = [:deps_get, :scoria_install, :ecto_create, :ecto_migrate]
-    install ++ overlay_step_atoms(host)
+    install ++ overlay_step_atoms(host.overlay_tests)
   end
 
-  defp overlay_step_atoms(host) do
-    host.overlay_tests
+  defp overlay_step_atoms(overlay_tests) do
+    overlay_tests
     |> Enum.map(fn file -> file |> Path.rootname() |> String.to_atom() end)
   end
 
@@ -149,6 +149,7 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
       host
       |> Generator.bump_unpack_dep!(current_unpack_root)
       |> Map.put(:current_unpack, current_unpack_root)
+      |> Generator.refresh_overlay!()
 
     {host, [run_mix!(host, :bump_dep, ["deps.clean", "scoria"], expect_exit: 0)]}
   end
@@ -183,6 +184,9 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
 
     failure_reason =
       cond do
+        Keyword.get(opts, :accept_check_results) ->
+          validate_accept_check_results(output, status, Keyword.get(opts, :accept_check_results))
+
         status != expect_exit ->
           "expected exit #{expect_exit}, got #{status}"
 
@@ -405,6 +409,22 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
       _ ->
         ""
     end
+  end
+
+  defp validate_accept_check_results(output, status, accepted) do
+    valid? =
+      Enum.any?(accepted, fn
+        :drift ->
+          status == 1 and String.contains?(output, "SCORIA_CHECK_RESULT status=drift exit_code=1")
+
+        :compliant ->
+          status == 0 and String.contains?(output, "SCORIA_CHECK_RESULT status=compliant exit_code=0")
+
+        other ->
+          raise ArgumentError, "unsupported accept_check_results entry: #{inspect(other)}"
+      end)
+
+    if valid?, do: nil, else: "expected pre-apply check drift (exit 1) or compliant (exit 0), got exit #{status}"
   end
 
   defp host_env do
