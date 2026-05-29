@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.10
 milestone_name: Hex Consumer Proof & Upgrade Smoke
-status: executing
-last_updated: "2026-05-29T20:13:00Z"
+status: ready_to_plan
+last_updated: 2026-05-29T19:54:47.516Z
 last_activity: 2026-05-29 -- Completed 78-03-PLAN.md
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
   completed_plans: 3
-  percent: 100
+  percent: 20
+stopped_at: Phase 78 complete (3/3) — ready to discuss Phase 79
 ---
 
 # Project State
@@ -21,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 78 complete — ready for Phase 79 tarball consumer overlay proof
+**Current focus:** Phase 79 — tarball consumer overlay proof
 
 ## Current Position
 
-Phase: 78 (hex-consumer-contract-foundation) — COMPLETE
-Plan: 3 of 3 (78-03 harness + CI env complete)
-Status: Phase 78 complete — tarball route adoption proof wired through HostAppProof harness
-Last activity: 2026-05-29 -- Completed 78-03-PLAN.md
+Phase: 79
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-29
 
 ## Performance Metrics
 

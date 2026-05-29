@@ -23,7 +23,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. `host_app_consumer_proof_test` asserts Hex-shaped dep and removes repo-root path assertion.
 4. `package_surface_test` tarball version matches `HexConsumerContract` constraint.
 
-**Plans:** 3 plans in 3 waves (78-01 contract SSOT ✅, 78-02 unpack cache ✅, 78-03 harness + CI ✅)
+**Plans:** 3/3 plans complete
 
 **Progress:** 3/3 plans complete
 
@@ -97,7 +97,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 78 | Hex consumer contract foundation | HEX-CONSUMER-01†, DOCS-HEX-01† | Complete (2026-05-29) |
+| 78 | 3/3 | Complete    | 2026-05-29 |
 | 79 | Tarball consumer overlay proof | HEX-CONSUMER-01 | Pending |
 | 80 | Upgrade smoke in adoption lane | HEX-UPGRADE-01 | Pending |
 | 81 | Post-publish registry gate | HEX-REGISTRY-01 | Pending |

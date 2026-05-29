@@ -8,13 +8,13 @@
 
 ### Hex consumer proof
 
-- [ ] **HEX-CONSUMER-01**: Generated Phoenix host in `mix test.adoption` consumes Scoria via Hex-shaped dependency (`mix hex.build` tarball in PR CI), proving deps.get → install → migrate → route smoke → HOST-01 runtime overlay (approval/resume/evidence) → HOST-02 handoff overlay — without repo-root `path:` dep.
+- [x] **HEX-CONSUMER-01**: Generated Phoenix host in `mix test.adoption` consumes Scoria via Hex-shaped dependency (`mix hex.build` tarball in PR CI), proving deps.get → install → migrate → route smoke → HOST-01 runtime overlay (approval/resume/evidence) → HOST-02 handoff overlay — without repo-root `path:` dep.
 - [ ] **HEX-UPGRADE-01**: Same generated host proves upgrade-safe install after version bump: pin published `0.1.0`, baseline overlay smokes + compliant `--check`, bump to current tarball, `--dry-run` / `--check` / apply / migrate, re-run overlay smokes with final compliant `--check`.
 - [ ] **HEX-REGISTRY-01**: `post-publish-smoke.yml` proves live Hex registry fetch plus install → migrate → overlay subset (release-blocking); documents real semver upgrade path when `0.1.x+1` publishes.
 
 ### Docs truth
 
-- [ ] **DOCS-HEX-01**: `Scoria.HexConsumerContract` SSOT pins Hex dep snippet and version; README, `docs/operator_verification.md`, and `docs/adoption_lanes.md` align; `adoption_surface_test` and `ci_policy_contract_test` drift-guard tarball consumer proof; `closeout_order/0` unchanged.
+- [x] **DOCS-HEX-01**: `Scoria.HexConsumerContract` SSOT pins Hex dep snippet and version; README, `docs/operator_verification.md`, and `docs/adoption_lanes.md` align; `adoption_surface_test` and `ci_policy_contract_test` drift-guard tarball consumer proof; `closeout_order/0` unchanged.
 
 ## Future Requirements
 
@@ -41,10 +41,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HEX-CONSUMER-01 | 78, 79 | Pending |
+| HEX-CONSUMER-01 | 78, 79 | Complete |
 | HEX-UPGRADE-01 | 80 | Pending |
 | HEX-REGISTRY-01 | 81 | Pending |
-| DOCS-HEX-01 | 78, 82 | Pending |
+| DOCS-HEX-01 | 78, 82 | Complete |
 
 **Coverage:**
 - v2.10 requirements: 4 total
