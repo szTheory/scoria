@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.9
 milestone_name: Warning Ratchet
 status: executing
-last_updated: "2026-05-29T18:30:31.968Z"
-last_activity: 2026-05-29 -- Phase 77.2 planning complete
+last_updated: "2026-05-29T18:32:48Z"
+last_activity: 2026-05-29 -- Completed 77.2-01-PLAN.md
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 3
-  completed_plans: 1
-  percent: 17
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 77.2 — v2.9 tech debt closeout
+**Current focus:** Phase 77.2 — address-tech-debt-v2-9-planning-hygiene-ci-contract
 
 ## Current Position
 
-Phase: 77.2
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-29 -- Phase 77.2 planning complete
+Phase: 77.2 (address-tech-debt-v2-9-planning-hygiene-ci-contract) — EXECUTING
+Plan: 2 of 2
+Status: Ready for 77.2-02 (CI contract test)
+Last activity: 2026-05-29 -- Completed 77.2-01-PLAN.md
 
 ## Performance Metrics
 
@@ -63,5 +63,5 @@ Last activity: 2026-05-29 -- Phase 77.2 planning complete
 
 ## Operator Next Steps
 
-- `/gsd-plan-phase 77.2` — v2.9 planning hygiene + CI contract
-- `/gsd-discuss-phase 77.2` — optional context gathering before planning
+- Execute plan 77.2-02 — `ci_policy_contract_test.exs` gallery-after-knowledge ordering
+- `/gsd-execute-phase 77.2` — continue phase 77.2 execution

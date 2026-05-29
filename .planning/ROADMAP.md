@@ -1,8 +1,8 @@
 # Roadmap — Milestone v2.9 Adoption Journey & Reference Demo
 
 **Milestone:** v2.9  
-**Phases:** 74–77.1 (continuing from v2.8 phase 73)  
-**Last updated:** 2026-05-29
+**Phases:** 74–77.2 (continuing from v2.8 phase 73)  
+**Last updated:** 2026-05-29 (77.2-01: retroactive VERIFICATION.md for phases 74–77)
 
 ## Overview
 
@@ -14,7 +14,8 @@ Battle-test Scoria through a realistic support-copilot domain: shared journey fi
 | 75 | Host-proof overlay expansion | Resume + handoff smokes in generated host | HOST-01, HOST-02 |
 | 76 | Support copilot example app | Committed gallery with seeds + host UI | GALL-01, GALL-02 |
 | 77 | Gallery CI + docs closeout | Advisory lane, README, operator docs | CI-GALL-01, DOCS-GALL-01 |
-| 77.1 | 1/1 | Complete    | 2026-05-29 |
+| 77.1 | Close gap: DOCS-GALL-01 drift guard expansion | Multi-surface drift guards | DOCS-GALL-01 |
+| 77.2 | Address tech debt: v2.9 planning hygiene + CI contract (INSERTED) | Retroactive planning artifacts + CI contract test | CI-GALL-01 |
 
 ## Phase 74: Journey fixture foundation
 
@@ -62,6 +63,17 @@ Battle-test Scoria through a realistic support-copilot domain: shared journey fi
 1. `SupportJourneySourceTest` (or equivalent contract tests) assert gallery-related `doc_fragments/0` against `README.md` and `docs/operator_verification.md`.
 2. Drift between gallery fixtures, advisory lane command, and all three adopter docs fails CI — not only the gallery guide.
 3. No widening of `VerificationLanes.closeout_order/0`; advisory gallery lane posture unchanged.
+
+## Phase 77.2: Address tech debt: v2.9 planning hygiene + CI contract (INSERTED)
+
+**Goal:** Close v2.9 milestone audit tech debt — retroactive planning artifacts for phases 74–77 and CI contract test for gallery lane ordering.
+
+**Depends on:** Phase 77.1
+
+**Success criteria:**
+1. Retroactive VERIFICATION.md (or equivalent closeout ledgers) for phases 74–77 documenting shipped evidence.
+2. `ci_policy_contract_test.exs` asserts gallery lane runs after knowledge WAE in CI topology.
+3. No functional regressions; `closeout_order/0` and advisory lane posture unchanged.
 
 ## Prior milestones (archived)
 
