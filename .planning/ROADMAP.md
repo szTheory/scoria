@@ -15,7 +15,7 @@ Battle-test Scoria through a realistic support-copilot domain: shared journey fi
 | 76 | Support copilot example app | Committed gallery with seeds + host UI | GALL-01, GALL-02 |
 | 77 | Gallery CI + docs closeout | Advisory lane, README, operator docs | CI-GALL-01, DOCS-GALL-01 |
 | 77.1 | Close gap: DOCS-GALL-01 drift guard expansion | Multi-surface drift guards | DOCS-GALL-01 |
-| 77.2 | Address tech debt: v2.9 planning hygiene + CI contract (INSERTED) | Retroactive planning artifacts + CI contract test | CI-GALL-01 |
+| 77.2 | 2/2 | Complete    | 2026-05-29 |
 
 ## Phase 74: Journey fixture foundation
 
