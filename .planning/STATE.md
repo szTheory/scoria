@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.10
 milestone_name: Hex Consumer Proof & Upgrade Smoke
 status: planning
-last_updated: "2026-05-29T18:55:56.199Z"
-last_activity: 2026-05-29
+last_updated: "2026-05-29T19:31:52.555Z"
+last_activity: 2026-05-29 — Milestone v2.10 roadmap created
 progress:
   total_phases: 5
   completed_phases: 0
