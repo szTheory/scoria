@@ -1,6 +1,8 @@
 defmodule Scoria.TestSupport.HostAppProof.Runner do
   @moduledoc false
 
+  alias Scoria.HexConsumerContract
+
   @route_overlay_test "host_route_smoke_test.exs"
 
   def deps_get!(host), do: run_mix!(host, :deps_get, ["deps.get"])
@@ -71,16 +73,71 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
       )
 
     if status != 0 do
-      raise """
-      host proof step failed: #{step}
-      command: mix #{Enum.join(args, " ")}
-      host: #{host.root}
-
-      #{output}
-      """
+      raise triage_message(host, step, args, output)
     end
 
     %{step: step, output: output}
+  end
+
+  defp triage_message(host, step, args, output) do
+    unpack_root = Map.get(host, :unpack_root)
+    hex_unpack_env = System.get_env("SCORIA_HEX_UNPACK_ROOT") || "(unset)"
+
+    tarball_dep =
+      if host.dep_mode == :hex_tarball and is_binary(unpack_root) do
+        HexConsumerContract.tarball_dep_snippet(unpack_root)
+      else
+        "path dep mode (repo root)"
+      end
+
+    replay =
+      if step == :overlay_smoke do
+        overlay_paths = Enum.map(host.overlay_tests, &("test/" <> &1))
+
+        "cd #{host.root} && MIX_ENV=test mix test #{Enum.join(overlay_paths, " ")} --trace"
+      else
+        "cd #{host.root} && MIX_ENV=test mix #{Enum.join(args, " ")}"
+      end
+
+    nested_failure =
+      if step == :overlay_smoke do
+        case extract_nested_failure_line(output) do
+          nil -> ""
+          line -> "#{line}\n\n"
+        end
+      else
+        ""
+      end
+
+    """
+    host proof step failed
+
+    step: #{step}
+    command: mix #{Enum.join(args, " ")}
+    host.root: #{host.root}
+    host.app_name: #{host.app_name}
+    host.db_name: #{host.db_name}
+    unpack_root: #{inspect(unpack_root)}
+    SCORIA_HEX_UNPACK_ROOT: #{hex_unpack_env}
+    tarball_dep: #{tarball_dep}
+    overlay_tests: #{inspect(host.overlay_tests)}
+    SCORIA_DB_HOST: #{System.get_env("SCORIA_DB_HOST", "localhost")}
+    SCORIA_DB_PORT: #{System.get_env("SCORIA_DB_PORT", "5432")}
+    SCORIA_DB_USERNAME: #{System.get_env("SCORIA_DB_USERNAME", "postgres")}
+    replay: #{replay}
+    preserve: SCORIA_PRESERVE_HOST=1 MIX_ENV=test mix test --only host_proof --trace
+
+    #{nested_failure}#{output}
+    """
+  end
+
+  defp extract_nested_failure_line(output) do
+    output
+    |> String.split("\n", trim: false)
+    |> Enum.find(fn line ->
+      (Regex.match?(~r/^\s*\d+\) test/, line) and String.contains?(line, "FAIL")) or
+        String.contains?(line, "** (")
+    end)
   end
 
   defp host_env do
