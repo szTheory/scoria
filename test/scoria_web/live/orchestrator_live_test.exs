@@ -309,7 +309,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
 
     render_click(view, "approve", %{})
 
-    eventually(fn -> render(view) !~ "Approval Required" end)
+    eventually(fn -> not (render(view) =~ "Approval Required") end)
 
     updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
     assert updated_approval.status == "approved"
