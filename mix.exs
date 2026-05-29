@@ -31,6 +31,7 @@ defmodule Scoria.MixProject do
         "scoria.test.knowledge": :test,
         "test.knowledge": :test,
         "scoria.warning_inventory": :test,
+        "scoria.warning_inventory.check_baseline": :test,
         "scoria.test.ci_trust": :test,
         "test.ci_trust": :test,
         "scoria.test.install_contract": :test,

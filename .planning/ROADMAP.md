@@ -2,10 +2,23 @@
 
 ## Milestones
 
+- ✅ **v2.8 CI Hardening & Post-Ship Hygiene** — Shipped 2026-05-29 (requirements: `.planning/milestones/v2.8-REQUIREMENTS.md`)
 - ✅ **v2.7 OSS Release + Docs Truth** — Shipped 2026-05-29 (audit: `.planning/milestones/v2.7-MILESTONE-AUDIT.md`)
 - ✅ **v2.6 Warning Ratchet** — Archived: `.planning/milestones/v2.6-ROADMAP.md` (shipped 2026-05-28)
 - ✅ **v2.5 Installer Safety & Upgrade Confidence** — Archived: `.planning/milestones/v2.5-ROADMAP.md` (shipped 2026-05-27)
 - ✅ **v2.4 Adoption Reliability Contract** — Archived: `.planning/milestones/v2.4-ROADMAP.md` (shipped 2026-05-27)
+
+## v2.8 Scope
+
+**Goal:** Close deferred CI trust items from v2.6/v2.7 without reordering default closeout lanes.
+
+| Phase | Name | Status | Completed |
+|------:|------|--------|-----------|
+| 73 | CI Hardening Closeout | Complete | 2026-05-29 |
+
+**Requirements:** SEM-CI-01, CI-KNOW-01, CI-INV-01 (see `.planning/milestones/v2.8-REQUIREMENTS.md`)
+
+---
 
 ## v2.7 Scope
 
@@ -23,6 +36,7 @@
 
 ## Phases
 
+- [x] Phase 73: CI Hardening Closeout (completed 2026-05-29)
 - [x] Phase 70: Docs Truth Foundation (0/3 plans) (completed 2026-05-28)
 - [x] Phase 71: Release Infrastructure (0/? plans) (completed 2026-05-28)
 - [x] Phase 72: Hex Publish Closeout (4/4 plans) (completed 2026-05-29)

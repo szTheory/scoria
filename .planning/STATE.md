@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.7
-milestone_name: Scope
+milestone: v2.8
+milestone_name: CI Hardening & Post-Ship Hygiene
 status: milestone_complete
-last_updated: "2026-05-29T01:05:00Z"
-last_activity: 2026-05-29 -- v2.7 shipped: Hex 0.1.0 live, README flip, milestone audit
+last_updated: "2026-05-29T12:00:00Z"
+last_activity: 2026-05-29 -- v2.8 CI hardening; post-publish smoke; connector adoption doc
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 1
+  completed_phases: 1
+  total_plans: 0
+  completed_plans: 0
   percent: 100
 ---
 
@@ -17,60 +17,45 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-05-28)
+See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v2.7 milestone complete — `0.1.0` on [Hex](https://hex.pm/packages/scoria)
+**Current focus:** v2.8 complete — CI hardening shipped; Hex `0.1.0` on main
 
 ## Current Position
 
-Phase: 72 (complete)
-Plan: 72-04 complete
-Status: Milestone v2.7 closed
-Last activity: 2026-05-29 -- Hex 0.1.0 published; adopter flip landed on main
+Phase: 73 (complete)
+Status: Milestone v2.8 closed
+Last activity: 2026-05-29 -- SEM-CI-01, CI-KNOW-01, CI-INV-01 in ci-verify; post-publish smoke attested
 
 ## Performance Metrics
 
-- **Latest Shipped Milestone:** `v2.7 OSS Release + Docs Truth` on 2026-05-29
+- **Latest Shipped Milestone:** `v2.8 CI Hardening & Post-Ship Hygiene` on 2026-05-29
 - **Hex release:** `0.1.0` at git tag `v0.1.0` — https://hex.pm/packages/scoria
-- **Previous:** `v2.6 Warning Ratchet` (2026-05-28)
+- **Previous:** `v2.7 OSS Release + Docs Truth` (2026-05-29)
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- **v2.6 (shipped):** WARN-03–CI-03 complete; full-suite WAE in CI; milestone archived 2026-05-28.
-- **v2.7 (active):** docs truth → release infra → Hex publish + coordinated README/test flip.
-- **Deferred from v2.7:** SEM-CI-01 (semantic lane in PR CI) — document maintainer command only.
-- **Preserve:** v2.4 lane contracts, v2.5 installer planner/check/apply, v2.6 warning-ratchet CI topology.
+- **v2.8 (shipped):** Semantic lane WAE, knowledge WAE, inventory baseline policy gate; `docs/connector_adoption.md`.
+- **v2.7 (shipped):** Docs truth → release infra → Hex publish + README flip.
+- **v2.6 (shipped):** WARN-03–CI-03; full-suite WAE in CI.
 
-### Research decisions (2026-05-28)
+### Evidence
 
-- Capability-based shipped banner (not milestone codenames) for adopter docs.
-- Docs truth merges before `mix hex.publish` — avoid public HexDocs with stale v2.1 narrative.
-- release-please + publish workflow mirroring full CI test topology (szTheory pattern).
-- `mix scoria.test.install_contract` — maintainer lane for deep installer proofs (Phase 70).
-
-### Evidence (v2.6 closeout baseline)
-
-- `mix scoria.test.ci_trust` — local Phase 69 contract verification
-- `.planning/warning-inventory.baseline.json` — `"clusters": {}`
-- `.planning/milestones/v2.6-MILESTONE-AUDIT.md` — passed; gate-zero waiver approved Phase 71 (remote CI URL deferred to Phase 72 publish)
-
-## Active Threads
-
-- Uncommitted WIP: `scoria.test.install_contract`, adoption lane boundary test — fold into Phase 70
+- `.planning/phases/72-hex-publish-closeout/72-VERIFICATION.md` — integration, publish, smoke
+- `.planning/milestones/v2.8-REQUIREMENTS.md` — SEM-CI-01, CI-KNOW-01, CI-INV-01
+- `mix scoria.test.ci_trust` — policy + ratchet hygiene contracts
 
 ## Deferred Items
 
-| Category | Item | Status | Owner |
-|----------|------|--------|-------|
-| v2.7 | SEM-CI-01 semantic lane in PR CI | deferred — document only | scoria-maintainers |
-| v2.7+ | Knowledge WAE in CI | deferred (Phase 69 D-17) | scoria-maintainers |
-| v2.6 carryover | Remote GitHub Actions green attestation | **closed** — `72-VERIFICATION.md` | scoria-maintainers |
+| Category | Item | Status |
+|----------|------|--------|
+| v2.9+ | Next milestone scope | open — planning |
 
 ## Operator Next Steps
 
-- `/gsd-discuss-phase 70` or `/gsd-plan-phase 70` after roadmap approval
-- Sequence: Phase 70 docs → Phase 71 release prep → Phase 72 publish
+- Plan v2.9 in `.planning/ROADMAP.md` when ready
+- Routine releases: release-please on `main`; monitor `post-publish-smoke.yml` after each Hex publish

@@ -41,6 +41,9 @@ jobs:
       - name: Check warning baseline expiry
         run: mix scoria.warning_baseline.check
 
+      - name: Check committed warning inventory baseline
+        run: mix scoria.warning_inventory.check_baseline
+
       - name: Compile with warnings as errors
         run: mix compile --warnings-as-errors
 
@@ -118,6 +121,9 @@ jobs:
       - name: Run runtime-to-handoff proof lane
         run: mix test.runtime_to_handoff
 
+      - name: Run semantic fast-path lane
+        run: mix test.semantic_fast_path --warnings-as-errors
+
       - name: Verify maintainer ratchet hygiene chain
         run: MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs
 
@@ -125,4 +131,4 @@ jobs:
         run: mix test --warnings-as-errors
 
       - name: Run knowledge lane
-        run: mix test.knowledge
+        run: mix test.knowledge --warnings-as-errors

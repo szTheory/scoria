@@ -62,6 +62,12 @@ defmodule Scoria.VerificationLanesTest do
 
     assert index_of(ci_workflow, release_preview) < index_of(ci_workflow, adoption)
     assert index_of(ci_workflow, adoption) < index_of(ci_workflow, runtime_to_handoff)
+
+    semantic = "mix test.semantic_fast_path --warnings-as-errors"
+
+    assert ci_workflow =~ semantic
+    assert index_of(ci_workflow, runtime_to_handoff) < index_of(ci_workflow, semantic)
+    assert index_of(ci_workflow, semantic) < index_of(ci_workflow, "run: mix test --warnings-as-errors")
   end
 
   defp index_of(content, needle) do

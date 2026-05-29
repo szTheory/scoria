@@ -21,22 +21,26 @@ Requirements for milestone `v2.7 OSS Release + Docs Truth`. Docs truth merges be
 - [x] **HEX-01**: First Hex publish at semver `0.1.0` with git tag `v0.1.0`; release-please (or equivalent szTheory release automation) and publish workflow runs the same test topology as PR CI before `mix hex.publish`.
 - [x] **HEX-02**: CHANGELOG for `0.1.0`, GitHub release at `v0.1.0`, Hex badge on README, and coordinated flip of README install snippet plus `package_surface_test` from pre-publish GitHub-only to Hex-primary with GitHub tag fallback.
 
+## v2.8 Requirements
+
+Shipped in milestone `v2.8 CI Hardening & Post-Ship Hygiene` (Phase 73):
+
+- [x] **SEM-CI-01**: Semantic fast-path lane in PR CI after closeout lanes, without widening `VerificationLanes.closeout_order/0`.
+- [x] **CI-KNOW-01**: `mix test.knowledge --warnings-as-errors` in CI.
+- [x] **CI-INV-01**: `mix scoria.warning_inventory.check_baseline` in policy job — committed inventory JSON must keep `clusters` empty.
+
 ## Future Requirements
 
-Deferred beyond `v2.7`:
-
-- **SEM-CI-01**: Optional semantic lane step in PR CI without widening default closeout order — deferred; document local maintainer command in v2.7 (DOCS-04).
-- **CI-KNOW-01**: `mix test.knowledge --warnings-as-errors` in CI — deferred (Phase 69 D-17).
-- **CI-INV-01**: Inventory JSON diff enforcement in CI — deferred (Phase 69 D-16).
+None queued for v2.8 closeout.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| SEM-CI-01 as v2.7 success criterion | Dilutes OSS/docs focus; semantic tests already in full-suite WAE |
-| Knowledge WAE in default CI closeout | Optional lane; no demonstrated regression |
+| SEM-CI-01 as v2.7 success criterion | v2.7 focused on Hex publish; landed in v2.8 |
+| Knowledge WAE in default closeout order | Optional lane stays after full-suite WAE, not in closeout_order |
 | New runtime capability families | v2.7 is adoption/maintainer trust, not breadth |
-| Connector adoption guide expansion | Defer until OSS/docs truth lands |
+| Connector adoption guide expansion | Narrow `docs/connector_adoption.md` added post-v2.7; deep profiles deferred |
 | Package-family Hex split | Too wide for first publish |
 | Landing page / brand book visual implementation | Not release-blocking |
 | Broad installer engine rewrite | v2.5 closed installer trust |
@@ -60,4 +64,4 @@ Deferred beyond `v2.7`:
 
 ---
 *Requirements defined: 2026-05-28*
-*Last updated: 2026-05-28 after v2.7 milestone start*
+*Last updated: 2026-05-29 after v2.8 CI hardening*

@@ -10,22 +10,24 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: v2.7 OSS Release + Docs Truth
+## Current Milestone: v2.8 CI Hardening & Post-Ship Hygiene (complete)
 
-**Goal:** Ship docs that honestly reflect v2.5+ capability, then publish `0.1.0` on Hex at git tag `v0.1.0` — without weakening v2.4 lane contracts, v2.5 installer truth, or v2.6 CI gates.
+**Goal:** Land deferred CI trust items (semantic lane, knowledge WAE, inventory baseline gate) without widening default closeout order.
 
-**Target features:**
-- DOCS-03 / DOCS-04: Capability-based shipped banner, README install upgrade path, `adoption_surface_test` alignment, maintainer semantic-lane doc boundary
-- INST-DX-01: `mix scoria.test.install_contract` maintainer task committed and documented (not a closeout lane)
-- HEX-01 / HEX-02: release-please + publish workflow, CHANGELOG, coordinated Hex/README/package_surface_test flip at `0.1.0`
+**Shipped (2026-05-29):** SEM-CI-01, CI-KNOW-01, CI-INV-01 — see `.planning/milestones/v2.8-REQUIREMENTS.md`.
 
-**Explicitly deferred:** SEM-CI-01 (semantic lane in PR CI) — document local maintainer command only
+## Latest Shipped Release Milestone: v2.7 OSS Release + Docs Truth
+
+**Goal:** Docs truth, then Hex `0.1.0` / `v0.1.0` — without weakening v2.4–v2.6 contracts.
+
+**Delivered:** DOCS-03/04, INST-DX-01, HEX-01/02, Hex-primary README, `package_surface_test` flip.
 
 ## Current State
 
-- Phase 70 Docs Truth Foundation complete (2026-05-28): README uses capability-based shipped truth; install_contract maintainer lane committed; CI gate map documents semantic local-only boundary and version namespaces.
-- Scoria shipped `v2.6 Warning Ratchet` on 2026-05-28.
-- CI policy→test topology: `mix scoria.warning_baseline.check` → compile WAE → lane-contract WAE (policy job); closeout lanes → full-suite WAE → knowledge (test job).
+- **Hex:** `0.1.0` live at https://hex.pm/packages/scoria (tag `v0.1.0`, 2026-05-29).
+- Phase 73 CI hardening complete (2026-05-29): semantic lane + knowledge WAE + inventory baseline check in `ci-verify.yml`; operator gate map updated.
+- Phase 72 Hex publish closeout complete (2026-05-29): README Hex-primary; release-please without `release-as` pin.
+- CI policy→test topology: `warning_baseline.check` → `warning_inventory.check_baseline` → compile WAE → lane-contract WAE (policy); closeout lanes → semantic WAE → ratchet hygiene → full-suite WAE → knowledge WAE (test).
 - Warning inventory and ratchet maintainer paths (`mix scoria.warning_inventory`, `mix scoria.warning_ratchet.*`) classify and clear debt by surface; baseline ledger empty (`"clusters": {}`).
 - Full-suite `mix test --warnings-as-errors` is green locally; `mix scoria.test.ci_trust` bundles Phase 69 contract verification.
 - Installer preview/check/apply truth from v2.5 remains SSOT; canonical lane order unchanged.
@@ -33,9 +35,9 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Next Milestone Goals
 
-**Active planning target (v2.7):** OSS Release + Docs Truth — Hex publish, README/shipped-state honesty, preserve lane and installer contracts.
+**Planning target:** define v2.9 scope (runtime breadth, connector profiles, or maintainer DX) after v2.8 CI hardening.
 
-**Preserve:** v2.4 lane contracts, CI closeout order, v2.5 installer planner/check/apply truth, and v2.6 warning-ratchet CI gates.
+**Preserve:** v2.4 `VerificationLanes.closeout_order/0`, v2.5 installer truth, v2.6 warning-ratchet gates, v2.7 Hex adopter flip.
 
 ## Requirements
 
@@ -100,8 +102,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-- [ ] **HEX-01**: First Hex publish at `0.1.0` / `v0.1.0` with release-please and publish CI mirroring PR test topology (v2.7).
-- [ ] **HEX-02**: CHANGELOG, GitHub release, Hex badge, coordinated README + `package_surface_test` Hex-first flip (v2.7).
+- None — v2.7 and v2.8 closeout complete; pick next milestone in `.planning/ROADMAP.md`.
 
 ### Out of Scope
 
@@ -114,8 +115,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - A broad installer engine rewrite beyond plan/check + drift-safe apply — too wide for the next milestone's leverage target.
 - Connector adoption guides without explicit embedded-boundary framing — risks hosted-connector-platform drift; defer or keep narrow after v2.7.
 - Combining `WARN-03` with Hex publish, semantic CI gate, or connector docs in one milestone — dilutes focus; sequence v2.6 then v2.7.
-- SEM-CI-01 semantic lane in PR CI — deferred from v2.7; document maintainer command only (research 2026-05-28).
-- Knowledge WAE in default CI closeout — deferred (Phase 69 D-17); optional lane stays optional.
+- SEM-CI-01 / CI-KNOW-01 / CI-INV-01 — shipped in v2.8 Phase 73.
 
 ## Latest Shipped Milestone: v2.6 Warning Ratchet
 

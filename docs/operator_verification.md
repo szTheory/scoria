@@ -266,16 +266,19 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 **Policy job (fail cheap, no database):**
 
 1. `mix scoria.warning_baseline.check` — baseline expiry before compile
-2. `mix compile --warnings-as-errors` — compile WAE
-3. Lane-contract WAE: `mix test --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
+2. `mix scoria.warning_inventory.check_baseline` — committed inventory JSON must keep `clusters` empty (CI-INV-01)
+3. `mix compile --warnings-as-errors` — compile WAE
+4. Lane-contract WAE: `mix test --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
 
 **Test job closeout (Postgres on 55432):**
 
 1. `MIX_ENV=dev mix scoria.release_preview` — release/docs lane (dev only)
 2. `mix ecto.create` + `mix ecto.migrate`
-3. `mix test.adoption` → `mix test.runtime_to_handoff` — behavioral closeout lanes
-4. `mix test --warnings-as-errors` — full-suite WAE after closeout lanes
-5. `mix test.knowledge` — optional knowledge lane (behavior, not WAE)
+3. `mix test.adoption` → `mix test.runtime_to_handoff` — behavioral closeout lanes (unchanged default closeout order)
+4. `mix test.semantic_fast_path --warnings-as-errors` — semantic lane WAE after closeout, before ratchet hygiene (SEM-CI-01)
+5. Ratchet hygiene: `mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
+6. `mix test --warnings-as-errors` — full-suite WAE
+7. `mix test.knowledge --warnings-as-errors` — optional knowledge lane WAE (CI-KNOW-01)
 
 **Verification lanes in PR CI**
 
@@ -283,8 +286,8 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 |------|---------|-----------|-------|
 | Default runtime | mix test.adoption | Yes | PR closeout lane 3 |
 | Runtime-to-handoff | mix test.runtime_to_handoff | Yes | PR closeout lane 3 |
-| Semantic fast-path | mix test.semantic_fast_path | Not in PR CI | Local maintainer command; see [Semantic fast-path troubleshooting lane](#semantic-fast-path-troubleshooting-lane); SEM-CI-01 deferred; semantic tests still run via full-suite WAE |
-| Optional knowledge | mix test.knowledge | Yes | After full-suite WAE |
+| Semantic fast-path | mix test.semantic_fast_path --warnings-as-errors | Yes | After closeout lanes; see [Semantic fast-path troubleshooting lane](#semantic-fast-path-troubleshooting-lane); not in `VerificationLanes.closeout_order/0` |
+| Optional knowledge | mix test.knowledge --warnings-as-errors | Yes | After full-suite WAE |
 
 **Version namespaces:** Hex/git releases use semver (`0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}`). Planning milestones (`v2.x` in `.planning/`) are internal shipped-work tranches, not a second installable version axis.
 
@@ -295,6 +298,7 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 **When CI fails, run the matching maintainer command next:**
 
 - Policy: `warning_baseline.check` failed → inspect `.planning/WARNING-BASELINE.md` expiry rows, then `mix scoria.warning_baseline.check` locally
+- Policy: `warning_inventory.check_baseline` failed → ensure `.planning/warning-inventory.baseline.json` has `"clusters": {}` or refresh with `mix scoria.warning_inventory --write` in a dedicated PR
 - Policy: compile WAE failed → `mix compile --warnings-as-errors` and fix compiler warnings
 - Policy: lane-contract WAE failed → `MIX_ENV=test mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
 - Test: adoption or runtime_to_handoff failed → reproduce with `SCORIA_DB_PORT=55432 mix test.adoption` or `mix test.runtime_to_handoff`

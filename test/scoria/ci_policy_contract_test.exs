@@ -6,6 +6,8 @@ defmodule Scoria.CiPolicyContractTest do
   @ci_verify ".github/workflows/ci-verify.yml"
   @ci_entry ".github/workflows/ci.yml"
   @baseline_check "mix scoria.warning_baseline.check"
+  @inventory_baseline_check "mix scoria.warning_inventory.check_baseline"
+  @semantic_lane "mix test.semantic_fast_path --warnings-as-errors"
   @compile_wae "mix compile --warnings-as-errors"
   @ci_policy_contract "test/scoria/ci_policy_contract_test.exs"
   @lane_contract "test/scoria/verification_lanes_test.exs"
@@ -16,6 +18,7 @@ defmodule Scoria.CiPolicyContractTest do
 
     assert ci_verify =~ "workflow_call"
     assert ci_verify =~ @baseline_check
+    assert ci_verify =~ @inventory_baseline_check
     assert ci_verify =~ "mix archive.install hex phx_new"
     assert ci_verify =~ "services:"
     assert ci_verify =~ "postgres"
@@ -110,11 +113,15 @@ defmodule Scoria.CiPolicyContractTest do
     refute ci_entry =~ "\n  policy:"
   end
 
-  test "policy job runs warning baseline check before compile WAE" do
+  test "policy job runs warning baseline and inventory checks before compile WAE" do
     ci_verify = File.read!(@ci_verify)
     [policy_section, _test_section] = split_jobs(ci_verify)
 
     assert policy_section =~ @baseline_check
+    assert policy_section =~ @inventory_baseline_check
+    assert index_of(policy_section, @baseline_check) <
+             index_of(policy_section, @inventory_baseline_check)
+    assert index_of(policy_section, @inventory_baseline_check) < index_of(policy_section, @compile_wae)
     assert index_of(policy_section, @baseline_check) < index_of(policy_section, @compile_wae)
     assert index_of(policy_section, @compile_wae) <
              index_of(policy_section, "Verify lane-contract tests with warnings as errors")
@@ -153,7 +160,22 @@ defmodule Scoria.CiPolicyContractTest do
     assert length(Scoria.WarningRatchet.high_signal_wae_paths()) > 0
   end
 
-  test "test job runs full suite WAE after runtime_to_handoff and before knowledge lane" do
+  test "test job runs semantic lane after runtime_to_handoff and before ratchet hygiene" do
+    ci_verify = File.read!(@ci_verify)
+    [_policy_section, test_section] = split_jobs(ci_verify)
+    runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
+
+    assert test_section =~ @semantic_lane
+    assert index_of(test_section, runtime_to_handoff) < index_of(test_section, @semantic_lane)
+
+    assert index_of(test_section, @semantic_lane) <
+             index_of(
+               test_section,
+               "MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs"
+             )
+  end
+
+  test "test job runs full suite WAE after closeout lanes and before knowledge WAE lane" do
     ci_verify = File.read!(@ci_verify)
     [_policy_section, test_section] = split_jobs(ci_verify)
     runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
@@ -164,7 +186,7 @@ defmodule Scoria.CiPolicyContractTest do
              index_of(test_section, "run: mix test --warnings-as-errors")
 
     assert index_of(test_section, "run: mix test --warnings-as-errors") <
-             index_of(test_section, "mix test.knowledge")
+             index_of(test_section, "mix test.knowledge --warnings-as-errors")
   end
 
   test "operator guide documents Hex release section and README links anchor" do
@@ -186,8 +208,8 @@ defmodule Scoria.CiPolicyContractTest do
     assert operator_docs =~ "CI gate map"
     assert operator_docs =~ "policy"
     assert operator_docs =~ "needs: policy" or operator_docs =~ "`policy`"
-    assert operator_docs =~ "Not in PR CI"
     assert operator_docs =~ "mix test.semantic_fast_path"
+    assert operator_docs =~ "mix scoria.warning_inventory.check_baseline"
     assert operator_docs =~ "Version namespaces"
     assert operator_docs =~ "mix scoria.test.install_contract"
   end
