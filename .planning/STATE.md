@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 ## Current Position
 
-Phase: 78 (not started)
+Phase: 78 (context gathered)
 Plan: —
-Status: Roadmap approved — ready for phase planning
-Last activity: 2026-05-29 — Milestone v2.10 roadmap created
+Status: Ready for `/gsd-plan-phase 78`
+Last activity: 2026-05-29 — Phase 78 discuss-phase complete
 
 ## Performance Metrics
 
@@ -63,5 +63,5 @@ Last activity: 2026-05-29 — Milestone v2.10 roadmap created
 
 ## Operator Next Steps
 
-- `/gsd-discuss-phase 78` — gather context for Hex consumer contract foundation
-- `/gsd-plan-phase 78` — skip discussion, plan directly
+- `/gsd-plan-phase 78` — plan Hex consumer contract foundation (context in `78-CONTEXT.md`)
+- `/gsd-plan-phase 78 --skip-research` — plan without research pass
