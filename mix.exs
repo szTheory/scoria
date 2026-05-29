@@ -35,7 +35,9 @@ defmodule Scoria.MixProject do
         "scoria.test.ci_trust": :test,
         "test.ci_trust": :test,
         "scoria.test.install_contract": :test,
-        "test.install_contract": :test
+        "test.install_contract": :test,
+        "scoria.test.support_copilot": :test,
+        "test.support_copilot": :test
       ]
     ]
   end
@@ -94,7 +96,8 @@ defmodule Scoria.MixProject do
         "docs/phoenix_runtime_example.md",
         "docs/bounded_handoffs.md",
         "docs/semantic_fast_path.md",
-        "docs/operator_verification.md"
+        "docs/operator_verification.md",
+        "docs/support_copilot_gallery.md"
       ]
     ]
   end
@@ -114,7 +117,8 @@ defmodule Scoria.MixProject do
         "docs/phoenix_runtime_example.md",
         "docs/bounded_handoffs.md",
         "docs/semantic_fast_path.md",
-        "docs/operator_verification.md"
+        "docs/operator_verification.md",
+        "docs/support_copilot_gallery.md"
       ],
       licenses: ["MIT"],
       links: %{

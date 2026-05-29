@@ -10,9 +10,15 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone
+## Current Milestone: v2.9 Adoption Journey & Reference Demo
 
-**Status:** v2.8 complete — awaiting next milestone (`/gsd-new-milestone`)
+**Goal:** Battle-test Scoria through a realistic support-copilot domain app with shared journey fixtures, extended host-proof overlay, and a human-clickable gallery — without weakening v2.4–v2.8 lane contracts.
+
+**Target features:**
+- `Scoria.SupportJourney` fixture SSOT (identities, seeds, doc fragments, UI expectations)
+- Extended merge-blocking host-proof overlay (resume + handoff smokes)
+- Committed `examples/support_copilot/` gallery with rich seeds and host UI
+- Advisory CI lane `mix scoria.test.support_copilot` (not in closeout order)
 
 **Latest shipped:** v2.8 CI Hardening & Post-Ship Hygiene (2026-05-29) — SEM-CI-01, CI-KNOW-01, CI-INV-01
 
@@ -33,11 +39,13 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Installer preview/check/apply truth from v2.5 remains SSOT; canonical lane order unchanged.
 - Milestone archives: `.planning/milestones/v2.6-ROADMAP.md`, `v2.6-REQUIREMENTS.md`, `v2.6-MILESTONE-AUDIT.md`.
 
-## Next Milestone Goals
+## Next Milestone Queue (after v2.9)
 
-**Planning target:** define v2.9 scope (runtime breadth, connector profiles, or maintainer DX) after v2.8 CI hardening.
+- **v2.10:** Hex consumer proof + upgrade smoke
+- **v2.11:** Orchestrator live wiring (trace stream, HITL from runtime)
+- **v2.12:** Optional lane journeys in demo (semantic, knowledge, connector)
 
-**Preserve:** v2.4 `VerificationLanes.closeout_order/0`, v2.5 installer truth, v2.6 warning-ratchet gates, v2.7 Hex adopter flip.
+**Preserve:** v2.4 `VerificationLanes.closeout_order/0`, v2.5 installer truth, v2.6 warning-ratchet gates, v2.7 Hex adopter flip, v2.8 CI topology.
 
 ## Requirements
 
@@ -107,12 +115,16 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-- None — start next milestone with `/gsd-new-milestone`.
+- **JOURN-01/02:** `Scoria.SupportJourney` fixture SSOT + source contract tests — Phase 74
+- **HOST-01/02:** Extended host-proof overlay (resume + handoff) — Phase 75
+- **GALL-01/02:** `examples/support_copilot/` gallery app — Phase 76
+- **CI-GALL-01 / DOCS-GALL-01:** Advisory gallery lane + docs — Phase 77
 
 ### Out of Scope
 
 - Full package-family decomposition into multiple Hex libraries — valuable later, but too wide for the first boring adopter closeout.
-- Hosted demo environments or managed onboarding services — would widen the product boundary before the embedded install story is fully proven.
+- Hosted demo environments or managed onboarding services — gallery is local `examples/` only; no hosted onboarding.
+- Adding gallery tests to `mix test.adoption` closeout chain — gallery stays advisory via `mix scoria.test.support_copilot`.
 - Broad bounded-handoff example expansion beyond one runtime-to-handoff path — too wide until one canonical example proves useful.
 - External semantic cache backends or ANN tuning controls — adjacent capability expansion, not the highest-leverage adoption closure.
 - Folding optional knowledge or semantic verification into the default adoption lane — would weaken the clear prerequisite boundary that this milestone is trying to strengthen.
@@ -161,7 +173,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Scoria shipped `v2.8 CI Hardening & Post-Ship Hygiene` on 2026-05-29; Hex `0.1.0` live at https://hex.pm/packages/scoria.
 - CI: policy job (baseline → inventory baseline → compile WAE → lane-contract) → test job (closeout → semantic WAE → ratchet hygiene → full WAE → knowledge WAE).
 - Baseline ledger and inventory clusters empty; `mix scoria.test.ci_trust` verifies policy contracts locally.
-- Next milestone: define v2.9 scope (runtime breadth, connector profiles, or maintainer DX).
+- v2.9 in progress: adoption journey fixtures, host-proof overlay expansion, `examples/support_copilot/` gallery.
+- Assessment thread: `.planning/threads/2026-05-29-adoption-journey-assessment.md`
 - Archives: `.planning/milestones/v2.8-*`, `v2.7-*`, `v2.6-*`
 
 ## Constraints
@@ -196,6 +209,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | No new runtime families until `WARN-03` and v2.7 OSS/docs closeout | Repo is ~84% done for embedded scope; highest leverage is warning trust + Hex/docs truth, not capability expansion | ✓ Good — v2.7/v2.8 shipped |
 | Milestone sequencing: v2.6 WARN-03 → v2.7 Hex/docs-truth → v2.8 CI hardening | Confirmed by milestone next-step assessment 2026-05-27 | ✓ Good — sequence complete |
 | Deferred CI lanes (semantic, knowledge, inventory) land in v2.8 without widening closeout order | Keeps v2.4 lane contract intact while closing maintainer trust gap | ✓ Good — shipped v2.8 |
+| v2.9 adopts phased hybrid demo: overlay (merge-blocking) + gallery (advisory) with `SupportJourney` SSOT | Closes adoption confidence gap before real adopters without hosted demo scope creep | — In progress |
 | Check-time manifest fingerprints are live-host-only; apply-time freshness gate uses stored manifest | Honest operator contract avoids misleading stored-fingerprint merge at check | ✓ Good — shipped Phase 63 |
 
 ## Milestone History
@@ -268,4 +282,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-29 after v2.8 milestone*
+*Last updated: 2026-05-29 — milestone v2.9 Adoption Journey & Reference Demo started*

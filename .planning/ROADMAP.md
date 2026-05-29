@@ -1,44 +1,58 @@
-# Roadmap: Scoria
+# Roadmap — Milestone v2.9 Adoption Journey & Reference Demo
 
-## Milestones
+**Milestone:** v2.9  
+**Phases:** 74–77 (continuing from v2.8 phase 73)  
+**Last updated:** 2026-05-29
 
-- ✅ **v2.8 CI Hardening & Post-Ship Hygiene** — Archived: `.planning/milestones/v2.8-ROADMAP.md` (shipped 2026-05-29)
-- ✅ **v2.7 OSS Release + Docs Truth** — Archived: `.planning/milestones/v2.7-ROADMAP.md` (shipped 2026-05-29)
-- ✅ **v2.6 Warning Ratchet** — Archived: `.planning/milestones/v2.6-ROADMAP.md` (shipped 2026-05-28)
-- ✅ **v2.5 Installer Safety & Upgrade Confidence** — Archived: `.planning/milestones/v2.5-ROADMAP.md` (shipped 2026-05-27)
-- ✅ **v2.4 Adoption Reliability Contract** — Archived: `.planning/milestones/v2.4-ROADMAP.md` (shipped 2026-05-27)
+## Overview
 
-## Phases
+Battle-test Scoria through a realistic support-copilot domain: shared journey fixtures, extended merge-blocking host-proof overlay, committed gallery app, and advisory CI lane — without weakening v2.4–v2.8 lane contracts.
 
-<details>
-<summary>✅ v2.8 CI Hardening & Post-Ship Hygiene (Phase 73) — SHIPPED 2026-05-29</summary>
+| Phase | Name | Goal | Requirements |
+|-------|------|------|--------------|
+| 74 | Journey fixture foundation | `SupportJourney` SSOT + source contract tests | JOURN-01, JOURN-02 |
+| 75 | Host-proof overlay expansion | Resume + handoff smokes in generated host | HOST-01, HOST-02 |
+| 76 | Support copilot example app | Committed gallery with seeds + host UI | GALL-01, GALL-02 |
+| 77 | Gallery CI + docs closeout | Advisory lane, README, operator docs | CI-GALL-01, DOCS-GALL-01 |
 
-- [x] Phase 73: CI Hardening Closeout (commit closeout) — completed 2026-05-29
+## Phase 74: Journey fixture foundation
 
-See `.planning/milestones/v2.8-ROADMAP.md` and `.planning/milestones/v2.8-REQUIREMENTS.md`.
+**Goal:** Establish `Scoria.SupportJourney` as the single source of truth for adoption journey identities, seed data, handler contracts, and doc fragments.
 
-</details>
+**Success criteria:**
+1. `lib/scoria/support_journey.ex` and `priv/fixtures/support_journey/` ship with the package.
+2. `test/scoria/support_journey_source_test.exs` pins fragments against docs.
+3. `AdoptionExample` delegates shared constants to `SupportJourney` where appropriate.
 
-<details>
-<summary>✅ v2.7 OSS Release + Docs Truth (Phases 70–72) — SHIPPED 2026-05-29</summary>
+## Phase 75: Host-proof overlay expansion
 
-- [x] Phase 70: Docs Truth Foundation (3/3 plans) — completed 2026-05-28
-- [x] Phase 71: Release Infrastructure (4/4 plans) — completed 2026-05-28
-- [x] Phase 72: Hex Publish Closeout (4/4 plans) — completed 2026-05-29
+**Goal:** Extend merge-blocking generated-host proof to cover approve→resume and bounded handoff journeys.
 
-See `.planning/milestones/v2.7-ROADMAP.md` and `.planning/milestones/v2.7-MILESTONE-AUDIT.md`.
+**Success criteria:**
+1. Overlay runtime smoke proves `resume_run` completion using `SupportJourney` identities.
+2. New `host_handoff_smoke_test.exs` proves delegated evidence on workflow page.
+3. `mix test.adoption` remains green; `closeout_order/0` unchanged.
 
-</details>
+## Phase 76: Support copilot example app
 
-## Progress
+**Goal:** Ship `examples/support_copilot/` as a human-clickable gallery with realistic support-domain seeds.
 
-| Phase | Milestone | Plans Complete | Status | Completed |
-| ----- | --------- | -------------- | ------ | --------- |
-| 70. Docs Truth Foundation | v2.7 | 3/3 | Complete | 2026-05-28 |
-| 71. Release Infrastructure | v2.7 | 4/4 | Complete | 2026-05-28 |
-| 72. Hex Publish Closeout | v2.7 | 4/4 | Complete | 2026-05-29 |
-| 73. CI Hardening Closeout | v2.8 | — | Complete | 2026-05-29 |
+**Success criteria:**
+1. Adopter can `cd examples/support_copilot && mix setup && mix phx.server`.
+2. Gallery tests prove default-lane and handoff happy paths with LiveView assertions.
+3. Gallery imports `SupportJourney` fixtures — no duplicated handler logic.
 
-## Next
+## Phase 77: Gallery CI + docs closeout
 
-Start the next milestone with `/gsd-new-milestone`.
+**Goal:** Wire advisory CI lane and document the gallery in README and operator verification.
+
+**Success criteria:**
+1. `mix scoria.test.support_copilot` runs gallery subprocess proof + contract tests.
+2. CI runs gallery lane after closeout lanes (advisory, non-blocking).
+3. README gallery section and operator verification updated with drift guards.
+
+## Prior milestones (archived)
+
+- ✅ **v2.8 CI Hardening & Post-Ship Hygiene** — `.planning/milestones/v2.8-*`
+- ✅ **v2.7 OSS Release + Docs Truth** — `.planning/milestones/v2.7-*`
+- ✅ **v2.6 Warning Ratchet** — `.planning/milestones/v2.6-*`

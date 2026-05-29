@@ -180,6 +180,25 @@ Keep it distinct from the other named lanes:
 - `mix test.runtime_to_handoff` proves bounded runtime-to-handoff escalation through `Scoria.get_run_detail/1` and `delegated_handoffs`
 - `mix test.semantic_fast_path` proves the bounded semantic troubleshooting lane
 - `mix test.knowledge` proves the optional knowledge lane
+- `mix scoria.test.support_copilot` proves the advisory support-copilot gallery (`examples/support_copilot`)
+
+## Support copilot gallery (advisory)
+
+After the default lane is boring, explore the committed gallery for a realistic support-copilot domain with shared `Scoria.SupportJourney` fixtures:
+
+```bash
+cd examples/support_copilot
+mix setup
+mix phx.server
+```
+
+Maintainers run the advisory gallery lane:
+
+```bash
+mix scoria.test.support_copilot
+```
+
+This lane is **not** part of `VerificationLanes.closeout_order/0`. Merge-blocking adoption proof remains `mix test.adoption`. See [`support_copilot_gallery.md`](support_copilot_gallery.md).
 
 ## Maintainer closeout
 
@@ -279,6 +298,7 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 5. Ratchet hygiene: `mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
 6. `mix test --warnings-as-errors` — full-suite WAE
 7. `mix test.knowledge --warnings-as-errors` — optional knowledge lane WAE (CI-KNOW-01)
+8. `mix scoria.test.support_copilot` — advisory support-copilot gallery lane (not closeout)
 
 **Verification lanes in PR CI**
 
@@ -288,6 +308,7 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 | Runtime-to-handoff | mix test.runtime_to_handoff | Yes | PR closeout lane 3 |
 | Semantic fast-path | mix test.semantic_fast_path --warnings-as-errors | Yes | After closeout lanes; see [Semantic fast-path troubleshooting lane](#semantic-fast-path-troubleshooting-lane); not in `VerificationLanes.closeout_order/0` |
 | Optional knowledge | mix test.knowledge --warnings-as-errors | Yes | After full-suite WAE |
+| Support copilot gallery | mix scoria.test.support_copilot | Yes | Advisory; after knowledge lane; not in `VerificationLanes.closeout_order/0` |
 
 **Version namespaces:** Hex/git releases use semver (`0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}`). Planning milestones (`v2.x` in `.planning/`) are internal shipped-work tranches, not a second installable version axis.
 

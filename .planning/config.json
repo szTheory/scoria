@@ -17,7 +17,9 @@
       "adopter_lens": true,
       "parallel_repo_research": true,
       "retain_threads_and_retrospective": true,
-      "prompts_dir": "prompts/"
+      "prompts_dir": "prompts/",
+      "demo_gallery_companion": true,
+      "journey_fixture_ssot": true
     }
   }
 }

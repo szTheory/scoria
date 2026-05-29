@@ -7,18 +7,15 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
   def ecto_migrate!(host), do: run_mix!(host, :ecto_migrate, ["ecto.migrate"])
 
   def smoke_pair!(host) do
-    result =
-      run_mix!(host, :route_runtime_smoke, [
-        "test",
-        host.route_smoke_test,
-        host.runtime_smoke_test,
-        "--trace"
-      ])
+    test_args = ["test"] ++ Enum.map(host.overlay_tests, &("test/" <> &1)) ++ ["--trace"]
 
-    [
-      %{step: :route_smoke, output: result.output},
-      %{step: :runtime_smoke, output: result.output}
-    ]
+    result = run_mix!(host, :overlay_smoke, test_args)
+
+    host.overlay_tests
+    |> Enum.map(fn file ->
+      step = file |> Path.rootname() |> String.to_atom()
+      %{step: step, output: result.output}
+    end)
   end
 
   def run_route_proof!(host) do

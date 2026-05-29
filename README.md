@@ -45,6 +45,7 @@ Docs:
 - [Bounded handoffs](docs/bounded_handoffs.md)
 - [Semantic fast path](docs/semantic_fast_path.md)
 - [Operator verification](docs/operator_verification.md)
+- [Support copilot gallery](docs/support_copilot_gallery.md) — local demo app at `examples/support_copilot`
 
 ## Install
 
@@ -225,6 +226,24 @@ SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_
 ```
 
 Use that lane only when you are intentionally validating semantic fast-path behavior. The task prepares the retrieval-backed knowledge tables it needs as part of the proof lane, so you do not need to run the full optional knowledge verification first.
+
+### Support copilot gallery (local demo)
+
+Explore Scoria in a realistic support-copilot domain with rich fixtures and a clickable host UI:
+
+```bash
+cd examples/support_copilot
+mix setup
+mix phx.server
+```
+
+Maintainers can run the advisory gallery verification lane (not part of closeout order):
+
+```bash
+mix scoria.test.support_copilot
+```
+
+See [`docs/support_copilot_gallery.md`](docs/support_copilot_gallery.md).
 
 For broader repo-health context outside the canonical lane proofs, maintainers can still run `mix test`.
 

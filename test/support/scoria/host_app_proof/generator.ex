@@ -2,8 +2,13 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
   @moduledoc false
 
   @host_module "ScoriaHostProof"
-  @route_smoke_test "test/host_route_smoke_test.exs"
-  @runtime_smoke_test "test/host_runtime_smoke_test.exs"
+  @overlay_test_dir "priv/host_app_proof/overlay/test"
+
+  def overlay_test_files do
+    Path.wildcard(Path.join([repo_root(), @overlay_test_dir, "*.exs"]))
+    |> Enum.map(&Path.basename/1)
+    |> Enum.sort()
+  end
 
   def create_host!(opts \\ []) do
     suffix = System.unique_integer([:positive]) |> Integer.to_string()
@@ -38,13 +43,14 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
     copy_overlay!(host_root)
     patch_host_install_surfaces!(host_root)
 
+    overlay_tests = overlay_test_files()
+
     %{
       app_name: app_name,
       db_name: "#{app_name}_test",
       root: host_root,
       repo_root: repo_root,
-      route_smoke_test: @route_smoke_test,
-      runtime_smoke_test: @runtime_smoke_test
+      overlay_tests: overlay_tests
     }
   end
 

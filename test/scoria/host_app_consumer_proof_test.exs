@@ -19,8 +19,9 @@ defmodule Scoria.HostAppConsumerProofTest do
              :scoria_install,
              :ecto_create,
              :ecto_migrate,
-             :route_smoke,
-             :runtime_smoke
+             :host_handoff_smoke_test,
+             :host_route_smoke_test,
+             :host_runtime_smoke_test
            ]
   end
 end
