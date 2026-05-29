@@ -74,34 +74,11 @@ defmodule Scoria.PackageSurfaceTest do
   end
 
   test "hex preview includes the required release surface" do
-    output_dir = Path.join(System.tmp_dir!(), "scoria-hex-preview-#{System.unique_integer([:positive])}")
-    on_exit(fn -> File.rm_rf(output_dir) end)
-
-    {output, status} =
-      System.cmd("mix", ["hex.build", "--unpack", "--output", output_dir],
-        cd: File.cwd!(),
-        stderr_to_stdout: true
-      )
-
-    assert status == 0, output
-
-    unpack_root =
-      cond do
-        File.regular?(Path.join(output_dir, "mix.exs")) -> output_dir
-        true -> find_unpack_root!(output_dir)
-      end
+    unpack_root = HexConsumerContract.ensure_current_unpack_root!()
 
     for relative_path <- @required_package_paths do
       assert File.exists?(Path.join(unpack_root, relative_path)),
              "expected #{relative_path} to exist in unpacked artifact"
     end
-  end
-
-  defp find_unpack_root!(output_dir) do
-    output_dir
-    |> File.ls!()
-    |> Enum.map(&Path.join(output_dir, &1))
-    |> Enum.find(&(File.dir?(&1) and File.regular?(Path.join(&1, "mix.exs")))) ||
-      raise "could not find unpacked package root inside #{output_dir}"
   end
 end
