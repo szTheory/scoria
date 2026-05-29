@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.10
 milestone_name: Hex Consumer Proof & Upgrade Smoke
 status: executing
-last_updated: "2026-05-29T21:30:06.340Z"
-last_activity: 2026-05-29 -- Phase 80 planning complete
+last_updated: "2026-05-29T21:32:23.087Z"
+last_activity: 2026-05-29 -- Completed 80-01 baseline fixture + contract APIs -- Completed 80-01 baseline fixture + contract APIs
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 9
-  completed_plans: 6
+  completed_plans: 7
   percent: 40
 ---
 
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 80 — upgrade smoke in adoption lane
+**Current focus:** Phase 80 — upgrade-smoke-in-adoption-lane
 
 ## Current Position
 
-Phase: 80
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-29 -- Phase 80 planning complete
+Phase: 80 (upgrade-smoke-in-adoption-lane) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute 80-02
+Last activity: 2026-05-29 -- Completed 80-01 baseline fixture + contract APIs
 
 ## Performance Metrics
 
@@ -37,6 +37,7 @@ Last activity: 2026-05-29 -- Phase 80 planning complete
 - **Hex release:** `0.1.0` at git tag `v0.1.0` — https://hex.pm/packages/scoria
 - **Phase 78 progress:** 3/3 plans complete
 - **Phase 79 progress:** 3/3 plans complete
+- **Phase 80 progress:** 1/3 plans complete
 
 ## Accumulated Context
 
@@ -62,6 +63,10 @@ Last activity: 2026-05-29 -- Phase 80 planning complete
 - Failure snapshot at tmp/scoria-host-proof-last-failure/ with MANIFEST.txt; copy best-effort (D-41, 79-02)
 - CI uploads failure snapshot on adoption lane failure only; 7-day retention; if-no-files-found ignore (D-42, 79-03)
 - HEX-CONSUMER-01 milestone Complete at Phase 79; DOCS-HEX-01 prose sweep remains Phase 82 (D-45, D-46, 79-03)
+- Committed frozen v0.1.0 unpack at test/fixtures/hex_consumer/scoria-0.1.0-unpack/ — not HEAD rebuild in CI (D-50, 80-01)
+- Baseline stamp fingerprint + git SHA drift guard via baseline_package_fingerprint/0 (D-51, 80-01)
+- SCORIA_HEX_BASELINE_UNPACK_ROOT maintainer-only env override — never CI (D-52, 80-01)
+- same_semver_content_upgrade?/0 asserts HEAD fingerprint differs from baseline fixture (D-54, 80-01)
 
 ### Evidence
 
@@ -69,17 +74,17 @@ Last activity: 2026-05-29 -- Phase 80 planning complete
 - `.planning/phases/79-tarball-consumer-overlay-proof/79-03-SUMMARY.md` — plan 79-03 complete
 - `.planning/phases/79-tarball-consumer-overlay-proof/79-02-SUMMARY.md` — plan 79-02 complete
 - `.planning/phases/79-tarball-consumer-overlay-proof/79-01-SUMMARY.md` — plan 79-01 complete
+- `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-01-SUMMARY.md` — plan 80-01 complete
 - `.planning/REQUIREMENTS.md` — HEX-CONSUMER-01 Complete (78, 79)
 
 ## Deferred Items
 
 | Category | Item | Status |
 |----------|------|--------|
-| Phase 80 | Upgrade smoke in adoption lane | next |
+| Phase 80 | Upgrade smoke — Wave 2 runner orchestration | next |
 | Phase 82 | DOCS-HEX-01 prose sweep + drift pins | queued |
 | v2.11+ | Orchestrator live wiring | queued |
 
 ## Operator Next Steps
 
-- `/gsd-plan-phase 80` — upgrade smoke from published 0.1.0 baseline
-- `/gsd-execute-phase 80` — after planning
+- `/gsd-execute-phase 80` — continue with 80-02 runner upgrade orchestration
