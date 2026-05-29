@@ -21,14 +21,16 @@ defmodule Scoria.TestSupport.Migrations do
     end
   end
 
-  @repo_priv Application.compile_env(:scoria, Repo)[:priv] || "priv/repo"
-  @core_migrations Path.join(@repo_priv, "migrations")
-  @knowledge_migrations Path.join(@repo_priv, "knowledge_migrations")
   @knowledge_source "schema_migrations_knowledge"
   @knowledge_migrated_key {:scoria_test_support, :knowledge_migrated}
 
+  defp repo_priv, do: Path.join(Application.app_dir(:scoria), "priv/repo")
+
+  defp core_migrations, do: Path.join(repo_priv(), "migrations")
+
+  defp knowledge_migrations, do: Path.join(repo_priv(), "knowledge_migrations")
   def migrate_core! do
-    migrate!([@core_migrations])
+    migrate!([core_migrations()])
   end
 
   def ensure_knowledge_migrated! do
@@ -57,7 +59,7 @@ defmodule Scoria.TestSupport.Migrations do
     try do
       {:ok, _, _} =
         Ecto.Migrator.with_repo(KnowledgeMigrationRepo, fn repo ->
-          Ecto.Migrator.run(repo, [@knowledge_migrations], :up, all: true, log: false)
+          Ecto.Migrator.run(repo, [knowledge_migrations()], :up, all: true, log: false)
         end)
 
       :ok
@@ -66,8 +68,8 @@ defmodule Scoria.TestSupport.Migrations do
     end
   end
 
-  def core_migrations_path, do: @core_migrations
-  def knowledge_migrations_path, do: @knowledge_migrations
+  def core_migrations_path, do: core_migrations()
+  def knowledge_migrations_path, do: knowledge_migrations()
   def knowledge_migration_source, do: @knowledge_source
 
   defp migrate!(paths, opts \\ []) do

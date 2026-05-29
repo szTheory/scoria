@@ -8,10 +8,26 @@ defmodule Scoria.TestSupport.SupportCopilotGallery.Runner do
 
     results = [
       %{step: :deps_get, output: run_mix!(:deps_get, ["deps.get"])},
-      %{step: :gallery_test, output: run_mix!(:gallery_test, ["test", "--trace"])}
+      %{step: :gallery_db, output: run_gallery_db_setup!()},
+      %{step: :gallery_test, output: run_mix!(:gallery_test, ["test", "--no-start", "--trace"])}
     ]
 
     %{results: results, steps: Enum.map(results, & &1.step)}
+  end
+
+  defp run_gallery_db_setup! do
+    for args <- [
+          ["ecto.create", "-r", "Scoria.Repo", "--quiet"],
+          ["ecto.migrate", "-r", "Scoria.Repo", "--to", "20260511000300", "--quiet"],
+          ["eval", "Scoria.TestSupport.Migrations.migrate_knowledge!()"],
+          ["ecto.migrate", "-r", "Scoria.Repo", "--to", "20260517000200", "--quiet"],
+          ["scoria.pgvector.bootstrap"],
+          ["ecto.migrate", "-r", "Scoria.Repo", "--quiet"]
+        ] do
+      run_mix!(:gallery_db, args)
+    end
+
+    "gallery database ready"
   end
 
   def gallery_root, do: @gallery_root
@@ -40,13 +56,17 @@ defmodule Scoria.TestSupport.SupportCopilotGallery.Runner do
   end
 
   defp gallery_env do
-    [
-      {"MIX_ENV", "test"},
-      {"SCORIA_DB_HOST", System.get_env("SCORIA_DB_HOST", "localhost")},
-      {"SCORIA_DB_PORT", System.get_env("SCORIA_DB_PORT", "5432")},
-      {"SCORIA_DB_USERNAME", System.get_env("SCORIA_DB_USERNAME", "postgres")},
-      {"SCORIA_DB_PASSWORD", System.get_env("SCORIA_DB_PASSWORD", "postgres")}
-    ]
+    defaults = %{
+      "MIX_ENV" => "test",
+      "SCORIA_DB_HOST" => "localhost",
+      "SCORIA_DB_PORT" => "5432",
+      "SCORIA_DB_USERNAME" => "postgres",
+      "SCORIA_DB_PASSWORD" => "postgres"
+    }
+
+    defaults
+    |> Map.merge(System.get_env())
+    |> Enum.to_list()
   end
 
   defp register_cleanup(_opts), do: :ok

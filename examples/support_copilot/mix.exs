@@ -21,7 +21,7 @@ defmodule SupportCopilot.MixProject do
   def application do
     [
       mod: {SupportCopilot.Application, []},
-      extra_applications: [:logger, :runtime_tools, :scoria]
+      extra_applications: [:logger, :runtime_tools]
     ]
   end
 
@@ -47,6 +47,9 @@ defmodule SupportCopilot.MixProject do
       "ecto.setup": [
         "ecto.create -r Scoria.Repo",
         "ecto.migrate -r Scoria.Repo --to 20260511000300",
+        "eval 'Scoria.TestSupport.Migrations.migrate_knowledge!()'",
+        "ecto.migrate -r Scoria.Repo --to 20260517000200",
+        "scoria.pgvector.bootstrap",
         "ecto.migrate -r Scoria.Repo",
         "run priv/repo/seeds.exs"
       ],
@@ -54,9 +57,11 @@ defmodule SupportCopilot.MixProject do
       test: [
         "ecto.create -r Scoria.Repo --quiet",
         "ecto.migrate -r Scoria.Repo --to 20260511000300 --quiet",
+        "eval 'Scoria.TestSupport.Migrations.migrate_knowledge!()'",
+        "ecto.migrate -r Scoria.Repo --to 20260517000200 --quiet",
         "scoria.pgvector.bootstrap",
         "ecto.migrate -r Scoria.Repo --quiet",
-        "test"
+        "test --no-start"
       ]
     ]
   end

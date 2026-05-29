@@ -8,7 +8,8 @@ defmodule Scoria.PackageSurfaceTest do
     "docs/phoenix_runtime_example.md",
     "docs/bounded_handoffs.md",
     "docs/semantic_fast_path.md",
-    "docs/operator_verification.md"
+    "docs/operator_verification.md",
+    "docs/support_copilot_gallery.md"
   ]
   @required_package_paths [
     "README.md",
@@ -21,7 +22,8 @@ defmodule Scoria.PackageSurfaceTest do
     "docs/phoenix_runtime_example.md",
     "docs/bounded_handoffs.md",
     "docs/semantic_fast_path.md",
-    "docs/operator_verification.md"
+    "docs/operator_verification.md",
+    "docs/support_copilot_gallery.md"
   ]
 
   test "project metadata describes one publish surface" do

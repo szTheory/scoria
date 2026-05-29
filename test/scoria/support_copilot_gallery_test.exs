@@ -10,6 +10,6 @@ defmodule Scoria.SupportCopilotGalleryTest do
 
     proof = Runner.run!()
 
-    assert proof.steps == [:deps_get, :gallery_test]
+    assert proof.steps == [:deps_get, :gallery_db, :gallery_test]
   end
 end
