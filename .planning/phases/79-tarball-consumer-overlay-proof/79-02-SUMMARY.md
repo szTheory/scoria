@@ -80,7 +80,8 @@ Each task was committed atomically:
 
 - Triage and MANIFEST omit database password; only host/port/username surfaced (T-79-06)
 - Snapshot destination workspace-relative at `tmp/scoria-host-proof-last-failure/` with optional `SCORIA_HOST_PROOF_ROOT` override
-- Copy uses `File.cp_r!(dereference_symlinks: true)` with `cp -RL` fallback for broken symlinks in generated Phoenix assets
+- Snapshot copy excludes `_build`, `deps`, and `node_modules` from `host.root` for triage-focused CI artifacts (2026-05-29 hygiene)
+- Copy uses selective walk of `host.root` — no full-tree `cp -RL` fallback
 
 ## Deviations from Plan
 

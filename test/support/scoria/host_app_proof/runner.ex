@@ -5,6 +5,7 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
 
   @route_overlay_test "host_route_smoke_test.exs"
   @snapshot_root "tmp/scoria-host-proof-last-failure"
+  @snapshot_exclude_dirs ~w(_build deps node_modules .git)
 
   def deps_get!(host), do: run_mix!(host, :deps_get, ["deps.get"])
   def scoria_install!(host), do: run_mix!(host, :scoria_install, ["scoria.install"])
@@ -150,36 +151,69 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     File.rm_rf!(destination)
     File.mkdir_p!(destination)
 
-    working_root = Map.get(host, :working_root)
-
     copy_note =
-      if is_binary(working_root) and File.dir?(working_root) do
+      if is_binary(host.root) and File.dir?(host.root) do
         host_dest = Path.join(destination, "host")
 
         try do
-          copy_working_root!(working_root, host_dest)
+          copy_host_root_for_snapshot!(host.root, host_dest)
           nil
         rescue
-          error -> "working_root copy failed: #{Exception.message(error)}"
+          error -> "host root copy failed: #{Exception.message(error)}"
         end
       else
-        "working_root missing or not a directory — host copy skipped"
+        "host.root missing or not a directory — host copy skipped"
       end
 
     manifest = manifest_content(host, step, args, copy_note)
     File.write!(Path.join(destination, "MANIFEST.txt"), manifest)
   end
 
-  defp copy_working_root!(source, dest) do
-    File.cp_r!(source, dest, dereference_symlinks: true)
-  rescue
-    _ ->
-      {output, status} =
-        System.cmd("cp", ["-RL", source, dest], stderr_to_stdout: true)
+  defp copy_host_root_for_snapshot!(source, dest) do
+    File.mkdir_p!(dest)
 
-      if status != 0 do
-        raise "host proof snapshot copy failed: cp -RL #{source} #{dest}\n\n#{output}"
+    for entry <- snapshot_entries(source) do
+      rel = Path.relative_to(entry, source)
+
+      unless snapshot_excluded?(rel) do
+        copy_snapshot_entry!(source, dest, entry)
       end
+    end
+  end
+
+  defp copy_snapshot_entry!(source_root, dest_root, entry) do
+    rel = Path.relative_to(entry, source_root)
+    dest = Path.join(dest_root, rel)
+
+    case File.lstat(entry) do
+      {:ok, %File.Stat{type: :regular}} ->
+        File.mkdir_p!(Path.dirname(dest))
+        File.cp!(entry, dest)
+
+      {:ok, %File.Stat{type: :directory}} ->
+        File.mkdir_p!(dest)
+
+        for child <- snapshot_entries(entry) do
+          child_rel = Path.relative_to(child, source_root)
+
+          unless snapshot_excluded?(child_rel) do
+            copy_snapshot_entry!(source_root, dest_root, child)
+          end
+        end
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp snapshot_entries(dir) do
+    Path.wildcard(Path.join(dir, "*")) ++ Path.wildcard(Path.join(dir, ".[^.]*"))
+  end
+
+  defp snapshot_excluded?(rel_path) do
+    rel_path
+    |> Path.split()
+    |> Enum.any?(&(&1 in @snapshot_exclude_dirs))
   end
 
   defp manifest_content(host, step, args, copy_note) do
