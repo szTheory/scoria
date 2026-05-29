@@ -4,6 +4,10 @@ defmodule Scoria.SupportJourney do
 
   Single source of truth for generated-host overlay proof, the `examples/support_copilot`
   gallery, and adopter documentation contract tests.
+
+  `adopter_doc_surfaces/0` maps each adopter doc path to scoped fragment lists used by
+  drift guards in `SupportJourneySourceTest` — gallery guide, README, and operator
+  verification each pin only the copy relevant to that surface.
   """
 
   @fixture_root Path.join([:code.priv_dir(:scoria), "fixtures", "support_journey"])
@@ -92,5 +96,34 @@ defmodule Scoria.SupportJourney do
       "support-copilot gallery",
       "Support Ops Lead"
     ]
+  end
+
+  def readme_doc_fragments do
+    [
+      gallery_path(),
+      advisory_lane_command(),
+      "docs/support_copilot_gallery.md",
+      "not part of closeout order",
+      "Scoria.SupportJourney"
+    ]
+  end
+
+  def operator_doc_fragments do
+    [
+      gallery_path(),
+      advisory_lane_command(),
+      "Scoria.SupportJourney",
+      "VerificationLanes.closeout_order/0",
+      "support_copilot_gallery.md",
+      "Scoria.get_run_detail/1"
+    ]
+  end
+
+  def adopter_doc_surfaces do
+    %{
+      "docs/support_copilot_gallery.md" => doc_fragments(),
+      "README.md" => readme_doc_fragments(),
+      "docs/operator_verification.md" => operator_doc_fragments()
+    }
   end
 end
