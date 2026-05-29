@@ -1,5 +1,5 @@
 defmodule Scoria.Workflows.RuntimeTest do
-  use ExUnit.Case, async: false
+  use Scoria.IntegrationCase
 
   alias Scoria.Repo
   alias Scoria.SRE.AuditOutboxEvent
@@ -43,10 +43,7 @@ defmodule Scoria.Workflows.RuntimeTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
-    Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
     Application.put_env(:scoria, :workflow_runtime_handlers, %{})
-    start_supervised!(Scoria.Workflows.Reconciler)
     :fuse.remove("provider:runtime-test")
     :fuse.remove("workflow:local-runtime-test")
 
@@ -122,8 +119,6 @@ defmodule Scoria.Workflows.RuntimeTest do
 
       assert {:ok, 1} =
                Reconciler.dispatch_runnable_steps(handlers: %{"success" => {Handlers, :succeed}})
-
-      Process.sleep(20)
 
       [step] = Workflows.list_run_steps(run.id)
       assert step.status == "completed"
@@ -446,12 +441,14 @@ defmodule Scoria.Workflows.RuntimeTest do
 
       assert {:ok, _approval} = Workflows.approve(approval.id, "approved")
 
-      assert {:ok, resumed_run} =
+      assert {:ok, _resumed_run} =
                Resume.resume_run(run.id, handlers: %{"approval" => {Handlers, :succeed}})
 
-      Process.sleep(20)
+      eventually(fn ->
+        status = Workflows.get_run!(run.id).status
+        status == "completed" or status == "running"
+      end)
 
-      assert resumed_run.status == "running" or resumed_run.status == "completed"
       assert Workflows.get_step!(step.id).status == "completed"
     end
 
@@ -472,13 +469,42 @@ defmodule Scoria.Workflows.RuntimeTest do
       assert {:ok, _run} =
                Resume.retry_failed_step(run.id, handlers: %{"failing" => {Handlers, :succeed}})
 
-      Process.sleep(20)
+      eventually(fn -> Workflows.get_step!(step.id).status == "completed" end)
 
       retried_step = Workflows.get_step!(step.id)
       checkpoints = Workflows.list_run_checkpoints(run.id)
       assert retried_step.attempt == 2
       assert retried_step.status == "completed"
       assert Enum.count(Enum.filter(checkpoints, &(&1.transition == "step_completed"))) == 1
+    end
+  end
+
+  describe "async workflow dispatch (production parity)" do
+    test "dispatch_run reaches completed status under async dispatch" do
+      previous = Application.get_env(:scoria, :workflow_dispatch)
+      Application.put_env(:scoria, :workflow_dispatch, :async)
+
+      on_exit(fn ->
+        Application.put_env(:scoria, :workflow_dispatch, previous)
+      end)
+
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, _step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "success",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, 1} =
+               Reconciler.dispatch_run(run.id, handlers: %{"success" => {Handlers, :succeed}})
+
+      eventually(fn ->
+        [step] = Workflows.list_run_steps(run.id)
+        step.status == "completed"
+      end)
     end
   end
 end

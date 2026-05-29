@@ -26,7 +26,7 @@ defmodule Scoria.WorkflowsIntegrationTest.Endpoint do
 end
 
 defmodule Scoria.WorkflowsIntegrationTest do
-  use ExUnit.Case, async: false
+  use Scoria.IntegrationCase
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
@@ -68,12 +68,7 @@ defmodule Scoria.WorkflowsIntegrationTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
-    Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
-
     Application.put_env(:scoria, :workflow_runtime_handlers, %{"approval" => {Handlers, :succeed}})
-
-    start_supervised!(Scoria.Workflows.Reconciler)
     start_supervised!(Scoria.WorkflowsIntegrationTest.Endpoint)
     :ok
   end
@@ -106,9 +101,8 @@ defmodule Scoria.WorkflowsIntegrationTest do
       })
 
     {:ok, _run} = Resume.resume_run(run.id, handlers: %{"approval" => {Handlers, :succeed}})
-    Process.sleep(20)
 
-    assert Workflows.get_run!(run.id).status == "completed"
+    eventually(fn -> Workflows.get_run!(run.id).status == "completed" end)
     assert Workflows.get_step!(step.id).status == "completed"
 
     approved_event =
@@ -139,11 +133,10 @@ defmodule Scoria.WorkflowsIntegrationTest do
     {:ok, _failed_step} = Runtime.execute_step(step.id, handler: {Handlers, :fail})
     checkpoints_before_retry = Workflows.list_run_checkpoints(run.id)
     {:ok, _run} = Resume.retry_failed_step(run.id, handlers: %{"failing" => {Handlers, :succeed}})
-    Process.sleep(20)
+
+    eventually(fn -> Workflows.get_step!(step.id).status == "completed" end)
 
     checkpoints_after_retry = Workflows.list_run_checkpoints(run.id)
-
-    assert Workflows.get_step!(step.id).status == "completed"
 
     assert Enum.count(Enum.filter(checkpoints_before_retry, &(&1.transition == "step_completed"))) ==
              0
@@ -178,9 +171,8 @@ defmodule Scoria.WorkflowsIntegrationTest do
 
     {:ok, _approval} = Workflows.approve(approval.id, "approved")
     {:ok, _run} = Resume.resume_run(run.id, handlers: %{"approval" => {Handlers, :succeed}})
-    Process.sleep(20)
 
-    assert render(view) =~ "completed"
+    eventually(fn -> render(view) =~ "completed" end)
     assert render(view) =~ "step_completed"
   end
 

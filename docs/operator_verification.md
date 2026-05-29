@@ -291,7 +291,7 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 
 **Version namespaces:** Hex/git releases use semver (`0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}`). Planning milestones (`v2.x` in `.planning/`) are internal shipped-work tranches, not a second installable version axis.
 
-**Local parity:** set `SCORIA_DB_PORT=55432` for the test job database; use `MIX_ENV=dev` only for `mix scoria.release_preview`. Run `mix scoria.test.ci_trust` for the full Phase 69 maintainer trust bundle (policy contracts + ratchet hygiene integration); add `--fast` for policy-parity only (~30s).
+**Local parity:** set `SCORIA_DB_PORT=55432` for the test job database; use `MIX_ENV=dev` only for `mix scoria.release_preview`. Integration specs use inline workflow dispatch (`config :scoria, :workflow_dispatch, :inline`); set `SCORIA_TEST_EVENTUALLY_TIMEOUT_MS` when reproducing slow CI on async UI paths. Run `mix scoria.test.ci_trust` for the full Phase 69 maintainer trust bundle (policy contracts + ratchet hygiene integration); add `--fast` for policy-parity only (~30s).
 
 **Ratchet is maintainer-only:** `mix scoria.warning_ratchet.test` and `mix scoria.warning_ratchet.check` are WARN-06 debugger commands — they are **not** CI steps after Phase 68.
 

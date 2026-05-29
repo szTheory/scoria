@@ -1,5 +1,5 @@
 defmodule Scoria.Runtime.SemanticFastPathTest do
-  use ExUnit.Case, async: false
+  use Scoria.IntegrationCase
 
   alias Scoria.Repo
   alias Scoria.Runtime
@@ -44,9 +44,6 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
       Migrations.ensure_knowledge_migrated!()
     end)
 
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
-    Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
-    start_supervised!(Scoria.Workflows.Reconciler)
     Application.put_env(:scoria, :workflow_runtime_handlers, %{"answer" => {Handlers, :answer}})
 
     previous = Application.get_env(:scoria, Scoria.Runtime)
@@ -72,7 +69,7 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
                handlers: %{"answer" => {Handlers, :answer}}
              )
 
-    wait_for_run(summary.run_id, "completed")
+    eventually(fn -> Workflows.get_run!(summary.run_id).status == "completed" end)
     run = Workflows.get_run_tree!(summary.run_id)
 
     assert run.metadata["runtime"]["semantic_cache"] == nil
@@ -166,7 +163,7 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
                handlers: %{"answer" => {Handlers, :answer}}
              )
 
-    wait_for_run(summary.run_id, "completed")
+    eventually(fn -> Workflows.get_run!(summary.run_id).status == "completed" end)
     run = Workflows.get_run!(summary.run_id)
     detail = Runtime.get_run_detail!(summary.run_id)
 
@@ -201,7 +198,7 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
                }
              )
 
-    wait_for_run(summary.run_id, "completed")
+    eventually(fn -> Workflows.get_run!(summary.run_id).status == "completed" end)
     detail = Runtime.get_run_detail!(summary.run_id)
 
     [entry] =
@@ -238,7 +235,7 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
                handlers: %{"answer" => {Handlers, :reject_writeback}}
              )
 
-    wait_for_run(summary.run_id, "completed")
+    eventually(fn -> Workflows.get_run!(summary.run_id).status == "completed" end)
 
     entry =
       Entry
@@ -264,7 +261,7 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
                handlers: %{"answer" => {Handlers, :answer}}
              )
 
-    wait_for_run(summary.run_id, "completed")
+    eventually(fn -> Workflows.get_run!(summary.run_id).status == "completed" end)
     run = Workflows.get_run!(summary.run_id)
 
     assert run.metadata["runtime"]["semantic_cache"]["eligibility_reason_code"] == "query_text_missing"
@@ -302,7 +299,7 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
                handlers: %{"answer" => {Handlers, :answer}}
              )
 
-    wait_for_run(summary.run_id, "completed")
+    eventually(fn -> Workflows.get_run!(summary.run_id).status == "completed" end)
     run = Workflows.get_run_tree!(summary.run_id)
     [step] = run.steps
     reloaded_entry = Repo.get!(Entry, entry.id)
@@ -349,7 +346,7 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
                handlers: %{"answer" => {Handlers, :answer}}
              )
 
-    wait_for_run(summary.run_id, "completed")
+    eventually(fn -> Workflows.get_run!(summary.run_id).status == "completed" end)
     run = Workflows.get_run_tree!(summary.run_id)
     [step] = run.steps
     reloaded_entry = Repo.get!(Entry, entry.id)
@@ -388,7 +385,7 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
                handlers: %{"answer" => {Handlers, :answer}}
              )
 
-    wait_for_run(summary.run_id, "completed")
+    eventually(fn -> Workflows.get_run!(summary.run_id).status == "completed" end)
     run = Workflows.get_run_tree!(summary.run_id)
     [step] = run.steps
     reloaded_entry = Repo.get!(Entry, entry.id)
@@ -399,19 +396,6 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
     assert reloaded_entry.status == "stale"
     assert reloaded_entry.state_reason_code == "freshness_window_elapsed"
   end
-
-  defp wait_for_run(run_id, expected_status, attempts \\ 40)
-
-  defp wait_for_run(run_id, expected_status, attempts) when attempts > 0 do
-    if Workflows.get_run!(run_id).status == expected_status do
-      :ok
-    else
-      Process.sleep(25)
-      wait_for_run(run_id, expected_status, attempts - 1)
-    end
-  end
-
-  defp wait_for_run(_run_id, _expected_status, 0), do: flunk("run did not reach expected status")
 
   defp create_retrieval_run!(query_text) do
     alias Scoria.Knowledge

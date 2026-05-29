@@ -289,6 +289,12 @@ defmodule Scoria.CiPolicyContractTest do
     assert index_of(lane_step, @ci_policy_contract) < index_of(lane_step, @lane_contract)
   end
 
+  test "test config uses inline workflow dispatch for deterministic integration specs" do
+    test_config = File.read!("config/test.exs")
+
+    assert test_config =~ ":workflow_dispatch, :inline"
+  end
+
   test "v2.6 milestone audit records CI-03 traceability" do
     audit = File.read!(".planning/milestones/v2.6-MILESTONE-AUDIT.md")
 

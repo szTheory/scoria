@@ -26,7 +26,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest.Endpoint do
 end
 
 defmodule ScoriaWeb.OrchestratorLiveTest do
-  use ExUnit.Case, async: false
+  use Scoria.IntegrationCase
+
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
@@ -69,14 +70,10 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
-    Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
-
     Application.put_env(:scoria, :workflow_runtime_handlers, %{
       "approval" => {ApprovalHandlers, :succeed}
     })
 
-    start_supervised!(Scoria.Workflows.Reconciler)
     start_supervised!(ScoriaWeb.OrchestratorLiveTest.Endpoint)
     :ok
   end
@@ -311,9 +308,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert html =~ "durably"
 
     render_click(view, "approve", %{})
-    Process.sleep(20)
 
-    refute render(view) =~ "Approval Required"
+    eventually(fn -> render(view) !~ "Approval Required" end)
 
     updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
     assert updated_approval.status == "approved"
@@ -358,10 +354,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     send(view.pid, {:hitl_request, approval})
 
     render_click(view, "reject", %{})
-    Process.sleep(20)
 
-    updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
-    assert updated_approval.status == "rejected"
+    eventually(fn -> Repo.get!(Scoria.Observe.Approval, approval.id).status == "rejected" end)
     assert Workflows.get_run!(run.id).status == "waiting_for_approval"
     assert Workflows.get_step!(step.id).status == "waiting_for_approval"
 

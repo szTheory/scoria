@@ -46,12 +46,19 @@ defmodule Scoria.Workflows.Reconciler do
   end
 
   defp do_dispatch(steps, opts) do
-    Enum.each(steps, fn step ->
-      Task.Supervisor.start_child(Scoria.Workflow.TaskSupervisor, fn ->
-        Runtime.execute_step(step.id, opts)
-      end)
-    end)
+    case Application.get_env(:scoria, :workflow_dispatch, :async) do
+      :inline ->
+        Enum.each(steps, fn step -> Runtime.execute_step(step.id, opts) end)
+        {:ok, length(steps)}
 
-    {:ok, length(steps)}
+      :async ->
+        Enum.each(steps, fn step ->
+          Task.Supervisor.start_child(Scoria.Workflow.TaskSupervisor, fn ->
+            Runtime.execute_step(step.id, opts)
+          end)
+        end)
+
+        {:ok, length(steps)}
+    end
   end
 end

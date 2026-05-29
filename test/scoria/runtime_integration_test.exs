@@ -26,7 +26,7 @@ defmodule Scoria.RuntimeIntegrationTest.Endpoint do
 end
 
 defmodule Scoria.RuntimeIntegrationTest do
-  use ExUnit.Case, async: false
+  use Scoria.IntegrationCase
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
@@ -65,12 +65,7 @@ defmodule Scoria.RuntimeIntegrationTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
-    Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
-
     Application.put_env(:scoria, :workflow_runtime_handlers, %{"approval" => {Handlers, :succeed}})
-
-    start_supervised!(Scoria.Workflows.Reconciler)
     start_supervised!(Scoria.RuntimeIntegrationTest.Endpoint)
     :ok
   end
@@ -127,7 +122,7 @@ defmodule Scoria.RuntimeIntegrationTest do
         handlers: %{"approval" => {Handlers, :wait_for_approval}}
       )
 
-    wait_for(fn ->
+    eventually(fn ->
       case Runtime.get_run(started.run_id) do
         {:ok, summary} -> summary.status == "waiting_for_approval"
         _ -> false
@@ -143,7 +138,7 @@ defmodule Scoria.RuntimeIntegrationTest do
 
     assert resumed.run_id == started.run_id
 
-    wait_for(fn ->
+    eventually(fn ->
       case Runtime.get_run(started.run_id) do
         {:ok, summary} -> summary.status == "completed"
         _ -> false
@@ -180,7 +175,7 @@ defmodule Scoria.RuntimeIntegrationTest do
 
     {:ok, view, _html} = live(conn, AdoptionExample.operator_route(started.run_id))
 
-    wait_for(fn ->
+    eventually(fn ->
       case Runtime.get_run(started.run_id) do
         {:ok, summary} -> summary.status == AdoptionExample.waiting_status()
         _ -> false
@@ -197,27 +192,14 @@ defmodule Scoria.RuntimeIntegrationTest do
     {:ok, _summary} =
       Scoria.resume_run(started.run_id, handlers: %{"approval" => {Handlers, :succeed}})
 
-    wait_for(fn ->
+    eventually(fn ->
       case Runtime.get_run(started.run_id) do
         {:ok, summary} -> summary.status == AdoptionExample.completed_status()
         _ -> false
       end
     end)
 
-    assert render(view) =~ AdoptionExample.completed_status()
+    eventually(fn -> render(view) =~ AdoptionExample.completed_status() end)
     assert render(view) =~ "step_completed"
   end
-
-  defp wait_for(fun, attempts \\ 120)
-
-  defp wait_for(fun, attempts) when attempts > 0 do
-    if fun.() do
-      :ok
-    else
-      Process.sleep(25)
-      wait_for(fun, attempts - 1)
-    end
-  end
-
-  defp wait_for(_fun, 0), do: flunk("condition not met before timeout")
 end

@@ -13,3 +13,5 @@ config :scoria, Scoria.Repo,
   show_sensitive_data_on_connection_error: true
 
 config :scoria, Oban, testing: :manual
+
+config :scoria, :workflow_dispatch, :inline
