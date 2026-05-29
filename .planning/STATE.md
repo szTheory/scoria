@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.10
 milestone_name: Hex Consumer Proof & Upgrade Smoke
 status: executing
-last_updated: "2026-05-29T21:34:07.760Z"
-last_activity: 2026-05-29 -- Completed 80-02 runner upgrade orchestration
+last_updated: "2026-05-29T21:45:00Z"
+last_activity: 2026-05-29 -- Completed 80-03 upgrade test and adoption lane closeout
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
-  percent: 44
+  completed_plans: 9
+  percent: 60
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 80 — upgrade-smoke-in-adoption-lane
+**Current focus:** Phase 81 — post-publish registry gate
 
 ## Current Position
 
-Phase: 80 (upgrade-smoke-in-adoption-lane) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute 80-03
-Last activity: 2026-05-29 -- Completed 80-02 runner upgrade orchestration
+Phase: 81 (post-publish-registry-gate) — READY
+Plan: TBD via `/gsd-plan-phase 81`
+Status: Phase 80 complete; ready to plan Phase 81
+Last activity: 2026-05-29 -- Completed 80-03 upgrade test and adoption lane closeout
 
 ## Performance Metrics
 
@@ -37,13 +37,14 @@ Last activity: 2026-05-29 -- Completed 80-02 runner upgrade orchestration
 - **Hex release:** `0.1.0` at git tag `v0.1.0` — https://hex.pm/packages/scoria
 - **Phase 78 progress:** 3/3 plans complete
 - **Phase 79 progress:** 3/3 plans complete
-- **Phase 80 progress:** 2/3 plans complete
+- **Phase 80 progress:** 3/3 plans complete
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
 - **v2.10 (executing):** Tarball consumer proof in adoption closeout; upgrade smoke; post-publish registry gate; HexConsumerContract docs alignment.
+- **Phase 80 (complete):** Content-revision upgrade smoke from v0.1.0 baseline fixture to HEAD tarball in adoption lane. See `80-VERIFICATION.md`.
 - **Phase 79 (complete):** Full overlay tarball consumer proof (handoff + route + runtime), failure diagnostics, CI failure artifact upload. See `79-VERIFICATION.md`.
 - **Phase 78 (complete):** HexConsumerContract SSOT, fingerprinted unpack cache, tarball route adoption harness + CI env reuse.
 - **v2.9 (shipped):** SupportJourney SSOT, host-proof overlay expansion, `examples/support_copilot/` gallery, advisory `mix scoria.test.support_copilot`, phases 77.1/77.2 audit closure.
@@ -72,25 +73,27 @@ Last activity: 2026-05-29 -- Completed 80-02 runner upgrade orchestration
 - bump_dep runs deps.clean scoria after mix.exs repoint (D-59, 80-02)
 - Installer check steps pin expect_exit and expect_trailer (D-60, 80-02)
 - MANIFEST includes baseline_unpack, current_unpack, upgrade_phase; preserve uses host_upgrade (D-67, D-62, 80-02)
+- Baseline overlays copied from v0.1.0 fixture; HEAD overlays refreshed after bump (80-03)
+- Pre-apply install check accepts drift or compliant when install surfaces unchanged (80-03)
+- Migration ordering criterion #4 latent — 24 identical migrations at v0.1.0 and HEAD (D-65, 80-03)
+- HEX-UPGRADE-01 Complete at Phase 80; Phase 81 owns registry semver (D-55, D-68, 80-03)
 
 ### Evidence
 
-- `.planning/phases/79-tarball-consumer-overlay-proof/79-VERIFICATION.md` — Phase 79 passed verification ledger
-- `.planning/phases/79-tarball-consumer-overlay-proof/79-03-SUMMARY.md` — plan 79-03 complete
-- `.planning/phases/79-tarball-consumer-overlay-proof/79-02-SUMMARY.md` — plan 79-02 complete
-- `.planning/phases/79-tarball-consumer-overlay-proof/79-01-SUMMARY.md` — plan 79-01 complete
+- `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-VERIFICATION.md` — Phase 80 passed verification ledger
+- `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-03-SUMMARY.md` — plan 80-03 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-02-SUMMARY.md` — plan 80-02 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-01-SUMMARY.md` — plan 80-01 complete
-- `.planning/REQUIREMENTS.md` — HEX-CONSUMER-01 Complete (78, 79)
+- `.planning/REQUIREMENTS.md` — HEX-UPGRADE-01 Complete (80)
 
 ## Deferred Items
 
 | Category | Item | Status |
 |----------|------|--------|
-| Phase 80 | Upgrade test + adoption lane wiring (80-03) | next |
+| Phase 81 | Live Hex registry post-publish gate | next |
 | Phase 82 | DOCS-HEX-01 prose sweep + drift pins | queued |
 | v2.11+ | Orchestrator live wiring | queued |
 
 ## Operator Next Steps
 
-- `/gsd-execute-phase 80` — continue with 80-03 upgrade test and adoption lane wiring
+- `/gsd-plan-phase 81` — plan post-publish registry gate (HEX-REGISTRY-01)

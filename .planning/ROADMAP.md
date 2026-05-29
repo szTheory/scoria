@@ -1,7 +1,7 @@
 # Roadmap: Scoria
 
 **Milestone:** v2.10 Hex Consumer Proof & Upgrade Smoke
-**Last updated:** 2026-05-29 (Phase 79 complete)
+**Last updated:** 2026-05-29 (Phase 80 complete)
 
 ## Overview
 
@@ -59,7 +59,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. Overlay smokes pass after upgrade without host regeneration.
 4. Migration ordering bugs on existing schema are caught (not greenfield-only).
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 | Wave | Plans | Focus |
 |------|-------|-------|
@@ -67,7 +67,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 | 2 | 80-02 | Runner upgrade orchestration + installer trailer assertions |
 | 3 | 80-03 | Upgrade test + adoption lane + closeout ceremony |
 
-*Wave 3 blocked on Waves 1–2 (Wave 2 complete).*
+**Status:** Complete (2026-05-29)
 
 ---
 
