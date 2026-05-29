@@ -229,7 +229,9 @@ Use that lane only when you are intentionally validating semantic fast-path beha
 
 ### Support copilot gallery (local demo)
 
-Explore Scoria in a realistic support-copilot domain with rich fixtures and a clickable host UI:
+Explore Scoria in a realistic support-copilot domain with rich fixtures and a clickable host UI.
+Shared journey fixtures live in `Scoria.SupportJourney` and `priv/fixtures/support_journey/`
+(see the gallery guide for the full narrative).
 
 ```bash
 cd examples/support_copilot
