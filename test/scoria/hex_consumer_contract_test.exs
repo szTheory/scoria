@@ -37,4 +37,17 @@ defmodule Scoria.HexConsumerContractTest do
   test "baseline_upgrade_version/0 returns 0.1.0 for Phase 80 fixture hook" do
     assert HexConsumerContract.baseline_upgrade_version() == "0.1.0"
   end
+
+  test "baseline_unpack_root!/0 returns committed scoria-0.1.0-unpack path" do
+    root = HexConsumerContract.baseline_unpack_root!()
+    assert String.contains?(root, "scoria-0.1.0-unpack")
+    assert File.regular?(Path.join(root, "mix.exs"))
+  end
+
+  test "same_semver_content_upgrade?/0 is true when HEAD fingerprint differs from baseline" do
+    assert HexConsumerContract.baseline_package_fingerprint() !=
+             HexConsumerContract.package_fingerprint()
+
+    assert HexConsumerContract.same_semver_content_upgrade?()
+  end
 end
