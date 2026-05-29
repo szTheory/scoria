@@ -41,7 +41,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. `VerificationLanes.closeout_order/0` unchanged; no new closeout lane added.
 4. CI timeout and sandbox patterns from v2.9 preserved (no new flake regressions).
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 ---
 
