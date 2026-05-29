@@ -212,9 +212,20 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
 
   defp register_cleanup(opts, path) do
     case Keyword.get(opts, :cleanup) do
-      nil -> :ok
-      register when is_function(register, 1) -> register.(fn -> File.rm_rf!(path) end)
+      nil ->
+        :ok
+
+      register when is_function(register, 1) ->
+        if preserve_host?() do
+          IO.warn("SCORIA_PRESERVE_HOST: preserved host at #{path}")
+        else
+          register.(fn -> File.rm_rf!(path) end)
+        end
     end
+  end
+
+  defp preserve_host? do
+    System.get_env("SCORIA_PRESERVE_HOST") in ~w(1 true yes)
   end
 
   defp repo_root do
