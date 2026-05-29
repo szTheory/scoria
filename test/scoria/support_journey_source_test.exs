@@ -3,13 +3,14 @@ defmodule Scoria.SupportJourneySourceTest do
 
   alias Scoria.SupportJourney
 
-  @gallery_doc "docs/support_copilot_gallery.md"
+  for {path, fragments} <- SupportJourney.adopter_doc_surfaces() do
+    test "adopter doc #{path} stays aligned with SupportJourney fixture SSOT" do
+      content = File.read!(unquote(path))
 
-  test "gallery guide stays aligned with SupportJourney fixture SSOT" do
-    content = File.read!(@gallery_doc)
-
-    for fragment <- SupportJourney.doc_fragments() do
-      assert content =~ fragment
+      for fragment <- unquote(Macro.escape(fragments)) do
+        assert content =~ fragment,
+               "expected #{unquote(path)} to contain fragment #{inspect(fragment)}"
+      end
     end
   end
 
