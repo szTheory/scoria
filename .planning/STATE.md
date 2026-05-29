@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: null
-status: ready_for_next_milestone
-last_updated: 2026-05-29
-last_activity: 2026-05-29 -- Archived v2.9 milestone
+milestone: v2.10
+milestone_name: Hex Consumer Proof & Upgrade Smoke
+status: planning
+last_updated: "2026-05-29T18:55:56.199Z"
+last_activity: 2026-05-29
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
   percent: 0
-stopped_at: null
 ---
 
 # Project State
@@ -22,45 +21,47 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Planning next milestone — run `/gsd-new-milestone` for v2.10
+**Current focus:** Milestone v2.10 — Hex consumer proof & upgrade smoke (Phases 78–82)
 
 ## Current Position
 
-Phase: none
-Plan: none
-Status: Ready for next milestone
-Last activity: 2026-05-29 — v2.9 milestone archived
+Phase: 78 (not started)
+Plan: —
+Status: Roadmap approved — ready for phase planning
+Last activity: 2026-05-29 — Milestone v2.10 roadmap created
 
 ## Performance Metrics
 
+- **Active milestone:** `v2.10 Hex Consumer Proof & Upgrade Smoke` (5 phases, 4 requirements)
 - **Latest Shipped Milestone:** `v2.9 Adoption Journey & Reference Demo` on 2026-05-29
 - **Hex release:** `0.1.0` at git tag `v0.1.0` — https://hex.pm/packages/scoria
-- **Active milestone:** none (start v2.10 via `/gsd-new-milestone`)
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
+- **v2.10 (planning):** Tarball consumer proof in adoption closeout; upgrade smoke; post-publish registry gate; HexConsumerContract docs alignment.
 - **v2.9 (shipped):** SupportJourney SSOT, host-proof overlay expansion, `examples/support_copilot/` gallery, advisory `mix scoria.test.support_copilot`, phases 77.1/77.2 audit closure.
 - **v2.8 (shipped):** Semantic lane WAE, knowledge WAE, inventory baseline policy gate.
 - **v2.7 (shipped):** Docs truth → release infra → Hex publish + README flip.
 
 ### Evidence
 
-- `.planning/milestones/v2.9-ROADMAP.md` — archived roadmap
-- `.planning/milestones/v2.9-REQUIREMENTS.md` — archived requirements
+- `.planning/REQUIREMENTS.md` — v2.10 requirements (HEX-CONSUMER-01, HEX-UPGRADE-01, HEX-REGISTRY-01, DOCS-HEX-01)
+- `.planning/ROADMAP.md` — Phases 78–82
 - `.planning/milestones/v2.9-MILESTONE-AUDIT.md` — passed audit (2026-05-29)
 
 ## Deferred Items
 
 | Category | Item | Status |
 |----------|------|--------|
-| v2.10+ | Hex consumer proof | queued |
 | v2.11+ | Orchestrator live wiring | queued |
+| v2.12+ | Optional lane journeys in gallery | queued |
 | v2.9 tech debt | `lookup_support_ticket` unused in overlay/gallery | backlog |
 | v2.9 tech debt | Gallery browser quick-start not automated | backlog |
 | v2.9 tech debt | Optional Nyquist VALIDATION.md for phases 74–77.2 | optional |
 
 ## Operator Next Steps
 
-- `/gsd-new-milestone` — start v2.10 (Hex consumer proof recommended first in PROJECT.md queue)
+- `/gsd-discuss-phase 78` — gather context for Hex consumer contract foundation
+- `/gsd-plan-phase 78` — skip discussion, plan directly

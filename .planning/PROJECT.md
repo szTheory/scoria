@@ -10,6 +10,16 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
+## Current Milestone: v2.10 Hex Consumer Proof & Upgrade Smoke
+
+**Goal:** Close the last adopter-trust gap after Hex `0.1.0` — prove the published package (not repo path) installs, upgrades, and runs the same overlay depth v2.9 validated.
+
+**Target features:**
+- Tarball-based consumer proof in merge-blocking `mix test.adoption` (route + HOST-01 runtime + HOST-02 handoff overlay smokes).
+- Upgrade smoke: published `0.1.0` → current artifact via `--dry-run` / `--check` / apply / migrate chain.
+- Post-publish registry proof + real semver upgrade gate in `post-publish-smoke.yml`.
+- `HexConsumerContract` SSOT + README/operator drift guards aligned to executable proof.
+
 ## Latest Shipped Milestone: v2.9 Adoption Journey & Reference Demo
 
 **Goal:** Battle-test Scoria through a realistic support-copilot domain with shared journey fixtures, extended host-proof overlay, and a human-clickable gallery — without weakening v2.4–v2.8 lane contracts.
@@ -24,11 +34,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Next Milestone Queue
 
-- **v2.10:** Hex consumer proof + upgrade smoke (HEX-CONSUMER-01)
 - **v2.11:** Orchestrator live wiring — trace stream, HITL from runtime (ORCH-LIVE-01)
 - **v2.12:** Optional lane journeys in demo gallery (LANE-DEMO-01)
-
-Run `/gsd-new-milestone` to start v2.10 planning.
 
 ## Latest Shipped Release Milestone: v2.7 OSS Release + Docs Truth
 
@@ -122,7 +129,10 @@ Run `/gsd-new-milestone` to start v2.10 planning.
 
 ### Active
 
-(None — run `/gsd-new-milestone` for v2.10 requirements)
+- **HEX-CONSUMER-01**: Generated Phoenix host in `mix test.adoption` consumes Scoria via Hex-shaped dependency (`mix hex.build` tarball in PR CI; live registry in post-publish smoke).
+- **HEX-UPGRADE-01**: Same host proves upgrade-safe install after simulated version bump (`--dry-run` / `--check` / apply / migrate).
+- **HEX-REGISTRY-01**: Post-publish workflow proves live Hex fetch + install/migrate/overlay subset; release-blocking upgrade on real semver bump.
+- **DOCS-HEX-01**: README, operator verification, and drift guards stay aligned via `HexConsumerContract` / `AdopterDocContract`.
 
 ### Out of Scope
 
@@ -132,7 +142,9 @@ Run `/gsd-new-milestone` to start v2.10 planning.
 - Broad bounded-handoff example expansion beyond one runtime-to-handoff path — too wide until one canonical example proves useful.
 - External semantic cache backends or ANN tuning controls — adjacent capability expansion, not the highest-leverage adoption closure.
 - Folding optional knowledge or semantic verification into the default adoption lane — would weaken the clear prerequisite boundary that this milestone is trying to strengthen.
-- Net-new runtime capability families — feature-strong; next milestone should be requirement-led.
+- Net-new runtime capability families — feature-strong; v2.10 is adoption proof only.
+- Widening `VerificationLanes.closeout_order/0` for hex proof — tarball consumer proof stays inside existing adoption lane.
+- Wallaby/browser CI for hex consumer host — LiveViewTest overlay smokes only.
 - A broad installer engine rewrite beyond plan/check + drift-safe apply — too wide for the next milestone's leverage target.
 - Connector adoption guides without explicit embedded-boundary framing — risks hosted-connector-platform drift; defer or keep narrow after v2.7.
 - Combining `WARN-03` with Hex publish, semantic CI gate, or connector docs in one milestone — dilutes focus; sequence v2.6 then v2.7.
@@ -169,7 +181,9 @@ Run `/gsd-new-milestone` to start v2.10 planning.
 
 ## Context
 
+- Active milestone: `v2.10 Hex Consumer Proof & Upgrade Smoke` (planning 2026-05-29).
 - Scoria shipped `v2.9 Adoption Journey & Reference Demo` on 2026-05-29; Hex `0.1.0` live at https://hex.pm/packages/scoria.
+- Merge-blocking consumer proof still uses repo `path:` dep — v2.10 closes Hex/tarball truth gap.
 - CI: policy job (baseline → inventory baseline → compile WAE → lane-contract) → test job (closeout → semantic WAE → ratchet hygiene → full WAE → knowledge WAE → advisory gallery).
 - `Scoria.SupportJourney` + `examples/support_copilot/` gallery; advisory `mix scoria.test.support_copilot` outside closeout.
 - Archives: `.planning/milestones/v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
@@ -207,6 +221,7 @@ Run `/gsd-new-milestone` to start v2.10 planning.
 | Milestone sequencing: v2.6 WARN-03 → v2.7 Hex/docs-truth → v2.8 CI hardening | Confirmed by milestone next-step assessment 2026-05-27 | ✓ Good — sequence complete |
 | Deferred CI lanes (semantic, knowledge, inventory) land in v2.8 without widening closeout order | Keeps v2.4 lane contract intact while closing maintainer trust gap | ✓ Good — shipped v2.8 |
 | v2.9 adopts phased hybrid demo: overlay (merge-blocking) + gallery (advisory) with `SupportJourney` SSOT | Closes adoption confidence gap before real adopters without hosted demo scope creep | ✓ Good — shipped v2.9 |
+| v2.10 closes Hex consumer proof with tarball in adoption closeout + registry post-publish gate | Path dep in merge-blocking CI misleads post-Hex adopters; tarball proves packaged artifact | ✓ Good — v2.10 selected |
 | Check-time manifest fingerprints are live-host-only; apply-time freshness gate uses stored manifest | Honest operator contract avoids misleading stored-fingerprint merge at check | ✓ Good — shipped Phase 63 |
 
 ## Milestone History
@@ -287,4 +302,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-29 after v2.9 milestone*
+*Last updated: 2026-05-29 — milestone v2.10 planning started*
