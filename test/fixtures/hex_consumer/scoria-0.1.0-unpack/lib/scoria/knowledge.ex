@@ -1,0 +1,277 @@
+defmodule Scoria.Knowledge do
+  @moduledoc """
+  Durable knowledge context for corpus ingestion, retrieval, citations, and grounding.
+  """
+
+  import Ecto.Query, warn: false
+
+  alias Ecto.Multi
+  alias Scoria.Knowledge.Backends.Pgvector
+  alias Scoria.Knowledge.Citation
+  alias Scoria.Knowledge.CitationFormatter
+  alias Scoria.Knowledge.Chunk
+  alias Scoria.Knowledge.Chunker
+  alias Scoria.Knowledge.Embedder
+  alias Scoria.Knowledge.Grounding
+  alias Scoria.Knowledge.GroundingScore
+  alias Scoria.Knowledge.RetrievalResult
+  alias Scoria.Knowledge.RetrievalRun
+  alias Scoria.Knowledge.Retrievers.Scrypath
+  alias Scoria.Knowledge.Source
+  alias Scoria.Repo
+
+  def create_source(attrs \\ %{}) do
+    attrs =
+      attrs
+      |> Map.new()
+      |> Map.put_new(:entity_id, Ecto.UUID.generate())
+      |> Map.put_new(:version, 1)
+      |> Map.put_new(:is_current, true)
+      |> Map.put_new_lazy(:digest, fn -> digest_body(attrs) end)
+
+    %Source{}
+    |> Source.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def ingest_source(source_or_attrs, opts \\ [])
+
+  def ingest_source(%Source{} = source, opts) do
+    chunker = Keyword.get(opts, :chunker, Chunker.Default)
+    embedder = Keyword.get(opts, :embedder, Embedder.Deterministic)
+    backend = Keyword.get(opts, :backend, Pgvector)
+
+    chunks = chunker.chunk(source_or_payload(source, opts), opts)
+    embeddings = embedder.embed_chunks(chunks, opts)
+
+    Multi.new()
+    |> Multi.delete_all(:delete_chunks, from(chunk in Chunk, where: chunk.source_id == ^source.id))
+    |> Multi.run(:chunks, fn repo, _changes ->
+      chunks
+      |> Enum.map(&Map.put(&1, :source_id, source.id))
+      |> Enum.map(fn attrs ->
+        %Chunk{}
+        |> Chunk.changeset(attrs)
+        |> repo.insert()
+      end)
+      |> collect_multi_results()
+    end)
+    |> Multi.run(:embedded_chunks, fn _repo, %{chunks: persisted_chunks} ->
+      backend.upsert_chunk_embeddings(persisted_chunks, embeddings)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{chunks: persisted_chunks}} -> {:ok, persisted_chunks}
+      {:error, _op, reason, _changes} -> {:error, reason}
+    end
+  end
+
+  def ingest_source(attrs, opts) when is_map(attrs) do
+    with {:ok, source} <- create_source(attrs),
+         {:ok, _chunks} <- ingest_source(source, Keyword.put(opts, :source_payload, attrs)) do
+      {:ok, source}
+    end
+  end
+
+  def reembed_source(%Source{} = source, opts \\ []) do
+    embedder = Keyword.get(opts, :embedder, Embedder.Deterministic)
+    backend = Keyword.get(opts, :backend, Pgvector)
+    chunks = list_source_chunks(source.id)
+    embeddings = embedder.embed_chunks(chunks, opts)
+    backend.upsert_chunk_embeddings(chunks, embeddings)
+  end
+
+  def reindex_source(%Source{} = source, opts \\ []) do
+    with :ok <- Pgvector.delete_source_embeddings(source.id),
+         {:ok, chunks} <- reembed_source(source, opts) do
+      {:ok, chunks}
+    end
+  end
+
+  def list_source_chunks(%Source{id: id}), do: list_source_chunks(id)
+
+  def list_source_chunks(source_id) do
+    Chunk
+    |> where([chunk], chunk.source_id == ^source_id)
+    |> preload(:source)
+    |> order_by([chunk], asc: chunk.start_offset)
+    |> Repo.all()
+  end
+
+  def create_retrieval_run(attrs \\ %{}) do
+    %RetrievalRun{}
+    |> RetrievalRun.changeset(
+      attrs
+      |> Map.new()
+      |> Map.put_new(:backend, inspect(Pgvector))
+      |> Map.put_new(:status, "pending")
+      |> Map.put_new(:top_k, 5)
+    )
+    |> Repo.insert()
+  end
+
+  def append_retrieval_results(%RetrievalRun{id: run_id}, results), do: append_retrieval_results(run_id, results)
+
+  def append_retrieval_results(run_id, results) do
+    results
+    |> Enum.map(fn attrs ->
+      attrs
+      |> Map.new()
+      |> Map.put(:retrieval_run_id, run_id)
+      |> then(&RetrievalResult.changeset(%RetrievalResult{}, &1))
+      |> Repo.insert()
+    end)
+    |> collect_multi_results()
+  end
+
+  def create_grounding_score(attrs \\ %{}) do
+    %GroundingScore{}
+    |> GroundingScore.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def build_citations(chunks, opts \\ []) do
+    CitationFormatter.build_anchors(chunks, opts)
+  end
+
+  def create_citation(attrs \\ %{}) do
+    %Citation{}
+    |> Citation.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def retrieve(query_text, opts \\ []) do
+    backend = Keyword.get(opts, :backend, Pgvector)
+    retriever = Keyword.get(opts, :retriever)
+    limit = Keyword.get(opts, :limit, 5)
+    filters = Keyword.get(opts, :filters, %{})
+    started_at = System.monotonic_time(:millisecond)
+
+    results =
+      case retriever do
+        nil ->
+          query_embedding =
+            opts[:query_embedding] ||
+              Embedder.Deterministic.embed_query(query_text, opts)
+
+          backend.similar_chunks(query_embedding, limit: limit, filters: filters)
+
+        Scrypath ->
+          Scrypath.retrieve(query_text, opts)
+
+        module ->
+          module.retrieve(query_text, opts)
+      end
+
+    with {:ok, result_rows} <- results,
+         {:ok, run} <-
+           create_retrieval_run(%{
+             query_text: query_text,
+             backend: inspect(backend),
+             retriever: retriever && inspect(retriever),
+             top_k: limit,
+             filters: filters,
+             trace_id: opts[:trace_id],
+             span_id: opts[:span_id],
+             status: "completed",
+             latency_ms: System.monotonic_time(:millisecond) - started_at
+           }),
+         {:ok, persisted_results} <- append_retrieval_results(run.id, result_rows) do
+      {:ok, %{run: run, results: persisted_results}}
+    end
+  end
+
+  def list_retrieval_results(%RetrievalRun{id: run_id}), do: list_retrieval_results(run_id)
+
+  def list_retrieval_results(run_id) do
+    RetrievalResult
+    |> where([result], result.retrieval_run_id == ^run_id)
+    |> order_by([result], asc: result.rank)
+    |> Repo.all()
+  end
+
+  def score_grounding(payload, opts \\ []) do
+    checks = [
+      {"citation_presence", Grounding.score_citation_presence(payload)},
+      {"citation_validity", Grounding.score_citation_validity(payload)},
+      {"chunk_membership", Grounding.score_chunk_membership(payload.answer || "", payload)},
+      {"unsupported_claims", Grounding.score_unsupported_claims(payload.answer || "", payload)},
+      {"retrieval_hits", Grounding.score_retrieval_hits(payload.results || [], payload)},
+      {"retrieval_ranking", Grounding.score_retrieval_ranking(payload.results || [], payload)}
+    ]
+
+    deterministic_scores =
+      Enum.map(checks, fn {scorer_kind, result} ->
+        create_grounding_score(%{
+          retrieval_run_id: payload[:retrieval_run_id],
+          citation_id: payload[:citation_id],
+          scorer_kind: scorer_kind,
+          rubric_version: Keyword.get(opts, :rubric_version, "deterministic-v1"),
+          score: result.score,
+          status: result.status,
+          reasoning: "Deterministic grounding check",
+          details: result.details,
+          evidence_refs: %{citations: Enum.map(payload[:citations] || [], &Map.take(&1, [:chunk_id, :source_id]))}
+        })
+      end)
+
+    case Enum.find(deterministic_scores, &match?({:error, _}, &1)) do
+      nil ->
+        maybe_append_judge_score(deterministic_scores, payload, opts)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp maybe_append_judge_score(scores, payload, opts) do
+    case opts[:judge_result] do
+      nil ->
+        {:ok, Enum.map(scores, fn {:ok, score} -> score end)}
+
+      judge_result ->
+        with {:ok, score} <-
+               create_grounding_score(%{
+                 retrieval_run_id: payload[:retrieval_run_id],
+                 citation_id: payload[:citation_id],
+                 scorer_kind: Map.get(judge_result, :scorer_kind, "judge"),
+                 rubric_version: Map.get(judge_result, :rubric_version, "judge-v1"),
+                 model: Map.get(judge_result, :model),
+                 prompt_version: Map.get(judge_result, :prompt_version),
+                 score: Map.get(judge_result, :score, 0.0),
+                 status: Map.get(judge_result, :status, "passed"),
+                 reasoning: Map.get(judge_result, :reasoning),
+                 details: Map.get(judge_result, :details, %{}),
+                 evidence_refs: Map.get(judge_result, :evidence_refs, %{})
+               }) do
+          {:ok, Enum.map(scores, fn {:ok, deterministic} -> deterministic end) ++ [score]}
+        end
+    end
+  end
+
+  defp source_or_payload(source, opts) do
+    opts[:source_payload]
+    |> case do
+      nil -> Map.from_struct(source)
+      payload -> Map.merge(Map.from_struct(source), payload)
+    end
+  end
+
+  defp digest_body(attrs) do
+    body =
+      Map.get(attrs, :body) ||
+        Map.get(attrs, "body") ||
+        [Map.get(attrs, :title), Map.get(attrs, :uri)]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.join(":")
+
+    :crypto.hash(:sha256, body) |> Base.encode16(case: :lower)
+  end
+
+  defp collect_multi_results(results) do
+    case Enum.find(results, fn {status, _value} -> status == :error end) do
+      nil -> {:ok, Enum.map(results, fn {:ok, value} -> value end)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+end
