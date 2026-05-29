@@ -2,6 +2,7 @@ defmodule Scoria.HostAppConsumerProofTest do
   use ExUnit.Case, async: false
 
   @moduletag timeout: 180_000
+  @moduletag :host_proof
 
   alias Scoria.TestSupport.HostAppProof.Generator
   alias Scoria.TestSupport.HostAppProof.Runner
@@ -17,14 +18,8 @@ defmodule Scoria.HostAppConsumerProofTest do
     refute mix_exs =~ "{:scoria, path: #{inspect(host.repo_root)}}"
     assert mix_exs =~ Scoria.HexConsumerContract.tarball_dep_snippet(unpack_root)
 
-    proof = Runner.run_route_proof!(host)
+    proof = Runner.run_full_proof!(host)
 
-    assert proof.steps == [
-             :deps_get,
-             :scoria_install,
-             :ecto_create,
-             :ecto_migrate,
-             :host_route_smoke_test
-           ]
+    assert proof.steps == Runner.expected_steps(host)
   end
 end
