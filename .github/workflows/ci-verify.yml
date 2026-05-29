@@ -119,6 +119,15 @@ jobs:
       - name: Run adoption closure lane
         run: mix test.adoption
 
+      - name: Upload host proof failure snapshot
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scoria-host-proof-last-failure
+          path: tmp/scoria-host-proof-last-failure/
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Run runtime-to-handoff proof lane
         run: mix test.runtime_to_handoff
 
