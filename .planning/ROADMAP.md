@@ -59,7 +59,15 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. Overlay smokes pass after upgrade without host regeneration.
 4. Migration ordering bugs on existing schema are caught (not greenfield-only).
 
-**Plans:** TBD via `/gsd-plan-phase 80`
+**Plans:** 3 plans (3 waves)
+
+| Wave | Plans | Focus |
+|------|-------|-------|
+| 1 | 80-01 | Baseline 0.1.0 fixture + HexConsumerContract baseline APIs |
+| 2 | 80-02 | Runner upgrade orchestration + installer trailer assertions |
+| 3 | 80-03 | Upgrade test + adoption lane + closeout ceremony |
+
+*Wave 2 blocked on Wave 1; Wave 3 blocked on Waves 1–2.*
 
 ---
 
