@@ -1,5 +1,7 @@
 defmodule Scoria.Runtime.SemanticFastPathTest do
-  use Scoria.IntegrationCase
+  use ExUnit.Case, async: false
+
+  import Scoria.TestSupport.Eventually, only: [eventually: 1]
 
   alias Scoria.Repo
   alias Scoria.Runtime
@@ -44,6 +46,9 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
       Migrations.ensure_knowledge_migrated!()
     end)
 
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Scoria.Repo)
+    Ecto.Adapters.SQL.Sandbox.mode(Scoria.Repo, {:shared, self()})
+    start_supervised!(Scoria.Workflows.Reconciler)
     Application.put_env(:scoria, :workflow_runtime_handlers, %{"answer" => {Handlers, :answer}})
 
     previous = Application.get_env(:scoria, Scoria.Runtime)
