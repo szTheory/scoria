@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.8
 milestone_name: CI Hardening & Post-Ship Hygiene
-status: milestone_complete
-last_updated: "2026-05-29T12:00:00Z"
-last_activity: 2026-05-29 -- v2.8 CI hardening; post-publish smoke; connector adoption doc
+status: Awaiting next milestone
+last_updated: "2026-05-29T16:00:00.000Z"
+last_activity: 2026-05-29 — Milestone v2.8 completed and archived
 progress:
-  total_phases: 1
-  completed_phases: 1
+  total_phases: 0
+  completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 100
+  percent: 0
 ---
 
 # Project State
@@ -25,9 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 ## Current Position
 
-Phase: 73 (complete)
-Status: Milestone v2.8 closed
-Last activity: 2026-05-29 -- SEM-CI-01, CI-KNOW-01, CI-INV-01 in ci-verify; post-publish smoke attested
+Phase: Milestone v2.8 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-29 — Milestone v2.8 completed and archived
 
 ## Performance Metrics
 
@@ -57,5 +58,4 @@ Last activity: 2026-05-29 -- SEM-CI-01, CI-KNOW-01, CI-INV-01 in ci-verify; post
 
 ## Operator Next Steps
 
-- Plan v2.9 in `.planning/ROADMAP.md` when ready
-- Routine releases: release-please on `main`; monitor `post-publish-smoke.yml` after each Hex publish
+- Start the next milestone with /gsd-new-milestone
