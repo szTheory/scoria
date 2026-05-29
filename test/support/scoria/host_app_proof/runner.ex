@@ -42,6 +42,16 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     ])
   end
 
+  def expected_steps(host) do
+    install = [:deps_get, :scoria_install, :ecto_create, :ecto_migrate]
+
+    overlay =
+      host.overlay_tests
+      |> Enum.map(fn file -> file |> Path.rootname() |> String.to_atom() end)
+
+    install ++ overlay
+  end
+
   defp run_steps(host, steps) do
     results =
       steps
