@@ -9,6 +9,22 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
 
   def deps_get!(host), do: run_mix!(host, :deps_get, ["deps.get"])
   def scoria_install!(host), do: run_mix!(host, :scoria_install, ["scoria.install"])
+
+  def scoria_install_check!(host, opts \\ []) do
+    run_mix!(host, :scoria_install_check, ["scoria.install", "--check"], opts)
+  end
+
+  def scoria_install_check_pre_apply!(host) do
+    scoria_install_check!(host,
+      expect_exit: 1,
+      expect_trailer: "SCORIA_CHECK_RESULT status=drift exit_code=1"
+    )
+  end
+
+  def scoria_install_dry_run!(host) do
+    run_mix!(host, :scoria_install_dry_run, ["scoria.install", "--dry-run"], expect_exit: 0)
+  end
+
   def ecto_create!(host), do: run_mix!(host, :ecto_create, ["ecto.create"])
   def ecto_migrate!(host), do: run_mix!(host, :ecto_migrate, ["ecto.migrate"])
 
@@ -64,7 +80,10 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     %{results: results, steps: Enum.map(results, & &1.step)}
   end
 
-  defp run_mix!(host, step, args) do
+  defp run_mix!(host, step, args, opts \\ []) do
+    expect_exit = Keyword.get(opts, :expect_exit, 0)
+    expect_trailer = Keyword.get(opts, :expect_trailer)
+
     IO.puts("HOST STEP #{step}: mix #{Enum.join(args, " ")}")
 
     {output, status} =
@@ -74,15 +93,27 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
         stderr_to_stdout: true
       )
 
-    if status != 0 do
+    failure_reason =
+      cond do
+        status != expect_exit ->
+          "expected exit #{expect_exit}, got #{status}"
+
+        is_binary(expect_trailer) and not String.contains?(output, expect_trailer) ->
+          "expected output to contain #{inspect(expect_trailer)}"
+
+        true ->
+          nil
+      end
+
+    if failure_reason do
       maybe_snapshot_failure!(host, step, args)
-      raise triage_message(host, step, args, output)
+      raise triage_message(host, step, args, output, failure_reason)
     end
 
     %{step: step, output: output}
   end
 
-  defp triage_message(host, step, args, output) do
+  defp triage_message(host, step, args, output, failure_reason) do
     unpack_root = Map.get(host, :unpack_root)
     hex_unpack_env = System.get_env("SCORIA_HEX_UNPACK_ROOT") || "(unset)"
 
@@ -105,12 +136,19 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
         ""
       end
 
+    failure_line =
+      if failure_reason do
+        "failure_reason: #{failure_reason}\n"
+      else
+        ""
+      end
+
     """
     host proof step failed
 
     step: #{step}
     command: mix #{Enum.join(args, " ")}
-    host.root: #{host.root}
+    #{failure_line}host.root: #{host.root}
     host.app_name: #{host.app_name}
     host.db_name: #{host.db_name}
     unpack_root: #{inspect(unpack_root)}
