@@ -100,7 +100,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 78 | 3/3 | Complete    | 2026-05-29 |
-| 79 | Tarball consumer overlay proof | HEX-CONSUMER-01 | Complete (2026-05-29) |
+| 79 | 3/3 | Complete    | 2026-05-29 |
 | 80 | Upgrade smoke in adoption lane | HEX-UPGRADE-01 | Pending |
 | 81 | Post-publish registry gate | HEX-REGISTRY-01 | Pending |
 | 82 | Docs truth + milestone closeout | DOCS-HEX-01 | Pending |

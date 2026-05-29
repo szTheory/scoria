@@ -45,6 +45,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **Phase 79 complete (2026-05-29):** Merge-blocking tarball consumer proof runs full v2.9 overlay depth (handoff → route → runtime) via `mix hex.build` unpack dep; operator triage, `SCORIA_PRESERVE_HOST`, and CI failure snapshot artifact wired.
 - **Hex:** `0.1.0` live at https://hex.pm/packages/scoria (tag `v0.1.0`, 2026-05-29).
 - Phase 73 CI hardening complete (2026-05-29): semantic lane + knowledge WAE + inventory baseline check in `ci-verify.yml`; operator gate map updated.
 - Phase 72 Hex publish closeout complete (2026-05-29): README Hex-primary; release-please without `release-as` pin.
@@ -126,10 +127,9 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Generated-host overlay proves resume and bounded handoff using `SupportJourney` identities. — `v2.9` (HOST-01, HOST-02)
 - ✓ `examples/support_copilot/` gallery demonstrates support-copilot domain with LiveView journey tests. — `v2.9` (GALL-01, GALL-02)
 - ✓ Advisory `mix scoria.test.support_copilot` runs gallery proof outside `closeout_order/0`; CI ordering contract enforced. — `v2.9` (CI-GALL-01)
+- ✓ Generated Phoenix host in `mix test.adoption` consumes Scoria via Hex-shaped tarball dependency and proves full overlay depth (handoff + route + runtime smokes). — Phase 79 (HEX-CONSUMER-01)
 
 ### Active
-
-- **HEX-CONSUMER-01**: Generated Phoenix host in `mix test.adoption` consumes Scoria via Hex-shaped dependency (`mix hex.build` tarball in PR CI; live registry in post-publish smoke).
 - **HEX-UPGRADE-01**: Same host proves upgrade-safe install after simulated version bump (`--dry-run` / `--check` / apply / migrate).
 - **HEX-REGISTRY-01**: Post-publish workflow proves live Hex fetch + install/migrate/overlay subset; release-blocking upgrade on real semver bump.
 - **DOCS-HEX-01**: README, operator verification, and drift guards stay aligned via `HexConsumerContract` / `AdopterDocContract`.
@@ -302,4 +302,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-29 — milestone v2.10 planning started*
+*Last updated: 2026-05-29 — Phase 79 tarball consumer overlay proof complete*
