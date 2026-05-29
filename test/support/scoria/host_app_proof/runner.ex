@@ -2,6 +2,9 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
   @moduledoc false
 
   alias Scoria.HexConsumerContract
+  alias Scoria.TestSupport.HostAppProof.Generator
+
+  @compliant_check_trailer "SCORIA_CHECK_RESULT status=compliant exit_code=0"
 
   @route_overlay_test "host_route_smoke_test.exs"
   @snapshot_root "tmp/scoria-host-proof-last-failure"
@@ -62,14 +65,99 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     ])
   end
 
+  def run_upgrade_proof!(host, opts) do
+    current_unpack_root = Keyword.fetch!(opts, :current_unpack_root)
+
+    host =
+      host
+      |> Map.put(:baseline_unpack, host.unpack_root)
+      |> Map.put(:upgrade_phase, :baseline)
+
+    {host, baseline_results} = run_baseline_upgrade_phase!(host)
+    host = Map.put(host, :upgrade_phase, :upgrade)
+
+    {_host, upgrade_results} =
+      run_upgrade_upgrade_phase!(host, current_unpack_root)
+
+    all_results = baseline_results ++ upgrade_results
+
+    %{
+      results: all_results,
+      steps: Enum.map(all_results, & &1.step),
+      phases: %{
+        baseline: Enum.map(baseline_results, & &1.step),
+        upgrade: Enum.map(upgrade_results, & &1.step)
+      }
+    }
+  end
+
+  def expected_upgrade_steps(host) do
+    overlays = overlay_step_atoms(host)
+
+    baseline =
+      [:deps_get, :scoria_install, :ecto_create, :ecto_migrate] ++
+        overlays ++
+        [:scoria_install_check]
+
+    upgrade =
+      [:bump_dep, :deps_get, :scoria_install_dry_run, :scoria_install_check_pre_apply,
+       :scoria_install, :ecto_migrate, :scoria_install_check] ++ overlays
+
+    baseline ++ upgrade
+  end
+
   def expected_steps(host) do
     install = [:deps_get, :scoria_install, :ecto_create, :ecto_migrate]
+    install ++ overlay_step_atoms(host)
+  end
 
-    overlay =
-      host.overlay_tests
-      |> Enum.map(fn file -> file |> Path.rootname() |> String.to_atom() end)
+  defp overlay_step_atoms(host) do
+    host.overlay_tests
+    |> Enum.map(fn file -> file |> Path.rootname() |> String.to_atom() end)
+  end
 
-    install ++ overlay
+  defp run_baseline_upgrade_phase!(host) do
+    compliant_check = [expect_trailer: @compliant_check_trailer]
+
+    run_host_steps!(host, [
+      fn h -> {h, [deps_get!(h)]} end,
+      fn h -> {h, [scoria_install!(h)]} end,
+      fn h -> {h, [ecto_create!(h)]} end,
+      fn h -> {h, [ecto_migrate!(h)]} end,
+      fn h -> {h, smoke_pair!(h)} end,
+      fn h -> {h, [scoria_install_check!(h, compliant_check)]} end
+    ])
+  end
+
+  defp run_upgrade_upgrade_phase!(host, current_unpack_root) do
+    compliant_check = [expect_trailer: @compliant_check_trailer]
+
+    run_host_steps!(host, [
+      fn h -> bump_dep!(h, current_unpack_root) end,
+      fn h -> {h, [deps_get!(h)]} end,
+      fn h -> {h, [scoria_install_dry_run!(h)]} end,
+      fn h -> {h, [scoria_install_check_pre_apply!(h)]} end,
+      fn h -> {h, [scoria_install!(h)]} end,
+      fn h -> {h, [ecto_migrate!(h)]} end,
+      fn h -> {h, [scoria_install_check!(h, compliant_check)]} end,
+      fn h -> {h, smoke_pair!(h)} end
+    ])
+  end
+
+  defp bump_dep!(host, current_unpack_root) do
+    host =
+      host
+      |> Generator.bump_unpack_dep!(current_unpack_root)
+      |> Map.put(:current_unpack, current_unpack_root)
+
+    {host, [run_mix!(host, :bump_dep, ["deps.clean", "scoria"], expect_exit: 0)]}
+  end
+
+  defp run_host_steps!(host, steps) do
+    Enum.reduce(steps, {host, []}, fn step_fn, {host, acc} ->
+      {host, step_results} = step_fn.(host)
+      {host, acc ++ List.wrap(step_results)}
+    end)
   end
 
   defp run_steps(host, steps) do
@@ -159,7 +247,7 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     SCORIA_DB_PORT: #{System.get_env("SCORIA_DB_PORT", "5432")}
     SCORIA_DB_USERNAME: #{System.get_env("SCORIA_DB_USERNAME", "postgres")}
     replay: #{replay}
-    preserve: SCORIA_PRESERVE_HOST=1 MIX_ENV=test mix test --only host_proof --trace
+    preserve: #{preserve_replay_command(host)}
 
     #{nested_failure}#{output}
     """
@@ -172,6 +260,17 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
       (Regex.match?(~r/^\s*\d+\) test/, line) and String.contains?(line, "FAIL")) or
         String.contains?(line, "** (")
     end)
+  end
+
+  defp preserve_replay_command(host) do
+    tag =
+      if Map.get(host, :upgrade_phase) in [:baseline, :upgrade] do
+        "host_upgrade"
+      else
+        "host_proof"
+      end
+
+    "SCORIA_PRESERVE_HOST=1 MIX_ENV=test mix test --only #{tag} --trace"
   end
 
   defp replay_command(host, step, args) do
@@ -273,6 +372,8 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
         ""
       end
 
+    upgrade_lines = upgrade_manifest_lines(host)
+
     """
     timestamp: #{DateTime.utc_now() |> DateTime.to_iso8601()}
     failed_step: #{step}
@@ -284,9 +385,26 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     package_fingerprint: #{HexConsumerContract.package_fingerprint()}
     SCORIA_HEX_UNPACK_ROOT: #{hex_unpack_env}
     replay_full: #{replay_full}
-    replay_preserve: SCORIA_PRESERVE_HOST=1 MIX_ENV=test mix test --only host_proof
-    #{tarball_dep_line}#{copy_note_line}
+    replay_preserve: #{preserve_replay_command(host)}
+    #{upgrade_lines}#{tarball_dep_line}#{copy_note_line}
     """
+  end
+
+  defp upgrade_manifest_lines(host) do
+    case Map.get(host, :upgrade_phase) do
+      phase when phase in [:baseline, :upgrade] ->
+        baseline_unpack = Map.get(host, :baseline_unpack, host.unpack_root)
+        current_unpack = Map.get(host, :current_unpack, host.unpack_root)
+
+        """
+        baseline_unpack: #{inspect(baseline_unpack)}
+        current_unpack: #{inspect(current_unpack)}
+        upgrade_phase: #{phase}
+        """
+
+      _ ->
+        ""
+    end
   end
 
   defp host_env do
