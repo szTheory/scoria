@@ -1,7 +1,7 @@
 ---
 phase: 72-hex-publish-closeout
-status: in_progress
-updated: 2026-05-28
+status: passed
+updated: 2026-05-29
 ---
 
 # Phase 72 — Verification Ledger
@@ -26,26 +26,32 @@ Phase 71 gate-zero waiver (`gate-zero-71`) is closed by this attestation on the 
 | Field | Value |
 |-------|-------|
 | Date | 2026-05-28 |
-| Merge commit SHA | `197c92939a7fa250febd7f18f7c505c109a17370` |
-| CI run URL | https://github.com/szTheory/scoria/actions/runs/26600574013 |
+| Release merge SHA | `49f2d60018c4c79fbc09969116526c48454a8e84` |
+| CI run URL | https://github.com/szTheory/scoria/actions/runs/26610277846 |
 | policy job | success |
 | test job | success |
 
 ## Publish evidence
 
-*(filled after Release PR merge, tag `v0.1.0`, and `publish-hex` — plan 72-02)*
-
 | Field | Value |
 |-------|-------|
-| Release PR URL | *(pending)* |
+| Date | 2026-05-29 |
+| Release PR URL | https://github.com/szTheory/scoria/pull/2 |
+| GitHub Release | https://github.com/szTheory/scoria/releases/tag/v0.1.0 |
 | Tag | `v0.1.0` |
-| Publish workflow run URL | *(pending)* |
-| hex.pm `0.1.0` | *(pending)* |
+| Publish workflow run URL | https://github.com/szTheory/scoria/actions/runs/26610277846 |
+| Publish job | `Publish to Hex.pm` — success |
+| hex.pm `0.1.0` | https://hex.pm/api/packages/scoria/releases/0.1.0 — 200 OK |
 
 ## Adopter flip gate
 
-*(filled in plan 72-03 — requires `curl -fsS https://hex.pm/api/packages/scoria/releases/0.1.0`)*
+| Check | Result | Date |
+|-------|--------|------|
+| `curl -fsS https://hex.pm/api/packages/scoria/releases/0.1.0` | 200 OK | 2026-05-29 |
 
 ## Post-flip smoke
 
-*(filled after `post-publish-smoke.yml` — plan 72-03)*
+| Check | Result | Date |
+|-------|--------|------|
+| Local `mix deps.get` + compile with `{:scoria, "~> 0.1", hex: :scoria}` | pending maintainer | 2026-05-29 |
+| 24h follow-up registry + consumer smoke | pending | — |

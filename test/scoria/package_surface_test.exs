@@ -42,19 +42,26 @@ defmodule Scoria.PackageSurfaceTest do
     assert project[:docs][:extras] == @docs_extras
   end
 
-  test "README keeps the pre-publish tagged GitHub install story" do
+  test "Hex-primary install with optional GitHub fallback" do
     readme = File.read!("README.md")
 
-    assert readme =~
-             "Scoria now carries Hex-ready package metadata, but until the first Hex publish lands you should install from a tagged GitHub release:"
+    assert readme =~ "{:scoria, \"~> 0.1\", hex: :scoria}"
+    assert readme =~ "github: \"szTheory/scoria\", tag: \"v0.1.0\""
+    refute readme =~ "until the first Hex publish lands"
 
-    assert readme =~ "{:scoria, github: \"szTheory/scoria\", tag: \"v0.1.0\"}"
+    active_dep_lines =
+      readme
+      |> String.split("\n")
+      |> Enum.filter(fn line ->
+        trimmed = String.trim_leading(line)
+        String.starts_with?(trimmed, "{:scoria,") and not String.starts_with?(trimmed, "#")
+      end)
+
+    assert length(active_dep_lines) == 1
 
     for guide <- tl(@docs_extras) do
       assert readme =~ guide
     end
-
-    refute readme =~ "{:scoria, hex:"
   end
 
   test "hex preview includes the required release surface" do

@@ -1,6 +1,7 @@
 # Scoria
 
 [![CI](https://github.com/szTheory/scoria/actions/workflows/ci.yml/badge.svg)](https://github.com/szTheory/scoria/actions/workflows/ci.yml)
+[![Hex.pm](https://img.shields.io/hexpm/v/scoria.svg)](https://hex.pm/packages/scoria)
 
 Maintainer CI topology: see [operator verification — CI gate map](docs/operator_verification.md#ci-gate-map-maintainers).
 
@@ -47,15 +48,20 @@ Docs:
 
 ## Install
 
-Scoria now carries Hex-ready package metadata, but until the first Hex publish lands you should install from a tagged GitHub release:
+Add Scoria from Hex, then mount the dashboard and run the installer:
 
 ```elixir
 def deps do
   [
-    {:scoria, github: "szTheory/scoria", tag: "v0.1.0"}
+    {:scoria, "~> 0.1", hex: :scoria}
+    # Fork or pinned patch only: {:scoria, github: "szTheory/scoria", tag: "v0.1.0"}
   ]
 end
 ```
+
+Tagged GitHub installs are for forks and pinned patches; prefer Hex for normal adoption.
+
+**Next steps:** `mix deps.get` → `mix scoria.install` → `mix ecto.migrate` — then see [Verification](#verification) for `mix test.adoption`.
 
 Then mount the dashboard in your Phoenix router and run the install task:
 
@@ -237,4 +243,4 @@ For the public delegation lane, see [`docs/bounded_handoffs.md`](docs/bounded_ha
 
 ## Status
 
-Hex package metadata is ready. The first Hex publish will be `0.1.0` from a tagged GitHub release (`v0.1.0`).
+Current release: `0.1.0` on [Hex](https://hex.pm/packages/scoria).

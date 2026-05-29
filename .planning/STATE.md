@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.7
 milestone_name: Scope
-status: executing
-last_updated: "2026-05-28T15:12:21.185Z"
-last_activity: 2026-05-28 -- Phase 72 planning complete
+status: milestone_complete
+last_updated: "2026-05-29T01:05:00Z"
+last_activity: 2026-05-29 -- v2.7 shipped: Hex 0.1.0 live, README flip, milestone audit
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 7
-  percent: 64
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -21,20 +21,20 @@ See: `.planning/PROJECT.md` (updated 2026-05-28)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 72 — hex-publish-closeout
+**Current focus:** v2.7 milestone complete — `0.1.0` on [Hex](https://hex.pm/packages/scoria)
 
 ## Current Position
 
-Phase: 72
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-28 -- Phase 72 planning complete
+Phase: 72 (complete)
+Plan: 72-04 complete
+Status: Milestone v2.7 closed
+Last activity: 2026-05-29 -- Hex 0.1.0 published; adopter flip landed on main
 
 ## Performance Metrics
 
-- **Latest Shipped Milestone:** `v2.6 Warning Ratchet` on 2026-05-28
-- **Current Milestone:** `v2.7 OSS Release + Docs Truth`
-- **Hex semver target:** `0.1.0` at git tag `v0.1.0` (distinct from GSD milestone tags `v2.x`)
+- **Latest Shipped Milestone:** `v2.7 OSS Release + Docs Truth` on 2026-05-29
+- **Hex release:** `0.1.0` at git tag `v0.1.0` — https://hex.pm/packages/scoria
+- **Previous:** `v2.6 Warning Ratchet` (2026-05-28)
 
 ## Accumulated Context
 
@@ -68,7 +68,7 @@ Last activity: 2026-05-28 -- Phase 72 planning complete
 |----------|------|--------|-------|
 | v2.7 | SEM-CI-01 semantic lane in PR CI | deferred — document only | scoria-maintainers |
 | v2.7+ | Knowledge WAE in CI | deferred (Phase 69 D-17) | scoria-maintainers |
-| v2.6 carryover | Remote GitHub Actions green attestation | Phase 72 publish commit (non-waivable) | scoria-maintainers |
+| v2.6 carryover | Remote GitHub Actions green attestation | **closed** — `72-VERIFICATION.md` | scoria-maintainers |
 
 ## Operator Next Steps
 

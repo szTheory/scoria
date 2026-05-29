@@ -111,7 +111,7 @@ jobs:
           head_oid=$(echo "$pr_json" | jq -r '.[0].headRefOid')
           labels=$(echo "$pr_json" | jq -r '.[0].labels[].name' | tr '\n' ' ')
           actual_files=$(echo "$pr_json" | jq -r '.[0].files[].path' | sort | paste -sd ',' -)
-          expected_files=".release-please-manifest.json,CHANGELOG.md,mix.exs"
+          allowed_files=".release-please-manifest.json,CHANGELOG.md,mix.exs"
 
           if [ "$head_oid" != "$HEAD_SHA" ]; then
             echo "PR #$pr_number head ($head_oid) does not match target SHA ($HEAD_SHA) — skipping stale run."
@@ -133,12 +133,16 @@ jobs:
             exit 0
           fi
 
-          if [ "$actual_files" != "$expected_files" ]; then
-            echo "Release PR changed unexpected files."
-            echo "Expected: $expected_files"
-            echo "Actual:   $actual_files"
-            exit 1
-          fi
+          IFS=',' read -r -a actual <<<"$actual_files"
+          IFS=',' read -r -a allowed <<<"$allowed_files"
+          for file in "${actual[@]}"; do
+            if ! printf '%s\n' "${allowed[@]}" | grep -qx "$file"; then
+              echo "Release PR changed unexpected file: $file"
+              echo "Allowed: $allowed_files"
+              echo "Actual:  $actual_files"
+              exit 1
+            fi
+          done
 
           echo "Merging release PR #$pr_number ($title)"
           gh pr merge "$pr_number" --squash -R "$REPOSITORY" || \

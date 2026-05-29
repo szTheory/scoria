@@ -362,6 +362,30 @@ Always pass `--ref` matching the tag so `ci-verify.yml` runs against that tree. 
 - No production `mix hex.publish` in Phase 71 (`publish-hex` jobs use `if: false`).
 - Record Release PR version target (`0.1.0`) in `71-VERIFICATION.md` after `main` receives release infra; do not merge until Phase 72.
 
+### Post-publish registry checks (maintainers)
+
+Repeat after each first-time or recovery publish. Record dated results in the phase verification ledger (`.planning/phases/72-hex-publish-closeout/72-VERIFICATION.md`) — not in this guide.
+
+```bash
+# Registry lists the release
+curl -fsS https://hex.pm/api/packages/scoria/releases/0.1.0
+
+# HexDocs source_ref matches the git tag
+curl -fsS "https://hexdocs.pm/scoria/0.1.0/" | head -n 5
+
+# Consumer smoke in a clean project
+mix new smoke_hex --sup
+cd smoke_hex
+# add {:scoria, "~> 0.1", hex: :scoria} to mix.exs deps
+mix deps.get
+mix compile --warnings-as-errors
+
+# Optional installer posture check in an existing host
+mix scoria.install --check
+```
+
+Flip README install guidance to Hex-primary only after the release API returns **200** for `0.1.0`. Schedule a **24h follow-up** row in the verification ledger (repeat `curl` + `mix deps.get`).
+
 ### Executable SSOT
 
 | Workflow | Role |
