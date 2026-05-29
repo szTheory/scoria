@@ -79,6 +79,7 @@ jobs:
       SCORIA_DB_USERNAME: postgres
       SCORIA_DB_PASSWORD: postgres
       SCORIA_DB_NAME: scoria_test
+      SCORIA_HEX_UNPACK_ROOT: tmp/scoria-release-preview
 
     steps:
       - uses: actions/checkout@v4
