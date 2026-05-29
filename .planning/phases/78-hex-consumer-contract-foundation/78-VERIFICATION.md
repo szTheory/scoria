@@ -10,6 +10,8 @@ requirements:
 
 # Phase 78 Verification
 
+> **Retro note (Phase 79 closeout):** HEX-CONSUMER-01 milestone **Complete** deferred to Phase 79 full overlay — see [79-VERIFICATION.md](../79-tarball-consumer-overlay-proof/79-VERIFICATION.md). Phase 78 delivered route-only tarball proof and HexConsumerContract SSOT as scoped.
+
 ## Goal
 
 Introduce `Scoria.HexConsumerContract` as SSOT for Hex dep snippets and tarball consumer wiring; parameterize `HostAppProof.Generator` with explicit `dep_mode`; make merge-blocking adoption prove a `mix hex.build --unpack` artifact (route smoke only), not a repo-root `path:` dep.
