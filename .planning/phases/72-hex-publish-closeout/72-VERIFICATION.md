@@ -53,7 +53,7 @@ Phase 71 gate-zero waiver (`gate-zero-71`) is closed by this attestation on the 
 
 | Check | Result | Date |
 |-------|--------|------|
-| `post-publish-smoke.yml` workflow_dispatch `v0.1.0` / `0.1.0` | see Post-publish workflow row | 2026-05-29 |
+| `post-publish-smoke.yml` workflow_dispatch `v0.1.0` / `0.1.0` | pass — run 26612459831 | 2026-05-29 |
 | Local `mix deps.get` + compile with `{:scoria, "~> 0.1", hex: :scoria}` | see Local consumer row | 2026-05-29 |
 | 24h follow-up registry + consumer smoke | closed at v2.8 closeout | 2026-05-29 |
 
@@ -64,7 +64,7 @@ Phase 71 gate-zero waiver (`gate-zero-71`) is closed by this attestation on the 
 | Workflow | `.github/workflows/post-publish-smoke.yml` |
 | Inputs | `tag: v0.1.0`, `version: 0.1.0` |
 | First dispatch run | https://github.com/szTheory/scoria/actions/runs/26611813528 — **failed** (setup-beam `version-file` without checkout; fixed in v2.8 closeout) |
-| Re-run after fix | dispatch after `post-publish-smoke.yml` checkout + explicit OTP/Elixir lands on `main` |
+| Re-run after fix | https://github.com/szTheory/scoria/actions/runs/26612459831 — **pass** (2026-05-29, commit `d9f5fc7`) |
 
 ## Local consumer smoke
 
