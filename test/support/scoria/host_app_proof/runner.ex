@@ -1,17 +1,21 @@
 defmodule Scoria.TestSupport.HostAppProof.Runner do
   @moduledoc false
 
+  @route_overlay_test "host_route_smoke_test.exs"
+
   def deps_get!(host), do: run_mix!(host, :deps_get, ["deps.get"])
   def scoria_install!(host), do: run_mix!(host, :scoria_install, ["scoria.install"])
   def ecto_create!(host), do: run_mix!(host, :ecto_create, ["ecto.create"])
   def ecto_migrate!(host), do: run_mix!(host, :ecto_migrate, ["ecto.migrate"])
 
-  def smoke_pair!(host) do
-    test_args = ["test"] ++ Enum.map(host.overlay_tests, &("test/" <> &1)) ++ ["--trace"]
+  def smoke_pair!(host), do: smoke_pair!(host, host.overlay_tests)
+
+  def smoke_pair!(host, overlay_files) do
+    test_args = ["test"] ++ Enum.map(overlay_files, &("test/" <> &1)) ++ ["--trace"]
 
     result = run_mix!(host, :overlay_smoke, test_args)
 
-    host.overlay_tests
+    overlay_files
     |> Enum.map(fn file ->
       step = file |> Path.rootname() |> String.to_atom()
       %{step: step, output: result.output}
@@ -24,7 +28,7 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
       &scoria_install!/1,
       &ecto_create!/1,
       &ecto_migrate!/1,
-      &smoke_pair!/1
+      fn h -> smoke_pair!(h, [@route_overlay_test]) end
     ])
   end
 
