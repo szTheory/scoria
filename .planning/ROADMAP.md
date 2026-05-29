@@ -1,7 +1,7 @@
 # Roadmap — Milestone v2.9 Adoption Journey & Reference Demo
 
 **Milestone:** v2.9  
-**Phases:** 74–77 (continuing from v2.8 phase 73)  
+**Phases:** 74–77.1 (continuing from v2.8 phase 73)  
 **Last updated:** 2026-05-29
 
 ## Overview
@@ -14,6 +14,7 @@ Battle-test Scoria through a realistic support-copilot domain: shared journey fi
 | 75 | Host-proof overlay expansion | Resume + handoff smokes in generated host | HOST-01, HOST-02 |
 | 76 | Support copilot example app | Committed gallery with seeds + host UI | GALL-01, GALL-02 |
 | 77 | Gallery CI + docs closeout | Advisory lane, README, operator docs | CI-GALL-01, DOCS-GALL-01 |
+| 77.1 | 1/1 | Complete    | 2026-05-29 |
 
 ## Phase 74: Journey fixture foundation
 
@@ -50,6 +51,17 @@ Battle-test Scoria through a realistic support-copilot domain: shared journey fi
 1. `mix scoria.test.support_copilot` runs gallery subprocess proof + contract tests.
 2. CI runs gallery lane after closeout lanes (advisory, non-blocking).
 3. README gallery section and operator verification updated with drift guards.
+
+## Phase 77.1: Close gap: DOCS-GALL-01 drift guard expansion (INSERTED)
+
+**Goal:** Close the v2.9 milestone audit partial on DOCS-GALL-01 by extending automated `SupportJourney` fragment pinning beyond `docs/support_copilot_gallery.md` to README and operator verification surfaces.
+
+**Depends on:** Phase 77
+
+**Success criteria:**
+1. `SupportJourneySourceTest` (or equivalent contract tests) assert gallery-related `doc_fragments/0` against `README.md` and `docs/operator_verification.md`.
+2. Drift between gallery fixtures, advisory lane command, and all three adopter docs fails CI — not only the gallery guide.
+3. No widening of `VerificationLanes.closeout_order/0`; advisory gallery lane posture unchanged.
 
 ## Prior milestones (archived)
 
