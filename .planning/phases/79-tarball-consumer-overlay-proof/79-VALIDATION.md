@@ -3,7 +3,7 @@ phase: 79
 slug: tarball-consumer-overlay-proof
 status: draft
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-05-29
 ---
 
@@ -48,9 +48,9 @@ created: 2026-05-29
 | 79-02-01 | 02 | 2 | HEX-CONSUMER-01 | T-79-01 | Enhanced raise includes triage fields | DX | Induced failure; inspect raise output | ❌ W0 | ⬜ pending |
 | 79-02-02 | 02 | 2 | HEX-CONSUMER-01 | — | `SCORIA_PRESERVE_HOST=1` skips cleanup | DX | `SCORIA_PRESERVE_HOST=1 MIX_ENV=test mix test --only host_proof` | ❌ W0 | ⬜ pending |
 | 79-02-03 | 02 | 2 | HEX-CONSUMER-01 | — | Failure snapshot under workspace `tmp/` | DX | Induced failure → `tmp/scoria-host-proof-last-failure/MANIFEST.txt` | ❌ W0 | ⬜ pending |
-| 79-03-01 | 03 | 3 | HEX-CONSUMER-01 | — | Adoption lane green with full overlay | lane | `MIX_ENV=test mix test.adoption` | ✅ | ⬜ pending |
-| 79-03-02 | 03 | 3 | HEX-CONSUMER-01 | — | Closeout order unchanged | contract | `MIX_ENV=test mix test test/scoria/verification_lanes_test.exs` | ✅ | ⬜ pending |
-| 79-03-03 | 03 | 3 | HEX-CONSUMER-01 | — | CI artifact on failure | CI | GHA upload after failed adoption | ❌ W0 | ⬜ pending |
+| 79-03-01 | 03 | 3 | HEX-CONSUMER-01 | — | Adoption lane green with full overlay | lane | `MIX_ENV=test mix test.adoption` | ✅ | ✅ green |
+| 79-03-02 | 03 | 3 | HEX-CONSUMER-01 | — | Closeout order unchanged | contract | `MIX_ENV=test mix test test/scoria/verification_lanes_test.exs` | ✅ | ✅ green |
+| 79-03-03 | 03 | 3 | HEX-CONSUMER-01 | — | CI artifact on failure | CI | GHA upload after failed adoption | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -58,14 +58,14 @@ created: 2026-05-29
 
 ## Wave 0 Requirements
 
-- [ ] Consumer test uses `run_full_proof!/1` with derived step assertion
-- [ ] `@moduletag :host_proof`
-- [ ] Enhanced `Runner` raise (D-39 fields + nested FAIL extract)
-- [ ] `SCORIA_PRESERVE_HOST` in Generator cleanup
-- [ ] Host map includes `working_root` / `unpack_root` for snapshot
-- [ ] Failure snapshot → `tmp/scoria-host-proof-last-failure/`
-- [ ] CI `upload-artifact` on failure
-- [ ] Closeout ceremony artifacts (79-VERIFICATION, ledger reconciliation)
+- [x] Consumer test uses `run_full_proof!/1` with derived step assertion
+- [x] `@moduletag :host_proof`
+- [x] Enhanced `Runner` raise (D-39 fields + nested FAIL extract)
+- [x] `SCORIA_PRESERVE_HOST` in Generator cleanup
+- [x] Host map includes `working_root` / `unpack_root` for snapshot
+- [x] Failure snapshot → `tmp/scoria-host-proof-last-failure/`
+- [x] CI `upload-artifact` on failure
+- [x] Closeout ceremony artifacts (79-VERIFICATION, ledger reconciliation)
 
 ---
 
@@ -94,4 +94,4 @@ If CI consumer proof exceeds **120s on two consecutive runs**, bump `@moduletag 
 - [ ] Feedback latency < 180s (or documented 240s escalation)
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** signed off 2026-05-29 (79-VERIFICATION.md passed)
