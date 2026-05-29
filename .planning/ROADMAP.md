@@ -23,7 +23,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. `host_app_consumer_proof_test` asserts Hex-shaped dep and removes repo-root path assertion.
 4. `package_surface_test` tarball version matches `HexConsumerContract` constraint.
 
-**Plans:** TBD via `/gsd-plan-phase 78`
+**Plans:** 3 plans in 3 waves (78-01 contract SSOT, 78-02 unpack cache, 78-03 harness + CI)
 
 ---
 
