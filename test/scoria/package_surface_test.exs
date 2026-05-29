@@ -1,6 +1,8 @@
 defmodule Scoria.PackageSurfaceTest do
   use ExUnit.Case, async: true
 
+  alias Scoria.HexConsumerContract
+
   @docs_extras [
     "README.md",
     "LICENSE",
@@ -36,6 +38,7 @@ defmodule Scoria.PackageSurfaceTest do
     assert project[:docs][:extras] == @docs_extras
     assert project[:package][:links]["GitHub"] == project[:source_url]
     assert project[:package][:licenses] == ["MIT"]
+    assert project[:version] == HexConsumerContract.published_version()
   end
 
   test "docs extras stay explicit and ordered" do
@@ -47,8 +50,11 @@ defmodule Scoria.PackageSurfaceTest do
   test "Hex-primary install with optional GitHub fallback" do
     readme = File.read!("README.md")
 
-    assert readme =~ "{:scoria, \"~> 0.1\", hex: :scoria}"
-    assert readme =~ "github: \"szTheory/scoria\", tag: \"v0.1.0\""
+    assert readme =~ HexConsumerContract.hex_dep_snippet()
+
+    assert readme =~
+             HexConsumerContract.github_fallback_snippet(HexConsumerContract.published_version())
+
     refute readme =~ "until the first Hex publish lands"
 
     active_dep_lines =
@@ -60,6 +66,7 @@ defmodule Scoria.PackageSurfaceTest do
       end)
 
     assert length(active_dep_lines) == 1
+    assert String.trim(hd(active_dep_lines)) == HexConsumerContract.hex_dep_snippet()
 
     for guide <- tl(@docs_extras) do
       assert readme =~ guide
