@@ -310,11 +310,20 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 
 | Lane | Command | In PR CI? | Notes |
 |------|---------|-----------|-------|
-| Default runtime | mix test.adoption | Yes | PR closeout lane 3 |
+| Default runtime | mix test.adoption | Yes | PR closeout lane 3 — tarball full overlay + content-revision upgrade |
 | Runtime-to-handoff | mix test.runtime_to_handoff | Yes | PR closeout lane 3 |
 | Semantic fast-path | mix test.semantic_fast_path --warnings-as-errors | Yes | After closeout lanes; see [Semantic fast-path troubleshooting lane](#semantic-fast-path-troubleshooting-lane); not in `VerificationLanes.closeout_order/0` |
 | Optional knowledge | mix test.knowledge --warnings-as-errors | Yes | After full-suite WAE |
 | Support copilot gallery | mix scoria.test.support_copilot | Yes | Advisory; after knowledge lane; not in `VerificationLanes.closeout_order/0` |
+
+**PR vs release proof depth (v2.10 gate map):**
+
+| Path | Proof depth | Command / workflow | Blocking? |
+|------|-------------|-------------------|-----------|
+| **PR CI** | Tarball consumer full overlay + content-revision upgrade | `mix test.adoption` via `.github/workflows/ci-verify.yml` | Yes — merge gate |
+| **Release** | Live Hex registry subset + conditional semver upgrade | `mix scoria.post_publish_smoke` via `.github/workflows/post-publish-smoke.yml` after `publish-hex` in `release-please.yml` (or recovery `hex-publish.yml`) | Yes — release workflow fails if attest fails |
+
+Registry attest proves install → migrate → route + runtime overlay smokes against exact-pinned `{:scoria, "<version>", hex: :scoria}` — not the shallow compile-only `deps.get` check. When `published_version > 0.1.0`, the attest also runs the registry semver upgrade leg (baseline exact previous → target just-published).
 
 **Version namespaces:** Hex/git releases use semver (`0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}`). Planning milestones (`v2.x` in `.planning/`) are internal shipped-work tranches, not a second installable version axis.
 
@@ -423,8 +432,9 @@ Flip README install guidance to Hex-primary only after the release API returns *
 |----------|------|
 | `.github/workflows/ci-verify.yml` | Reusable policy → test verify bar |
 | `.github/workflows/ci.yml` | PR / `release-please--**` triggers |
-| `.github/workflows/release-please.yml` | Release PR automation |
-| `.github/workflows/hex-publish.yml` | Manual recovery (`workflow_dispatch`) |
+| `.github/workflows/release-please.yml` | Release PR automation + publish-hex + post-publish-attest |
+| `.github/workflows/post-publish-smoke.yml` | Reusable registry attest (`workflow_call` SSOT) |
+| `.github/workflows/hex-publish.yml` | Manual recovery (`workflow_dispatch`) + post-publish-attest |
 
 ## Installer contract proofs (maintainers)
 

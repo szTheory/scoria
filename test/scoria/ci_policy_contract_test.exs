@@ -53,6 +53,8 @@ defmodule Scoria.CiPolicyContractTest do
     assert release_please =~ "Skip if version already on Hex"
     assert release_please =~ "Wait for Hex.pm index"
     assert release_please =~ "gate-ci-green"
+    assert release_please =~ "post-publish-attest"
+    assert release_please =~ "post-publish-smoke.yml"
   end
 
   test "release-pr-automerge.yml guards release PR merges" do
@@ -79,6 +81,7 @@ defmodule Scoria.CiPolicyContractTest do
     assert hex_publish =~ "gate-ci-green"
     assert hex_publish =~ "Skip if version already on Hex"
     assert hex_publish =~ "Wait for Hex.pm index"
+    assert hex_publish =~ "post-publish-smoke.yml"
   end
 
   test "hex-publish.yml supports workflow_dispatch recovery with verify and publish" do
