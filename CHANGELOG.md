@@ -11,6 +11,12 @@ Published Hex releases use `[0.x.y]` version headings in this file. Internal rep
 milestone labels (such as `v2.x`) track delivery tranches — they are **not** a second
 install axis and do not map to Hex versions.
 
+## [Unreleased]
+
+### Changed
+
+- Bump `req_llm` peer dependency to `~> 1.13` (locked at 1.13.0)
+
 ## 0.1.1 (2026-05-30)
 
 ### Added

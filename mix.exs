@@ -76,7 +76,7 @@ defmodule Scoria.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_ecto, "~> 4.4"},
       {:req, "~> 0.5"},
-      {:req_llm, "~> 1.11"},
+      {:req_llm, "~> 1.13"},
       {:tiktoken, "~> 0.4.2"},
       {:ex_doc, "~> 0.38", only: :dev, runtime: false},
       {:floki, ">= 0.30.0", only: :test},
