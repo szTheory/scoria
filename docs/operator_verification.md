@@ -323,6 +323,9 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 | **PR CI** | Tarball consumer full overlay + content-revision upgrade | `mix test.adoption` via `.github/workflows/ci-verify.yml` | Yes — merge gate |
 | **Release** | Live Hex registry subset + conditional semver upgrade | `mix scoria.post_publish_smoke` via `.github/workflows/post-publish-smoke.yml` after `publish-hex` in `release-please.yml` (or recovery `hex-publish.yml`) | Yes — release workflow fails if attest fails |
 
+- **Content-revision upgrade:** `scoria-0.1.0-unpack` fixture → HEAD tarball (same semver content-revision path in PR CI)
+- **Registry semver upgrade:** `baseline exact previous → target just-published` when `published_version > 0.1.0`
+
 Registry attest proves install → migrate → route + runtime overlay smokes against exact-pinned `{:scoria, "<version>", hex: :scoria}` — not the shallow compile-only `deps.get` check. When `published_version > 0.1.0`, the attest also runs the registry semver upgrade leg (baseline exact previous → target just-published).
 
 **Version namespaces:** Hex/git releases use semver (`0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}`). Planning milestones (`v2.x` in `.planning/`) are internal shipped-work tranches, not a second installable version axis.

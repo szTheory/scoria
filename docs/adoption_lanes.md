@@ -39,6 +39,8 @@ mix ecto.migrate
 mix test.adoption
 ```
 
+Adoption closeout exercises a packaged tarball from `mix hex.build --unpack` (not a monorepo root `path:` dep). Maintainer CI topology — PR tarball vs release registry attest — lives in [`docs/operator_verification.md`](operator_verification.md).
+
 If you are not sure where to start, start here.
 
 After upgrades, run `mix scoria.install --check` as a no-write verification step. See
