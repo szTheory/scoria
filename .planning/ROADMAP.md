@@ -1,13 +1,13 @@
 # Roadmap: Scoria
 
 **Milestone:** v2.11 Orchestrator Live Wiring
-**Last updated:** 2026-05-30 (phase 01 plans complete)
+**Last updated:** 2026-05-30 (phase 01.1 inserted)
 
 ## Overview
 
 Wire orchestrator live trace broadcast and HITL approval modal from real runtime events — the first milestone after Hex consumer proof closed the adopter-trust gap.
 
-**Requirements:** 1 (ORCH-LIVE-01) | **Phases:** 1 | **Coverage:** 100% mapped
+**Requirements:** 1 (ORCH-LIVE-01) | **Phases:** 2 (1 complete + 1 inserted) | **Coverage:** 100% mapped
 
 ## Phases
 
@@ -34,11 +34,34 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 
 ---
 
+### Phase 01.1: Address tech debt: orchestrator live wiring follow-ups (INSERTED)
+
+**Goal:** Harden ORCH-LIVE-01 trust paths — delta/hydrate redaction, approval decision integration proof, token delta coalesce proof (01-REVIEW + v2.11 audit follow-ups).
+
+**Requirements:** ORCH-LIVE-01 (hardening; no new REQ-ID)
+**Depends on:** Phase 01
+**Plans:** 3 plans
+
+Plans:
+- [ ] **01.1-01** Redaction defense-in-depth (delta telemetry + DB hydrate) — Wave 1
+- [ ] **01.1-02** Approval approve/reject integration tests — Wave 2 *(blocked on Wave 1)*
+- [ ] **01.1-03** `emit_span_delta/1` + token coalesce E2E + timer cancel — Wave 3 *(blocked on Waves 1–2)*
+
+**Cross-cutting constraints:**
+- Redact → broadcast → buffer ordering preserved on all telemetry egress paths (D-118, D-133)
+- Integration tests use `Runtime.start_run/2` producer path — no `send/2` (D-129)
+- `VerificationLanes.closeout_order/0` unchanged
+
+**Status:** Planned (2026-05-30)
+
+---
+
 ## Phase map
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 01 | 3/3 | Complete    | 2026-05-30 |
+| 01 | Orchestrator live wiring | ORCH-LIVE-01 | Complete (2026-05-30) |
+| 01.1 | Address tech debt: orchestrator live wiring follow-ups | ORCH-LIVE-01 (hardening) | Planned (2026-05-30) |
 
 ## Completed milestones
 
