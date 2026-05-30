@@ -31,11 +31,12 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
-  alias Scoria.Observe.{Buffer, OperatorBroadcast}
+  alias Scoria.Observe.{Approval, Buffer, OperatorBroadcast}
   alias Scoria.Observe.Adapters.ReqLLM
   alias Scoria.Repo
   alias Scoria.Repo.{Span, Trace}
   alias Scoria.Runtime
+  alias Scoria.Workflows
 
   alias Phoenix.LiveViewTest.{ClientProxy, View}
 
@@ -299,6 +300,58 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
     html = render(view)
     assert html =~ "publish"
     refute html =~ "super-secret-key"
+  end
+
+  test "approve decision clears modal via producer path" do
+    unique = Integer.to_string(System.unique_integer([:positive]))
+    tenant_id = "orch-approve-tenant-" <> unique
+    session_id = "orch-approve-session-" <> unique
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "tenant_id" => tenant_id,
+        "actor_id" => "operator-int"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    assert {:ok, started} =
+             Runtime.start_run(
+               %{
+                 tenant_id: tenant_id,
+                 actor_id: "operator-int",
+                 session_id: session_id
+               },
+               root_role_id: "executor",
+               initial_step: %{
+                 sequence: 1,
+                 kind: "approval",
+                 role_id: "executor",
+                 status: "queued"
+               },
+               handlers: %{"approval" => {Handlers, :wait_for_approval}}
+             )
+
+    eventually(fn ->
+      match?({:ok, %{status: "waiting_for_approval"}}, Runtime.get_run(started.run_id))
+    end)
+
+    eventually(fn ->
+      html = render(view)
+      html =~ "Approval Required" and html =~ "publish" and not (html =~ "super-secret-key")
+    end)
+
+    [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
+
+    render_click(view, "approve", %{})
+
+    eventually(fn ->
+      html = render(view)
+      not (html =~ "Approval Required") and Repo.get!(Approval, approval_id).status == "approved" and
+        not (html =~ "super-secret-key")
+    end)
   end
 
   test "reconnect shows modal from DB pending approval" do
