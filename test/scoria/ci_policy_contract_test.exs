@@ -259,6 +259,24 @@ defmodule Scoria.CiPolicyContractTest do
     assert ci_verify =~ "# test:"
   end
 
+  test "operator gate map pins v2.10 PR vs release proof depth" do
+    operator_docs = File.read!("docs/operator_verification.md")
+    gate_map = section_after(operator_docs, "### CI gate map (maintainers)")
+    pr_release = section_after(gate_map, "**PR vs release proof depth (v2.10 gate map):**")
+
+    assert pr_release =~ "mix test.adoption"
+    assert pr_release =~ "content-revision upgrade"
+    assert pr_release =~ "Tarball consumer full overlay" or pr_release =~ "mix hex.build"
+    assert pr_release =~ "mix scoria.post_publish_smoke"
+    assert pr_release =~ "post-publish-smoke.yml"
+    assert pr_release =~ "{:scoria, \"<version>\", hex: :scoria}" or pr_release =~ "exact-pinned"
+    assert pr_release =~ "scoria-0.1.0-unpack"
+    assert pr_release =~ "HEAD tarball"
+    assert pr_release =~ "baseline exact previous"
+    assert pr_release =~ "target just-published"
+    assert pr_release =~ "v2.x"
+  end
+
   test "operator CI gate map documents topology, parity, ratchet, and failure diagnosis" do
     operator_docs = File.read!("docs/operator_verification.md")
     gate_map = section_after(operator_docs, "### CI gate map (maintainers)")

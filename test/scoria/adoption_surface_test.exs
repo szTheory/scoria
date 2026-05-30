@@ -1,7 +1,19 @@
 defmodule Scoria.AdoptionSurfaceTest do
   use ExUnit.Case, async: true
   alias Scoria.AdopterDocContract
+  alias Scoria.HexConsumerContract
   alias Scoria.VerificationLanes
+
+  for {path, fragments} <- HexConsumerContract.adopter_doc_surfaces() do
+    test "adopter doc #{path} stays aligned with HexConsumerContract surface SSOT" do
+      content = File.read!(unquote(path))
+
+      for fragment <- unquote(Macro.escape(fragments)) do
+        assert content =~ fragment,
+               "expected #{unquote(path)} to contain fragment #{inspect(fragment)}"
+      end
+    end
+  end
 
   @readme "README.md"
   @lane_guide "docs/adoption_lanes.md"
