@@ -1,8 +1,8 @@
 ---
 phase: 82
 slug: docs-truth-milestone-closeout
-status: draft
-nyquist_compliant: false
+status: active
+nyquist_compliant: true
 wave_0_complete: true
 created: 2026-05-29
 ---
@@ -38,11 +38,11 @@ created: 2026-05-29
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 82-01-01 | 01 | 1 | DOCS-HEX-01 | — | adopter_doc_surfaces/0 API | unit | `mix test test/scoria/hex_consumer_contract_test.exs` | ✅ | ⬜ pending |
-| 82-01-02 | 01 | 1 | DOCS-HEX-01 | — | Adopter doc fragment pins | contract | `mix test test/scoria/adoption_surface_test.exs` | ✅ | ⬜ pending |
-| 82-01-03 | 01 | 1 | DOCS-HEX-01 | — | Maintainer gate map pins | contract | `mix test test/scoria/ci_policy_contract_test.exs` | ✅ | ⬜ pending |
-| 82-02-01 | 02 | 2 | DOCS-HEX-01 | — | Phase verification doc | doc | Manual review `82-VERIFICATION.md` | ❌ W0 | ⬜ pending |
-| 82-02-02 | 02 | 2 | DOCS-HEX-01 | — | Milestone audit passed | doc | Manual review `v2.10-MILESTONE-AUDIT.md` | ❌ W0 | ⬜ pending |
+| 82-01-01 | 01 | 1 | DOCS-HEX-01 | — | adopter_doc_surfaces/0 API | unit | `mix test test/scoria/hex_consumer_contract_test.exs` | ✅ | ✅ green |
+| 82-01-02 | 01 | 1 | DOCS-HEX-01 | — | Adopter doc fragment pins | contract | `mix test test/scoria/adoption_surface_test.exs` | ✅ | ✅ green |
+| 82-01-03 | 01 | 1 | DOCS-HEX-01 | — | Maintainer gate map pins | contract | `mix test test/scoria/ci_policy_contract_test.exs` | ✅ | ✅ green |
+| 82-02-01 | 02 | 2 | DOCS-HEX-01 | — | Phase verification doc | doc | Manual review `82-VERIFICATION.md` | ✅ | ✅ green |
+| 82-02-02 | 02 | 2 | DOCS-HEX-01 | — | Milestone audit passed | doc | Manual review `v2.10-MILESTONE-AUDIT.md` | ✅ | ✅ green |
 | 82-03-01 | 03 | 3 | DOCS-HEX-01 | — | Milestone archive complete | doc | `/gsd-complete-milestone v2.10` preflight | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*

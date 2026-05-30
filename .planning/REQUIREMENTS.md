@@ -14,7 +14,7 @@
 
 ### Docs truth
 
-- [ ] **DOCS-HEX-01**: `Scoria.HexConsumerContract` SSOT pins Hex dep snippet and version; README, `docs/operator_verification.md`, and `docs/adoption_lanes.md` align; `adoption_surface_test` and `ci_policy_contract_test` drift-guard tarball consumer proof; `closeout_order/0` unchanged.
+- [x] **DOCS-HEX-01**: `Scoria.HexConsumerContract` SSOT pins Hex dep snippet and version; `adopter_doc_surfaces/0`, `adoption_surface_test`, and `ci_policy_contract_test` drift-guard tarball consumer proof; README, `docs/adoption_lanes.md`, and `docs/operator_verification.md` aligned; `closeout_order/0` unchanged.
 
 ## Future Requirements
 
@@ -44,7 +44,7 @@
 | HEX-CONSUMER-01 | 78, 79 | Complete |
 | HEX-UPGRADE-01 | 80 | Complete |
 | HEX-REGISTRY-01 | 81 | Complete |
-| DOCS-HEX-01 | 78, 82 | Partial — drift guards land in 82-01; milestone Complete deferred to 82-02 after verification + audit |
+| DOCS-HEX-01 | 78, 82 | Complete |
 
 **Coverage:**
 - v2.10 requirements: 4 total

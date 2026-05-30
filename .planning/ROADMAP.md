@@ -109,10 +109,10 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 **Requirements:** DOCS-HEX-01
 
 **Success criteria:**
-1. README Verification section states adoption proves Hex-shaped tarball artifact.
-2. `docs/operator_verification.md` documents tarball CI vs registry post-publish smoke and upgrade sequence.
-3. `adoption_surface_test` and `ci_policy_contract_test` guard new operator/README anchors.
-4. Milestone audit passes; requirements traceability complete; v2.10 archived to `.planning/milestones/`.
+1. ✅ README Verification section states adoption proves Hex-shaped tarball artifact.
+2. ✅ `docs/operator_verification.md` documents tarball CI vs registry post-publish smoke and upgrade sequence.
+3. ✅ `adoption_surface_test` and `ci_policy_contract_test` guard new operator/README anchors.
+4. ⏳ Milestone audit passes (done); v2.10 archive to `.planning/milestones/` awaits 82-03.
 
 **Plans:** 3 plans in 3 waves
 
@@ -135,7 +135,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 | 79 | 3/3 | Complete    | 2026-05-29 |
 | 80 | 3/3 | Complete    | 2026-05-29 |
 | 81 | 3/3 | Complete    | 2026-05-30 |
-| 82 | Docs truth + milestone closeout | DOCS-HEX-01 | Pending |
+| 82 | Docs truth + milestone closeout | DOCS-HEX-01 | Complete (2026-05-30) |
 
 † partial
 

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.10
 milestone_name: Hex Consumer Proof & Upgrade Smoke
 status: executing
-last_updated: "2026-05-30T01:20:24.960Z"
-last_activity: 2026-05-30 -- Phase 82 planning complete
+last_updated: "2026-05-30T02:00:00Z"
+last_activity: 2026-05-30 -- Phase 82 plans 01-02 complete; archive awaits 82-03
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 15
-  completed_plans: 12
-  percent: 80
+  completed_plans: 14
+  percent: 93
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 ## Current Position
 
 Phase: 82
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-30 -- Phase 82 planning complete
+Plan: 02 complete (archive 03 pending)
+Status: Executing — ready for 82-03 milestone archive
+Last activity: 2026-05-30 -- Phase 82 verification + v2.10 audit passed
 
 ## Performance Metrics
 
@@ -39,7 +39,7 @@ Last activity: 2026-05-30 -- Phase 82 planning complete
 - **Phase 79 progress:** 3/3 plans complete
 - **Phase 80 progress:** 3/3 plans complete
 - **Phase 81 progress:** 3/3 plans complete
-- **Phase 82 progress:** 0/3 plans ready to execute
+- **Phase 82 progress:** 2/3 plans complete (82-03 archive pending)
 
 ## Accumulated Context
 
@@ -97,6 +97,9 @@ Last activity: 2026-05-30 -- Phase 82 planning complete
 
 ### Evidence
 
+- `.planning/phases/82-docs-truth-milestone-closeout/82-VERIFICATION.md` — Phase 82 verification passed
+- `.planning/milestones/v2.10-MILESTONE-AUDIT.md` — v2.10 audit passed (archive in 82-03)
+- `.planning/phases/82-docs-truth-milestone-closeout/82-01-SUMMARY.md` — DOCS-HEX-01 drift guards
 - `.planning/phases/81-post-publish-registry-gate/81-03-SUMMARY.md` — plan 81-03 complete
 - `.planning/phases/81-post-publish-registry-gate/81-VERIFICATION.md` — Phase 81 verification passed
 - `.planning/phases/81-post-publish-registry-gate/81-01-SUMMARY.md` — plan 81-01 complete
@@ -110,9 +113,9 @@ Last activity: 2026-05-30 -- Phase 82 planning complete
 | Category | Item | Status |
 |----------|------|--------|
 | Phase 81 | Live Hex registry post-publish gate | complete (3/3 plans) |
-| Phase 82 | DOCS-HEX-01 prose sweep + drift pins | queued |
+| Phase 82 | DOCS-HEX-01 prose sweep + drift pins | complete (2/3 plans; archive 82-03 pending) |
 | v2.11+ | Orchestrator live wiring | queued |
 
 ## Operator Next Steps
 
-- `/gsd-plan-phase 82` — docs truth + milestone closeout
+- `/gsd-execute-phase 82` — run plan 82-03 milestone archive ceremony
