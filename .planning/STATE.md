@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.11
 milestone_name: Orchestrator Live Wiring
 status: executing
-last_updated: "2026-05-30T11:29:00Z"
-last_activity: 2026-05-30 -- Completed 01.1-01 redaction defense-in-depth
+last_updated: "2026-05-30T11:37:00Z"
+last_activity: 2026-05-30 -- Completed 01.1-02 approval decision integration tests
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` (updated 2026-05-30)
 ## Current Position
 
 Phase: 01.1 (address-tech-debt-orchestrator-live-wiring-follow-ups) — EXECUTING
-Plan: 2 of 3
-Status: Ready for 01.1-02 (approval E2E)
-Last activity: 2026-05-30 -- Completed 01.1-01 redaction defense-in-depth
+Plan: 3 of 3
+Status: Ready for 01.1-03 (emit_span_delta + token coalesce)
+Last activity: 2026-05-30 -- Completed 01.1-02 approval decision integration tests
 
 ## Performance Metrics
 
@@ -62,9 +62,11 @@ Last activity: 2026-05-30 -- Completed 01.1-01 redaction defense-in-depth
 - Span-delta telemetry: Redactor.redact → scrub_text on chunk → OperatorBroadcast.span_delta (D-133, plan 01.1-01)
 - Hydrate path: Redactor.redact on span.attributes before TraceProjection.span_view (D-134, plan 01.1-01)
 - Redactor.scrub_text/1 replaces deny-list key=value patterns in streaming chunk strings (plan 01.1-01)
+- Approval integration tests use render_click on producer path; boolean eventually/1 for polling (D-135–D-136, plan 01.1-02)
 
 ### Evidence
 
+- `.planning/phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-02-SUMMARY.md` — plan 01.1-02 verification (integration 7 tests, unit 18 tests)
 - `.planning/phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-01-SUMMARY.md` — plan 01.1-01 verification (telemetry 4 tests, integration 5 tests, compile WAE)
 - `.planning/phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-03-SUMMARY.md` — plan 01-03 verification (56 semantic lane tests, 4 integration tests)
 - `.planning/phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-02-SUMMARY.md` — plan 01-02 verification (46 tests, 0 failures)
