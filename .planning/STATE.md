@@ -9,8 +9,8 @@ progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 12
-  completed_plans: 10
-  percent: 83
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 ## Current Position
 
 Phase: 81
-Plan: 1/3 complete
+Plan: 2/3 complete
 Status: In progress
 Last activity: 2026-05-30
 
@@ -38,7 +38,7 @@ Last activity: 2026-05-30
 - **Phase 78 progress:** 3/3 plans complete
 - **Phase 79 progress:** 3/3 plans complete
 - **Phase 80 progress:** 3/3 plans complete
-- **Phase 81 progress:** 1/3 plans complete
+- **Phase 81 progress:** 2/3 plans complete
 
 ## Accumulated Context
 
@@ -82,9 +82,14 @@ Last activity: 2026-05-30
 - overlay_from_dep!/1 copies route+runtime from deps/scoria/priv/... after deps.get (D-70, 81-01)
 - :hex_registry hosts start overlay_tests: [] until overlay_from_dep!/1 (D-74, 81-01)
 - semver_upgrade_eligible?/1 and registry_upgrade_pair/1 gate conditional upgrade legs (D-83, D-86, 81-01)
+- run_registry_proof!/1 executes 6-step registry subset; expected_registry_steps/1 fixed atom list (D-69, D-71, 81-02)
+- run_upgrade_proof!/2 accepts bump: {:registry, from:, to:} with bump_registry_dep!/2 dispatch (D-84, 81-02)
+- mix scoria.post_publish_smoke runs registry proof; not in mix test.adoption (D-75, 81-02)
+- MANIFEST/triage include dep_mode and registry_version for :hex_registry hosts (D-76, 81-02)
 
 ### Evidence
 
+- `.planning/phases/81-post-publish-registry-gate/81-02-SUMMARY.md` — plan 81-02 complete
 - `.planning/phases/81-post-publish-registry-gate/81-01-SUMMARY.md` — plan 81-01 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-03-SUMMARY.md` — plan 80-03 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-02-SUMMARY.md` — plan 80-02 complete
@@ -95,10 +100,10 @@ Last activity: 2026-05-30
 
 | Category | Item | Status |
 |----------|------|--------|
-| Phase 81 | Live Hex registry post-publish gate | in progress (1/3 plans) |
+| Phase 81 | Live Hex registry post-publish gate | in progress (2/3 plans) |
 | Phase 82 | DOCS-HEX-01 prose sweep + drift pins | queued |
 | v2.11+ | Orchestrator live wiring | queued |
 
 ## Operator Next Steps
 
-- `/gsd-execute-phase 81` — continue post-publish registry gate (81-02 next)
+- `/gsd-execute-phase 81` — continue post-publish registry gate (81-03 next)
