@@ -114,6 +114,8 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ @semantic_fast_path_command
     assert content =~ @knowledge_lane_command
     assert content =~ @connector_lane_command
+    assert content =~ "connector_adoption.md"
+    assert content =~ "embedded-boundary framing"
     refute content =~ "mix scoria.test.knowledge"
     assert content =~ "This lane is explicitly optional."
     assert content =~ "Start narrow. Expand only when the current lane already feels boring."
