@@ -8,6 +8,7 @@ defmodule ScoriaWeb.OrchestratorLive do
   alias Scoria.Repo.Span
   alias Scoria.Runtime
 
+  alias Scoria.Observe.Redactor
   alias Scoria.Observe.TraceProjection
 
   alias Scoria.Connectors
@@ -1044,6 +1045,9 @@ defmodule ScoriaWeb.OrchestratorLive do
   end
 
   defp span_view_from_record(%Span{} = span) do
+    %{attributes: attributes} =
+      Redactor.redact(%{attributes: span.attributes || %{}})
+
     TraceProjection.span_view(%{
       id: span.id,
       name: span.name,
@@ -1052,7 +1056,7 @@ defmodule ScoriaWeb.OrchestratorLive do
       parent_id: span.parent_id,
       start_time: span.start_time,
       end_time: span.end_time,
-      attributes: span.attributes || %{}
+      attributes: attributes
     })
   end
 

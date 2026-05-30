@@ -34,7 +34,7 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
   alias Scoria.Observe.{Buffer, OperatorBroadcast}
   alias Scoria.Observe.Adapters.ReqLLM
   alias Scoria.Repo
-  alias Scoria.Repo.Trace
+  alias Scoria.Repo.{Span, Trace}
   alias Scoria.Runtime
 
   alias Phoenix.LiveViewTest.{ClientProxy, View}
@@ -166,6 +166,49 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
     eventually(fn ->
       assert render(view) =~ Handlers.span_name()
     end)
+  end
+
+  test "reconnect hydrates redacted span attributes from DB" do
+    unique = Integer.to_string(System.unique_integer([:positive]))
+    tenant_id = "orch-hydrate-redact-" <> unique
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "tenant_id" => tenant_id,
+        "actor_id" => "operator-int"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+    :ok = Ecto.Adapters.SQL.Sandbox.allow(Scoria.Repo, self(), view.pid)
+    render_disconnect(view)
+
+    trace_id = Ecto.UUID.generate()
+    now = DateTime.utc_now()
+
+    Repo.insert!(%Trace{id: trace_id})
+
+    Repo.insert!(%Span{
+      trace_id: trace_id,
+      name: "hydrate-ok-span",
+      span_kind: "LLM",
+      status_code: "OK",
+      start_time: now,
+      end_time: now,
+      attributes: %{
+        "tenant_id" => tenant_id,
+        "api_key" => "db-secret-value",
+        "public" => "ok"
+      }
+    })
+
+    {:ok, view, html} = render_reconnect(conn, view, "/scoria")
+    :ok = Ecto.Adapters.SQL.Sandbox.allow(Scoria.Repo, self(), view.pid)
+
+    assert html =~ "hydrate-ok-span"
+    refute html =~ "db-secret-value"
+    assert html =~ "ok"
   end
 
   test "reconnect hydrates traces from DB after missed PubSub", %{
