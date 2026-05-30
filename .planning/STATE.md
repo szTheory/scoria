@@ -2,38 +2,37 @@
 gsd_state_version: 1.0
 milestone: v2.15
 milestone_name: Connector Adoption Lane
-status: milestone_complete
-last_updated: 2026-05-30T13:04:15.382Z
-last_activity: 2026-05-30 -- Phase 07.1 execution started
+status: Awaiting next milestone
+last_updated: "2026-05-30T13:07:50.348Z"
+last_activity: 2026-05-30 — Milestone v2.15 completed and archived
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 4
   total_plans: 1
-  completed_plans: 4
-  percent: 0
-stopped_at: Milestone complete (Phase 07.1 was final phase)
+  completed_plans: 1
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-05-30)
+See: `.planning/PROJECT.md` (updated 2026-05-30 after v2.15 archive)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Milestone complete
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 07.1
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-30
+Phase: Milestone v2.15 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-30 — Milestone v2.15 archived
 
 ## Performance Metrics
 
-- **Active Milestone:** `v2.15 Connector Adoption Lane`
+- **Latest Shipped:** `v2.15 Connector Adoption Lane` (2026-05-30)
 - **Previous Shipped:** `v2.14 Maintenance Release` (2026-05-30)
 - **Hex release:** `0.1.1` prepared; publish via release-please pending CI green
 
@@ -41,10 +40,10 @@ Last activity: 2026-05-30
 
 ### Roadmap Evolution
 
-- **v2.15 (active):** Named connector adoption lane — PR WAE after knowledge, not in closeout.
+- **v2.15 (shipped):** Named connector adoption lane — PR WAE after knowledge, not in closeout.
 - **v2.14 (shipped prep):** `0.1.1` bump, CHANGELOG, release-please manifest.
 - **v2.12–v2.13 (shipped):** Gallery lanes, MAINTAINERS split, docs truth.
-- Phase 07.1 inserted after Phase 07: Close gap: VERIFICATION artifacts for v2.15 phases 05–07 (URGENT)
+- Phase 07.1 inserted after Phase 07: retroactive VERIFICATION ledgers for phases 05–07.
 
 ### Decisions
 
@@ -58,8 +57,9 @@ Last activity: 2026-05-30
 |----------|------|--------|
 | Release | Publish 0.1.1 via release-please + registry semver upgrade smoke | in_progress |
 | Tech debt | ReqLLM streaming adapter | deferred |
+| Tech debt | Local `mix test.connector` migrate_core! ordering on fresh DB | deferred |
 
 ## Operator Next Steps
 
-- `/gsd-plan-phase 07.1` — retroactive VERIFICATION.md for phases 05–07
+- `/gsd-new-milestone` — start next milestone (questioning → research → requirements → roadmap)
 - Merge release-please PR when main CI green

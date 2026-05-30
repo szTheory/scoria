@@ -10,11 +10,13 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: v2.15 Connector Adoption Lane (Shipped 2026-05-30)
+## Latest Shipped Milestone: v2.15 Connector Adoption Lane (2026-05-30)
 
 **Goal:** Named connector adoption proof lane with docs/CI/drift-guard parity to semantic and knowledge lanes.
 
 **Delivered:** `mix test.connector`, VerificationLanes `:connector` entry, SupportJourney integration proof, PR CI WAE. Phase 07.1 closed retroactive VERIFICATION/SUMMARY process gap — milestone audit `passed`, `requirements_process: 6/6`.
+
+**Why it mattered:** Connector adoption now has the same executable lane contract, docs truth, and CI posture as semantic and knowledge — without widening closeout order.
 
 ## Release Queue
 
@@ -64,6 +66,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **v2.15 shipped (2026-05-30):** Connector adoption lane — `mix test.connector`, PR CI WAE after knowledge, drift guards; archived in `.planning/milestones/v2.15-*`.
 - **v2.12 shipped (2026-05-30):** Adoption confidence reference demo — SupportJourney.Handlers SSOT, gallery optional lane journeys, orchestrator producer smoke, MAINTAINERS.md split; Hex `0.1.1` prepared.
 - **v2.11 shipped (2026-05-30):** ORCH-LIVE-01 complete — orchestrator live trace broadcast and HITL from real runtime/workflow paths; phases 01 + 01.1 in `.planning/milestones/v2.11-phases/`.
 - **v2.10 shipped (2026-05-30):** Hex consumer proof milestone archived — phases 78–82 in `.planning/milestones/v2.10-phases/`; audit at `v2.10-MILESTONE-AUDIT.md`.
@@ -163,7 +166,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Named connector adoption lane `mix test.connector` with VerificationLanes entry, SupportJourney proof, docs truth, and PR CI WAE. — `v2.15` (CONN-LANE-01–03, CONN-DOCS-01–02, CONN-CI-01)
 
 ### Active
-- _(none — v2.15 shipped; release 0.1.1 publish pending)_
+- _(none — v2.15 shipped; planning next milestone; release 0.1.1 publish pending)_
 
 ### Out of Scope
 
@@ -212,12 +215,12 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Context
 
-- Active milestone: planning `v2.15` connector adoption lane (`mix test.connector`).
+- **Latest shipped:** v2.15 connector adoption lane (`mix test.connector`) — archived 2026-05-30.
 - v2.12–v2.14 shipped 2026-05-30; v2.13/v2.14 bundled with v2.12 closeout pass.
 - Hex `0.1.1` prepared locally; `0.1.0` live at https://hex.pm/packages/scoria — publish via release-please.
-- CI: policy job (baseline → inventory baseline → compile WAE → lane-contract) → test job (closeout → semantic WAE → ratchet hygiene → full WAE → knowledge WAE → advisory gallery).
+- CI: policy job (baseline → inventory baseline → compile WAE → lane-contract) → test job (closeout → semantic WAE → ratchet hygiene → full WAE → knowledge WAE → connector WAE → advisory gallery).
 - `Scoria.SupportJourney` + `examples/support_copilot/` gallery; advisory `mix scoria.test.support_copilot` outside closeout.
-- Archives: `.planning/milestones/v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
+- Archives: `.planning/milestones/v2.15-*`, `v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
 
 ## Constraints
 
@@ -256,6 +259,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | v2.11 closes orchestrator live wiring with producer-path integration proof | Post-Hex adopters need operator UX without hollow LiveView test paths | ✓ Good — shipped v2.11 |
 | Phase 01.1 inserted after audit for ORCH-LIVE-01 hardening | Audit found redaction, approval E2E, and token coalesce gaps | ✓ Good — shipped 01.1 |
 | Check-time manifest fingerprints are live-host-only; apply-time freshness gate uses stored manifest | Honest operator contract avoids misleading stored-fingerprint merge at check | ✓ Good — shipped Phase 63 |
+| v2.15 connector lane as PR WAE after knowledge, not in closeout | Parity with semantic/knowledge lanes; preserve v2.4 closeout contract | ✓ Good — shipped v2.15 |
 
 ## Milestone History
 
@@ -281,6 +285,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v2.9 Adoption Journey & Reference Demo`: SupportJourney SSOT, host-proof overlay expansion, support copilot gallery, advisory CI lane, multi-surface drift guards.
 - `v2.10 Hex Consumer Proof & Upgrade Smoke`: Tarball consumer proof, upgrade smoke, registry attest, DOCS-HEX-01 drift guards.
 - `v2.11 Orchestrator Live Wiring`: ORCH-LIVE-01 live trace + HITL from runtime; Phase 01.1 hardening slice.
+- `v2.15 Connector Adoption Lane`: Named `mix test.connector` lane, SupportJourney proof, docs/CI/drift guards; Phase 07.1 process closeout.
 
 ## Archived Planning Notes
 
@@ -344,4 +349,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 after phase 07.1 process closeout (v2.15 VERIFICATION artifacts)*
+*Last updated: 2026-05-30 after v2.15 milestone archive*

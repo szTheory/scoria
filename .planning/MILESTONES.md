@@ -2,7 +2,7 @@
 
 ## v2.15 Connector Adoption Lane (Shipped: 2026-05-30)
 
-**Phases completed:** 3 phases (05–07), 6 requirements
+**Phases completed:** 4 phases (05–07 + 07.1 inserted), 6 requirements, 1 plan
 
 **Key accomplishments:**
 
@@ -10,6 +10,9 @@
 - `Mix.Tasks.Scoria.Test.Connector` bounded test bundle with SupportJourney integration proof
 - Docs/drift guards in `adoption_lanes.md`, `connector_adoption.md`, README
 - PR CI WAE: connector lane after knowledge, before advisory gallery
+- Phase 07.1 retroactive VERIFICATION ledgers — milestone audit `passed`, `requirements_process: 6/6`
+
+**Known deferred at close:** Publish `0.1.1` via release-please; local `mix test.connector` migrate ordering (see `.planning/milestones/v2.15-MILESTONE-AUDIT.md`).
 
 ---
 

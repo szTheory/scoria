@@ -2,6 +2,44 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v2.15 — Connector Adoption Lane
+
+**Shipped:** 2026-05-30
+**Phases:** 4 (05–07 + 07.1 inserted) | **Plans:** 1 formal
+
+### What Was Built
+- Named `mix test.connector` lane in `VerificationLanes` with advisory exclusion from `closeout_order/0`.
+- `Mix.Tasks.Scoria.Test.Connector` bounded four-file test subset with lane contract tests.
+- `Scoria.Connectors.AdoptionLaneTest` proving register → fleet → operator drawer via `SupportJourney` fixtures.
+- Docs/drift guards pinning connector lane in `adoption_lanes.md`, `connector_adoption.md`, and SSOT tests.
+- PR CI WAE: connector lane after knowledge, before advisory gallery.
+- Phase 07.1 retroactive VERIFICATION ledgers — milestone audit re-run to `passed`.
+
+### What Worked
+- Retroactive validate-phase + inserted 07.1 closed process gate without reopening shipped code.
+- Bounded test slice (73 tests) gave fast re-audit confidence after VERIFICATION gap.
+- Connector lane followed semantic/knowledge CI posture pattern — predictable adopter story.
+
+### What Was Inefficient
+- Phases 05–07 shipped without GSD execute artifacts; required 07.1 insertion and retroactive ledgers.
+- Partial milestone close (`84c1f3a`) updated MILESTONES/STATE before archival finished — required full `/gsd-complete-milestone` pass.
+
+### Patterns Established
+- Optional escalation lanes: PR WAE after knowledge, explicit exclusion from `closeout_order/0`.
+- Integration proof in core repo via `AdoptionLaneTest`; gallery connector journey stays advisory.
+- Process gate: all REQ-IDs must appear in phase VERIFICATION frontmatter before milestone close.
+
+### Key Lessons
+1. Run milestone audit before partial close; retroactive VERIFICATION is cheaper than orphan REQ detection at archive time.
+2. Named connector lane with drift guards prevents embedded-boundary doc drift toward hosted-platform framing.
+3. Insert decimal phases for process-only closeout when implementation shipped ahead of GSD artifacts.
+
+### Cost Observations
+- Model mix: not tracked
+- Notable: Implementation + process closeout same calendar day; 19 commits in ~43 minutes of active work
+
+---
+
 ## Milestone: v2.11 — Orchestrator Live Wiring
 
 **Shipped:** 2026-05-30
@@ -254,7 +292,8 @@
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
-| v2.5 | 16 | 7 | Shipped planner/check no-write contracts, manifest-aware drift-safe apply, and installer contract SSOT with Nyquist closeout |
+| v2.15 | 1 | 4 | Named connector adoption lane with PR CI WAE; 07.1 retroactive VERIFICATION closeout |
+| v2.11 | 2 | 2 | Producer-path orchestrator live wiring + 01.1 hardening after audit |
 | v2.4 | 6 | 4 | Added canonical lane-contract source and enforced warning/lane-order reliability contracts across docs/tests/CI/installer |
 | v2.3 | 9 | 3 | Added canonical runtime-to-handoff proof lane and aligned docs/tests/CI to one support-truth contract |
 
