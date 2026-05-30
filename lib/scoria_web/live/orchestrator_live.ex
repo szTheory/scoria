@@ -1234,7 +1234,21 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   defp maybe_clear_token_preview(socket, span_view) do
     if Map.get(span_view, :end_time) do
-      assign(socket, :token_previews, Map.delete(socket.assigns.token_previews, span_view.id))
+      span_id = span_view.id
+
+      socket =
+        case Map.get(socket.assigns.token_timers, span_id) do
+          nil ->
+            socket
+
+          ref ->
+            _ = Process.cancel_timer(ref)
+            assign(socket, :token_timers, Map.delete(socket.assigns.token_timers, span_id))
+        end
+
+      socket
+      |> assign(:token_buffers, Map.delete(socket.assigns.token_buffers, span_id))
+      |> assign(:token_previews, Map.delete(socket.assigns.token_previews, span_id))
     else
       socket
     end
