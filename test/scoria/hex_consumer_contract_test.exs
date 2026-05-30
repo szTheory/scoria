@@ -50,4 +50,26 @@ defmodule Scoria.HexConsumerContractTest do
 
     assert HexConsumerContract.same_semver_content_upgrade?()
   end
+
+  test "registry_dep_tuple_pinned/1 returns exact hex pin tuple" do
+    assert HexConsumerContract.registry_dep_tuple_pinned("0.1.1") ==
+             {:scoria, "0.1.1", hex: :scoria}
+  end
+
+  test "registry_dep_snippet_pinned/1 matches pinned tuple shape" do
+    assert HexConsumerContract.registry_dep_snippet_pinned("0.1.1") ==
+             "{:scoria, \"0.1.1\", hex: :scoria}"
+  end
+
+  test "semver_upgrade_eligible?/1 gates on published version > 0.1.0" do
+    refute HexConsumerContract.semver_upgrade_eligible?("0.1.0")
+    assert HexConsumerContract.semver_upgrade_eligible?("0.1.1")
+  end
+
+  test "registry_upgrade_pair/1 resolves previous patch with 0.1.0 floor" do
+    assert HexConsumerContract.registry_upgrade_pair("0.1.1") == %{
+             from: "0.1.0",
+             to: "0.1.1"
+           }
+  end
 end

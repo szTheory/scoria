@@ -110,6 +110,62 @@ defmodule Scoria.HexConsumerContract do
   def hex_dep_snippet, do: "{:scoria, \"~> 0.1\", hex: :scoria}"
 
   @doc """
+  Exact-pinned Hex registry dep tuple for post-publish attest paths.
+
+  Uses an exact semver string so the resolver cannot pick a stale index entry
+  during lag. Adopter docs keep `hex_dep_tuple/0` (`~> 0.1`); pinned helpers are
+  attest-only.
+  """
+  def registry_dep_tuple_pinned(version) when is_binary(version) do
+    {@app, version, hex: @app}
+  end
+
+  @doc """
+  Exact-pinned Hex registry dep snippet for generated host mix.exs patching.
+  """
+  def registry_dep_snippet_pinned(version) when is_binary(version) do
+    "{:scoria, \"#{version}\", hex: :scoria}"
+  end
+
+  @doc """
+  True when a live registry semver upgrade leg is meaningful (published > 0.1.0).
+  """
+  def semver_upgrade_eligible?(version) when is_binary(version) do
+    Version.compare(version, @baseline_upgrade_version) == :gt
+  end
+
+  @doc """
+  Previous patch semver for a registry upgrade baseline pin.
+
+  Decrements the patch segment with a floor at `"0.1.0"`. For example,
+  `"0.1.1"` → `"0.1.0"`, `"0.1.2"` → `"0.1.1"`, and `"0.1.0"` stays at
+  `"0.1.0"`.
+  """
+  def registry_upgrade_from_version(version) when is_binary(version) do
+    case Version.parse(version) do
+      {:ok, %Version{major: major, minor: minor, patch: patch}} ->
+        if patch > 0 do
+          "#{major}.#{minor}.#{patch - 1}"
+        else
+          @baseline_upgrade_version
+        end
+
+      :error ->
+        Mix.raise("invalid semver for registry upgrade baseline: #{inspect(version)}")
+    end
+  end
+
+  @doc """
+  Baseline and target semver pair for a conditional registry upgrade leg.
+  """
+  def registry_upgrade_pair(current_version) when is_binary(current_version) do
+    %{
+      from: registry_upgrade_from_version(current_version),
+      to: current_version
+    }
+  end
+
+  @doc """
   GitHub fallback dep tuple for forks or pinned patches.
   """
   def github_fallback_tuple(version), do: {@app, github: @github_repo, tag: "v#{version}"}
