@@ -354,6 +354,61 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
     end)
   end
 
+  test "reject decision clears modal and keeps run paused" do
+    unique = Integer.to_string(System.unique_integer([:positive]))
+    tenant_id = "orch-reject-tenant-" <> unique
+    session_id = "orch-reject-session-" <> unique
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "tenant_id" => tenant_id,
+        "actor_id" => "operator-int"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    assert {:ok, started} =
+             Runtime.start_run(
+               %{
+                 tenant_id: tenant_id,
+                 actor_id: "operator-int",
+                 session_id: session_id
+               },
+               root_role_id: "executor",
+               initial_step: %{
+                 sequence: 1,
+                 kind: "approval",
+                 role_id: "executor",
+                 status: "queued"
+               },
+               handlers: %{"approval" => {Handlers, :wait_for_approval}}
+             )
+
+    eventually(fn ->
+      match?({:ok, %{status: "waiting_for_approval"}}, Runtime.get_run(started.run_id))
+    end)
+
+    eventually(fn ->
+      html = render(view)
+      html =~ "Approval Required" and html =~ "publish" and not (html =~ "super-secret-key") and
+        html =~ "Reject records a durable rejection"
+    end)
+
+    [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
+
+    render_click(view, "reject", %{})
+
+    eventually(fn ->
+      html = render(view)
+
+      not (html =~ "Approval Required") and Repo.get!(Approval, approval_id).status == "rejected" and
+        match?({:ok, %{status: "waiting_for_approval"}}, Runtime.get_run(started.run_id)) and
+        not (html =~ "super-secret-key")
+    end)
+  end
+
   test "reconnect shows modal from DB pending approval" do
     unique = Integer.to_string(System.unique_integer([:positive]))
     tenant_id = "orch-hitl-reconnect-" <> unique
