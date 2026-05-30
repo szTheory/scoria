@@ -1,7 +1,7 @@
 # Roadmap: Scoria
 
 **Milestone:** v2.11 Orchestrator Live Wiring
-**Last updated:** 2026-05-30 (phase 01.1 inserted)
+**Last updated:** 2026-05-30 (phase 01.1 complete)
 
 ## Overview
 
@@ -40,19 +40,19 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 
 **Requirements:** ORCH-LIVE-01 (hardening; no new REQ-ID)
 **Depends on:** Phase 01
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] **01.1-01** Redaction defense-in-depth (delta telemetry + DB hydrate) — Wave 1
 - [x] **01.1-02** Approval approve/reject integration tests — Wave 2
-- [ ] **01.1-03** `emit_span_delta/1` + token coalesce E2E + timer cancel — Wave 3 *(blocked on Waves 1–2)*
+- [x] **01.1-03** `emit_span_delta/1` + token coalesce E2E + timer cancel — Wave 3
 
 **Cross-cutting constraints:**
 - Redact → broadcast → buffer ordering preserved on all telemetry egress paths (D-118, D-133)
 - Integration tests use `Runtime.start_run/2` producer path — no `send/2` (D-129)
 - `VerificationLanes.closeout_order/0` unchanged
 
-**Status:** In Progress (2026-05-30) — 2/3 plans complete
+**Status:** Complete (2026-05-30) — ready for `/gsd-verify-work`
 
 ---
 
@@ -61,7 +61,7 @@ Plans:
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 01 | Orchestrator live wiring | ORCH-LIVE-01 | Complete (2026-05-30) |
-| 01.1 | Address tech debt: orchestrator live wiring follow-ups | ORCH-LIVE-01 (hardening) | In Progress (2/3 plans, 2026-05-30) |
+| 01.1 | Address tech debt: orchestrator live wiring follow-ups | ORCH-LIVE-01 (hardening) | Complete (2026-05-30) |
 
 ## Completed milestones
 

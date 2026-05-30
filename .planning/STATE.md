@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.11
 milestone_name: Orchestrator Live Wiring
 status: executing
-last_updated: "2026-05-30T11:37:00Z"
-last_activity: 2026-05-30 -- Completed 01.1-02 approval decision integration tests
+last_updated: "2026-05-30T11:26:41Z"
+last_activity: 2026-05-30 -- Completed 01.1-03 emit_span_delta + token coalesce E2E
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: `.planning/PROJECT.md` (updated 2026-05-30)
 
 Phase: 01.1 (address-tech-debt-orchestrator-live-wiring-follow-ups) — EXECUTING
 Plan: 3 of 3
-Status: Ready for 01.1-03 (emit_span_delta + token coalesce)
-Last activity: 2026-05-30 -- Completed 01.1-02 approval decision integration tests
+Status: Phase 01.1 plans complete — ready for UAT
+Last activity: 2026-05-30 -- Completed 01.1-03 emit_span_delta + token coalesce E2E
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Last activity: 2026-05-30 -- Completed 01.1-02 approval decision integration tes
 
 ### Roadmap Evolution
 
-- **v2.11 (executing):** Phase 01 all plans complete — ORCH-LIVE-01 ready for UAT.
+- **v2.11 (executing):** Phase 01 + Phase 01.1 all plans complete — ORCH-LIVE-01 ready for UAT.
 - **v2.10 (shipped):** Tarball consumer proof; content-revision upgrade; registry attest; DOCS-HEX-01 drift guards. See `v2.10-MILESTONE-AUDIT.md`.
 - **v2.9 (shipped):** SupportJourney SSOT, host-proof overlay, support_copilot gallery.
 - Phase 01.1 inserted after Phase 1: Address tech debt: orchestrator live wiring follow-ups (URGENT)
@@ -63,9 +63,13 @@ Last activity: 2026-05-30 -- Completed 01.1-02 approval decision integration tes
 - Hydrate path: Redactor.redact on span.attributes before TraceProjection.span_view (D-134, plan 01.1-01)
 - Redactor.scrub_text/1 replaces deny-list key=value patterns in streaming chunk strings (plan 01.1-01)
 - Approval integration tests use render_click on producer path; boolean eventually/1 for polling (D-135–D-136, plan 01.1-02)
+- Public `Telemetry.emit_span_delta/1` for delta emit; integration tests must not use raw delta `:telemetry.execute` (D-139, plan 01.1-03)
+- `maybe_clear_token_preview/2` cancels `token_timers` and clears `token_buffers` on span complete (D-141, plan 01.1-03)
+- Token coalesce E2E: active LLM span + handler `emit_span_delta` → `"Hello world"` in DOM after 75ms coalesce (D-140, plan 01.1-03)
 
 ### Evidence
 
+- `.planning/phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-03-SUMMARY.md` — plan 01.1-03 verification (integration 8 tests, semantic fast path)
 - `.planning/phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-02-SUMMARY.md` — plan 01.1-02 verification (integration 7 tests, unit 18 tests)
 - `.planning/phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-01-SUMMARY.md` — plan 01.1-01 verification (telemetry 4 tests, integration 5 tests, compile WAE)
 - `.planning/phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-03-SUMMARY.md` — plan 01-03 verification (56 semantic lane tests, 4 integration tests)
