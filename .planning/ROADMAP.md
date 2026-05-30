@@ -16,7 +16,7 @@
 | 05 | Lane contract + Mix task | Named `mix test.connector` in VerificationLanes | CONN-LANE-01, CONN-LANE-02 | complete |
 | 06 | Integration proof | SupportJourney connector register → fleet → drawer | CONN-LANE-03 | complete |
 | 07 | Docs, drift guards, CI | Docs truth + PR WAE wiring | CONN-DOCS-01, CONN-DOCS-02, CONN-CI-01 | complete |
-| 07.1 | VERIFICATION gap closeout (INSERTED) | Retroactive `*-VERIFICATION.md` + `07-SUMMARY.md` for phases 05–07 | CONN-* (process) | planned |
+| 07.1 | VERIFICATION gap closeout (INSERTED) | 1/1 | Complete    | 2026-05-30 |
 
 ### Phase 05: Lane contract + Mix task
 
@@ -63,9 +63,9 @@ See `.planning/MILESTONES.md` for v2.12–v2.14 closeout history.
 **Goal:** Close the v2.15 process gate — write retroactive `05/06/07-VERIFICATION.md` + `07-SUMMARY.md`, re-run milestone audit to `status: passed` without changing shipped code.
 **Requirements**: CONN-LANE-01, CONN-LANE-02, CONN-LANE-03, CONN-DOCS-01, CONN-DOCS-02, CONN-CI-01 (process traceability only)
 **Depends on:** Phase 07
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 
 **Wave 1**
-- [ ] 07.1-01-PLAN.md — Coordinated retro VERIFICATION + 07-SUMMARY + milestone re-audit (5 tasks)
+- [x] 07.1-01-PLAN.md — Coordinated retro VERIFICATION + 07-SUMMARY + milestone re-audit (5 tasks)
