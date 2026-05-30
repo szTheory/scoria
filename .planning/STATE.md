@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.11
 milestone_name: Orchestrator Live Wiring
 status: executing
-last_updated: "2026-05-30T11:16:39.816Z"
-last_activity: 2026-05-30 -- Phase 01.1 planning complete
+last_updated: "2026-05-30T11:29:00Z"
+last_activity: 2026-05-30 -- Completed 01.1-01 redaction defense-in-depth
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 6
-  completed_plans: 3
-  percent: 50
+  completed_plans: 4
+  percent: 67
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-30)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 01.1 tech debt follow-ups
+**Current focus:** Phase 01.1 — address-tech-debt-orchestrator-live-wiring-follow-ups
 
 ## Current Position
 
-Phase: 01.1
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-30 -- Phase 01.1 planning complete
+Phase: 01.1 (address-tech-debt-orchestrator-live-wiring-follow-ups) — EXECUTING
+Plan: 2 of 3
+Status: Ready for 01.1-02 (approval E2E)
+Last activity: 2026-05-30 -- Completed 01.1-01 redaction defense-in-depth
 
 ## Performance Metrics
 
@@ -59,9 +59,13 @@ Last activity: 2026-05-30 -- Phase 01.1 planning complete
 - stream_insert trace on token flush so LiveComponents inside stream receive token_previews (plan 01-02)
 - DB hydrate filters ai_spans by attributes tenant_id; maybe_seed_active_approval on reconnect (plan 01-03)
 - Integration tests use Runtime.start_run + ReqLLM adapter shim; semantic lane pin only (plan 01-03)
+- Span-delta telemetry: Redactor.redact → scrub_text on chunk → OperatorBroadcast.span_delta (D-133, plan 01.1-01)
+- Hydrate path: Redactor.redact on span.attributes before TraceProjection.span_view (D-134, plan 01.1-01)
+- Redactor.scrub_text/1 replaces deny-list key=value patterns in streaming chunk strings (plan 01.1-01)
 
 ### Evidence
 
+- `.planning/phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-01-SUMMARY.md` — plan 01.1-01 verification (telemetry 4 tests, integration 5 tests, compile WAE)
 - `.planning/phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-03-SUMMARY.md` — plan 01-03 verification (56 semantic lane tests, 4 integration tests)
 - `.planning/phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-02-SUMMARY.md` — plan 01-02 verification (46 tests, 0 failures)
 - `.planning/milestones/v2.10-MILESTONE-AUDIT.md` — v2.10 audit passed

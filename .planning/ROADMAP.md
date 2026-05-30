@@ -40,10 +40,10 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 
 **Requirements:** ORCH-LIVE-01 (hardening; no new REQ-ID)
 **Depends on:** Phase 01
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
-- [ ] **01.1-01** Redaction defense-in-depth (delta telemetry + DB hydrate) — Wave 1
+- [x] **01.1-01** Redaction defense-in-depth (delta telemetry + DB hydrate) — Wave 1
 - [ ] **01.1-02** Approval approve/reject integration tests — Wave 2 *(blocked on Wave 1)*
 - [ ] **01.1-03** `emit_span_delta/1` + token coalesce E2E + timer cancel — Wave 3 *(blocked on Waves 1–2)*
 
@@ -52,7 +52,7 @@ Plans:
 - Integration tests use `Runtime.start_run/2` producer path — no `send/2` (D-129)
 - `VerificationLanes.closeout_order/0` unchanged
 
-**Status:** Planned (2026-05-30)
+**Status:** In Progress (2026-05-30) — 1/3 plans complete
 
 ---
 
@@ -61,7 +61,7 @@ Plans:
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 01 | Orchestrator live wiring | ORCH-LIVE-01 | Complete (2026-05-30) |
-| 01.1 | Address tech debt: orchestrator live wiring follow-ups | ORCH-LIVE-01 (hardening) | Planned (2026-05-30) |
+| 01.1 | Address tech debt: orchestrator live wiring follow-ups | ORCH-LIVE-01 (hardening) | In Progress (1/3 plans, 2026-05-30) |
 
 ## Completed milestones
 
