@@ -18,7 +18,12 @@ defmodule Scoria.Observe.Telemetry do
   end
 
   def handle_event([:scoria, :observe, :span, :delta], _measurements, metadata, _config) do
-    OperatorBroadcast.span_delta(metadata)
+    redacted =
+      metadata
+      |> Redactor.redact()
+      |> scrub_delta_chunk()
+
+    OperatorBroadcast.span_delta(redacted)
   end
 
   def handle_event([:scoria, :observe, :span, _type], _measurements, metadata, %{
@@ -34,4 +39,10 @@ defmodule Scoria.Observe.Telemetry do
   defp buffer_span(redacted) do
     Map.take(redacted, @span_buffer_fields)
   end
+
+  defp scrub_delta_chunk(%{chunk: chunk} = metadata) when is_binary(chunk) do
+    Map.put(metadata, :chunk, Redactor.scrub_text(chunk))
+  end
+
+  defp scrub_delta_chunk(metadata), do: metadata
 end

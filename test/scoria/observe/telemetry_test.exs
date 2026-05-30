@@ -72,6 +72,28 @@ defmodule Scoria.Observe.TelemetryTest do
     assert Repo.aggregate(Span, :count) == 1
   end
 
+  test "redacts span delta chunk before broadcast", %{tenant_id: tenant_id} do
+    trace_id = Ecto.UUID.generate()
+    span_id = Ecto.UUID.generate()
+
+    :telemetry.execute(
+      [:scoria, :observe, :span, :delta],
+      %{},
+      %{
+        tenant_id: tenant_id,
+        trace_id: trace_id,
+        span_id: span_id,
+        chunk: "leak api_key=super-secret-key",
+        attributes: %{"api_key" => "secret"}
+      }
+    )
+
+    assert_receive {:trace_delta, delta}
+    refute delta.chunk =~ "super-secret-key"
+    refute Map.has_key?(delta, :attributes)
+    refute inspect(delta) =~ "secret"
+  end
+
   test "broadcasts trace_delta on span delta event", %{tenant_id: tenant_id} do
     trace_id = Ecto.UUID.generate()
     span_id = Ecto.UUID.generate()

@@ -44,6 +44,11 @@ defmodule Scoria.Observe.RedactorTest do
       %{"custom_secret" => "[REDACTED]", "password" => "[REDACTED]", custom_atom_secret: "[REDACTED]"}
   end
 
+  test "scrubs deny-list key=value patterns from text" do
+    assert Redactor.scrub_text("leak api_key=super-secret-key") ==
+             "leak api_key=[REDACTED]"
+  end
+
   test "defers to MFA override if configured" do
     Application.put_env(:scoria, Scoria.Observe.Redactor, mfa: {__MODULE__, :custom_redact, []})
     on_exit(fn -> Application.delete_env(:scoria, Scoria.Observe.Redactor) end)
