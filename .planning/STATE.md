@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v2.11
 milestone_name: Orchestrator Live Wiring
 status: planning
-last_updated: "2026-05-30T02:15:00Z"
-last_activity: 2026-05-30 -- v2.10 milestone archived; v2.11 planning ready
+last_updated: "2026-05-30T12:00:00Z"
+last_activity: 2026-05-30 -- Phase 01 context gathered (ORCH-LIVE-01)
 progress:
-  total_phases: 0
+  total_phases: 1
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-05-30)
 
 ## Current Position
 
-Phase: Not started
+Phase: 01 — Orchestrator live wiring
 Plan: —
-Status: Planning — run `/gsd-discuss-phase` or `/gsd-plan-phase` for first v2.11 phase
-Last activity: 2026-05-30 -- v2.10 milestone archive complete (82-03)
+Status: Context gathered — run `/gsd-plan-phase 1`
+Last activity: 2026-05-30 -- Phase 01 discuss complete (D-113–D-131 locked)
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ Last activity: 2026-05-30 -- v2.10 milestone archive complete (82-03)
 
 ### Roadmap Evolution
 
-- **v2.11 (planning):** Runtime→PubSub trace broadcast; HITL modal from real approvals (ORCH-LIVE-01).
+- **v2.11 (planning):** Phase 01 context locked — OperatorBroadcast, trace deltas, HITL fan-out, integration tests (ORCH-LIVE-01).
 - **v2.10 (shipped):** Tarball consumer proof; content-revision upgrade; registry attest; DOCS-HEX-01 drift guards. See `v2.10-MILESTONE-AUDIT.md`.
 - **v2.9 (shipped):** SupportJourney SSOT, host-proof overlay, support_copilot gallery.
 
@@ -63,12 +63,12 @@ Last activity: 2026-05-30 -- v2.10 milestone archive complete (82-03)
 
 | Category | Item | Status |
 |----------|------|--------|
-| v2.11 | ORCH-LIVE-01 orchestrator live wiring | queued — plan first phase |
+| v2.11 | ORCH-LIVE-01 orchestrator live wiring | Phase 01 context done — `/gsd-plan-phase 1` |
 | v2.12 | LANE-DEMO-01 gallery lane expansion | queued |
 | Tech debt | Registry semver upgrade leg at 0.1.1+ | latent (from v2.10 audit) |
 
 ## Operator Next Steps
 
-- `/gsd-discuss-phase` — start v2.11 phase scoping (recommended)
-- `/gsd-plan-phase` — plan first v2.11 phase after discuss
+- `/gsd-plan-phase 1` — plan Phase 01 from locked context (recommended next)
+- `/gsd-discuss-phase 1` — re-open context if decisions change
 - `/gsd-progress` — view roadmap and milestone status

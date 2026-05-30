@@ -7,17 +7,38 @@
 
 Wire orchestrator live trace broadcast and HITL approval modal from real runtime events — the first milestone after Hex consumer proof closed the adopter-trust gap.
 
-**Requirements:** 1 (ORCH-LIVE-01) | **Phases:** TBD | **Coverage:** pending planning
+**Requirements:** 1 (ORCH-LIVE-01) | **Phases:** 1 | **Coverage:** 100% mapped
 
 ## Phases
 
-_Phases will be added via `/gsd-plan-phase` after discuss/spec._
+### Phase 01: Orchestrator live wiring
+
+**Goal:** Wire runtime→PubSub trace broadcast and HITL approval modal from real workflow/runtime events (close HOLLOW_PROP on OrchestratorLive).
+
+**Requirements:** ORCH-LIVE-01
+
+**Depends on:** v2.10 shipped (Hex consumer proof)
+
+**Canonical refs:** `.planning/phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-CONTEXT.md`, `prompts/phoenix-ai-lib-deep-research.md`
+
+**Success criteria:**
+1. `Scoria.Observe.OperatorBroadcast` fans out span/trace deltas to `scoria:runs:{tenant_id}` from telemetry (not test `send/2`).
+2. `Workflows.mark_waiting_for_approval/3` fans out HITL projection to tenant topic; modal opens from real approval pause.
+3. OrchestratorLive hydrates recent traces + pending approvals on mount; PubSub merges live deltas.
+4. `orchestrator_live_integration_test.exs` proves ORCH-LIVE-01 without `send/2`; pinned in semantic fast-path lane.
+5. `VerificationLanes.closeout_order/0` unchanged.
+
+**Plans:** 0 plans
+
+**Status:** Context gathered — run `/gsd-plan-phase 1`
+
+---
 
 ## Phase map
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| — | _TBD_ | ORCH-LIVE-01 | Not started |
+| 01 | Orchestrator live wiring | ORCH-LIVE-01 | Context gathered |
 
 ## Completed milestones
 
@@ -31,3 +52,4 @@ _Phases will be added via `/gsd-plan-phase` after discuss/spec._
 
 - **v2.11:** Orchestrator live wiring (ORCH-LIVE-01) — **current**
 - **v2.12:** Optional lane journeys in gallery (LANE-DEMO-01)
+

@@ -27,12 +27,12 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ORCH-LIVE-01 | TBD | Pending |
+| ORCH-LIVE-01 | 01 | Context gathered |
 
 **Coverage:**
 - v2.11 requirements: 1 total
-- Mapped to phases: 0 (planning pending)
-- Unmapped: 1 — plan via `/gsd-plan-phase`
+- Mapped to phases: 1
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-30*
