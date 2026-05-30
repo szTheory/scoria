@@ -52,7 +52,7 @@ Wire **production** runtime→PubSub→OrchestratorLive paths for ORCH-LIVE-01:
   - Map `StaleEntryError` to friendly flash: *"This approval was already decided by another operator."*
   - After successful approve/reject, broadcast **`{:approval_decided, approval_id, status}`** on tenant topic; OrchestratorLive clears stale `@active_approval` by id.
 - **D-123:** **Blocking overlay modal** (Governors: Verification) for push-triggered approvals. Show: tool name, reason, redacted args preview, connector badge/scopes when `connector_label` or `blocker_kind == "connector"`, link to `/workflows/{workflow_run_id}`. **Dismiss ("Decide later")** closes modal without calling `approve/3`; item stays in inbox.
-- **D-124:** **Hybrid UX:** push modal when `@active_approval` is nil OR new approval matches focused `@runtime_query`; otherwise inbox-only highlight. Single `@active_approval` — no modal stack. Reject footer copy: *"Reject records a durable rejection and keeps the workflow paused. To continue, the run needs a new approval request or operator retry."*
+- **D-124:** **Hybrid UX:** push modal when `@active_approval` is nil OR new approval matches focused `@runtime_query` via `approval_matches_focus?/2`; otherwise inbox-only highlight via `@highlighted_approval_id` passed to `ApprovalInboxComponent`. Single `@active_approval` — no modal stack. Reject footer copy: *"Reject records a durable rejection and keeps the workflow paused. To continue, the run needs a new approval request or operator retry."*
 
 ### Token streaming (D-125–D-128)
 
@@ -63,7 +63,7 @@ Wire **production** runtime→PubSub→OrchestratorLive paths for ORCH-LIVE-01:
 
 ### Verification, reconnect & adopter DX (D-129–D-131)
 
-- **D-129:** Add **`test/scoria_web/live/orchestrator_live_integration_test.exs`** proving ORCH-LIVE-01 via `Runtime.start_run` → LiveView DOM (`eventually` until modal/trace) **without `send/2`**. Register in `mix scoria.test.semantic_fast_path` file list (+ matching contract test). Keep existing `orchestrator_live_test.exs` `send/2` tests as **UI unit tier**. Do **not** widen `closeout_order/0`.
+- **D-129:** Add **`test/scoria_web/live/orchestrator_live_integration_test.exs`** proving ORCH-LIVE-01 via **`Runtime.start_run/2`** (required producer path — not raw `:telemetry.execute`) → LiveView DOM (`eventually` until modal/trace) **without `send/2`**. Include reconnect trace DB hydrate test (disconnect → Buffer flush → reconnect → trace from hydrate). Register in `mix scoria.test.semantic_fast_path` file list (+ matching contract test). Keep existing `orchestrator_live_test.exs` `send/2` tests as **UI unit tier**. Do **not** widen `closeout_order/0`.
 - **D-130:** Document host session contract in adoption fragments: host apps must set **`session["tenant_id"]`** and **`session["actor_id"]`** before `/scoria` so PubSub scoping and audit refs match runtime identity. **`mix scoria.install` unchanged** (auth-agnostic).
 - **D-131:** One semantic-lane test: `render_disconnect` → trigger real approval → `render_reconnect` → modal visible from **DB catch-up** (pending approval projection on mount, not only PubSub).
 
@@ -83,7 +83,7 @@ Planner may choose exact module file layout under `lib/scoria/observe/`, hydrate
 
 | Wave | Focus |
 |------|-------|
-| **01-01** | `OperatorBroadcast` + `TraceProjection` + Telemetry hook + span metadata enrichment |
+| **01-01** | `TraceProjection` then `OperatorBroadcast` + Telemetry hook + span metadata enrichment |
 | **01-02** | HITL tenant fan-out + projection `arguments_preview` + multi-operator broadcasts + modal/inbox UX |
 | **01-03** | DB hydrate on mount + integration tests + semantic lane pins + adoption doc fragment |
 
