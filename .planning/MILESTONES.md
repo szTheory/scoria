@@ -1,5 +1,22 @@
 # Milestones
 
+## v2.11 Orchestrator Live Wiring (Shipped: 2026-05-30)
+
+**Phases completed:** 2 phases, 6 plans, 22 tasks
+
+**Key accomplishments:**
+
+- Tenant-scoped trace delta fan-out from telemetry via OperatorBroadcast and TraceProjection, with redact-before-broadcast hook and adapter metadata enrichment
+- Tenant-scoped HITL projection fan-out, hybrid approval modal/inbox UX, incremental trace merge, and per-span LLM token previews wired into OrchestratorLive
+- Tenant-scoped trace DB hydrate on reconnect, Runtime.start_run integration tests without send/2, semantic lane pin, and adoption doc session contract close ORCH-LIVE-01
+- Span-delta PubSub and DB hydrate paths now redact before broadcast/projection, with scrub_text for embedded secrets in streaming chunks
+- Approve and reject HITL decisions proven on Runtime.start_run producer path via render_click, with modal cleared and secrets never in DOM
+- Public emit_span_delta/1, timer cancel on span stop, and integration proof that coalesced token previews render on active LLM spans via the producer path
+
+**Known deferred at close:** Phase 01.1 missing Nyquist VALIDATION.md (non-blocking); ReqLLM streaming adapter deferred to v2.12+; optional conversational `/gsd-verify-work` browser walkthrough. See `.planning/milestones/v2.11-MILESTONE-AUDIT.md`.
+
+---
+
 ## v2.10 Hex Consumer Proof & Upgrade Smoke (Shipped: 2026-05-30)
 
 **Phases completed:** 5 phases (78–82), 15 plans, 4 requirements

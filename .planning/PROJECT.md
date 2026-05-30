@@ -10,15 +10,23 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: v2.11 Orchestrator Live Wiring
+## Current Milestone: Planning v2.12
+
+**Goal:** Optional lane journeys in demo gallery (LANE-DEMO-01) — start with `/gsd-new-milestone`.
+
+## Latest Shipped Milestone: v2.11 Orchestrator Live Wiring
 
 **Goal:** Wire runtime→PubSub trace broadcast and HITL approval modal from real approvals (ORCH-LIVE-01).
 
-**Target features:**
-- Live trace stream from runtime events to operator UI.
-- HITL modal driven by real approval pauses, not fixture-only paths.
+**Delivered:**
+- `OperatorBroadcast` tenant PubSub fan-out from telemetry with redact→broadcast→buffer ordering.
+- HITL modal and inbox from real `Workflows.mark_waiting_for_approval/3` / approve/reject paths.
+- `OrchestratorLive` DB hydrate, incremental trace merge, token coalesce, producer-path integration tests.
+- Phase 01.1 hardening: delta/hydrate redaction, approval E2E, public `emit_span_delta/1`.
 
-## Latest Shipped Milestone: v2.10 Hex Consumer Proof & Upgrade Smoke
+**Why it mattered:** Operators see live traces and real approval pauses without hollow LiveView test paths — closes the post-Hex operator UX gap.
+
+## Previous Shipped: v2.10 Hex Consumer Proof & Upgrade Smoke
 
 **Goal:** Close the post-Hex adopter-trust gap — prove packaged artifact installs, upgrades, and matches v2.9 overlay depth.
 
@@ -44,7 +52,6 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Next Milestone Queue
 
-- **v2.11:** Orchestrator live wiring — trace stream, HITL from runtime (ORCH-LIVE-01)
 - **v2.12:** Optional lane journeys in demo gallery (LANE-DEMO-01)
 
 ## Latest Shipped Release Milestone: v2.7 OSS Release + Docs Truth
@@ -55,8 +62,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
-- **v2.11 Phase 01.1 complete (2026-05-30):** ORCH-LIVE-01 hardening — delta/hydrate redaction defense-in-depth (D-133/D-134), approval approve/reject producer-path integration tests (D-135/D-136), public `emit_span_delta/1` + token coalesce E2E + timer cancel (D-139–D-141). Milestone ready for conversational UAT.
-- **v2.11 Phase 01 complete (2026-05-30):** ORCH-LIVE-01 implemented — OperatorBroadcast tenant PubSub, Telemetry redact→broadcast→buffer hook, OrchestratorLive incremental trace merge + HITL hybrid UX, DB hydrate on connect, integration test proving `Runtime.start_run` → DOM without `send/2`.
+- **v2.11 shipped (2026-05-30):** ORCH-LIVE-01 complete — orchestrator live trace broadcast and HITL from real runtime/workflow paths; phases 01 + 01.1 archived in `.planning/milestones/v2.11-*`.
 - **v2.10 shipped (2026-05-30):** Hex consumer proof milestone archived — phases 78–82 in `.planning/milestones/v2.10-phases/`; audit at `v2.10-MILESTONE-AUDIT.md`.
 - **Phase 81 (v2.10):** Post-publish registry gate — `mix scoria.post_publish_smoke` proves live Hex install with exact version pins; blocking `post-publish-attest` wired in release-please and hex-publish workflows.
 - **Phase 79 complete (2026-05-29):** Merge-blocking tarball consumer proof runs full v2.9 overlay depth (handoff → route → runtime) via `mix hex.build` unpack dep; operator triage, `SCORIA_PRESERVE_HOST`, and CI failure snapshot artifact wired.
@@ -142,12 +148,13 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ `examples/support_copilot/` gallery demonstrates support-copilot domain with LiveView journey tests. — `v2.9` (GALL-01, GALL-02)
 - ✓ Advisory `mix scoria.test.support_copilot` runs gallery proof outside `closeout_order/0`; CI ordering contract enforced. — `v2.9` (CI-GALL-01)
 - ✓ Generated Phoenix host in `mix test.adoption` consumes Scoria via Hex-shaped tarball dependency and proves full overlay depth (handoff + route + runtime smokes). — Phase 79 (HEX-CONSUMER-01)
-- ✓ Runtime span events fan out to tenant-scoped PubSub; OrchestratorLive merges live trace deltas and HITL approval pauses from real workflow paths (not test `send/2`). — Phase 01 (ORCH-LIVE-01)
+- ✓ Same host proves upgrade-safe install after simulated version bump (`--dry-run` / `--check` / apply / migrate). — `v2.10` (HEX-UPGRADE-01)
+- ✓ Post-publish workflow proves live Hex fetch + install/migrate/overlay subset; release-blocking upgrade on real semver bump. — `v2.10` (HEX-REGISTRY-01)
+- ✓ README, operator verification, and drift guards stay aligned via `HexConsumerContract` / `AdopterDocContract`. — `v2.10` (DOCS-HEX-01)
+- ✓ Runtime span events fan out to tenant-scoped PubSub; OrchestratorLive merges live trace deltas and HITL approval pauses from real workflow paths (not test `send/2`). — `v2.11` (ORCH-LIVE-01)
 
 ### Active
-- **HEX-UPGRADE-01**: Same host proves upgrade-safe install after simulated version bump (`--dry-run` / `--check` / apply / migrate).
-- **HEX-REGISTRY-01**: Post-publish workflow proves live Hex fetch + install/migrate/overlay subset; release-blocking upgrade on real semver bump.
-- **DOCS-HEX-01**: README, operator verification, and drift guards stay aligned via `HexConsumerContract` / `AdopterDocContract`.
+- **LANE-DEMO-01**: Semantic, knowledge, and connector journeys in demo gallery.
 
 ### Out of Scope
 
@@ -196,12 +203,13 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Context
 
-- Active milestone: `v2.10 Hex Consumer Proof & Upgrade Smoke` (planning 2026-05-29).
-- Scoria shipped `v2.9 Adoption Journey & Reference Demo` on 2026-05-29; Hex `0.1.0` live at https://hex.pm/packages/scoria.
+- Active milestone: planning `v2.12` gallery lane expansion (LANE-DEMO-01).
+- Scoria shipped `v2.11 Orchestrator Live Wiring` on 2026-05-30; `v2.10` and `v2.9` archived in `.planning/milestones/`.
+- Hex `0.1.0` live at https://hex.pm/packages/scoria.
 - Merge-blocking consumer proof still uses repo `path:` dep — v2.10 closes Hex/tarball truth gap.
 - CI: policy job (baseline → inventory baseline → compile WAE → lane-contract) → test job (closeout → semantic WAE → ratchet hygiene → full WAE → knowledge WAE → advisory gallery).
 - `Scoria.SupportJourney` + `examples/support_copilot/` gallery; advisory `mix scoria.test.support_copilot` outside closeout.
-- Archives: `.planning/milestones/v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
+- Archives: `.planning/milestones/v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
 
 ## Constraints
 
@@ -236,7 +244,9 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | Milestone sequencing: v2.6 WARN-03 → v2.7 Hex/docs-truth → v2.8 CI hardening | Confirmed by milestone next-step assessment 2026-05-27 | ✓ Good — sequence complete |
 | Deferred CI lanes (semantic, knowledge, inventory) land in v2.8 without widening closeout order | Keeps v2.4 lane contract intact while closing maintainer trust gap | ✓ Good — shipped v2.8 |
 | v2.9 adopts phased hybrid demo: overlay (merge-blocking) + gallery (advisory) with `SupportJourney` SSOT | Closes adoption confidence gap before real adopters without hosted demo scope creep | ✓ Good — shipped v2.9 |
-| v2.10 closes Hex consumer proof with tarball in adoption closeout + registry post-publish gate | Path dep in merge-blocking CI misleads post-Hex adopters; tarball proves packaged artifact | ✓ Good — v2.10 selected |
+| v2.10 closes Hex consumer proof with tarball in adoption closeout + registry post-publish gate | Path dep in merge-blocking CI misleads post-Hex adopters; tarball proves packaged artifact | ✓ Good — shipped v2.10 |
+| v2.11 closes orchestrator live wiring with producer-path integration proof | Post-Hex adopters need operator UX without hollow LiveView test paths | ✓ Good — shipped v2.11 |
+| Phase 01.1 inserted after audit for ORCH-LIVE-01 hardening | Audit found redaction, approval E2E, and token coalesce gaps | ✓ Good — shipped 01.1 |
 | Check-time manifest fingerprints are live-host-only; apply-time freshness gate uses stored manifest | Honest operator contract avoids misleading stored-fingerprint merge at check | ✓ Good — shipped Phase 63 |
 
 ## Milestone History
@@ -261,8 +271,17 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v2.7 OSS Release + Docs Truth`: Capability-based docs truth, release-please bootstrap, Hex `0.1.0` publish, README Hex-primary flip.
 - `v2.8 CI Hardening & Post-Ship Hygiene`: Semantic/knowledge WAE and inventory baseline gate in PR CI; post-publish smoke fix.
 - `v2.9 Adoption Journey & Reference Demo`: SupportJourney SSOT, host-proof overlay expansion, support copilot gallery, advisory CI lane, multi-surface drift guards.
+- `v2.10 Hex Consumer Proof & Upgrade Smoke`: Tarball consumer proof, upgrade smoke, registry attest, DOCS-HEX-01 drift guards.
+- `v2.11 Orchestrator Live Wiring`: ORCH-LIVE-01 live trace + HITL from runtime; Phase 01.1 hardening slice.
 
 ## Archived Planning Notes
+
+<details>
+<summary>Pre-ship v2.11 framing</summary>
+
+`v2.11` wired orchestrator live trace broadcast and HITL from real runtime/workflow events. Phase 01.1 inserted after audit for redaction, approval E2E, and token coalesce hardening. Archived in `.planning/milestones/v2.11-ROADMAP.md`, `.planning/milestones/v2.11-REQUIREMENTS.md`, and `.planning/milestones/v2.11-MILESTONE-AUDIT.md`.
+
+</details>
 
 <details>
 <summary>Pre-ship v2.9 framing</summary>
@@ -317,4 +336,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 — Phase 01.1 ORCH-LIVE-01 hardening complete*
+*Last updated: 2026-05-30 after v2.11 milestone*

@@ -2,6 +2,44 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v2.11 — Orchestrator Live Wiring
+
+**Shipped:** 2026-05-30
+**Phases:** 2 | **Plans:** 6
+
+### What Was Built
+- Tenant-scoped trace delta fan-out from telemetry via `OperatorBroadcast` and `TraceProjection`.
+- HITL projection fan-out, hybrid approval modal/inbox UX, incremental trace merge, and per-span LLM token previews on `OrchestratorLive`.
+- DB hydrate on reconnect, producer-path integration tests (`Runtime.start_run`, no `send/2`), semantic lane pin.
+- Redaction defense-in-depth on delta telemetry and DB hydrate; approve/reject integration proof on producer path.
+- Public `Telemetry.emit_span_delta/1` and token coalesce E2E with timer cancel on span complete.
+
+### What Worked
+- Milestone audit before close caught trust gaps; Phase 01.1 inserted as hardening slice without new REQ-ID.
+- Producer-path integration tests (`Runtime.start_run`) replaced hollow LiveView `send/2` patterns — durable ORCH-LIVE-01 proof.
+- Redact → broadcast → buffer ordering preserved across span stop and delta paths (D-118, D-133, D-134).
+
+### What Was Inefficient
+- Phase 01.1 shipped without Nyquist VALIDATION.md — discovery-only verification; retroactive `/gsd-validate-phase 01.1` optional.
+- Two-phase delivery (01 + 01.1) for one requirement — justified by audit gap closure but added planning overhead.
+
+### Patterns Established
+- `OperatorBroadcast` as sole Observe-layer tenant PubSub fan-out module.
+- `TraceProjection` never exposes raw attributes — `attributes_preview` capped.
+- `emit_span_delta/1` as the only supported delta emit API for adapters and integration tests.
+- Integration tests must use producer path; semantic fast-path lane pins orchestrator integration test.
+
+### Key Lessons
+1. Run milestone audit before archive; insert decimal phases for hardening rather than shipping with audit gaps.
+2. Close HOLLOW_PROP with integration tests on the real producer path, not LiveView test doubles.
+3. Defense-in-depth redaction on both live telemetry egress and DB hydrate reconnect paths.
+
+### Cost Observations
+- Model mix: not tracked
+- Notable: Phase 01 + 01.1 completed same calendar day after v2.10 ship
+
+---
+
 ## Milestone: v2.9 — Adoption Journey & Reference Demo
 
 **Shipped:** 2026-05-29

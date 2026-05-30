@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.11
 milestone_name: Orchestrator Live Wiring
-status: milestone_complete
-last_updated: 2026-05-30T11:28:45.661Z
-last_activity: 2026-05-30 -- Completed 01.1-03 emit_span_delta + token coalesce E2E
+status: Awaiting next milestone
+last_updated: "2026-05-30T11:39:01.838Z"
+last_activity: 2026-05-30 — Milestone v2.11 completed and archived
 progress:
   total_phases: 2
-  completed_phases: 1
-  total_plans: 3
+  completed_phases: 2
+  total_plans: 6
   completed_plans: 6
-  percent: 50
-stopped_at: Milestone complete (Phase 01.1 was final phase)
+  percent: 100
 ---
 
 # Project State
@@ -22,19 +21,19 @@ See: `.planning/PROJECT.md` (updated 2026-05-30)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Milestone complete
+**Current focus:** Planning next milestone (v2.12)
 
 ## Current Position
 
-Phase: 01.1
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-30
+Phase: Milestone v2.11 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-30 — Milestone v2.11 completed and archived
 
 ## Performance Metrics
 
-- **Active milestone:** `v2.11 Orchestrator Live Wiring` (ORCH-LIVE-01)
-- **Latest Shipped Milestone:** `v2.10 Hex Consumer Proof & Upgrade Smoke` on 2026-05-30
+- **Latest Shipped Milestone:** `v2.11 Orchestrator Live Wiring` on 2026-05-30
+- **v2.11 archive:** `.planning/milestones/v2.11-{ROADMAP,REQUIREMENTS,MILESTONE-AUDIT}.md`
 - **Hex release:** `0.1.0` at git tag `v0.1.0` — https://hex.pm/packages/scoria
 - **v2.10 archive:** `.planning/milestones/v2.10-{ROADMAP,REQUIREMENTS,MILESTONE-AUDIT}.md`, `.planning/milestones/v2.10-phases/`
 
@@ -42,7 +41,7 @@ Last activity: 2026-05-30
 
 ### Roadmap Evolution
 
-- **v2.11 (executing):** Phase 01 + Phase 01.1 all plans complete — ORCH-LIVE-01 ready for UAT.
+- **v2.11 (shipped):** ORCH-LIVE-01 — OperatorBroadcast, HITL producer path, hydrate, 01.1 hardening. See `v2.11-MILESTONE-AUDIT.md`.
 - **v2.10 (shipped):** Tarball consumer proof; content-revision upgrade; registry attest; DOCS-HEX-01 drift guards. See `v2.10-MILESTONE-AUDIT.md`.
 - **v2.9 (shipped):** SupportJourney SSOT, host-proof overlay, support_copilot gallery.
 - Phase 01.1 inserted after Phase 1: Address tech debt: orchestrator live wiring follow-ups (URGENT)
@@ -81,11 +80,11 @@ Last activity: 2026-05-30
 
 | Category | Item | Status |
 |----------|------|--------|
-| v2.11 | ORCH-LIVE-01 orchestrator live wiring | Phase 01 plans complete — UAT next |
 | v2.12 | LANE-DEMO-01 gallery lane expansion | queued |
 | Tech debt | Registry semver upgrade leg at 0.1.1+ | latent (from v2.10 audit) |
+| Tech debt | Phase 01.1 missing Nyquist VALIDATION.md | optional `/gsd-validate-phase 01.1` |
+| Tech debt | ReqLLM streaming adapter (D-125/D-128) | deferred to v2.12+ |
 
 ## Operator Next Steps
 
-- `/gsd-verify-work` — conversational UAT for phase 01
-- `/gsd-progress` — view roadmap and milestone status
+- Start the next milestone with `/gsd-new-milestone`
