@@ -31,6 +31,7 @@ defmodule Mix.Tasks.Scoria.PostPublishSmoke do
   @impl Mix.Task
   def run(args) do
     version = registry_version!()
+    System.put_env("SCORIA_TEST_INCLUDE_REGISTRY", "true")
 
     Mix.Task.run("loadpaths")
     Mix.Task.reenable("test")

@@ -8,7 +8,15 @@ end
 
 Application.put_env(:phoenix_live_view, :html_parser, Floki)
 
-ExUnit.start(
-  exclude:
-    if(System.get_env("SCORIA_TEST_INCLUDE_KNOWLEDGE") == "true", do: [], else: [knowledge: true])
-)
+excluded_tags =
+  []
+  |> then(fn tags ->
+    if System.get_env("SCORIA_TEST_INCLUDE_KNOWLEDGE") == "true", do: tags, else: [{:knowledge, true} | tags]
+  end)
+  |> then(fn tags ->
+    if System.get_env("SCORIA_TEST_INCLUDE_REGISTRY") == "true",
+      do: tags,
+      else: [{:registry_proof, true}, {:registry_upgrade, true} | tags]
+  end)
+
+ExUnit.start(exclude: excluded_tags)
