@@ -2,7 +2,8 @@ import Config
 
 config :scoria,
   ecto_repos: [Scoria.Repo],
-  live_token_coalesce_ms: 75
+  live_token_coalesce_ms: 75,
+  orchestrator_hydrate_trace_limit: 25
 
 config :scoria, Scoria.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,

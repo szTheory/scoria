@@ -5,6 +5,7 @@ defmodule ScoriaWeb.OrchestratorLive do
   alias Decimal, as: D
   alias Scoria.Eval
   alias Scoria.Repo
+  alias Scoria.Repo.Span
   alias Scoria.Runtime
 
   alias Scoria.Observe.TraceProjection
@@ -35,11 +36,6 @@ defmodule ScoriaWeb.OrchestratorLive do
   def mount(params, session, socket) do
     tenant_id = session["tenant_id"] || "default"
 
-    if connected?(socket) do
-      Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
-      Phoenix.PubSub.subscribe(Scoria.PubSub, "mcp:runtimes:#{tenant_id}")
-    end
-
     socket =
       socket
       |> assign(:page_title, "Scoria Dashboard")
@@ -67,7 +63,16 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:tenant_id, tenant_id)
       |> stream(:traces, [])
 
-    {:ok, load_operator_surface(socket)}
+    socket =
+      if connected?(socket) do
+        Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
+        Phoenix.PubSub.subscribe(Scoria.PubSub, "mcp:runtimes:#{tenant_id}")
+        hydrate_traces(socket, tenant_id)
+      else
+        socket
+      end
+
+    {:ok, socket |> load_operator_surface() |> maybe_seed_active_approval()}
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, socket) do
@@ -970,6 +975,95 @@ defmodule ScoriaWeb.OrchestratorLive do
     Code.ensure_loaded?(ConnectorDetailDrawerComponent) and
       function_exported?(ConnectorDetailDrawerComponent, :render, 1)
   end
+
+  @doc false
+  defp hydrate_traces(socket, tenant_id) do
+    limit = Application.get_env(:scoria, :orchestrator_hydrate_trace_limit, 25)
+
+    trace_ids =
+      Span
+      |> where([s], fragment("?->>? = ?", s.attributes, "tenant_id", ^tenant_id))
+      |> group_by([s], s.trace_id)
+      |> order_by([s], desc: max(s.end_time))
+      |> limit(^limit)
+      |> select([s], s.trace_id)
+      |> Repo.all()
+
+    traces =
+      trace_ids
+      |> Enum.map(&build_hydrated_trace(&1, tenant_id))
+      |> Enum.reject(&is_nil/1)
+
+    trace_records =
+      Enum.reduce(traces, socket.assigns.trace_records, fn trace, acc ->
+        if Map.has_key?(acc, trace.id), do: acc, else: Map.put(acc, trace.id, trace)
+      end)
+
+    new_traces = Enum.reject(traces, &Map.has_key?(socket.assigns.trace_records, &1.id))
+
+    socket
+    |> assign(:trace_records, trace_records)
+    |> then(fn sock ->
+      if new_traces == [] do
+        sock
+      else
+        Enum.reduce(new_traces, sock, fn trace, s -> stream_insert(s, :traces, trace) end)
+      end
+    end)
+  end
+
+  defp build_hydrated_trace(trace_id, tenant_id) do
+    spans =
+      Span
+      |> where([s], s.trace_id == ^trace_id)
+      |> where([s], fragment("?->>? = ?", s.attributes, "tenant_id", ^tenant_id))
+      |> order_by([s], asc: s.start_time)
+      |> Repo.all()
+
+    case spans do
+      [] ->
+        nil
+
+      [first | _] = span_rows ->
+        attrs = first.attributes || %{}
+
+        header = %{
+          id: trace_id,
+          session_id: attrs["session_id"] || attrs[:session_id],
+          workflow_run_id: attrs["workflow_run_id"] || attrs[:workflow_run_id],
+          tenant_id: tenant_id
+        }
+
+        span_views =
+          span_rows
+          |> Enum.map(&span_view_from_record/1)
+          |> TraceProjection.with_depths()
+
+        Map.put(header, :spans, span_views)
+    end
+  end
+
+  defp span_view_from_record(%Span{} = span) do
+    TraceProjection.span_view(%{
+      id: span.id,
+      name: span.name,
+      span_kind: span.span_kind,
+      status_code: span.status_code,
+      parent_id: span.parent_id,
+      start_time: span.start_time,
+      end_time: span.end_time,
+      attributes: span.attributes || %{}
+    })
+  end
+
+  defp maybe_seed_active_approval(%{assigns: %{active_approval: nil}} = socket) do
+    case Enum.find(socket.assigns.approval_inbox, &approval_matches_focus?(&1, socket.assigns.runtime_query)) do
+      nil -> socket
+      projection -> assign(socket, :active_approval, projection)
+    end
+  end
+
+  defp maybe_seed_active_approval(socket), do: socket
 
   defp load_operator_surface(socket) do
     tenant_id = socket.assigns.tenant_id
