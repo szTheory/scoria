@@ -16,7 +16,12 @@ defmodule Scoria.MixProject do
       package: package(),
       source_url: "https://github.com/szTheory/scoria",
       homepage_url: "https://hexdocs.pm/scoria",
-      test_ignore_filters: [&String.starts_with?(&1, "test/fixtures/")]
+      test_load_filters: [
+        fn path ->
+          String.ends_with?(path, "_test.exs") and not excluded_test_path?(path)
+        end
+      ],
+      test_ignore_filters: [&excluded_test_path?/1]
     ]
   end
 
@@ -48,6 +53,12 @@ defmodule Scoria.MixProject do
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  # Host-app overlay templates and hex unpack fixtures must not compile in the root suite.
+  defp excluded_test_path?(path) do
+    String.starts_with?(path, "test/fixtures/") or
+      String.contains?(path, "host_app_proof/overlay/test/")
+  end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
