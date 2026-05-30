@@ -105,6 +105,62 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert render(view) =~ "trace-tree"
   end
 
+  test "trace_opened and trace_span sequence renders span name incrementally" do
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+    trace_id = "trace-incr-1"
+
+    send(view.pid, {:trace_opened, %{id: trace_id, tenant_id: "default"}})
+
+    refute render(view) =~ "agent_turn"
+
+    send(view.pid, {:trace_span, trace_id, %{id: "span-1", name: "agent_turn", span_kind: "LLM"}})
+
+    assert render(view) =~ "agent_turn"
+  end
+
+  test "duplicate trace_opened is ignored idempotently" do
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+    trace_id = "trace-dup-1"
+    header = %{id: trace_id, tenant_id: "default"}
+
+    send(view.pid, {:trace_opened, header})
+    send(view.pid, {:trace_span, trace_id, %{id: "span-1", name: "first_span"}})
+    send(view.pid, {:trace_opened, header})
+
+    html = render(view)
+    assert html =~ "first_span"
+    assert html =~ ~s(id="trace-dup-1")
+  end
+
+  test "trace_span upsert replaces span with same id" do
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+    trace_id = "trace-upsert-1"
+    span_id = "span-same"
+
+    send(view.pid, {:trace_opened, %{id: trace_id}})
+    send(view.pid, {:trace_span, trace_id, %{id: span_id, name: "draft"}})
+    send(view.pid, {:trace_span, trace_id, %{id: span_id, name: "final"}})
+
+    html = render(view)
+    assert html =~ "final"
+    refute html =~ "draft"
+  end
+
   test "tokens are buffered and flushed properly" do
     conn =
       build_conn()

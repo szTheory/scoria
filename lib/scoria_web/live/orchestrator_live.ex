@@ -7,6 +7,8 @@ defmodule ScoriaWeb.OrchestratorLive do
   alias Scoria.Repo
   alias Scoria.Runtime
 
+  alias Scoria.Observe.TraceProjection
+
   alias Scoria.Connectors
 
   alias Scoria.SRE.{
@@ -72,11 +74,27 @@ defmodule ScoriaWeb.OrchestratorLive do
   end
 
   def handle_info({:new_trace, trace}, socket) do
-    socket =
-      socket
-      |> assign(:trace_records, Map.put(socket.assigns.trace_records, trace.id, trace))
-      |> stream_insert(:traces, trace)
+    trace_id = trace.id
+    header = Map.take(trace, [:id, :session_id, :workflow_run_id, :tenant_id])
 
+    socket =
+      Enum.reduce(trace.spans, maybe_open_trace(socket, header), fn span, sock ->
+        span_view = normalize_span_view(span)
+        upsert_trace_span(sock, trace_id, span_view)
+      end)
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:trace_opened, header}, socket) do
+    {:noreply, maybe_open_trace(socket, header)}
+  end
+
+  def handle_info({:trace_span, trace_id, span_view}, socket) do
+    {:noreply, upsert_trace_span(socket, trace_id, span_view)}
+  end
+
+  def handle_info({:approval_decided, _approval_id, _status}, socket) do
     {:noreply, socket}
   end
 
@@ -934,5 +952,46 @@ defmodule ScoriaWeb.OrchestratorLive do
     else
       []
     end
+  end
+
+  defp maybe_open_trace(socket, %{id: trace_id} = header) when is_binary(trace_id) do
+    if Map.has_key?(socket.assigns.trace_records, trace_id) do
+      socket
+    else
+      trace = Map.merge(header, %{spans: []})
+
+      socket
+      |> assign(:trace_records, Map.put(socket.assigns.trace_records, trace_id, trace))
+      |> stream_insert(:traces, trace)
+    end
+  end
+
+  defp maybe_open_trace(socket, _header), do: socket
+
+  defp upsert_trace_span(socket, trace_id, span_view) do
+    trace =
+      Map.get(socket.assigns.trace_records, trace_id, %{
+        id: trace_id,
+        spans: []
+      })
+
+    spans =
+      trace.spans
+      |> Enum.reject(&(&1.id == span_view.id))
+      |> Kernel.++([Map.put_new(span_view, :parent_id, nil)])
+      |> TraceProjection.with_depths()
+
+    updated_trace = Map.put(trace, :spans, spans)
+
+    socket
+    |> assign(:trace_records, Map.put(socket.assigns.trace_records, trace_id, updated_trace))
+    |> stream_insert(:traces, updated_trace)
+  end
+
+  defp normalize_span_view(span) do
+    span
+    |> Map.new()
+    |> Map.put_new(:id, Map.get(span, :id) || Ecto.UUID.generate())
+    |> Map.put_new(:parent_id, nil)
   end
 end
