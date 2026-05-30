@@ -55,6 +55,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **v2.11 Phase 01.1 complete (2026-05-30):** ORCH-LIVE-01 hardening — delta/hydrate redaction defense-in-depth (D-133/D-134), approval approve/reject producer-path integration tests (D-135/D-136), public `emit_span_delta/1` + token coalesce E2E + timer cancel (D-139–D-141). Milestone ready for conversational UAT.
 - **v2.11 Phase 01 complete (2026-05-30):** ORCH-LIVE-01 implemented — OperatorBroadcast tenant PubSub, Telemetry redact→broadcast→buffer hook, OrchestratorLive incremental trace merge + HITL hybrid UX, DB hydrate on connect, integration test proving `Runtime.start_run` → DOM without `send/2`.
 - **v2.10 shipped (2026-05-30):** Hex consumer proof milestone archived — phases 78–82 in `.planning/milestones/v2.10-phases/`; audit at `v2.10-MILESTONE-AUDIT.md`.
 - **Phase 81 (v2.10):** Post-publish registry gate — `mix scoria.post_publish_smoke` proves live Hex install with exact version pins; blocking `post-publish-attest` wired in release-please and hex-publish workflows.
