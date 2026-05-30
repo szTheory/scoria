@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.11
 milestone_name: Orchestrator Live Wiring
-status: milestone_complete
-last_updated: 2026-05-30T09:33:44.401Z
+status: Not planned
+last_updated: "2026-05-30T11:14:34.679Z"
 last_activity: 2026-05-30
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
   total_plans: 3
   completed_plans: 3
-  percent: 100
-stopped_at: Milestone complete (Phase 01 was final phase)
+  percent: 50
 ---
 
 # Project State
@@ -22,13 +21,13 @@ See: `.planning/PROJECT.md` (updated 2026-05-30)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Milestone complete
+**Current focus:** Phase 01.1 tech debt follow-ups
 
 ## Current Position
 
-Phase: 01
+Phase: 01.1
 Plan: Not started
-Status: Milestone complete
+Status: Not planned
 Last activity: 2026-05-30
 
 ## Performance Metrics
@@ -45,6 +44,7 @@ Last activity: 2026-05-30
 - **v2.11 (executing):** Phase 01 all plans complete — ORCH-LIVE-01 ready for UAT.
 - **v2.10 (shipped):** Tarball consumer proof; content-revision upgrade; registry attest; DOCS-HEX-01 drift guards. See `v2.10-MILESTONE-AUDIT.md`.
 - **v2.9 (shipped):** SupportJourney SSOT, host-proof overlay, support_copilot gallery.
+- Phase 01.1 inserted after Phase 1: Address tech debt: orchestrator live wiring follow-ups (URGENT)
 
 ### Decisions
 
