@@ -123,6 +123,8 @@ jobs:
     needs: [gate-ci-green, verify]
     if: ${{ needs.verify.result == 'success' }}
     runs-on: ubuntu-latest
+    outputs:
+      skip_index_wait: ${{ steps.idempotency.outputs.skip != 'true' && github.event.inputs.dry_run != 'true' }}
     permissions:
       contents: read
     env:
@@ -184,3 +186,12 @@ jobs:
             sleep 10
           done
           exit 1
+
+  post-publish-attest:
+    name: Post-publish registry attest
+    needs: publish
+    if: ${{ needs.publish.result == 'success' }}
+    uses: ./.github/workflows/post-publish-smoke.yml
+    with:
+      version: ${{ github.event.inputs.release_version }}
+      skip_index_wait: ${{ needs.publish.outputs.skip_index_wait == 'true' }}
