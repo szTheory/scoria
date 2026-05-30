@@ -64,8 +64,36 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     ])
   end
 
+  def run_registry_proof!(host) do
+    unless host.dep_mode == :hex_registry do
+      raise ArgumentError,
+            "run_registry_proof!/1 requires dep_mode :hex_registry, got: #{inspect(host.dep_mode)}"
+    end
+
+    {_host, results} =
+      run_host_steps!(host, [
+        fn h -> {h, [deps_get!(h)]} end,
+        fn h -> {maybe_overlay_from_dep!(h), []} end,
+        fn h -> {h, [scoria_install!(h)]} end,
+        fn h -> {h, [ecto_create!(h)]} end,
+        fn h -> {h, [ecto_migrate!(h)]} end,
+        fn h -> {h, smoke_pair!(h)} end
+      ])
+
+    %{results: results, steps: Enum.map(results, & &1.step)}
+  end
+
+  def expected_registry_steps(_host) do
+    [:deps_get, :scoria_install, :ecto_create, :ecto_migrate,
+     :host_route_smoke_test, :host_runtime_smoke_test]
+  end
+
   def run_upgrade_proof!(host, opts) do
-    current_unpack_root = Keyword.fetch!(opts, :current_unpack_root)
+    bump_target =
+      case Keyword.get(opts, :bump) do
+        {:registry, from: from, to: to} -> {:registry, from: from, to: to}
+        nil -> Keyword.fetch!(opts, :current_unpack_root)
+      end
 
     host =
       host
@@ -76,7 +104,7 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     host = Map.put(host, :upgrade_phase, :upgrade)
 
     {_host, upgrade_results} =
-      run_upgrade_upgrade_phase!(host, current_unpack_root)
+      run_upgrade_upgrade_phase!(host, bump_target)
 
     all_results = baseline_results ++ upgrade_results
 
@@ -92,7 +120,13 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
 
   def expected_upgrade_steps(host) do
     baseline_overlays = overlay_step_atoms(host.overlay_tests)
-    upgrade_overlays = overlay_step_atoms(Map.get(host, :upgrade_overlay_tests, host.overlay_tests))
+
+    upgrade_overlays =
+      if host.dep_mode == :hex_registry do
+        overlay_step_atoms(host.overlay_tests)
+      else
+        overlay_step_atoms(Map.get(host, :upgrade_overlay_tests, host.overlay_tests))
+      end
 
     baseline =
       [:deps_get, :scoria_install, :ecto_create, :ecto_migrate] ++
@@ -121,6 +155,7 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
 
     run_host_steps!(host, [
       fn h -> {h, [deps_get!(h)]} end,
+      fn h -> {maybe_overlay_from_dep!(h), []} end,
       fn h -> {h, [scoria_install!(h)]} end,
       fn h -> {h, [ecto_create!(h)]} end,
       fn h -> {h, [ecto_migrate!(h)]} end,
@@ -129,12 +164,13 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     ])
   end
 
-  defp run_upgrade_upgrade_phase!(host, current_unpack_root) do
+  defp run_upgrade_upgrade_phase!(host, bump_target) do
     compliant_check = [expect_trailer: @compliant_check_trailer]
 
     run_host_steps!(host, [
-      fn h -> bump_dep!(h, current_unpack_root) end,
+      fn h -> bump_dep!(h, bump_target) end,
       fn h -> {h, [deps_get!(h)]} end,
+      fn h -> {maybe_overlay_from_dep!(h), []} end,
       fn h -> {h, [scoria_install_dry_run!(h)]} end,
       fn h -> {h, [scoria_install_check_pre_apply!(h)]} end,
       fn h -> {h, [scoria_install!(h)]} end,
@@ -144,7 +180,16 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     ])
   end
 
-  defp bump_dep!(host, current_unpack_root) do
+  defp bump_dep!(host, {:registry, from: _from, to: to_ver}) do
+    host =
+      host
+      |> Generator.bump_registry_dep!(to_ver)
+      |> Map.put(:hex_version, to_ver)
+
+    {host, [run_mix!(host, :bump_dep, ["deps.clean", "scoria"], expect_exit: 0)]}
+  end
+
+  defp bump_dep!(host, current_unpack_root) when is_binary(current_unpack_root) do
     host =
       host
       |> Generator.bump_unpack_dep!(current_unpack_root)
@@ -152,6 +197,10 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
       |> Generator.refresh_overlay!()
 
     {host, [run_mix!(host, :bump_dep, ["deps.clean", "scoria"], expect_exit: 0)]}
+  end
+
+  defp maybe_overlay_from_dep!(host) do
+    if host.dep_mode == :hex_registry, do: Generator.overlay_from_dep!(host), else: host
   end
 
   defp run_host_steps!(host, steps) do
@@ -210,10 +259,16 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     hex_unpack_env = System.get_env("SCORIA_HEX_UNPACK_ROOT") || "(unset)"
 
     tarball_dep =
-      if host.dep_mode == :hex_tarball and is_binary(unpack_root) do
-        HexConsumerContract.tarball_dep_snippet(unpack_root)
-      else
-        "path dep mode (repo root)"
+      cond do
+        host.dep_mode == :hex_tarball and is_binary(unpack_root) ->
+          HexConsumerContract.tarball_dep_snippet(unpack_root)
+
+        host.dep_mode == :hex_registry ->
+          version = Map.get(host, :hex_version, "(unset)")
+          HexConsumerContract.registry_dep_snippet_pinned(version)
+
+        true ->
+          "path dep mode (repo root)"
       end
 
     replay = replay_command(host, step, args)
@@ -240,9 +295,11 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
 
     step: #{step}
     command: mix #{Enum.join(args, " ")}
-    #{failure_line}host.root: #{host.root}
+    #{failure_line}    host.root: #{host.root}
     host.app_name: #{host.app_name}
     host.db_name: #{host.db_name}
+    dep_mode: #{host.dep_mode}
+    registry_version: #{Map.get(host, :hex_version, "(unset)")}
     unpack_root: #{inspect(unpack_root)}
     SCORIA_HEX_UNPACK_ROOT: #{hex_unpack_env}
     tarball_dep: #{tarball_dep}
@@ -268,10 +325,18 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
 
   defp preserve_replay_command(host) do
     tag =
-      if Map.get(host, :upgrade_phase) in [:baseline, :upgrade] do
-        "host_upgrade"
-      else
-        "host_proof"
+      cond do
+        host.dep_mode == :hex_registry and Map.get(host, :upgrade_phase) in [:baseline, :upgrade] ->
+          "registry_upgrade"
+
+        host.dep_mode == :hex_registry ->
+          "registry_proof"
+
+        Map.get(host, :upgrade_phase) in [:baseline, :upgrade] ->
+          "host_upgrade"
+
+        true ->
+          "host_proof"
       end
 
     "SCORIA_PRESERVE_HOST=1 MIX_ENV=test mix test --only #{tag} --trace"
@@ -362,11 +427,22 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     hex_unpack_env = System.get_env("SCORIA_HEX_UNPACK_ROOT") || "(unset)"
     replay_full = replay_command(host, step, args)
 
-    tarball_dep_line =
-      if host.dep_mode == :hex_tarball and is_binary(unpack_root) do
-        "tarball_dep: #{HexConsumerContract.tarball_dep_snippet(unpack_root)}\n"
-      else
-        ""
+    dep_line =
+      cond do
+        host.dep_mode == :hex_tarball and is_binary(unpack_root) ->
+          "tarball_dep: #{HexConsumerContract.tarball_dep_snippet(unpack_root)}\n"
+
+        host.dep_mode == :hex_registry ->
+          version = Map.get(host, :hex_version, "(unset)")
+
+          """
+          dep_mode: hex_registry
+          registry_version: #{version}
+          registry_dep: #{HexConsumerContract.registry_dep_snippet_pinned(version)}
+          """
+
+        true ->
+          ""
       end
 
     copy_note_line =
@@ -390,7 +466,7 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     SCORIA_HEX_UNPACK_ROOT: #{hex_unpack_env}
     replay_full: #{replay_full}
     replay_preserve: #{preserve_replay_command(host)}
-    #{upgrade_lines}#{tarball_dep_line}#{copy_note_line}
+    #{upgrade_lines}#{dep_line}#{copy_note_line}
     """
   end
 
