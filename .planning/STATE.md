@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.15
 milestone_name: Connector Adoption Lane
-status: complete
-last_updated: "2026-05-30T19:00:00.000Z"
-last_activity: 2026-05-30 — v2.15 phases 05–07 implemented
+status: planning
+last_updated: "2026-05-30T12:55:31.465Z"
+last_activity: 2026-05-30 — Phase 07.1 inserted (VERIFICATION gap closeout)
 progress:
-  total_phases: 3
-  completed_phases: 3
+  total_phases: 4
+  completed_phases: 0
   total_plans: 0
-  completed_plans: 0
-  percent: 100
+  completed_plans: 2
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-05-30)
 
 ## Current Position
 
-Phase: Milestone v2.15 complete
+Phase: 07.1
 Plan: —
-Status: Release 0.1.1 via release-please pending CI + merge
-Last activity: 2026-05-30 — mix test.connector lane shipped (phases 05–07)
+Status: Ready to plan
+Last activity: 2026-05-30 — Phase 07.1 inserted (VERIFICATION gap closeout)
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Last activity: 2026-05-30 — mix test.connector lane shipped (phases 05–07)
 - **v2.15 (active):** Named connector adoption lane — PR WAE after knowledge, not in closeout.
 - **v2.14 (shipped prep):** `0.1.1` bump, CHANGELOG, release-please manifest.
 - **v2.12–v2.13 (shipped):** Gallery lanes, MAINTAINERS split, docs truth.
+- Phase 07.1 inserted after Phase 07: Close gap: VERIFICATION artifacts for v2.15 phases 05–07 (URGENT)
 
 ### Decisions
 
@@ -59,5 +60,5 @@ Last activity: 2026-05-30 — mix test.connector lane shipped (phases 05–07)
 
 ## Operator Next Steps
 
-- `/gsd-plan-phase 05` or continue phase 05 implementation
+- `/gsd-plan-phase 07.1` — retroactive VERIFICATION.md for phases 05–07
 - Merge release-please PR when main CI green
