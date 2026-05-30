@@ -4,6 +4,7 @@ defmodule Scoria.WorkflowsTest do
 
   alias Scoria.Repo
   alias Scoria.Observe.Approval
+  alias Scoria.Observe.OperatorBroadcast
   alias Scoria.Workflows
   alias Scoria.Workflows.{Checkpoint, Event, Handoff, Run, Step}
 
@@ -427,6 +428,91 @@ defmodule Scoria.WorkflowsTest do
       assert_raise Ecto.StaleEntryError, fn ->
         Repo.update!(Approval.changeset(stale_approval, %{reason: "stale"}))
       end
+    end
+  end
+
+  describe "HITL tenant fan-out" do
+    test "mark_waiting_for_approval/3 broadcasts hitl_request on tenant topic" do
+      tenant_id = "tenant-hitl-#{System.unique_integer([:positive])}"
+      Phoenix.PubSub.subscribe(Scoria.PubSub, OperatorBroadcast.tenant_topic(tenant_id))
+
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          tenant_id: tenant_id,
+          session_id: "session-hitl"
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      assert {:ok, approval} =
+               Workflows.mark_waiting_for_approval(run.id, step.id, %{
+                 tool_name: "publish",
+                 arguments: %{"env" => "prod"},
+                 reason: "Need approval"
+               })
+
+      assert_receive {:hitl_request, projection}
+      assert projection.id == approval.id
+      assert projection.tool_name == "publish"
+      assert Map.has_key?(projection, :arguments_preview)
+    end
+
+    test "approve/3 broadcasts approval_decided on tenant topic" do
+      tenant_id = "tenant-decided-#{System.unique_integer([:positive])}"
+      Phoenix.PubSub.subscribe(Scoria.PubSub, OperatorBroadcast.tenant_topic(tenant_id))
+
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          tenant_id: tenant_id
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, approval} =
+        Workflows.request_remote_approval(run.id, step.id, %{
+          tool_name: "publish",
+          local_tool_name: "publish"
+        })
+
+      assert {:ok, _updated} = Workflows.approve(approval.id, "approved", %{})
+
+      assert_receive {:approval_decided, approval_id, "approved"}
+      assert approval_id == approval.id
+    end
+
+    test "approve/3 rejects already-decided approval with :not_pending" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", tenant_id: "tenant-stale"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, approval} =
+        Workflows.request_remote_approval(run.id, step.id, %{
+          tool_name: "publish",
+          local_tool_name: "publish"
+        })
+
+      assert {:ok, _} = Workflows.approve(approval.id, "approved", %{})
+      assert {:error, :not_pending} = Workflows.approve(approval.id, "approved", %{})
     end
   end
 end

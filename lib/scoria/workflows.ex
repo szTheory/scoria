@@ -11,6 +11,7 @@ defmodule Scoria.Workflows do
   alias Scoria.Connectors.LocalTool
   alias Scoria.Identity
   alias Scoria.Observe.Approval
+  alias Scoria.Observe.OperatorBroadcast
   alias Scoria.Repo
   alias Scoria.SRE
   alias Scoria.SRE.AuditOutboxEvent
@@ -416,6 +417,10 @@ defmodule Scoria.Workflows do
       {:ok, {run, approval, audit_outbox_event}} ->
         SRE.emit_audit_outbox_telemetry(audit_outbox_event)
         broadcast(run.id, {:approval_requested, run.id, approval.id})
+
+        projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+        OperatorBroadcast.hitl_request(approval.tenant_id, projection)
+
         {:ok, approval}
 
       {:error, value} ->
@@ -632,6 +637,11 @@ defmodule Scoria.Workflows do
 
     Repo.transaction(fn repo ->
       approval = repo.get!(Approval, approval_id)
+
+      if approval.status != "pending" do
+        repo.rollback(:not_pending)
+      end
+
       audit_context = approval_decision_context(repo, approval, attrs)
 
       update_attrs =
@@ -679,7 +689,11 @@ defmodule Scoria.Workflows do
     |> case do
       {:ok, {updated_approval, audit_outbox_event}} ->
         SRE.emit_audit_outbox_telemetry(audit_outbox_event)
+        OperatorBroadcast.approval_decided(updated_approval.tenant_id, updated_approval.id, status)
         {:ok, updated_approval}
+
+      {:error, :not_pending} ->
+        {:error, :not_pending}
 
       {:error, _operation, value, _changes} ->
         {:error, value}

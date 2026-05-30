@@ -56,11 +56,26 @@ defmodule Scoria.Observe.OperatorBroadcast do
     :dropped
   end
 
-  @doc false
-  def hitl_request(_tenant_id, _projection), do: :ok
+  def hitl_request(tenant_id, projection_map) when is_binary(tenant_id) and tenant_id != "" do
+    broadcast(tenant_id, {:hitl_request, projection_map})
+    :ok
+  end
 
-  @doc false
-  def approval_decided(_tenant_id, _approval_id, _status), do: :ok
+  def hitl_request(_tenant_id, _projection_map) do
+    Logger.debug("OperatorBroadcast.hitl_request/2 dropped: missing tenant_id")
+    :dropped
+  end
+
+  def approval_decided(tenant_id, approval_id, status)
+      when is_binary(tenant_id) and tenant_id != "" do
+    broadcast(tenant_id, {:approval_decided, approval_id, status})
+    :ok
+  end
+
+  def approval_decided(_tenant_id, _approval_id, _status) do
+    Logger.debug("OperatorBroadcast.approval_decided/3 dropped: missing tenant_id")
+    :dropped
+  end
 
   def reset_trace_seen! do
     ensure_trace_seen_table()

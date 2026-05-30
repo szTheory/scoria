@@ -95,6 +95,32 @@ defmodule Scoria.Observe.OperatorBroadcastTest do
     refute_receive _, 10
   end
 
+  test "hitl_request broadcasts projection to tenant topic", %{tenant_id: tenant_id} do
+    projection = %{id: Ecto.UUID.generate(), tool_name: "publish"}
+
+    assert :ok = OperatorBroadcast.hitl_request(tenant_id, projection)
+
+    assert_receive {:hitl_request, ^projection}
+  end
+
+  test "approval_decided broadcasts to tenant topic", %{tenant_id: tenant_id} do
+    approval_id = Ecto.UUID.generate()
+
+    assert :ok = OperatorBroadcast.approval_decided(tenant_id, approval_id, "approved")
+
+    assert_receive {:approval_decided, ^approval_id, "approved"}
+  end
+
+  test "hitl_request drops when tenant_id missing" do
+    assert :dropped = OperatorBroadcast.hitl_request(nil, %{id: "x"})
+    refute_receive _, 10
+  end
+
+  test "approval_decided drops when tenant_id missing" do
+    assert :dropped = OperatorBroadcast.approval_decided(nil, Ecto.UUID.generate(), "approved")
+    refute_receive _, 10
+  end
+
   defp drain_messages do
     receive do
       _ -> drain_messages()
