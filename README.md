@@ -52,7 +52,7 @@ Add Scoria from Hex, then mount the dashboard and run the installer:
 def deps do
   [
     {:scoria, "~> 0.1", hex: :scoria}
-    # Fork or pinned patch only: {:scoria, github: "szTheory/scoria", tag: "v0.1.0"}
+    # Fork or pinned patch only: {:scoria, github: "szTheory/scoria", tag: "v0.1.1"}
   ]
 end
 ```

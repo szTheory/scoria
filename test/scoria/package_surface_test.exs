@@ -6,12 +6,15 @@ defmodule Scoria.PackageSurfaceTest do
   @docs_extras [
     "README.md",
     "LICENSE",
+    "CHANGELOG.md",
     "docs/adoption_lanes.md",
     "docs/phoenix_runtime_example.md",
     "docs/bounded_handoffs.md",
     "docs/semantic_fast_path.md",
     "docs/operator_verification.md",
-    "docs/support_copilot_gallery.md"
+    "docs/connector_adoption.md",
+    "docs/support_copilot_gallery.md",
+    "docs/MAINTAINERS.md"
   ]
   @required_package_paths [
     "README.md",
@@ -25,14 +28,16 @@ defmodule Scoria.PackageSurfaceTest do
     "docs/bounded_handoffs.md",
     "docs/semantic_fast_path.md",
     "docs/operator_verification.md",
-    "docs/support_copilot_gallery.md"
+    "docs/connector_adoption.md",
+    "docs/support_copilot_gallery.md",
+    "docs/MAINTAINERS.md"
   ]
 
   test "project metadata describes one publish surface" do
     project = Mix.Project.config()
 
     assert project[:source_url] == "https://github.com/szTheory/scoria"
-    assert project[:homepage_url] == project[:source_url]
+    assert project[:homepage_url] == "https://hexdocs.pm/scoria"
     assert project[:docs][:main] == "readme"
     assert project[:docs][:source_ref] == "v#{project[:version]}"
     assert project[:docs][:extras] == @docs_extras

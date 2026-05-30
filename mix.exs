@@ -16,6 +16,7 @@ defmodule Scoria.MixProject do
       package: package(),
       source_url: "https://github.com/szTheory/scoria",
       homepage_url: "https://hexdocs.pm/scoria",
+      test_ignore_filters: [&String.starts_with?(&1, "test/fixtures/")]
     ]
   end
 
