@@ -162,26 +162,29 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     refute html =~ "draft"
   end
 
-  test "tokens are buffered and flushed properly" do
+  test "trace_delta coalesces preview on LLM span row without global token strip" do
     conn =
       build_conn()
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
-    {:ok, view, _html} = live(conn, "/scoria")
+    {:ok, view, html} = live(conn, "/scoria")
 
-    # Send tokens
-    send(view.pid, {:token, "Hello"})
-    send(view.pid, {:token, " World"})
+    refute html =~ "token-stream"
 
-    # Ensure they are not in the DOM immediately (buffered)
-    refute render(view) =~ "Hello World"
+    trace_id = "trace-token-1"
+    span_id = "span-llm-1"
 
-    # Send flush event explicitly (or wait for timer)
-    send(view.pid, :flush_tokens)
+    send(view.pid, {:trace_opened, %{id: trace_id}})
+    send(view.pid, {:trace_span, trace_id, %{id: span_id, name: "llm_call", span_kind: "LLM"}})
+    send(view.pid, {:trace_delta, %{trace_id: trace_id, span_id: span_id, chunk: "Hello"}})
+    send(view.pid, {:trace_delta, %{trace_id: trace_id, span_id: span_id, chunk: " world"}})
+    send(view.pid, {:flush_tokens, span_id})
 
-    # Now they should be in the DOM
-    assert render(view) =~ "Hello World"
+    html = render(view)
+    assert html =~ "Hello world"
+    assert html =~ "token-preview"
+    refute html =~ "token-stream"
   end
 
   test "retrieval evidence loads lazily and renders citation freshness details" do

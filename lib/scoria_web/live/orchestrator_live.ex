@@ -43,9 +43,9 @@ defmodule ScoriaWeb.OrchestratorLive do
     socket =
       socket
       |> assign(:page_title, "Scoria Dashboard")
-      |> assign(:token_buffer, [])
-      |> assign(:timer_ref, nil)
-      |> assign(:token_text, "")
+      |> assign(:token_buffers, %{})
+      |> assign(:token_previews, %{})
+      |> assign(:token_timers, %{})
       |> assign(:active_approval, nil)
       |> assign(:highlighted_approval_id, nil)
       |> assign(:approval_inbox, [])
@@ -92,7 +92,20 @@ defmodule ScoriaWeb.OrchestratorLive do
   end
 
   def handle_info({:trace_span, trace_id, span_view}, socket) do
-    {:noreply, upsert_trace_span(socket, trace_id, span_view)}
+    socket =
+      socket
+      |> upsert_trace_span(trace_id, span_view)
+      |> maybe_clear_token_preview(span_view)
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:trace_delta, %{trace_id: _trace_id, span_id: span_id, chunk: chunk}}, socket) do
+    {:noreply, append_trace_delta(socket, span_id, chunk)}
+  end
+
+  def handle_info({:flush_tokens, span_id}, socket) do
+    {:noreply, flush_token_preview(socket, span_id)}
   end
 
   def handle_info({:approval_decided, approval_id, _status}, socket) do
@@ -117,32 +130,6 @@ defmodule ScoriaWeb.OrchestratorLive do
       else
         assign(socket, :highlighted_approval_id, projection.id)
       end
-
-    {:noreply, socket}
-  end
-
-  def handle_info({:token, token}, socket) do
-    new_buffer = [token | socket.assigns.token_buffer]
-
-    socket =
-      if is_nil(socket.assigns.timer_ref) do
-        ref = Process.send_after(self(), :flush_tokens, 75)
-        assign(socket, timer_ref: ref)
-      else
-        socket
-      end
-
-    {:noreply, assign(socket, token_buffer: new_buffer)}
-  end
-
-  def handle_info(:flush_tokens, socket) do
-    new_chunk = socket.assigns.token_buffer |> Enum.reverse() |> Enum.join("")
-
-    socket =
-      socket
-      |> assign(token_text: socket.assigns.token_text <> new_chunk)
-      |> assign(token_buffer: [])
-      |> assign(timer_ref: nil)
 
     {:noreply, socket}
   end
@@ -255,8 +242,6 @@ defmodule ScoriaWeb.OrchestratorLive do
           </div>
         </section>
 
-        <div id="token-stream" class="mb-4 whitespace-pre-wrap"><%= @token_text %></div>
-
         <div class="mb-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
           <%= if approval_inbox_component?() do %>
             <ApprovalInboxComponent.render
@@ -337,7 +322,12 @@ defmodule ScoriaWeb.OrchestratorLive do
 
         <div id="traces-list" phx-update="stream" class="space-y-4">
           <div :for={{id, trace} <- @streams.traces} id={id} class="bg-white p-4 rounded shadow">
-            <.live_component module={ScoriaWeb.TraceTreeComponent} id={"tree-#{id}"} spans={trace.spans} />
+            <.live_component
+              module={ScoriaWeb.TraceTreeComponent}
+              id={"tree-#{id}"}
+              spans={trace.spans}
+              token_previews={@token_previews}
+            />
             <div class="mt-3 flex flex-wrap gap-2 text-[11px]">
               <span :for={badge <- trace_badges(trace)} class={trace_badge_class(badge.tone)}>
                 <%= badge.label %>
@@ -1089,5 +1079,66 @@ defmodule ScoriaWeb.OrchestratorLive do
     |> Map.new()
     |> Map.put_new(:id, Map.get(span, :id) || Ecto.UUID.generate())
     |> Map.put_new(:parent_id, nil)
+  end
+
+  defp append_trace_delta(socket, span_id, chunk) do
+    buffers = socket.assigns.token_buffers
+    span_buffer = Map.get(buffers, span_id, [])
+
+    span_buffer =
+      if length(span_buffer) >= 256 do
+        [chunk | Enum.take(span_buffer, 127)]
+      else
+        [chunk | span_buffer]
+      end
+
+    socket =
+      assign(socket, :token_buffers, Map.put(buffers, span_id, span_buffer))
+
+    if Map.has_key?(socket.assigns.token_timers, span_id) do
+      socket
+    else
+      coalesce_ms = Application.get_env(:scoria, :live_token_coalesce_ms, 75)
+      ref = Process.send_after(self(), {:flush_tokens, span_id}, coalesce_ms)
+
+      assign(socket, :token_timers, Map.put(socket.assigns.token_timers, span_id, ref))
+    end
+  end
+
+  defp flush_token_preview(socket, span_id) do
+    chunks =
+      socket.assigns.token_buffers
+      |> Map.get(span_id, [])
+      |> Enum.reverse()
+
+    preview =
+      socket.assigns.token_previews
+      |> Map.get(span_id, "")
+      |> Kernel.<>(Enum.join(chunks, ""))
+
+    socket =
+      socket
+      |> assign(:token_buffers, Map.put(socket.assigns.token_buffers, span_id, []))
+      |> assign(:token_previews, Map.put(socket.assigns.token_previews, span_id, preview))
+      |> assign(:token_timers, Map.delete(socket.assigns.token_timers, span_id))
+
+    case find_trace_for_span(socket, span_id) do
+      nil -> socket
+      trace -> stream_insert(socket, :traces, trace)
+    end
+  end
+
+  defp find_trace_for_span(socket, span_id) do
+    Enum.find_value(socket.assigns.trace_records, fn {_trace_id, trace} ->
+      if Enum.any?(trace.spans, &(Map.get(&1, :id) == span_id)), do: trace, else: nil
+    end)
+  end
+
+  defp maybe_clear_token_preview(socket, span_view) do
+    if Map.get(span_view, :end_time) do
+      assign(socket, :token_previews, Map.delete(socket.assigns.token_previews, span_view.id))
+    else
+      socket
+    end
   end
 end

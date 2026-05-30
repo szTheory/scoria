@@ -1,6 +1,9 @@
 defmodule ScoriaWeb.TraceTreeComponent do
   use Phoenix.LiveComponent
 
+  attr :spans, :list, required: true
+  attr :token_previews, :map, default: %{}
+
   def mount(socket) do
     {:ok, assign(socket, active_span_id: nil)}
   end
@@ -32,12 +35,17 @@ defmodule ScoriaWeb.TraceTreeComponent do
           <div 
             class="trace-span-name font-mono text-sm cursor-pointer hover:bg-gray-100 p-1"
             phx-click="load_metadata" 
-            phx-value-span_id={Map.get(span, :id, span.name)} 
+            phx-value-span_id={Map.get(span, :id) || Map.get(span, "id") || Map.get(span, :name) || Map.get(span, "name")}
             phx-target={@myself}
           >
-            <%= span.name %>
+            <%= Map.get(span, :name) || Map.get(span, "name") %>
           </div>
-          <%= if @active_span_id == to_string(Map.get(span, :id, span.name)) do %>
+          <%= if llm_token_preview?(assigns, span) do %>
+            <div class="token-preview pl-4 text-xs text-emerald-700 font-mono whitespace-pre-wrap break-all bg-emerald-50 border border-emerald-100 p-2 mt-1">
+              <%= Map.get(@token_previews, Map.get(span, :id) || Map.get(span, "id")) %>
+            </div>
+          <% end %>
+          <%= if @active_span_id == to_string(Map.get(span, :id) || Map.get(span, "id") || Map.get(span, :name)) do %>
             <div class="pl-4 text-xs text-gray-500 mt-1 bg-gray-50 p-2 border border-gray-200">
               <%= if Map.get(assigns, :active_metadata) do %>
                 <%= if @active_metadata.ok? do %>
@@ -56,5 +64,14 @@ defmodule ScoriaWeb.TraceTreeComponent do
       <% end %>
     </div>
     """
+  end
+
+  defp llm_token_preview?(assigns, span) do
+    span_id = Map.get(span, :id) || Map.get(span, "id")
+
+    Map.get(span, :span_kind) == "LLM" and
+      is_nil(Map.get(span, :end_time)) and
+      Map.get(assigns, :token_previews, %{})
+      |> Map.get(span_id, "") != ""
   end
 end
