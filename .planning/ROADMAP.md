@@ -1,7 +1,7 @@
 # Roadmap: Scoria
 
 **Milestone:** v2.11 Orchestrator Live Wiring
-**Last updated:** 2026-05-30 (v2.10 shipped)
+**Last updated:** 2026-05-30 (phase 01 plans complete)
 
 ## Overview
 
@@ -28,9 +28,9 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 4. `orchestrator_live_integration_test.exs` proves ORCH-LIVE-01 without `send/2`; pinned in semantic fast-path lane.
 5. `VerificationLanes.closeout_order/0` unchanged.
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans executed
 
-**Status:** In Progress — plan 01-03 next (DB hydrate + integration tests)
+**Status:** Complete (2026-05-30) — ready for `/gsd-verify-work`
 
 ---
 
@@ -38,7 +38,7 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 01 | Orchestrator live wiring | ORCH-LIVE-01 | In Progress (2/3 plans) |
+| 01 | Orchestrator live wiring | ORCH-LIVE-01 | Complete (3/3 plans, 2026-05-30) |
 
 ## Completed milestones
 
@@ -50,6 +50,5 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 
 ## Next milestone queue
 
-- **v2.11:** Orchestrator live wiring (ORCH-LIVE-01) — **current**
+- **v2.11:** Orchestrator live wiring (ORCH-LIVE-01) — **current, UAT pending**
 - **v2.12:** Optional lane journeys in gallery (LANE-DEMO-01)
-

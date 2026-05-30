@@ -8,7 +8,7 @@
 
 ### Orchestrator live wiring
 
-- [ ] **ORCH-LIVE-01**: Runtime→PubSub trace broadcast and HITL modal from real approvals.
+- [x] **ORCH-LIVE-01**: Runtime→PubSub trace broadcast and HITL modal from real approvals.
 
 ## Future Requirements
 
@@ -27,7 +27,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ORCH-LIVE-01 | 01 | Context gathered |
+| ORCH-LIVE-01 | 01 | Complete |
 
 **Coverage:**
 - v2.11 requirements: 1 total
