@@ -1,5 +1,21 @@
 # Milestones
 
+## v2.16 ReqLLM Peer Bump (Shipped: 2026-05-30)
+
+**Phases completed:** 4 phases (08–10 + 10.1 inserted), 4 requirements, 1 plan
+
+**Key accomplishments:**
+
+- ReqLLM peer dependency bumped to `~> 1.13` (locked at 1.13.0)
+- Orchestrator, judge runner, compaction worker, and observe adapter verified against bumped ReqLLM
+- `mix scoria.test.ci_trust` green — no new warning debt from transitive lock updates
+- CHANGELOG `[Unreleased]` notes peer bump
+- Phase 10.1 retroactive VERIFICATION ledgers — milestone audit `passed`, `requirements_process: 4/4`
+
+**Known deferred at close:** Publish `0.1.1` via release-please; ReqLLM streaming adapter (ECOS-02); SummarizeWorker dedicated unit test (see `.planning/milestones/v2.16-MILESTONE-AUDIT.md`).
+
+---
+
 ## v2.15 Connector Adoption Lane (Shipped: 2026-05-30)
 
 **Phases completed:** 4 phases (05–07 + 07.1 inserted), 6 requirements, 1 plan

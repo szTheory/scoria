@@ -2,6 +2,42 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v2.16 — ReqLLM Peer Bump
+
+**Shipped:** 2026-05-30
+**Phases:** 4 (08–10 + 10.1 inserted) | **Plans:** 1 formal
+
+### What Was Built
+- ReqLLM peer dependency bumped from `~> 1.11` to `~> 1.13` (1.13.0 locked in `mix.lock`).
+- Integration verification: orchestrator, judge runner, compaction worker, observe adapter, OrchestratorLive producer path.
+- `mix scoria.test.ci_trust` green (43 tests) — no new warning debt from transitive lock updates.
+- CHANGELOG `[Unreleased]` entry for peer bump.
+- Phase 10.1 retroactive VERIFICATION ledgers — milestone audit re-run to `passed`.
+
+### What Worked
+- Minimal scope kept milestone focused — dependency hygiene only, no product expansion.
+- Integration test slice (17 tests) gave fast confidence after lockfile update.
+- Phase 10.1 decimal closeout pattern (established in v2.15) closed process gate without code changes.
+
+### What Was Inefficient
+- Phases 08–10 shipped without GSD execute artifacts; required 10.1 insertion and retroactive ledgers (repeat of v2.15 pattern).
+- No dedicated SummarizeWorker unit test — compile + orchestrator path coverage only.
+
+### Patterns Established
+- Thin dependency-bump milestones: audit-time test commands as automated gates in retroactive VERIFICATION.
+- Decimal phase for process-only closeout when implementation ships ahead of GSD artifacts.
+
+### Key Lessons
+1. Run milestone audit before marking complete; retroactive VERIFICATION is cheaper than orphan REQ detection at archive time.
+2. Lockfile transitive updates (decimal, jsv, llm_db, plug, telemetry) need CI trust bundle verification, not just compile.
+3. Repeat the 10.1 pattern proactively for thin milestones to avoid double closeout passes.
+
+### Cost Observations
+- Model mix: not tracked
+- Notable: Same-day implementation + process closeout; thin milestone with zero product code in 10.1
+
+---
+
 ## Milestone: v2.15 — Connector Adoption Lane
 
 **Shipped:** 2026-05-30

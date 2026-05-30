@@ -10,7 +10,15 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Latest Shipped Milestone: v2.15 Connector Adoption Lane (2026-05-30)
+## Latest Shipped Milestone: v2.16 ReqLLM Peer Bump (2026-05-30)
+
+**Goal:** Keep Scoria's LLM orchestration peer current on Hex without widening product scope.
+
+**Delivered:** ReqLLM `~> 1.13` (1.13.0 locked); integration slice (17 tests) + `mix scoria.test.ci_trust` (43 tests) green. Phase 10.1 closed retroactive VERIFICATION process gap — milestone audit `passed`, `requirements_process: 4/4`.
+
+**Why it mattered:** LLM orchestration peer stays current on Hex without product scope creep or CI regression.
+
+## Previous Shipped: v2.15 Connector Adoption Lane (2026-05-30)
 
 **Goal:** Named connector adoption proof lane with docs/CI/drift-guard parity to semantic and knowledge lanes.
 
@@ -66,6 +74,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **v2.16 shipped (2026-05-30):** ReqLLM peer bump to `~> 1.13` (1.13.0); archived in `.planning/milestones/v2.16-*`.
 - **v2.15 shipped (2026-05-30):** Connector adoption lane — `mix test.connector`, PR CI WAE after knowledge, drift guards; archived in `.planning/milestones/v2.15-*`.
 - **v2.12 shipped (2026-05-30):** Adoption confidence reference demo — SupportJourney.Handlers SSOT, gallery optional lane journeys, orchestrator producer smoke, MAINTAINERS.md split; Hex `0.1.1` prepared.
 - **v2.11 shipped (2026-05-30):** ORCH-LIVE-01 complete — orchestrator live trace broadcast and HITL from real runtime/workflow paths; phases 01 + 01.1 in `.planning/milestones/v2.11-phases/`.
@@ -164,9 +173,10 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Adopter vs maintainer docs split (`docs/MAINTAINERS.md`); Hex metadata and connector_adoption in package extras. — `v2.13` (DOCS-03, DOCS-04)
 - ✓ Maintenance release `0.1.1` prepared with adopter-readable CHANGELOG and release-please manifest. — `v2.14` (HEX-03)
 - ✓ Named connector adoption lane `mix test.connector` with VerificationLanes entry, SupportJourney proof, docs truth, and PR CI WAE. — `v2.15` (CONN-LANE-01–03, CONN-DOCS-01–02, CONN-CI-01)
+- ✓ ReqLLM peer dependency bumped to `~> 1.13` (1.13.0); orchestrator, judge runner, compaction worker, and observe adapter verified — `v2.16` (DEPS-01–04)
 
 ### Active
-- _(none — v2.15 shipped; planning next milestone; release 0.1.1 publish pending)_
+- _(none — v2.16 archived; define next milestone via `/gsd-new-milestone`; release 0.1.1 publish pending)_
 
 ### Out of Scope
 
@@ -215,12 +225,13 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Context
 
-- **Latest shipped:** v2.15 connector adoption lane (`mix test.connector`) — archived 2026-05-30.
+- **Latest shipped:** v2.16 ReqLLM peer bump (`~> 1.13`) — archived 2026-05-30.
+- v2.15 connector adoption lane (`mix test.connector`) — archived 2026-05-30.
 - v2.12–v2.14 shipped 2026-05-30; v2.13/v2.14 bundled with v2.12 closeout pass.
 - Hex `0.1.1` prepared locally; `0.1.0` live at https://hex.pm/packages/scoria — publish via release-please.
 - CI: policy job (baseline → inventory baseline → compile WAE → lane-contract) → test job (closeout → semantic WAE → ratchet hygiene → full WAE → knowledge WAE → connector WAE → advisory gallery).
 - `Scoria.SupportJourney` + `examples/support_copilot/` gallery; advisory `mix scoria.test.support_copilot` outside closeout.
-- Archives: `.planning/milestones/v2.15-*`, `v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
+- Archives: `.planning/milestones/v2.16-*`, `v2.15-*`, `v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
 
 ## Constraints
 
@@ -260,6 +271,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | Phase 01.1 inserted after audit for ORCH-LIVE-01 hardening | Audit found redaction, approval E2E, and token coalesce gaps | ✓ Good — shipped 01.1 |
 | Check-time manifest fingerprints are live-host-only; apply-time freshness gate uses stored manifest | Honest operator contract avoids misleading stored-fingerprint merge at check | ✓ Good — shipped Phase 63 |
 | v2.15 connector lane as PR WAE after knowledge, not in closeout | Parity with semantic/knowledge lanes; preserve v2.4 closeout contract | ✓ Good — shipped v2.15 |
+| v2.16 minimal ReqLLM-only peer bump; no optional szTheory deps | User chose narrow dependency hygiene scope; Tribunal already current | ✓ Good — shipped v2.16 |
+| Phase 10.1 inserted after audit for v2.16 VERIFICATION gap | Phases 08–10 shipped without GSD execute artifacts; retroactive ledgers | ✓ Good — shipped 10.1 |
 
 ## Milestone History
 
@@ -286,6 +299,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v2.10 Hex Consumer Proof & Upgrade Smoke`: Tarball consumer proof, upgrade smoke, registry attest, DOCS-HEX-01 drift guards.
 - `v2.11 Orchestrator Live Wiring`: ORCH-LIVE-01 live trace + HITL from runtime; Phase 01.1 hardening slice.
 - `v2.15 Connector Adoption Lane`: Named `mix test.connector` lane, SupportJourney proof, docs/CI/drift guards; Phase 07.1 process closeout.
+- `v2.16 ReqLLM Peer Bump`: ReqLLM `~> 1.13` peer bump with integration + CI trust verification; Phase 10.1 process closeout.
 
 ## Archived Planning Notes
 
@@ -349,4 +363,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 after v2.15 milestone archive*
+*Last updated: 2026-05-30 after v2.16 milestone archive*
