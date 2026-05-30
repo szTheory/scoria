@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.10
 milestone_name: Hex Consumer Proof & Upgrade Smoke
-status: ready_to_plan
-last_updated: 2026-05-29T21:45:11.614Z
-last_activity: 2026-05-29 -- Completed 80-03 upgrade test and adoption lane closeout
+status: planning
+last_updated: "2026-05-30T00:23:19.150Z"
+last_activity: 2026-05-29
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 9
   completed_plans: 9
   percent: 60
-stopped_at: Phase 80 complete (3/3) — ready to discuss Phase 81
 ---
 
 # Project State
