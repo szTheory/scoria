@@ -16,6 +16,7 @@
 | 05 | Lane contract + Mix task | Named `mix test.connector` in VerificationLanes | CONN-LANE-01, CONN-LANE-02 | complete |
 | 06 | Integration proof | SupportJourney connector register → fleet → drawer | CONN-LANE-03 | complete |
 | 07 | Docs, drift guards, CI | Docs truth + PR WAE wiring | CONN-DOCS-01, CONN-DOCS-02, CONN-CI-01 | complete |
+| 07.1 | VERIFICATION gap closeout (INSERTED) | Retroactive `*-VERIFICATION.md` + `07-SUMMARY.md` for phases 05–07 | CONN-* (process) | planned |
 
 ### Phase 05: Lane contract + Mix task
 
@@ -24,6 +25,7 @@
 **Requirements:** CONN-LANE-01, CONN-LANE-02
 
 **Success criteria:**
+
 1. `VerificationLanes.command(:connector)` returns `mix test.connector`
 2. `:connector` is not in `closeout_order/0`
 3. `mix test.connector` runs bounded connector test file set green
@@ -35,6 +37,7 @@
 **Requirements:** CONN-LANE-03
 
 **Success criteria:**
+
 1. `Scoria.Connectors.AdoptionLaneTest` uses `SupportJourney.connector_key/0` and `tenant_id/0`
 2. Fleet list and drawer evidence assertions pass under lane task
 
@@ -45,6 +48,7 @@
 **Requirements:** CONN-DOCS-01, CONN-DOCS-02, CONN-CI-01
 
 **Success criteria:**
+
 1. `docs/adoption_lanes.md` and `docs/connector_adoption.md` name `mix test.connector`
 2. `SupportJourney` + `adoption_surface_test` pin connector lane fragments
 3. `ci-verify.yml` runs connector lane after knowledge, before gallery
@@ -53,3 +57,15 @@
 ## Previous milestone archive
 
 See `.planning/MILESTONES.md` for v2.12–v2.14 closeout history.
+
+### Phase 07.1: Close gap: VERIFICATION artifacts for v2.15 phases 05–07 (INSERTED)
+
+**Goal:** Close the v2.15 process gate — write retroactive `05/06/07-VERIFICATION.md` + `07-SUMMARY.md`, re-run milestone audit to `status: passed` without changing shipped code.
+**Requirements**: CONN-LANE-01, CONN-LANE-02, CONN-LANE-03, CONN-DOCS-01, CONN-DOCS-02, CONN-CI-01 (process traceability only)
+**Depends on:** Phase 07
+**Plans:** 1 plan
+
+Plans:
+
+**Wave 1**
+- [ ] 07.1-01-PLAN.md — Coordinated retro VERIFICATION + 07-SUMMARY + milestone re-audit (5 tasks)
