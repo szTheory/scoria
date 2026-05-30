@@ -31,6 +31,18 @@ Operator surfaces:
 - `/scoria`
 - `/scoria/workflows/:run_id`
 
+#### Host session identity
+
+Host apps **must** set `session["tenant_id"]` and `session["actor_id"]` before mounting `/scoria` (or any route wired with `scoria_dashboard/2`). OrchestratorLive scopes PubSub to `scoria:runs:{tenant_id}` and uses both keys for audit refs on `Workflows.approve/3`. The runtime identity you pass to `Scoria.start_run/2` must use the **same** `tenant_id` as the LiveView session or live trace and HITL updates will not reach the operator UI.
+
+```elixir
+conn
+|> put_session("tenant_id", conn.assigns.current_account.id)
+|> put_session("actor_id", conn.assigns.current_user.id)
+```
+
+`mix scoria.install` does **not** inject auth or session keys — that contract is host-owned. When operator live broadcast is enabled, ensure Observe `Telemetry` and `Buffer` are started in your host application (see `test/scoria/observe/telemetry_test.exs` for the attach pattern).
+
 Proof lane:
 
 ```bash
