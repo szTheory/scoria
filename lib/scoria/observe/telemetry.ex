@@ -17,6 +17,17 @@ defmodule Scoria.Observe.Telemetry do
     )
   end
 
+  @doc """
+  Emits a span delta telemetry event for streaming token chunks.
+
+  Future ReqLLM streaming adapters should call this instead of raw
+  `:telemetry.execute/3`. Integration tests must use this for delta proof
+  (not raw `:telemetry.execute` on `[:scoria, :observe, :span, :delta]`).
+  """
+  def emit_span_delta(metadata) when is_map(metadata) do
+    :telemetry.execute([:scoria, :observe, :span, :delta], %{}, metadata)
+  end
+
   def handle_event([:scoria, :observe, :span, :delta], _measurements, metadata, _config) do
     redacted =
       metadata
