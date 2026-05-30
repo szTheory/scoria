@@ -343,11 +343,14 @@ defmodule Scoria.CiPolicyContractTest do
 
   test "planning ledgers reflect v2.10 hex consumer proof milestone" do
     roadmap = File.read!(".planning/ROADMAP.md")
+    archived_roadmap = File.read!(".planning/milestones/v2.10-ROADMAP.md")
     milestones = File.read!(".planning/MILESTONES.md")
 
     assert roadmap =~ "v2.10"
-    assert roadmap =~ "81"
-    assert roadmap =~ "post-publish"
+    assert roadmap =~ "v2.11"
+    assert archived_roadmap =~ "81"
+    assert archived_roadmap =~ "post-publish"
+    assert milestones =~ "v2.10 Hex Consumer"
     assert milestones =~ "v2.9 Adoption Journey"
   end
 

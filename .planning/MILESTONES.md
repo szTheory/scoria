@@ -1,5 +1,21 @@
 # Milestones
 
+## v2.10 Hex Consumer Proof & Upgrade Smoke (Shipped: 2026-05-30)
+
+**Phases completed:** 5 phases (78–82), 15 plans, 4 requirements
+
+**Key accomplishments:**
+
+- `HexConsumerContract` SSOT with fingerprinted unpack cache and tarball dep tuples.
+- Merge-blocking tarball consumer full overlay in `mix test.adoption` (handoff → route → runtime).
+- Content-revision upgrade smoke from committed `scoria-0.1.0-unpack` fixture to HEAD tarball.
+- Blocking `mix scoria.post_publish_smoke` registry attest in release-please and hex-publish workflows.
+- DOCS-HEX-01 drift guards: `adopter_doc_surfaces/0`, `adoption_surface_test`, `ci_policy_contract_test` gate map pins.
+
+**Known deferred at close:** Registry semver upgrade leg latent until `0.1.1+` publishes; Nyquist missing for phases 78–82 (non-blocking); orchestrator live wiring → v2.11.
+
+---
+
 ## v2.9 Adoption Journey & Reference Demo (Shipped: 2026-05-29)
 
 **Phases completed:** 6 phases (74–77.2), 3 formal plans + PR #4 commit-driven delivery, 8 requirements

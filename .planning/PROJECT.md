@@ -10,17 +10,27 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: v2.10 Hex Consumer Proof & Upgrade Smoke
+## Current Milestone: v2.11 Orchestrator Live Wiring
 
-**Goal:** Close the last adopter-trust gap after Hex `0.1.0` — prove the published package (not repo path) installs, upgrades, and runs the same overlay depth v2.9 validated.
+**Goal:** Wire runtime→PubSub trace broadcast and HITL approval modal from real approvals (ORCH-LIVE-01).
 
 **Target features:**
-- Tarball-based consumer proof in merge-blocking `mix test.adoption` (route + HOST-01 runtime + HOST-02 handoff overlay smokes).
-- Upgrade smoke: published `0.1.0` → current artifact via `--dry-run` / `--check` / apply / migrate chain.
-- Post-publish registry proof + real semver upgrade gate in `post-publish-smoke.yml`.
-- `HexConsumerContract` SSOT + README/operator drift guards aligned to executable proof.
+- Live trace stream from runtime events to operator UI.
+- HITL modal driven by real approval pauses, not fixture-only paths.
 
-## Latest Shipped Milestone: v2.9 Adoption Journey & Reference Demo
+## Latest Shipped Milestone: v2.10 Hex Consumer Proof & Upgrade Smoke
+
+**Goal:** Close the post-Hex adopter-trust gap — prove packaged artifact installs, upgrades, and matches v2.9 overlay depth.
+
+**Delivered:**
+- Tarball consumer proof in merge-blocking `mix test.adoption`.
+- Content-revision upgrade smoke (`0.1.0` fixture → HEAD).
+- Blocking post-publish registry attest via `mix scoria.post_publish_smoke`.
+- `adopter_doc_surfaces/0` + executable drift guards (DOCS-HEX-01).
+
+**Why it mattered:** Adopters and maintainers share one SSOT for Hex dep shapes, CI topology, and doc pins before orchestrator live wiring.
+
+## Previous Shipped: v2.9 Adoption Journey & Reference Demo
 
 **Goal:** Battle-test Scoria through a realistic support-copilot domain with shared journey fixtures, extended host-proof overlay, and a human-clickable gallery — without weakening v2.4–v2.8 lane contracts.
 
@@ -45,7 +55,9 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
-- **Phase 81 complete (2026-05-30):** Post-publish registry gate — `mix scoria.post_publish_smoke` proves live Hex install with exact version pins; blocking `post-publish-attest` wired in release-please and hex-publish workflows; operator gate map distinguishes PR tarball vs release registry proof.
+- **v2.10 shipped (2026-05-30):** Hex consumer proof milestone archived — phases 78–82 in `.planning/milestones/v2.10-phases/`; audit at `v2.10-MILESTONE-AUDIT.md`.
+- **v2.11 planning:** ORCH-LIVE-01 queued; phases TBD via `/gsd-discuss-phase` → `/gsd-plan-phase`.
+- **Phase 81 (v2.10):** Post-publish registry gate — `mix scoria.post_publish_smoke` proves live Hex install with exact version pins; blocking `post-publish-attest` wired in release-please and hex-publish workflows.
 - **Phase 79 complete (2026-05-29):** Merge-blocking tarball consumer proof runs full v2.9 overlay depth (handoff → route → runtime) via `mix hex.build` unpack dep; operator triage, `SCORIA_PRESERVE_HOST`, and CI failure snapshot artifact wired.
 - **Hex:** `0.1.0` live at https://hex.pm/packages/scoria (tag `v0.1.0`, 2026-05-29).
 - Phase 73 CI hardening complete (2026-05-29): semantic lane + knowledge WAE + inventory baseline check in `ci-verify.yml`; operator gate map updated.
