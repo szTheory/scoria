@@ -55,8 +55,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **v2.11 Phase 01 complete (2026-05-30):** ORCH-LIVE-01 implemented — OperatorBroadcast tenant PubSub, Telemetry redact→broadcast→buffer hook, OrchestratorLive incremental trace merge + HITL hybrid UX, DB hydrate on connect, integration test proving `Runtime.start_run` → DOM without `send/2`.
 - **v2.10 shipped (2026-05-30):** Hex consumer proof milestone archived — phases 78–82 in `.planning/milestones/v2.10-phases/`; audit at `v2.10-MILESTONE-AUDIT.md`.
-- **v2.11 planning:** ORCH-LIVE-01 queued; phases TBD via `/gsd-discuss-phase` → `/gsd-plan-phase`.
 - **Phase 81 (v2.10):** Post-publish registry gate — `mix scoria.post_publish_smoke` proves live Hex install with exact version pins; blocking `post-publish-attest` wired in release-please and hex-publish workflows.
 - **Phase 79 complete (2026-05-29):** Merge-blocking tarball consumer proof runs full v2.9 overlay depth (handoff → route → runtime) via `mix hex.build` unpack dep; operator triage, `SCORIA_PRESERVE_HOST`, and CI failure snapshot artifact wired.
 - **Hex:** `0.1.0` live at https://hex.pm/packages/scoria (tag `v0.1.0`, 2026-05-29).
@@ -141,6 +141,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ `examples/support_copilot/` gallery demonstrates support-copilot domain with LiveView journey tests. — `v2.9` (GALL-01, GALL-02)
 - ✓ Advisory `mix scoria.test.support_copilot` runs gallery proof outside `closeout_order/0`; CI ordering contract enforced. — `v2.9` (CI-GALL-01)
 - ✓ Generated Phoenix host in `mix test.adoption` consumes Scoria via Hex-shaped tarball dependency and proves full overlay depth (handoff + route + runtime smokes). — Phase 79 (HEX-CONSUMER-01)
+- ✓ Runtime span events fan out to tenant-scoped PubSub; OrchestratorLive merges live trace deltas and HITL approval pauses from real workflow paths (not test `send/2`). — Phase 01 (ORCH-LIVE-01)
 
 ### Active
 - **HEX-UPGRADE-01**: Same host proves upgrade-safe install after simulated version bump (`--dry-run` / `--check` / apply / migrate).
@@ -315,4 +316,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 — Phase 81 post-publish registry gate complete*
+*Last updated: 2026-05-30 — Phase 01 ORCH-LIVE-01 orchestrator live wiring complete*

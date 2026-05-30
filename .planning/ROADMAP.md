@@ -38,7 +38,7 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 01 | Orchestrator live wiring | ORCH-LIVE-01 | Complete (3/3 plans, 2026-05-30) |
+| 01 | 3/3 | Complete    | 2026-05-30 |
 
 ## Completed milestones
 
