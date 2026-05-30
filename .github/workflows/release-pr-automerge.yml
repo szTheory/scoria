@@ -1,4 +1,6 @@
-# Merge Release Please PRs after CI succeeds on the release branch.
+# Merge Release Please PRs after ci-gate succeeds on the release branch.
+# With RELEASE_PLEASE_TOKEN, pull_request CI runs natively; release-please.yml only
+# workflow_dispatch-dispatches when an open Release PR was not freshly updated.
 
 name: Release PR Auto-Merge
 
@@ -61,12 +63,11 @@ jobs:
             echo "branch=${RUN_BRANCH}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Verify CI verify jobs succeeded on target SHA
+      - name: Verify ci-gate succeeded on target SHA
         uses: actions/github-script@v7
         with:
           script: |
             const sha = '${{ steps.target.outputs.sha }}';
-            const required = ['verify / policy', 'verify / test'];
             const { data } = await github.rest.checks.listForRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -74,16 +75,20 @@ jobs:
               filter: 'all'
             });
 
-            for (const name of required) {
-              const runs = data.check_runs
-                .filter((run) => run.name === name)
-                .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
-              const latest = runs[0];
-              if (!latest || latest.conclusion !== 'success') {
-                core.setFailed(`${name} must succeed on ${sha} (found: ${latest?.conclusion ?? 'missing'})`);
-                return;
-              }
+            const ciGateRuns = data.check_runs
+              .filter((run) => run.name === 'ci-gate')
+              .sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+
+            const latest = ciGateRuns[0];
+
+            if (!latest || latest.conclusion !== 'success') {
+              core.setFailed(
+                `Latest ci-gate on ${sha} must succeed before merge (found: ${latest?.conclusion ?? 'missing'}).`
+              );
+              return;
             }
+
+            core.info(`Latest ci-gate succeeded on ${sha}: ${latest.details_url}`);
 
       - name: Find and merge release PR
         env:
@@ -144,14 +149,57 @@ jobs:
             fi
           done
 
-          echo "Merging release PR #$pr_number ($title)"
-          gh pr merge "$pr_number" --squash -R "$REPOSITORY" || \
-            gh pr merge "$pr_number" --squash --admin -R "$REPOSITORY"
+          latest_ci_gate() {
+            gh api "repos/${REPOSITORY}/commits/${HEAD_SHA}/check-runs" \
+              --jq '[.check_runs[] | select(.name == "ci-gate")] | sort_by(.started_at) | last | .conclusion // "missing"'
+          }
 
-      - name: Bootstrap CI on main after merge
-        if: success()
+          echo "Merging release PR #$pr_number ($title)"
+          for attempt in $(seq 1 12); do
+            conclusion=$(latest_ci_gate)
+            if [ "$conclusion" != "success" ]; then
+              echo "Latest ci-gate on $HEAD_SHA is $conclusion (attempt ${attempt}/12); waiting 30s..."
+              sleep 30
+              continue
+            fi
+
+            if gh pr merge "$pr_number" --squash -R "$REPOSITORY"; then
+              echo "Merged PR #$pr_number"
+              merge_sha=$(gh pr view "$pr_number" --json mergeCommit -q '.mergeCommit.oid' -R "$REPOSITORY")
+              echo "merge_sha=${merge_sha}" >> "$GITHUB_ENV"
+              echo "merged=true" >> "$GITHUB_ENV"
+              exit 0
+            fi
+
+            if gh pr merge "$pr_number" --squash --admin -R "$REPOSITORY"; then
+              echo "Merged PR #$pr_number with admin override"
+              merge_sha=$(gh pr view "$pr_number" --json mergeCommit -q '.mergeCommit.oid' -R "$REPOSITORY")
+              echo "merge_sha=${merge_sha}" >> "$GITHUB_ENV"
+              echo "merged=true" >> "$GITHUB_ENV"
+              exit 0
+            fi
+
+            echo "Merge blocked (attempt ${attempt}/12); waiting for branch protection to catch up..."
+            sleep 30
+          done
+
+          echo "Failed to merge PR #$pr_number after 12 attempts"
+          exit 1
+
+      - name: Bootstrap CI on merge commit
+        if: env.merged == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh workflow run ci.yml --ref main -R "${{ github.repository }}" || true
-          gh workflow run release-please.yml --ref main -R "${{ github.repository }}" || true
+          # GITHUB_TOKEN merges do not emit push events. main HEAD is the merge commit
+          # immediately after squash merge, so dispatch CI on main (not a raw SHA ref).
+          gh workflow run ci.yml --ref main -R "${{ github.repository }}"
+          echo "Dispatched CI on main at merge commit ${{ env.merge_sha }}."
+
+      - name: Trigger release workflow after merge
+        if: env.merged == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run release-please.yml -R "${{ github.repository }}"
+          echo "Dispatched Release Please workflow for tag + Hex publish."

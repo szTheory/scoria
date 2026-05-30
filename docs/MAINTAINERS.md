@@ -4,7 +4,7 @@ This guide is for **maintainers** — CI topology, release operations, warning r
 
 ## CI gate map {#ci-gate-map-maintainers}
 
-GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **`test`** (`needs: policy`, pgvector Postgres on port 55432) for canonical closeout. Executable jobs live in `.github/workflows/ci-verify.yml` (reusable SSOT); `.github/workflows/ci.yml` is the PR entrypoint. Lane order is enforced by `Scoria.VerificationLanes` and `test/scoria/ci_policy_contract_test.exs`.
+GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **`test`** (`needs: policy`, pgvector Postgres on port 55432) for canonical closeout. A **`ci-gate`** umbrella job fails if either lane fails — branch protection and release automerge require **CI / ci-gate**. Executable jobs live in `.github/workflows/ci-verify.yml` (reusable SSOT); `.github/workflows/ci.yml` is the PR entrypoint. Lane order is enforced by `Scoria.VerificationLanes` and `test/scoria/ci_policy_contract_test.exs`.
 
 **Policy job (fail cheap, no database):**
 
@@ -68,23 +68,54 @@ Maintainer-only release operations. Adopter install guidance stays in README and
 - **Hex / git:** semver such as `0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}` on [hex.pm](https://hex.pm/packages/scoria)
 - **Planning:** internal `v2.x` milestone labels in the repository are delivery tranches — not a second install axis
 
-### HEX_API_KEY
+### Required secrets
+
+**`HEX_API_KEY`** — Hex publish from CI:
 
 ```bash
 mix hex.user key generate scoria-ci --api
 gh secret set HEX_API_KEY --repo szTheory/scoria
 ```
 
-### Default path (Release Please)
+**`RELEASE_PLEASE_TOKEN`** — fine-grained PAT with Contents + Pull requests write. Required for routine hands-off releases: native `pull_request` CI on Release Please bot pushes and reliable GitHub release creation. Without it, release-branch CI may not refresh when the Release PR is stale.
 
-1. Push conventional commits to `main` → release-please opens/updates a Release PR
-2. Confirm CI is green on the `release-please--**` branch
-3. Merge the Release PR → tag → `publish-hex` with `HEX_API_KEY`
-4. Post-publish attest runs `mix scoria.post_publish_smoke`
+```bash
+gh secret set RELEASE_PLEASE_TOKEN --repo szTheory/scoria
+```
+
+### Normal patch release (fully automated)
+
+1. Merge maintainer PRs to `main` using conventional commit prefixes (`fix:`, `docs:`, `chore:` for patch-eligible work).
+2. Confirm GitHub Actions **CI / ci-gate** is green on `main`.
+3. **Release Please** workflow opens or updates a patch Release PR.
+4. **Bootstrap CI on Release PR** dispatches `ci.yml` only when a Release PR is open but was **not** just updated (`prs_created` false). Fresh Release Please updates run **pull_request** CI via `RELEASE_PLEASE_TOKEN` — no duplicate dispatch.
+5. When **ci-gate** succeeds on the release branch, **Release PR Auto-Merge** merges the Release PR, dispatches **CI** on `main`, then **Release Please** (`GITHUB_TOKEN` merges do not emit push events).
+6. **Release Please** tags the merge, waits for **ci-gate** on the tag SHA, then publishes to Hex automatically.
+7. **Post-publish registry attest** runs `mix scoria.post_publish_smoke` (includes semver upgrade leg when `published_version > 0.1.0`).
+8. Verify `mix hex.info scoria` lists the new version.
+
+Routine patch releases require **no manual merge** of the Release PR.
+
+### What to expect in Actions
+
+| Workflow | When it runs | Skipped is normal when |
+|----------|--------------|------------------------|
+| **Release Please** | Every push to `main` or after automerge dispatch | Tag/Hex jobs skip until a Release PR merges (`release_created` is false). |
+| **Release PR Auto-Merge** | After **CI** completes on `release-please--**` | CI on `main` finishes — only release-branch CI triggers merge. |
+| **Bootstrap CI on Release PR** | After **Release Please** on `main` | Open Release PR exists but was not just updated (`prs_created` false). |
+| **Release PR Auto-Merge** | `workflow_dispatch` | Manual retry when automation stalled after green ci-gate. |
+
+A **skipped** Release PR Auto-Merge run after a maintainer push to `main` is expected, not a failed release.
+
+### Avoiding duplicate CI on Release PRs
+
+With `RELEASE_PLEASE_TOKEN`, Release Please PR updates trigger native `pull_request` CI. The bootstrap job **does not** `workflow_dispatch` CI when `prs_created` is true — duplicate runs would cancel each other and leave a stale failed `ci-gate` on the PR.
+
+**Automerge** merges with `GITHUB_TOKEN`, which does **not** emit `push` events. **Release PR Auto-Merge** dispatches **CI** on `main`, then **Release Please**, so `gate-ci-green` can verify `ci-gate` before Hex publish.
 
 ### Manual recovery (`hex-publish.yml`)
 
-When `publish-hex` failed but the git tag exists and the version is not on hex.pm:
+Use only when Release Please or Hex publish did not complete:
 
 ```bash
 gh workflow run hex-publish.yml \
@@ -109,8 +140,9 @@ When `published_version > 0.1.0`, registry attest also runs the semver upgrade l
 | Workflow | Role |
 |----------|------|
 | `.github/workflows/ci-verify.yml` | Reusable policy → test verify bar |
-| `.github/workflows/ci.yml` | PR / release-please triggers |
-| `.github/workflows/release-please.yml` | Release PR + publish-hex + post-publish-attest |
+| `.github/workflows/ci.yml` | PR / release-please triggers + ci-gate umbrella |
+| `.github/workflows/release-please.yml` | Release PR + bootstrap CI + publish-hex + post-publish-attest |
+| `.github/workflows/release-pr-automerge.yml` | Auto-merge release PR after ci-gate |
 | `.github/workflows/post-publish-smoke.yml` | Registry attest |
 | `.github/workflows/hex-publish.yml` | Manual recovery |
 

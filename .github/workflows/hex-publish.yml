@@ -67,7 +67,7 @@ jobs:
           script: |
             const sha = '${{ steps.validate.outputs.sha }}';
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-            const required = ['verify / policy', 'verify / test'];
+            const required = ['ci-gate'];
 
             for (let attempt = 1; attempt <= 20; attempt++) {
               const { data } = await github.rest.actions.listWorkflowRuns({

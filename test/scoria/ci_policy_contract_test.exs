@@ -57,6 +57,8 @@ defmodule Scoria.CiPolicyContractTest do
     assert release_please =~ "gate-ci-green"
     assert release_please =~ "post-publish-attest"
     assert release_please =~ "post-publish-smoke.yml"
+    assert release_please =~ "bootstrap-release-pr-ci"
+    assert release_please =~ "prs_created"
   end
 
   test "release-pr-automerge.yml guards release PR merges" do
@@ -65,8 +67,18 @@ defmodule Scoria.CiPolicyContractTest do
     assert automerge =~ "release-please--branches--main"
     assert automerge =~ "autorelease: pending"
     assert automerge =~ "do-not-merge"
-    assert automerge =~ "verify / policy"
-    assert automerge =~ "verify / test"
+    assert automerge =~ "ci-gate"
+    assert automerge =~ "seq 1 12"
+    assert automerge =~ "Trigger release workflow after merge"
+  end
+
+  test "MAINTAINERS.md documents fully automated release train" do
+    maintainers = File.read!(@maintainer_docs)
+
+    assert maintainers =~ "Normal patch release (fully automated)"
+    assert maintainers =~ "RELEASE_PLEASE_TOKEN"
+    assert maintainers =~ "no manual merge"
+    refute maintainers =~ "Merge the Release PR"
   end
 
   test "ci-verify.yml prepares knowledge migrations before semantic cache" do
@@ -115,6 +127,7 @@ defmodule Scoria.CiPolicyContractTest do
     assert ci_entry =~ "uses: ./.github/workflows/ci-verify.yml"
     assert ci_entry =~ "release-please--"
     assert ci_entry =~ "workflow_dispatch"
+    assert ci_entry =~ "ci-gate"
     refute ci_entry =~ "\n  policy:"
   end
 

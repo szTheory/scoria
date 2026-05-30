@@ -22,3 +22,20 @@ permissions:
 jobs:
   verify:
     uses: ./.github/workflows/ci-verify.yml
+
+  ci-gate:
+    name: ci-gate
+    runs-on: ubuntu-latest
+    needs: [verify]
+    if: always()
+    steps:
+      - name: Verify required CI lanes
+        env:
+          VERIFY: ${{ needs.verify.result }}
+        run: |
+          set -euo pipefail
+          if [[ "$VERIFY" != "success" ]]; then
+            echo "ci-gate failed: verify workflow result was $VERIFY"
+            exit 1
+          fi
+          echo "ci-gate passed: all required lanes succeeded."

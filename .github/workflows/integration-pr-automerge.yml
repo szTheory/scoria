@@ -26,7 +26,7 @@ jobs:
         with:
           script: |
             const sha = '${{ github.event.workflow_run.head_sha }}';
-            const required = ['verify / policy', 'verify / test'];
+            const required = ['ci-gate'];
             const { data } = await github.rest.checks.listForRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
