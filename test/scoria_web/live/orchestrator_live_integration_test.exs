@@ -37,6 +37,7 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
   alias Scoria.Repo.{Span, Trace}
   alias Scoria.Runtime
   alias Scoria.Workflows
+  alias Scoria.Workflows.RemoteApprovalProjection
 
   alias Phoenix.LiveViewTest.{ClientProxy, View}
 
@@ -124,6 +125,18 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
          tool_name: "publish",
          arguments: %{"env" => "prod", "api_key" => "super-secret-key"},
          reason: "Need approval",
+         actor_id: "operator-int",
+         tenant_id: run.tenant_id,
+         trace_id: "trace-#{run.id}"
+       }}
+    end
+
+    def wait_for_other_approval(_step, run) do
+      {:waiting_for_approval,
+       %{
+         tool_name: "other_tool",
+         arguments: %{"env" => "staging"},
+         reason: "Needs approval",
          actor_id: "operator-int",
          tenant_id: run.tenant_id,
          trace_id: "trace-#{run.id}"
@@ -431,6 +444,177 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
       html = render(view)
       not (html =~ "Approval Required") and Repo.get!(Approval, approval_id).status == "approved" and
         not (html =~ "super-secret-key")
+    end)
+
+    eventually(fn ->
+      match?({:ok, %{status: "completed"}}, Runtime.get_run(started.run_id))
+    end)
+  end
+
+  test "dismiss closes modal without approving via producer path" do
+    unique = Integer.to_string(System.unique_integer([:positive]))
+    tenant_id = "orch-dismiss-tenant-" <> unique
+    session_id = "orch-dismiss-session-" <> unique
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "tenant_id" => tenant_id,
+        "actor_id" => "operator-int"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    assert {:ok, _started} =
+             Runtime.start_run(
+               %{
+                 tenant_id: tenant_id,
+                 actor_id: "operator-int",
+                 session_id: session_id
+               },
+               root_role_id: "executor",
+               initial_step: %{
+                 sequence: 1,
+                 kind: "approval",
+                 role_id: "executor",
+                 status: "queued"
+               },
+               handlers: %{"approval" => {Handlers, :wait_for_approval}}
+             )
+
+    eventually(fn ->
+      html = render(view)
+      html =~ "Approval Required" and html =~ "publish"
+    end)
+
+    [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
+
+    render_click(view, "dismiss_approval", %{})
+
+    eventually(fn ->
+      html = render(view)
+      not (html =~ "Approval Required") and html =~ "publish" and
+        Repo.get!(Approval, approval_id).status == "pending"
+    end)
+  end
+
+  test "stale approval decision surfaces friendly flash via producer path" do
+    unique = Integer.to_string(System.unique_integer([:positive]))
+    tenant_id = "orch-stale-tenant-" <> unique
+    session_id = "orch-stale-session-" <> unique
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "tenant_id" => tenant_id,
+        "actor_id" => "operator-int"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    assert {:ok, _started} =
+             Runtime.start_run(
+               %{
+                 tenant_id: tenant_id,
+                 actor_id: "operator-int",
+                 session_id: session_id
+               },
+               root_role_id: "executor",
+               initial_step: %{
+                 sequence: 1,
+                 kind: "approval",
+                 role_id: "executor",
+                 status: "queued"
+               },
+               handlers: %{"approval" => {Handlers, :wait_for_approval}}
+             )
+
+    eventually(fn ->
+      render(view) =~ "Approval Required"
+    end)
+
+    [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval_id)
+
+    assert {:ok, _} =
+             Workflows.approve(approval_id, "approved", %{actor_id: "other-operator"})
+
+    eventually(fn ->
+      not (render(view) =~ "Approval Required")
+    end)
+
+    OperatorBroadcast.hitl_request(tenant_id, projection)
+
+    eventually(fn ->
+      render(view) =~ "Approval Required"
+    end)
+
+    render_click(view, "approve", %{})
+
+    assert render(view) =~ "already decided by another operator"
+  end
+
+  test "non-focused approval highlights inbox without replacing modal via producer path" do
+    unique = Integer.to_string(System.unique_integer([:positive]))
+    tenant_id = "orch-highlight-tenant-" <> unique
+    session_a = "orch-highlight-session-a-" <> unique
+    session_b = "orch-highlight-session-b-" <> unique
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "tenant_id" => tenant_id,
+        "actor_id" => "operator-int"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria?runtime=#{session_a}")
+
+    assert {:ok, _started_a} =
+             Runtime.start_run(
+               %{
+                 tenant_id: tenant_id,
+                 actor_id: "operator-int",
+                 session_id: session_a
+               },
+               root_role_id: "executor",
+               initial_step: %{
+                 sequence: 1,
+                 kind: "approval",
+                 role_id: "executor",
+                 status: "queued"
+               },
+               handlers: %{"approval" => {Handlers, :wait_for_approval}}
+             )
+
+    eventually(fn ->
+      html = render(view)
+      html =~ "Approval Required" and html =~ "publish"
+    end)
+
+    assert {:ok, _started_b} =
+             Runtime.start_run(
+               %{
+                 tenant_id: tenant_id,
+                 actor_id: "operator-int",
+                 session_id: session_b
+               },
+               root_role_id: "executor",
+               initial_step: %{
+                 sequence: 1,
+                 kind: "approval",
+                 role_id: "executor",
+                 status: "queued"
+               },
+               handlers: %{"approval" => {Handlers, :wait_for_other_approval}}
+             )
+
+    eventually(fn ->
+      html = render(view)
+      html =~ "Approval Required" and html =~ "publish" and html =~ "other_tool" and
+        html =~ "ring-2 ring-amber-400"
     end)
   end
 

@@ -2,11 +2,7 @@
 
 [![CI](https://github.com/szTheory/scoria/actions/workflows/ci.yml/badge.svg)](https://github.com/szTheory/scoria/actions/workflows/ci.yml)
 [![Hex.pm](https://img.shields.io/hexpm/v/scoria.svg)](https://hex.pm/packages/scoria)
-
-Maintainer CI topology: see [operator verification — CI gate map](docs/operator_verification.md#ci-gate-map-maintainers).
-
-Maintainers: Hex release & recovery — [operator guide](docs/operator_verification.md#hex-release--recovery-maintainers).
-
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/scoria)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Elixir](https://img.shields.io/badge/Elixir-1.19%2B-4B275F.svg)](https://elixir-lang.org/)
 [![Phoenix](https://img.shields.io/badge/Phoenix-1.7%2B-FD4F00.svg)](https://www.phoenixframework.org/)
@@ -45,7 +41,8 @@ Docs:
 - [Bounded handoffs](docs/bounded_handoffs.md)
 - [Semantic fast path](docs/semantic_fast_path.md)
 - [Operator verification](docs/operator_verification.md)
-- [Support copilot gallery](docs/support_copilot_gallery.md) — local demo app at `examples/support_copilot`
+- [Remote connector adoption](docs/connector_adoption.md)
+- [Support copilot gallery](docs/support_copilot_gallery.md) — clone repo for `examples/support_copilot`
 
 ## Install
 
@@ -63,12 +60,6 @@ end
 Tagged GitHub installs are for forks and pinned patches; prefer Hex for normal adoption.
 
 **Next steps:** `mix deps.get` → `mix scoria.install` → `mix ecto.migrate` — then see [Verification](#verification) for `mix test.adoption`.
-
-Then mount the dashboard in your Phoenix router and run the install task:
-
-```bash
-mix scoria.install
-```
 
 That installs the default Phoenix lane by:
 
@@ -138,6 +129,14 @@ If the run is waiting on approval, resume that exact run after the decision is r
 
 The operator evidence page for that same run lives at `/scoria/workflows/:run_id`. Use it to inspect what happened in Scoria; keep your host app as the owner of user-facing business truth.
 
+For the LiveView operator dashboard at `/scoria`, set session keys before mounting routes:
+
+```elixir
+conn
+|> put_session("tenant_id", identity.tenant_id)
+|> put_session("actor_id", identity.actor_id)
+```
+
 Starting a new turn in the same conversation means reusing `session_id` and creating a fresh run:
 
 ```elixir
@@ -198,9 +197,9 @@ mix ecto.migrate
 mix test.adoption
 ```
 
-Adoption closeout in CI exercises Scoria via a `mix hex.build --unpack` tarball (`{:scoria, path: unpack_root}`), not a monorepo root `path:` — see `Scoria.HexConsumerContract`. Maintainer CI topology lives in [`docs/operator_verification.md`](docs/operator_verification.md).
+Adoption closeout in CI exercises Scoria via a packaged tarball (`{:scoria, path: unpack_root}` from `mix hex.build --unpack`) — see `Scoria.HexConsumerContract` in the maintainer guide for tarball consumer topology.
 
-Then inspect `/scoria` and `/scoria/workflows/:run_id` for operator evidence from one real run in your app. Read it back through `Scoria.get_run/1` or `Scoria.list_runs_for_session/1`. The dedicated operator verification guide lives in [`docs/operator_verification.md`](docs/operator_verification.md).
+Then inspect `/scoria` and `/scoria/workflows/:run_id` for operator evidence from one real run in your app.
 
 `mix test.adoption` is the canonical bounded verifier for the default lane. It carries the generated-host proof under a local proof-only timeout, so you do not need suite-wide timeout changes or a `--trace` variant to use it.
 
@@ -231,25 +230,22 @@ Use that lane only when you are intentionally validating semantic fast-path beha
 
 ### Support copilot gallery (local demo)
 
-Explore Scoria in a realistic support-copilot domain with rich fixtures and a clickable host UI.
-Shared journey fixtures live in `Scoria.SupportJourney` and `priv/fixtures/support_journey/`
-(see the gallery guide for the full narrative).
+Clone the repository to explore Scoria in a realistic support-copilot domain with rich fixtures and a clickable host UI. Shared journey fixtures live in `Scoria.SupportJourney` and `priv/fixtures/support_journey/`. The gallery is **not** in the Hex tarball — it uses a `path: dependency` for local development.
 
 ```bash
-cd examples/support_copilot
+git clone https://github.com/szTheory/scoria.git
+cd scoria/examples/support_copilot
 mix setup
 mix phx.server
 ```
 
-Maintainers can run the advisory gallery verification lane (not part of closeout order):
+Run the advisory gallery verification lane from the repo root (not part of closeout order):
 
 ```bash
 mix scoria.test.support_copilot
 ```
 
 See [`docs/support_copilot_gallery.md`](docs/support_copilot_gallery.md).
-
-For broader repo-health context outside the canonical lane proofs, maintainers can still run `mix test`.
 
 ## Phoenix Example
 
@@ -266,4 +262,11 @@ For the public delegation lane, see [`docs/bounded_handoffs.md`](docs/bounded_ha
 
 ## Status
 
-Current release: `0.1.0` on [Hex](https://hex.pm/packages/scoria).
+Current release: `0.1.1` on [Hex](https://hex.pm/packages/scoria). See [CHANGELOG.md](CHANGELOG.md).
+
+## For maintainers
+
+- [Maintainer guide](docs/MAINTAINERS.md) — CI topology, release operations, warning ratchet
+- [Operator verification](docs/operator_verification.md) — adopter verification ladder (also used as docs extra)
+
+For broader repo-health context outside the canonical lane proofs, run `mix test` locally or see the maintainer guide.

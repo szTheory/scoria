@@ -1,9 +1,10 @@
 # Operator Verification
 
-This guide is the default Phoenix verification lane for Scoria's public runtime surface. The goal is simple: prove the core install, runtime, and operator-evidence path before you touch the optional knowledge lane.
-Maintainer closeout starts with mix scoria.release_preview before the bounded test lanes.
+This guide is the default Phoenix verification lane for Scoria's public runtime surface. The goal is simple: prove the core install, runtime, and operator-evidence path before you touch optional lanes.
+
 Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Use mix test.runtime_to_handoff as the bounded escalation proof lane when the same durable run needs narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
-Start here with `mix scoria.install`, `mix ecto.migrate`, and `mix test.adoption`; add this only when the default lane is stable in your host app.
+
+Start here with `mix scoria.install`, `mix ecto.migrate`, and `mix test.adoption`; add optional lanes only when the default lane is stable in your host app.
 
 ## What core success means
 
@@ -284,169 +285,10 @@ MIX_ENV=test mix test.adoption --warnings-as-errors
 
 Local full-suite closeout uses pgvector Postgres on port 55432 (`SCORIA_DB_PORT=55432`).
 
-### CI gate map (maintainers)
+## Maintainers
 
-GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **`test`** (`needs: policy`, pgvector Postgres on port 55432) for canonical closeout. Executable jobs live in `.github/workflows/ci-verify.yml` (reusable SSOT); `.github/workflows/ci.yml` is the PR entrypoint. Lane order is also enforced by `Scoria.VerificationLanes` and `test/scoria/ci_policy_contract_test.exs` — this section explains topology and local parity only.
+CI topology, release operations, warning ratchet commands, and installer contract proofs live in [`docs/MAINTAINERS.md`](MAINTAINERS.md#ci-gate-map-maintainers).
 
-**Policy job (fail cheap, no database):**
+Deep installer contract proofs (`mix scoria.test.install_contract`) and tarball consumer triage are documented in the maintainer guide — not part of the adopter closeout chain.
 
-1. `mix scoria.warning_baseline.check` — baseline expiry before compile
-2. `mix scoria.warning_inventory.check_baseline` — committed inventory JSON must keep `clusters` empty (CI-INV-01)
-3. `mix compile --warnings-as-errors` — compile WAE
-4. Lane-contract WAE: `mix test --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
-
-**Test job closeout (Postgres on 55432):**
-
-1. `MIX_ENV=dev mix scoria.release_preview` — release/docs lane (dev only)
-2. `mix ecto.create` + `mix ecto.migrate`
-3. `mix test.adoption` → `mix test.runtime_to_handoff` — behavioral closeout lanes (unchanged default closeout order)
-4. `mix test.semantic_fast_path --warnings-as-errors` — semantic lane WAE after closeout, before ratchet hygiene (SEM-CI-01)
-5. Ratchet hygiene: `mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
-6. `mix test --warnings-as-errors` — full-suite WAE
-7. `mix test.knowledge --warnings-as-errors` — optional knowledge lane WAE (CI-KNOW-01)
-8. `mix scoria.test.support_copilot` — advisory support-copilot gallery lane (not closeout)
-
-**Verification lanes in PR CI**
-
-| Lane | Command | In PR CI? | Notes |
-|------|---------|-----------|-------|
-| Default runtime | mix test.adoption | Yes | PR closeout lane 3 — tarball full overlay + content-revision upgrade |
-| Runtime-to-handoff | mix test.runtime_to_handoff | Yes | PR closeout lane 3 |
-| Semantic fast-path | mix test.semantic_fast_path --warnings-as-errors | Yes | After closeout lanes; see [Semantic fast-path troubleshooting lane](#semantic-fast-path-troubleshooting-lane); not in `VerificationLanes.closeout_order/0` |
-| Optional knowledge | mix test.knowledge --warnings-as-errors | Yes | After full-suite WAE |
-| Support copilot gallery | mix scoria.test.support_copilot | Yes | Advisory; after knowledge lane; not in `VerificationLanes.closeout_order/0` |
-
-**PR vs release proof depth (v2.10 gate map):**
-
-| Path | Proof depth | Command / workflow | Blocking? |
-|------|-------------|-------------------|-----------|
-| **PR CI** | Tarball consumer full overlay + content-revision upgrade | `mix test.adoption` via `.github/workflows/ci-verify.yml` | Yes — merge gate |
-| **Release** | Live Hex registry subset + conditional semver upgrade | `mix scoria.post_publish_smoke` via `.github/workflows/post-publish-smoke.yml` after `publish-hex` in `release-please.yml` (or recovery `hex-publish.yml`) | Yes — release workflow fails if attest fails |
-
-- **Content-revision upgrade:** `scoria-0.1.0-unpack` fixture → HEAD tarball (same semver content-revision path in PR CI)
-- **Registry semver upgrade:** `baseline exact previous → target just-published` when `published_version > 0.1.0`
-
-Registry attest proves install → migrate → route + runtime overlay smokes against exact-pinned `{:scoria, "<version>", hex: :scoria}` — not the shallow compile-only `deps.get` check. When `published_version > 0.1.0`, the attest also runs the registry semver upgrade leg (baseline exact previous → target just-published).
-
-**Version namespaces:** Hex/git releases use semver (`0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}`). Planning milestones (`v2.x` in `.planning/`) are internal shipped-work tranches, not a second installable version axis.
-
-**Local parity:** set `SCORIA_DB_PORT=55432` for the test job database; use `MIX_ENV=dev` only for `mix scoria.release_preview`. Integration specs use inline workflow dispatch (`config :scoria, :workflow_dispatch, :inline`); set `SCORIA_TEST_EVENTUALLY_TIMEOUT_MS` when reproducing slow CI on async UI paths. Run `mix scoria.test.ci_trust` for the full Phase 69 maintainer trust bundle (policy contracts + ratchet hygiene integration); add `--fast` for policy-parity only (~30s).
-
-**Ratchet is maintainer-only:** `mix scoria.warning_ratchet.test` and `mix scoria.warning_ratchet.check` are WARN-06 debugger commands — they are **not** CI steps after Phase 68.
-
-**When CI fails, run the matching maintainer command next:**
-
-- Policy: `warning_baseline.check` failed → inspect `.planning/WARNING-BASELINE.md` expiry rows, then `mix scoria.warning_baseline.check` locally
-- Policy: `warning_inventory.check_baseline` failed → ensure `.planning/warning-inventory.baseline.json` has `"clusters": {}` or refresh with `mix scoria.warning_inventory --write` in a dedicated PR
-- Policy: compile WAE failed → `mix compile --warnings-as-errors` and fix compiler warnings
-- Policy: lane-contract WAE failed → `MIX_ENV=test mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
-- Test: adoption or runtime_to_handoff failed → reproduce with `SCORIA_DB_PORT=55432 mix test.adoption` or `mix test.runtime_to_handoff`
-- Test: full-suite WAE failed → `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors` after closeout lanes pass
-
-## Hex release & recovery (maintainers) {#hex-release--recovery-maintainers}
-
-Maintainer-only release operations for the first Hex publish at semver `0.1.0` / git tag `v0.1.0`. Adopter install guidance stays in README and [CHANGELOG.md](../CHANGELOG.md) — see the **Planning milestones vs Hex releases** preamble there for how `v2.x` planning tranches relate to Hex semver.
-
-### Version namespaces
-
-- **Hex / git:** `0.1.0`, `v0.1.0`, `{:scoria, "~> 0.1"}` on [hex.pm](https://hex.pm/packages/scoria) after Phase 72.
-- **Planning:** `v2.x` rows in [`.planning/MILESTONES.md`](../.planning/MILESTONES.md) are internal delivery tranches — not a second install axis.
-
-### HEX_API_KEY
-
-Generate an API-scoped key locally, then store it as a repository secret (never commit the key value):
-
-```bash
-mix hex.user key generate scoria-ci --api
-gh secret set HEX_API_KEY --repo szTheory/scoria
-```
-
-If the package later gains an `organization:` field in `mix.exs`, use the matching Hex org key workflow.
-
-### GitHub workflow permissions
-
-Before the first Release Please run on `main`, set workflow permissions so release-please can open PRs and chain CI:
-
-```bash
-gh api -X PUT /repos/szTheory/scoria/actions/permissions/workflow \
-  -f default_workflow_permissions=write \
-  -F can_approve_pull_request_reviews=true
-```
-
-### RELEASE_PLEASE_TOKEN (optional)
-
-Set `RELEASE_PLEASE_TOKEN` to a fine-grained PAT when `GITHUB_TOKEN` cannot open Release PRs or when pushes to `release-please--**` branches must trigger required checks. Otherwise `github.token` suffices.
-
-### Default path (Release Please)
-
-1. Push conventional commits to `main` → `.github/workflows/release-please.yml` opens/updates a Release PR.
-2. Confirm CI is green on the `release-please--**` branch (same `ci-verify.yml` bar as PR CI).
-3. Review the Release PR — it must target **`0.1.0`** for the first publish (not `0.1.1`, `0.2.0`, or `1.0.0`).
-4. **Phase 71:** do **not** merge the Release PR or run production `mix hex.publish`.
-5. **Phase 72:** merge the Release PR → tag `v0.1.0` → enable `publish-hex` with `HEX_API_KEY`.
-
-### Manual recovery (`hex-publish.yml`)
-
-When `publish-hex` failed or was skipped but the git tag exists and the version is **not** already on hex.pm:
-
-```bash
-gh workflow run hex-publish.yml \
-  --ref v0.1.0 \
-  -f tag=v0.1.0 \
-  -f release_version=0.1.0
-```
-
-Always pass `--ref` matching the tag so `ci-verify.yml` runs against that tree. After recovery, sync `.release-please-manifest.json` if the registry version advanced without a matching manifest bump.
-
-**Do not** re-publish a version already listed on hex.pm.
-
-### Phase 71 boundary
-
-- No production `mix hex.publish` in Phase 71 (`publish-hex` jobs use `if: false`).
-- Record Release PR version target (`0.1.0`) in `71-VERIFICATION.md` after `main` receives release infra; do not merge until Phase 72.
-
-### Post-publish registry checks (maintainers)
-
-Repeat after each first-time or recovery publish. Record dated results in the phase verification ledger (`.planning/phases/72-hex-publish-closeout/72-VERIFICATION.md`) — not in this guide.
-
-```bash
-# Registry lists the release
-curl -fsS https://hex.pm/api/packages/scoria/releases/0.1.0
-
-# HexDocs source_ref matches the git tag
-curl -fsS "https://hexdocs.pm/scoria/0.1.0/" | head -n 5
-
-# Consumer smoke in a clean project
-mix new smoke_hex --sup
-cd smoke_hex
-# add {:scoria, "~> 0.1", hex: :scoria} to mix.exs deps
-mix deps.get
-mix compile --warnings-as-errors
-
-# Optional installer posture check in an existing host
-mix scoria.install --check
-```
-
-Flip README install guidance to Hex-primary only after the release API returns **200** for `0.1.0`. Schedule a **24h follow-up** row in the verification ledger (repeat `curl` + `mix deps.get`).
-
-### Executable SSOT
-
-| Workflow | Role |
-|----------|------|
-| `.github/workflows/ci-verify.yml` | Reusable policy → test verify bar |
-| `.github/workflows/ci.yml` | PR / `release-please--**` triggers |
-| `.github/workflows/release-please.yml` | Release PR automation + publish-hex + post-publish-attest |
-| `.github/workflows/post-publish-smoke.yml` | Reusable registry attest (`workflow_call` SSOT) |
-| `.github/workflows/hex-publish.yml` | Manual recovery (`workflow_dispatch`) + post-publish-attest |
-
-## Installer contract proofs (maintainers)
-
-Deep installer contract proofs live outside the adoption closeout lanes:
-
-```bash
-mix scoria.test.install_contract
-```
-
-(`mix test.install_contract` is a compatibility alias.)
-
-This maintainer bundle runs report, mode_equivalence, install, install_check, and planner tests. It is **not** a PR CI step, **not** in the adoption closeout chain, and **not** documented in the README.
+Maintainer closeout starts with `mix scoria.release_preview` before the bounded test lanes — see the maintainer guide for the full policy → test job map.

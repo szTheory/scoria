@@ -10,9 +10,33 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: Planning v2.12
+## Current Milestone: v2.15 Connector Adoption Lane (Planning)
 
-**Goal:** Optional lane journeys in demo gallery (LANE-DEMO-01) — start with `/gsd-new-milestone`.
+**Goal:** Give connector adopters a named, executable proof lane (`mix test.connector`) with docs/CI/drift-guard parity to semantic and knowledge lanes — without widening `VerificationLanes.closeout_order/0`.
+
+**Target features:**
+- Named Mix task `mix test.connector` (+ `mix scoria.test.connector` alias)
+- `:connector` lane entry in `Scoria.VerificationLanes`
+- Curated connector test bundle and SupportJourney-aligned integration proof
+- Doc updates and drift guards for connector lane command + boundary wording
+
+## Latest Shipped Milestone: v2.14 Maintenance Release (2026-05-30)
+
+**Goal:** Prepare `0.1.1` maintenance release with registry semver upgrade proof path.
+
+**Delivered:** Version bump, adopter-readable CHANGELOG, release-please manifest ready.
+
+## Previous Shipped: v2.13 Adopter Docs Truth (2026-05-30)
+
+**Delivered:** MAINTAINERS split, Hex metadata, README session keys, connector_adoption in package extras.
+
+## Previous Shipped: v2.12 Adoption Confidence & Reference Demo (2026-05-30)
+
+**Delivered:** SupportJourney.Handlers SSOT, gallery optional lane journeys, orchestrator producer smoke.
+
+## Release Queue
+
+- **Publish `0.1.1`:** merge to main → release-please PR → registry semver upgrade smoke
 
 ## Latest Shipped Milestone: v2.11 Orchestrator Live Wiring
 
@@ -50,10 +74,6 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 **Why it mattered:** Adopters get a realistic domain story with executable overlay proof, clickable gallery, and doc↔fixture alignment before Hex consumer proof (v2.10).
 
-## Next Milestone Queue
-
-- **v2.12:** Optional lane journeys in demo gallery (LANE-DEMO-01)
-
 ## Latest Shipped Release Milestone: v2.7 OSS Release + Docs Truth
 
 **Goal:** Docs truth, then Hex `0.1.0` / `v0.1.0` — without weakening v2.4–v2.6 contracts.
@@ -62,11 +82,12 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **v2.12 shipped (2026-05-30):** Adoption confidence reference demo — SupportJourney.Handlers SSOT, gallery optional lane journeys, orchestrator producer smoke, MAINTAINERS.md split; Hex `0.1.1` prepared.
 - **v2.11 shipped (2026-05-30):** ORCH-LIVE-01 complete — orchestrator live trace broadcast and HITL from real runtime/workflow paths; phases 01 + 01.1 in `.planning/milestones/v2.11-phases/`.
 - **v2.10 shipped (2026-05-30):** Hex consumer proof milestone archived — phases 78–82 in `.planning/milestones/v2.10-phases/`; audit at `v2.10-MILESTONE-AUDIT.md`.
 - **Phase 81 (v2.10):** Post-publish registry gate — `mix scoria.post_publish_smoke` proves live Hex install with exact version pins; blocking `post-publish-attest` wired in release-please and hex-publish workflows.
 - **Phase 79 complete (2026-05-29):** Merge-blocking tarball consumer proof runs full v2.9 overlay depth (handoff → route → runtime) via `mix hex.build` unpack dep; operator triage, `SCORIA_PRESERVE_HOST`, and CI failure snapshot artifact wired.
-- **Hex:** `0.1.0` live at https://hex.pm/packages/scoria (tag `v0.1.0`, 2026-05-29).
+- **Hex:** `0.1.1` prepared locally; `0.1.0` live at https://hex.pm/packages/scoria (tag `v0.1.0`, 2026-05-29).
 - Phase 73 CI hardening complete (2026-05-29): semantic lane + knowledge WAE + inventory baseline check in `ci-verify.yml`; operator gate map updated.
 - Phase 72 Hex publish closeout complete (2026-05-29): README Hex-primary; release-please without `release-as` pin.
 - CI policy→test topology: `warning_baseline.check` → `warning_inventory.check_baseline` → compile WAE → lane-contract WAE (policy); closeout lanes → semantic WAE → ratchet hygiene → full-suite WAE → knowledge WAE (test).
@@ -152,9 +173,14 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Post-publish workflow proves live Hex fetch + install/migrate/overlay subset; release-blocking upgrade on real semver bump. — `v2.10` (HEX-REGISTRY-01)
 - ✓ README, operator verification, and drift guards stay aligned via `HexConsumerContract` / `AdopterDocContract`. — `v2.10` (DOCS-HEX-01)
 - ✓ Runtime span events fan out to tenant-scoped PubSub; OrchestratorLive merges live trace deltas and HITL approval pauses from real workflow paths (not test `send/2`). — `v2.11` (ORCH-LIVE-01)
+- ✓ Shared `Scoria.SupportJourney.Handlers` used by host overlay and gallery with no duplicated handler logic. — `v2.12` (DEMO-01)
+- ✓ Gallery optional lane journeys (semantic, knowledge, connector) with LiveView tests via advisory `mix scoria.test.support_copilot`. — `v2.12` (LANE-01–03)
+- ✓ Gallery producer-path orchestrator smoke and honest gallery docs with SupportJourney drift guards. — `v2.12` (ORCH-01, DOCS-01–02)
+- ✓ Adopter vs maintainer docs split (`docs/MAINTAINERS.md`); Hex metadata and connector_adoption in package extras. — `v2.13` (DOCS-03, DOCS-04)
+- ✓ Maintenance release `0.1.1` prepared with adopter-readable CHANGELOG and release-please manifest. — `v2.14` (HEX-03)
 
 ### Active
-- **LANE-DEMO-01**: Semantic, knowledge, and connector journeys in demo gallery.
+- **v2.15 CONN-LANE/DOCS/CI**: Named connector adoption lane — `mix test.connector`, VerificationLanes entry, docs truth, CI wiring.
 
 ### Out of Scope
 
@@ -203,10 +229,9 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Context
 
-- Active milestone: planning `v2.12` gallery lane expansion (LANE-DEMO-01).
-- Scoria shipped `v2.11 Orchestrator Live Wiring` on 2026-05-30; `v2.10` and `v2.9` archived in `.planning/milestones/`.
-- Hex `0.1.0` live at https://hex.pm/packages/scoria.
-- Merge-blocking consumer proof still uses repo `path:` dep — v2.10 closes Hex/tarball truth gap.
+- Active milestone: planning `v2.15` connector adoption lane (`mix test.connector`).
+- v2.12–v2.14 shipped 2026-05-30; v2.13/v2.14 bundled with v2.12 closeout pass.
+- Hex `0.1.1` prepared locally; `0.1.0` live at https://hex.pm/packages/scoria — publish via release-please.
 - CI: policy job (baseline → inventory baseline → compile WAE → lane-contract) → test job (closeout → semantic WAE → ratchet hygiene → full WAE → knowledge WAE → advisory gallery).
 - `Scoria.SupportJourney` + `examples/support_copilot/` gallery; advisory `mix scoria.test.support_copilot` outside closeout.
 - Archives: `.planning/milestones/v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
@@ -336,4 +361,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 after v2.11 milestone*
+*Last updated: 2026-05-30 after v2.13/v2.14 closeout; v2.15 planning*

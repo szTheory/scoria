@@ -19,7 +19,10 @@
       "retain_threads_and_retrospective": true,
       "prompts_dir": "prompts/",
       "demo_gallery_companion": true,
-      "journey_fixture_ssot": true
+      "journey_fixture_ssot": true,
+      "adopter_docs_audit": true,
+      "shift_left_liveview_over_browser": true,
+      "maintenance_release_cadence": "release-please"
     }
   }
 }

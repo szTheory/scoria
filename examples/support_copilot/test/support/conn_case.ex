@@ -19,7 +19,9 @@ defmodule SupportCopilotWeb.ConnCase do
     end
 
     Application.put_env(:scoria, :workflow_runtime_handlers, %{
-      "approval" => {SupportCopilot.RuntimeHandlers, :wait_for_approval}
+      "approval" => {Scoria.SupportJourney.Handlers, :wait_for_approval},
+      "tool" => {Scoria.SupportJourney.Handlers, :lookup_support_ticket},
+      "answer" => {Scoria.SupportJourney.Handlers, :faq_answer}
     })
 
     start_supervised!(Scoria.Workflows.Reconciler)

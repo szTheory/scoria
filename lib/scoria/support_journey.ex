@@ -38,6 +38,10 @@ defmodule Scoria.SupportJourney do
   def completed_status, do: "completed"
   def ticket_lookup_tool, do: @ticket_lookup_tool
   def refund_approval_tool, do: @refund_approval_tool
+  def semantic_lane_module, do: "Elixir.SupportCopilot.SemanticLane"
+  def knowledge_source_title, do: "Acme refund policy"
+  def connector_key, do: "billing"
+  def connector_label, do: "Billing MCP"
 
   def operator_route(run_id), do: "/scoria/workflows/#{run_id}"
   def operator_route_pattern, do: "/scoria/workflows/:run_id"
@@ -94,7 +98,13 @@ defmodule Scoria.SupportJourney do
       waiting_status(),
       completed_status(),
       "support-copilot gallery",
-      "Support Ops Lead"
+      "Support Ops Lead",
+      "Scoria.SupportJourney.Handlers",
+      "mix test.semantic_fast_path",
+      "mix test.knowledge",
+      "clone the repository",
+      "path: dependency",
+      "tarball consumer proof"
     ]
   end
 

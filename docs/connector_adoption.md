@@ -31,7 +31,7 @@ Scoria does **not** run connectors as a multi-tenant SaaS. Each connector invoca
 - **Optional knowledge:** `mix test.knowledge` — only when grounding/retrieval is in scope.
 - **Semantic fast-path:** `mix test.semantic_fast_path` — read-only cache lanes only; see [semantic_fast_path.md](semantic_fast_path.md).
 
-Maintainer CI topology and lane ordering: [operator_verification.md#ci-gate-map-maintainers](operator_verification.md#ci-gate-map-maintainers).
+Maintainer CI topology and lane ordering: [MAINTAINERS.md#ci-gate-map-maintainers](MAINTAINERS.md#ci-gate-map-maintainers).
 
 ## Further reading
 

@@ -1,5 +1,48 @@
 # Milestones
 
+## v2.14 Maintenance Release & Registry Upgrade Proof (Shipped: 2026-05-30)
+
+**Phases completed:** Thin release prep (bundled with v2.12 closeout)
+
+**Key accomplishments:**
+
+- Version bumped to `0.1.1` in `mix.exs` and `.release-please-manifest.json`
+- Adopter-readable CHANGELOG entry for `0.1.1`
+- Release-please path ready for registry semver upgrade smoke (`0.1.0` → `0.1.1`)
+
+**Known deferred at close:** Hex publish via release-please merge (manual release gate).
+
+---
+
+## v2.13 Adopter Docs Truth & Package Surface (Shipped: 2026-05-30)
+
+**Phases completed:** Thin docs pass (bundled with v2.12 closeout)
+
+**Key accomplishments:**
+
+- README: Hex Docs badge, session keys for `/scoria`, deduped install, maintainer section at bottom
+- Operator verification trimmed for adopters; maintainer content in `docs/MAINTAINERS.md`
+- `mix.exs`: tags, HexDocs homepage, Documentation + Changelog links, CHANGELOG.md in docs extras
+- `docs/connector_adoption.md` in Hex package/docs extras
+
+---
+
+## v2.12 Adoption Confidence & Reference Demo (Shipped: 2026-05-30)
+
+**Phases completed:** 3 phases (02–04), 9 requirements
+
+**Key accomplishments:**
+
+- `Scoria.SupportJourney.Handlers` SSOT shared by overlay smokes and support copilot gallery
+- Gallery optional lane journeys: semantic FAQ, knowledge refund policy, billing connector
+- Gallery producer-path orchestrator smoke on `/scoria`
+- `docs/MAINTAINERS.md` split from adopter operator guide; connector adoption in Hex package
+- Version `0.1.1` prepared with adopter-readable CHANGELOG
+
+**Known deferred at close:** Registry semver upgrade leg exercises on next Hex publish; v2.15 connector adoption lane queued.
+
+---
+
 ## v2.11 Orchestrator Live Wiring (Shipped: 2026-05-30)
 
 **Phases completed:** 2 phases, 6 plans, 22 tasks

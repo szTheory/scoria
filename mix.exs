@@ -1,7 +1,7 @@
 defmodule Scoria.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.1.1"
 
   def project do
     [
@@ -15,7 +15,7 @@ defmodule Scoria.MixProject do
       docs: docs(),
       package: package(),
       source_url: "https://github.com/szTheory/scoria",
-      homepage_url: "https://github.com/szTheory/scoria"
+      homepage_url: "https://hexdocs.pm/scoria",
     ]
   end
 
@@ -92,12 +92,15 @@ defmodule Scoria.MixProject do
       extras: [
         "README.md",
         "LICENSE",
+        "CHANGELOG.md",
         "docs/adoption_lanes.md",
         "docs/phoenix_runtime_example.md",
         "docs/bounded_handoffs.md",
         "docs/semantic_fast_path.md",
         "docs/operator_verification.md",
-        "docs/support_copilot_gallery.md"
+        "docs/connector_adoption.md",
+        "docs/support_copilot_gallery.md",
+        "docs/MAINTAINERS.md"
       ]
     ]
   end
@@ -118,12 +121,17 @@ defmodule Scoria.MixProject do
         "docs/bounded_handoffs.md",
         "docs/semantic_fast_path.md",
         "docs/operator_verification.md",
-        "docs/support_copilot_gallery.md"
+        "docs/connector_adoption.md",
+        "docs/support_copilot_gallery.md",
+        "docs/MAINTAINERS.md"
       ],
       licenses: ["MIT"],
       links: %{
-        "GitHub" => "https://github.com/szTheory/scoria"
-      }
+        "GitHub" => "https://github.com/szTheory/scoria",
+        "Documentation" => "https://hexdocs.pm/scoria",
+        "Changelog" => "https://hex.pm/packages/scoria/changelog"
+      },
+      tags: ~w(elixir phoenix ai llm mcp observability liveview workflows approvals)
     ]
   end
 end

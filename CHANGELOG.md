@@ -7,10 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Planning milestones vs Hex releases
 
-Published Hex releases use `[0.x.y]` version headings in this file. Internal planning
-milestones (`v2.x` in [`.planning/MILESTONES.md`](.planning/MILESTONES.md)) track delivery
-tranches inside the repository — they are **not** a second install axis and do not map to
-Hex versions (there is no Hex `2.7.0` matching a GSD milestone label).
+Published Hex releases use `[0.x.y]` version headings in this file. Internal repository
+milestone labels (such as `v2.x`) track delivery tranches — they are **not** a second
+install axis and do not map to Hex versions.
+
+## 0.1.1 (2026-05-30)
+
+### Added
+
+- Shared `Scoria.SupportJourney.Handlers` for overlay and gallery journey smokes
+- Support copilot gallery optional lane journeys: semantic FAQ, knowledge, connector
+- Gallery producer-path orchestrator smoke on `/scoria`
+- `docs/MAINTAINERS.md` for CI topology and release operations
+- `docs/connector_adoption.md` in Hex package and docs extras
+
+### Changed
+
+- Support copilot gallery docs: clone-repo requirement and path vs tarball consumer distinction
+- README: session keys for LiveView operator UI, deduplicated install steps, maintainer section at bottom
+- Operator verification guide trimmed for adopters; maintainer content moved to `MAINTAINERS.md`
 
 ## 0.1.0 (2026-05-28)
 
