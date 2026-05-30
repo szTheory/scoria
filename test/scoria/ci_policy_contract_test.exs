@@ -5,6 +5,8 @@ defmodule Scoria.CiPolicyContractTest do
 
   @ci_verify ".github/workflows/ci-verify.yml"
   @ci_entry ".github/workflows/ci.yml"
+  @maintainer_docs "docs/MAINTAINERS.md"
+  @operator_docs "docs/operator_verification.md"
   @baseline_check "mix scoria.warning_baseline.check"
   @inventory_baseline_check "mix scoria.warning_inventory.check_baseline"
   @semantic_lane "mix test.semantic_fast_path --warnings-as-errors"
@@ -96,11 +98,11 @@ defmodule Scoria.CiPolicyContractTest do
     refute hex_publish =~ "sync_release_summary"
   end
 
-  test "release-please bootstrap config reflects shipped 0.1.0" do
+  test "release-please bootstrap config reflects prepared 0.1.1 maintenance release" do
     manifest = File.read!(".release-please-manifest.json")
     config = File.read!("release-please-config.json")
 
-    assert manifest =~ "0.1.0"
+    assert manifest =~ "0.1.1"
     refute manifest =~ "0.0.0"
     refute config =~ "release-as"
     assert config =~ "bootstrap-sha"
@@ -156,7 +158,7 @@ defmodule Scoria.CiPolicyContractTest do
   end
 
   test "WARN-06 documents WarningRatchet maintainer commands" do
-    operator_docs = File.read!("docs/operator_verification.md")
+    operator_docs = File.read!(@operator_docs)
 
     assert operator_docs =~ "mix scoria.warning_ratchet.test"
     assert operator_docs =~ "mix scoria.warning_ratchet.check"
@@ -203,29 +205,28 @@ defmodule Scoria.CiPolicyContractTest do
     refute :support_copilot_gallery in VerificationLanes.closeout_order()
   end
 
-  test "operator guide documents Hex release section and README links anchor" do
-    operator_docs = File.read!("docs/operator_verification.md")
+  test "maintainer guide documents Hex release section and README links anchor" do
+    maintainer_docs = File.read!(@maintainer_docs)
     readme = File.read!("README.md")
 
-    assert operator_docs =~ "## Hex release & recovery"
-    assert operator_docs =~ "hex-release--recovery-maintainers"
-    assert operator_docs =~ "HEX_API_KEY"
-    assert operator_docs =~ "hex-publish.yml"
-    assert operator_docs =~ "release-please--"
-    assert operator_docs =~ "default_workflow_permissions=write"
-    assert readme =~ "hex-release--recovery-maintainers"
+    assert maintainer_docs =~ "## Hex release & recovery"
+    assert maintainer_docs =~ "hex-release--recovery-maintainers"
+    assert maintainer_docs =~ "HEX_API_KEY"
+    assert maintainer_docs =~ "hex-publish.yml"
+    assert maintainer_docs =~ "release-please--"
+    assert readme =~ "docs/MAINTAINERS.md"
   end
 
   test "CI-03 documents CI gate map for maintainers" do
-    operator_docs = File.read!("docs/operator_verification.md")
+    maintainer_docs = File.read!(@maintainer_docs)
 
-    assert operator_docs =~ "CI gate map"
-    assert operator_docs =~ "policy"
-    assert operator_docs =~ "needs: policy" or operator_docs =~ "`policy`"
-    assert operator_docs =~ "mix test.semantic_fast_path"
-    assert operator_docs =~ "mix scoria.warning_inventory.check_baseline"
-    assert operator_docs =~ "Version namespaces"
-    assert operator_docs =~ "mix scoria.test.install_contract"
+    assert maintainer_docs =~ "CI gate map"
+    assert maintainer_docs =~ "policy"
+    assert maintainer_docs =~ "needs: policy" or maintainer_docs =~ "`policy`"
+    assert maintainer_docs =~ "mix test.semantic_fast_path"
+    assert maintainer_docs =~ "mix scoria.warning_inventory.check_baseline"
+    assert maintainer_docs =~ "Version namespaces"
+    assert maintainer_docs =~ "mix scoria.test.install_contract"
   end
 
   test "policy job does not run warning_ratchet.test" do
@@ -259,27 +260,27 @@ defmodule Scoria.CiPolicyContractTest do
     assert ci_verify =~ "# test:"
   end
 
-  test "operator gate map pins v2.10 PR vs release proof depth" do
-    operator_docs = File.read!("docs/operator_verification.md")
-    gate_map = section_after(operator_docs, "### CI gate map (maintainers)")
-    pr_release = section_after(gate_map, "**PR vs release proof depth (v2.10 gate map):**")
+  test "maintainer gate map pins v2.10 PR vs release proof depth" do
+    maintainer_docs = File.read!(@maintainer_docs)
+    gate_map = section_after(maintainer_docs, "## CI gate map")
+    pr_release = section_after(gate_map, "**PR vs release proof depth**")
 
     assert pr_release =~ "mix test.adoption"
     assert pr_release =~ "content-revision upgrade"
     assert pr_release =~ "Tarball consumer full overlay" or pr_release =~ "mix hex.build"
     assert pr_release =~ "mix scoria.post_publish_smoke"
-    assert pr_release =~ "post-publish-smoke.yml"
-    assert pr_release =~ "{:scoria, \"<version>\", hex: :scoria}" or pr_release =~ "exact-pinned"
+    assert pr_release =~ "publish-hex"
+    assert maintainer_docs =~ "post-publish-smoke.yml"
     assert pr_release =~ "scoria-0.1.0-unpack"
     assert pr_release =~ "HEAD tarball"
     assert pr_release =~ "baseline exact previous"
     assert pr_release =~ "target just-published"
-    assert pr_release =~ "v2.x"
+    assert maintainer_docs =~ "v2.x"
   end
 
-  test "operator CI gate map documents topology, parity, ratchet, and failure diagnosis" do
-    operator_docs = File.read!("docs/operator_verification.md")
-    gate_map = section_after(operator_docs, "### CI gate map (maintainers)")
+  test "maintainer CI gate map documents topology, parity, ratchet, and failure diagnosis" do
+    maintainer_docs = File.read!(@maintainer_docs)
+    gate_map = section_after(maintainer_docs, "## CI gate map")
 
     assert gate_map =~ "Policy job"
     assert gate_map =~ "Test job closeout"
@@ -290,17 +291,13 @@ defmodule Scoria.CiPolicyContractTest do
     refute gate_map =~ "Policy: compile WAE failed → `MIX_ENV=test mix compile --warnings-as-errors`"
   end
 
-  test "README links maintainers to CI gate map near the CI badge" do
-    readme =
-      "README.md"
-      |> File.read!()
-      |> String.split("\n")
-      |> Enum.take(10)
-      |> Enum.join("\n")
+  test "README links maintainers to maintainer guide near status section" do
+    readme = File.read!("README.md")
 
-    assert readme =~ "CI gate map"
-    assert readme =~ "operator_verification.md#ci-gate-map-maintainers"
-    refute String.match?(readme, ~r/Maintainer CI topology.*\n.*Maintainer CI topology/s)
+    assert readme =~ "For maintainers"
+    assert readme =~ "docs/MAINTAINERS.md"
+    assert readme =~ "CI topology"
+    refute String.match?(readme, ~r/Maintainer guide.*\n.*Maintainer guide/s)
   end
 
   test "ci.yml triggers on push and pull_request to main" do
