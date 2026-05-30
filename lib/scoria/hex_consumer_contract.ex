@@ -110,6 +110,31 @@ defmodule Scoria.HexConsumerContract do
   def hex_dep_snippet, do: "{:scoria, \"~> 0.1\", hex: :scoria}"
 
   @doc """
+  Adopter doc surfaces for executable drift guards — README and adoption lanes only.
+
+  Maintainer gate-map topology lives in `ci_policy_contract_test`, not here (D-96, D-98).
+  """
+  def adopter_doc_surfaces do
+    adoption_cmd = Scoria.VerificationLanes.command(:adoption)
+
+    %{
+      "README.md" => [
+        adoption_cmd,
+        "mix hex.build --unpack",
+        "{:scoria, path: unpack_root}",
+        "Scoria.HexConsumerContract",
+        "docs/operator_verification.md"
+      ],
+      "docs/adoption_lanes.md" => [
+        adoption_cmd,
+        "mix hex.build --unpack",
+        "packaged tarball",
+        "operator_verification.md"
+      ]
+    }
+  end
+
+  @doc """
   Exact-pinned Hex registry dep tuple for post-publish attest paths.
 
   Uses an exact semver string so the resolver cannot pick a stale index entry

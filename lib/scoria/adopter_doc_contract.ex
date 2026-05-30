@@ -34,6 +34,7 @@ defmodule Scoria.AdopterDocContract do
     "mix scoria.warning_baseline",
     "mix scoria.eval",
     "mix scoria.milestone",
+    "mix scoria.post_publish_smoke",
     "mix scoria.test.knowledge"
   ]
 
