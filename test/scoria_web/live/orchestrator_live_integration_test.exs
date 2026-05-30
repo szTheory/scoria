@@ -44,12 +44,15 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
 
   defmodule Handlers do
     alias Scoria.Observe.Adapters.ReqLLM
+    alias Scoria.Observe.Telemetry
     alias Scoria.Repo
     alias Scoria.Repo.Trace
 
     @span_name "req_llm_request"
+    @token_delta_span_name "token_delta_llm_span"
 
     def span_name, do: @span_name
+    def token_delta_span_name, do: @token_delta_span_name
 
     def emit_llm_span(_step, run) do
       trace_id = Ecto.UUID.generate()
@@ -75,6 +78,44 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
       )
 
       {:ok, %{"span" => @span_name}}
+    end
+
+    def emit_token_deltas(_step, run) do
+      trace_id = Ecto.UUID.generate()
+      span_id = Ecto.UUID.generate()
+      now = DateTime.utc_now()
+
+      :telemetry.execute(
+        [:scoria, :observe, :span, :stop],
+        %{},
+        %{
+          id: span_id,
+          name: @token_delta_span_name,
+          span_kind: "LLM",
+          trace_id: trace_id,
+          tenant_id: run.tenant_id,
+          session_id: run.session_id,
+          workflow_run_id: run.id,
+          start_time: now,
+          attributes: %{}
+        }
+      )
+
+      Telemetry.emit_span_delta(%{
+        tenant_id: run.tenant_id,
+        trace_id: trace_id,
+        span_id: span_id,
+        chunk: "Hello "
+      })
+
+      Telemetry.emit_span_delta(%{
+        tenant_id: run.tenant_id,
+        trace_id: trace_id,
+        span_id: span_id,
+        chunk: "world"
+      })
+
+      {:ok, %{}}
     end
 
     def wait_for_approval(_step, run) do
@@ -130,6 +171,45 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
     end)
 
     {:ok, buffer_name: buffer_name, buffer_pid: buffer_pid}
+  end
+
+  test "token delta coalesces into span preview via producer path" do
+    unique = Integer.to_string(System.unique_integer([:positive]))
+    tenant_id = "orch-token-delta-" <> unique
+    session_id = "orch-token-delta-session-" <> unique
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "tenant_id" => tenant_id,
+        "actor_id" => "operator-int"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    assert {:ok, _started} =
+             Runtime.start_run(
+               %{
+                 tenant_id: tenant_id,
+                 actor_id: "operator-int",
+                 session_id: session_id
+               },
+               root_role_id: "executor",
+               initial_step: %{
+                 sequence: 1,
+                 kind: "token_delta",
+                 role_id: "executor",
+                 status: "queued"
+               },
+               handlers: %{"token_delta" => {Handlers, :emit_token_deltas}}
+             )
+
+    eventually(fn ->
+      Process.sleep(100)
+      html = render(view)
+      html =~ Handlers.token_delta_span_name() and html =~ "Hello world"
+    end)
   end
 
   test "live trace appears in orchestrator without send/2" do
