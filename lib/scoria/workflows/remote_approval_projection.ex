@@ -6,9 +6,12 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
   import Ecto.Query, warn: false
 
   alias Scoria.Observe.Approval
+  alias Scoria.Observe.Redactor
   alias Scoria.Repo
 
   @filter_fields ~w(actor_id session_id status tenant_id tool_name workflow_run_id replay_scope)a
+  @preview_max_keys 10
+  @preview_max_chars 512
 
   def list_pending_approvals(filters \\ %{}) do
     filters = normalize_filters(filters)
@@ -50,6 +53,8 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
       tenant_id: approval.tenant_id,
       session_id: approval.session_id,
       reason: approval.reason,
+      arguments_preview: preview_arguments(approval.arguments),
+      connector_label: approval.connector_label,
       trace_id: approval.trace_id,
       blocker_kind: approval.blocker_kind,
       grant_status: approval.grant_status,
@@ -117,4 +122,27 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
   end
 
   defp argument_value(_arguments, _key), do: nil
+
+  defp preview_arguments(arguments) when is_map(arguments) do
+    arguments
+    |> Redactor.redact()
+    |> Enum.take(@preview_max_keys)
+    |> Map.new()
+    |> cap_preview_size()
+  end
+
+  defp preview_arguments(_arguments), do: %{}
+
+  defp cap_preview_size(preview) do
+    if preview_char_count(preview) > @preview_max_chars do
+      preview
+      |> Enum.take(div(@preview_max_keys, 2))
+      |> Map.new()
+      |> cap_preview_size()
+    else
+      preview
+    end
+  end
+
+  defp preview_char_count(preview), do: preview |> inspect() |> String.length()
 end

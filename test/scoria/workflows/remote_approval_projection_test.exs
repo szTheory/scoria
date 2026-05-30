@@ -12,6 +12,26 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
     :ok
   end
 
+  test "project_approval redacts secrets in arguments_preview and exposes connector_label" do
+    approval =
+      Repo.insert!(Approval.changeset(%Approval{}, %{
+        tool_name: "publish",
+        status: "pending",
+        arguments: %{"api_key" => "sk-secret-value", "env" => "prod"},
+        connector_label: "Stripe Connector"
+      }))
+
+    assert %{
+             arguments_preview: arguments_preview,
+             connector_label: "Stripe Connector"
+           } = Workflows.get_remote_approval_lineage!(approval.id)
+
+    refute Map.has_key?(Workflows.get_remote_approval_lineage!(approval.id), :arguments)
+    refute inspect(arguments_preview) =~ "sk-secret-value"
+    assert arguments_preview["api_key"] == "[REDACTED]"
+    assert arguments_preview["env"] == "prod"
+  end
+
   test "list_pending_approvals/1 exposes replay-safe inbox evidence directly from the projection" do
     {:ok, run} =
       Workflows.create_run(%{
