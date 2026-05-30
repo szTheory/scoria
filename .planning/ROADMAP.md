@@ -61,7 +61,7 @@ Plans:
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 01 | Orchestrator live wiring | ORCH-LIVE-01 | Complete (2026-05-30) |
-| 01.1 | Address tech debt: orchestrator live wiring follow-ups | ORCH-LIVE-01 (hardening) | Complete (2026-05-30) |
+| 01.1 | 3/3 | Complete    | 2026-05-30 |
 
 ## Completed milestones
 
