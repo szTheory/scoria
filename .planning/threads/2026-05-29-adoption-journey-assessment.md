@@ -1,7 +1,8 @@
 # Thread: Adoption Journey Assessment (v2.9)
 
 **Captured:** 2026-05-29  
-**Status:** open  
+**Status:** closed  
+**Closed:** 2026-05-30 — superseded by `.planning/threads/2026-05-30-milestone-next-step-assessment.md`
 **Source:** Adoption Evidence Assessment pass + approved v2.9 plan
 
 ## Assessment Outcome

@@ -12,6 +12,7 @@ defmodule Scoria.VerificationLanesTest do
              :runtime_to_handoff,
              :semantic_fast_path,
              :knowledge,
+             :connector,
              :support_copilot_gallery
            ]
 
@@ -51,6 +52,12 @@ defmodule Scoria.VerificationLanesTest do
     assert VerificationLanes.boundary_sentence(:release_preview) == nil
   end
 
+  test "connector lane stays advisory outside closeout order" do
+    refute :connector in VerificationLanes.closeout_order()
+    assert VerificationLanes.command(:connector) == "mix test.connector"
+    assert VerificationLanes.prerequisites(:connector) == ["mix test.adoption"]
+  end
+
   test "support copilot gallery lane stays advisory outside closeout order" do
     refute :support_copilot_gallery in VerificationLanes.closeout_order()
     assert VerificationLanes.command(:support_copilot_gallery) == "mix scoria.test.support_copilot"
@@ -75,6 +82,14 @@ defmodule Scoria.VerificationLanesTest do
     assert ci_workflow =~ semantic
     assert index_of(ci_workflow, runtime_to_handoff) < index_of(ci_workflow, semantic)
     assert index_of(ci_workflow, semantic) < index_of(ci_workflow, "run: mix test --warnings-as-errors")
+
+    connector = VerificationLanes.ci_command(:connector)
+    gallery = VerificationLanes.ci_command(:support_copilot_gallery)
+
+    assert ci_workflow =~ connector
+    assert index_of(ci_workflow, "mix test.knowledge --warnings-as-errors") <
+             index_of(ci_workflow, connector)
+    assert index_of(ci_workflow, connector) < index_of(ci_workflow, gallery)
   end
 
   defp index_of(content, needle) do

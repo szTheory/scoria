@@ -22,7 +22,8 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 5. Ratchet hygiene: `mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
 6. `mix test --warnings-as-errors` — full-suite WAE
 7. `mix test.knowledge --warnings-as-errors` — optional knowledge lane WAE
-8. `mix scoria.test.support_copilot` — advisory support-copilot gallery lane (not closeout)
+8. `mix test.connector --warnings-as-errors` — remote connector lane WAE after knowledge
+9. `mix scoria.test.support_copilot` — advisory support-copilot gallery lane (not closeout)
 
 **Verification lanes in PR CI**
 
@@ -32,6 +33,7 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 | Runtime-to-handoff | mix test.runtime_to_handoff | Yes | Closeout lane |
 | Semantic fast-path | mix test.semantic_fast_path --warnings-as-errors | Yes | Not in closeout order |
 | Optional knowledge | mix test.knowledge --warnings-as-errors | Yes | After full-suite WAE |
+| Remote connector | mix test.connector --warnings-as-errors | Yes | After knowledge WAE; not in closeout order |
 | Support copilot gallery | mix scoria.test.support_copilot | Yes | Advisory; not in closeout order |
 
 **PR vs release proof depth**

@@ -138,6 +138,26 @@ mix test.knowledge
 
 This lane is explicitly optional. It is not required to prove the core runtime, handoff, or semantic fast-path adoption story, and it is not a prerequisite for first adoption.
 
+### 5. Remote connector lane
+
+Add this only when you are intentionally validating remote MCP connector registration and operator fleet evidence.
+
+Choose it when:
+
+- you need durable connector records, grants, and health state inside your Phoenix app
+- operator evidence for connector fleet and drawer surfaces matters for your integration review
+- you have already proven the default runtime lane
+
+Proof lane:
+
+```bash
+mix test.connector
+```
+
+This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
+
+See [connector_adoption.md](connector_adoption.md) for embedded-boundary framing.
+
 ## A Good Default Order
 
 Adopt Scoria in this order:
@@ -146,6 +166,7 @@ Adopt Scoria in this order:
 2. bounded handoffs if one role truly needs delegation
 3. semantic fast path if safe read-only reuse is worth it
 4. optional knowledge lane if retrieval and grounding are part of your product
+5. remote connector lane if MCP tool surfaces are part of your product
 
 ## What You Do Not Need To Adopt First
 

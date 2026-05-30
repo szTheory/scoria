@@ -194,6 +194,19 @@ defmodule Scoria.CiPolicyContractTest do
              index_of(test_section, "mix test.knowledge --warnings-as-errors")
   end
 
+  test "test job runs connector lane after knowledge WAE and before gallery lane" do
+    ci_verify = File.read!(@ci_verify)
+    [_policy_section, test_section] = split_jobs(ci_verify)
+    connector_cmd = VerificationLanes.ci_command(:connector)
+    knowledge_cmd = "mix test.knowledge --warnings-as-errors"
+    gallery_cmd = VerificationLanes.ci_command(:support_copilot_gallery)
+
+    assert test_section =~ connector_cmd
+    assert index_of(test_section, knowledge_cmd) < index_of(test_section, connector_cmd)
+    assert index_of(test_section, connector_cmd) < index_of(test_section, gallery_cmd)
+    refute :connector in VerificationLanes.closeout_order()
+  end
+
   test "test job runs support copilot gallery lane after knowledge WAE and outside closeout order" do
     ci_verify = File.read!(@ci_verify)
     [_policy_section, test_section] = split_jobs(ci_verify)
@@ -224,6 +237,7 @@ defmodule Scoria.CiPolicyContractTest do
     assert maintainer_docs =~ "policy"
     assert maintainer_docs =~ "needs: policy" or maintainer_docs =~ "`policy`"
     assert maintainer_docs =~ "mix test.semantic_fast_path"
+    assert maintainer_docs =~ "mix test.connector"
     assert maintainer_docs =~ "mix scoria.warning_inventory.check_baseline"
     assert maintainer_docs =~ "Version namespaces"
     assert maintainer_docs =~ "mix scoria.test.install_contract"
@@ -338,17 +352,17 @@ defmodule Scoria.CiPolicyContractTest do
     assert audit =~ "policy"
   end
 
-  test "planning ledgers reflect v2.10 hex consumer proof milestone" do
+  test "planning ledgers reflect shipped hex consumer and connector milestones" do
     roadmap = File.read!(".planning/ROADMAP.md")
     archived_roadmap = File.read!(".planning/milestones/v2.10-ROADMAP.md")
     milestones = File.read!(".planning/MILESTONES.md")
 
-    assert roadmap =~ "v2.10"
-    assert roadmap =~ "v2.11"
+    assert roadmap =~ "v2.15"
+    assert roadmap =~ "Connector Adoption Lane"
     assert archived_roadmap =~ "81"
     assert archived_roadmap =~ "post-publish"
     assert milestones =~ "v2.10 Hex Consumer"
-    assert milestones =~ "v2.9 Adoption Journey"
+    assert milestones =~ "v2.12 Adoption Confidence"
   end
 
   defp lane_contract_step(policy_section) do

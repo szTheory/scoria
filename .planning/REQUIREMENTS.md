@@ -1,36 +1,47 @@
-# Requirements: Milestone Archive
+# Requirements: Milestone v2.15 Connector Adoption Lane
 
+**Milestone:** v2.15  
+**Status:** Active (phases 05–07 implemented)  
 **Last updated:** 2026-05-30
 
-## v2.14 Maintenance Release (Complete)
+## v2.15 Requirements
 
-- [x] **HEX-03**: Maintenance release `0.1.1` with adopter-readable CHANGELOG and release-please manifest (publish via release-please)
+### Lane Contract & Proof Task
 
-## v2.13 Adopter Docs Truth (Complete)
+- [x] **CONN-LANE-01**: `VerificationLanes` exposes `:connector` with command, prerequisites (`mix test.adoption`), and explicit exclusions — not in `closeout_order/0`
+- [x] **CONN-LANE-02**: `Mix.Tasks.Scoria.Test.Connector` runs a bounded, documented test file set via `mix test.connector`
 
-- [x] **DOCS-03**: Split adopter vs maintainer docs (`docs/MAINTAINERS.md`)
-- [x] **DOCS-04**: Hex metadata tags, HexDocs links, connector_adoption in package extras
+### Integration Proof
 
-## v2.12 Adoption Confidence & Reference Demo (Complete)
+- [x] **CONN-LANE-03**: Lane proves register → fleet list → operator drawer evidence using `SupportJourney` fixture identities
 
-### Handler SSOT & Tool Exercise
+### Docs Truth
 
-- [x] **DEMO-01**: Shared `Scoria.SupportJourney.Handlers` used by host overlay and gallery
-- [x] **DEMO-02**: `lookup_support_ticket` and `issue_refund` tools exercised in gallery journeys
-- [x] **DEMO-03**: Default and handoff gallery journeys remain green with shared handlers
+- [x] **CONN-DOCS-01**: `adoption_lanes.md` and `connector_adoption.md` name `mix test.connector` with embedded-boundary framing
+- [x] **CONN-DOCS-02**: `SupportJourney.adopter_doc_surfaces/0` and adoption drift guards pin connector lane command + boundary wording
 
-### Optional Lane Gallery Journeys
+### CI
 
-- [x] **LANE-01**: Semantic FAQ journey in gallery with LiveView test
-- [x] **LANE-02**: Knowledge refund-policy journey in gallery with LiveView test
-- [x] **LANE-03**: Connector billing journey in gallery with LiveView test
+- [x] **CONN-CI-01**: PR CI runs `mix test.connector --warnings-as-errors` after knowledge WAE and before advisory gallery; not in closeout order
 
-### Orchestrator & Docs
+## Future Requirements
 
-- [x] **ORCH-01**: Gallery producer-path orchestrator smoke on `/scoria`
-- [x] **DOCS-01**: Gallery guide documents clone-repo and path vs tarball distinction
-- [x] **DOCS-02**: `SupportJourney` drift guards cover new lane fragments
+- Connector lane expansion into host-proof overlay tarball consumer (defer — gallery covers domain story)
 
-## Next: v2.15 Connector Adoption Lane
+## Out of Scope
 
-See `.planning/ROADMAP.md` after `/gsd-new-milestone` init.
+- Widening `VerificationLanes.closeout_order/0` for connector
+- Hosted connector platform scope
+- Wallaby/browser CI for connector proof
+- Net-new connector capability families (v1.5 boundary already shipped)
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CONN-LANE-01 | 05 | complete |
+| CONN-LANE-02 | 05 | complete |
+| CONN-LANE-03 | 06 | complete |
+| CONN-DOCS-01 | 07 | complete |
+| CONN-DOCS-02 | 07 | complete |
+| CONN-CI-01 | 07 | complete |

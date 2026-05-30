@@ -143,5 +143,8 @@ jobs:
       - name: Run knowledge lane
         run: mix test.knowledge --warnings-as-errors
 
+      - name: Run connector lane
+        run: mix test.connector --warnings-as-errors
+
       - name: Run support copilot gallery lane (advisory)
         run: mix scoria.test.support_copilot

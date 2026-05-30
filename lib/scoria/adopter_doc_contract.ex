@@ -12,6 +12,7 @@ defmodule Scoria.AdopterDocContract do
     "bounded handoff",
     "semantic fast path",
     "optional knowledge",
+    "remote connector",
     "upgrade-safe install"
   ]
 

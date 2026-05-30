@@ -15,6 +15,7 @@ Scoria is a Phoenix-native runtime with a narrow public surface — **start with
 - **Bounded handoff** — narrow same-run delegation, projected context, visible lineage
 - **Semantic fast path** — opt-in, tenant-partitioned reuse for explicitly safe read-only work
 - **Optional knowledge** — pgvector retrieval/grounding when chosen
+- **Remote connector** — MCP tool surfaces after default lane is green
 - **Upgrade-safe install** — `mix scoria.install` with plan/check/apply paths
 
 Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Use mix test.runtime_to_handoff as the bounded escalation proof lane when the same durable run needs narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
@@ -219,6 +220,14 @@ mix test.knowledge
 ```
 
 The knowledge lane does not define first adoption. You do not need pgvector, knowledge tables, retrieval, grounding, semantic fast-path setup, or `mix test.knowledge` to prove the core runtime, identity, approval, and operator-evidence path.
+
+Optional remote connector lane:
+
+```bash
+mix test.connector
+```
+
+Use this after `mix test.adoption` when validating MCP connector registration and operator fleet evidence. See [`docs/connector_adoption.md`](docs/connector_adoption.md).
 
 For the bounded semantic lane:
 

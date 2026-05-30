@@ -102,6 +102,7 @@ defmodule Scoria.SupportJourney do
       "Scoria.SupportJourney.Handlers",
       "mix test.semantic_fast_path",
       "mix test.knowledge",
+      "mix test.connector",
       "clone the repository",
       "path: dependency",
       "tarball consumer proof"
@@ -129,9 +130,21 @@ defmodule Scoria.SupportJourney do
     ]
   end
 
+  def connector_doc_fragments do
+    [
+      "mix test.connector",
+      "mix test.adoption",
+      connector_key(),
+      connector_label(),
+      "Embedded boundary",
+      "not a hosted connector platform"
+    ]
+  end
+
   def adopter_doc_surfaces do
     %{
       "docs/support_copilot_gallery.md" => doc_fragments(),
+      "docs/connector_adoption.md" => connector_doc_fragments(),
       "README.md" => readme_doc_fragments(),
       "docs/operator_verification.md" => operator_doc_fragments()
     }

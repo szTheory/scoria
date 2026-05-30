@@ -38,7 +38,9 @@ defmodule Scoria.MixProject do
         "scoria.test.install_contract": :test,
         "test.install_contract": :test,
         "scoria.test.support_copilot": :test,
-        "test.support_copilot": :test
+        "test.support_copilot": :test,
+        "scoria.test.connector": :test,
+        "test.connector": :test
       ]
     ]
   end

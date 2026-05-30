@@ -61,6 +61,15 @@ defmodule Scoria.VerificationLanes do
       exclusions: []
     },
     %{
+      id: :connector,
+      name: "Remote connector lane",
+      command: "mix test.connector",
+      ci_command: "mix test.connector --warnings-as-errors",
+      env: :test,
+      prerequisites: ["mix test.adoption"],
+      exclusions: @no_optional_setup_exclusions ++ ["full optional knowledge lane"]
+    },
+    %{
       id: :support_copilot_gallery,
       name: "Support copilot gallery lane",
       command: "mix scoria.test.support_copilot",

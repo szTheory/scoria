@@ -29,6 +29,7 @@ defmodule Scoria.AdoptionSurfaceTest do
   @runtime_to_handoff_command VerificationLanes.command(:runtime_to_handoff)
   @semantic_fast_path_command VerificationLanes.command(:semantic_fast_path)
   @knowledge_lane_command VerificationLanes.command(:knowledge)
+  @connector_lane_command VerificationLanes.command(:connector)
   @default_boundary_sentence VerificationLanes.boundary_sentence(:adoption)
   @closeout_chain VerificationLanes.closeout_chain()
 
@@ -55,6 +56,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ @default_lane_command
     assert content =~ @semantic_fast_path_command
     assert content =~ @knowledge_lane_command
+    assert content =~ @connector_lane_command
     assert content =~ "local proof-only timeout"
     assert content =~ "suite-wide timeout changes"
     assert content =~ "broader repo-health context"
@@ -104,12 +106,14 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "Bounded handoff lane"
     assert content =~ "Semantic fast-path lane"
     assert content =~ "Optional knowledge lane"
+    assert content =~ "Remote connector lane"
     assert content =~ "identity -> start -> inspect -> resume"
     assert content =~ "Scoria.start_handoff_run/3"
     assert content =~ "use Scoria.SemanticLane"
     assert content =~ @default_lane_command
     assert content =~ @semantic_fast_path_command
     assert content =~ @knowledge_lane_command
+    assert content =~ @connector_lane_command
     refute content =~ "mix scoria.test.knowledge"
     assert content =~ "This lane is explicitly optional."
     assert content =~ "Start narrow. Expand only when the current lane already feels boring."
