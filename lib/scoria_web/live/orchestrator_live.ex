@@ -47,6 +47,7 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:timer_ref, nil)
       |> assign(:token_text, "")
       |> assign(:active_approval, nil)
+      |> assign(:highlighted_approval_id, nil)
       |> assign(:approval_inbox, [])
       |> assign(:connector_fleet, [])
       |> assign(:connector_drawer, nil)
@@ -94,7 +95,29 @@ defmodule ScoriaWeb.OrchestratorLive do
     {:noreply, upsert_trace_span(socket, trace_id, span_view)}
   end
 
-  def handle_info({:approval_decided, _approval_id, _status}, socket) do
+  def handle_info({:approval_decided, approval_id, _status}, socket) do
+    socket =
+      socket
+      |> maybe_clear_active_approval(approval_id)
+      |> maybe_clear_highlighted_approval(approval_id)
+      |> load_operator_surface()
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:hitl_request, projection}, socket) do
+    socket = load_operator_surface(socket)
+
+    socket =
+      if is_nil(socket.assigns.active_approval) or
+           approval_matches_focus?(projection, socket.assigns.runtime_query) do
+        socket
+        |> assign(:active_approval, projection)
+        |> assign(:highlighted_approval_id, nil)
+      else
+        assign(socket, :highlighted_approval_id, projection.id)
+      end
+
     {:noreply, socket}
   end
 
@@ -124,19 +147,16 @@ defmodule ScoriaWeb.OrchestratorLive do
     {:noreply, socket}
   end
 
-  def handle_info({:hitl_request, approval}, socket) do
-    {:noreply,
-     socket
-     |> assign(:active_approval, approval)
-     |> load_operator_surface()}
-  end
-
   def handle_event("approve", _, socket) do
     {:noreply, record_approval_decision(socket, "approved")}
   end
 
   def handle_event("reject", _, socket) do
     {:noreply, record_approval_decision(socket, "rejected")}
+  end
+
+  def handle_event("dismiss_approval", _, socket) do
+    {:noreply, assign(socket, :active_approval, nil)}
   end
 
   def handle_event("load_metadata", %{"id" => trace_id}, socket) do
@@ -210,6 +230,14 @@ defmodule ScoriaWeb.OrchestratorLive do
         <h1 class="text-3xl font-bold mb-6">Scoria Orchestrator</h1>
         <p class="text-gray-600 mb-8">A Phoenix-native AI Application Quality Layer.</p>
 
+        <div
+          :for={{kind, message} <- @flash}
+          id={"flash-#{kind}"}
+          class={["mb-4 rounded-lg border px-4 py-3 text-sm", flash_kind_class(kind)]}
+        >
+          <%= message %>
+        </div>
+
         <section
           :if={@review_candidate}
           class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm"
@@ -231,7 +259,10 @@ defmodule ScoriaWeb.OrchestratorLive do
 
         <div class="mb-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
           <%= if approval_inbox_component?() do %>
-            <ApprovalInboxComponent.render approvals={@approval_inbox} />
+            <ApprovalInboxComponent.render
+              approvals={@approval_inbox}
+              highlight_approval_id={@highlighted_approval_id}
+            />
           <% else %>
             <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
               <p class="text-xs uppercase tracking-[0.24em] text-stone-500">approvals</p>
@@ -386,19 +417,40 @@ defmodule ScoriaWeb.OrchestratorLive do
       </div>
 
       <%= if @active_approval do %>
-        <div id="approval-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div id="approval-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div class="bg-white p-6 rounded shadow-lg max-w-md w-full">
             <h2 class="text-xl font-bold mb-4">Approval Required</h2>
-            <p class="mb-2"><strong>Tool:</strong> <%= @active_approval.tool_name %></p>
+            <p class="mb-2"><strong>Tool:</strong> <%= @active_approval[:tool_name] %></p>
+            <p :if={@active_approval[:reason]} class="mb-2 text-sm text-stone-700">
+              <strong>Reason:</strong> <%= @active_approval[:reason] %>
+            </p>
+            <p :if={@active_approval[:arguments_preview] not in [nil, %{}]} class="mb-2 text-sm text-stone-700">
+              <strong>Arguments:</strong>
+              <span class="font-mono text-xs block mt-1 whitespace-pre-wrap break-all"><%= inspect(@active_approval[:arguments_preview]) %></span>
+            </p>
+            <span
+              :if={@active_approval[:connector_label] || @active_approval[:blocker_kind] == "connector"}
+              class="inline-block mb-3 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-700"
+            >
+              <%= @active_approval[:connector_label] || "connector approval" %>
+            </span>
+            <a
+              :if={@active_approval[:workflow_run_id]}
+              href={"/workflows/#{@active_approval[:workflow_run_id]}"}
+              class="text-sm text-blue-700 underline block mb-4"
+            >
+              View workflow run
+            </a>
             <p class="text-sm text-stone-600">
               Record a workflow-owned decision. The approval state and audit evidence are written durably before any resume attempt.
             </p>
             <div class="flex justify-end space-x-4 mt-6">
+              <button phx-click="dismiss_approval" class="px-4 py-2 bg-stone-200 text-stone-800 rounded">Decide later</button>
               <button phx-click="reject" class="px-4 py-2 bg-red-500 text-white rounded">Reject Decision</button>
               <button phx-click="approve" class="px-4 py-2 bg-blue-500 text-white rounded">Approve Decision</button>
             </div>
             <p class="mt-4 text-xs text-stone-500">
-              Reject Decision keeps the workflow paused until a new operator action is recorded.
+              Reject records a durable rejection and keeps the workflow paused. To continue, the run needs a new approval request or operator retry.
             </p>
           </div>
         </div>
@@ -855,8 +907,52 @@ defmodule ScoriaWeb.OrchestratorLive do
     |> Repo.one()
   end
 
+  defp flash_kind_class(:error), do: "border-rose-200 bg-rose-50 text-rose-900"
+  defp flash_kind_class(:info), do: "border-sky-200 bg-sky-50 text-sky-900"
+  defp flash_kind_class(_kind), do: "border-stone-200 bg-stone-50 text-stone-900"
+
+  defp approval_error_message(_status, :not_pending) do
+    "This approval was already decided by another operator."
+  end
+
+  defp approval_error_message(_status, %Ecto.StaleEntryError{}) do
+    "This approval was already decided by another operator."
+  end
+
   defp approval_error_message(status, reason) do
     "Could not #{status} approval through workflow-owned state: #{inspect(reason)}"
+  end
+
+  defp approval_matches_focus?(_projection, query) when query in [nil, ""], do: true
+
+  defp approval_matches_focus?(projection, query) when is_binary(query) do
+    projection.session_id == query or projection.workflow_run_id == query
+  end
+
+  defp approval_matches_focus?(projection, query) when is_map(query) do
+    workflow_run_id = query["workflow_run_id"] || query[:workflow_run_id]
+    session_id = query["session_id"] || query[:session_id]
+
+    (is_binary(workflow_run_id) and projection.workflow_run_id == workflow_run_id) or
+      (is_binary(session_id) and projection.session_id == session_id)
+  end
+
+  defp approval_matches_focus?(_projection, _query), do: false
+
+  defp maybe_clear_active_approval(socket, approval_id) do
+    if socket.assigns.active_approval && socket.assigns.active_approval.id == approval_id do
+      assign(socket, :active_approval, nil)
+    else
+      socket
+    end
+  end
+
+  defp maybe_clear_highlighted_approval(socket, approval_id) do
+    if socket.assigns.highlighted_approval_id == approval_id do
+      assign(socket, :highlighted_approval_id, nil)
+    else
+      socket
+    end
   end
 
   defp load_review_candidate(nil), do: nil

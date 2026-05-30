@@ -2,6 +2,7 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
   use Phoenix.Component
 
   attr :approvals, :list, required: true
+  attr :highlight_approval_id, :string, default: nil
 
   def render(assigns) do
     ~H"""
@@ -12,7 +13,14 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
         No pending approvals.
       </div>
       <div :if={@approvals != []} class="mt-4 space-y-3">
-        <article :for={approval <- @approvals} class="rounded-xl border border-stone-200 bg-stone-50 p-3">
+        <article
+          :for={approval <- @approvals}
+          class={[
+            "rounded-xl border border-stone-200 bg-stone-50 p-3",
+            approval.id == @highlight_approval_id && "ring-2 ring-amber-400"
+          ]}
+          data-highlight={approval.id == @highlight_approval_id && "true"}
+        >
           <p class="text-sm font-semibold text-stone-900"><%= approval_field(approval, :tool_name) %></p>
           <p class="mt-1 text-xs text-stone-600">
             status <%= approval_field(approval, :status) %>

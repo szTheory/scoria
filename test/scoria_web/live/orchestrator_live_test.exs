@@ -39,6 +39,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   alias Scoria.Workflows
   alias Scoria.Workflows.Runtime
   alias Scoria.Workflows.{Run, Step}
+  alias Scoria.Workflows.RemoteApprovalProjection
 
   @endpoint ScoriaWeb.OrchestratorLiveTest.Endpoint
 
@@ -354,14 +355,18 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     {:ok, approval} =
       Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_approval})
 
-    send(view.pid, {:hitl_request, approval})
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+    send(view.pid, {:hitl_request, projection})
 
     html = render(view)
     assert html =~ "Approval Required"
     assert html =~ "test_tool"
+    assert html =~ "Requires approval"
     assert html =~ "Approve Decision"
     assert html =~ "Reject Decision"
+    assert html =~ "Decide later"
     assert html =~ "durably"
+    assert html =~ "arguments_preview" or html =~ "prod"
 
     render_click(view, "approve", %{})
 
@@ -407,7 +412,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     {:ok, approval} =
       Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_approval})
 
-    send(view.pid, {:hitl_request, approval})
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+    send(view.pid, {:hitl_request, projection})
 
     render_click(view, "reject", %{})
 
@@ -424,6 +430,179 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
 
     assert rejected_event.actor_ref == "operator-live"
     assert rejected_event.redacted_refs["approval_id"] == approval.id
+  end
+
+  test "HITL modal dismiss closes without approving" do
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{"tenant_id" => "tenant-live"})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    projection = %{
+      id: Ecto.UUID.generate(),
+      tool_name: "dismiss_tool",
+      reason: "Review later",
+      arguments_preview: %{"env" => "staging"},
+      workflow_run_id: Ecto.UUID.generate(),
+      status: "pending"
+    }
+
+    send(view.pid, {:hitl_request, projection})
+    assert render(view) =~ "Approval Required"
+
+    render_click(view, "dismiss_approval", %{})
+
+    refute render(view) =~ "Approval Required"
+  end
+
+  test "approval_decided clears active modal" do
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{"tenant_id" => "tenant-live"})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+    approval_id = Ecto.UUID.generate()
+
+    send(view.pid, {:hitl_request, %{id: approval_id, tool_name: "sync_tool", status: "pending"}})
+    assert render(view) =~ "Approval Required"
+
+    send(view.pid, {:approval_decided, approval_id, "approved"})
+
+    refute render(view) =~ "Approval Required"
+  end
+
+  test "stale approval decision surfaces friendly flash" do
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{
+        "actor_id" => "operator-live",
+        "tenant_id" => "tenant-live"
+      })
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", tenant_id: "tenant-live"})
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    {:ok, approval} =
+      Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_approval})
+
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+    send(view.pid, {:hitl_request, projection})
+
+    assert {:ok, _} = Workflows.approve(approval.id, "approved", %{actor_id: "other-operator"})
+    send(view.pid, {:approval_decided, approval.id, "approved"})
+    send(view.pid, {:hitl_request, projection})
+    render_click(view, "approve", %{})
+
+    assert render(view) =~ "already decided by another operator"
+  end
+
+  test "focused runtime highlights non-matching inbox approval without modal" do
+    session_a = "session-focus-a"
+
+    {:ok, run_a} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        tenant_id: "tenant-live",
+        session_id: session_a
+      })
+
+    {:ok, step_a} =
+      Workflows.create_step(run_a.id, %{
+        sequence: 1,
+        kind: "approval_gate",
+        role_id: "critic",
+        status: "running"
+      })
+
+    {:ok, approval_a} =
+      Workflows.mark_waiting_for_approval(run_a.id, step_a.id, %{
+        tool_name: "run_a_tool",
+        arguments: %{"env" => "prod"},
+        reason: "Needs approval"
+      })
+
+    {:ok, run_b} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        tenant_id: "tenant-live",
+        session_id: "session-focus-b"
+      })
+
+    {:ok, step_b} =
+      Workflows.create_step(run_b.id, %{
+        sequence: 1,
+        kind: "approval_gate",
+        role_id: "critic",
+        status: "running"
+      })
+
+    {:ok, approval_b} =
+      Workflows.mark_waiting_for_approval(run_b.id, step_b.id, %{
+        tool_name: "run_b_tool",
+        arguments: %{"env" => "staging"},
+        reason: "Needs approval"
+      })
+
+    projection_a = RemoteApprovalProjection.get_approval_lineage!(approval_a.id)
+    projection_b = RemoteApprovalProjection.get_approval_lineage!(approval_b.id)
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{"tenant_id" => "tenant-live"})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria?runtime=#{session_a}")
+
+    drain_pubsub_messages()
+
+    send(view.pid, {:hitl_request, projection_a})
+    assert render(view) =~ "Approval Required"
+    assert render(view) =~ "run_a_tool"
+
+    send(view.pid, {:hitl_request, projection_b})
+
+    html = render(view)
+    assert html =~ "run_a_tool"
+    assert html =~ "Approval Required"
+    assert html =~ "run_b_tool"
+    assert html =~ "ring-2 ring-amber-400"
+  end
+
+  test "matching focus opens modal for same workflow run" do
+    run_id = Ecto.UUID.generate()
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{"tenant_id" => "tenant-live"})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria?runtime=#{run_id}")
+
+    send(view.pid, {:hitl_request, %{id: Ecto.UUID.generate(), tool_name: "focused_tool", workflow_run_id: run_id, status: "pending"}})
+
+    assert render(view) =~ "focused_tool"
+    assert render(view) =~ "Approval Required"
+  end
+
+  defp drain_pubsub_messages do
+    receive do
+      _ -> drain_pubsub_messages()
+    after
+      0 -> :ok
+    end
   end
 
   defp review_candidate_fixture do
