@@ -1,9 +1,13 @@
 ---
 status: passed
 phase: 81-post-publish-registry-gate
-verified: 2026-05-30T00:45:00Z
+verified: 2026-05-29T12:00:00Z
 requirements:
   - HEX-REGISTRY-01
+score:
+  must_haves: 16/16
+  roadmap_criteria: 3/4_pass + 1/4_latent
+  requirement: 1/1
 ---
 
 # Phase 81 Verification
@@ -72,6 +76,17 @@ At `0.1.0`-only releases, `mix scoria.post_publish_smoke` runs fresh-install reg
 
 Post-upgrade `ecto.migrate` migration-delta assertion remains **latent** until first post-0.1.0 core migration ships (same as Phase 80 criterion #4). Harness ships now; activation documented here for continuity.
 
+## Score summary
+
+| Layer | Score | Notes |
+|-------|-------|-------|
+| Plan must_haves (81-01 + 81-02 + 81-03) | **16/16** | All truths and artifacts verified in codebase |
+| ROADMAP success criteria | **3 PASS + 1 latent** | Criterion 3 (live semver upgrade leg) wired + documented; activates at `0.1.1+` |
+| Requirement HEX-REGISTRY-01 | **1/1** | Traceability matches `.planning/REQUIREMENTS.md` |
+| Automated checks (this run) | **7/7** | rg pins, contract tests, compile WAE, ci_policy_contract |
+
+**Overall status: `passed`** — phase goal achieved; intentional deferrals are latent activation, not gaps.
+
 ## Automated verification
 
 | Command | Result | Notes |
@@ -80,6 +95,8 @@ Post-upgrade `ecto.migrate` migration-delta assertion remains **latent** until f
 | `rg -n 'post-publish-attest' .github/workflows/release-please.yml` | PASS | Blocking release job |
 | `rg -n 'post-publish-smoke.yml' .github/workflows/hex-publish.yml` | PASS | Recovery parity |
 | `rg -n 'post-publish|registry' docs/operator_verification.md` | PASS | Gate map row |
+| `MIX_ENV=test mix test test/scoria/hex_consumer_contract_test.exs --warnings-as-errors` | PASS | 11 tests, 0 failures |
+| `MIX_ENV=test mix test test/scoria/ci_policy_contract_test.exs --warnings-as-errors` | PASS | 29 tests, 0 failures |
 | `MIX_ENV=test mix compile --warnings-as-errors` | PASS | Compile WAE |
 
 **Note:** Full `mix scoria.post_publish_smoke` requires live Hex + Postgres — runs in CI post-publish chain, not in PR CI.
@@ -116,9 +133,16 @@ rg -n 'post-publish-attest|skip_index_wait' .github/workflows/release-please.yml
 - Criterion 4 migration delta — **latent** until first post-0.1.0 core migration ships
 - Phase 82: full README/operator tarball-vs-registry prose sweep (DOCS-HEX-01)
 
+## Review follow-ups (non-blocking)
+
+From `81-REVIEW.md` — do not block phase closeout; address before first `0.1.1+` live attest:
+
+- `hex-publish.yml`: guard `post-publish-attest` when `dry_run: true` (dry-run recovery should not poll Hex for unpublished version)
+- `scoria.post_publish_smoke`: validate `SCORIA_REGISTRY_VERSION` with `Version.parse/1` at task entry
+
 ## Verdict
 
 Phase 81 goal **achieved**. All three plan waves delivered: registry contract + Generator, Runner proof + Mix task, and blocking workflow attest with operator gate map stub. **HEX-REGISTRY-01 Complete.**
 
 ---
-*Verified: 2026-05-30*
+*Verified: 2026-05-29 (re-verified against codebase)*

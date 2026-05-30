@@ -83,7 +83,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. Real semver upgrade step documented for when `0.1.x+1` publishes (FROM previous → TO just-published).
 4. Operator gate map updated for v2.10 CI topology.
 
-**Plans:** 3 plans (3 waves)
+**Plans:** 3/3 plans complete
 
 | Wave | Plans | What it builds |
 |------|-------|----------------|
@@ -125,7 +125,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 | 78 | 3/3 | Complete    | 2026-05-29 |
 | 79 | 3/3 | Complete    | 2026-05-29 |
 | 80 | 3/3 | Complete    | 2026-05-29 |
-| 81 | Post-publish registry gate | HEX-REGISTRY-01 | Complete (2026-05-30) |
+| 81 | 3/3 | Complete    | 2026-05-30 |
 | 82 | Docs truth + milestone closeout | DOCS-HEX-01 | Pending |
 
 † partial

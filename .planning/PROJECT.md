@@ -45,6 +45,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **Phase 81 complete (2026-05-30):** Post-publish registry gate — `mix scoria.post_publish_smoke` proves live Hex install with exact version pins; blocking `post-publish-attest` wired in release-please and hex-publish workflows; operator gate map distinguishes PR tarball vs release registry proof.
 - **Phase 79 complete (2026-05-29):** Merge-blocking tarball consumer proof runs full v2.9 overlay depth (handoff → route → runtime) via `mix hex.build` unpack dep; operator triage, `SCORIA_PRESERVE_HOST`, and CI failure snapshot artifact wired.
 - **Hex:** `0.1.0` live at https://hex.pm/packages/scoria (tag `v0.1.0`, 2026-05-29).
 - Phase 73 CI hardening complete (2026-05-29): semantic lane + knowledge WAE + inventory baseline check in `ci-verify.yml`; operator gate map updated.
@@ -302,4 +303,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-29 — Phase 79 tarball consumer overlay proof complete*
+*Last updated: 2026-05-30 — Phase 81 post-publish registry gate complete*
