@@ -28,7 +28,7 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 4. `orchestrator_live_integration_test.exs` proves ORCH-LIVE-01 without `send/2`; pinned in semantic fast-path lane.
 5. `VerificationLanes.closeout_order/0` unchanged.
 
-**Plans:** 3/3 plans executed
+**Plans:** 3/3 plans complete
 
 **Status:** Complete (2026-05-30) — ready for `/gsd-verify-work`
 
