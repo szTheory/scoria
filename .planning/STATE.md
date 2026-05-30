@@ -7,10 +7,10 @@ last_updated: "2026-05-30"
 last_activity: 2026-05-30
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
-  completed_plans: 11
-  percent: 92
+  completed_plans: 12
+  percent: 100
 ---
 
 # Project State
@@ -21,13 +21,13 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 81 — post publish registry gate
+**Current focus:** Phase 82 — docs truth + milestone closeout
 
 ## Current Position
 
-Phase: 81
-Plan: 2/3 complete
-Status: In progress
+Phase: 82
+Plan: 0/TBD
+Status: Ready to plan
 Last activity: 2026-05-30
 
 ## Performance Metrics
@@ -38,13 +38,15 @@ Last activity: 2026-05-30
 - **Phase 78 progress:** 3/3 plans complete
 - **Phase 79 progress:** 3/3 plans complete
 - **Phase 80 progress:** 3/3 plans complete
-- **Phase 81 progress:** 2/3 plans complete
+- **Phase 81 progress:** 3/3 plans complete
+- **Phase 82 progress:** 0 plans (TBD)
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
 - **v2.10 (executing):** Tarball consumer proof in adoption closeout; upgrade smoke; post-publish registry gate; HexConsumerContract docs alignment.
+- **Phase 81 (complete):** Live Hex registry post-publish gate with blocking attest in release workflows. See `81-VERIFICATION.md`.
 - **Phase 80 (complete):** Content-revision upgrade smoke from v0.1.0 baseline fixture to HEAD tarball in adoption lane. See `80-VERIFICATION.md`.
 - **Phase 79 (complete):** Full overlay tarball consumer proof (handoff + route + runtime), failure diagnostics, CI failure artifact upload. See `79-VERIFICATION.md`.
 - **Phase 78 (complete):** HexConsumerContract SSOT, fingerprinted unpack cache, tarball route adoption harness + CI env reuse.
@@ -86,10 +88,17 @@ Last activity: 2026-05-30
 - run_upgrade_proof!/2 accepts bump: {:registry, from:, to:} with bump_registry_dep!/2 dispatch (D-84, 81-02)
 - mix scoria.post_publish_smoke runs registry proof; not in mix test.adoption (D-75, 81-02)
 - MANIFEST/triage include dep_mode and registry_version for :hex_registry hosts (D-76, 81-02)
+- post-publish-smoke.yml workflow_call SSOT; release:published trigger removed (D-77, 81-03)
+- post-publish-attest needs publish-hex in release-please.yml (D-78, 81-03)
+- hex-publish recovery includes same attest job (D-79, 81-03)
+- Postgres pgvector on 55432 for registry attest (D-81, 81-03)
+- PR CI = tarball full depth; release = registry subset + conditional semver upgrade (D-89, 81-03)
+- HEX-REGISTRY-01 Complete at Phase 81 (81-03)
 
 ### Evidence
 
-- `.planning/phases/81-post-publish-registry-gate/81-02-SUMMARY.md` — plan 81-02 complete
+- `.planning/phases/81-post-publish-registry-gate/81-03-SUMMARY.md` — plan 81-03 complete
+- `.planning/phases/81-post-publish-registry-gate/81-VERIFICATION.md` — Phase 81 verification passed
 - `.planning/phases/81-post-publish-registry-gate/81-01-SUMMARY.md` — plan 81-01 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-03-SUMMARY.md` — plan 80-03 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-02-SUMMARY.md` — plan 80-02 complete
@@ -100,10 +109,10 @@ Last activity: 2026-05-30
 
 | Category | Item | Status |
 |----------|------|--------|
-| Phase 81 | Live Hex registry post-publish gate | in progress (2/3 plans) |
+| Phase 81 | Live Hex registry post-publish gate | complete (3/3 plans) |
 | Phase 82 | DOCS-HEX-01 prose sweep + drift pins | queued |
 | v2.11+ | Orchestrator live wiring | queued |
 
 ## Operator Next Steps
 
-- `/gsd-execute-phase 81` — continue post-publish registry gate (81-03 next)
+- `/gsd-plan-phase 82` — docs truth + milestone closeout

@@ -10,7 +10,7 @@
 
 - [x] **HEX-CONSUMER-01**: Generated Phoenix host in `mix test.adoption` consumes Scoria via Hex-shaped dependency (`mix hex.build` tarball in PR CI), proving deps.get → install → migrate → route smoke → HOST-01 runtime overlay (approval/resume/evidence) → HOST-02 handoff overlay — without repo-root `path:` dep.
 - [x] **HEX-UPGRADE-01**: Same generated host proves upgrade-safe install after version bump: pin published `0.1.0`, baseline overlay smokes + compliant `--check`, bump to current tarball, `--dry-run` / `--check` / apply / migrate, re-run overlay smokes with final compliant `--check`.
-- [ ] **HEX-REGISTRY-01**: `post-publish-smoke.yml` proves live Hex registry fetch plus install → migrate → overlay subset (release-blocking); documents real semver upgrade path when `0.1.x+1` publishes.
+- [x] **HEX-REGISTRY-01**: `post-publish-smoke.yml` proves live Hex registry fetch plus install → migrate → overlay subset (release-blocking); documents real semver upgrade path when `0.1.x+1` publishes.
 
 ### Docs truth
 
@@ -43,7 +43,7 @@
 |-------------|-------|--------|
 | HEX-CONSUMER-01 | 78, 79 | Complete |
 | HEX-UPGRADE-01 | 80 | Complete |
-| HEX-REGISTRY-01 | 81 | Pending |
+| HEX-REGISTRY-01 | 81 | Complete |
 | DOCS-HEX-01 | 78, 82 | Complete |
 
 **Coverage:**
@@ -53,4 +53,4 @@
 
 ---
 *Requirements defined: 2026-05-29*
-*Last updated: 2026-05-29 after v2.10 milestone planning*
+*Last updated: 2026-05-30 after Phase 81 closeout*

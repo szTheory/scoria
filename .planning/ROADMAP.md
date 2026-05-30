@@ -1,7 +1,7 @@
 # Roadmap: Scoria
 
 **Milestone:** v2.10 Hex Consumer Proof & Upgrade Smoke
-**Last updated:** 2026-05-30 (Phase 81 plan 81-02 complete)
+**Last updated:** 2026-05-30 (Phase 81 complete)
 
 ## Overview
 
@@ -89,9 +89,11 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 |------|-------|----------------|
 | 1 | 81-01 ✓ | HexConsumerContract registry APIs; Generator `:hex_registry` + overlay-from-deps |
 | 2 | 81-02 ✓ | Runner registry proof; ExUnit + `mix scoria.post_publish_smoke` |
-| 3 | 81-03 | `workflow_call` post-publish smoke; blocking release attest; gate map stub |
+| 3 | 81-03 ✓ | `workflow_call` post-publish smoke; blocking release attest; gate map stub |
 
-**Progress:** 2/3 plans complete
+**Progress:** 3/3 plans complete
+
+**Status:** Complete (2026-05-30)
 
 **Cross-cutting constraints:**
 - Exact Hex version pins on registry attest path (never `~> 0.1` in proof)
@@ -123,7 +125,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 | 78 | 3/3 | Complete    | 2026-05-29 |
 | 79 | 3/3 | Complete    | 2026-05-29 |
 | 80 | 3/3 | Complete    | 2026-05-29 |
-| 81 | Post-publish registry gate | HEX-REGISTRY-01 | Planned |
+| 81 | Post-publish registry gate | HEX-REGISTRY-01 | Complete (2026-05-30) |
 | 82 | Docs truth + milestone closeout | DOCS-HEX-01 | Pending |
 
 † partial
