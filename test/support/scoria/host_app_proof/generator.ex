@@ -5,6 +5,7 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
 
   @host_module "ScoriaHostProof"
   @overlay_test_dir "priv/host_app_proof/overlay/test"
+  @registry_overlay_files ~w(host_route_smoke_test.exs host_runtime_smoke_test.exs)
 
   def overlay_test_files do
     overlay_test_files_from(repo_root())
@@ -24,9 +25,15 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
   def create_host!(opts) do
     dep_mode = Keyword.fetch!(opts, :dep_mode)
 
-    unless dep_mode in [:hex_tarball, :path] do
+    unless dep_mode in [:hex_tarball, :path, :hex_registry] do
       raise ArgumentError,
-            "dep_mode must be :hex_tarball or :path, got: #{inspect(dep_mode)}"
+            "dep_mode must be :hex_tarball, :path, or :hex_registry, got: #{inspect(dep_mode)}"
+    end
+
+    hex_version = Keyword.get(opts, :hex_version)
+
+    if dep_mode == :hex_registry and is_nil(hex_version) do
+      raise ArgumentError, "dep_mode :hex_registry requires :hex_version opt"
     end
 
     suffix = System.unique_integer([:positive]) |> Integer.to_string()
@@ -61,19 +68,28 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
       host_root,
       dep_mode: dep_mode,
       unpack_root: Keyword.get(opts, :unpack_root),
-      repo_root: repo_root
+      repo_root: repo_root,
+      hex_version: hex_version
     )
 
     patch_test_config!(host_root, app_name)
 
-    overlay_source = Keyword.get(opts, :overlay_source, repo_root())
-    copy_overlay!(host_root, overlay_source)
+    overlay_tests =
+      case dep_mode do
+        :hex_registry ->
+          []
+
+        _ ->
+          overlay_source = Keyword.get(opts, :overlay_source, repo_root())
+          copy_overlay!(host_root, overlay_source)
+          overlay_test_files_from(overlay_source)
+      end
+
     patch_host_install_surfaces!(host_root)
 
-    overlay_tests = overlay_test_files_from(overlay_source)
     upgrade_overlay_tests = overlay_test_files()
 
-    %{
+    host = %{
       app_name: app_name,
       db_name: "#{app_name}_test",
       root: host_root,
@@ -84,6 +100,56 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
       dep_mode: dep_mode,
       unpack_root: Keyword.get(opts, :unpack_root)
     }
+
+    if hex_version do
+      Map.put(host, :hex_version, hex_version)
+    else
+      host
+    end
+  end
+
+  def overlay_from_dep!(host) do
+    deps_root = Path.join(host.root, "deps/scoria")
+    overlay_dir = Path.join(deps_root, "priv/host_app_proof/overlay/test")
+
+    unless File.dir?(deps_root) do
+      raise "deps/scoria not found at #{deps_root} — run mix deps.get in the host first"
+    end
+
+    destination_root = Path.join(host.root, "test")
+    File.mkdir_p!(destination_root)
+
+    for basename <- @registry_overlay_files do
+      source = Path.join(overlay_dir, basename)
+
+      unless File.regular?(source) do
+        raise "registry overlay missing #{basename} at #{source} — ensure deps.get fetched scoria from Hex"
+      end
+
+      File.cp!(source, Path.join(destination_root, basename))
+    end
+
+    Map.put(host, :overlay_tests, @registry_overlay_files)
+  end
+
+  def bump_registry_dep!(host, to_version) do
+    mix_exs = Path.join(host.root, "mix.exs")
+    content = File.read!(mix_exs)
+    dep_line = HexConsumerContract.registry_dep_snippet_pinned(to_version) <> ","
+
+    patched =
+      Regex.replace(
+        ~r/\{:scoria,\s*"[^"]+",\s*hex:\s*:scoria\},/,
+        content,
+        dep_line
+      )
+
+    if patched == content do
+      raise "could not find {:scoria, \"...\", hex: :scoria} dep line in #{mix_exs}"
+    end
+
+    File.write!(mix_exs, patched)
+    Map.put(host, :hex_version, to_version)
   end
 
   def bump_unpack_dep!(host, new_unpack_root) do
@@ -134,6 +200,10 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
           unpack_root = Keyword.fetch!(opts, :unpack_root)
           {:scoria, path: unpack_root} = Scoria.HexConsumerContract.tarball_dep_tuple(unpack_root)
           "{:scoria, path: #{inspect(unpack_root)}},"
+
+        :hex_registry ->
+          hex_version = Keyword.fetch!(opts, :hex_version)
+          HexConsumerContract.registry_dep_snippet_pinned(hex_version) <> ","
       end
 
     patched =
