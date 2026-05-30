@@ -28,7 +28,7 @@ Scoria does **not** run connectors as a multi-tenant SaaS. Each connector invoca
 ## Verification
 
 - **Default:** `mix test.adoption` — no connector setup required.
-- **Connector proof:** `mix test.connector` — register → fleet list → operator drawer evidence using SupportJourney fixture identities.
+- **Connector proof:** `mix test.connector` — register → fleet list → operator drawer evidence using SupportJourney fixture identities (including the `billing` **Billing MCP** connector profile).
 - **Optional knowledge:** `mix test.knowledge` — only when grounding/retrieval is in scope.
 - **Semantic fast-path:** `mix test.semantic_fast_path` — read-only cache lanes only; see [semantic_fast_path.md](semantic_fast_path.md).
 

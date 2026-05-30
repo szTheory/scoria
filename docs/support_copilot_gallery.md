@@ -42,6 +42,7 @@ Optional lane commands exercised by gallery journeys (run in the main repo, not 
 
 - `mix test.semantic_fast_path` — semantic FAQ journey
 - `mix test.knowledge` — knowledge refund-policy journey
+- `mix test.connector` — billing connector register → fleet → drawer journey
 
 ## Journey fixtures
 

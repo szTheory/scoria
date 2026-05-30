@@ -20,6 +20,7 @@ install axis and do not map to Hex versions.
 - Gallery producer-path orchestrator smoke on `/scoria`
 - `docs/MAINTAINERS.md` for CI topology and release operations
 - `docs/connector_adoption.md` in Hex package and docs extras
+- Named remote connector adoption lane (`mix test.connector`) with SupportJourney billing fixture proof
 
 ### Changed
 

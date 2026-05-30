@@ -110,11 +110,17 @@ defmodule Scoria.CiPolicyContractTest do
     refute hex_publish =~ "sync_release_summary"
   end
 
-  test "release-please bootstrap config reflects prepared 0.1.1 maintenance release" do
+  test "release-please bootstrap config matches mix.exs version" do
     manifest = File.read!(".release-please-manifest.json")
     config = File.read!("release-please-config.json")
+    mix_exs = File.read!("mix.exs")
 
-    assert manifest =~ "0.1.1"
+    version =
+      ~r/@version "([^"]+)"/
+      |> Regex.run(mix_exs)
+      |> Enum.at(1)
+
+    assert manifest =~ version
     refute manifest =~ "0.0.0"
     refute config =~ "release-as"
     assert config =~ "bootstrap-sha"
