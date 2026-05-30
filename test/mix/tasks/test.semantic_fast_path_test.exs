@@ -9,6 +9,7 @@ defmodule Mix.Tasks.Scoria.Test.SemanticFastPathTest do
       "test/scoria/semantic_cache/lookup_test.exs",
       "test/scoria/semantic_cache/invalidation_test.exs",
       "test/scoria_web/live/orchestrator_live_test.exs",
+      "test/scoria_web/live/orchestrator_live_integration_test.exs",
       "test/scoria_web/components/runtime_detail_drawer_component_test.exs",
       "test/scoria_web/components/semantic_evidence_notebook_component_test.exs",
       "test/scoria_web/live/workflow_live_test.exs",
@@ -22,6 +23,7 @@ defmodule Mix.Tasks.Scoria.Test.SemanticFastPathTest do
     assert Mix.Tasks.Scoria.Test.SemanticFastPath.semantic_fast_path_test_files() == expected_files
     assert "test/scoria/runtime/semantic_fast_path_test.exs" in expected_files
     assert "test/scoria_web/live/orchestrator_live_test.exs" in expected_files
+    assert "test/scoria_web/live/orchestrator_live_integration_test.exs" in expected_files
     assert "test/scoria_web/components/runtime_detail_drawer_component_test.exs" in expected_files
     assert "test/scoria_web/components/semantic_evidence_notebook_component_test.exs" in expected_files
     assert "test/scoria_web/live/workflow_live_test.exs" in expected_files
