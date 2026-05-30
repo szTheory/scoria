@@ -33,7 +33,7 @@ Last activity: 2026-05-30 — Milestone v2.11 completed and archived
 ## Performance Metrics
 
 - **Latest Shipped Milestone:** `v2.11 Orchestrator Live Wiring` on 2026-05-30
-- **v2.11 archive:** `.planning/milestones/v2.11-{ROADMAP,REQUIREMENTS,MILESTONE-AUDIT}.md`
+- **v2.11 archive:** `.planning/milestones/v2.11-{ROADMAP,REQUIREMENTS,MILESTONE-AUDIT}.md`, `.planning/milestones/v2.11-phases/`
 - **Hex release:** `0.1.0` at git tag `v0.1.0` — https://hex.pm/packages/scoria
 - **v2.10 archive:** `.planning/milestones/v2.10-{ROADMAP,REQUIREMENTS,MILESTONE-AUDIT}.md`, `.planning/milestones/v2.10-phases/`
 
@@ -69,11 +69,11 @@ Last activity: 2026-05-30 — Milestone v2.11 completed and archived
 
 ### Evidence
 
-- `.planning/phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-03-SUMMARY.md` — plan 01.1-03 verification (integration 8 tests, semantic fast path)
-- `.planning/phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-02-SUMMARY.md` — plan 01.1-02 verification (integration 7 tests, unit 18 tests)
-- `.planning/phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-01-SUMMARY.md` — plan 01.1-01 verification (telemetry 4 tests, integration 5 tests, compile WAE)
-- `.planning/phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-03-SUMMARY.md` — plan 01-03 verification (56 semantic lane tests, 4 integration tests)
-- `.planning/phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-02-SUMMARY.md` — plan 01-02 verification (46 tests, 0 failures)
+- `.planning/milestones/v2.11-phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-03-SUMMARY.md` — plan 01.1-03 verification (integration 8 tests, semantic fast path)
+- `.planning/milestones/v2.11-phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-02-SUMMARY.md` — plan 01.1-02 verification (integration 7 tests, unit 18 tests)
+- `.planning/milestones/v2.11-phases/01.1-address-tech-debt-orchestrator-live-wiring-follow-ups/01.1-01-SUMMARY.md` — plan 01.1-01 verification (telemetry 4 tests, integration 5 tests, compile WAE)
+- `.planning/milestones/v2.11-phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-03-SUMMARY.md` — plan 01-03 verification (56 semantic lane tests, 4 integration tests)
+- `.planning/milestones/v2.11-phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-02-SUMMARY.md` — plan 01-02 verification (46 tests, 0 failures)
 - `.planning/milestones/v2.10-MILESTONE-AUDIT.md` — v2.10 audit passed
 
 ## Deferred Items

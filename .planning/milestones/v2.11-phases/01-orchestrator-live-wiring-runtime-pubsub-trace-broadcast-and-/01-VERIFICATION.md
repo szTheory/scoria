@@ -17,7 +17,7 @@ must_haves_score: 27/27
 
 | Requirement | Phase | Status | Evidence |
 |-------------|-------|--------|----------|
-| **ORCH-LIVE-01** | 01 | **Complete (implementation)** | Observe tenant fan-out, OrchestratorLive handlers, integration tests, semantic lane pin; UAT pending |
+| **ORCH-LIVE-01** | 01 | **Complete** | Observe tenant fan-out, OrchestratorLive handlers, integration tests, semantic lane pin; UAT automated (11/11) |
 
 Source: `.planning/REQUIREMENTS.md` maps ORCH-LIVE-01 → Phase 01 Complete.
 
@@ -27,7 +27,7 @@ Source: `.planning/REQUIREMENTS.md` maps ORCH-LIVE-01 → Phase 01 Complete.
 |---------|--------|
 | `MIX_ENV=test mix compile --warnings-as-errors` | **PASS** |
 | `MIX_ENV=test mix test test/scoria/observe/operator_broadcast_test.exs test/scoria/observe/trace_projection_test.exs test/scoria/observe/telemetry_test.exs` | **16 tests, 0 failures** |
-| `MIX_ENV=test mix test test/scoria_web/live/orchestrator_live_integration_test.exs` | **4 tests, 0 failures** |
+| `MIX_ENV=test mix test test/scoria_web/live/orchestrator_live_integration_test.exs` | **11 tests, 0 failures** |
 | `MIX_ENV=test mix test test/mix/tasks/test.semantic_fast_path_test.exs test/scoria/verification_lanes_test.exs` | **6 tests, 0 failures** |
 | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path --warnings-as-errors` | **56 tests, 0 failures** |
 
@@ -98,18 +98,28 @@ Source: `.planning/REQUIREMENTS.md` maps ORCH-LIVE-01 → Phase 01 Complete.
 
 **None** — all plan must_haves verified against source and automated gates.
 
-## Human verification (recommended)
+## UAT automation
 
-| Item | Reason |
-|------|--------|
-| `/gsd-verify-work` phase 01 UAT | ROADMAP marks UAT pending after implementation complete |
-| Browser walkthrough in `examples/support_copilot` | Confirm operator UX with real session plug + live workflow |
-| LLM token streaming from ReqLLM runtime | D-125/D-128 — handler + UI slot shipped; full streaming adapter is follow-up, not blocking |
+**Status:** Complete — 11/11 scenarios mapped to ExUnit + CI.
+
+| Gate | Command | Role |
+|------|---------|------|
+| Merge-blocking producer path | `mix test.semantic_fast_path --warnings-as-errors` | OrchestratorLive integration + unit tiers pinned in semantic lane |
+| Advisory host wiring | `mix scoria.test.support_copilot` | `/scoria` mount smoke via support_copilot gallery |
+
+Canonical mapping: `.planning/phases/01-orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-/01-UAT.md`
+
+Local parity:
+
+```bash
+SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path --warnings-as-errors
+```
 
 ## Score summary
 
 - **must_haves:** 27/27 verified
 - **automated gates:** 5/5 pass
-- **requirement:** ORCH-LIVE-01 implementation complete; conversational UAT next
+- **UAT:** 11/11 automated (zero human verification required)
+- **requirement:** ORCH-LIVE-01 complete
 
 ## Self-Check: PASSED

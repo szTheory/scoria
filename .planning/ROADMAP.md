@@ -19,7 +19,7 @@
 - [x] Phase 01: Orchestrator live wiring (3/3 plans) — completed 2026-05-30
 - [x] Phase 01.1: Orchestrator live wiring follow-ups (3/3 plans) — completed 2026-05-30
 
-Full details: [`.planning/milestones/v2.11-ROADMAP.md`](milestones/v2.11-ROADMAP.md)
+Full details: [`.planning/milestones/v2.11-ROADMAP.md`](milestones/v2.11-ROADMAP.md) · Phase artifacts: [`.planning/milestones/v2.11-phases/`](milestones/v2.11-phases/)
 
 </details>
 
