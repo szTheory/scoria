@@ -28,9 +28,9 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 4. `orchestrator_live_integration_test.exs` proves ORCH-LIVE-01 without `send/2`; pinned in semantic fast-path lane.
 5. `VerificationLanes.closeout_order/0` unchanged.
 
-**Plans:** 0 plans
+**Plans:** 1/3 complete (01-01 Observe-layer PubSub bridge)
 
-**Status:** Context gathered — run `/gsd-plan-phase 1`
+**Status:** In Progress — plan 01-02 next (HITL fan-out + LiveView handlers)
 
 ---
 
@@ -38,7 +38,7 @@ Wire orchestrator live trace broadcast and HITL approval modal from real runtime
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 01 | Orchestrator live wiring | ORCH-LIVE-01 | Context gathered |
+| 01 | Orchestrator live wiring | ORCH-LIVE-01 | In Progress (1/3 plans) |
 
 ## Completed milestones
 

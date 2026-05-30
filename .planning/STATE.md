@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.11
 milestone_name: Orchestrator Live Wiring
 status: executing
-last_updated: "2026-05-30T09:15:01.389Z"
-last_activity: 2026-05-30 -- Phase 01 planning complete
+last_updated: "2026-05-30T09:19:23.372Z"
+last_activity: 2026-05-30
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-30)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v2.11 — Orchestrator live wiring (ORCH-LIVE-01)
+**Current focus:** Phase 01 — orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-
 
 ## Current Position
 
-Phase: 01 — Orchestrator live wiring
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-30 -- Phase 01 planning complete
+Phase: 01 (orchestrator-live-wiring-runtime-pubsub-trace-broadcast-and-) — EXECUTING
+Plan: 2 of 3 (01-01 complete)
+Status: Executing Phase 01 — ready for plan 01-02
+Last activity: 2026-05-30 — Completed plan 01-01 (Observe-layer PubSub bridge)
 
 ## Performance Metrics
 
@@ -51,6 +51,8 @@ Last activity: 2026-05-30 -- Phase 01 planning complete
 - `adopter_doc_surfaces/0` scopes README + adoption_lanes only; maintainer gate map in ci_policy_contract_test (D-96, D-98)
 - DOCS-HEX-01 Complete only after drift guards + audit (D-112)
 - v2.10 archive: move phases 78–82 to `v2.10-phases/` — no silent deletion (D-108)
+- ETS `insert_new` per trace_id for trace_opened dedup on OperatorBroadcast (plan 01-01)
+- Telemetry `buffer_span/1` strips broadcast-only keys before Buffer cast (plan 01-01)
 
 ### Evidence
 
@@ -63,12 +65,11 @@ Last activity: 2026-05-30 -- Phase 01 planning complete
 
 | Category | Item | Status |
 |----------|------|--------|
-| v2.11 | ORCH-LIVE-01 orchestrator live wiring | Phase 01 context done — `/gsd-plan-phase 1` |
+| v2.11 | ORCH-LIVE-01 orchestrator live wiring | Phase 01 plan 01-01 complete — execute 01-02 |
 | v2.12 | LANE-DEMO-01 gallery lane expansion | queued |
 | Tech debt | Registry semver upgrade leg at 0.1.1+ | latent (from v2.10 audit) |
 
 ## Operator Next Steps
 
-- `/gsd-plan-phase 1` — plan Phase 01 from locked context (recommended next)
-- `/gsd-discuss-phase 1` — re-open context if decisions change
+- Execute plan 01-02 — HITL tenant fan-out + OrchestratorLive handler updates
 - `/gsd-progress` — view roadmap and milestone status
