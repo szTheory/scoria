@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.10
 milestone_name: Hex Consumer Proof & Upgrade Smoke
-status: planning
-last_updated: "2026-05-30T00:23:19.150Z"
-last_activity: 2026-05-29
+status: Ready to execute
+last_updated: "2026-05-30"
+last_activity: 2026-05-30
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 60
+  total_plans: 12
+  completed_plans: 10
+  percent: 83
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` (updated 2026-05-29)
 ## Current Position
 
 Phase: 81
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-05-29
+Plan: 1/3 complete
+Status: In progress
+Last activity: 2026-05-30
 
 ## Performance Metrics
 
@@ -38,6 +38,7 @@ Last activity: 2026-05-29
 - **Phase 78 progress:** 3/3 plans complete
 - **Phase 79 progress:** 3/3 plans complete
 - **Phase 80 progress:** 3/3 plans complete
+- **Phase 81 progress:** 1/3 plans complete
 
 ## Accumulated Context
 
@@ -77,10 +78,14 @@ Last activity: 2026-05-29
 - Pre-apply install check accepts drift or compliant when install surfaces unchanged (80-03)
 - Migration ordering criterion #4 latent — 24 identical migrations at v0.1.0 and HEAD (D-65, 80-03)
 - HEX-UPGRADE-01 Complete at Phase 80; Phase 81 owns registry semver (D-55, D-68, 80-03)
+- registry_dep_tuple_pinned/1 and registry_dep_snippet_pinned/1 are attest-only; hex_dep_snippet/0 unchanged (D-73, 81-01)
+- overlay_from_dep!/1 copies route+runtime from deps/scoria/priv/... after deps.get (D-70, 81-01)
+- :hex_registry hosts start overlay_tests: [] until overlay_from_dep!/1 (D-74, 81-01)
+- semver_upgrade_eligible?/1 and registry_upgrade_pair/1 gate conditional upgrade legs (D-83, D-86, 81-01)
 
 ### Evidence
 
-- `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-VERIFICATION.md` — Phase 80 passed verification ledger
+- `.planning/phases/81-post-publish-registry-gate/81-01-SUMMARY.md` — plan 81-01 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-03-SUMMARY.md` — plan 80-03 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-02-SUMMARY.md` — plan 80-02 complete
 - `.planning/phases/80-upgrade-smoke-in-adoption-lane/80-01-SUMMARY.md` — plan 80-01 complete
@@ -90,10 +95,10 @@ Last activity: 2026-05-29
 
 | Category | Item | Status |
 |----------|------|--------|
-| Phase 81 | Live Hex registry post-publish gate | next |
+| Phase 81 | Live Hex registry post-publish gate | in progress (1/3 plans) |
 | Phase 82 | DOCS-HEX-01 prose sweep + drift pins | queued |
 | v2.11+ | Orchestrator live wiring | queued |
 
 ## Operator Next Steps
 
-- `/gsd-plan-phase 81` — plan post-publish registry gate (HEX-REGISTRY-01)
+- `/gsd-execute-phase 81` — continue post-publish registry gate (81-02 next)

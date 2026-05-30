@@ -1,7 +1,7 @@
 # Roadmap: Scoria
 
 **Milestone:** v2.10 Hex Consumer Proof & Upgrade Smoke
-**Last updated:** 2026-05-29 (Phase 80 complete)
+**Last updated:** 2026-05-30 (Phase 81 plan 81-01 complete)
 
 ## Overview
 
@@ -83,7 +83,20 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. Real semver upgrade step documented for when `0.1.x+1` publishes (FROM previous → TO just-published).
 4. Operator gate map updated for v2.10 CI topology.
 
-**Plans:** TBD via `/gsd-plan-phase 81`
+**Plans:** 3 plans (3 waves)
+
+| Wave | Plans | What it builds |
+|------|-------|----------------|
+| 1 | 81-01 ✓ | HexConsumerContract registry APIs; Generator `:hex_registry` + overlay-from-deps |
+| 2 | 81-02 | Runner registry proof; ExUnit + `mix scoria.post_publish_smoke` |
+| 3 | 81-03 | `workflow_call` post-publish smoke; blocking release attest; gate map stub |
+
+**Progress:** 1/3 plans complete
+
+**Cross-cutting constraints:**
+- Exact Hex version pins on registry attest path (never `~> 0.1` in proof)
+- Overlays from `deps/scoria/priv/...` after `deps.get`, not checkout
+- Registry proof not in `mix test.adoption`
 
 ---
 
@@ -110,7 +123,7 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 | 78 | 3/3 | Complete    | 2026-05-29 |
 | 79 | 3/3 | Complete    | 2026-05-29 |
 | 80 | 3/3 | Complete    | 2026-05-29 |
-| 81 | Post-publish registry gate | HEX-REGISTRY-01 | Pending |
+| 81 | Post-publish registry gate | HEX-REGISTRY-01 | Planned |
 | 82 | Docs truth + milestone closeout | DOCS-HEX-01 | Pending |
 
 † partial
