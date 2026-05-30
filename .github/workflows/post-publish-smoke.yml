@@ -1,10 +1,22 @@
-# Lightweight post-publish smoke: Hex index + consumer deps.get in a clean project.
+# Reusable post-publish registry attest SSOT.
+# Blocking attest is wired via workflow_call from release-please.yml (post-publish-attest)
+# and hex-publish.yml after publish-hex. The release:published trigger is intentionally
+# removed — it races ahead of publish-hex in the release chain (D-77).
 
 name: Post Publish Smoke
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      version:
+        description: 'Semver without v prefix (e.g. 0.1.0)'
+        required: true
+        type: string
+      skip_index_wait:
+        description: 'Skip Hex index poll when chained after publish-hex'
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       tag:
@@ -20,22 +32,44 @@ permissions:
   contents: read
 
 concurrency:
-  group: post-publish-smoke-${{ github.event.release.tag_name || github.event.inputs.tag || github.sha }}
+  group: post-publish-smoke-${{ github.event.inputs.tag || inputs.version || github.sha }}
   cancel-in-progress: false
 
 jobs:
   smoke:
-    name: Hex consumer smoke
+    name: Registry consumer attest
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scoria_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d scoria_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     env:
-      RELEASE_TAG: ${{ github.event.inputs.tag || github.event.release.tag_name }}
-      RELEASE_VERSION: ${{ github.event.inputs.version || github.event.release.tag_name }}
+      MIX_ENV: test
+      SCORIA_DB_HOST: localhost
+      SCORIA_DB_PORT: 55432
+      SCORIA_DB_USERNAME: postgres
+      SCORIA_DB_PASSWORD: postgres
+      SCORIA_DB_NAME: scoria_test
+
     steps:
       - name: Resolve version
         id: version
         run: |
           set -euo pipefail
-          raw="${RELEASE_VERSION:-}"
+          raw="${{ inputs.version || github.event.inputs.version || github.event.inputs.tag || '' }}"
           raw="${raw#v}"
           if [ -z "$raw" ]; then
             echo "Could not resolve release version" >&2
@@ -47,10 +81,16 @@ jobs:
 
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "27"
-          elixir-version: "1.19"
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Install Hex + Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
 
       - name: Wait for Hex.pm index
+        if: inputs.skip_index_wait != true
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -65,32 +105,26 @@ jobs:
           done
           exit 1
 
-      - name: Consumer deps.get smoke
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        working-directory: ${{ runner.temp }}
+      - name: Fetch deps and compile
         run: |
-          set -euo pipefail
-          mix new smoke_hex --sup
-          cd smoke_hex
-          elixir -e '
-            version = System.get_env("VERSION")
-            mix_path = "mix.exs"
-            content = File.read!(mix_path)
-            entry = "      {:scoria, \"~> 0.1\", hex: :scoria},\n"
-            updated = String.replace(content, ~r/(defp deps do\n\s*\[\n)/, "\\1" <> entry, global: false)
-            File.write!(mix_path, updated)
-          '
           mix deps.get
           mix compile --warnings-as-errors
+
+      - name: Install phx_new archive for host consumer proof
+        run: mix archive.install hex phx_new --force
+
+      - name: Run post-publish registry attest
+        env:
+          SCORIA_REGISTRY_VERSION: ${{ steps.version.outputs.version }}
+        run: mix scoria.post_publish_smoke
 
       - name: Summary
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           {
-            echo "## Post-publish smoke passed"
+            echo "## Post-publish registry attest passed"
             echo "- Version: ${VERSION}"
-            echo "- Tag: ${RELEASE_TAG:-n/a}"
-            echo "- Consumer deps.get + compile: success"
+            echo "- Fresh-install: deps.get → scoria.install → ecto.create → ecto.migrate → route + runtime overlay smokes"
+            echo "- Conditional semver upgrade leg when version > 0.1.0"
           } >> "$GITHUB_STEP_SUMMARY"
