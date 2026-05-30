@@ -114,7 +114,16 @@ Close the post-Hex publish adopter-trust gap: merge-blocking `mix test.adoption`
 3. `adoption_surface_test` and `ci_policy_contract_test` guard new operator/README anchors.
 4. Milestone audit passes; requirements traceability complete; v2.10 archived to `.planning/milestones/`.
 
-**Plans:** TBD via `/gsd-plan-phase 82`
+**Plans:** 3 plans in 3 waves
+
+**Wave 1**
+- `82-01-PLAN.md` — DOCS-HEX-01 prose sweep + `adopter_doc_surfaces/0` + drift pins + REQUIREMENTS honesty fix
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- `82-02-PLAN.md` — `82-VERIFICATION.md` + v2.10 milestone audit (`status: passed`)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- `82-03-PLAN.md` — `/gsd-complete-milestone v2.10` archive + v2.11 seed
 
 ---
 
