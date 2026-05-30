@@ -1,5 +1,18 @@
 # Milestones
 
+## v2.15 Connector Adoption Lane (Shipped: 2026-05-30)
+
+**Phases completed:** 3 phases (05–07), 6 requirements
+
+**Key accomplishments:**
+
+- Named `mix test.connector` lane in `VerificationLanes` (not in closeout order)
+- `Mix.Tasks.Scoria.Test.Connector` bounded test bundle with SupportJourney integration proof
+- Docs/drift guards in `adoption_lanes.md`, `connector_adoption.md`, README
+- PR CI WAE: connector lane after knowledge, before advisory gallery
+
+---
+
 ## v2.14 Maintenance Release & Registry Upgrade Proof (Shipped: 2026-05-30)
 
 **Phases completed:** Thin release prep (bundled with v2.12 closeout)

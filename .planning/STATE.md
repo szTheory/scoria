@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.15
 milestone_name: Connector Adoption Lane
-status: planning
-last_updated: "2026-05-30T18:30:00.000Z"
-last_activity: 2026-05-30 — v2.15 milestone initialized; phases 05–07 planned
+status: complete
+last_updated: "2026-05-30T19:00:00.000Z"
+last_activity: 2026-05-30 — v2.15 phases 05–07 implemented
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 3
   total_plans: 0
   completed_plans: 0
-  percent: 0
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-05-30)
 
 ## Current Position
 
-Phase: 05 — Lane contract + Mix task (implementation in progress)
+Phase: Milestone v2.15 complete
 Plan: —
-Status: Defining requirements / executing phase 05
-Last activity: 2026-05-30 — v2.15 milestone init + connector lane scaffold
+Status: Release 0.1.1 via release-please pending CI + merge
+Last activity: 2026-05-30 — mix test.connector lane shipped (phases 05–07)
 
 ## Performance Metrics
 

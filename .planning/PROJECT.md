@@ -10,33 +10,15 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: v2.15 Connector Adoption Lane (Planning)
+## Current Milestone: v2.15 Connector Adoption Lane (Shipped 2026-05-30)
 
-**Goal:** Give connector adopters a named, executable proof lane (`mix test.connector`) with docs/CI/drift-guard parity to semantic and knowledge lanes — without widening `VerificationLanes.closeout_order/0`.
+**Goal:** Named connector adoption proof lane with docs/CI/drift-guard parity to semantic and knowledge lanes.
 
-**Target features:**
-- Named Mix task `mix test.connector` (+ `mix scoria.test.connector` alias)
-- `:connector` lane entry in `Scoria.VerificationLanes`
-- Curated connector test bundle and SupportJourney-aligned integration proof
-- Doc updates and drift guards for connector lane command + boundary wording
-
-## Latest Shipped Milestone: v2.14 Maintenance Release (2026-05-30)
-
-**Goal:** Prepare `0.1.1` maintenance release with registry semver upgrade proof path.
-
-**Delivered:** Version bump, adopter-readable CHANGELOG, release-please manifest ready.
-
-## Previous Shipped: v2.13 Adopter Docs Truth (2026-05-30)
-
-**Delivered:** MAINTAINERS split, Hex metadata, README session keys, connector_adoption in package extras.
-
-## Previous Shipped: v2.12 Adoption Confidence & Reference Demo (2026-05-30)
-
-**Delivered:** SupportJourney.Handlers SSOT, gallery optional lane journeys, orchestrator producer smoke.
+**Delivered:** `mix test.connector`, VerificationLanes `:connector` entry, SupportJourney integration proof, PR CI WAE.
 
 ## Release Queue
 
-- **Publish `0.1.1`:** merge to main → release-please PR → registry semver upgrade smoke
+- **Publish `0.1.1`:** merge release-please PR #3 when CI green → registry semver upgrade smoke
 
 ## Latest Shipped Milestone: v2.11 Orchestrator Live Wiring
 
@@ -178,9 +160,10 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Gallery producer-path orchestrator smoke and honest gallery docs with SupportJourney drift guards. — `v2.12` (ORCH-01, DOCS-01–02)
 - ✓ Adopter vs maintainer docs split (`docs/MAINTAINERS.md`); Hex metadata and connector_adoption in package extras. — `v2.13` (DOCS-03, DOCS-04)
 - ✓ Maintenance release `0.1.1` prepared with adopter-readable CHANGELOG and release-please manifest. — `v2.14` (HEX-03)
+- ✓ Named connector adoption lane `mix test.connector` with VerificationLanes entry, SupportJourney proof, docs truth, and PR CI WAE. — `v2.15` (CONN-LANE-01–03, CONN-DOCS-01–02, CONN-CI-01)
 
 ### Active
-- **v2.15 CONN-LANE/DOCS/CI**: Named connector adoption lane — `mix test.connector`, VerificationLanes entry, docs truth, CI wiring.
+- _(none — v2.15 shipped; release 0.1.1 publish pending)_
 
 ### Out of Scope
 
