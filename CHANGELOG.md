@@ -13,6 +13,21 @@ install axis and do not map to Hex versions.
 
 ## [Unreleased]
 
+### Added
+
+- Self-contained, dark-first (with light theme) operator dashboard design system. The
+  `/scoria` dashboard now ships its own brand-token CSS, client bundle (LiveSocket +
+  hooks), and self-hosted fonts (IBM Plex Sans, JetBrains Mono) — it renders fully styled
+  and interactive with **no dependency on the host app's Tailwind/asset pipeline**.
+- Task-oriented navigation shell: persona-grouped sidebar (Operate / Improve), breadcrumb
+  topbar, light/dark theme toggle, and a GOV.UK-style "what do you want to do?" task band
+  on the Live Ops landing page.
+- Runs index at `/scoria/workflows`; the previously-unreachable Eval Workbench is now
+  routed at `/scoria/eval_specs`.
+- `?tenant=` view parameter on Live Ops and `priv/repo/dev_seed.exs` (gallery) to populate
+  every dashboard screen with realistic data.
+- `mix scoria.assets.build` to (re)generate the shipped dashboard asset bundle.
+
 ### Changed
 
 - Bump `req_llm` peer dependency to `~> 1.13` (locked at 1.13.0)
