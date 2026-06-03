@@ -12,7 +12,6 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     repo_root = File.cwd!()
     fixture_root = Path.join(@tmp_dir, "fixture-#{System.unique_integer([:positive])}")
     router_path = Path.join([fixture_root, "lib", "dummy_host_web", "router.ex"])
-    tailwind_path = Path.join(fixture_root, "tailwind.config.js")
     config_path = Path.join([fixture_root, "config", "runtime.exs"])
 
     File.mkdir_p!(Path.dirname(router_path))
@@ -25,7 +24,6 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     )
 
     File.write!(router_path, unmanaged_router())
-    File.write!(tailwind_path, unmanaged_tailwind())
     File.write!(Path.join([fixture_root, "config", "config.exs"]), "import Config\n")
     File.write!(config_path, "import Config\n")
     write_host_mix_project!(fixture_root, repo_root)
@@ -37,7 +35,6 @@ defmodule Mix.Tasks.Scoria.InstallTest do
      repo_root: repo_root,
      fixture_root: fixture_root,
      router_path: router_path,
-     tailwind_path: tailwind_path,
      config_path: config_path}
   end
 
@@ -86,7 +83,7 @@ defmodule Mix.Tasks.Scoria.InstallTest do
   test "mix scoria.install apply executes only planner-classified actionable operations", ctx do
     write_owned_managed_files!(ctx)
     before_snapshot = snapshot_host_files(ctx)
-    plan = Planner.build(ctx.router_path, ctx.tailwind_path, ctx.config_path, mode: :apply)
+    plan = Planner.build(ctx.router_path, ctx.config_path, mode: :apply)
 
     actionable_surfaces =
       plan.entries
@@ -109,7 +106,7 @@ defmodule Mix.Tasks.Scoria.InstallTest do
     File.write!(ctx.router_path, owned_router_with_non_root_browser_scope())
 
     before_snapshot = snapshot_host_files(ctx)
-    plan = Planner.build(ctx.router_path, ctx.tailwind_path, ctx.config_path, mode: :apply)
+    plan = Planner.build(ctx.router_path, ctx.config_path, mode: :apply)
     router_entry = Enum.find(plan.entries, &(&1.surface == :router))
 
     assert router_entry.classification == :manual_review
@@ -130,7 +127,7 @@ defmodule Mix.Tasks.Scoria.InstallTest do
 
   test "mix scoria.install blocks stale planner fingerprints before writes", ctx do
     write_owned_managed_files!(ctx)
-    plan = Planner.build(ctx.router_path, ctx.tailwind_path, ctx.config_path, mode: :apply)
+    plan = Planner.build(ctx.router_path, ctx.config_path, mode: :apply)
 
     File.write!(ctx.router_path, File.read!(ctx.router_path) <> "\n# stale-change")
     before_snapshot = snapshot_host_files(ctx)
@@ -161,7 +158,6 @@ defmodule Mix.Tasks.Scoria.InstallTest do
 
     %{
       router: File.read!(ctx.router_path),
-      tailwind: File.read!(ctx.tailwind_path),
       runtime_config: File.read!(ctx.config_path),
       migration_files: migration_files
     }
@@ -170,7 +166,6 @@ defmodule Mix.Tasks.Scoria.InstallTest do
   defp changed_surfaces(before_snapshot, after_snapshot) do
     %{
       router: before_snapshot.router != after_snapshot.router,
-      tailwind: before_snapshot.tailwind != after_snapshot.tailwind,
       runtime_config: before_snapshot.runtime_config != after_snapshot.runtime_config,
       migrations: before_snapshot.migration_files != after_snapshot.migration_files
     }
@@ -199,22 +194,6 @@ defmodule Mix.Tasks.Scoria.InstallTest do
           get "/", PageController, :home
         end
       end
-      """
-    )
-
-    File.write!(
-      ctx.tailwind_path,
-      """
-      // scoria:tailwind:start
-      module.exports = {
-        content: [
-          "./js/**/*.js",
-          "../lib/dummy_host_web.ex",
-          "../lib/dummy_host_web/**/*.*ex",
-          "../deps/scoria/lib/**/*.*ex"
-        ]
-      }
-      // scoria:tailwind:end
       """
     )
 
@@ -269,18 +248,6 @@ defmodule Mix.Tasks.Scoria.InstallTest do
         get "/dashboard", AdminController, :index
       end
     end
-    """
-  end
-
-  defp unmanaged_tailwind do
-    """
-    module.exports = {
-      content: [
-        "./js/**/*.js",
-        "../lib/dummy_host_web.ex",
-        "../lib/dummy_host_web/**/*.*ex"
-      ]
-    }
     """
   end
 

@@ -28,7 +28,7 @@ defmodule SupportCopilotWeb.OrchestratorProducerTest do
     :ok
   end
 
-  test "orchestrator shows approval from producer path on /scoria", %{conn: conn} do
+  test "approvals page shows approval from producer path on /scoria/approvals", %{conn: conn} do
     identity = SupportJourney.runtime_identity()
 
     {:ok, started} =
@@ -52,9 +52,9 @@ defmodule SupportCopilotWeb.OrchestratorProducerTest do
         "actor_id" => SupportJourney.operator_identity().actor_id
       })
 
-    {:ok, view, html} = live(operator_conn, "/scoria")
+    {:ok, view, html} = live(operator_conn, "/scoria/approvals")
 
-    assert html =~ "Scoria Orchestrator"
+    assert html =~ "Approvals"
     assert html =~ "Approval inbox"
 
     eventually(fn ->

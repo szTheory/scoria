@@ -13,10 +13,11 @@ defmodule SupportCopilot.Application do
           ]
 
         _ ->
+          # Scoria.Workflows.Reconciler is owned by Scoria.Application's own supervision tree
+          # (the :scoria OTP app starts it in non-test); the host must not start a second one.
           [
             {Phoenix.PubSub, name: SupportCopilot.PubSub},
-            SupportCopilotWeb.Endpoint,
-            Scoria.Workflows.Reconciler
+            SupportCopilotWeb.Endpoint
           ]
       end
 

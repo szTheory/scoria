@@ -6,7 +6,6 @@ defmodule Scoria.Install.ApplyExecutor do
                                        "20260525070000_create_semantic_cache_tables.exs",
                                        "20260525090000_add_semantic_cache_compatibility_fields.exs"
                                      ])
-  @tailwind_glob "../deps/scoria/lib/**/*.*ex"
   @router_start_marker "# scoria:router:start"
   @router_end_marker "# scoria:router:end"
   @runtime_start_marker "# scoria:runtime:start"
@@ -19,8 +18,6 @@ defmodule Scoria.Install.ApplyExecutor do
       prompt_policy: [policy_key: "default"]
     ]
   """
-  @tailwind_start_marker "// scoria:tailwind:start"
-  @tailwind_end_marker "// scoria:tailwind:end"
 
   defmodule BlockedApplyError do
     defexception [:status, :message, blockers: []]
@@ -118,26 +115,6 @@ defmodule Scoria.Install.ApplyExecutor do
 
     final_content = ensure_dashboard_mount!(updated, target_path)
     File.write!(target_path, final_content)
-  end
-
-  defp patch_managed_region!(%{surface: :tailwind, target_path: target_path}) do
-    content = File.read!(target_path)
-
-    updated =
-      update_managed_region!(
-        content,
-        @tailwind_start_marker,
-        @tailwind_end_marker,
-        fn managed_region ->
-          if String.contains?(managed_region, @tailwind_glob) do
-            managed_region
-          else
-            inject_tailwind_glob!(managed_region)
-          end
-        end
-      )
-
-    File.write!(target_path, updated)
   end
 
   defp patch_managed_region!(entry) do
@@ -241,9 +218,6 @@ defmodule Scoria.Install.ApplyExecutor do
       String.contains?(expanded, "/config/") ->
         expanded |> Path.dirname() |> Path.dirname()
 
-      String.ends_with?(expanded, "/tailwind.config.js") ->
-        maybe_tailwind_root(expanded)
-
       String.contains?(expanded, "/lib/") ->
         case String.split(expanded, "/lib/", parts: 2) do
           [root, _rest] when root != "" -> root
@@ -256,14 +230,6 @@ defmodule Scoria.Install.ApplyExecutor do
   end
 
   defp infer_entry_root(_entry), do: nil
-
-  defp maybe_tailwind_root(path) do
-    case Path.split(path) |> Enum.reverse() do
-      ["tailwind.config.js", "assets" | rest] -> rest |> Enum.reverse() |> Path.join()
-      ["tailwind.config.js" | rest] -> rest |> Enum.reverse() |> Path.join()
-      _ -> nil
-    end
-  end
 
   defp current_fingerprint(entry, project_root) do
     case Map.get(entry, :ownership_mode) do
@@ -411,28 +377,6 @@ defmodule Scoria.Install.ApplyExecutor do
 
       _ ->
         raise "Managed region start marker #{start_marker} is missing."
-    end
-  end
-
-  defp inject_tailwind_glob!(content) do
-    updated =
-      Regex.replace(
-        ~r/(content:\s*\[)(.*?)(\])/s,
-        content,
-        fn _, start, inner, ending ->
-          inner_trimmed = String.trim_trailing(inner)
-
-          separator =
-            if String.ends_with?(inner_trimmed, ",") or inner_trimmed == "", do: "", else: ","
-
-          "#{start}#{inner}#{separator}\n    \"#{@tailwind_glob}\"\n  #{ending}"
-        end
-      )
-
-    if updated == content do
-      raise "Tailwind managed region is missing a supported content anchor."
-    else
-      updated
     end
   end
 end

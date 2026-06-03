@@ -11,13 +11,12 @@ defmodule Scoria.Install.Planner do
   alias Scoria.Install.Surface.Migrations
   alias Scoria.Install.Surface.Router
   alias Scoria.Install.Surface.RuntimeConfig
-  alias Scoria.Install.Surface.Tailwind
 
-  @surface_order [:router, :tailwind, :migrations, :runtime_config]
+  @surface_order [:router, :migrations, :runtime_config]
 
-  def build(router_path, tailwind_path, config_path, opts \\ []) do
+  def build(router_path, config_path, opts \\ []) do
     mode = Keyword.get(opts, :mode, :dry_run)
-    project_root = project_root(router_path, tailwind_path, config_path)
+    project_root = project_root(router_path, config_path)
     manifest = Manifest.load(project_root)
     manifest_path = Manifest.path(project_root)
     manifest_state = if File.exists?(manifest_path), do: :present, else: :absent
@@ -25,7 +24,6 @@ defmodule Scoria.Install.Planner do
     entries =
       [
         {:router, Router.analyze(router_path, opts)},
-        {:tailwind, Tailwind.analyze(tailwind_path, opts)},
         {:migrations, Migrations.analyze(project_root, opts)},
         {:runtime_config, RuntimeConfig.analyze(config_path, opts)}
       ]
@@ -78,10 +76,9 @@ defmodule Scoria.Install.Planner do
     end)
   end
 
-  defp project_root(router_path, tailwind_path, config_path) do
+  defp project_root(router_path, config_path) do
     [
       config_root(config_path),
-      tailwind_root(tailwind_path),
       router_root(router_path)
     ]
     |> Enum.find(& &1)
@@ -94,18 +91,6 @@ defmodule Scoria.Install.Planner do
     |> Path.expand()
     |> Path.dirname()
     |> Path.dirname()
-  end
-
-  defp tailwind_root(nil), do: nil
-
-  defp tailwind_root(path) do
-    expanded = Path.expand(path)
-
-    case Path.split(expanded) |> Enum.reverse() do
-      ["tailwind.config.js", "assets" | rest] -> rest |> Enum.reverse() |> Path.join()
-      ["tailwind.config.js" | rest] -> rest |> Enum.reverse() |> Path.join()
-      _ -> nil
-    end
   end
 
   defp router_root(nil), do: nil

@@ -89,19 +89,19 @@ defmodule Mix.Tasks.Scoria.InstallCheckTest do
     assert normalize_plan_body(dry_run_output) == normalize_plan_body(check_output)
   end
 
-  test "mix scoria.install --check optional_surface_absent reports skipped and creates no tailwind files" do
+  test "mix scoria.install never probes or creates host tailwind config files" do
     fixture = HostInstallFixtures.build!(:optional_surface_absent, tmp_parent: @tmp_dir)
 
     {output, exit_code} =
-      System.cmd("mix", ["scoria.install", "--check"],
+      System.cmd("mix", ["scoria.install"],
         cd: fixture.root,
         stderr_to_stdout: true,
         env: HostInstallFixtures.subprocess_mix_env(fixture.repo_root)
       )
 
     assert exit_code == 0
-    assert output =~ "skipped:"
     assert output =~ "SCORIA_CHECK_RESULT status=compliant exit_code=0"
+    refute output =~ "tailwind"
     refute File.exists?(Path.join(fixture.root, "tailwind.config.js"))
     refute File.exists?(Path.join(fixture.root, "assets/tailwind.config.js"))
   end

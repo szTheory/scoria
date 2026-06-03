@@ -7,7 +7,7 @@ defmodule Scoria.TestSupport.HostInstallFixtures do
   @doc """
   Builds a subprocess installer host fixture for `kind`.
 
-  Returns `%{root: path, repo_root: path, router_path: ..., tailwind_path: ..., config_path: ...}`.
+  Returns `%{root: path, repo_root: path, router_path: ..., config_path: ...}`.
   """
   def build!(kind, opts \\ []) do
     tmp_parent = Keyword.get(opts, :tmp_parent, "test/tmp/install_check")
@@ -19,8 +19,6 @@ defmodule Scoria.TestSupport.HostInstallFixtures do
     config_path = Path.join([fixture_root, "config", "config.exs"])
     app_module_path = Path.join([fixture_root, "lib", host_app_module(kind) <> ".ex"])
     migration_dir = Path.join([fixture_root, "priv", "repo", "migrations"])
-    root_tailwind_path = Path.join(fixture_root, "tailwind.config.js")
-    assets_tailwind_path = Path.join([fixture_root, "assets", "tailwind.config.js"])
 
     File.mkdir_p!(Path.dirname(router_path))
     File.mkdir_p!(Path.dirname(runtime_config_path))
@@ -34,18 +32,23 @@ defmodule Scoria.TestSupport.HostInstallFixtures do
     File.write!(runtime_config_path, runtime_config_fixture(kind))
     File.write!(router_path, router_fixture(kind))
 
-    write_tailwind_fixtures!(kind, root_tailwind_path, assets_tailwind_path)
     copy_required_core_migrations!(migration_dir, repo_root)
 
     if kind == :drift do
       remove_one_required_migration!(migration_dir)
     end
 
+    if kind == :error do
+      # Force a planner/check failure: a directory where the router file is expected
+      # makes the router surface's File.read! raise (tri-state error exit code 2).
+      File.rm!(router_path)
+      File.mkdir_p!(router_path)
+    end
+
     %{
       root: fixture_root,
       repo_root: repo_root,
       router_path: router_path,
-      tailwind_path: tailwind_path(kind, root_tailwind_path, assets_tailwind_path),
       config_path: runtime_config_path,
       migration_dir: migration_dir
     }
@@ -60,17 +63,6 @@ defmodule Scoria.TestSupport.HostInstallFixtures do
   end
 
   def snapshot_host_files(%{root: root, router_path: router_path, config_path: config_path} = ctx) do
-    tailwind_paths = [
-      Path.join(root, "tailwind.config.js"),
-      Path.join(root, "assets/tailwind.config.js")
-    ]
-
-    tailwind_snapshot =
-      tailwind_paths
-      |> Enum.filter(&File.exists?/1)
-      |> Enum.map(fn path -> {path, File.read!(path)} end)
-      |> Enum.into(%{})
-
     migration_files =
       root
       |> Path.join("priv/repo/migrations/*.exs")
@@ -83,11 +75,10 @@ defmodule Scoria.TestSupport.HostInstallFixtures do
     %{
       router: File.read!(router_path),
       runtime_config: File.read!(config_path),
-      tailwind: tailwind_snapshot,
       migration_files: migration_files,
       manifest_exists: File.exists?(manifest_path)
     }
-    |> Map.merge(Map.take(ctx, [:router_path, :tailwind_path, :config_path, :root]))
+    |> Map.merge(Map.take(ctx, [:router_path, :config_path, :root]))
   end
 
   defp host_app_module(:owned_apply_host), do: "OwnedHost"
@@ -95,21 +86,6 @@ defmodule Scoria.TestSupport.HostInstallFixtures do
 
   defp host_web_module(:owned_apply_host), do: "owned_host_web"
   defp host_web_module(_), do: "fixture_host_web"
-
-  defp tailwind_path(:optional_surface_absent, _root, _assets), do: nil
-
-  defp tailwind_path(_kind, root_tailwind_path, _assets), do: root_tailwind_path
-
-  defp write_tailwind_fixtures!(:optional_surface_absent, _root, _assets), do: :ok
-
-  defp write_tailwind_fixtures!(:error, _root, assets_tailwind_path) do
-    File.mkdir_p!(Path.dirname(assets_tailwind_path))
-    File.mkdir_p!(assets_tailwind_path)
-  end
-
-  defp write_tailwind_fixtures!(kind, root_tailwind_path, _assets) do
-    File.write!(root_tailwind_path, tailwind_fixture(kind))
-  end
 
   defp router_fixture(:compliant) do
     compliant_router_string_form()
@@ -239,49 +215,6 @@ defmodule Scoria.TestSupport.HostInstallFixtures do
         prompt_policy: [policy_key: "default"]
       ]
     # scoria:runtime:end
-    """
-  end
-
-  defp tailwind_fixture(:manual_review) do
-    """
-    module.exports = {
-      content: [
-        "./js/**/*.js",
-        "../lib/fixture_host_web.ex",
-        "../lib/fixture_host_web/**/*.*ex",
-        "../deps/scoria/lib/**/*.*ex"
-      ]
-    }
-    """
-  end
-
-  defp tailwind_fixture(:owned_apply_host) do
-    """
-    // scoria:tailwind:start
-    module.exports = {
-      content: [
-        "./js/**/*.js",
-        "../lib/owned_host_web.ex",
-        "../lib/owned_host_web/**/*.*ex",
-        "../deps/scoria/lib/**/*.*ex"
-      ]
-    }
-    // scoria:tailwind:end
-    """
-  end
-
-  defp tailwind_fixture(_fixture_kind) do
-    """
-    // scoria:tailwind:start
-    module.exports = {
-      content: [
-        "./js/**/*.js",
-        "../lib/fixture_host_web.ex",
-        "../lib/fixture_host_web/**/*.*ex",
-        "../deps/scoria/lib/**/*.*ex"
-      ]
-    }
-    // scoria:tailwind:end
     """
   end
 

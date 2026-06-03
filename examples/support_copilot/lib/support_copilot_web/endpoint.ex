@@ -1,6 +1,8 @@
 defmodule SupportCopilotWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :support_copilot
 
+  socket("/live", Phoenix.LiveView.Socket, websocket: true, longpoll: false)
+
   @session_options [
     store: :cookie,
     key: "_support_copilot_key",

@@ -1,11 +1,12 @@
 defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
   use Phoenix.Component
+  import ScoriaWeb.UI, only: [badge: 1]
 
-  attr :step, :map, default: nil
-  attr :checkpoint, :map, default: nil
-  attr :comparison, :map, default: nil
-  attr :selected_source_variant, :string, default: "original"
-  attr :selected_comparison_entry, :map, default: nil
+  attr(:step, :map, default: nil)
+  attr(:checkpoint, :map, default: nil)
+  attr(:comparison, :map, default: nil)
+  attr(:selected_source_variant, :string, default: "original")
+  attr(:selected_comparison_entry, :map, default: nil)
 
   def render(assigns) do
     ~H"""
@@ -76,8 +77,8 @@ defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
     """
   end
 
-  attr :title, :string, required: true
-  attr :group, :map, default: %{}
+  attr(:title, :string, required: true)
+  attr(:group, :map, default: %{})
 
   defp group_card(assigns) do
     ~H"""
@@ -87,7 +88,7 @@ defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
           <h4 class="text-sm font-semibold text-stone-900"><%= @title %></h4>
           <p class="mt-1 text-xs text-stone-500">Structured evidence projected from durable runtime DTOs.</p>
         </div>
-        <span class={badge_class(card_status(@group), :status)}><%= card_status(@group) %></span>
+        <.badge tone={status_tone(card_status(@group))} label={card_status(@group)} dot={false} />
       </div>
 
       <dl class="mt-3 space-y-3 text-sm text-stone-700">
@@ -101,7 +102,8 @@ defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
   end
 
   defp toggle_visible?(comparison) when is_map(comparison) do
-    map_size(comparison) > 0 and Map.has_key?(comparison, :original) and Map.has_key?(comparison, :replay)
+    map_size(comparison) > 0 and Map.has_key?(comparison, :original) and
+      Map.has_key?(comparison, :replay)
   end
 
   defp toggle_visible?(_comparison), do: false
@@ -159,16 +161,7 @@ defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
   defp normalize_for_json(value) when is_list(value), do: Enum.map(value, &normalize_for_json/1)
   defp normalize_for_json(value), do: value
 
-  defp badge_class(value, kind) do
-    base = "rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-
-    tone =
-      case {kind, value} do
-        {:status, "empty"} -> "border border-amber-200 bg-amber-50 text-amber-800"
-        {:status, "recorded"} -> "border border-emerald-200 bg-emerald-50 text-emerald-800"
-        _ -> "border border-stone-200 bg-stone-100 text-stone-700"
-      end
-
-    [base, tone]
-  end
+  defp status_tone("empty"), do: :warn
+  defp status_tone("recorded"), do: :pass
+  defp status_tone(_value), do: :neutral
 end

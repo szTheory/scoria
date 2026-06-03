@@ -1,8 +1,9 @@
 defmodule ScoriaWeb.ApprovalInboxComponent do
   use Phoenix.Component
 
-  attr :approvals, :list, required: true
-  attr :highlight_approval_id, :string, default: nil
+  attr(:approvals, :list, required: true)
+  attr(:highlight_approval_id, :string, default: nil)
+  attr(:select_event, :string, default: nil)
 
   def render(assigns) do
     ~H"""
@@ -15,8 +16,11 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
       <div :if={@approvals != []} class="mt-4 space-y-3">
         <article
           :for={approval <- @approvals}
+          phx-click={@select_event}
+          phx-value-id={@select_event && approval_field(approval, :id)}
           class={[
             "rounded-xl border border-stone-200 bg-stone-50 p-3",
+            @select_event && "cursor-pointer hover:border-stone-300",
             approval.id == @highlight_approval_id && "ring-2 ring-amber-400"
           ]}
           data-highlight={approval.id == @highlight_approval_id && "true"}

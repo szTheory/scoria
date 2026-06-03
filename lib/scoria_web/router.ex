@@ -31,10 +31,17 @@ defmodule ScoriaWeb.Router do
           :callback
         )
 
-        live_session :scoria_dashboard do
+        live_session :scoria_dashboard,
+          root_layout: {ScoriaWeb.Layouts, :root},
+          on_mount: ScoriaWeb.DashboardNav do
           live("/", ScoriaWeb.OrchestratorLive, :index)
+          live("/approvals", ScoriaWeb.ApprovalsLive.Index, :index)
           live("/reviews", ScoriaWeb.ReviewQueueLive, :index)
+          live("/workflows", ScoriaWeb.WorkflowLive.Index, :index)
           live("/workflows/:id", ScoriaWeb.WorkflowLive.Show, :show)
+          live("/connectors", ScoriaWeb.ConnectorsLive.Index, :index)
+          live("/incidents", ScoriaWeb.IncidentsLive.Index, :index)
+          live("/eval_specs", ScoriaWeb.EvalSpecLive.Index, :index)
           live("/prompts", ScoriaWeb.PromptLive.Index, :index)
           live("/prompts/:id/release", ScoriaWeb.PromptLive.ReleaseWorkbenchLive, :index)
         end

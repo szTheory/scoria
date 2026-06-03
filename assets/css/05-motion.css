@@ -1,0 +1,46 @@
+/*
+ * Motion layer (§12 + emilkowalski rules): small named set, transform/opacity only,
+ * ease-out for user-initiated motion, all under ~300ms, all interruptible,
+ * all collapse to 0 under prefers-reduced-motion.
+ */
+@layer scoria.components {
+  @keyframes scoria-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scoria-pop {
+    from { opacity: 0; transform: translateY(6px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes scoria-slide {
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes scoria-approval-pulse {
+    0%, 100% { border-color: var(--scoria-tone-warn-border); }
+    50% { border-color: var(--scoria-tone-warn-fg); }
+  }
+
+  /* Approval-required cue: sulfur border pulse, max 2 cycles then settle (§12.2). */
+  .scoria-attention {
+    animation: scoria-approval-pulse 600ms var(--scoria-ease-in-out) 2;
+    border: 1px solid var(--scoria-tone-warn-border);
+  }
+
+  /* Disclosure rows expand calmly. */
+  .scoria-disclose {
+    transition: opacity var(--scoria-dur-mid) var(--scoria-ease-out);
+  }
+}
+
+/* Unlayered so it reliably wins: kill motion when the user asks for less. */
+@media (prefers-reduced-motion: reduce) {
+  .scoria-root *,
+  .scoria-root *::before,
+  .scoria-root *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

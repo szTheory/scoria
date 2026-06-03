@@ -17,12 +17,12 @@ defmodule Scoria.Install.ModeEquivalenceTest do
       fixture = HostInstallFixtures.build!(unquote(kind), tmp_parent: @tmp_dir)
 
       dry_run_plan =
-        Planner.build(fixture.router_path, fixture.tailwind_path, fixture.config_path,
+        Planner.build(fixture.router_path, fixture.config_path,
           mode: :dry_run
         )
 
       check_plan =
-        Planner.build(fixture.router_path, fixture.tailwind_path, fixture.config_path,
+        Planner.build(fixture.router_path, fixture.config_path,
           mode: :check
         )
 

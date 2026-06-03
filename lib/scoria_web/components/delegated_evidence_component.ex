@@ -1,7 +1,8 @@
 defmodule ScoriaWeb.DelegatedEvidenceComponent do
   use Phoenix.Component
+  import ScoriaWeb.UI, only: [badge: 1, tone: 1]
 
-  attr :delegated_handoffs, :list, required: true
+  attr(:delegated_handoffs, :list, required: true)
 
   def render(assigns) do
     ~H"""
@@ -41,9 +42,7 @@ defmodule ScoriaWeb.DelegatedEvidenceComponent do
               </p>
             </div>
 
-            <span class={["inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold", badge_class(delegated.status)]}>
-              <%= delegated_status_label(delegated.status) %>
-            </span>
+            <.badge tone={tone(delegated.status)} label={delegated_status_label(delegated.status)} dot={false} class="w-fit" />
           </div>
 
           <dl class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -127,7 +126,9 @@ defmodule ScoriaWeb.DelegatedEvidenceComponent do
     |> Enum.take(3)
   end
 
-  defp sorted_pairs(map) when is_map(map), do: Enum.sort_by(map, fn {key, _value} -> to_string(key) end)
+  defp sorted_pairs(map) when is_map(map),
+    do: Enum.sort_by(map, fn {key, _value} -> to_string(key) end)
+
   defp sorted_pairs(_), do: []
 
   defp preview_value(value) when is_binary(value) and byte_size(value) > 80 do
@@ -140,11 +141,4 @@ defmodule ScoriaWeb.DelegatedEvidenceComponent do
   defp delegated_status_label("child_step_pending"), do: "child step pending"
   defp delegated_status_label(value) when is_binary(value), do: value
   defp delegated_status_label(_value), do: "unknown"
-
-  defp badge_class("completed"), do: "bg-emerald-100 text-emerald-700"
-  defp badge_class("running"), do: "bg-sky-100 text-sky-700"
-  defp badge_class("waiting_for_approval"), do: "bg-amber-100 text-amber-800"
-  defp badge_class("failed"), do: "bg-rose-100 text-rose-800"
-  defp badge_class("child_step_pending"), do: "bg-stone-200 text-stone-700"
-  defp badge_class(_status), do: "bg-stone-200 text-stone-700"
 end

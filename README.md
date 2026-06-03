@@ -67,9 +67,8 @@ That installs the default Phoenix lane by:
 - mounting the operator dashboard at `/scoria`
 - copying Scoria's core Ecto migrations into `priv/repo/migrations`
 - injecting baseline runtime defaults into `config/runtime.exs` or `config/config.exs`
-- updating Tailwind content globs when a Tailwind config is present
 
-Tailwind is optional for the install task. If your host app uses a different asset pipeline, the default lane still installs cleanly.
+The `/scoria` dashboard ships its own precompiled assets (brand-token CSS, a LiveSocket client bundle, and self-hosted fonts), so it renders fully styled and interactive with **no host Tailwind, npm, or asset-pipeline work required**. The installer does not touch your asset config regardless of which pipeline your host app uses.
 
 ### Upgrading or re-running install
 

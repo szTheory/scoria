@@ -57,40 +57,37 @@ defmodule Mix.Tasks.Scoria.Install do
     format = parse_format!(opts)
 
     router_paths = Path.wildcard("lib/*_web/router.ex")
-    tailwind_paths = ["assets/tailwind.config.js", "tailwind.config.js"]
     config_paths = ["config/runtime.exs", "config/config.exs"]
 
     router_path = List.first(router_paths)
-    tailwind_path = Enum.find(tailwind_paths, &File.exists?/1)
     config_path = Enum.find(config_paths, &File.exists?/1)
 
     cond do
       opts[:dry_run] ->
         plan =
-          Planner.build(router_path, tailwind_path, config_path,
+          Planner.build(router_path, config_path,
             mode: :dry_run
           )
 
         print_report(plan, format, :dry_run)
 
       opts[:check] ->
-        run_check_mode(router_path, tailwind_path, config_path, format)
+        run_check_mode(router_path, config_path, format)
 
       true ->
-        run_apply_mode(router_path, tailwind_path, config_path, format)
+        run_apply_mode(router_path, config_path, format)
     end
   end
 
-  def do_run(router_path, tailwind_path \\ nil, config_path \\ nil) do
-    project_root = project_root(router_path, tailwind_path, config_path)
-    plan = Planner.build(router_path, tailwind_path, config_path, mode: :apply)
+  def do_run(router_path, config_path \\ nil) do
+    project_root = project_root(router_path, config_path)
+    plan = Planner.build(router_path, config_path, mode: :apply)
     ApplyExecutor.run(plan, project_root: project_root)
   end
 
-  defp project_root(router_path, tailwind_path, config_path) do
+  defp project_root(router_path, config_path) do
     [
       config_root(config_path),
-      tailwind_root(tailwind_path),
       router_root(router_path)
     ]
     |> Enum.find(& &1)
@@ -105,18 +102,6 @@ defmodule Mix.Tasks.Scoria.Install do
     |> Path.dirname()
   end
 
-  defp tailwind_root(nil), do: nil
-
-  defp tailwind_root(path) do
-    expanded = Path.expand(path)
-
-    case Path.split(expanded) |> Enum.reverse() do
-      ["tailwind.config.js", "assets" | rest] -> rest |> Enum.reverse() |> Path.join()
-      ["tailwind.config.js" | rest] -> rest |> Enum.reverse() |> Path.join()
-      _ -> nil
-    end
-  end
-
   defp router_root(nil), do: nil
 
   defp router_root(path) do
@@ -128,11 +113,11 @@ defmodule Mix.Tasks.Scoria.Install do
     end
   end
 
-  defp run_check_mode(router_path, tailwind_path, config_path, format) do
+  defp run_check_mode(router_path, config_path, format) do
     {plan, result} =
       try do
         plan =
-          Planner.build(router_path, tailwind_path, config_path,
+          Planner.build(router_path, config_path,
             mode: :check
           )
 
@@ -149,13 +134,13 @@ defmodule Mix.Tasks.Scoria.Install do
     System.halt(exit_code)
   end
 
-  defp run_apply_mode(router_path, tailwind_path, config_path, format) do
-    project_root = project_root(router_path, tailwind_path, config_path)
+  defp run_apply_mode(router_path, config_path, format) do
+    project_root = project_root(router_path, config_path)
 
     {plan, result} =
       try do
         plan =
-          Planner.build(router_path, tailwind_path, config_path,
+          Planner.build(router_path, config_path,
             mode: :apply
           )
 

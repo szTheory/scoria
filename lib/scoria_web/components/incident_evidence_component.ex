@@ -1,5 +1,6 @@
 defmodule ScoriaWeb.IncidentEvidenceComponent do
   use Phoenix.Component
+  import ScoriaWeb.UI, only: [badge: 1]
 
   attr(:evidence, :map, required: true)
 
@@ -67,7 +68,7 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
                   Reservation actuals, reason codes, and provider/tool refs for the selected run.
                 </p>
               </div>
-              <span class={badge_class(@evidence.budget.status, :budget)}><%= @evidence.budget.status_label %></span>
+              <.badge tone={badge_tone(@evidence.budget.status, :budget)} label={@evidence.budget.status_label} dot={false} />
             </div>
 
             <div class="mt-3 grid gap-3 md:grid-cols-2 text-sm text-stone-700">
@@ -97,8 +98,8 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
                     <p class="mt-1 text-xs text-stone-500"><%= incident.reason_code %></p>
                   </div>
                   <div class="flex flex-wrap gap-2">
-                    <span class={badge_class(incident.routing_class, :routing)}><%= incident.routing_label %></span>
-                    <span class={badge_class(incident.severity, :severity)}><%= incident.severity_label %></span>
+                    <.badge tone={badge_tone(incident.routing_class, :routing)} label={incident.routing_label} dot={false} />
+                    <.badge tone={badge_tone(incident.severity, :severity)} label={incident.severity_label} dot={false} />
                   </div>
                 </div>
 
@@ -126,7 +127,7 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
               <div class="rounded-md bg-stone-50 p-3">
                 <div class="flex items-center justify-between gap-3">
                   <p class="text-sm font-medium text-stone-900"><%= @evidence.breaker.breaker_key %></p>
-                  <span class={badge_class(@evidence.breaker.state, :breaker)}><%= @evidence.breaker.state_label %></span>
+                  <.badge tone={badge_tone(@evidence.breaker.state, :breaker)} label={@evidence.breaker.state_label} dot={false} />
                 </div>
                 <p class="mt-2 text-xs text-stone-600"><%= @evidence.breaker.reason_code %> via <%= @evidence.breaker.integration_kind %></p>
               </div>
@@ -134,7 +135,7 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
               <div :for={audit <- @evidence.audit_rows} class="rounded-md bg-stone-50 p-3 text-sm text-stone-700">
                 <div class="flex items-center justify-between gap-3">
                   <p class="font-medium text-stone-900"><%= audit.event_type %></p>
-                  <span class={badge_class(audit.sink_status, :audit)}><%= audit.sink_status %></span>
+                  <.badge tone={badge_tone(audit.sink_status, :audit)} label={audit.sink_status} dot={false} />
                 </div>
                 <p class="mt-1 text-xs text-stone-500">
                   approval <%= audit.approval_id %> · actor <%= audit.actor_ref %>
@@ -149,7 +150,7 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
               <div :for={delivery <- @evidence.deliveries} class="rounded-md bg-stone-50 p-3 text-sm text-stone-700">
                 <div class="flex items-center justify-between gap-3">
                   <p class="font-medium text-stone-900"><%= delivery.sink_kind %></p>
-                  <span class={badge_class(delivery.delivery_status, :delivery)}><%= delivery.delivery_status %></span>
+                  <.badge tone={badge_tone(delivery.delivery_status, :delivery)} label={delivery.delivery_status} dot={false} />
                 </div>
                 <p class="mt-1 text-xs text-stone-500"><%= delivery.routing_key %></p>
                 <p class="mt-2 text-xs text-stone-600">
@@ -170,23 +171,15 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
     """
   end
 
-  defp badge_class(value, kind) do
-    base = "rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-
-    tone =
-      case {kind, value} do
-        {:severity, "critical"} -> "border border-rose-200 bg-rose-50 text-rose-800"
-        {:severity, "warning"} -> "border border-amber-200 bg-amber-50 text-amber-800"
-        {:routing, "page"} -> "border border-rose-200 bg-rose-50 text-rose-800"
-        {:routing, "review"} -> "border border-sky-200 bg-sky-50 text-sky-800"
-        {:budget, "trip"} -> "border border-rose-200 bg-rose-50 text-rose-800"
-        {:budget, "warn"} -> "border border-amber-200 bg-amber-50 text-amber-800"
-        {:breaker, "open"} -> "border border-rose-200 bg-rose-50 text-rose-800"
-        {:delivery, "failed"} -> "border border-rose-200 bg-rose-50 text-rose-800"
-        {:audit, "pending"} -> "border border-amber-200 bg-amber-50 text-amber-800"
-        _ -> "border border-emerald-200 bg-emerald-50 text-emerald-800"
-      end
-
-    [base, tone]
-  end
+  # Domain (value, kind) → semantic tone atom. Rendering lives in ScoriaWeb.UI.badge/1.
+  defp badge_tone("critical", :severity), do: :fail
+  defp badge_tone("warning", :severity), do: :warn
+  defp badge_tone("page", :routing), do: :fail
+  defp badge_tone("review", :routing), do: :info
+  defp badge_tone("trip", :budget), do: :fail
+  defp badge_tone("warn", :budget), do: :warn
+  defp badge_tone("open", :breaker), do: :fail
+  defp badge_tone("failed", :delivery), do: :fail
+  defp badge_tone("pending", :audit), do: :warn
+  defp badge_tone(_value, _kind), do: :pass
 end

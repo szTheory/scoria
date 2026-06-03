@@ -13,8 +13,41 @@ install axis and do not map to Hex versions.
 
 ## [Unreleased]
 
+### Added
+
+- Self-contained, dark-first (with light theme) operator dashboard design system. The
+  `/scoria` dashboard now ships its own brand-token CSS, client bundle (LiveSocket +
+  hooks), and self-hosted fonts (IBM Plex Sans, JetBrains Mono) — it renders fully styled
+  and interactive with **no dependency on the host app's Tailwind/asset pipeline**.
+- Task-oriented navigation shell: persona-grouped sidebar (Operate / Improve), breadcrumb
+  topbar, light/dark theme toggle, and a GOV.UK-style "what do you want to do?" task band
+  on the Live Ops landing page.
+- Runs index at `/scoria/workflows`; the previously-unreachable Eval Workbench is now
+  routed at `/scoria/eval_specs`.
+- Routed Operate pages extracted from the Live Ops god-page, each a focused, linkable
+  surface with its own nav item: Approvals (`/scoria/approvals` — inbox + decision modal),
+  Connectors (`/scoria/connectors` — runtime + connector fleet posture and drawers), and
+  Incidents (`/scoria/incidents` — tenant SRE triage with trace-first evidence).
+- `?tenant=` view parameter on Live Ops and `priv/repo/dev_seed.exs` (gallery) to populate
+  every dashboard screen with realistic data.
+- `mix scoria.assets.build` to (re)generate the shipped dashboard asset bundle.
+- First-run empty states on the Prompt Registry (`/scoria/prompts`) and Eval Workbench
+  (`/scoria/eval_specs`) tables, consistent with the Runs and Incidents pages.
+
 ### Changed
 
+- `mix scoria.install` no longer probes or edits the host app's Tailwind config. Because the
+  dashboard ships self-contained assets, install is now router mount + Ecto migrations +
+  runtime config only — there is no Tailwind install surface and no host asset work.
+
+- Live Ops (`/scoria`) slimmed to a task band + live trace stream plus a compact
+  Approvals/Connectors/Incidents "at a glance" strip that links to the new routed pages;
+  approvals, fleet posture, and the tenant incident rollup moved off the landing page.
+- Shared `ScoriaWeb.OperatorSurface` read model now backs Live Ops and the routed Operate
+  pages, replacing the duplicated fleet/SRE projection reads.
+- Status→color styling fully consolidated into `ScoriaWeb.UI` (`tone/1` + `<.badge tone=>`
+  + `<.flash_group>`); the per-component `badge_class/status_color/trace_badge_class/
+  flash_kind_class` helpers are removed and a drift-guard test prevents their return.
 - Bump `req_llm` peer dependency to `~> 1.13` (locked at 1.13.0)
 
 ## 0.1.1 (2026-05-30)

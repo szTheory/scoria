@@ -1,0 +1,409 @@
+/*
+ * Scoria component vocabulary. Emitted by ScoriaWeb.UI function components.
+ * All values come from semantic tokens — never raw hex, never a per-component color map.
+ */
+@layer scoria.components {
+  /* ---------- App shell (nav + content) ---------- */
+  .scoria-shell {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "sidebar topbar" "sidebar main";
+    min-height: 100vh;
+  }
+  .scoria-sidebar {
+    grid-area: sidebar;
+    border-right: 1px solid var(--scoria-border);
+    background: var(--scoria-surface-panel);
+    padding: var(--scoria-space-4) var(--scoria-space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-5);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .scoria-topbar {
+    grid-area: topbar;
+    border-bottom: 1px solid var(--scoria-border);
+    background: color-mix(in srgb, var(--scoria-surface-app) 86%, transparent);
+    backdrop-filter: blur(8px);
+    padding: var(--scoria-space-3) var(--scoria-space-5);
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-4);
+    position: sticky;
+    top: 0;
+    z-index: var(--scoria-z-sticky);
+  }
+  .scoria-main {
+    grid-area: main;
+    padding: var(--scoria-space-6);
+    max-width: 1280px;
+    width: 100%;
+  }
+
+  /* Brand lockup */
+  .scoria-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    font-weight: 600;
+    font-size: var(--scoria-fs-panel);
+    letter-spacing: -0.01em;
+    color: var(--scoria-text);
+  }
+  .scoria-brand__mark {
+    width: 24px;
+    height: 24px;
+    flex: none;
+  }
+
+  /* Sidebar nav groups + items */
+  .scoria-navgroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-1);
+  }
+  .scoria-navgroup__label {
+    font-size: var(--scoria-fs-badge);
+    text-transform: uppercase;
+    letter-spacing: var(--scoria-tracking-eyebrow);
+    color: var(--scoria-text-subtle);
+    padding: var(--scoria-space-1) var(--scoria-space-3);
+    margin-bottom: var(--scoria-space-1);
+  }
+  .scoria-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-3);
+    padding: var(--scoria-space-2) var(--scoria-space-3);
+    border-radius: var(--scoria-radius-md);
+    color: var(--scoria-text-muted);
+    font-weight: 500;
+    transition: background-color var(--scoria-dur-fast) var(--scoria-ease-out),
+      color var(--scoria-dur-fast) var(--scoria-ease-out);
+  }
+  .scoria-nav:hover {
+    background: var(--scoria-tone-neutral-bg);
+    color: var(--scoria-text);
+  }
+  .scoria-nav[aria-current="page"] {
+    background: var(--scoria-tone-brand-bg);
+    color: var(--scoria-tone-brand-fg);
+    box-shadow: inset 2px 0 0 var(--scoria-action);
+  }
+  .scoria-nav__icon {
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+  .scoria-nav__count {
+    margin-left: auto;
+    font-family: var(--scoria-font-mono);
+    font-size: var(--scoria-fs-badge);
+    color: var(--scoria-tone-brand-fg);
+    background: var(--scoria-tone-brand-bg);
+    border: 1px solid var(--scoria-tone-brand-border);
+    border-radius: var(--scoria-radius-pill);
+    padding: 0 var(--scoria-space-2);
+    line-height: 1.6;
+  }
+
+  /* ---------- Panel / card ---------- */
+  .scoria-panel {
+    background: var(--scoria-surface-panel);
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-lg);
+    padding: var(--scoria-space-4);
+    box-shadow: var(--scoria-shadow-panel);
+  }
+  .scoria-panel--raised {
+    background: linear-gradient(180deg, var(--scoria-surface-panel-raised), var(--scoria-surface-panel));
+    box-shadow: var(--scoria-shadow-raised);
+  }
+  .scoria-panel--flush {
+    padding: 0;
+    overflow: hidden;
+  }
+  .scoria-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--scoria-space-3);
+    margin-bottom: var(--scoria-space-3);
+  }
+
+  /* ---------- Eyebrow (category/status label) ---------- */
+  .scoria-eyebrow {
+    font-size: var(--scoria-fs-badge);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--scoria-tracking-eyebrow);
+    color: var(--scoria-text-subtle);
+  }
+
+  /* ---------- Button ---------- */
+  .scoria-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--scoria-space-2);
+    font-weight: 500;
+    font-size: var(--scoria-fs-body);
+    line-height: 1;
+    padding: var(--scoria-space-2) var(--scoria-space-4);
+    border-radius: var(--scoria-radius-md);
+    border: 1px solid transparent;
+    transition: background-color var(--scoria-dur-fast) var(--scoria-ease-out),
+      border-color var(--scoria-dur-fast) var(--scoria-ease-out),
+      box-shadow var(--scoria-dur-fast) var(--scoria-ease-out),
+      transform var(--scoria-dur-fast) var(--scoria-ease-out);
+  }
+  .scoria-button:active {
+    transform: translateY(0.5px);
+  }
+  .scoria-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .scoria-button--primary {
+    background: var(--scoria-action);
+    color: var(--scoria-action-fg);
+    border-color: color-mix(in srgb, var(--scoria-white-hot) 14%, transparent);
+  }
+  .scoria-button--primary:hover:not(:disabled) {
+    background: var(--scoria-action-hover);
+    box-shadow: var(--scoria-glow-ember);
+  }
+  .scoria-button--ghost {
+    background: transparent;
+    color: var(--scoria-text);
+    border-color: var(--scoria-border-strong);
+  }
+  .scoria-button--ghost:hover:not(:disabled) {
+    background: var(--scoria-tone-neutral-bg);
+    border-color: var(--scoria-text-subtle);
+  }
+  .scoria-button--danger {
+    background: transparent;
+    color: var(--scoria-danger-action);
+    border-color: color-mix(in srgb, var(--scoria-danger-action) 42%, transparent);
+  }
+  .scoria-button--danger:hover:not(:disabled) {
+    background: var(--scoria-tone-fail-bg);
+  }
+  .scoria-button--sm {
+    padding: var(--scoria-space-1) var(--scoria-space-3);
+    font-size: var(--scoria-fs-label);
+  }
+
+  /* ---------- Badge (tone) ---------- */
+  .scoria-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--scoria-space-1);
+    font-size: var(--scoria-fs-badge);
+    font-weight: 500;
+    line-height: 1.6;
+    padding: 0 var(--scoria-space-2);
+    border-radius: var(--scoria-radius-pill);
+    border: 1px solid var(--scoria-tone-neutral-border);
+    background: var(--scoria-tone-neutral-bg);
+    color: var(--scoria-tone-neutral-fg);
+    white-space: nowrap;
+  }
+  .scoria-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
+  .scoria-badge--bare::before { display: none; }
+  .scoria-badge--neutral { color: var(--scoria-tone-neutral-fg); background: var(--scoria-tone-neutral-bg); border-color: var(--scoria-tone-neutral-border); }
+  .scoria-badge--pass { color: var(--scoria-tone-pass-fg); background: var(--scoria-tone-pass-bg); border-color: var(--scoria-tone-pass-border); }
+  .scoria-badge--info { color: var(--scoria-tone-info-fg); background: var(--scoria-tone-info-bg); border-color: var(--scoria-tone-info-border); }
+  .scoria-badge--warn { color: var(--scoria-tone-warn-fg); background: var(--scoria-tone-warn-bg); border-color: var(--scoria-tone-warn-border); }
+  .scoria-badge--fail { color: var(--scoria-tone-fail-fg); background: var(--scoria-tone-fail-bg); border-color: var(--scoria-tone-fail-border); }
+  .scoria-badge--trace { color: var(--scoria-tone-trace-fg); background: var(--scoria-tone-trace-bg); border-color: var(--scoria-tone-trace-border); }
+  .scoria-badge--brand { color: var(--scoria-tone-brand-fg); background: var(--scoria-tone-brand-bg); border-color: var(--scoria-tone-brand-border); }
+
+  /* ---------- Metric ---------- */
+  .scoria-metric__label {
+    font-size: var(--scoria-fs-label);
+    color: var(--scoria-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .scoria-metric__value {
+    font-size: var(--scoria-fs-metric);
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    margin-top: var(--scoria-space-1);
+  }
+  .scoria-metric__delta {
+    font-family: var(--scoria-font-mono);
+    font-size: var(--scoria-fs-label);
+    margin-top: var(--scoria-space-1);
+  }
+  .scoria-metric__delta--pass { color: var(--scoria-tone-pass-fg); }
+  .scoria-metric__delta--fail { color: var(--scoria-tone-fail-fg); }
+  .scoria-metric__delta--neutral { color: var(--scoria-text-muted); }
+
+  /* ---------- Copyable monospace id ---------- */
+  .scoria-id {
+    font-family: var(--scoria-font-mono);
+    font-size: var(--scoria-fs-label);
+    color: var(--scoria-text-muted);
+    background: var(--scoria-tone-neutral-bg);
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-sm);
+    padding: 1px var(--scoria-space-2);
+    cursor: copy;
+  }
+  .scoria-id:hover { color: var(--scoria-text); border-color: var(--scoria-border-strong); }
+
+  /* ---------- Table ---------- */
+  .scoria-table { font-size: var(--scoria-fs-body); }
+  .scoria-table thead th {
+    position: sticky;
+    top: 0;
+    text-align: left;
+    font-size: var(--scoria-fs-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--scoria-text-subtle);
+    background: var(--scoria-surface-panel);
+    padding: var(--scoria-space-2) var(--scoria-space-3);
+    border-bottom: 1px solid var(--scoria-border);
+  }
+  .scoria-table tbody td {
+    padding: var(--scoria-space-3);
+    border-bottom: 1px solid var(--scoria-border);
+    vertical-align: top;
+  }
+  .scoria-table tbody tr:hover { background: var(--scoria-tone-neutral-bg); }
+
+  /* ---------- Drawer + modal ---------- */
+  .scoria-scrim {
+    position: fixed;
+    inset: 0;
+    background: var(--scoria-surface-overlay);
+    z-index: var(--scoria-z-modal);
+    animation: scoria-fade var(--scoria-dur-fast) var(--scoria-ease-out);
+  }
+  .scoria-modal {
+    position: fixed;
+    inset: 0;
+    z-index: var(--scoria-z-modal);
+    display: grid;
+    place-items: center;
+    padding: var(--scoria-space-5);
+  }
+  .scoria-modal__panel {
+    background: var(--scoria-surface-panel-raised);
+    border: 1px solid var(--scoria-border-strong);
+    border-radius: var(--scoria-radius-lg);
+    box-shadow: var(--scoria-shadow-raised);
+    width: min(560px, 100%);
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: var(--scoria-space-5);
+    animation: scoria-pop var(--scoria-dur-mid) var(--scoria-ease-out);
+  }
+  .scoria-drawer {
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-lg);
+    background: var(--scoria-surface-panel-raised);
+    padding: var(--scoria-space-4);
+    animation: scoria-slide var(--scoria-dur-slow) var(--scoria-ease-out);
+  }
+
+  /* ---------- Empty state ---------- */
+  .scoria-empty {
+    text-align: center;
+    padding: var(--scoria-space-7) var(--scoria-space-5);
+    border: 1px dashed var(--scoria-border-strong);
+    border-radius: var(--scoria-radius-lg);
+    color: var(--scoria-text-muted);
+  }
+  .scoria-empty__title {
+    color: var(--scoria-text);
+    font-weight: 600;
+    margin-bottom: var(--scoria-space-2);
+  }
+
+  /* ---------- Task card (GDS start band) ---------- */
+  .scoria-taskcard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-2);
+    padding: var(--scoria-space-4);
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-lg);
+    background: var(--scoria-surface-panel);
+    transition: border-color var(--scoria-dur-fast) var(--scoria-ease-out),
+      box-shadow var(--scoria-dur-fast) var(--scoria-ease-out),
+      transform var(--scoria-dur-fast) var(--scoria-ease-out);
+  }
+  .scoria-taskcard:hover {
+    border-color: var(--scoria-tone-brand-border);
+    box-shadow: var(--scoria-glow-ember);
+    transform: translateY(-1px);
+  }
+  .scoria-taskcard__title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--scoria-space-2);
+    font-weight: 600;
+    color: var(--scoria-text);
+  }
+  .scoria-taskcard__desc { color: var(--scoria-text-muted); font-size: var(--scoria-fs-label); }
+
+  /* ---------- Trace span row ---------- */
+  .scoria-span {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-3);
+    padding: var(--scoria-space-2) var(--scoria-space-3);
+    border-radius: var(--scoria-radius-sm);
+  }
+  .scoria-span:hover { background: var(--scoria-tone-neutral-bg); }
+  .scoria-span__rail {
+    width: 3px;
+    align-self: stretch;
+    border-radius: var(--scoria-radius-pill);
+    background: var(--scoria-text-subtle);
+    flex: none;
+  }
+  .scoria-span--agent .scoria-span__rail { background: var(--scoria-span-agent); }
+  .scoria-span--llm .scoria-span__rail { background: var(--scoria-span-llm); }
+  .scoria-span--prompt .scoria-span__rail { background: var(--scoria-span-prompt); }
+  .scoria-span--tool .scoria-span__rail { background: var(--scoria-span-tool); }
+  .scoria-span--mcp .scoria-span__rail { background: var(--scoria-span-mcp); }
+  .scoria-span--retriever .scoria-span__rail { background: var(--scoria-span-retriever); }
+  .scoria-span--guardrail .scoria-span__rail { background: var(--scoria-span-guardrail); }
+  .scoria-span--eval .scoria-span__rail { background: var(--scoria-span-eval); }
+  .scoria-span--error .scoria-span__rail { background: var(--scoria-span-error); }
+  .scoria-span--redacted .scoria-span__rail { background: var(--scoria-span-redacted); }
+  .scoria-row-selected { background: var(--scoria-tone-brand-bg); }
+
+  /* ---------- Page header ---------- */
+  .scoria-pagehead { margin-bottom: var(--scoria-space-5); }
+  .scoria-pagehead__title { display: flex; align-items: center; gap: var(--scoria-space-3); }
+  .scoria-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    font-size: var(--scoria-fs-label);
+    color: var(--scoria-text-subtle);
+  }
+  .scoria-breadcrumbs a { color: var(--scoria-text-muted); }
+  .scoria-breadcrumbs__sep { color: var(--scoria-text-subtle); }
+}

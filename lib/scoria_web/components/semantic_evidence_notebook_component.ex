@@ -1,7 +1,8 @@
 defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
   use Phoenix.Component
+  import ScoriaWeb.UI, only: [badge: 1]
 
-  attr :semantic_evidence, :map, default: %{}
+  attr(:semantic_evidence, :map, default: %{})
 
   def render(assigns) do
     ~H"""
@@ -39,8 +40,8 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
     """
   end
 
-  attr :title, :string, required: true
-  attr :group, :map, default: %{}
+  attr(:title, :string, required: true)
+  attr(:group, :map, default: %{})
 
   defp group_card(assigns) do
     ~H"""
@@ -50,7 +51,7 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
           <h4 class="text-sm font-semibold text-stone-900"><%= @title %></h4>
           <p class="mt-1 text-xs text-stone-500">Curated semantic evidence from runtime metadata and durable cache truth.</p>
         </div>
-        <span class={badge_class(card_status(@group))}><%= card_status(@group) %></span>
+        <.badge tone={notebook_tone(card_status(@group))} label={card_status(@group)} dot={false} />
       </div>
 
       <dl class="mt-3 space-y-3 text-sm text-stone-700">
@@ -63,7 +64,7 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
     """
   end
 
-  attr :events, :list, default: []
+  attr(:events, :list, default: [])
 
   defp events_card(assigns) do
     ~H"""
@@ -73,9 +74,11 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
           <h4 class="text-sm font-semibold text-stone-900">Append-only events</h4>
           <p class="mt-1 text-xs text-stone-500">Semantic entry events stay inspectable instead of collapsing into a generic miss.</p>
         </div>
-        <span class={badge_class(if(@events == [], do: "empty", else: "recorded"))}>
-          <%= if @events == [], do: "empty", else: "recorded" %>
-        </span>
+        <.badge
+          tone={notebook_tone(if(@events == [], do: "empty", else: "recorded"))}
+          label={if(@events == [], do: "empty", else: "recorded")}
+          dot={false}
+        />
       </div>
 
       <div :if={@events == []} class="mt-3 rounded-md bg-stone-50 p-3 text-sm text-stone-600">
@@ -99,7 +102,9 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
     """
   end
 
-  defp present?(semantic_evidence) when is_map(semantic_evidence), do: map_size(semantic_evidence) > 0
+  defp present?(semantic_evidence) when is_map(semantic_evidence),
+    do: map_size(semantic_evidence) > 0
+
   defp present?(_semantic_evidence), do: false
 
   defp read_group(entry, key) when is_map(entry), do: Map.get(entry, key, %{})
@@ -121,8 +126,13 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
   end
 
   defp render_value("semantic_reuse"), do: "Semantic fast path reused a cached answer."
-  defp render_value("live_execution_admitted"), do: "Normal runtime path executed and admitted fresh semantic evidence."
-  defp render_value("live_execution_writeback_rejected"), do: "Normal runtime path executed and writeback_rejected semantic evidence."
+
+  defp render_value("live_execution_admitted"),
+    do: "Normal runtime path executed and admitted fresh semantic evidence."
+
+  defp render_value("live_execution_writeback_rejected"),
+    do: "Normal runtime path executed and writeback_rejected semantic evidence."
+
   defp render_value("normal_runtime_path_executed"), do: "Normal runtime path executed."
   defp render_value(value) when is_binary(value), do: value
   defp render_value(value) when is_boolean(value), do: if(value, do: "true", else: "false")
@@ -156,11 +166,8 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
   defp normalize_for_json(value) when is_list(value), do: Enum.map(value, &normalize_for_json/1)
   defp normalize_for_json(value), do: value
 
-  defp badge_class("empty"),
-    do: "rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-800"
-
-  defp badge_class(_value),
-    do: "rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800"
+  defp notebook_tone("empty"), do: :warn
+  defp notebook_tone(_value), do: :pass
 
   defp map_value(map, key) when is_map(map), do: Map.get(map, key)
   defp map_value(_map, _key), do: nil

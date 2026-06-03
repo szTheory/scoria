@@ -50,7 +50,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "session_id"
     assert content =~ "run_id"
     assert content =~ "/scoria/workflows/:run_id"
-    assert content =~ "Tailwind is optional for the install task."
+    assert content =~ "no host Tailwind, npm, or asset-pipeline work required"
     assert content =~ "mix scoria.install"
     assert content =~ "mix ecto.migrate"
     assert content =~ @default_lane_command

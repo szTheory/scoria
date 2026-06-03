@@ -1,0 +1,184 @@
+/*
+ * Scoria-shipped utility layer — a scoped, token-backed subset of Tailwind-compatible
+ * class names. This keeps the existing utility-class markup working (and rendering branded
+ * in dark mode) WITHOUT depending on a host Tailwind build, and lets new markup keep the
+ * familiar layout/spacing ergonomics. Color-bearing utilities resolve to semantic tokens,
+ * so legacy palette classes (bg-white, text-stone-900, ...) pick up the brand automatically.
+ *
+ * Scoped under .scoria-root and in @layer scoria.utilities (wins over components for
+ * one-off overrides, but never reaches host pages).
+ */
+@layer scoria.utilities {
+  /* ---- display / layout ---- */
+  .scoria-root .flex { display: flex; }
+  .scoria-root .inline-flex { display: inline-flex; }
+  .scoria-root .grid { display: grid; gap: var(--scoria-space-4); }
+  .scoria-root .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .scoria-root .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .scoria-root .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .scoria-root .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .scoria-root .block { display: block; }
+  .scoria-root .inline-block { display: inline-block; }
+  .scoria-root .hidden { display: none; }
+  .scoria-root .relative { position: relative; }
+  .scoria-root .fixed { position: fixed; }
+  .scoria-root .sticky { position: sticky; }
+  .scoria-root .inset-0 { inset: 0; }
+  .scoria-root .z-50 { z-index: var(--scoria-z-modal); }
+  .scoria-root .flex-col { flex-direction: column; }
+  .scoria-root .flex-wrap { flex-wrap: wrap; }
+  .scoria-root .flex-1 { flex: 1 1 0%; }
+  .scoria-root .items-center { align-items: center; }
+  .scoria-root .items-start { align-items: flex-start; }
+  .scoria-root .items-end { align-items: flex-end; }
+  .scoria-root .justify-between { justify-content: space-between; }
+  .scoria-root .justify-center { justify-content: center; }
+  .scoria-root .justify-end { justify-content: flex-end; }
+  .scoria-root .w-full { width: 100%; }
+  .scoria-root .max-w-md { max-width: 28rem; }
+  .scoria-root .max-w-2xl { max-width: 42rem; }
+  .scoria-root .max-w-7xl { max-width: 80rem; }
+  .scoria-root .mx-auto { margin-left: auto; margin-right: auto; }
+  .scoria-root .ml-2 { margin-left: var(--scoria-space-2); }
+  .scoria-root .ml-auto { margin-left: auto; }
+  .scoria-root .min-h-screen { min-height: 100vh; }
+  .scoria-root .overflow-x-auto { overflow-x: auto; }
+  .scoria-root .overflow-y-auto { overflow-y: auto; }
+  .scoria-root .overflow-hidden { overflow: hidden; }
+  .scoria-root .text-right { text-align: right; }
+  .scoria-root .text-center { text-align: center; }
+  .scoria-root .whitespace-pre-wrap { white-space: pre-wrap; }
+  .scoria-root .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scoria-root .cursor-pointer { cursor: pointer; }
+
+  /* ---- sizing (icons, status dots) ---- */
+  .scoria-root .w-2 { width: 8px; }
+  .scoria-root .h-2 { height: 8px; }
+  .scoria-root .w-3 { width: 12px; }
+  .scoria-root .h-3 { height: 12px; }
+  .scoria-root .w-4 { width: 16px; }
+  .scoria-root .h-4 { height: 16px; }
+  .scoria-root .w-5 { width: 20px; }
+  .scoria-root .h-5 { height: 20px; }
+  .scoria-root .w-8 { width: 32px; }
+  .scoria-root .h-8 { height: 32px; }
+  .scoria-root .break-all { word-break: break-all; }
+  .scoria-root .break-words { overflow-wrap: break-word; }
+
+  /* ---- gap / spacing ---- */
+  .scoria-root .gap-1 { gap: var(--scoria-space-1); }
+  .scoria-root .gap-2 { gap: var(--scoria-space-2); }
+  .scoria-root .gap-3 { gap: var(--scoria-space-3); }
+  .scoria-root .gap-4 { gap: var(--scoria-space-4); }
+  .scoria-root .gap-6 { gap: var(--scoria-space-6); }
+  .scoria-root .space-y-2 > * + * { margin-top: var(--scoria-space-2); }
+  .scoria-root .space-y-3 > * + * { margin-top: var(--scoria-space-3); }
+  .scoria-root .space-y-4 > * + * { margin-top: var(--scoria-space-4); }
+  .scoria-root .p-2 { padding: var(--scoria-space-2); }
+  .scoria-root .p-3 { padding: var(--scoria-space-3); }
+  .scoria-root .p-4 { padding: var(--scoria-space-4); }
+  .scoria-root .p-5 { padding: 20px; }
+  .scoria-root .p-6 { padding: var(--scoria-space-5); }
+  .scoria-root .p-8 { padding: var(--scoria-space-6); }
+  .scoria-root .px-2 { padding-left: var(--scoria-space-2); padding-right: var(--scoria-space-2); }
+  .scoria-root .px-3 { padding-left: var(--scoria-space-3); padding-right: var(--scoria-space-3); }
+  .scoria-root .px-4 { padding-left: var(--scoria-space-4); padding-right: var(--scoria-space-4); }
+  .scoria-root .py-0\.5 { padding-top: 2px; padding-bottom: 2px; }
+  .scoria-root .py-1 { padding-top: var(--scoria-space-1); padding-bottom: var(--scoria-space-1); }
+  .scoria-root .py-2 { padding-top: var(--scoria-space-2); padding-bottom: var(--scoria-space-2); }
+  .scoria-root .py-3 { padding-top: var(--scoria-space-3); padding-bottom: var(--scoria-space-3); }
+  .scoria-root .py-8 { padding-top: var(--scoria-space-6); padding-bottom: var(--scoria-space-6); }
+  .scoria-root .mt-1 { margin-top: var(--scoria-space-1); }
+  .scoria-root .mt-2 { margin-top: var(--scoria-space-2); }
+  .scoria-root .mt-3 { margin-top: var(--scoria-space-3); }
+  .scoria-root .mt-4 { margin-top: var(--scoria-space-4); }
+  .scoria-root .mt-6 { margin-top: var(--scoria-space-5); }
+  .scoria-root .mb-2 { margin-bottom: var(--scoria-space-2); }
+  .scoria-root .mb-3 { margin-bottom: var(--scoria-space-3); }
+  .scoria-root .mb-4 { margin-bottom: var(--scoria-space-4); }
+  .scoria-root .mb-6 { margin-bottom: var(--scoria-space-5); }
+
+  /* ---- radius ---- */
+  .scoria-root .rounded { border-radius: var(--scoria-radius-sm); }
+  .scoria-root .rounded-md { border-radius: var(--scoria-radius-sm); }
+  .scoria-root .rounded-lg { border-radius: var(--scoria-radius-md); }
+  .scoria-root .rounded-xl { border-radius: var(--scoria-radius-md); }
+  .scoria-root .rounded-2xl { border-radius: var(--scoria-radius-lg); }
+  .scoria-root .rounded-full { border-radius: var(--scoria-radius-pill); }
+
+  /* ---- borders ---- */
+  .scoria-root .border { border: 1px solid var(--scoria-border); }
+  .scoria-root .border-b { border-bottom: 1px solid var(--scoria-border); }
+  .scoria-root .border-stone-200 { border-color: var(--scoria-border); }
+  .scoria-root .border-stone-300 { border-color: var(--scoria-border-strong); }
+  .scoria-root .border-blue-100,
+  .scoria-root .border-blue-200 { border-color: var(--scoria-tone-info-border); }
+  .scoria-root .border-amber-200 { border-color: var(--scoria-tone-warn-border); }
+  .scoria-root .border-emerald-200 { border-color: var(--scoria-tone-pass-border); }
+  .scoria-root .border-rose-200 { border-color: var(--scoria-tone-fail-border); }
+
+  /* ---- surfaces (color-bearing → semantic tokens) ---- */
+  .scoria-root .bg-white { background-color: var(--scoria-surface-panel); }
+  .scoria-root .bg-gray-50 { background-color: var(--scoria-surface-app); }
+  .scoria-root .bg-stone-50 { background-color: var(--scoria-surface-panel-raised); }
+  .scoria-root .bg-emerald-50 { background-color: var(--scoria-tone-pass-bg); }
+  .scoria-root .bg-amber-50 { background-color: var(--scoria-tone-warn-bg); }
+  .scoria-root .bg-blue-50 { background-color: var(--scoria-tone-info-bg); }
+  .scoria-root .bg-blue-600 { background-color: var(--scoria-action); }
+  .scoria-root .bg-black { background-color: var(--scoria-surface-overlay); }
+  .scoria-root .bg-opacity-50 { /* opacity folded into overlay token */ }
+
+  /* ---- text color (→ semantic tokens) ---- */
+  .scoria-root .text-stone-900,
+  .scoria-root .text-stone-800,
+  .scoria-root .text-stone-700 { color: var(--scoria-text); }
+  .scoria-root .text-stone-600 { color: var(--scoria-text-muted); }
+  .scoria-root .text-stone-500 { color: var(--scoria-text-subtle); }
+  .scoria-root .text-white { color: var(--scoria-action-fg); }
+  .scoria-root .text-blue-700 { color: var(--scoria-link); }
+  .scoria-root .text-emerald-700,
+  .scoria-root .text-emerald-800,
+  .scoria-root .text-emerald-900 { color: var(--scoria-tone-pass-fg); }
+  .scoria-root .text-amber-700 { color: var(--scoria-tone-warn-fg); }
+  .scoria-root .text-rose-700 { color: var(--scoria-tone-fail-fg); }
+
+  /* ---- type ---- */
+  .scoria-root .text-\[11px\] { font-size: 11px; }
+  .scoria-root .text-xs { font-size: var(--scoria-fs-label); line-height: 1.45; }
+  .scoria-root .text-sm { font-size: var(--scoria-fs-body); }
+  .scoria-root .text-lg { font-size: var(--scoria-fs-panel); }
+  .scoria-root .text-2xl { font-size: var(--scoria-fs-title); line-height: var(--scoria-lh-tight); }
+  .scoria-root .text-3xl { font-size: var(--scoria-fs-display); line-height: var(--scoria-lh-tight); }
+  .scoria-root .font-medium { font-weight: 500; }
+  .scoria-root .font-semibold { font-weight: 600; }
+  .scoria-root .font-mono { font-family: var(--scoria-font-mono); }
+  .scoria-root .uppercase { text-transform: uppercase; }
+  .scoria-root .underline { text-decoration: underline; text-underline-offset: 2px; }
+  .scoria-root .tracking-\[0\.16em\] { letter-spacing: 0.16em; }
+  .scoria-root .tracking-\[0\.18em\] { letter-spacing: 0.18em; }
+  .scoria-root .tracking-\[0\.22em\] { letter-spacing: 0.22em; }
+  .scoria-root .tracking-\[0\.24em\] { letter-spacing: 0.24em; }
+
+  /* ---- hover ---- */
+  .scoria-root .hover\:bg-stone-50:hover { background-color: var(--scoria-tone-neutral-bg); }
+  .scoria-root .hover\:bg-blue-700:hover { background-color: var(--scoria-action-hover); }
+
+  /* ---- responsive grids ---- */
+  @media (min-width: 768px) {
+    .scoria-root .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .scoria-root .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .scoria-root .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) {
+    .scoria-root .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .scoria-root .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .scoria-root .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .scoria-root .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .scoria-root .lg\:flex-row { flex-direction: row; }
+    .scoria-root .lg\:justify-between { justify-content: space-between; }
+    .scoria-root .lg\:items-end { align-items: flex-end; }
+  }
+  @media (min-width: 1280px) {
+    .scoria-root .xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+}

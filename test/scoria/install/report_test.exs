@@ -45,7 +45,7 @@ defmodule Scoria.Install.ReportTest do
       entries: [
         %{
           order: 1,
-          surface: :tailwind,
+          surface: :runtime_config,
           target_path: "n/a",
           classification: :no_op,
           rationale: "optional",
@@ -74,7 +74,7 @@ defmodule Scoria.Install.ReportTest do
       entries: [
         %{
           order: 1,
-          surface: :tailwind,
+          surface: :runtime_config,
           target_path: "n/a",
           classification: :manual_review,
           rationale: "review",
