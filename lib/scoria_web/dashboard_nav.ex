@@ -17,6 +17,7 @@ defmodule ScoriaWeb.DashboardNav do
         %{key: :live_ops, label: "Live Ops", path: "/", icon: :pulse},
         %{key: :approvals, label: "Approvals", path: "/approvals", icon: :inbox},
         %{key: :runs, label: "Runs", path: "/workflows", icon: :tree},
+        %{key: :incidents, label: "Incidents", path: "/incidents", icon: :alert},
         %{key: :connectors, label: "Connectors", path: "/connectors", icon: :plug}
       ]
     },
@@ -34,6 +35,7 @@ defmodule ScoriaWeb.DashboardNav do
     ScoriaWeb.OrchestratorLive => :live_ops,
     ScoriaWeb.ApprovalsLive.Index => :approvals,
     ScoriaWeb.ConnectorsLive.Index => :connectors,
+    ScoriaWeb.IncidentsLive.Index => :incidents,
     ScoriaWeb.WorkflowLive.Show => :runs,
     ScoriaWeb.ReviewQueueLive => :reviews,
     ScoriaWeb.EvalSpecLive.Index => :evals,
@@ -79,6 +81,7 @@ defmodule ScoriaWeb.DashboardNav do
         ScoriaWeb.OrchestratorLive -> "/"
         ScoriaWeb.ApprovalsLive.Index -> "/approvals"
         ScoriaWeb.ConnectorsLive.Index -> "/connectors"
+        ScoriaWeb.IncidentsLive.Index -> "/incidents"
         ScoriaWeb.ReviewQueueLive -> "/reviews"
         ScoriaWeb.EvalSpecLive.Index -> "/eval_specs"
         ScoriaWeb.PromptLive.Index -> "/prompts"
