@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" class="scoria-root" data-theme="dark" data-scoria-socket={assigns[:scoria_socket_path] || "/live"}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()} />
+    <.live_title default="Scoria" suffix=" · Scoria">{assigns[:page_title]}</.live_title>
+    <style nonce={assigns[:scoria_nonce]}><%= Phoenix.HTML.raw(ScoriaWeb.Assets.css()) %></style>
+  </head>
+  <body>
+    {@inner_content}
+    <script nonce={assigns[:scoria_nonce]}><%= Phoenix.HTML.raw(ScoriaWeb.Assets.js()) %></script>
+  </body>
+</html>

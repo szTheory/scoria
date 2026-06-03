@@ -1,0 +1,75 @@
+/*
+ * Base element styling for the dashboard surface. Layer below components.
+ */
+@layer scoria.base {
+  .scoria-root {
+    font-family: var(--scoria-font-sans);
+    font-size: var(--scoria-fs-body);
+    line-height: var(--scoria-lh-body);
+    color: var(--scoria-text);
+    background: var(--scoria-surface-app);
+    min-height: 100vh;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Volcanic atmosphere: a subtle heat-under-rock glow, never neon. */
+  .scoria-root[data-theme="dark"] body,
+  .scoria-root[data-theme="dark"].scoria-root {
+    background-image:
+      radial-gradient(60rem 40rem at 12% -8%, rgba(255, 122, 77, 0.06), transparent 60%),
+      radial-gradient(50rem 36rem at 92% -4%, rgba(167, 199, 111, 0.04), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  .scoria-root h1 {
+    font-size: var(--scoria-fs-title);
+    line-height: var(--scoria-lh-tight);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .scoria-root h2 {
+    font-size: var(--scoria-fs-panel);
+    line-height: var(--scoria-lh-tight);
+    font-weight: 600;
+  }
+
+  .scoria-root h3 {
+    font-size: var(--scoria-fs-body);
+    font-weight: 600;
+  }
+
+  .scoria-root strong,
+  .scoria-root b {
+    font-weight: 600;
+  }
+
+  /* Custom scrollbars that match the surface, not the OS chrome. */
+  .scoria-root *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .scoria-root *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scoria-root *::-webkit-scrollbar-thumb {
+    background: var(--scoria-border-strong);
+    border-radius: var(--scoria-radius-pill);
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .scoria-root *::-webkit-scrollbar-thumb:hover {
+    background: var(--scoria-text-subtle);
+    background-clip: content-box;
+  }
+  .scoria-root {
+    scrollbar-color: var(--scoria-border-strong) transparent;
+    scrollbar-width: thin;
+  }
+
+  /* Text selection picks up brand warmth. */
+  .scoria-root ::selection {
+    background: color-mix(in srgb, var(--scoria-ember-500) 32%, transparent);
+    color: var(--scoria-text);
+  }
+}

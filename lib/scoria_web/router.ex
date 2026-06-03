@@ -31,7 +31,7 @@ defmodule ScoriaWeb.Router do
           :callback
         )
 
-        live_session :scoria_dashboard do
+        live_session :scoria_dashboard, root_layout: {ScoriaWeb.Layouts, :root} do
           live("/", ScoriaWeb.OrchestratorLive, :index)
           live("/reviews", ScoriaWeb.ReviewQueueLive, :index)
           live("/workflows/:id", ScoriaWeb.WorkflowLive.Show, :show)

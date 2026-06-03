@@ -12,6 +12,7 @@ defmodule Scoria.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       docs: docs(),
       package: package(),
       source_url: "https://github.com/szTheory/scoria",
@@ -92,6 +93,13 @@ defmodule Scoria.MixProject do
       {:ex_doc, "~> 0.38", only: :dev, runtime: false},
       {:floki, ">= 0.30.0", only: :test},
       {:lazy_html, ">= 0.1.0", only: :test}
+    ]
+  end
+
+  defp aliases do
+    [
+      "assets.build": ["scoria.assets.build"],
+      "assets.deploy": ["scoria.assets.build"]
     ]
   end
 

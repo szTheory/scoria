@@ -1,0 +1,69 @@
+/*
+ * Scoped reset — applies ONLY inside .scoria-root so it never touches host pages.
+ * Deliberately NOT Tailwind Preflight (which resets globally and would wreck the host).
+ */
+@layer scoria.reset {
+  .scoria-root,
+  .scoria-root *,
+  .scoria-root *::before,
+  .scoria-root *::after {
+    box-sizing: border-box;
+  }
+
+  .scoria-root {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  .scoria-root :where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd) {
+    margin: 0;
+  }
+
+  .scoria-root :where(ul, ol) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .scoria-root :where(button, input, select, textarea) {
+    font: inherit;
+    color: inherit;
+    margin: 0;
+  }
+
+  .scoria-root :where(button) {
+    cursor: pointer;
+    background: none;
+    border: none;
+  }
+
+  .scoria-root :where(a) {
+    color: var(--scoria-link);
+    text-decoration: none;
+  }
+
+  .scoria-root :where(a:hover) {
+    color: var(--scoria-link-hover);
+  }
+
+  .scoria-root :where(img, svg, video, canvas) {
+    display: block;
+    max-width: 100%;
+  }
+
+  .scoria-root :where(table) {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .scoria-root :where(code, pre, kbd, samp) {
+    font-family: var(--scoria-font-mono);
+  }
+
+  .scoria-root :where(:focus-visible) {
+    outline: 2px solid var(--scoria-focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--scoria-radius-sm);
+  }
+}
