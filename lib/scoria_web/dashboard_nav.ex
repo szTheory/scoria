@@ -15,6 +15,7 @@ defmodule ScoriaWeb.DashboardNav do
       label: "Operate",
       items: [
         %{key: :live_ops, label: "Live Ops", path: "/", icon: :pulse},
+        %{key: :approvals, label: "Approvals", path: "/approvals", icon: :inbox},
         %{key: :runs, label: "Runs", path: "/workflows", icon: :tree}
       ]
     },
@@ -30,6 +31,7 @@ defmodule ScoriaWeb.DashboardNav do
 
   @views %{
     ScoriaWeb.OrchestratorLive => :live_ops,
+    ScoriaWeb.ApprovalsLive.Index => :approvals,
     ScoriaWeb.WorkflowLive.Show => :runs,
     ScoriaWeb.ReviewQueueLive => :reviews,
     ScoriaWeb.EvalSpecLive.Index => :evals,
@@ -73,6 +75,7 @@ defmodule ScoriaWeb.DashboardNav do
     suffix =
       case view do
         ScoriaWeb.OrchestratorLive -> "/"
+        ScoriaWeb.ApprovalsLive.Index -> "/approvals"
         ScoriaWeb.ReviewQueueLive -> "/reviews"
         ScoriaWeb.EvalSpecLive.Index -> "/eval_specs"
         ScoriaWeb.PromptLive.Index -> "/prompts"
@@ -88,6 +91,9 @@ defmodule ScoriaWeb.DashboardNav do
 
   defp strip_known_prefixes(path) do
     path
-    |> String.replace(~r{/(workflows|prompts|reviews|eval_specs)(/.*)?$}, "")
+    |> String.replace(
+      ~r{/(workflows|prompts|reviews|eval_specs|approvals|connectors|incidents)(/.*)?$},
+      ""
+    )
   end
 end

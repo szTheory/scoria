@@ -14,7 +14,7 @@ defmodule ScoriaWeb.Layouts do
   embed_templates("layouts/*")
 
   @doc "Porous-cinder brand mark (negative-space vesicles evoke a trace tree)."
-  attr :class, :string, default: nil
+  attr(:class, :string, default: nil)
 
   def brand_mark(assigns) do
     ~H"""
@@ -34,8 +34,8 @@ defmodule ScoriaWeb.Layouts do
   end
 
   @doc "Inline stroke icons for nav items (brand book §9: stroke, rounded)."
-  attr :name, :atom, required: true
-  attr :class, :string, default: "scoria-nav__icon"
+  attr(:name, :atom, required: true)
+  attr(:class, :string, default: "scoria-nav__icon")
 
   def icon(assigns) do
     ~H"""
@@ -53,6 +53,12 @@ defmodule ScoriaWeb.Layouts do
           <rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 17.5h7M17.5 14v7" />
         <% :doc -> %>
           <path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" />
+        <% :inbox -> %>
+          <path d="M3 13h4l2 3h6l2-3h4" /><path d="M5 13V5h14v8M3 13v6h18v-6" />
+        <% :plug -> %>
+          <path d="M9 3v5m6-5v5" /><path d="M6 8h12v3a6 6 0 0 1-12 0z" /><path d="M12 17v4" />
+        <% :alert -> %>
+          <path d="M12 4 2 20h20z" /><path d="M12 10v4m0 3h.01" />
         <% _ -> %>
           <circle cx="12" cy="12" r="8" />
       <% end %>

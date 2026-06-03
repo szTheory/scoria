@@ -35,6 +35,7 @@ defmodule ScoriaWeb.Router do
           root_layout: {ScoriaWeb.Layouts, :root},
           on_mount: ScoriaWeb.DashboardNav do
           live("/", ScoriaWeb.OrchestratorLive, :index)
+          live("/approvals", ScoriaWeb.ApprovalsLive.Index, :index)
           live("/reviews", ScoriaWeb.ReviewQueueLive, :index)
           live("/workflows", ScoriaWeb.WorkflowLive.Index, :index)
           live("/workflows/:id", ScoriaWeb.WorkflowLive.Show, :show)
