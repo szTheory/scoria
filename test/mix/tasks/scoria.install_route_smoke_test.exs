@@ -28,27 +28,10 @@ defmodule Mix.Tasks.Scoria.InstallRouteSmokeTest do
     end
     """
 
-    tailwind_content = """
-    // scoria:tailwind:start
-    module.exports = {
-      content: [
-        "./js/**/*.js",
-        "../deps/scoria/lib/**/*.*ex"
-      ],
-      theme: {
-        extend: {},
-      },
-      plugins: [],
-    }
-    // scoria:tailwind:end
-    """
-
     router_path = Path.join(@tmp_dir, "router.ex")
-    tailwind_path = Path.join(@tmp_dir, "tailwind.config.js")
     config_path = Path.join([@tmp_dir, "config", "runtime.exs"])
 
     File.write!(router_path, router_content)
-    File.write!(tailwind_path, tailwind_content)
     File.write!(Path.join([@tmp_dir, "config", "config.exs"]), "import Config\n")
 
     File.write!(
@@ -69,15 +52,14 @@ defmodule Mix.Tasks.Scoria.InstallRouteSmokeTest do
 
     on_exit(fn -> File.rm_rf!(@tmp_dir) end)
 
-    {:ok, router_path: router_path, tailwind_path: tailwind_path, config_path: config_path}
+    {:ok, router_path: router_path, config_path: config_path}
   end
 
   test "installed /scoria routes resolve through Phoenix router metadata", %{
     router_path: router_path,
-    tailwind_path: tailwind_path,
     config_path: config_path
   } do
-    result = Mix.Tasks.Scoria.Install.do_run(router_path, tailwind_path, config_path)
+    result = Mix.Tasks.Scoria.Install.do_run(router_path, config_path)
     assert result.exit_code == 0
 
     with_compiled_modules!(File.read!(router_path), fn ->
@@ -94,13 +76,12 @@ defmodule Mix.Tasks.Scoria.InstallRouteSmokeTest do
 
   test "non-root browser scope topology blocks apply and leaves dashboard routes absent", %{
     router_path: router_path,
-    tailwind_path: tailwind_path,
     config_path: config_path
   } do
     File.write!(router_path, non_root_browser_scope_router())
     before_router = File.read!(router_path)
 
-    result = Mix.Tasks.Scoria.Install.do_run(router_path, tailwind_path, config_path)
+    result = Mix.Tasks.Scoria.Install.do_run(router_path, config_path)
     after_router = File.read!(router_path)
 
     assert result.status == :manual_review

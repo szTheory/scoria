@@ -31,8 +31,14 @@ install axis and do not map to Hex versions.
 - `?tenant=` view parameter on Live Ops and `priv/repo/dev_seed.exs` (gallery) to populate
   every dashboard screen with realistic data.
 - `mix scoria.assets.build` to (re)generate the shipped dashboard asset bundle.
+- First-run empty states on the Prompt Registry (`/scoria/prompts`) and Eval Workbench
+  (`/scoria/eval_specs`) tables, consistent with the Runs and Incidents pages.
 
 ### Changed
+
+- `mix scoria.install` no longer probes or edits the host app's Tailwind config. Because the
+  dashboard ships self-contained assets, install is now router mount + Ecto migrations +
+  runtime config only — there is no Tailwind install surface and no host asset work.
 
 - Live Ops (`/scoria`) slimmed to a task band + live trace stream plus a compact
   Approvals/Connectors/Incidents "at a glance" strip that links to the new routed pages;
