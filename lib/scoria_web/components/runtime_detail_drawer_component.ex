@@ -1,5 +1,6 @@
 defmodule ScoriaWeb.RuntimeDetailDrawerComponent do
   use Phoenix.Component
+  import ScoriaWeb.UI, only: [badge: 1, tone: 1]
 
   attr(:drawer, :map, default: nil)
 
@@ -12,9 +13,7 @@ defmodule ScoriaWeb.RuntimeDetailDrawerComponent do
             <p class="text-xs uppercase tracking-[0.24em] text-stone-500">runtime detail</p>
             <h2 class="text-lg font-semibold text-stone-900"><%= @drawer.id %></h2>
             <div class="mt-2 flex gap-2">
-              <span class={"rounded-full px-2 py-0.5 text-xs font-semibold #{status_color(@drawer.status)}"}>
-                <%= @drawer.status %>
-              </span>
+              <.badge tone={tone(@drawer.status)} label={@drawer.status} dot={false} />
             </div>
           </div>
           <button phx-click="close_runtime_drawer" class="text-xs font-medium text-stone-600 underline">Close</button>
@@ -117,10 +116,6 @@ defmodule ScoriaWeb.RuntimeDetailDrawerComponent do
     """
   end
 
-  defp status_color("online"), do: "bg-emerald-100 text-emerald-800"
-  defp status_color("offline"), do: "bg-rose-100 text-rose-800"
-  defp status_color(_), do: "bg-stone-100 text-stone-800"
-
   defp semantic_present?(semantic) when is_map(semantic), do: map_size(semantic) > 0
   defp semantic_present?(_semantic), do: false
 
@@ -133,8 +128,9 @@ defmodule ScoriaWeb.RuntimeDetailDrawerComponent do
   defp fallback_copy(%{fallback_outcome: "live_execution_writeback_rejected"}),
     do: "Normal runtime path executed and writeback_rejected semantic evidence."
 
-  defp fallback_copy(%{fallback_outcome: outcome}) when outcome in ["normal_runtime_path_executed", nil],
-    do: "Normal runtime path executed."
+  defp fallback_copy(%{fallback_outcome: outcome})
+       when outcome in ["normal_runtime_path_executed", nil],
+       do: "Normal runtime path executed."
 
   defp fallback_copy(_semantic), do: "Normal runtime path executed."
 
