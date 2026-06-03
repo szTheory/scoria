@@ -39,6 +39,9 @@ install axis and do not map to Hex versions.
   approvals, fleet posture, and the tenant incident rollup moved off the landing page.
 - Shared `ScoriaWeb.OperatorSurface` read model now backs Live Ops and the routed Operate
   pages, replacing the duplicated fleet/SRE projection reads.
+- Status→color styling fully consolidated into `ScoriaWeb.UI` (`tone/1` + `<.badge tone=>`
+  + `<.flash_group>`); the per-component `badge_class/status_color/trace_badge_class/
+  flash_kind_class` helpers are removed and a drift-guard test prevents their return.
 - Bump `req_llm` peer dependency to `~> 1.13` (locked at 1.13.0)
 
 ## 0.1.1 (2026-05-30)
