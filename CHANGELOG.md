@@ -24,12 +24,21 @@ install axis and do not map to Hex versions.
   on the Live Ops landing page.
 - Runs index at `/scoria/workflows`; the previously-unreachable Eval Workbench is now
   routed at `/scoria/eval_specs`.
+- Routed Operate pages extracted from the Live Ops god-page, each a focused, linkable
+  surface with its own nav item: Approvals (`/scoria/approvals` — inbox + decision modal),
+  Connectors (`/scoria/connectors` — runtime + connector fleet posture and drawers), and
+  Incidents (`/scoria/incidents` — tenant SRE triage with trace-first evidence).
 - `?tenant=` view parameter on Live Ops and `priv/repo/dev_seed.exs` (gallery) to populate
   every dashboard screen with realistic data.
 - `mix scoria.assets.build` to (re)generate the shipped dashboard asset bundle.
 
 ### Changed
 
+- Live Ops (`/scoria`) slimmed to a task band + live trace stream plus a compact
+  Approvals/Connectors/Incidents "at a glance" strip that links to the new routed pages;
+  approvals, fleet posture, and the tenant incident rollup moved off the landing page.
+- Shared `ScoriaWeb.OperatorSurface` read model now backs Live Ops and the routed Operate
+  pages, replacing the duplicated fleet/SRE projection reads.
 - Bump `req_llm` peer dependency to `~> 1.13` (locked at 1.13.0)
 
 ## 0.1.1 (2026-05-30)
