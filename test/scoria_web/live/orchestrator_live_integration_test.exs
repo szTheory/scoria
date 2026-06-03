@@ -36,7 +36,6 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
   alias Scoria.Repo
   alias Scoria.Repo.{Span, Trace}
   alias Scoria.Runtime
-  alias Scoria.Workflows
 
   alias Phoenix.LiveViewTest.{ClientProxy, View}
 

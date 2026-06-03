@@ -34,7 +34,6 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   alias Scoria.Repo
   alias Scoria.Repo.Trace
   alias Scoria.Eval.OnlineScoreCandidate
-  alias Scoria.Workflows
   alias Scoria.Workflows.{Run, Step}
 
   @endpoint ScoriaWeb.OrchestratorLiveTest.Endpoint
