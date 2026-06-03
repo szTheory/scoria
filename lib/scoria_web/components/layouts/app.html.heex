@@ -1,0 +1,46 @@
+<div class="scoria-shell">
+  <aside class="scoria-sidebar">
+    <a class="scoria-brand" href={(assigns[:scoria_base] || "") <> "/"}>
+      <.brand_mark /> Scoria
+    </a>
+
+    <nav class="space-y-4" aria-label="Dashboard sections">
+      <div :for={group <- nav_groups()} class="scoria-navgroup">
+        <p class="scoria-navgroup__label">{group.label}</p>
+        <.link
+          :for={item <- group.items}
+          navigate={(assigns[:scoria_base] || "") <> item.path}
+          class="scoria-nav"
+          aria-current={if item.key == assigns[:scoria_nav], do: "page"}
+        >
+          <.icon name={item.icon} />
+          <span>{item.label}</span>
+        </.link>
+      </div>
+    </nav>
+  </aside>
+
+  <header class="scoria-topbar">
+    <div class="scoria-breadcrumbs">
+      <span class="scoria-breadcrumbs__sep">Scoria</span>
+      <span class="scoria-breadcrumbs__sep">/</span>
+      <span style="color: var(--scoria-text);">{assigns[:page_title] || "Dashboard"}</span>
+    </div>
+    <div class="ml-auto flex items-center gap-3">
+      <button
+        type="button"
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        phx-hook="ThemeToggle"
+        id="scoria-theme-toggle"
+        title="Toggle light / dark"
+        aria-label="Toggle light or dark theme"
+      >
+        <span>Theme</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="scoria-main">
+    {@inner_content}
+  </main>
+</div>

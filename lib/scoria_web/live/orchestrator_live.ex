@@ -1,5 +1,5 @@
 defmodule ScoriaWeb.OrchestratorLive do
-  use Phoenix.LiveView
+  use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
   import Ecto.Query, warn: false
 
   alias Decimal, as: D

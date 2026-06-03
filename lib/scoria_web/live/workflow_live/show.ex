@@ -1,5 +1,5 @@
 defmodule ScoriaWeb.WorkflowLive.Show do
-  use Phoenix.LiveView
+  use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
   alias Scoria.Eval
   alias Scoria.Runtime

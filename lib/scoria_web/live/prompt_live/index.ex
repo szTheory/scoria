@@ -1,5 +1,5 @@
 defmodule ScoriaWeb.PromptLive.Index do
-  use Phoenix.LiveView
+  use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
   alias Scoria.PromptRegistry
   alias Scoria.PromptRegistry.PromptTemplate
   alias Scoria.PromptRegistry.Tokenizer

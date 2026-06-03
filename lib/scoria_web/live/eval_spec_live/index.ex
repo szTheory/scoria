@@ -1,5 +1,5 @@
 defmodule ScoriaWeb.EvalSpecLive.Index do
-  use Phoenix.LiveView
+  use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
   alias Scoria.Eval
   alias Scoria.Eval.EvalSpec
 

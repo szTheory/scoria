@@ -150,6 +150,21 @@ removing illegal node: "${(i.outerHTML||i.nodeValue).trim()}"
     },
   };
 
+  // Light/dark theme toggle. Persists choice; defaults to dark (brand-first).
+  Hooks.ThemeToggle = {
+    mounted: function () {
+      var root = document.documentElement;
+      var stored = null;
+      try { stored = localStorage.getItem("scoria-theme"); } catch (e) {}
+      if (stored) root.setAttribute("data-theme", stored);
+      this.el.addEventListener("click", function () {
+        var next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("scoria-theme", next); } catch (e) {}
+      });
+    },
+  };
+
   // Escape closes the topmost open drawer/modal that opts in via data-scoria-dismiss.
   Hooks.Dismissable = {
     mounted: function () {
