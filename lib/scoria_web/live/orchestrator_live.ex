@@ -35,7 +35,7 @@ defmodule ScoriaWeb.OrchestratorLive do
   }
 
   def mount(params, session, socket) do
-    tenant_id = session["tenant_id"] || "default"
+    tenant_id = params["tenant"] || session["tenant_id"] || "default"
 
     socket =
       socket
