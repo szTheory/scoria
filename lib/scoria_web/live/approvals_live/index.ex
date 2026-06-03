@@ -6,6 +6,8 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   """
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
+  import ScoriaWeb.UI, only: [flash_group: 1]
+
   import Ecto.Query, warn: false
 
   alias Scoria.Repo
@@ -99,13 +101,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         </p>
       </div>
 
-      <div
-        :for={{kind, message} <- @flash}
-        id={"flash-#{kind}"}
-        class={["mb-4 rounded-lg border px-4 py-3 text-sm", flash_kind_class(kind)]}
-      >
-        <%= message %>
-      </div>
+      <.flash_group flash={@flash} />
 
       <ApprovalInboxComponent.render
         approvals={@approval_inbox}
@@ -279,8 +275,4 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       socket
     end
   end
-
-  defp flash_kind_class(:error), do: "border-rose-200 bg-rose-50 text-rose-900"
-  defp flash_kind_class(:info), do: "border-sky-200 bg-sky-50 text-sky-900"
-  defp flash_kind_class(_kind), do: "border-stone-200 bg-stone-50 text-stone-900"
 end

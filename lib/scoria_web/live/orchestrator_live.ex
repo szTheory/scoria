@@ -1,6 +1,7 @@
 defmodule ScoriaWeb.OrchestratorLive do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
   import Ecto.Query, warn: false
+  import ScoriaWeb.UI, only: [badge: 1, flash_group: 1]
 
   alias Scoria.Eval
   alias Scoria.Repo
@@ -163,13 +164,7 @@ defmodule ScoriaWeb.OrchestratorLive do
           </.link>
         </div>
 
-        <div
-          :for={{kind, message} <- @flash}
-          id={"flash-#{kind}"}
-          class={["mb-4 rounded-lg border px-4 py-3 text-sm", flash_kind_class(kind)]}
-        >
-          <%= message %>
-        </div>
+        <.flash_group flash={@flash} />
 
         <section
           :if={@review_candidate}
@@ -219,9 +214,7 @@ defmodule ScoriaWeb.OrchestratorLive do
               token_previews={@token_previews}
             />
             <div class="mt-3 flex flex-wrap gap-2 text-[11px]">
-              <span :for={badge <- trace_badges(trace)} class={trace_badge_class(badge.tone)}>
-                <%= badge.label %>
-              </span>
+              <.badge :for={badge <- trace_badges(trace)} tone={badge.tone} label={badge.label} dot={false} />
             </div>
             <div class="mt-3 flex flex-wrap gap-3 text-xs">
               <button phx-click="load_metadata" phx-value-id={trace.id} class="text-blue-500 underline">Load Deep Metadata</button>
@@ -262,10 +255,10 @@ defmodule ScoriaWeb.OrchestratorLive do
               <div class="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
                 <p class="text-xs uppercase tracking-[0.24em] text-stone-500">Budget state</p>
                 <div class="mt-3 flex flex-wrap gap-2 text-xs">
-                  <span class={trace_badge_class("amber")}><%= budget_state.status_label %></span>
-                  <span class={trace_badge_class("rose")} :if={budget_state.breaker_open?}>breaker open</span>
-                  <span class={trace_badge_class("sky")} :if={budget_state.review_open?}>review incident</span>
-                  <span class={trace_badge_class("rose")} :if={budget_state.page_open?}>page incident</span>
+                  <.badge tone={:warn} label={budget_state.status_label} dot={false} />
+                  <.badge :if={budget_state.breaker_open?} tone={:fail} label="breaker open" dot={false} />
+                  <.badge :if={budget_state.review_open?} tone={:info} label="review incident" dot={false} />
+                  <.badge :if={budget_state.page_open?} tone={:fail} label="page incident" dot={false} />
                 </div>
                 <p class="mt-3 text-sm text-stone-700"><%= budget_state.actuals %></p>
               </div>
@@ -323,25 +316,11 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   defp trace_badges(trace) do
     Enum.concat([
-      if(trace[:budget_state], do: [%{label: trace[:budget_state], tone: "amber"}], else: []),
-      if(trace[:breaker_state] == "open", do: [%{label: "breaker open", tone: "rose"}], else: []),
-      if(trace[:review_incident], do: [%{label: "review incident", tone: "sky"}], else: []),
-      if(trace[:page_incident], do: [%{label: "page incident", tone: "rose"}], else: [])
+      if(trace[:budget_state], do: [%{label: trace[:budget_state], tone: :warn}], else: []),
+      if(trace[:breaker_state] == "open", do: [%{label: "breaker open", tone: :fail}], else: []),
+      if(trace[:review_incident], do: [%{label: "review incident", tone: :info}], else: []),
+      if(trace[:page_incident], do: [%{label: "page incident", tone: :fail}], else: [])
     ])
-  end
-
-  defp trace_badge_class(tone) do
-    base = "rounded-full px-2.5 py-1 font-semibold uppercase tracking-[0.18em]"
-
-    color =
-      case tone do
-        "rose" -> "border border-rose-200 bg-rose-50 text-rose-800"
-        "sky" -> "border border-sky-200 bg-sky-50 text-sky-800"
-        "amber" -> "border border-amber-200 bg-amber-50 text-amber-800"
-        _ -> "border border-emerald-200 bg-emerald-50 text-emerald-800"
-      end
-
-    [base, color]
   end
 
   defp refresh_trace_badges(socket, trace_id, run_id) do
@@ -361,10 +340,6 @@ defmodule ScoriaWeb.OrchestratorLive do
     _error ->
       socket
   end
-
-  defp flash_kind_class(:error), do: "border-rose-200 bg-rose-50 text-rose-900"
-  defp flash_kind_class(:info), do: "border-sky-200 bg-sky-50 text-sky-900"
-  defp flash_kind_class(_kind), do: "border-stone-200 bg-stone-50 text-stone-900"
 
   defp load_review_candidate(nil), do: nil
   defp load_review_candidate(candidate_id), do: Eval.get_review_candidate(candidate_id)

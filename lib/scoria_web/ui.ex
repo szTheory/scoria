@@ -21,16 +21,20 @@ defmodule ScoriaWeb.UI do
 
   def tone(status) when is_binary(status) do
     case status do
-      s when s in ~w(completed complete success succeeded online healthy ok pass passed available active resolved approved) ->
+      s
+      when s in ~w(completed complete success succeeded online healthy ok pass passed available active resolved approved) ->
         :pass
 
-      s when s in ~w(running streaming in_progress executing scheduled queued info reference retrieval) ->
+      s
+      when s in ~w(running streaming in_progress executing scheduled queued info reference retrieval) ->
         :info
 
-      s when s in ~w(waiting_for_approval pending_approval retrying warning warn drift degraded stale pending approval_requested needs_review) ->
+      s
+      when s in ~w(waiting_for_approval pending_approval retrying warning warn drift degraded stale pending approval_requested needs_review) ->
         :warn
 
-      s when s in ~w(failed failure error offline denied rejected regression cancelled canceled unhealthy expired) ->
+      s
+      when s in ~w(failed failure error offline denied rejected regression cancelled canceled unhealthy expired) ->
         :fail
 
       s when s in ~w(replay experiment branch candidate trace promotion_candidate online_eval) ->
@@ -52,12 +56,12 @@ defmodule ScoriaWeb.UI do
 
   def status_label(_), do: "Unknown"
 
-  attr :tone, :atom, default: :neutral
-  attr :label, :string, default: nil
-  attr :dot, :boolean, default: true
-  attr :class, :string, default: nil
-  attr :rest, :global
-  slot :inner_block
+  attr(:tone, :atom, default: :neutral)
+  attr(:label, :string, default: nil)
+  attr(:dot, :boolean, default: true)
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+  slot(:inner_block)
 
   @doc "Status badge. Always renders a text label alongside color (a11y: never color-alone)."
   def badge(assigns) do
@@ -68,12 +72,17 @@ defmodule ScoriaWeb.UI do
     """
   end
 
-  attr :variant, :atom, default: :primary, values: [:primary, :ghost, :danger]
-  attr :size, :atom, default: :md, values: [:md, :sm]
-  attr :type, :string, default: "button"
-  attr :class, :string, default: nil
-  attr :rest, :global, include: ~w(phx-click phx-value-id phx-value-approval-id phx-disable-with disabled form name value href)
-  slot :inner_block, required: true
+  attr(:variant, :atom, default: :primary, values: [:primary, :ghost, :danger])
+  attr(:size, :atom, default: :md, values: [:md, :sm])
+  attr(:type, :string, default: "button")
+  attr(:class, :string, default: nil)
+
+  attr(:rest, :global,
+    include:
+      ~w(phx-click phx-value-id phx-value-approval-id phx-disable-with disabled form name value href)
+  )
+
+  slot(:inner_block, required: true)
 
   @doc "Primary/ghost/danger button (brand book §8.5)."
   def button(assigns) do
@@ -88,8 +97,8 @@ defmodule ScoriaWeb.UI do
     """
   end
 
-  attr :class, :string, default: nil
-  slot :inner_block, required: true
+  attr(:class, :string, default: nil)
+  slot(:inner_block, required: true)
 
   @doc "Small uppercase category/status label (brand book card eyebrow)."
   def eyebrow(assigns) do
@@ -98,13 +107,13 @@ defmodule ScoriaWeb.UI do
     """
   end
 
-  attr :variant, :atom, default: :flat, values: [:flat, :raised]
-  attr :class, :string, default: nil
-  attr :rest, :global
-  slot :eyebrow
-  slot :title
-  slot :actions
-  slot :inner_block, required: true
+  attr(:variant, :atom, default: :flat, values: [:flat, :raised])
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+  slot(:eyebrow)
+  slot(:title)
+  slot(:actions)
+  slot(:inner_block, required: true)
 
   @doc "Panel/card surface with optional eyebrow + title + actions header."
   def panel(assigns) do
@@ -122,11 +131,11 @@ defmodule ScoriaWeb.UI do
     """
   end
 
-  attr :label, :string, required: true
-  attr :value, :string, required: true
-  attr :delta, :string, default: nil
-  attr :delta_tone, :atom, default: :neutral
-  attr :class, :string, default: nil
+  attr(:label, :string, required: true)
+  attr(:value, :string, required: true)
+  attr(:delta, :string, default: nil)
+  attr(:delta_tone, :atom, default: :neutral)
+  attr(:class, :string, default: nil)
 
   @doc "Metric card: label, big value, explicit delta (brand book §11.3 — never a magic score)."
   def metric(assigns) do
@@ -139,9 +148,9 @@ defmodule ScoriaWeb.UI do
     """
   end
 
-  attr :value, :string, required: true
-  attr :copy, :string, default: nil
-  attr :class, :string, default: nil
+  attr(:value, :string, required: true)
+  attr(:copy, :string, default: nil)
+  attr(:class, :string, default: nil)
 
   @doc "Copyable monospace identifier (run/trace/actor IDs). Uses the CopyId JS hook."
   def id(assigns) do
@@ -152,10 +161,10 @@ defmodule ScoriaWeb.UI do
     """
   end
 
-  attr :title, :string, required: true
-  attr :class, :string, default: nil
-  slot :inner_block
-  slot :action
+  attr(:title, :string, required: true)
+  attr(:class, :string, default: nil)
+  slot(:inner_block)
+  slot(:action)
 
   @doc "Empty state: status + learning cue + optional primary action (NN/g)."
   def empty_state(assigns) do
@@ -167,4 +176,23 @@ defmodule ScoriaWeb.UI do
     </div>
     """
   end
+
+  attr(:flash, :map, default: %{})
+
+  @doc "Dashboard flash banners. Single home for flash kind → tone styling."
+  def flash_group(assigns) do
+    ~H"""
+    <div
+      :for={{kind, message} <- @flash}
+      id={"flash-#{kind}"}
+      class={["mb-4 rounded-lg border px-4 py-3 text-sm", flash_tone_class(kind)]}
+    >
+      {message}
+    </div>
+    """
+  end
+
+  defp flash_tone_class(:error), do: "border-rose-200 bg-rose-50 text-rose-900"
+  defp flash_tone_class(:info), do: "border-sky-200 bg-sky-50 text-sky-900"
+  defp flash_tone_class(_kind), do: "border-stone-200 bg-stone-50 text-stone-900"
 end
