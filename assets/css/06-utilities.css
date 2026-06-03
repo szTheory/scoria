@@ -51,6 +51,20 @@
   .scoria-root .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .scoria-root .cursor-pointer { cursor: pointer; }
 
+  /* ---- sizing (icons, status dots) ---- */
+  .scoria-root .w-2 { width: 8px; }
+  .scoria-root .h-2 { height: 8px; }
+  .scoria-root .w-3 { width: 12px; }
+  .scoria-root .h-3 { height: 12px; }
+  .scoria-root .w-4 { width: 16px; }
+  .scoria-root .h-4 { height: 16px; }
+  .scoria-root .w-5 { width: 20px; }
+  .scoria-root .h-5 { height: 20px; }
+  .scoria-root .w-8 { width: 32px; }
+  .scoria-root .h-8 { height: 32px; }
+  .scoria-root .break-all { word-break: break-all; }
+  .scoria-root .break-words { overflow-wrap: break-word; }
+
   /* ---- gap / spacing ---- */
   .scoria-root .gap-1 { gap: var(--scoria-space-1); }
   .scoria-root .gap-2 { gap: var(--scoria-space-2); }

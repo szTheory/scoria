@@ -464,10 +464,10 @@ defmodule ScoriaWeb.OrchestratorLive do
             <p class="text-sm text-stone-600">
               Record a workflow-owned decision. The approval state and audit evidence are written durably before any resume attempt.
             </p>
-            <div class="flex justify-end space-x-4 mt-6">
-              <button phx-click="dismiss_approval" class="px-4 py-2 bg-stone-200 text-stone-800 rounded">Decide later</button>
-              <button phx-click="reject" class="px-4 py-2 bg-red-500 text-white rounded">Reject Decision</button>
-              <button phx-click="approve" class="px-4 py-2 bg-blue-500 text-white rounded">Approve Decision</button>
+            <div class="flex justify-end gap-3 mt-6">
+              <button phx-click="dismiss_approval" class="scoria-button scoria-button--ghost">Decide later</button>
+              <button phx-click="reject" class="scoria-button scoria-button--danger">Reject decision</button>
+              <button phx-click="approve" class="scoria-button scoria-button--primary">Approve decision</button>
             </div>
             <p class="mt-4 text-xs text-stone-500">
               Reject records a durable rejection and keeps the workflow paused. To continue, the run needs a new approval request or operator retry.
