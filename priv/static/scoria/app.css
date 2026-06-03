@@ -810,6 +810,7 @@
   .scoria-span--eval .scoria-span__rail { background: var(--scoria-span-eval); }
   .scoria-span--error .scoria-span__rail { background: var(--scoria-span-error); }
   .scoria-span--redacted .scoria-span__rail { background: var(--scoria-span-redacted); }
+  .scoria-row-selected { background: var(--scoria-tone-brand-bg); }
 
   /* ---------- Page header ---------- */
   .scoria-pagehead { margin-bottom: var(--scoria-space-5); }
