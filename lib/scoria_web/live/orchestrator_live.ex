@@ -39,7 +39,7 @@ defmodule ScoriaWeb.OrchestratorLive do
 
     socket =
       socket
-      |> assign(:page_title, "Scoria Dashboard")
+      |> assign(:page_title, "Live Ops")
       |> assign(:token_buffers, %{})
       |> assign(:token_previews, %{})
       |> assign(:token_timers, %{})
@@ -218,10 +218,34 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   def render(assigns) do
     ~H"""
-    <div class="scoria-dashboard bg-gray-50 min-h-screen p-8 text-gray-900 font-sans relative">
-      <div class="max-w-7xl mx-auto">
-        <h1 class="text-3xl font-bold mb-6">Scoria Orchestrator</h1>
-        <p class="text-gray-600 mb-8">A Phoenix-native AI Application Quality Layer.</p>
+    <div class="scoria-dashboard relative">
+      <div>
+        <div class="scoria-pagehead">
+          <h1>Live Ops</h1>
+          <p class="text-stone-600 mt-1">Live runtime activity, approvals, and connector health. Start from a task below.</p>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2 mb-6">
+          <a href="#approvals-section" class="scoria-taskcard">
+            <div class="scoria-taskcard__title">
+              <span>Approve pending tool calls</span>
+              <span class={["scoria-badge", "scoria-badge--bare", (if @approval_inbox == [], do: "scoria-badge--neutral", else: "scoria-badge--warn")]}><%= length(@approval_inbox) %></span>
+            </div>
+            <p class="scoria-taskcard__desc">Review and approve or deny operator-gated tool calls.</p>
+          </a>
+          <.link navigate={(assigns[:scoria_base] || "") <> "/reviews"} class="scoria-taskcard">
+            <div class="scoria-taskcard__title"><span>Review flagged traces</span></div>
+            <p class="scoria-taskcard__desc">Triage low-quality or policy-flagged runs and promote them to datasets.</p>
+          </.link>
+          <.link navigate={(assigns[:scoria_base] || "") <> "/workflows"} class="scoria-taskcard">
+            <div class="scoria-taskcard__title"><span>Inspect a run</span></div>
+            <p class="scoria-taskcard__desc">Open the Trace Explorer for any durable run's steps and evidence.</p>
+          </.link>
+          <.link navigate={(assigns[:scoria_base] || "") <> "/eval_specs"} class="scoria-taskcard">
+            <div class="scoria-taskcard__title"><span>Tune evals &amp; prompts</span></div>
+            <p class="scoria-taskcard__desc">Manage rubrics and prompt versions in the workbench.</p>
+          </.link>
+        </div>
 
         <div
           :for={{kind, message} <- @flash}
@@ -248,7 +272,7 @@ defmodule ScoriaWeb.OrchestratorLive do
           </div>
         </section>
 
-        <div class="mb-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+        <div id="approvals-section" class="mb-6 grid gap-6 lg:grid-cols-2">
           <%= if approval_inbox_component?() do %>
             <ApprovalInboxComponent.render
               approvals={@approval_inbox}
