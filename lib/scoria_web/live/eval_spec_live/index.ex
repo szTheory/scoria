@@ -5,8 +5,9 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, 
+    {:ok,
      socket
+     |> assign(:page_title, "Eval Workbench")
      |> assign(:eval_specs, Eval.list_eval_specs())
      |> assign(:edit_spec, nil)
      |> assign(:form, nil)}

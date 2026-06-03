@@ -850,6 +850,10 @@
   .scoria-root .flex { display: flex; }
   .scoria-root .inline-flex { display: inline-flex; }
   .scoria-root .grid { display: grid; gap: var(--scoria-space-4); }
+  .scoria-root .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .scoria-root .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .scoria-root .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .scoria-root .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .scoria-root .block { display: block; }
   .scoria-root .inline-block { display: inline-block; }
   .scoria-root .hidden { display: none; }
@@ -985,11 +989,19 @@
   /* ---- responsive grids ---- */
   @media (min-width: 768px) {
     .scoria-root .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .scoria-root .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .scoria-root .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   }
   @media (min-width: 1024px) {
     .scoria-root .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .scoria-root .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .scoria-root .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .scoria-root .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .scoria-root .lg\:flex-row { flex-direction: row; }
     .scoria-root .lg\:justify-between { justify-content: space-between; }
     .scoria-root .lg\:items-end { align-items: flex-end; }
+  }
+  @media (min-width: 1280px) {
+    .scoria-root .xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   }
 }

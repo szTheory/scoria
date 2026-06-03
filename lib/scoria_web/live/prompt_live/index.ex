@@ -6,8 +6,9 @@ defmodule ScoriaWeb.PromptLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, 
+    {:ok,
      socket
+     |> assign(:page_title, "Prompt Registry")
      |> assign(:prompt_templates, PromptRegistry.list_prompt_templates())
      |> assign(:edit_template, nil)
      |> assign(:estimated_tokens, nil)
