@@ -13,7 +13,7 @@ defmodule SupportCopilotWeb.OrchestratorSmokeTest do
 
     {:ok, _view, html} = live(conn, "/scoria")
 
-    assert html =~ "Scoria Orchestrator"
-    assert html =~ "Approval inbox"
+    assert html =~ "Live Ops"
+    assert html =~ "Approve pending tool calls"
   end
 end
