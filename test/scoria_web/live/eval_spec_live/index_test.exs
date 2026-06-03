@@ -47,6 +47,18 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     :ok
   end
 
+  test "renders an empty state when no eval specs exist" do
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
+
+    {:ok, _view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+
+    assert html =~ "No evaluation rubrics yet"
+    refute html =~ "<tbody>"
+  end
+
   test "renders eval specs and handles editing" do
     {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Test Dataset", state: :sealed})
 

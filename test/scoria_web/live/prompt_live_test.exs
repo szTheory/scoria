@@ -44,6 +44,18 @@ defmodule ScoriaWeb.PromptLive.IndexTest do
     :ok
   end
 
+  test "renders an empty state when no prompt templates exist" do
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.PromptLive.IndexTest.Endpoint)
+
+    {:ok, _view, html} = live_isolated(conn, ScoriaWeb.PromptLive.Index)
+
+    assert html =~ "No prompt templates yet"
+    refute html =~ "<tbody>"
+  end
+
   test "renders prompt templates and handles editing and token estimation" do
     entity_id = Ecto.UUID.generate()
     {:ok, template} = PromptRegistry.create_draft_template(%{

@@ -1,5 +1,6 @@
 defmodule ScoriaWeb.PromptLive.Index do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
+  import ScoriaWeb.UI, only: [empty_state: 1]
   alias Scoria.PromptRegistry
   alias Scoria.PromptRegistry.PromptTemplate
   alias Scoria.PromptRegistry.Tokenizer
@@ -124,7 +125,12 @@ defmodule ScoriaWeb.PromptLive.Index do
           </.form>
         </div>
       <% else %>
-        <table>
+        <.empty_state :if={@prompt_templates == []} title="No prompt templates yet">
+          Draft one with <span class="font-mono">Scoria.PromptRegistry.create_draft_template/1</span>
+          and it will appear here with version history, status, and token estimates.
+        </.empty_state>
+
+        <table :if={@prompt_templates != []}>
           <thead>
             <tr>
               <th>Entity ID</th>

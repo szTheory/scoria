@@ -1,5 +1,6 @@
 defmodule ScoriaWeb.EvalSpecLive.Index do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
+  import ScoriaWeb.UI, only: [empty_state: 1]
   alias Scoria.Eval
   alias Scoria.Eval.EvalSpec
 
@@ -96,7 +97,12 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
           </.form>
         </div>
       <% else %>
-        <table>
+        <.empty_state :if={@eval_specs == []} title="No evaluation rubrics yet">
+          Define a rubric with scorers and a threshold policy and it will appear here,
+          ready to gate releases on measurable eval deltas.
+        </.empty_state>
+
+        <table :if={@eval_specs != []}>
           <thead>
             <tr>
               <th>Name</th>
