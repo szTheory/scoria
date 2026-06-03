@@ -9,19 +9,11 @@ defmodule ScoriaWeb.OrchestratorLive do
   alias Scoria.Observe.Redactor
   alias Scoria.Observe.TraceProjection
 
-  alias Scoria.SRE.AuditOutboxEvent
-
-  alias Scoria.Workflows
-  alias Scoria.Workflows.Resume
-
   alias ScoriaWeb.OperatorSurface
 
   alias ScoriaWeb.{
-    ApprovalInboxComponent,
     CitationEvidenceComponent,
-    ConnectorDetailDrawerComponent,
-    IncidentEvidenceComponent,
-    RuntimeDetailDrawerComponent
+    IncidentEvidenceComponent
   }
 
   def mount(params, session, socket) do
@@ -33,17 +25,6 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:token_buffers, %{})
       |> assign(:token_previews, %{})
       |> assign(:token_timers, %{})
-      |> assign(:active_approval, nil)
-      |> assign(:highlighted_approval_id, nil)
-      |> assign(:approval_inbox, [])
-      |> assign(:connector_fleet, [])
-      |> assign(:connector_drawer, nil)
-      |> assign(:runtimes, [])
-      |> assign(:runtime_drawer, nil)
-      |> assign(
-        :actor_id,
-        session["actor_id"] || session["user_id"] || session["session_id"] || "operator"
-      )
       |> assign(:budget_state, nil)
       |> assign(:incident_evidence, nil)
       |> assign(:trace_records, %{})
@@ -52,22 +33,18 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:runtime_query, Map.get(params, "runtime"))
       |> assign(:review_candidate, load_review_candidate(Map.get(params, "review_candidate_id")))
       |> assign(:tenant_id, tenant_id)
+      |> load_summary()
       |> stream(:traces, [])
 
     socket =
       if connected?(socket) do
         Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
-        Phoenix.PubSub.subscribe(Scoria.PubSub, "mcp:runtimes:#{tenant_id}")
         hydrate_traces(socket, tenant_id)
       else
         socket
       end
 
-    {:ok, socket |> load_operator_surface() |> maybe_seed_active_approval()}
-  end
-
-  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, socket) do
-    {:noreply, load_operator_surface(socket)}
+    {:ok, socket}
   end
 
   def handle_info({:new_trace, trace}, socket) do
@@ -104,43 +81,9 @@ defmodule ScoriaWeb.OrchestratorLive do
     {:noreply, flush_token_preview(socket, span_id)}
   end
 
-  def handle_info({:approval_decided, approval_id, _status}, socket) do
-    socket =
-      socket
-      |> maybe_clear_active_approval(approval_id)
-      |> maybe_clear_highlighted_approval(approval_id)
-      |> load_operator_surface()
-
-    {:noreply, socket}
-  end
-
-  def handle_info({:hitl_request, projection}, socket) do
-    socket = load_operator_surface(socket)
-
-    socket =
-      if is_nil(socket.assigns.active_approval) or
-           approval_matches_focus?(projection, socket.assigns.runtime_query) do
-        socket
-        |> assign(:active_approval, projection)
-        |> assign(:highlighted_approval_id, nil)
-      else
-        assign(socket, :highlighted_approval_id, projection.id)
-      end
-
-    {:noreply, socket}
-  end
-
-  def handle_event("approve", _, socket) do
-    {:noreply, record_approval_decision(socket, "approved")}
-  end
-
-  def handle_event("reject", _, socket) do
-    {:noreply, record_approval_decision(socket, "rejected")}
-  end
-
-  def handle_event("dismiss_approval", _, socket) do
-    {:noreply, assign(socket, :active_approval, nil)}
-  end
+  # Approvals/connectors/runtimes moved to their own routed pages; ignore their
+  # broadcasts here so the live trace stream keeps working.
+  def handle_info(_message, socket), do: {:noreply, socket}
 
   def handle_event("load_metadata", %{"id" => trace_id}, socket) do
     {:noreply,
@@ -148,23 +91,6 @@ defmodule ScoriaWeb.OrchestratorLive do
        # Fetch deep trace metadata (simulated here)
        {:ok, %{trace_metadata: %{id: trace_id, deep_data: "loaded lazily"}}}
      end)}
-  end
-
-  def handle_event("open_connector_drawer", %{"id" => connector_id}, socket) do
-    {:noreply, assign(socket, :connector_drawer, OperatorSurface.connector_drawer(connector_id))}
-  end
-
-  def handle_event("close_connector_drawer", _, socket) do
-    {:noreply, assign(socket, :connector_drawer, nil)}
-  end
-
-  def handle_event("open_runtime_drawer", %{"id" => id}, socket) do
-    runtime = Enum.find(socket.assigns.runtimes, &(&1.id == id))
-    {:noreply, assign(socket, :runtime_drawer, runtime)}
-  end
-
-  def handle_event("close_runtime_drawer", _, socket) do
-    {:noreply, assign(socket, :runtime_drawer, nil)}
   end
 
   def handle_event("load_retrieval_evidence", %{"id" => trace_id}, socket) do
@@ -216,13 +142,13 @@ defmodule ScoriaWeb.OrchestratorLive do
         </div>
 
         <div class="grid gap-4 md:grid-cols-2 mb-6">
-          <a href="#approvals-section" class="scoria-taskcard">
+          <.link navigate={(assigns[:scoria_base] || "") <> "/approvals"} class="scoria-taskcard">
             <div class="scoria-taskcard__title">
               <span>Approve pending tool calls</span>
-              <span class={["scoria-badge", "scoria-badge--bare", (if @approval_inbox == [], do: "scoria-badge--neutral", else: "scoria-badge--warn")]}><%= length(@approval_inbox) %></span>
+              <span class={["scoria-badge", "scoria-badge--bare", (if @approval_count == 0, do: "scoria-badge--neutral", else: "scoria-badge--warn")]}><%= @approval_count %></span>
             </div>
             <p class="scoria-taskcard__desc">Review and approve or deny operator-gated tool calls.</p>
-          </a>
+          </.link>
           <.link navigate={(assigns[:scoria_base] || "") <> "/reviews"} class="scoria-taskcard">
             <div class="scoria-taskcard__title"><span>Review flagged traces</span></div>
             <p class="scoria-taskcard__desc">Triage low-quality or policy-flagged runs and promote them to datasets.</p>
@@ -262,83 +188,27 @@ defmodule ScoriaWeb.OrchestratorLive do
           </div>
         </section>
 
-        <div id="approvals-section" class="mb-6 grid gap-6 lg:grid-cols-2">
-          <%= if approval_inbox_component?() do %>
-            <ApprovalInboxComponent.render
-              approvals={@approval_inbox}
-              highlight_approval_id={@highlighted_approval_id}
-            />
-          <% else %>
-            <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-              <p class="text-xs uppercase tracking-[0.24em] text-stone-500">approvals</p>
-              <h2 class="text-lg font-semibold text-stone-900">Approval inbox</h2>
-            </section>
-          <% end %>
-
-          <div class="space-y-6">
-            <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-xs uppercase tracking-[0.24em] text-stone-500">external runtimes</p>
-                  <h2 class="text-lg font-semibold text-stone-900">Runtime posture</h2>
-                </div>
-              </div>
-
-              <div class="mt-4 space-y-3">
-                <article :for={runtime <- @runtimes} class="rounded-xl border border-stone-200 bg-stone-50 p-3 flex justify-between items-start">
-                  <div>
-                    <p class="text-sm font-semibold text-stone-900 truncate max-w-[12rem]"><%= runtime.id %></p>
-                    <p class="text-xs text-stone-500 mt-1">
-                      <span class={"inline-block w-2 h-2 rounded-full mr-1 #{if runtime.status == "online", do: "bg-emerald-500", else: "bg-stone-300"}"}></span>
-                      <%= runtime.status %>
-                    </p>
-                  </div>
-                  <button phx-click="open_runtime_drawer" phx-value-id={runtime.id} class="text-xs font-medium text-blue-700 underline">
-                    Details
-                  </button>
-                </article>
-              </div>
-            </section>
-
-            <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-xs uppercase tracking-[0.24em] text-stone-500">connector fleet</p>
-                  <h2 class="text-lg font-semibold text-stone-900">Connector posture</h2>
-                </div>
-              </div>
-
-              <div class="mt-4 space-y-3">
-                <article :for={connector <- @connector_fleet} class="rounded-xl border border-stone-200 bg-stone-50 p-3">
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
-                      <p class="text-sm font-semibold text-stone-900"><%= connector.connector_label %></p>
-                      <p class="mt-1 text-xs text-stone-600">
-                        <%= connector.health_state %> · refresh <%= connector.last_refresh_status %>
-                      </p>
-                    </div>
-                    <button phx-click="open_connector_drawer" phx-value-id={connector.connector_id} class="text-xs font-medium text-blue-700 underline">
-                      Open drawer
-                    </button>
-                  </div>
-
-                  <div class="mt-3 flex flex-wrap gap-3 text-xs text-stone-600">
-                    <span>approvals <%= connector.pending_approval_count %></span>
-                    <span>pending tools <%= connector.pending_local_tool_count %></span>
-                    <span>auth <%= connector.auth_provenance.status %></span>
-                  </div>
-                </article>
-              </div>
-            </section>
-          </div>
+        <div id="ops-summary" class="mb-6 grid gap-4 sm:grid-cols-3">
+          <.link navigate={(assigns[:scoria_base] || "") <> "/approvals"} class="scoria-taskcard">
+            <p class="text-xs uppercase tracking-[0.24em] text-stone-500">Approvals</p>
+            <p class="mt-2 text-2xl font-semibold text-stone-900"><%= @approval_count %></p>
+            <p class="mt-1 text-xs text-stone-600">pending decisions →</p>
+          </.link>
+          <.link navigate={(assigns[:scoria_base] || "") <> "/connectors"} class="scoria-taskcard">
+            <p class="text-xs uppercase tracking-[0.24em] text-stone-500">Connectors</p>
+            <p class="mt-2 text-2xl font-semibold text-stone-900"><%= @fleet_summary.runtimes_online %>/<%= @fleet_summary.runtimes_total %></p>
+            <p class="mt-1 text-xs text-stone-600">
+              runtimes online · <%= @fleet_summary.connectors_degraded %> connector(s) degraded →
+            </p>
+          </.link>
+          <.link navigate={(assigns[:scoria_base] || "") <> "/incidents"} class="scoria-taskcard">
+            <p class="text-xs uppercase tracking-[0.24em] text-stone-500">Incidents</p>
+            <p class="mt-2 text-2xl font-semibold text-stone-900"><%= @incidents_summary.open %></p>
+            <p class="mt-1 text-xs text-stone-600">
+              open · <%= @incidents_summary.page %> paging →
+            </p>
+          </.link>
         </div>
-
-        <%= if runtime_drawer_component?() do %>
-          <RuntimeDetailDrawerComponent.render drawer={@runtime_drawer} />
-        <% end %>
-        <%= if connector_drawer_component?() do %>
-          <ConnectorDetailDrawerComponent.render drawer={@connector_drawer} />
-        <% end %>
 
         <div id="traces-list" phx-update="stream" class="space-y-4">
           <div :for={{id, trace} <- @streams.traces} id={id} class="bg-white p-4 rounded shadow">
@@ -425,46 +295,6 @@ defmodule ScoriaWeb.OrchestratorLive do
           </div>
         <% end %>
       </div>
-
-      <%= if @active_approval do %>
-        <div id="approval-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div class="bg-white p-6 rounded shadow-lg max-w-md w-full">
-            <h2 class="text-xl font-bold mb-4">Approval Required</h2>
-            <p class="mb-2"><strong>Tool:</strong> <%= @active_approval[:tool_name] %></p>
-            <p :if={@active_approval[:reason]} class="mb-2 text-sm text-stone-700">
-              <strong>Reason:</strong> <%= @active_approval[:reason] %>
-            </p>
-            <p :if={@active_approval[:arguments_preview] not in [nil, %{}]} class="mb-2 text-sm text-stone-700">
-              <strong>Arguments:</strong>
-              <span class="font-mono text-xs block mt-1 whitespace-pre-wrap break-all"><%= inspect(@active_approval[:arguments_preview]) %></span>
-            </p>
-            <span
-              :if={@active_approval[:connector_label] || @active_approval[:blocker_kind] == "connector"}
-              class="inline-block mb-3 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-700"
-            >
-              <%= @active_approval[:connector_label] || "connector approval" %>
-            </span>
-            <a
-              :if={@active_approval[:workflow_run_id]}
-              href={"/workflows/#{@active_approval[:workflow_run_id]}"}
-              class="text-sm text-blue-700 underline block mb-4"
-            >
-              View workflow run
-            </a>
-            <p class="text-sm text-stone-600">
-              Record a workflow-owned decision. The approval state and audit evidence are written durably before any resume attempt.
-            </p>
-            <div class="flex justify-end gap-3 mt-6">
-              <button phx-click="dismiss_approval" class="scoria-button scoria-button--ghost">Decide later</button>
-              <button phx-click="reject" class="scoria-button scoria-button--danger">Reject decision</button>
-              <button phx-click="approve" class="scoria-button scoria-button--primary">Approve decision</button>
-            </div>
-            <p class="mt-4 text-xs text-stone-500">
-              Reject records a durable rejection and keeps the workflow paused. To continue, the run needs a new approval request or operator retry.
-            </p>
-          </div>
-        </div>
-      <% end %>
     </div>
     """
   end
@@ -532,129 +362,12 @@ defmodule ScoriaWeb.OrchestratorLive do
       socket
   end
 
-  defp record_approval_decision(socket, status) do
-    case socket.assigns.active_approval do
-      nil ->
-        socket
-
-      approval ->
-        attrs = approval_decision_attrs(socket, approval)
-
-        with {:ok, updated_approval} <- Workflows.approve(approval.id, status, attrs),
-             {:ok, updated_socket} <- maybe_resume_approval(socket, updated_approval, status) do
-          updated_socket
-          |> assign(:active_approval, nil)
-          |> load_operator_surface()
-        else
-          {:error, reason} ->
-            put_flash(socket, :error, approval_error_message(status, reason))
-        end
-    end
-  end
-
-  defp maybe_resume_approval(socket, _approval, status) when status != "approved",
-    do: {:ok, socket}
-
-  defp maybe_resume_approval(socket, approval, "approved") do
-    case approval.workflow_run_id do
-      nil -> {:ok, socket}
-      run_id -> Resume.resume_run(run_id)
-    end
-    |> case do
-      {:ok, _run} -> {:ok, socket}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp approval_decision_attrs(socket, approval) do
-    request_event = approval_request_event(approval)
-
-    %{
-      actor_id: socket.assigns.actor_id || approval.session_id || "operator",
-      tenant_id:
-        socket.assigns.tenant_id || (request_event && request_event.tenant_id) || "default",
-      trace_id: request_event && request_event.trace_id
-    }
-  end
-
-  defp approval_request_event(approval) do
-    AuditOutboxEvent
-    |> where(
-      [event],
-      event.workflow_run_id == ^approval.workflow_run_id and
-        event.event_type == "approval.requested"
-    )
-    |> where([event], fragment("?->>? = ?", event.redacted_refs, "approval_id", ^approval.id))
-    |> order_by([event], desc: event.inserted_at)
-    |> limit(1)
-    |> Repo.one()
-  end
-
   defp flash_kind_class(:error), do: "border-rose-200 bg-rose-50 text-rose-900"
   defp flash_kind_class(:info), do: "border-sky-200 bg-sky-50 text-sky-900"
   defp flash_kind_class(_kind), do: "border-stone-200 bg-stone-50 text-stone-900"
 
-  defp approval_error_message(_status, :not_pending) do
-    "This approval was already decided by another operator."
-  end
-
-  defp approval_error_message(_status, %Ecto.StaleEntryError{}) do
-    "This approval was already decided by another operator."
-  end
-
-  defp approval_error_message(status, reason) do
-    "Could not #{status} approval through workflow-owned state: #{inspect(reason)}"
-  end
-
-  defp approval_matches_focus?(_projection, query) when query in [nil, ""], do: true
-
-  defp approval_matches_focus?(projection, query) when is_binary(query) do
-    projection.session_id == query or projection.workflow_run_id == query
-  end
-
-  defp approval_matches_focus?(projection, query) when is_map(query) do
-    workflow_run_id = query["workflow_run_id"] || query[:workflow_run_id]
-    session_id = query["session_id"] || query[:session_id]
-
-    (is_binary(workflow_run_id) and projection.workflow_run_id == workflow_run_id) or
-      (is_binary(session_id) and projection.session_id == session_id)
-  end
-
-  defp approval_matches_focus?(_projection, _query), do: false
-
-  defp maybe_clear_active_approval(socket, approval_id) do
-    if socket.assigns.active_approval && socket.assigns.active_approval.id == approval_id do
-      assign(socket, :active_approval, nil)
-    else
-      socket
-    end
-  end
-
-  defp maybe_clear_highlighted_approval(socket, approval_id) do
-    if socket.assigns.highlighted_approval_id == approval_id do
-      assign(socket, :highlighted_approval_id, nil)
-    else
-      socket
-    end
-  end
-
   defp load_review_candidate(nil), do: nil
   defp load_review_candidate(candidate_id), do: Eval.get_review_candidate(candidate_id)
-
-  defp approval_inbox_component? do
-    Code.ensure_loaded?(ApprovalInboxComponent) and
-      function_exported?(ApprovalInboxComponent, :render, 1)
-  end
-
-  defp runtime_drawer_component? do
-    Code.ensure_loaded?(RuntimeDetailDrawerComponent) and
-      function_exported?(RuntimeDetailDrawerComponent, :render, 1)
-  end
-
-  defp connector_drawer_component? do
-    Code.ensure_loaded?(ConnectorDetailDrawerComponent) and
-      function_exported?(ConnectorDetailDrawerComponent, :render, 1)
-  end
 
   @doc false
   defp hydrate_traces(socket, tenant_id) do
@@ -739,25 +452,13 @@ defmodule ScoriaWeb.OrchestratorLive do
     })
   end
 
-  defp maybe_seed_active_approval(%{assigns: %{active_approval: nil}} = socket) do
-    case Enum.find(
-           socket.assigns.approval_inbox,
-           &approval_matches_focus?(&1, socket.assigns.runtime_query)
-         ) do
-      nil -> socket
-      projection -> assign(socket, :active_approval, projection)
-    end
-  end
-
-  defp maybe_seed_active_approval(socket), do: socket
-
-  defp load_operator_surface(socket) do
+  defp load_summary(socket) do
     tenant_id = socket.assigns.tenant_id
 
     socket
-    |> assign(:approval_inbox, Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id}))
-    |> assign(:connector_fleet, OperatorSurface.connector_fleet(tenant_id))
-    |> assign(:runtimes, OperatorSurface.load_runtimes(tenant_id))
+    |> assign(:approval_count, OperatorSurface.pending_approval_count(tenant_id))
+    |> assign(:fleet_summary, OperatorSurface.fleet_summary(tenant_id))
+    |> assign(:incidents_summary, OperatorSurface.incidents_summary(tenant_id))
   end
 
   defp maybe_open_trace(socket, %{id: trace_id} = header) when is_binary(trace_id) do
