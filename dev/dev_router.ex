@@ -13,11 +13,20 @@ defmodule ScoriaWeb.DevRouter do
   """
   use Phoenix.Router
 
+  import Phoenix.Controller
   import ScoriaWeb.Router
 
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
+    # Required for the real LiveView WebSocket join: protect_from_forgery stores
+    # the CSRF token in the session so the socket can verify _csrf_token on
+    # connect. Without it, every join is rejected as "session misconfigured /
+    # stale", causing an infinite redirect loop (the dashboard never settles, so
+    # the data-scoria-ready sentinel never fires). The per-test inline routers
+    # omit this because LiveViewTest bypasses the real socket CSRF check.
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
   end
 
   scope "/" do

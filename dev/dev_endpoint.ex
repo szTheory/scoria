@@ -32,9 +32,13 @@ defmodule ScoriaWeb.DevEndpoint do
     websocket: [connect_info: [session: @session_options]]
   )
 
-  # Live reload for fast local iteration. Only active when phoenix_live_reload
-  # is loaded (dev-only dep) and configured with patterns in config/dev.exs.
-  if Code.ensure_loaded?(Phoenix.LiveReloader) do
+  # Live reload is opt-in via SCORIA_DEV_LIVE_RELOAD=1. It is OFF by default
+  # because Phoenix.CodeReloader recompiling mid-request makes the connected
+  # LiveView's session token stale vs. the static render, which triggers an
+  # "unauthorized live_redirect (stale)" reload loop that prevents the
+  # data-scoria-ready sentinel from ever firing — breaking the headless
+  # screenshot harness. Manual iterators who want auto-refresh can opt in.
+  if Code.ensure_loaded?(Phoenix.LiveReloader) and System.get_env("SCORIA_DEV_LIVE_RELOAD") == "1" do
     socket("/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket)
     plug(Phoenix.LiveReloader)
     plug(Phoenix.CodeReloader)

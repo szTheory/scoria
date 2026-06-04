@@ -31,3 +31,10 @@ scoria-*.tar
 # Only priv/shots/gap_register.md is committed.
 priv/shots/**/*.png
 priv/shots/**/*.json
+
+# Dev-only Playwright harness install (priv/dev is excluded from the Hex package;
+# node_modules + lockfile are local install artifacts, not committed).
+priv/dev/node_modules/
+priv/dev/package-lock.json
+
+.env
