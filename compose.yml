@@ -1,0 +1,134 @@
+# Scoria dashboard — dev DX stack.
+#
+# Design (see .planning research / v3-docker-dx-decisions):
+#   - DB is NOT published to the host -> eliminates the cross-project 5432 clashes.
+#   - The web port is NOT fixed to 4000 (that clashes with other lib demos);
+#     reach the dashboard by name via the shared Traefik proxy at
+#     http://scoria.localhost/scoria, plus an ephemeral 127.0.0.1 fallback.
+#   - Source is bind-mounted; deps/_build/hex/mix live in named volumes so a
+#     style/source edit never re-fetches or re-compiles dependencies.
+#
+# One-time host setup (shared across all your lib demos):
+#   docker network create proxy
+#   docker compose -f docker/traefik/compose.yml up -d
+#
+# Then:  docker compose up        # http://scoria.localhost/scoria
+name: scoria_demo
+
+services:
+  db:
+    # pgvector image: the knowledge migrations create an hnsw vector index.
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: scoria_dev
+    # No ports: container-network only (reached by service name `db`).
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      MIX_ENV: dev
+      PHX_HOST: scoria.localhost
+      SCORIA_DB_HOST: db
+      SCORIA_DB_USERNAME: postgres
+      SCORIA_DB_PASSWORD: postgres
+      SCORIA_DB_NAME: scoria_dev
+      # macOS Docker Desktop doesn't propagate fs events into the VM -> polling.
+      FILE_SYSTEM_BACKEND: fs_poll
+    volumes:
+      - .:/app                 # live source
+      - deps:/app/deps         # named volumes shadow the bind mount: fast,
+      - build:/app/_build      # Linux-native, and never re-fetched on edits
+      - hex:/root/.hex
+      - mix:/root/.mix
+    ports:
+      # Ephemeral loopback fallback so the app is reachable even if Traefik is
+      # down. Can never collide (Docker picks a free host port). Find it with:
+      #   docker compose port web 4000
+      - "127.0.0.1::4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.scoria.rule=Host(`scoria.localhost`)
+      - traefik.http.services.scoria.loadbalancer.server.port=4000
+
+  # --- Screenshot/critique harness (profile-gated; excluded from `up`) --------
+  # Screenshots run in the official Playwright image (pinned to match
+  # priv/dev/package.json). It reaches the app by service name, not localhost.
+  shots:
+    image: mcr.microsoft.com/playwright:v1.60.0-noble
+    profiles: ["shots"]
+    init: true
+    shm_size: "1gb"
+    working_dir: /app/priv/dev
+    volumes:
+      - .:/app
+      - shots_node_modules:/app/priv/dev/node_modules
+    environment:
+      SHOTS_BASE_URL: http://web:4000/scoria
+    depends_on:
+      web:
+        condition: service_started
+    networks:
+      - default
+    command:
+      - sh
+      - -c
+      - "npm install --no-audit --no-fund --prefer-offline && node shots.mjs --base-url \"$$SHOTS_BASE_URL\" --out-dir \"/app/priv/shots/$$(date +%F)\""
+
+  # Critique runs in the Elixir image (ReqLLM lives here). --skip-shots reuses
+  # the PNGs the `shots` service already captured. ANTHROPIC_API_KEY only here.
+  critique:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    profiles: ["shots"]
+    working_dir: /app
+    entrypoint: []
+    volumes:
+      - .:/app
+      - deps:/app/deps
+      - build:/app/_build
+      - hex:/root/.hex
+      - mix:/root/.mix
+    environment:
+      MIX_ENV: dev
+      SCORIA_DB_HOST: db
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+    command: ["mix", "scoria.ui.shots", "--critique", "--skip-shots", "--url", "http://web:4000/scoria"]
+
+volumes:
+  pgdata:
+  deps:
+  build:
+  hex:
+  mix:
+  shots_node_modules:
+
+networks:
+  # Shared, externally-created proxy network that Traefik also joins. Create once:
+  #   docker network create proxy
+  proxy:
+    external: true
+  default:

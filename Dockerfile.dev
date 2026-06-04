@@ -1,0 +1,49 @@
+# syntax=docker/dockerfile:1
+#
+# Dev-only image for the Scoria dashboard harness. Scoria is a Hex library, so
+# this image exists purely to run the dev host harness (mix phx.server via
+# dev/DevEndpoint) and the screenshot/critique loop — never for production.
+#
+# Layer order is deliberate: copy mix.exs/mix.lock + config FIRST so the
+# dep-fetch/compile layers stay cached when only source changes. In day-to-day
+# dev the source is bind-mounted and deps/_build live in named volumes (see
+# compose.yml), so edits never re-fetch deps — this image build is just the
+# cold-start baseline.
+#
+# Pinned to .tool-versions: erlang 27.3.2 / elixir 1.19.5-otp-27.
+FROM hexpm/elixir:1.19.5-erlang-27.3.2-debian-bookworm-20250630-slim
+
+# build-essential: NIF compilation; git: hex deps from git; inotify-tools:
+# native file watching when run on a Linux host (macOS uses fs_poll, see config).
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends build-essential git inotify-tools ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+RUN mix local.hex --force && mix local.rebar --force
+
+ENV MIX_ENV=dev \
+    LANG=C.UTF-8
+
+# 1) Dependency manifests only — this layer re-runs only when deps change.
+COPY mix.exs mix.lock ./
+RUN mix deps.get
+
+# 2) Compile-time config before deps.compile (Elixir deps read config at compile time).
+COPY config config
+RUN mix deps.compile
+
+# 3) Volatile source last — editing these does NOT invalidate the layers above.
+COPY lib lib
+COPY dev dev
+COPY priv priv
+
+RUN mix compile
+
+EXPOSE 4000
+
+# Entrypoint sets up the DB (idempotent), prints the URL banner, and serves.
+COPY docker/dev-entrypoint.sh /usr/local/bin/dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/dev-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/dev-entrypoint.sh"]

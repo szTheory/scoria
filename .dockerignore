@@ -1,0 +1,25 @@
+# Build context excludes — keep the image lean and the cache stable.
+# Host-arch artifacts MUST be excluded (they are Linux-incompatible and would
+# clobber the cleanly-compiled image layers / cause NIF arch mismatches).
+_build/
+deps/
+.git/
+.elixir_ls/
+cover/
+doc/
+tmp/
+*.ez
+erl_crash.dump
+.DS_Store
+scoria-*.tar
+
+# Dev-only / not needed in the image
+priv/dev/node_modules/
+priv/shots/
+.planning/
+examples/
+prompts/
+.env
+
+# priv/static/scoria is rebuilt in-container by `mix scoria.assets.build`
+priv/static/scoria/

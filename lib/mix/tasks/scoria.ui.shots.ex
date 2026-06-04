@@ -58,6 +58,7 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
   @switches [
     critique: :boolean,
     render_only: :boolean,
+    skip_shots: :boolean,
     tenant_empty: :string,
     tenant_seeded: :string,
     url: :string,
@@ -97,8 +98,12 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
         render_gap_register(out_dir, @screens)
 
       true ->
-        # Screenshot pass — always runs; does NOT start the Elixir app (Node only)
-        run_screenshot_pass(opts, out_dir)
+        # Screenshot pass — runs unless --skip-shots (e.g. the dockerized
+        # critique service reuses PNGs already captured by the `shots` service,
+        # since the Elixir image has no Node/Playwright). Node only; no app.
+        unless opts[:skip_shots] do
+          run_screenshot_pass(opts, out_dir)
+        end
 
         # Critique pass — only with --critique flag; starts the app for ReqLLM
         if opts[:critique] do
