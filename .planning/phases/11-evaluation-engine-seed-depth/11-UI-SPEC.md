@@ -5,6 +5,8 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-06-04
+revised: 2026-06-04
+revision_reason: "Checker fix B — explicit exception declarations for 5th font size (11px badge) and out-of-standard-set spacing tokens (12px, 96px). No design decisions changed."
 ---
 
 # Phase 11 — UI Design Contract: Evaluation Engine + Seed Depth
@@ -17,6 +19,12 @@ the 9-dimension critique rubric, `dev_seed.exs` depth, and a baseline audit. The
 UI surface is the harness output format (CLI progress, per-screen JSON findings, gap-register
 report). No new interactive dashboard screens are added in this phase; the existing dashboard
 screens are the subjects of the harness, not changed by it.
+
+> **AUDIT PHASE NOTE:** This spec documents the *existing* ScoriaWeb token system so the
+> harness can capture and critique it. All token values below reflect live codebase state
+> (`assets/css/02-tokens.css`). Removing real tokens to satisfy a greenfield counting rule
+> would produce an inaccurate contract. Checker Fix option B applies throughout: real values
+> are retained and explicit exception declarations with codebase-source citations are added.
 
 ---
 
@@ -41,19 +49,52 @@ Source: detected from `assets/css/02-tokens.css`, `assets/css/04-components.css`
 The project uses a 4px-base scale declared as `--scoria-space-{n}` tokens. The 8-point
 grid is the enforced rule. All new surfaces in this phase must bind to these tokens.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--scoria-space-1` | 4px | Icon gaps, badge internal padding, inline tight spacing |
-| `--scoria-space-2` | 8px | Compact element spacing, button sm padding y |
-| `--scoria-space-3` | 12px | Nav item padding, table cell padding |
-| `--scoria-space-4` | 16px | Default element spacing, panel padding, button padding x |
-| `--scoria-space-5` | 24px | Section padding, modal padding, pagehead margin-bottom |
-| `--scoria-space-6` | 32px | Main content area padding |
-| `--scoria-space-7` | 48px | Empty state vertical padding |
-| `--scoria-space-8` | 64px | Major section breaks |
-| `--scoria-space-9` | 96px | Page-level maximum breathing room |
+**Standard set (8-point grid multiples):** 4, 8, 16, 24, 32, 48, 64px.
 
-Exceptions:
+| Token | Value | In Standard Set | Usage |
+|-------|-------|-----------------|-------|
+| `--scoria-space-1` | 4px | yes | Icon gaps, badge internal padding, inline tight spacing |
+| `--scoria-space-2` | 8px | yes | Compact element spacing, button sm padding y |
+| `--scoria-space-3` | 12px | **exception — see below** | Nav item padding, table cell padding |
+| `--scoria-space-4` | 16px | yes | Default element spacing, panel padding, button padding x |
+| `--scoria-space-5` | 24px | yes | Section padding, modal padding, pagehead margin-bottom |
+| `--scoria-space-6` | 32px | yes | Main content area padding |
+| `--scoria-space-7` | 48px | yes | Empty state vertical padding |
+| `--scoria-space-8` | 64px | yes | Major section breaks |
+| `--scoria-space-9` | 96px | **exception — see below** | Page-level maximum breathing room |
+
+### Exception: `--scoria-space-3` = 12px
+
+**EXPLICIT EXCEPTION — pre-existing codebase token.**
+
+- Source: `assets/css/02-tokens.css:53`
+- 12px is a valid multiple of 4 but sits between the standard 8px and 16px steps.
+- This token is **heavily used** across the codebase: gap-3, p-3, px-3, py-3, space-y-3
+  utility classes are generated from it (`assets/css/06-utilities.css:71–97`) and approximately
+  15+ component-level rules in `assets/css/04-components.css` depend on it directly.
+- **Rationale for retention:** Removing or consolidating 12px to 8px or 16px would break
+  existing nav item padding, table cell density, and numerous component rules without any
+  visual benefit in this phase. This spec captures the real system; changing the token is out
+  of scope for Phase 11.
+- **DS gap candidate:** Consolidating `--scoria-space-3` (12px) → 8px or 16px is a
+  candidate item for the Phase 11 baseline gap register (DS gap). It is NOT changed in
+  this phase.
+
+### Exception: `--scoria-space-9` = 96px
+
+**EXPLICIT EXCEPTION — pre-existing codebase token.**
+
+- Source: `assets/css/02-tokens.css:59`
+- 96px is a valid multiple of 4 but beyond the standard 7-step set's ceiling of 64px.
+- This token sits at the top of the existing 9-step 4px-base scale and is used for
+  page-level maximum breathing room.
+- **Rationale for retention:** The codebase uses a 9-step scale, not a 7-step scale. Dropping
+  the ceiling token from the spec would make the contract inaccurate relative to the live system
+  the harness is auditing.
+- **DS gap candidate:** If future phases consolidate to a strict 7-step scale, this token
+  is the logical candidate for removal. That is a Phase 11 audit finding, not a Phase 11 change.
+
+Other exceptions:
 - Touch targets for interactive controls: minimum 44px tall (WCAG 2.5.5) — use padding to
   achieve this without breaking the token grid.
 - The `mix scoria.ui.shots` CLI is a terminal tool; the spacing scale applies only to
@@ -67,6 +108,8 @@ Source: `assets/css/02-tokens.css` §8.3.
 
 All sizes are token-bound. Components reference `--scoria-fs-*` and `--scoria-lh-*`.
 
+**Primary role scale (4 sizes) + 1 documented legacy exception (see below).**
+
 | Role | Token | Size | Weight | Line Height | Font |
 |------|-------|------|--------|-------------|------|
 | Body | `--scoria-fs-body` | 14px | 400 (regular) | 1.5 (`--scoria-lh-body`) | IBM Plex Sans |
@@ -78,6 +121,26 @@ All sizes are token-bound. Components reference `--scoria-fs-*` and `--scoria-lh
 
 **Exactly 2 weights in use:** 400 (regular) for body/prose, 600 (semibold) for headings,
 labels, badges, and CTAs.
+
+### Exception: `--scoria-fs-badge` = 11px (5th declared size)
+
+**EXPLICIT EXCEPTION — pre-existing codebase token, retained for audit accuracy.**
+
+- Source: `assets/css/02-tokens.css:78`
+- Active use: `assets/css/04-components.css:70, 105, 140, 207` — badge component rules
+  across all tone variants (pass, warn, fail, info, trace, brand).
+- **Why this is not a 4th primary size:** The effective role scale for new surfaces has
+  4 primary sizes: 12px (label), 14px (body), 18px (panel), 30px (display/metric). The
+  badge token is a legacy eyebrow size that predates the 12px label token. It sits 1px
+  below label and is visually differentiated from it by weight 600 + letter-spacing
+  (both declared in `.scoria-badge`). In practice it reads as a distinct component style,
+  not a fifth typographic level.
+- **Rationale for retention:** The `--scoria-fs-badge` token is in live use across all
+  badge tone variants. Removing it from this spec would make the contract inaccurate for
+  the harness audit. The badge component is a subject of the harness, not a new surface.
+- **DS gap candidate:** Consolidating `--scoria-fs-badge` (11px) → 12px (`--scoria-fs-label`)
+  is a candidate fix for the Phase 11 baseline gap register (DS gap). The token is NOT
+  changed in this phase.
 
 Source: `assets/css/02-tokens.css` §6, `assets/css/04-components.css`.
 
