@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: executing
-last_updated: "2026-06-04T16:37:52.394Z"
+last_updated: "2026-06-04T16:43:36.264Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 15
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
   percent: 7
 ---
 
@@ -26,11 +26,11 @@ See: `.planning/PROJECT.md` (updated 2026-06-03 after v3.0 Control Room mileston
 ## Current Position
 
 Phase: 12 (design-system-component-layer) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-06-04
 
-Progress: [████████░░] 80%
+Progress: [█████████░] 90%
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
@@ -70,6 +70,8 @@ Progress: [████████░░] 80%
 - [Phase ?]: DS-06 ratchet uses File.exists? guard so mix test stays green before plan 12-05 commits the baseline
 - [Phase ?]: ui.ex-zero assertion tagged :ui_ex_zero excluded until plan 12-02 sweeps flash_tone_class
 - [Phase ?]: Use Map.get/3 in template instead of :default in slot attr declarations
+- [Phase ?]: empty_slot is the slot name in notebook/1 to avoid conflict with the empty boolean attr
+- [Phase ?]: JS.hide in toast/1 omits to: option — targets self (Pitfall 3 from RESEARCH.md; avoids id interpolation in component)
 
 ## Deferred Items
 
@@ -86,6 +88,7 @@ Progress: [████████░░] 80%
 | Phase 12-design-system-component-layer P01 | 3min | 2 tasks | 4 files |
 | Phase 12-design-system-component-layer P02 | 8min | 2 tasks | 2 files |
 | Phase 12-design-system-component-layer P03 | 10min | 2 tasks | 2 files |
+| Phase 12 P04 | 3min | 2 tasks | 3 files |
 
 ## Operator Next Steps
 
