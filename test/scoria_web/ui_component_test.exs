@@ -283,15 +283,15 @@ defmodule ScoriaWeb.UIComponentTest do
       assert html =~ "scoria-field__help"
     end
 
-    test "caller inner_block input is rendered inside the field wrapper" do
+    test "caller inner_block content is rendered inside the field wrapper" do
       html =
         render_component(&ScoriaWeb.UI.field/1,
           id: "myinput",
           label: "Name",
-          inner_block: slot_block(~s(<input id="myinput" class="scoria-input" />))
+          inner_block: slot_block("my-inner-content")
         )
 
-      assert html =~ ~s(id="myinput")
+      assert html =~ "my-inner-content"
       assert html =~ "scoria-field"
     end
   end

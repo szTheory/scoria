@@ -279,6 +279,60 @@ defmodule ScoriaWeb.UI do
   end
 
   # ---------------------------------------------------------------------------
+  # DS-03: <.field> and <.form_section> — form control wrappers (plan 12-03)
+  # ---------------------------------------------------------------------------
+
+  attr(:id, :string, required: true)
+  attr(:label, :string, required: true)
+  attr(:help, :string, default: nil)
+  attr(:error, :string, default: nil)
+  attr(:required, :boolean, default: false)
+  attr(:rest, :global)
+  slot(:inner_block, required: true)
+
+  @doc "Form field wrapper (DS-03).
+  Renders a label + caller-provided input slot + optional help text + validation error.
+  Error is surfaced via an exclamation icon + text (never error by color alone).
+  Required fields include an aria-hidden asterisk and a visually-hidden '(required)' span.
+  The caller provides the actual input/select/textarea element via the inner_block slot."
+  def field(assigns) do
+    ~H"""
+    <div class="scoria-field" {@rest}>
+      <label for={@id} class="scoria-field__label">
+        {@label}
+        <span :if={@required} aria-hidden="true" style="color: var(--scoria-danger-action)">*</span>
+        <span :if={@required} class="sr-only">(required)</span>
+      </label>
+      {render_slot(@inner_block)}
+      <p :if={@help} class="scoria-field__help">{@help}</p>
+      <p :if={@error} class="scoria-field__error">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" fill="currentColor">
+          <path fill-rule="evenodd" d="M6 1a5 5 0 1 0 0 10A5 5 0 0 0 6 1zM5.25 4a.75.75 0 0 1 1.5 0v2.25a.75.75 0 0 1-1.5 0V4zm.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5z" clip-rule="evenodd" />
+        </svg>
+        {@error}
+      </p>
+    </div>
+    """
+  end
+
+  attr(:title, :string, required: true)
+  attr(:description, :string, default: nil)
+  attr(:rest, :global)
+  slot(:inner_block, required: true)
+
+  @doc "Form section group (DS-03).
+  Groups related <.field> components under a section heading with an optional description."
+  def form_section(assigns) do
+    ~H"""
+    <section class="scoria-form-section" {@rest}>
+      <h3 class="scoria-form-section__title">{@title}</h3>
+      <p :if={@description} class="scoria-form-section__description">{@description}</p>
+      {render_slot(@inner_block)}
+    </section>
+    """
+  end
+
+  # ---------------------------------------------------------------------------
   # DS-01: <.table> — sortable, density-aware data table (plan 12-02)
   # ---------------------------------------------------------------------------
 
