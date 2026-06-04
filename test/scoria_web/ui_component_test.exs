@@ -89,6 +89,10 @@ defmodule ScoriaWeb.UIComponentTest do
   # DS-02: <.modal> and <.drawer> (plan 12-03)
   # ---------------------------------------------------------------------------
 
+  # Helper: a minimal slot inner_block entry that renders a static string
+  defp slot_block(content),
+    do: [%{inner_block: fn _changed, _arg -> content end, __slot__: :inner_block}]
+
   describe "modal/1" do
     test "show: true renders role=dialog and aria-modal=true" do
       html =
@@ -96,7 +100,7 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-modal",
           show: true,
           on_dismiss: "close_modal",
-          inner_block: [%{inner_block: "Modal content"}]
+          inner_block: slot_block("Modal content")
         )
 
       assert html =~ ~s(role="dialog")
@@ -109,7 +113,7 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-modal",
           show: true,
           on_dismiss: "close_modal",
-          inner_block: [%{inner_block: "Modal content"}]
+          inner_block: slot_block("Modal content")
         )
 
       assert html =~ ~s(aria-label="Close dialog")
@@ -121,7 +125,7 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-modal",
           show: false,
           on_dismiss: "close_modal",
-          inner_block: [%{inner_block: "Modal content"}]
+          inner_block: slot_block("Modal content")
         )
 
       refute html =~ "scoria-modal__panel"
@@ -134,7 +138,7 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-modal",
           show: true,
           on_dismiss: "my_dismiss_event",
-          inner_block: [%{inner_block: "Modal content"}]
+          inner_block: slot_block("Modal content")
         )
 
       assert html =~ ~s(phx-window-keydown="my_dismiss_event")
@@ -147,8 +151,8 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-modal",
           show: true,
           on_dismiss: "close_modal",
-          inner_block: [%{inner_block: "Body"}],
-          footer: [%{inner_block: "Save button"}]
+          inner_block: slot_block("Body"),
+          footer: slot_block("Save button")
         )
 
       assert html =~ "scoria-modal__footer"
@@ -161,7 +165,7 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-modal",
           show: true,
           on_dismiss: "close_modal",
-          inner_block: [%{inner_block: "Body"}]
+          inner_block: slot_block("Body")
         )
 
       refute html =~ "scoria-modal__footer"
@@ -175,7 +179,7 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-drawer",
           show: true,
           on_dismiss: "close_drawer",
-          inner_block: [%{inner_block: "Drawer content"}]
+          inner_block: slot_block("Drawer content")
         )
 
       assert html =~ "Close drawer"
@@ -187,7 +191,7 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-drawer",
           show: true,
           on_dismiss: "close_drawer",
-          inner_block: [%{inner_block: "Drawer content"}]
+          inner_block: slot_block("Drawer content")
         )
 
       assert html =~ ~s(role="dialog")
@@ -200,7 +204,7 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-drawer",
           show: false,
           on_dismiss: "close_drawer",
-          inner_block: [%{inner_block: "Drawer content"}]
+          inner_block: slot_block("Drawer content")
         )
 
       refute html =~ "scoria-drawer"
@@ -213,7 +217,7 @@ defmodule ScoriaWeb.UIComponentTest do
           id: "test-drawer",
           show: true,
           on_dismiss: "my_dismiss_event",
-          inner_block: [%{inner_block: "Drawer content"}]
+          inner_block: slot_block("Drawer content")
         )
 
       assert html =~ ~s(phx-window-keydown="my_dismiss_event")
