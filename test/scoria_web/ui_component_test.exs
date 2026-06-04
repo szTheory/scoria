@@ -517,6 +517,52 @@ defmodule ScoriaWeb.UIComponentTest do
   end
 
   # ---------------------------------------------------------------------------
+  # DS-04 proof adapter: RemoteInvocationEvidenceComponent (plan 12-05)
+  # ---------------------------------------------------------------------------
+
+  describe "RemoteInvocationEvidenceComponent/1 notebook adapter" do
+    test "renders scoria-notebook shell and Remote tab label" do
+      html =
+        render_component(
+          &ScoriaWeb.RemoteInvocationEvidenceComponent.render/1,
+          evidence: %{
+            approvals: [
+              %{id: "ap-1", tool_name: "test_tool", status: "approved"}
+            ]
+          }
+        )
+
+      assert html =~ "scoria-notebook"
+      assert html =~ "Remote"
+    end
+
+    test "renders approval tool_name inside the notebook tab" do
+      html =
+        render_component(
+          &ScoriaWeb.RemoteInvocationEvidenceComponent.render/1,
+          evidence: %{
+            approvals: [
+              %{id: "ap-2", tool_name: "my_tool", status: "pending"}
+            ]
+          }
+        )
+
+      assert html =~ "my_tool"
+      assert html =~ "pending"
+    end
+
+    test "renders empty approvals list without errors" do
+      html =
+        render_component(
+          &ScoriaWeb.RemoteInvocationEvidenceComponent.render/1,
+          evidence: %{approvals: []}
+        )
+
+      assert html =~ "scoria-notebook"
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # DS-01: <.table> (plan 12-02)
   # ---------------------------------------------------------------------------
 
