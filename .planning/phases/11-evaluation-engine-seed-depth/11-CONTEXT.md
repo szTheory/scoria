@@ -70,7 +70,7 @@ not changed by it. Fixing the design system itself is Phases 12–17.
 - **D-11:** Empty vs populated capture uses **dual-tenant navigation** — the harness navigates
   twice per screen with a different `?tenant=` query param (already wired on every screen):
   a seeded tenant for `populated`, an empty tenant for `empty`. **No DB reset** between captures.
-- **D-12:** Refactoring overlays to `live_action` URL params was **rejected** as pre-phase scope
+- **D-12 [informational]:** Refactoring overlays to `live_action` URL params was **rejected** as pre-phase scope
   creep — it touches 5+ LiveViews and belongs (if ever) in the Phase 12 design-system contract,
   not here.
 
