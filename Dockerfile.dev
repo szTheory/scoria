@@ -11,7 +11,7 @@
 # cold-start baseline.
 #
 # Pinned to .tool-versions: erlang 27.3.2 / elixir 1.19.5-otp-27.
-FROM hexpm/elixir:1.19.5-erlang-27.3.2-debian-bookworm-20250630-slim
+FROM hexpm/elixir:1.19.5-erlang-27.3.2-debian-bookworm-20260518-slim
 
 # build-essential: NIF compilation; git: hex deps from git; inotify-tools:
 # native file watching when run on a Linux host (macOS uses fs_poll, see config).
