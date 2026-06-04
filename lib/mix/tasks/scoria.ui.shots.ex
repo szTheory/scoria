@@ -57,10 +57,24 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
 
   @switches [
     critique: :boolean,
+    render_only: :boolean,
     tenant_empty: :string,
     tenant_seeded: :string,
     url: :string,
     release_id: :string
+  ]
+
+  # Documented baseline gaps the visual critique cannot see (flash banners only
+  # render when a flash is active, so they never appear in the captured shots).
+  # The plan requires the baseline register to surface flash_tone_class as a
+  # ranked consistency finding (UI-SPEC Implementation Notes 6 / RESEARCH
+  # Pitfall 4). NOT fixed in Phase 11 — scope fence, Phase 12 / DS-05.
+  # Shape matches the LLM-derived entries: {screen, dimension, score, findings}.
+  @known_baseline_issues [
+    {"all-screens (flash)", "consistency", 2,
+     [
+       "flash_tone_class/1 (lib/scoria_web/ui.ex) renders flash banners with raw palette classes (border-rose-200 bg-rose-50 text-rose-900) instead of semantic design-system tokens. Not captured visually (no active flash in the baseline shots). Known DS-05 gap — fix in Phase 12, not Phase 11."
+     ]}
   ]
 
   @impl Mix.Task
@@ -76,12 +90,20 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
 
     File.mkdir_p!(out_dir)
 
-    # Screenshot pass — always runs; does NOT start the Elixir app (Node only)
-    run_screenshot_pass(opts, out_dir)
+    cond do
+      # Re-render the gap register from already-written per-screen findings JSON
+      # — no screenshots, no LLM calls (the render is pure over existing files).
+      opts[:render_only] ->
+        render_gap_register(out_dir, @screens)
 
-    # Critique pass — only with --critique flag; starts the app for ReqLLM
-    if opts[:critique] do
-      run_critique_pass(opts, out_dir)
+      true ->
+        # Screenshot pass — always runs; does NOT start the Elixir app (Node only)
+        run_screenshot_pass(opts, out_dir)
+
+        # Critique pass — only with --critique flag; starts the app for ReqLLM
+        if opts[:critique] do
+          run_critique_pass(opts, out_dir)
+        end
     end
   end
 
@@ -216,7 +238,7 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
     screens_audited = length(screen_findings)
 
     # Flatten all {screen, dimension, score, findings_list} entries
-    all_entries =
+    llm_entries =
       Enum.flat_map(screen_findings, fn {screen, findings_map} ->
         Enum.flat_map(findings_map, fn {dimension, dim_data} ->
           case dim_data do
@@ -229,6 +251,11 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
           end
         end)
       end)
+
+    # Merge documented baseline gaps the visual critique cannot see (e.g.
+    # flash_tone_class — flash banners aren't rendered in the shots). Required
+    # by the plan so the committed baseline honestly records them.
+    all_entries = llm_entries ++ @known_baseline_issues
 
     p0_count = Enum.count(all_entries, fn {_, _, score, _} -> score == 1 end)
     p1_count = Enum.count(all_entries, fn {_, _, score, _} -> score == 2 end)
