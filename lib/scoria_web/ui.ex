@@ -151,12 +151,23 @@ defmodule ScoriaWeb.UI do
 
   attr(:value, :string, required: true)
   attr(:copy, :string, default: nil)
+  attr(:id, :string, default: nil)
   attr(:class, :string, default: nil)
 
-  @doc "Copyable monospace identifier (run/trace/actor IDs). Uses the CopyId JS hook."
+  @doc "Copyable monospace identifier (run/trace/actor IDs). Uses the CopyId JS hook.
+
+  The DOM id must be stable across renders so LiveView/morphdom patches the existing
+  element in place rather than tearing down and re-mounting the CopyId hook. When no
+  caller-supplied id is given it is derived deterministically from the displayed value;
+  prefer passing an explicit id where two identical values can appear on one page."
   def id(assigns) do
+    assigns =
+      assign_new(assigns, :id, fn ->
+        "id-" <> Integer.to_string(:erlang.phash2(assigns.value))
+      end)
+
     ~H"""
-    <span class={["scoria-id", @class]} phx-hook="CopyId" id={"id-#{System.unique_integer([:positive])}"} data-copy={@copy || @value} title="Click to copy">
+    <span class={["scoria-id", @class]} phx-hook="CopyId" id={@id} data-copy={@copy || @value} title="Click to copy">
       {@value}
     </span>
     """
@@ -459,9 +470,21 @@ defmodule ScoriaWeb.UI do
   phx-click={@on_tab_change} phx-value-tab={key}. When @empty is true, the :empty_slot
   body is rendered instead of the tab bar and panel."
   def notebook(assigns) do
-    # Default to first tab when selected_tab is nil
+    # WR-05: a notebook with more than one tab but no on_tab_change handler would
+    # render multiple inert (phx-click=nil) controls that look clickable but cannot
+    # switch panels. Fail loudly at render rather than ship a silently-broken control.
+    if length(assigns.tab) > 1 and is_nil(assigns.on_tab_change) do
+      raise ArgumentError,
+            "<.notebook> with more than one tab requires on_tab_change; " <>
+              "got #{length(assigns.tab)} tabs and on_tab_change=nil"
+    end
+
+    # WR-04: select the first tab whenever selected_tab is nil OR points at a key
+    # that no current <:tab> exposes (stale value after the tab set changed, or a
+    # typo). Without this the tablist renders with every tab aria-selected=false and
+    # the panel comprehension yields nothing, so the tabpanel body silently vanishes.
     assigns =
-      if assigns.selected_tab == nil and assigns.tab != [] do
+      if assigns.tab != [] and not Enum.any?(assigns.tab, &(&1.key == assigns.selected_tab)) do
         assign(assigns, :selected_tab, hd(assigns.tab).key)
       else
         assigns
@@ -479,17 +502,32 @@ defmodule ScoriaWeb.UI do
         </div>
       <% else %>
         <nav class="scoria-notebook__tabbar" role="tablist">
-          <button
-            :for={tab <- @tab}
-            role="tab"
-            id={"#{@id}-tab-#{tab.key}"}
-            aria-selected={to_string(tab.key == @selected_tab)}
-            class={["scoria-notebook__tab", tab.key == @selected_tab && "scoria-notebook__tab--active"]}
-            phx-click={@on_tab_change}
-            phx-value-tab={tab.key}
-          >
-            {tab.label}
-          </button>
+          <%= for tab <- @tab do %>
+            <%= if @on_tab_change do %>
+              <button
+                role="tab"
+                id={"#{@id}-tab-#{tab.key}"}
+                aria-selected={to_string(tab.key == @selected_tab)}
+                class={["scoria-notebook__tab", tab.key == @selected_tab && "scoria-notebook__tab--active"]}
+                phx-click={@on_tab_change}
+                phx-value-tab={tab.key}
+              >
+                {tab.label}
+              </button>
+            <% else %>
+              <%!-- WR-05: no on_tab_change handler (single-tab notebook); render a
+                    non-interactive span so the control does not present as a clickable
+                    button that is actually inert. --%>
+              <span
+                role="tab"
+                id={"#{@id}-tab-#{tab.key}"}
+                aria-selected={to_string(tab.key == @selected_tab)}
+                class={["scoria-notebook__tab", tab.key == @selected_tab && "scoria-notebook__tab--active"]}
+              >
+                {tab.label}
+              </span>
+            <% end %>
+          <% end %>
         </nav>
         <%= for tab <- @tab, tab.key == @selected_tab do %>
           <div
