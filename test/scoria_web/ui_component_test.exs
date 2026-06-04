@@ -86,6 +86,142 @@ defmodule ScoriaWeb.UIComponentTest do
   end
 
   # ---------------------------------------------------------------------------
+  # DS-02: <.modal> and <.drawer> (plan 12-03)
+  # ---------------------------------------------------------------------------
+
+  describe "modal/1" do
+    test "show: true renders role=dialog and aria-modal=true" do
+      html =
+        render_component(&ScoriaWeb.UI.modal/1,
+          id: "test-modal",
+          show: true,
+          on_dismiss: "close_modal",
+          inner_block: [%{inner_block: "Modal content"}]
+        )
+
+      assert html =~ ~s(role="dialog")
+      assert html =~ ~s(aria-modal="true")
+    end
+
+    test "show: true renders aria-label=Close dialog on close button" do
+      html =
+        render_component(&ScoriaWeb.UI.modal/1,
+          id: "test-modal",
+          show: true,
+          on_dismiss: "close_modal",
+          inner_block: [%{inner_block: "Modal content"}]
+        )
+
+      assert html =~ ~s(aria-label="Close dialog")
+    end
+
+    test "show: false renders nothing (no panel, no scrim)" do
+      html =
+        render_component(&ScoriaWeb.UI.modal/1,
+          id: "test-modal",
+          show: false,
+          on_dismiss: "close_modal",
+          inner_block: [%{inner_block: "Modal content"}]
+        )
+
+      refute html =~ "scoria-modal__panel"
+      refute html =~ "scoria-scrim"
+    end
+
+    test "binds phx-window-keydown and phx-key=Escape to on_dismiss" do
+      html =
+        render_component(&ScoriaWeb.UI.modal/1,
+          id: "test-modal",
+          show: true,
+          on_dismiss: "my_dismiss_event",
+          inner_block: [%{inner_block: "Modal content"}]
+        )
+
+      assert html =~ ~s(phx-window-keydown="my_dismiss_event")
+      assert html =~ ~s(phx-key="Escape")
+    end
+
+    test "footer slot rendered when provided" do
+      html =
+        render_component(&ScoriaWeb.UI.modal/1,
+          id: "test-modal",
+          show: true,
+          on_dismiss: "close_modal",
+          inner_block: [%{inner_block: "Body"}],
+          footer: [%{inner_block: "Save button"}]
+        )
+
+      assert html =~ "scoria-modal__footer"
+      assert html =~ "Save button"
+    end
+
+    test "no footer rendered when footer slot is absent" do
+      html =
+        render_component(&ScoriaWeb.UI.modal/1,
+          id: "test-modal",
+          show: true,
+          on_dismiss: "close_modal",
+          inner_block: [%{inner_block: "Body"}]
+        )
+
+      refute html =~ "scoria-modal__footer"
+    end
+  end
+
+  describe "drawer/1" do
+    test "show: true renders Close drawer button" do
+      html =
+        render_component(&ScoriaWeb.UI.drawer/1,
+          id: "test-drawer",
+          show: true,
+          on_dismiss: "close_drawer",
+          inner_block: [%{inner_block: "Drawer content"}]
+        )
+
+      assert html =~ "Close drawer"
+    end
+
+    test "show: true renders role=dialog and aria-modal=true" do
+      html =
+        render_component(&ScoriaWeb.UI.drawer/1,
+          id: "test-drawer",
+          show: true,
+          on_dismiss: "close_drawer",
+          inner_block: [%{inner_block: "Drawer content"}]
+        )
+
+      assert html =~ ~s(role="dialog")
+      assert html =~ ~s(aria-modal="true")
+    end
+
+    test "show: false renders nothing (no drawer, no scrim)" do
+      html =
+        render_component(&ScoriaWeb.UI.drawer/1,
+          id: "test-drawer",
+          show: false,
+          on_dismiss: "close_drawer",
+          inner_block: [%{inner_block: "Drawer content"}]
+        )
+
+      refute html =~ "scoria-drawer"
+      refute html =~ "scoria-scrim"
+    end
+
+    test "scrim binds phx-window-keydown and phx-key=Escape to on_dismiss" do
+      html =
+        render_component(&ScoriaWeb.UI.drawer/1,
+          id: "test-drawer",
+          show: true,
+          on_dismiss: "my_dismiss_event",
+          inner_block: [%{inner_block: "Drawer content"}]
+        )
+
+      assert html =~ ~s(phx-window-keydown="my_dismiss_event")
+      assert html =~ ~s(phx-key="Escape")
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # DS-01: <.table> (plan 12-02)
   # ---------------------------------------------------------------------------
 
