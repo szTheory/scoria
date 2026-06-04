@@ -157,3 +157,86 @@ Not a PR CI step or adoption closeout lane command.
 ## UAT automation contract
 
 Producer-path integration tests prove runtime→PubSub→LiveView without test `send/2`. Merge-blocking orchestrator wiring: `mix test.semantic_fast_path --warnings-as-errors`. Gallery advisory lane: `mix scoria.test.support_copilot`.
+
+## Screenshot + Critique Harness (dev-only)
+
+The screenshot and LLM-critique harness provides a mechanical proof loop for the v3.0 Control Room milestone. It captures every dashboard screen across its state matrix, runs an optional 9-dimension AI critique, and writes a ranked gap register. It is **dev-only**: excluded from the shipped Hex package and never run in merge-blocking CI (D-01).
+
+### Prerequisites
+
+1. **Node.js >= 18** — must be on `PATH` (the harness shells out via `System.cmd("node", ...)`).
+   Verify: `node --version`
+
+2. **Playwright + Chromium** — install globally before running any screenshot pass:
+
+   ```bash
+   npm install -g playwright && npx playwright install chromium
+   ```
+
+   Playwright is a documented maintainer prerequisite (D-02). It is **not** a `mix.exs` dependency — installing it does not affect `mix.lock` or `hex.audit`.
+
+3. **ANTHROPIC_API_KEY** — required only for the `--critique` pass (the LLM vision call). The screenshot pass runs without it. Set in your shell or `.env`:
+
+   ```bash
+   export ANTHROPIC_API_KEY="sk-ant-..."
+   ```
+
+### Seed-first workflow
+
+Screens must render populated data before capture — run the idempotent dashboard seed first:
+
+```bash
+mix run priv/repo/dev_seed.exs
+```
+
+This is safe to re-run: it uses `Repo.get_by` + conditional insert guards so records are not duplicated. Seeded tenant is `acme-corp` (the `Scoria.SupportJourney` spine — D-07).
+
+### Screenshot pass
+
+Start the dev server, then run the screenshot pass:
+
+```bash
+mix phx.server          # in one terminal
+mix scoria.ui.shots     # in another terminal
+```
+
+Captured PNGs land in `priv/shots/{date}/{screen}/{state}.png` (gitignored — only `gap_register.md` is committed). The state matrix per tenant-scoped screen is:
+
+- `empty_dark_desktop`, `empty_dark_mobile`, `empty_light_desktop`, `empty_light_mobile`
+- `populated_dark_desktop`, `populated_dark_mobile`, `populated_light_desktop`, `populated_light_mobile`
+- Overlay states (screen-specific): `modal_dark_desktop`, `connector_drawer_dark_desktop`, etc.
+
+**Optional flags:**
+
+```bash
+mix scoria.ui.shots --url http://localhost:4000/scoria   # custom dev server URL (default shown)
+mix scoria.ui.shots --tenant-empty empty-tenant          # empty-state tenant slug (default shown)
+mix scoria.ui.shots --tenant-seeded acme-corp            # seeded-state tenant slug (default shown)
+mix scoria.ui.shots --release-id <uuid>                  # navigate directly to a specific prompt release
+```
+
+### Critique pass (--critique)
+
+Run the critique pass as a separate gated step at phase-milestone boundaries (D-04). It calls `Scoria.UICritique.critique_screen/3` via ReqLLM vision on the canonical populated · desktop · dark state for each screen (~9 vision calls), then writes per-screen findings JSON:
+
+```bash
+mix scoria.ui.shots --critique
+```
+
+Requires `ANTHROPIC_API_KEY`. Writes `priv/shots/{date}/{screen}/populated_dark_desktop.json` alongside the PNG. The gap register aggregation step (`priv/shots/gap_register.md`) runs in Plan 05's audit pass.
+
+This step starts the Elixir application (to access ReqLLM and application config). The plain screenshot pass does **not** start the Elixir app — it only shells out to Node/Playwright.
+
+### Empty-state limitation (4 non-tenant-scoped screens)
+
+**Review Queue**, **Eval Workbench**, **Prompt Registry**, and **Workflow Index** do not support `?tenant=` query-param switching — they list all records globally and do not read `params["tenant"]` in `mount/3`. As a result, the harness captures **populated-only** for these four screens; their `tenantScoped` manifest flag is `false`.
+
+Their empty state (all-empty DB) is a freshly-migrated-DB artifact, not a per-run harness capture. Document this when reviewing gap register findings — empty captures for these four screens require running the harness against a freshly-migrated database before applying the seed.
+
+The five remaining tenant-scoped screens (Live Ops, Approvals, Workflows, Incidents, Connectors) support both empty and populated state captures via `?tenant=` navigation.
+
+### Dev-only posture summary
+
+- `priv/dev/shots.mjs` is **checked into git** (committed dev tooling, D-01) but **excluded from the shipped Hex package** via explicit `priv/` subdirectory inclusions in `mix.exs package.files`.
+- `priv/shots/` screenshot captures are **gitignored** (PNG/JSON); only `gap_register.md` is committed.
+- The `scoria.ui.shots` Mix task is **not registered in CI** (`cli.preferred_envs` does not list it) — it runs only when maintainers explicitly invoke it.
