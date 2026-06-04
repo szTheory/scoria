@@ -902,22 +902,25 @@ IO.puts("  ✓ eval spec (#{spec.name})")
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Empty-state capture for global-list screens**
    - What we know: Review Queue, Eval Workbench, Prompt Registry, and Workflow Index do not support `?tenant=` switching — they list all records globally.
    - What's unclear: How to mechanically capture "empty" state for these four screens without a DB reset.
    - Recommendation: The planner should decide between (a) skipping the empty matrix state for these four screens and documenting the limitation, or (b) structuring the harness to capture empty state only on freshly-migrated DBs. Option (a) is simpler and aligned with D-11 (no DB reset).
+   - **RESOLVED** — see Plan 03 <interfaces> (chosen: RESEARCH option (a) — skip the empty matrix state for the 4 non-tenant-scoped screens, capture populated-only; manifest `tenantScoped` flag gates empty captures; limitation documented in docs/MAINTAINERS.md per Plan 04).
 
 2. **Overlay dispatch for record-ID-dependent overlays**
    - What we know: Approvals modal and Connector drawers require a real record ID from the seeded data; the Playwright script must discover this ID at runtime.
    - What's unclear: Best DOM attribute strategy — do the rendered list rows emit `phx-value-id` attributes that Playwright can read, or does it need a custom `data-*` attribute?
    - Recommendation: Read the existing LiveView templates carefully during implementation. Approvals rows already render `phx-click="select_approval"` and `phx-value-id={approval.id}` — Playwright can use `page.getAttribute('[phx-click="select_approval"]', 'phx-value-id')` or click the first row directly.
+   - **RESOLVED** — see Plan 03 <interfaces> (chosen: Playwright page.click on the first-row phx-click button supplies the real seeded record id, then re-await data-scoria-ready; per-screen overlay/selector manifest hardcoded in shots.mjs).
 
 3. **`priv/repo/dev_seed.exs` inclusion in shipped Hex package**
    - What we know: Current `package.files` includes `"priv"` as a bare directory.
    - What's unclear: Whether the project intentionally ships `priv/repo/` to adopters (migrations are shipped; the dev_seed.exs would be new there).
    - Recommendation: The planner should decide whether `dev_seed.exs` belongs in `package.files`. It is a developer tool that adopters may find useful as a reference, but it is not a runtime artifact. The safer default is to exclude it and document it only in MAINTAINERS.md.
+   - **RESOLVED** — see Plan 04 <interfaces> (chosen: EXCLUDE priv/repo/dev_seed.exs from the shipped package — omit "priv/repo" from package.files; documented in MAINTAINERS.md only).
 
 ---
 
