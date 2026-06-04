@@ -10,14 +10,16 @@ echo "==> [scoria dev] setting up database (create + core/knowledge migrations +
 mix dev.setup
 
 HOST="${PHX_HOST:-scoria.localhost}"
+INSTANCE="${COMPOSE_PROJECT_NAME:-scoria}"
 
 cat <<BANNER
 
 ────────────────────────────────────────────────────────────────────
-  Scoria dashboard — dev harness is up
+  Scoria dashboard — dev harness is up   (instance: ${INSTANCE})
 ────────────────────────────────────────────────────────────────────
   Open:  http://${HOST}/scoria        (via Traefik; *.localhost resolves
-                                        automatically in Chrome/Firefox)
+                                        automatically in Chrome/Chromium)
+         host fallback: run \`make url\` for the ephemeral 127.0.0.1 port
 
   Screens:
     /scoria              Live Ops (orchestrator)

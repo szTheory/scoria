@@ -15,9 +15,16 @@ FROM hexpm/elixir:1.19.5-erlang-27.3.2-debian-bookworm-20260518-slim
 
 # build-essential: NIF compilation; git: hex deps from git; inotify-tools:
 # native file watching when run on a Linux host (macOS uses fs_poll, see config).
-RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends build-essential git inotify-tools ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+#
+# BuildKit apt cache: keep downloaded .debs + lists across rebuilds so a cold
+# `docker compose build` re-uses them instead of re-downloading. (Drop the
+# default docker-clean hook that would purge the cache, and don't rm the lists.)
+RUN rm -f /etc/apt/apt.conf.d/docker-clean \
+  && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update -y \
+  && apt-get install -y --no-install-recommends build-essential git inotify-tools ca-certificates
 
 WORKDIR /app
 
@@ -27,12 +34,19 @@ ENV MIX_ENV=dev \
     LANG=C.UTF-8
 
 # 1) Dependency manifests only — this layer re-runs only when deps change.
+#    BuildKit cache for the Hex package cache: a re-run after a lockfile change
+#    re-fetches only what changed instead of the whole tree. (deps land in
+#    /app/deps in the layer; only the download cache is mounted.)
 COPY mix.exs mix.lock ./
-RUN mix deps.get
+RUN --mount=type=cache,target=/root/.hex,sharing=locked \
+    mix deps.get
 
 # 2) Compile-time config before deps.compile (Elixir deps read config at compile time).
+#    Cache the rebar3 build cache for NIF/rebar deps across rebuilds.
 COPY config config
-RUN mix deps.compile
+RUN --mount=type=cache,target=/root/.hex,sharing=locked \
+    --mount=type=cache,target=/root/.cache/rebar3,sharing=locked \
+    mix deps.compile
 
 # 3) Volatile source last — editing these does NOT invalidate the layers above.
 COPY lib lib

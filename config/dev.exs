@@ -38,7 +38,9 @@ config :scoria, ScoriaWeb.DevEndpoint,
   ]
 
 # Started by Scoria.Application via the runtime-safe :dev_children hook.
-config :scoria, dev_children: [ScoriaWeb.DevEndpoint]
+# DevAssetWatcher rebuilds priv/static/scoria/app.{css,js} when assets/ changes,
+# so style edits hot-reload without a manual `mix scoria.assets.build`.
+config :scoria, dev_children: [ScoriaWeb.DevEndpoint, ScoriaWeb.DevAssetWatcher]
 
 # macOS Docker Desktop does not propagate host fs events into the Linux VM, so
 # the native file watcher never fires. Polling works everywhere. Gated on an env

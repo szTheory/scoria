@@ -12,8 +12,18 @@
 #   docker network create proxy
 #   docker compose -f docker/traefik/compose.yml up -d
 #
-# Then:  docker compose up        # http://scoria.localhost/scoria
-name: scoria_demo
+# Then:  make up                  # http://scoria-<branch>.localhost/scoria
+#
+# Multi-instance: the project name + Traefik host are driven by env vars so two
+# checkouts/branches can run at once without colliding. The Makefile sets them
+# from the git branch (COMPOSE_PROJECT_NAME=scoria-<branch>,
+# SCORIA_HOST=scoria-<branch>.localhost). Running bare `docker compose up`
+# without those set falls back to the plain `scoria` / `scoria.localhost`
+# defaults below (see .env.example to pin them for the bare-compose path).
+#
+# NOTE: there is deliberately no top-level `name:` and no `container_name:` on
+# any service — both would defeat per-instance prefixing (a fixed name makes a
+# second instance fail with "name already in use"). COMPOSE_PROJECT_NAME wins.
 
 services:
   db:
@@ -38,7 +48,8 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       MIX_ENV: dev
-      PHX_HOST: scoria.localhost
+      PHX_HOST: ${SCORIA_HOST:-scoria.localhost}
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-scoria}
       SCORIA_DB_HOST: db
       SCORIA_DB_USERNAME: postgres
       SCORIA_DB_PASSWORD: postgres
@@ -63,10 +74,13 @@ services:
       - default
       - proxy
     labels:
+      # Router/service ids + Host rule are per-instance so two checkouts don't
+      # collide on one route. ${COMPOSE_PROJECT_NAME}/${SCORIA_HOST} are exported
+      # by the Makefile (or .env); both fall back to the single-instance default.
       - traefik.enable=true
       - traefik.docker.network=proxy
-      - traefik.http.routers.scoria.rule=Host(`scoria.localhost`)
-      - traefik.http.services.scoria.loadbalancer.server.port=4000
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-scoria}.rule=Host(`${SCORIA_HOST:-scoria.localhost}`)
+      - traefik.http.services.${COMPOSE_PROJECT_NAME:-scoria}.loadbalancer.server.port=4000
 
   # --- Screenshot/critique harness (profile-gated; excluded from `up`) --------
   # Screenshots run in the official Playwright image (pinned to match

@@ -1,6 +1,6 @@
 # Scoria Maintainer Guide
 
-This guide is for **maintainers** — CI topology, release operations, warning ratchet commands, and installer contract proofs. Adopters should start with [operator verification](operator_verification.md) and [adoption lanes](adoption_lanes.md).
+This guide is for **maintainers** — CI topology, release operations, warning ratchet commands, and installer contract proofs. Adopters should start with [operator verification](operator_verification.md) and [adoption lanes](adoption_lanes.md). For running the dashboard locally (and the multi-instance / no-port-conflict Docker setup), see [Docker dev DX](https://github.com/szTheory/scoria/blob/main/docs/docker_dev_dx.md) (dev-only; not shipped to Hex).
 
 ## CI gate map {#ci-gate-map-maintainers}
 
