@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: executing
-last_updated: "2026-06-04T16:16:53.257Z"
+last_updated: "2026-06-04T16:30:15.644Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 15
   completed_phases: 1
   total_plans: 10
-  completed_plans: 6
+  completed_plans: 7
   percent: 7
 ---
 
@@ -26,11 +26,11 @@ See: `.planning/PROJECT.md` (updated 2026-06-03 after v3.0 Control Room mileston
 ## Current Position
 
 Phase: 12 (design-system-component-layer) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-06-04
 
-Progress: [██████░░░░] 60%
+Progress: [███████░░░] 70%
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
@@ -69,6 +69,7 @@ Progress: [██████░░░░] 60%
 - [Phase ?]: Use add_if_not_exists when deleted interim migrations may have partially applied columns
 - [Phase ?]: DS-06 ratchet uses File.exists? guard so mix test stays green before plan 12-05 commits the baseline
 - [Phase ?]: ui.ex-zero assertion tagged :ui_ex_zero excluded until plan 12-02 sweeps flash_tone_class
+- [Phase ?]: Use Map.get/3 in template instead of :default in slot attr declarations
 
 ## Deferred Items
 
@@ -83,6 +84,7 @@ Progress: [██████░░░░] 60%
 | Tech debt | Local `mix test.connector` migrate_core! ordering on fresh DB | deferred |
 | Phase 11-evaluation-engine-seed-depth P01 | 90min | 2 tasks | 2 files |
 | Phase 12-design-system-component-layer P01 | 3min | 2 tasks | 4 files |
+| Phase 12-design-system-component-layer P02 | 8min | 2 tasks | 2 files |
 
 ## Operator Next Steps
 
