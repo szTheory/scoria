@@ -10,6 +10,26 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
+## Current Milestone: v3.0 Control Room
+
+**Goal:** Take the embedded `/scoria` operator dashboard to "insane polish" — a tightened, fully-adopted design system, a clear persona/JTBD information architecture, brand-tied motion, full light/dark parity, and seed data that exercises every screen — proven by a committed screenshot+critique evaluation loop.
+
+**Core finding driving the milestone:** Scoria's design system is under-*adopted*, not under-built. The token-first CSS already defines tables, drawers, modals, span rails, and disciplined motion, but `lib/scoria_web/ui.ex` never exposed them as components — so ~22/25 view files leaked raw Tailwind (`stone-*/rose-*/...`), worst in the least-iterated screens. The work: expose components → delete leaked classes → consolidate → orient → polish → prove.
+
+**Personas (one shared evidence model, persona-weighted surfacing — nothing role-gated):**
+- **On-Call Operator** — watch live runtime, clear approvals, triage incidents, confirm connector health.
+- **AI Quality Engineer** — triage flagged traces → promote to dataset → run evals → gate a prompt release.
+- **Integrator / Admin** — wire connectors/MCP/tools, set governance policy, watch spend.
+
+**Target features:**
+- Committed dev-only screenshot + LLM-critique harness (`mix scoria.ui.shots`) + 9-dimension audit rubric.
+- Seed-data depth so Reviews / Incidents / Eval Workbench / Prompt Registry render at their most useful.
+- Design-system component layer in `ui.ex` (table+affordances, drawer/modal shells, form controls, unified evidence notebook shell, skeleton, toast) + executable raw-color drift guard.
+- Orientation spine: third nav axis (Operate / Improve / Configure), Status-Home landing, real breadcrumbs, `⌘K` command palette, keyboard shortcuts, cross-screen quality-loop threading, honest stub screens for reserved brand names (Dataset Builder, Cost Ledger, Replay Playground, MCP Gateway, Tool Registry, Feedback Inbox).
+- Per-screen polish (least-iterated first), restrained brand-tied motion, mobile-first responsive, full light/dark parity.
+
+**Key context:** Keep the custom token-first scoped CSS architecture (no Tailwind/BEM switch); `ui.ex` is the enforced token gateway. UI-only milestone — reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data. Plan: `/Users/jon/.claude/plans/another-ui-pass-so-elegant-garden.md`.
+
 ## Latest Shipped Milestone: v2.16 ReqLLM Peer Bump (2026-05-30)
 
 **Goal:** Keep Scoria's LLM orchestration peer current on Hex without widening product scope.
@@ -176,7 +196,16 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ ReqLLM peer dependency bumped to `~> 1.13` (1.13.0); orchestrator, judge runner, compaction worker, and observe adapter verified — `v2.16` (DEPS-01–04)
 
 ### Active
-- _(none — v2.16 archived; define next milestone via `/gsd-new-milestone`; release 0.1.1 publish pending)_
+
+_v3.0 Control Room — admin dashboard UI/UX iteration (see Current Milestone above; REQ-IDs in `.planning/REQUIREMENTS.md`)._
+
+- [ ] Operators get a committed dev-only screenshot + LLM-critique evaluation loop and seed data that exercises every dashboard screen.
+- [ ] The design system is fully adopted: shared `ui.ex` components replace hand-rolled markup, with zero raw-palette class leakage enforced by a drift guard.
+- [ ] A newcomer dropped on the dashboard immediately understands what Scoria does and how to reach their job; power users keep a zero-click path (Status Home, third nav axis, breadcrumbs, command palette, cross-screen threading).
+- [ ] Every screen reaches a consistent high-polish bar in both light and dark themes, with restrained brand-tied motion and mobile-first responsive behavior.
+- [ ] Reserved brand-name screens read as complete in the IA via honest "coming soon" stubs (no fake data).
+
+_(Release 0.1.1 publish via release-please remains pending, tracked in Release Queue.)_
 
 ### Out of Scope
 
@@ -363,4 +392,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 after v2.16 milestone archive*
+*Last updated: 2026-06-03 after v3.0 Control Room milestone start*
