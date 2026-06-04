@@ -62,7 +62,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   4. Clicking through Reviews, Incidents, Eval Workbench, and Prompt Registry shows populated, useful content from `dev_seed.exs` — no empty/thin screens.
   5. A baseline audit produces a ranked design-system gap register and a prioritized fix backlog.
 **Plans**: 5 plans
-  - [ ] 11-01-PLAN.md — Seed depth: idempotent dev_seed.exs populating all 9 screens (EVAL-04)
+  - [x] 11-01-PLAN.md — Seed depth: idempotent dev_seed.exs populating all 9 screens (EVAL-04)
   - [ ] 11-02-PLAN.md — UICritique module + 9-key findings-JSON unit test (EVAL-02)
   - [ ] 11-03-PLAN.md — Harness: scoria.ui.shots Mix task + Playwright shots.mjs (EVAL-01)
   - [ ] 11-04-PLAN.md — Hex hygiene (package.files) + gitignore + MAINTAINERS docs (EVAL-03)
@@ -142,7 +142,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 11. Evaluation engine + seed depth | v3.0 | 0/5 | Planned | - |
+| 11. Evaluation engine + seed depth | v3.0 | 1/5 | In Progress|  |
 | 12. Design-system component layer | v3.0 | 0/? | Not started | - |
 | 13. Orientation spine (IA) | v3.0 | 0/? | Not started | - |
 | 14. Least-iterated screens polish | v3.0 | 0/? | Not started | - |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: executing
-last_updated: "2026-06-04T07:38:16.163Z"
-last_activity: 2026-06-04 -- Phase 11 planning complete
+last_updated: "2026-06-04T08:11:47.230Z"
+last_activity: 2026-06-04
 progress:
   total_phases: 15
   completed_phases: 0
   total_plans: 5
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,16 +21,16 @@ See: `.planning/PROJECT.md` (updated 2026-06-03 after v3.0 Control Room mileston
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v3.0 Control Room — admin dashboard UI/UX iteration. Expose `ui.ex` components → delete leaked raw-palette classes → consolidate → orient → polish → prove via a committed screenshot+critique loop.
+**Current focus:** Phase 11 — evaluation-engine-seed-depth
 
 ## Current Position
 
-Phase: 11 — Evaluation engine + seed depth (next: `/gsd:plan-phase 11`)
-Plan: —
+Phase: 11 (evaluation-engine-seed-depth) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-06-04 -- Phase 11 planning complete
+Last activity: 2026-06-04
 
-Progress: [○○○○○○○] 0/7 phases
+Progress: [██░░░░░░░░] 20%
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
@@ -64,6 +64,9 @@ Progress: [○○○○○○○] 0/7 phases
 - Screenshot+critique harness is committed dev-only tooling, not merge-blocking CI (consistent with LiveViewTest-only posture) — 2026-06-03
 - Full light + dark parity held to the same polish bar; harness captures both themes mechanically — 2026-06-03
 - v2.16 scope: ReqLLM-only — no optional szTheory Hex deps — 2026-05-30
+- [Phase ?]: RunSummary.run_id is the correct field for downstream run ID linking
+- [Phase ?]: All seeded review candidates need review_status: pending for list_review_queue(%{}) to return them
+- [Phase ?]: Use add_if_not_exists when deleted interim migrations may have partially applied columns
 
 ## Deferred Items
 
@@ -76,6 +79,7 @@ Progress: [○○○○○○○] 0/7 phases
 | Tech debt | ReqLLM streaming adapter (ECOS-02) | deferred |
 | Tech debt | SummarizeWorker dedicated unit test | deferred |
 | Tech debt | Local `mix test.connector` migrate_core! ordering on fresh DB | deferred |
+| Phase 11-evaluation-engine-seed-depth P01 | 90min | 2 tasks | 2 files |
 
 ## Operator Next Steps
 
