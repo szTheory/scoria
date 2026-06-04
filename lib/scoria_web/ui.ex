@@ -333,6 +333,108 @@ defmodule ScoriaWeb.UI do
   end
 
   # ---------------------------------------------------------------------------
+  # DS-05: <.skeleton> and <.toast> — loading/transient feedback (plan 12-04)
+  # ---------------------------------------------------------------------------
+
+  attr(:class, :string, default: nil)
+  attr(:rows, :integer, default: 1)
+  attr(:rest, :global)
+
+  @doc "Loading skeleton placeholder (DS-05).
+  Renders stacked skeleton lines with aria-label='Loading…' and role='status'.
+  Pulse animation + prefers-reduced-motion suppression are handled by CSS."
+  def skeleton(assigns) do
+    ~H"""
+    <div class="scoria-skeleton-group" aria-label="Loading…" role="status" {@rest}>
+      <div :for={_ <- 1..@rows} class={["scoria-skeleton", "scoria-skeleton--text", @class]}></div>
+    </div>
+    """
+  end
+
+  attr(:id, :string, required: true)
+  attr(:tone, :atom, default: :neutral, values: [:pass, :fail, :warn, :info, :neutral])
+  attr(:message, :string, required: true)
+  attr(:duration_ms, :integer, default: 4000)
+
+  @doc "Transient toast notification (DS-05).
+  Driven by a server @toasts assign. Auto-dismisses via phx-mounted={JS.hide(...)}.
+  Manual dismiss X button is also provided. Does NOT use a JS hook (untestable in LiveViewTest).
+  Omit 'to:' on JS.hide so it targets self (Pitfall 3)."
+  def toast(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class={["scoria-toast", "scoria-toast--#{@tone}"]}
+      role="status"
+      phx-mounted={JS.hide(transition: {"scoria-fade", "opacity-100", "opacity-0"}, time: @duration_ms)}
+    >
+      {toast_icon(@tone)}
+      <p>{@message}</p>
+      <button
+        phx-click={JS.hide(transition: {"scoria-fade", "opacity-100", "opacity-0"}, time: 100)}
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        aria-label="Dismiss"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+          <path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+    """
+  end
+
+  # 16×16 inline SVG tone icons for toast — status never by color alone (a11y DS-05).
+  defp toast_icon(:pass) do
+    assigns = %{}
+
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+      <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.78 5.78a.75.75 0 0 0-1.06-1.06L7 9.44 5.28 7.72a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.06 0l4.25-4.25z" clip-rule="evenodd" />
+    </svg>
+    """
+  end
+
+  defp toast_icon(:fail) do
+    assigns = %{}
+
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+      <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM7 5a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0V5zm1 6.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5z" clip-rule="evenodd" />
+    </svg>
+    """
+  end
+
+  defp toast_icon(:warn) do
+    assigns = %{}
+
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+      <path fill-rule="evenodd" d="M8.22 1.3a.25.25 0 0 0-.44 0L.36 14.26a.25.25 0 0 0 .22.37h14.84a.25.25 0 0 0 .22-.37L8.22 1.3zm-.72 4.7a.5.5 0 0 1 1 0v3a.5.5 0 0 1-1 0V6zm.75 5.5a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0z" clip-rule="evenodd" />
+    </svg>
+    """
+  end
+
+  defp toast_icon(:info) do
+    assigns = %{}
+
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+      <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-1 4a1 1 0 0 1 1-1h.01a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8z" clip-rule="evenodd" />
+    </svg>
+    """
+  end
+
+  defp toast_icon(_tone) do
+    assigns = %{}
+
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+      <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-1 4a1 1 0 0 1 1-1h.01a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8z" clip-rule="evenodd" />
+    </svg>
+    """
+  end
+
+  # ---------------------------------------------------------------------------
   # DS-04: <.notebook> and <.raw_evidence> — unified evidence panel shell (plan 12-04)
   # ---------------------------------------------------------------------------
 
