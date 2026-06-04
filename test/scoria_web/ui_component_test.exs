@@ -446,6 +446,77 @@ defmodule ScoriaWeb.UIComponentTest do
   end
 
   # ---------------------------------------------------------------------------
+  # DS-05: <.skeleton> and <.toast> (plan 12-04)
+  # ---------------------------------------------------------------------------
+
+  describe "skeleton/1" do
+    test "renders aria-label=Loading… and scoria-skeleton class" do
+      html = render_component(&ScoriaWeb.UI.skeleton/1, rows: 1)
+      assert html =~ ~s(aria-label="Loading…")
+      assert html =~ "scoria-skeleton"
+    end
+
+    test "skeleton rows={3} renders 3 skeleton line elements" do
+      html = render_component(&ScoriaWeb.UI.skeleton/1, rows: 3)
+      count = html |> String.split("scoria-skeleton--text") |> length() |> Kernel.-(1)
+      assert count == 3
+    end
+
+    test "skeleton carries role=status" do
+      html = render_component(&ScoriaWeb.UI.skeleton/1, rows: 1)
+      assert html =~ ~s(role="status")
+    end
+  end
+
+  describe "toast/1" do
+    test "tone={:pass} renders scoria-toast--pass" do
+      html =
+        render_component(&ScoriaWeb.UI.toast/1,
+          id: "toast-1",
+          tone: :pass,
+          message: "Saved"
+        )
+
+      assert html =~ "scoria-toast--pass"
+    end
+
+    test "renders role=status and message text" do
+      html =
+        render_component(&ScoriaWeb.UI.toast/1,
+          id: "toast-2",
+          tone: :neutral,
+          message: "Saved"
+        )
+
+      assert html =~ ~s(role="status")
+      assert html =~ "Saved"
+    end
+
+    test "renders phx-mounted with JS.hide directive" do
+      html =
+        render_component(&ScoriaWeb.UI.toast/1,
+          id: "toast-3",
+          tone: :neutral,
+          message: "Saved",
+          duration_ms: 2000
+        )
+
+      assert html =~ "phx-mounted"
+    end
+
+    test "renders manual dismiss button with aria-label=Dismiss" do
+      html =
+        render_component(&ScoriaWeb.UI.toast/1,
+          id: "toast-4",
+          tone: :neutral,
+          message: "Saved"
+        )
+
+      assert html =~ ~s(aria-label="Dismiss")
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # DS-01: <.table> (plan 12-02)
   # ---------------------------------------------------------------------------
 
