@@ -189,10 +189,19 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
         with {:ok, updated_approval} <- Workflows.approve(approval.id, status, attrs),
              {:ok, updated_socket} <- maybe_resume_approval(socket, updated_approval, status) do
+          # WR-03: a rejection deliberately keeps the workflow paused, so it must not
+          # report the same green ":pass / decision recorded" toast as an approval —
+          # that blurs a safety-relevant distinction. Branch the toast on status.
+          toast_opts =
+            case status do
+              "approved" -> [tone: :pass, message: "Approval granted."]
+              _ -> [tone: :warn, message: "Approval rejected — workflow remains paused."]
+            end
+
           updated_socket
           |> assign(:active_approval, nil)
           |> reload_inbox()
-          |> put_toast(tone: :pass, message: "Approval decision recorded.")
+          |> put_toast(toast_opts)
         else
           {:error, reason} ->
             socket
