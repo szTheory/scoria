@@ -335,6 +335,23 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     assert render(view) =~ "Approval Required"
   end
 
+  test "approval decision renders scoria-toast in approvals view" do
+    {:ok, view, _html} =
+      live(
+        session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+        "/scoria/approvals"
+      )
+
+    %{approval: approval} = pending_approval()
+
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+    send(view.pid, {:hitl_request, projection})
+
+    render_click(view, "approve", %{})
+
+    eventually(fn -> render(view) =~ "scoria-toast" end)
+  end
+
   defp drain_pubsub_messages do
     receive do
       _ -> drain_pubsub_messages()

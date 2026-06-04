@@ -57,6 +57,23 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     :ok
   end
 
+  test "async loading state renders scoria-skeleton in place of bespoke loading markup" do
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
+
+    # Before async resolves the loading state should show the skeleton
+    assert html =~ "scoria-skeleton"
+    refute html =~ "Loading compacted memories..."
+
+    render_async(view)
+  end
+
   test "LiveView mounts from persisted workflow records and subscribes for projection updates" do
     {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
 
