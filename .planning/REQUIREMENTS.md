@@ -10,7 +10,7 @@
 
 ### Evaluation & Seed Depth
 
-- [ ] **EVAL-01**: A maintainer can run `mix scoria.ui.shots` to capture every dashboard screen across its state matrix (empty / populated / modal-open / drawer-open × light / dark × mobile / desktop) against the local dev server, gated on the existing `data-scoria-ready` sentinel.
+- [x] **EVAL-01**: A maintainer can run `mix scoria.ui.shots` to capture every dashboard screen across its state matrix (empty / populated / modal-open / drawer-open × light / dark × mobile / desktop) against the local dev server, gated on the existing `data-scoria-ready` sentinel.
 - [x] **EVAL-02**: Captured screenshots can be critiqued against a 9-dimension rubric (brand-fit, consistency, hierarchy, affordance/least-surprise, accessibility, responsive, motion, microcopy, density) to produce structured per-screen findings.
 - [ ] **EVAL-03**: The screenshot + critique harness ships as committed dev-only tooling (not merge-blocking CI) with documented usage.
 - [x] **EVAL-04**: `dev_seed.exs` populates every dashboard screen — Reviews, Incidents, Eval Workbench, and Prompt Registry included — so each renders at its most useful when clicked through.
@@ -79,7 +79,7 @@ Each requirement maps to exactly one phase. Phase numbering continues from v2.16
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EVAL-01 | Phase 11 — Evaluation engine + seed depth | Pending |
+| EVAL-01 | Phase 11 — Evaluation engine + seed depth | Complete |
 | EVAL-02 | Phase 11 — Evaluation engine + seed depth | Complete |
 | EVAL-03 | Phase 11 — Evaluation engine + seed depth | Pending |
 | EVAL-04 | Phase 11 — Evaluation engine + seed depth | Complete |
