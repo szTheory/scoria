@@ -20,6 +20,10 @@
     0%, 100% { border-color: var(--scoria-tone-warn-border); }
     50% { border-color: var(--scoria-tone-warn-fg); }
   }
+  @keyframes scoria-skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 0.8; }
+  }
 
   /* Approval-required cue: sulfur border pulse, max 2 cycles then settle (§12.2). */
   .scoria-attention {

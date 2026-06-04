@@ -406,4 +406,165 @@
   }
   .scoria-breadcrumbs a { color: var(--scoria-text-muted); }
   .scoria-breadcrumbs__sep { color: var(--scoria-text-subtle); }
+
+  /* ---------- Table density modifiers ---------- */
+  .scoria-table--compact tbody td  { padding: var(--scoria-space-2); }
+  .scoria-table--comfortable tbody td { padding: var(--scoria-space-4); }
+
+  /* ---------- Modal header + footer ---------- */
+  .scoria-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--scoria-space-3);
+    margin-bottom: var(--scoria-space-4);
+  }
+  .scoria-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--scoria-space-2);
+    margin-top: var(--scoria-space-4);
+  }
+
+  /* ---------- Drawer header ---------- */
+  .scoria-drawer__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--scoria-space-3);
+    margin-bottom: var(--scoria-space-4);
+  }
+
+  /* ---------- Field + form section ---------- */
+  .scoria-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-1);
+  }
+  .scoria-field__label {
+    font-size: var(--scoria-fs-label);
+    font-weight: 600;
+    color: var(--scoria-text);
+  }
+  .scoria-field__error {
+    color: var(--scoria-danger-action);
+    font-size: var(--scoria-fs-label);
+    margin-top: var(--scoria-space-1);
+  }
+  .scoria-field__help {
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-label);
+  }
+  .scoria-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-4);
+  }
+  .scoria-form-section__title {
+    font-size: var(--scoria-fs-panel);
+    font-weight: 600;
+    color: var(--scoria-text);
+    margin-bottom: var(--scoria-space-1);
+  }
+  .scoria-form-section__description {
+    font-size: var(--scoria-fs-body);
+    color: var(--scoria-text-muted);
+    margin-bottom: var(--scoria-space-2);
+  }
+
+  /* ---------- Notebook (evidence panel shell) ---------- */
+  .scoria-notebook {
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-lg);
+    background: var(--scoria-surface-panel);
+  }
+  .scoria-notebook__tabbar {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--scoria-border);
+    background: var(--scoria-surface-panel);
+  }
+  .scoria-notebook__tab {
+    font-size: var(--scoria-fs-body);
+    font-weight: 600;
+    color: var(--scoria-text-muted);
+    padding: var(--scoria-space-2) var(--scoria-space-4);
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    cursor: pointer;
+  }
+  .scoria-notebook__tab:hover { color: var(--scoria-text); }
+  .scoria-notebook__tab[aria-selected="true"] {
+    color: var(--scoria-text);
+    border-bottom-color: var(--scoria-action);
+  }
+  .scoria-notebook__panel {
+    background: var(--scoria-surface-panel-raised);
+    padding: var(--scoria-space-4);
+  }
+
+  /* ---------- Flash banners ---------- */
+  .scoria-flash {
+    border: 1px solid var(--scoria-tone-neutral-border);
+    background: var(--scoria-tone-neutral-bg);
+    color: var(--scoria-tone-neutral-fg);
+    border-radius: var(--scoria-radius-md);
+    padding: var(--scoria-space-2) var(--scoria-space-4);
+    font-size: var(--scoria-fs-body);
+    margin-bottom: var(--scoria-space-4);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-flash--fail { border-color: var(--scoria-tone-fail-border); background: var(--scoria-tone-fail-bg); color: var(--scoria-tone-fail-fg); }
+  .scoria-flash--info { border-color: var(--scoria-tone-info-border); background: var(--scoria-tone-info-bg); color: var(--scoria-tone-info-fg); }
+  .scoria-flash--warn { border-color: var(--scoria-tone-warn-border); background: var(--scoria-tone-warn-bg); color: var(--scoria-tone-warn-fg); }
+  .scoria-flash--pass { border-color: var(--scoria-tone-pass-border); background: var(--scoria-tone-pass-bg); color: var(--scoria-tone-pass-fg); }
+
+  /* ---------- Skeleton (loading placeholder) ---------- */
+  .scoria-skeleton {
+    background: var(--scoria-tone-neutral-bg);
+    border-radius: var(--scoria-radius-sm);
+    animation: scoria-skeleton-pulse 1.5s ease-in-out infinite;
+  }
+  .scoria-skeleton--text { height: 1em; }
+
+  /* ---------- Toast (transient notification) ---------- */
+  .scoria-toast {
+    position: fixed;
+    bottom: var(--scoria-space-5);
+    right: var(--scoria-space-5);
+    z-index: var(--scoria-z-toast);
+    min-width: 280px;
+    max-width: 400px;
+    box-shadow: var(--scoria-shadow-raised);
+    border-radius: var(--scoria-radius-md);
+    border: 1px solid var(--scoria-tone-neutral-border);
+    background: var(--scoria-tone-neutral-bg);
+    color: var(--scoria-tone-neutral-fg);
+    padding: var(--scoria-space-2) var(--scoria-space-4);
+    font-size: var(--scoria-fs-body);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-toast--neutral { border-color: var(--scoria-tone-neutral-border); background: var(--scoria-tone-neutral-bg); color: var(--scoria-tone-neutral-fg); }
+  .scoria-toast--pass    { border-color: var(--scoria-tone-pass-border);    background: var(--scoria-tone-pass-bg);    color: var(--scoria-tone-pass-fg); }
+  .scoria-toast--fail    { border-color: var(--scoria-tone-fail-border);    background: var(--scoria-tone-fail-bg);    color: var(--scoria-tone-fail-fg); }
+  .scoria-toast--warn    { border-color: var(--scoria-tone-warn-border);    background: var(--scoria-tone-warn-bg);    color: var(--scoria-tone-warn-fg); }
+  .scoria-toast--info    { border-color: var(--scoria-tone-info-border);    background: var(--scoria-tone-info-bg);    color: var(--scoria-tone-info-fg); }
+  .scoria-toast-region {
+    position: fixed;
+    bottom: var(--scoria-space-5);
+    right: var(--scoria-space-5);
+    z-index: var(--scoria-z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-2);
+    pointer-events: none;
+  }
+  .scoria-toast-region > * { pointer-events: auto; }
 }
