@@ -132,7 +132,22 @@ defmodule Scoria.MixProject do
       name: "scoria",
       files: [
         "lib",
-        "priv",
+        # Explicit priv/ subdirectory inclusions — the bare priv glob was replaced
+        # to prevent dev-only harness tooling from shipping to adopters (supply-chain
+        # control, T-11-06 / D-01 / D-02).
+        "priv/fixtures",
+        "priv/host_app_proof",
+        # priv/repo: migrations ship to adopters; dev_seed.exs is excluded by
+        # listing only the migration subdirs (not the whole dir).
+        # Open question #2 resolution: dev_seed.exs is a maintainer dev tool, not
+        # a runtime artifact — adopters do not need it in the package.
+        "priv/repo/migrations",
+        "priv/repo/knowledge_migrations",
+        "priv/static",
+        # priv/dev intentionally excluded — shots.mjs is a dev-only harness script,
+        # not for adopters (D-01: zero Hex footprint for browser automation tooling).
+        # priv/shots intentionally excluded — screenshot captures are transient
+        # dev-only artifacts; only gap_register.md is committed (per .gitignore rules).
         "mix.exs",
         ".formatter.exs",
         "CHANGELOG.md",

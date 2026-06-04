@@ -25,3 +25,9 @@ scoria-*.tar
 
 # macOS Finder metadata.
 .DS_Store
+
+# Screenshot harness outputs — belt-and-suspenders guard (priv/shots/.gitignore
+# is the primary policy; this catches captures outside that subdirectory).
+# Only priv/shots/gap_register.md is committed.
+priv/shots/**/*.png
+priv/shots/**/*.json
