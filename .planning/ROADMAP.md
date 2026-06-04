@@ -82,7 +82,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 **Plans**: 5 plans
   - [x] 12-01-PLAN.md — Wave 0: net-new CSS + skeleton keyframe + DS-06 guard & component-test scaffolds
   - [x] 12-02-PLAN.md — ui.ex: flash_group semantic fix (zeroes ui.ex) + `<.table>` (DS-05, DS-01)
-  - [ ] 12-03-PLAN.md — ui.ex: `<.drawer>`/`<.modal>` + `<.field>`/`<.form_section>` (DS-02, DS-03)
+  - [x] 12-03-PLAN.md — ui.ex: `<.drawer>`/`<.modal>` + `<.field>`/`<.form_section>` (DS-02, DS-03)
   - [ ] 12-04-PLAN.md — ui.ex: `<.notebook>` shell + `<.skeleton>` + `<.toast>` (DS-04, DS-05)
   - [ ] 12-05-PLAN.md — Real toast + real skeleton wiring + notebook proof adapter + commit DS-06 baseline (DS-05, DS-04, DS-06)
 **UI hint**: yes
@@ -148,7 +148,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
-| 12. Design-system component layer | v3.0 | 2/5 | In Progress|  |
+| 12. Design-system component layer | v3.0 | 3/5 | In Progress|  |
 | 13. Orientation spine (IA) | v3.0 | 0/? | Not started | - |
 | 14. Least-iterated screens polish | v3.0 | 0/? | Not started | - |
 | 15. High-traffic screens + evidence adapters | v3.0 | 0/? | Not started | - |
