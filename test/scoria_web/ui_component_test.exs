@@ -331,6 +331,121 @@ defmodule ScoriaWeb.UIComponentTest do
   end
 
   # ---------------------------------------------------------------------------
+  # DS-04: <.notebook> and <.raw_evidence> (plan 12-04)
+  # ---------------------------------------------------------------------------
+
+  defp tab_slot(key, label, content) do
+    [
+      %{
+        key: key,
+        label: label,
+        inner_block: fn _changed, _arg -> content end,
+        __slot__: :tab
+      }
+    ]
+  end
+
+  describe "notebook/1" do
+    test "renders role=tablist nav and one role=tab button per :tab slot" do
+      html =
+        render_component(&ScoriaWeb.UI.notebook/1,
+          id: "nb-1",
+          title: "Evidence",
+          selected_tab: "trace",
+          on_tab_change: "change_tab",
+          tab: tab_slot("trace", "Trace", "trace content") ++ tab_slot("memory", "Memory", "memory content")
+        )
+
+      assert html =~ ~s(role="tablist")
+      assert html =~ ~s(role="tab")
+      # Two tab buttons present
+      assert (html |> String.split(~s(role="tab")) |> length()) > 2
+      assert html =~ "Trace"
+      assert html =~ "Memory"
+    end
+
+    test "active tab carries aria-selected=true; others carry aria-selected=false" do
+      html =
+        render_component(&ScoriaWeb.UI.notebook/1,
+          id: "nb-2",
+          title: "Evidence",
+          selected_tab: "trace",
+          on_tab_change: "change_tab",
+          tab: tab_slot("trace", "Trace", "trace content") ++ tab_slot("memory", "Memory", "memory content")
+        )
+
+      assert html =~ ~s(aria-selected="true")
+      assert html =~ ~s(aria-selected="false")
+    end
+
+    test "tab buttons emit phx-value-tab with the tab key" do
+      html =
+        render_component(&ScoriaWeb.UI.notebook/1,
+          id: "nb-3",
+          title: "Evidence",
+          selected_tab: "trace",
+          on_tab_change: "change_tab",
+          tab: tab_slot("trace", "Trace", "trace content")
+        )
+
+      assert html =~ ~s(phx-value-tab="trace")
+    end
+
+    test "active tab panel carries role=tabpanel" do
+      html =
+        render_component(&ScoriaWeb.UI.notebook/1,
+          id: "nb-4",
+          title: "Evidence",
+          selected_tab: "trace",
+          on_tab_change: "change_tab",
+          tab: tab_slot("trace", "Trace", "trace content")
+        )
+
+      assert html =~ ~s(role="tabpanel")
+    end
+
+    test "empty: true renders :empty slot and no tab buttons" do
+      html =
+        render_component(&ScoriaWeb.UI.notebook/1,
+          id: "nb-5",
+          title: "Evidence",
+          empty: true,
+          tab: [],
+          empty: slot_block("No evidence yet")
+        )
+
+      assert html =~ "No evidence yet"
+      refute html =~ ~s(role="tablist")
+      refute html =~ ~s(role="tab")
+    end
+  end
+
+  describe "raw_evidence/1" do
+    test "renders <details> + <summary> + <pre>" do
+      html =
+        render_component(&ScoriaWeb.UI.raw_evidence/1,
+          label: "Advanced raw evidence",
+          inner_block: slot_block("{\"key\": \"value\"}")
+        )
+
+      assert html =~ "<details"
+      assert html =~ "<summary"
+      assert html =~ "<pre"
+      assert html =~ "Advanced raw evidence"
+      assert html =~ "{&quot;key&quot;: &quot;value&quot;}"
+    end
+
+    test "renders default label when not provided" do
+      html =
+        render_component(&ScoriaWeb.UI.raw_evidence/1,
+          inner_block: slot_block("raw data")
+        )
+
+      assert html =~ "Advanced raw evidence"
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # DS-01: <.table> (plan 12-02)
   # ---------------------------------------------------------------------------
 
