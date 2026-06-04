@@ -1,319 +1,226 @@
 ---
 phase: 12-design-system-component-layer
-reviewed: 2026-06-04T18:00:00Z
+reviewed: 2026-06-04T00:00:00Z
 depth: standard
-files_reviewed: 10
+files_reviewed: 11
 files_reviewed_list:
-  - lib/scoria_web/ui.ex
+  - assets/css/04-components.css
+  - assets/css/05-motion.css
   - lib/scoria_web/components/remote_invocation_evidence_component.ex
   - lib/scoria_web/live/approvals_live/index.ex
   - lib/scoria_web/live/workflow_live/show.ex
-  - assets/css/04-components.css
-  - assets/css/05-motion.css
-  - test/scoria_web/ui_component_test.exs
+  - lib/scoria_web/ui.ex
   - test/scoria_web/ds06_drift_guard_test.exs
   - test/scoria_web/live/approvals_live_test.exs
   - test/scoria_web/live/workflow_live_test.exs
+  - test/scoria_web/ui_component_test.exs
+  - test/support/ds06_baseline.txt
 findings:
   critical: 1
-  warning: 5
+  warning: 6
   info: 4
-  total: 10
+  total: 11
 status: issues_found
 ---
 
 # Phase 12: Code Review Report
 
-**Reviewed:** 2026-06-04T18:00:00Z
+**Reviewed:** 2026-06-04T00:00:00Z
 **Depth:** standard
-**Files Reviewed:** 10
+**Files Reviewed:** 11
 **Status:** issues_found
 
 ## Summary
 
-Phase 12 added nine design-system components to `ui.ex`, converted `RemoteInvocationEvidenceComponent`
-to a `<.notebook>` adapter, wired toast/skeleton into two screens, and activated the DS-06 ratchet guard.
-The Elixir component logic is generally sound; most of the HEEx renders correctly and the DS-06 guard
-is structurally correct. However, there is one layout defect that will be user-visible on every multi-toast
-scenario (all toasts pile at identical viewport coordinates), two a11y omissions on dialog elements,
-a silent behavioral bug in `skeleton` when `rows=0` is passed, and several CSS class definitions emitted
-by the components that have no corresponding CSS rules — these cause invisible layout gaps.
-
----
+Phase 12 introduces a shared design-system component vocabulary (`ScoriaWeb.UI`), CSS
+component/motion layers, a notebook adapter for remote-invocation evidence, and a DS-06
+"ratchet" drift guard plus its committed baseline. The component library is generally well
+structured (token-driven, a11y-aware, never-color-alone). However, there is one genuine
+LiveView correctness bug in `<.id>` (non-stable DOM id breaking hook patching), several
+robustness gaps around the notebook component contract and the approval-decision toast
+semantics, and a notable design weakness in the DS-06 drift guard: it is a snapshot-equality
+ratchet that silently re-permits palette usage when a file is refactored, and the two
+in-scope LiveViews sit exactly at their baseline (53 and 9), so the guard provides no real
+headroom and is one line away from breaking unrelated work.
 
 ## Critical Issues
 
-### CR-01: Multiple toasts overlap at the same viewport position
+### CR-01: `<.id>` regenerates a fresh DOM id + hook on every render (breaks LiveView patching)
 
-**File:** `assets/css/04-components.css:559-591`
-**Issue:** `.scoria-toast` declares `position: fixed; bottom: var(--scoria-space-5); right: var(--scoria-space-5)`.
-`.scoria-toast-region` also declares `position: fixed` at the same coordinates and uses `display: flex; flex-direction: column; gap`.
-A `position: fixed` child inside a `position: fixed` parent is positioned relative to the parent's established containing
-block, not the viewport — but the parent itself collapses to zero height because all its children are removed from normal
-flow by their own `position: fixed`. The result: every additional toast after the first stacks at the same `(bottom, right)`
-coordinates and all toasts are invisible or overlap each other completely. This is user-visible any time two toasts arrive
-(e.g., the error path in `approvals_live` triggers `put_flash` + `put_toast` — a single approval action can produce two
-toasts in rapid succession).
+**File:** `lib/scoria_web/ui.ex:157-163`
+**Issue:** The copyable-id component sets
+`id={"id-#{System.unique_integer([:positive])}"}` inside the render body. `System.unique_integer/1`
+returns a *different* value on every render pass. In LiveView, the element id is the DOM
+patch key — an id that changes on each diff means morphdom treats the element as brand-new,
+tearing down and re-mounting the `phx-hook="CopyId"` instance on every parent update. This
+causes: (a) the CopyId hook's `mounted/destroyed` lifecycle to thrash, (b) loss of any hook
+internal state, (c) wasted DOM churn, and (d) on rapid updates, orphaned hook instances.
+The id must be stable across renders for a given logical element. It should be derived from
+the value being displayed (or accepted as a required attr from the caller), not a global
+monotonic counter evaluated at render time.
+**Fix:**
+```elixir
+attr(:value, :string, required: true)
+attr(:copy, :string, default: nil)
+attr(:id, :string, default: nil)
+attr(:class, :string, default: nil)
 
-**Fix:** Remove `position: fixed` (and the associated `bottom`/`right`/`z-index`) from the individual `.scoria-toast` rule.
-The containing `.scoria-toast-region` already handles fixed placement, stacking direction, and z-index. The toast should
-participate in normal flex flow within the region:
+def id(assigns) do
+  assigns =
+    assign_new(assigns, :id, fn ->
+      "id-" <> Integer.to_string(:erlang.phash2(assigns.value))
+    end)
 
-```css
-/* Before */
-.scoria-toast {
-  position: fixed;
-  bottom: var(--scoria-space-5);
-  right: var(--scoria-space-5);
-  z-index: var(--scoria-z-toast);
-  min-width: 280px;
-  ...
-}
-
-/* After */
-.scoria-toast {
-  /* position is now static inside the flex region */
-  min-width: 280px;
-  max-width: 400px;
-  box-shadow: var(--scoria-shadow-raised);
-  border-radius: var(--scoria-radius-md);
-  border: 1px solid var(--scoria-tone-neutral-border);
-  background: var(--scoria-tone-neutral-bg);
-  color: var(--scoria-tone-neutral-fg);
-  padding: var(--scoria-space-2) var(--scoria-space-4);
-  font-size: var(--scoria-fs-body);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--scoria-space-2);
-}
+  ~H"""
+  <span class={["scoria-id", @class]} phx-hook="CopyId" id={@id} data-copy={@copy || @value} title="Click to copy">
+    {@value}
+  </span>
+  """
+end
 ```
-
-The toast can still be used standalone (outside the region) for other callers, in which case it would need
-the `position: fixed` added at the call site via a utility class or a separate modifier.
-
----
+Prefer a caller-supplied stable id where two identical values can appear on one page.
 
 ## Warnings
 
-### WR-01: `skeleton` renders 2 rows when `rows=0` is passed (off-by-one via descending range)
+### WR-01: DS-06 drift guard is an equality-snapshot ratchet that silently re-permits palette on refactor
 
-**File:** `lib/scoria_web/ui.ex:349`
-**Issue:** The skeleton component uses `:for={_ <- 1..@rows}`. In Elixir 1.12+, `1..0` is a *decreasing*
-range `[1, 0]` (step −1), not an empty range. Passing `rows=0` renders **two** skeleton rows instead of
-zero, and the compiler emits: `warning: 1..0 has a default step of -1, please write 1..0//-1 instead`.
-While `rows=0` is not used in current callers, the attr has no documented minimum value, and `rows=0` is
-a reasonable caller assumption for "no skeleton needed."
+**File:** `test/scoria_web/ds06_drift_guard_test.exs:32-50`, `test/support/ds06_baseline.txt`
+**Issue:** The guard only fails when `count > baseline_count`. It never fails when a file's
+count is *below* baseline, and the baseline is a static committed file. Consequence: once a
+developer reduces a file's palette usage (the stated Phase 12 goal) but forgets to lower the
+baseline, the file silently re-acquires headroom — a future change can add palette classes
+back up to the stale baseline with the guard staying green. A ratchet that does not tighten
+on improvement freezes the worst-ever state. `workflow_live/show.ex` (baseline 53) and
+`approvals_live/index.ex` (baseline 9) currently sit *exactly* at baseline, so the guard
+offers zero margin and will fail on the next unrelated one-line palette addition while
+providing no protection against re-introducing the 53 classes that were supposed to migrate away.
+**Fix:** Either (a) fail when `count != baseline_count` (forces baseline to be re-committed
+downward on every improvement), or (b) add a "baseline is not stale" assertion that fails if
+any file is now below its baseline, prompting regeneration. Document the regeneration command.
 
-**Fix:** Use an explicit step or guard:
+### WR-02: `load_baseline/1` crashes on any malformed baseline line instead of reporting it
+
+**File:** `test/scoria_web/ds06_drift_guard_test.exs:65-73`
+**Issue:** `[path, count] = String.split(line, ":", parts: 2)` raises `MatchError` if a line
+has no colon, and `String.to_integer(count)` raises `ArgumentError` on non-integer text
+(trailing whitespace, a stray `\r`, etc.). A malformed committed baseline entry surfaces as an
+opaque crash with no indication of which line is bad rather than a clear drift-guard failure.
+A path that itself contains a colon beyond the first (`parts: 2`) puts the remainder into
+`count` and crashes.
+**Fix:** Trim and validate each field, emitting a descriptive failure naming the offending line.
+
+### WR-03: Approval reject path reports a green ":pass" "Approval decision recorded." toast
+
+**File:** `lib/scoria_web/live/approvals_live/index.ex:182-217`
+**Issue:** `record_approval_decision/2` is shared by `approve` and `reject`. On success it
+always emits `put_toast(tone: :pass, message: "Approval decision recorded.")`. For a rejection
+— which deliberately keeps the workflow *paused* (see copy at lines 150-152) — a `:pass`-tone
+"decision recorded" toast communicates a successful, completed-feeling outcome by color and
+wording. An operator who rejected gets the same green confirmation as one who approved,
+blurring a safety-relevant distinction.
+**Fix:** Branch the toast on `status`:
 ```elixir
-# Option A — explicit step makes intent clear
-<div :for={_ <- 1..max(@rows, 0)//1} class={["scoria-skeleton", "scoria-skeleton--text", @class]}></div>
-
-# Option B — add a minimum validator to the attr declaration
-attr(:rows, :integer, default: 1)  # add: no direct fix, but document rows >= 1
-
-# Option C — simplest defensive fix
-<div :for={n <- 1..@rows//1, @rows >= 1} class={["scoria-skeleton", "scoria-skeleton--text", @class]}></div>
+toast_opts =
+  case status do
+    "approved" -> [tone: :pass, message: "Approval granted."]
+    "rejected" -> [tone: :warn, message: "Approval rejected — workflow remains paused."]
+  end
 ```
 
-### WR-02: `modal/1` and `drawer/1` missing `aria-labelledby` on `role="dialog"` elements
+### WR-04: `<.notebook>` renders no panel when `selected_tab` matches no tab key
 
-**File:** `lib/scoria_web/ui.ex:203, 256`
-**Issue:** Both `modal/1` (line 203) and `drawer/1` (line 256) render `role="dialog" aria-modal="true"` 
-but omit `aria-labelledby`. The WAI-ARIA authoring practices for `dialog` require either `aria-labelledby`
-referencing the dialog's heading element or `aria-label` on the dialog container itself. Without this,
-screen readers announce "dialog" with no accessible name — the user cannot identify what dialog has opened
-before interacting with its contents. The modal already has `autofocus` on the close button but this does
-not substitute for an accessible dialog name.
-
-**Fix:** Add an `id` to the title `h2` and reference it on the panel element:
+**File:** `lib/scoria_web/ui.ex:461-506`
+**Issue:** The default-tab logic only fires when `selected_tab == nil`. If a caller passes a
+non-nil `selected_tab` that matches no `<:tab>` key (stale value after the tab set changes, or
+a typo), the tab bar renders with every tab `aria-selected="false"` and the
+`for tab <- @tab, tab.key == @selected_tab` comprehension yields nothing — the
+`role="tabpanel"` body silently disappears with no error. No uniqueness check on tab keys
+exists either; duplicates would render two panels.
+**Fix:** Fall back to the first tab whenever `selected_tab` matches nothing:
 ```elixir
-# modal/1 — add id to h2 and aria-labelledby to panel
-<div class="scoria-modal__panel" role="dialog" aria-modal="true"
-     aria-labelledby={"#{@id}-title"} style={"max-width: #{@max_width}"}>
-  <div class="scoria-modal__header">
-    <div>
-      <h2 :if={@title_slot != []} id={"#{@id}-title"}>{render_slot(@title_slot)}</h2>
-      <h2 :if={@title_slot == [] and @title != nil} id={"#{@id}-title"}>{@title}</h2>
-    </div>
-    ...
-```
-Apply the same pattern in `drawer/1` using `@id` to build the `aria-labelledby` reference.
-
-### WR-03: `.scoria-drawer` has no positioning — renders inline, not as a side panel
-
-**File:** `assets/css/04-components.css:319-325`
-**Issue:** `.scoria-drawer` only defines `border`, `border-radius`, `background`, `padding`, and
-`animation`. It has no `position: fixed` (or `absolute`), no `top`/`right`/`bottom`/`width`, and no
-`z-index`. The containing `.scoria-drawer-shell` (which wraps the scrim + aside) also has no CSS
-definition at all. The `<.drawer>` component will therefore render inline in the document flow below the
-scrim overlay, not as a floating side panel. Callers will see the scrim appear but the drawer content
-will be scrolled to in the page body rather than sliding in from the edge.
-
-**Fix:** At minimum, `.scoria-drawer-shell` needs `position: fixed; inset: 0; z-index: var(--scoria-z-modal);`
-(matching `.scoria-modal`) and `.scoria-drawer` needs `position: fixed; right: 0; top: 0; bottom: 0; width: clamp(320px, 40vw, 560px); overflow-y: auto; z-index: var(--scoria-z-modal);` (or use a grid/flex layout within the shell):
-
-```css
-.scoria-drawer-shell {
-  position: fixed;
-  inset: 0;
-  z-index: var(--scoria-z-modal);
-  display: flex;
-  align-items: stretch;
-  justify-content: flex-end; /* or flex-start for left drawer */
-}
-.scoria-drawer {
-  position: relative; /* contained by shell */
-  width: clamp(320px, 40vw, 560px);
-  overflow-y: auto;
-  background: var(--scoria-surface-panel-raised);
-  padding: var(--scoria-space-4);
-  border-left: 1px solid var(--scoria-border);
-  animation: scoria-slide var(--scoria-dur-slow) var(--scoria-ease-out);
-}
+assigns =
+  if assigns.tab != [] and not Enum.any?(assigns.tab, &(&1.key == assigns.selected_tab)) do
+    assign(assigns, :selected_tab, hd(assigns.tab).key)
+  else
+    assigns
+  end
 ```
 
-### WR-04: DS-06 ratchet `:new_violation` branch is unreachable dead code
+### WR-05: `<.notebook>` tab buttons emit `phx-click={nil}` when `on_tab_change` is unset, yielding inert tabs
 
-**File:** `test/scoria_web/ds06_drift_guard_test.exs:41-43`
-**Issue:** The `cond` in the ratchet test has two branches that both fire for the case of a brand-new
-file with palette usage (baseline count = 0, current count > 0):
+**File:** `lib/scoria_web/ui.ex:482-492`, `lib/scoria_web/components/remote_invocation_evidence_component.ex:7,19`
+**Issue:** `on_tab_change` defaults to `nil`. When nil, each tab button renders
+`phx-click={nil}` (no handler) yet still presents as interactive (`role="tab"`, hover styling).
+`RemoteInvocationEvidenceComponent` instantiates the notebook with `on_tab_change={@on_tab_change}`
+defaulting to nil and never wires it, and `workflow_live/show.ex:232-235` renders that
+component without passing `on_tab_change`. Today the remote notebook has one tab so the dead
+click is invisible, but the contract invites a multi-tab caller to ship visibly-broken
+non-switching tabs — a control that looks clickable but is inert.
+**Fix:** Render a non-button (`<span role="tab">`) when `on_tab_change` is nil and there is one
+tab, or raise when `length(@tab) > 1 and is_nil(@on_tab_change)`.
 
-```elixir
-cond do
-  count > baseline_count -> {path, count, baseline_count, :regression}       # fires first (0 < count)
-  baseline_count == 0 and count > 0 -> {path, count, 0, :new_violation}       # NEVER reached
-  true -> nil
-end
-```
+### WR-06: `approval_value/3` collapses present-but-falsy values into the literal "unknown"
 
-When `baseline_count == 0` and `count > 0`, `count > baseline_count` is `true`, so `:regression` always
-fires. The `:new_violation` atom is dead code. This does not cause a false pass (violations are still
-caught), but the failure message will incorrectly report `:regression` for genuinely new files instead of
-the more informative `:new_violation`. Over time this makes the error messages misleading.
-
+**File:** `lib/scoria_web/components/remote_invocation_evidence_component.ex:42-44`
+**Issue:** `Map.get(approval, key) || Map.get(approval, to_string(key)) || "unknown"` treats any
+falsy value (`nil`, `false`) as missing and substitutes `"unknown"`. A real `nil` (e.g. an
+approval id not yet assigned) is rendered to the operator as the word "unknown", indistinguishable
+from a genuinely absent key, and a stored `false` under the atom key incorrectly falls through to
+the string-key lookup. Use explicit key presence.
 **Fix:**
 ```elixir
-cond do
-  baseline_count == 0 and count > 0 -> {path, count, 0, :new_violation}   # check new-file case first
-  count > baseline_count             -> {path, count, baseline_count, :regression}
-  true                               -> nil
+defp approval_value(approval, key) do
+  cond do
+    Map.has_key?(approval, key) -> Map.get(approval, key)
+    Map.has_key?(approval, to_string(key)) -> Map.get(approval, to_string(key))
+    true -> "unknown"
+  end
 end
 ```
-
-### WR-05: `on_page_change: nil` (default) allows pagination UI to render without any click handler
-
-**File:** `lib/scoria_web/ui.ex:544, 631-651`
-**Issue:** `on_page_change` defaults to `nil`. When `total_pages > 1`, the pagination `<nav>` renders
-with `phx-click={nil}` on the prev/next buttons. In HEEx, `phx-click={nil}` omits the attribute
-entirely — clicking these buttons does nothing, silently. A caller who passes `total_pages > 1` (explicitly
-or via accumulation) without wiring `on_page_change` will see pagination controls that appear clickable
-but do nothing. There is no runtime warning or compile-time check.
-
-**Fix:** Add a compile-time guard or a runtime assertion:
-```elixir
-# Option A — make on_page_change required when total_pages can exceed 1
-# (document this in the attr's doc comment clearly)
-attr :on_page_change, :string, default: nil
-# Add in table/1 body:
-if @total_pages > 1 and is_nil(@on_page_change) do
-  raise ArgumentError, "<.table> total_pages=#{@total_pages} but on_page_change is nil"
-end
-
-# Option B — only render pagination when on_page_change is also set
-<nav :if={@total_pages > 1 and not is_nil(@on_page_change)} ...>
-```
-
----
 
 ## Info
 
-### IN-01: `scoria-notebook__tab--active` CSS class emitted but has no CSS definition
+### IN-01: Approval modal in `approvals_live/index.ex` bypasses the new `<.modal>` shell
 
-**File:** `lib/scoria_web/ui.ex:487` / `assets/css/04-components.css`
-**Issue:** The notebook tab button emits `"scoria-notebook__tab--active"` as a BEM modifier class when
-a tab is selected. No CSS rule for `.scoria-notebook__tab--active` exists; the active-tab styling is
-entirely driven by `.scoria-notebook__tab[aria-selected="true"]`. The `--active` class is a no-op.
-This is misleading to future developers who may try to add overrides targeting the class, and
-it indicates the BEM/attribute-selector pattern is split across the two files inconsistently.
+**File:** `lib/scoria_web/live/approvals_live/index.ex:117-155`
+**Issue:** Phase 12 adds a token-driven `<.modal>` (ui.ex:199) with the triple dismiss contract
+(close button + scrim + Escape) and semantic surfaces. The approvals page instead hand-rolls a
+`fixed inset-0 ... bg-black bg-opacity-50` modal with raw `bg-white` / `text-stone-*` /
+`text-blue-700` palette and no Escape/scrim dismissal — the exact drift the design system is
+meant to eliminate, keeping the file pinned at its DS-06 baseline of 9.
+**Fix:** Replace with `<.modal id="approval-modal" show={...} on_dismiss="dismiss_approval">`.
 
-**Fix:** Either define the modifier class in CSS (and keep both for belt-and-suspenders):
-```css
-.scoria-notebook__tab--active,
-.scoria-notebook__tab[aria-selected="true"] {
-  color: var(--scoria-text);
-  border-bottom-color: var(--scoria-action);
-}
-```
-Or remove the class emission from `ui.ex` line 487 and rely solely on `aria-selected`.
+### IN-02: `workflow_live/show.ex` retains 53 raw-palette classes — the largest drift surface, untouched
 
-### IN-02: Multiple scoria-* CSS classes emitted by components but not defined
+**File:** `lib/scoria_web/live/workflow_live/show.ex` (throughout render/1)
+**Issue:** This LiveView carries 53 raw palette classes (stone/blue/emerald/amber/red), exactly
+matching its DS-06 baseline. It adopts only `<.skeleton>` from the new library while continuing
+to hand-roll panels, pill badges (`rounded-full border border-stone-200`), and notices with raw
+palette. The design-system goal is only partially realized here.
+**Fix:** Incrementally migrate notices/panels/badges to `<.panel>`, `<.badge>`, `<.eyebrow>` and
+lower the baseline accordingly.
 
-**File:** `assets/css/04-components.css` (gap) / `lib/scoria_web/ui.ex` (emitters)
-**Issue:** The following classes are emitted by `ui.ex` components but have no corresponding CSS rule
-in `04-components.css` or any other CSS file in `assets/css/`:
+### IN-03: Test asserts raw palette `ring-2 ring-amber-400` markup (couples test to un-migrated styling)
 
-- `scoria-drawer-shell` (outer drawer wrapper — also flagged in WR-03)
-- `scoria-drawer__body`, `scoria-drawer__header-text`, `scoria-drawer__header-actions`
-- `scoria-modal__body`
-- `scoria-notebook__header`, `scoria-notebook__title`
-- `scoria-skeleton-group` (no gap/spacing between stacked rows)
-- `scoria-table-shell`, `scoria-table__filter`, `scoria-table__density-toggle`
-- `scoria-table__pagination`, `scoria-table__page-label`, `scoria-table__td--actions`
+**File:** `test/scoria_web/live/approvals_live_test.exs:315`
+**Issue:** `assert html =~ "ring-2 ring-amber-400"` hard-codes a raw Tailwind palette class as the
+highlight signal. This couples the test to styling the design system is meant to replace;
+migrating the highlight to a semantic class (e.g. `scoria-attention` from 05-motion.css) would
+silently break this assertion.
+**Fix:** Add a stable attribute (`data-highlighted` / `aria-current`) to the highlighted row and
+assert on that instead of the Tailwind ring class.
 
-Most are structural/layout helpers where missing CSS means default browser styling (block elements,
-no explicit gaps). The most impactful absent definitions are the drawer ones (covered in WR-03), and
-`scoria-skeleton-group` (skeleton rows have no gap/spacing between them).
+### IN-04: `assign_selection/2` reads `selected_step_id` from the pre-pipe socket (latent footgun)
 
-**Fix:** Add minimal CSS definitions for each missing class. At minimum, add gap to skeleton group:
-```css
-.scoria-skeleton-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--scoria-space-2);
-}
-```
-And define the structural drawer/modal body/table layout classes as appropriate.
-
-### IN-03: Toast JS.hide fade transition references undefined CSS classes
-
-**File:** `lib/scoria_web/ui.ex:369, 374`
-**Issue:** The `JS.hide` calls use `transition: {"scoria-fade", "opacity-100", "opacity-0"}`. The
-`opacity-100` and `opacity-0` classes are Tailwind CSS utility classes that are not defined anywhere
-in the library's own CSS (`assets/css/`). The `scoria-fade` string is an `@keyframes` name in
-`05-motion.css`, not a CSS class. Host applications that do not include Tailwind will silently get an
-instant hide (no animation) instead of a fade — functionally correct but not the designed behavior.
-This creates an undocumented dependency on the host app's Tailwind installation.
-
-**Fix:** Define the transition classes in the library's own CSS, or use a `scoria-` prefixed transition
-class that does not rely on Tailwind:
-```css
-/* In 04-components.css or 06-utilities.css */
-.scoria-fade-transition {
-  transition: opacity var(--scoria-dur-fast) var(--scoria-ease-out);
-}
-.opacity-0 { opacity: 0; }
-.opacity-100 { opacity: 1; }
-```
-Then update the JS.hide call to `transition: {"scoria-fade-transition", "opacity-100", "opacity-0"}`.
-
-### IN-04: Test endpoint `secret_key_base` is exactly 64 characters — borderline for LiveView signing
-
-**File:** `test/scoria_web/live/approvals_live_test.exs:60` / `test/scoria_web/live/workflow_live_test.exs:44`
-**Issue:** Both test endpoints use the same `secret_key_base` value of exactly 64 characters
-(`"uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1M"`). Per the project's own
-MEMORY.md note: "LiveView test endpoints need a ≥64-char secret_key_base or the page 500s (masked as
-missing ErrorView)." The value is exactly at the boundary, not above it. While this currently works,
-it is fragile — any truncation (copy-paste, tooling, etc.) would produce a silent 500. Additionally,
-both test modules share the identical key, which is fine for test isolation but worth noting.
-
-**Fix:** Use a clearly over-length key (80+ chars) to have comfortable margin:
-```elixir
-secret_key_base: String.duplicate("scoria_test_key_", 5)  # 80 chars, obviously synthetic
-```
+**File:** `lib/scoria_web/live/workflow_live/show.ex:47`
+**Issue:** `socket |> assign(:selected_source_variant, source) |> assign_selection(socket.assigns.selected_step_id)`
+binds the argument to the *original* socket, not the result of the preceding `assign/3`. Correct
+today only because `selected_step_id` is not modified in that pipe; a future edit that also
+updates `selected_step_id` would silently use the stale value.
+**Fix:** Bind `step_id = socket.assigns.selected_step_id` before the pipe and pass it explicitly.
 
 ---
 
-_Reviewed: 2026-06-04T18:00:00Z_
+_Reviewed: 2026-06-04T00:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
