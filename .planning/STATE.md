@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
-status: verifying
-last_updated: "2026-06-04T17:01:53.888Z"
+status: ready_to_plan
+last_updated: 2026-06-04T17:27:15.273Z
 last_activity: 2026-06-04
 progress:
   total_phases: 15
@@ -11,6 +11,7 @@ progress:
   total_plans: 10
   completed_plans: 10
   percent: 13
+stopped_at: Phase 12 complete (5/5) — ready to discuss Phase 13
 ---
 
 # Project State
@@ -21,13 +22,13 @@ See: `.planning/PROJECT.md` (updated 2026-06-03 after v3.0 Control Room mileston
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 12 — design-system-component-layer
+**Current focus:** Phase 13 — orientation spine (ia)
 
 ## Current Position
 
-Phase: 12 (design-system-component-layer) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
+Phase: 13
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-06-04
 
 Progress: [██████████] 100%
