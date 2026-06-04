@@ -66,7 +66,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   - [x] 11-02-PLAN.md — UICritique module + 9-key findings-JSON unit test (EVAL-02)
   - [x] 11-03-PLAN.md — Harness: scoria.ui.shots Mix task + Playwright shots.mjs (EVAL-01)
   - [x] 11-04-PLAN.md — Hex hygiene (package.files) + gitignore + MAINTAINERS docs (EVAL-03)
-  - [ ] 11-05-PLAN.md — Baseline audit: render + commit ranked gap register (EVAL-05)
+  - [x] 11-05-PLAN.md — Baseline audit: render + commit ranked gap register (EVAL-05)
 **UI hint**: yes
 
 ### Phase 12: Design-system component layer
@@ -142,7 +142,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 11. Evaluation engine + seed depth | v3.0 | 4/5 | In Progress|  |
+| 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete   | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 0/? | Not started | - |
 | 13. Orientation spine (IA) | v3.0 | 0/? | Not started | - |
 | 14. Least-iterated screens polish | v3.0 | 0/? | Not started | - |
