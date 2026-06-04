@@ -404,14 +404,14 @@ defmodule ScoriaWeb.UIComponentTest do
       assert html =~ ~s(role="tabpanel")
     end
 
-    test "empty: true renders :empty slot and no tab buttons" do
+    test "empty: true renders :empty_slot content and no tab buttons" do
       html =
         render_component(&ScoriaWeb.UI.notebook/1,
           id: "nb-5",
           title: "Evidence",
           empty: true,
           tab: [],
-          empty: slot_block("No evidence yet")
+          empty_slot: slot_block("No evidence yet")
         )
 
       assert html =~ "No evidence yet"

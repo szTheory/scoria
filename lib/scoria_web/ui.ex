@@ -333,6 +333,92 @@ defmodule ScoriaWeb.UI do
   end
 
   # ---------------------------------------------------------------------------
+  # DS-04: <.notebook> and <.raw_evidence> — unified evidence panel shell (plan 12-04)
+  # ---------------------------------------------------------------------------
+
+  attr(:id, :string, required: true)
+  attr(:title, :string, required: true)
+  attr(:eyebrow, :string, default: nil)
+  attr(:empty, :boolean, default: false)
+  attr(:selected_tab, :string, default: nil)
+  attr(:on_tab_change, :string, default: nil)
+  attr(:rest, :global)
+
+  slot :tab, doc: "One tab panel" do
+    attr :key, :string, required: true
+    attr :label, :string, required: true
+  end
+
+  slot(:empty_slot)
+
+  @doc "Unified tabbed evidence panel shell (DS-04).
+  Renders a <nav role='tablist'> tab bar with one <button role='tab'> per <:tab> slot.
+  The tab matching @selected_tab carries aria-selected='true'. Clicking a tab emits
+  phx-click={@on_tab_change} phx-value-tab={key}. When @empty is true, the :empty_slot
+  body is rendered instead of the tab bar and panel."
+  def notebook(assigns) do
+    # Default to first tab when selected_tab is nil
+    assigns =
+      if assigns.selected_tab == nil and assigns.tab != [] do
+        assign(assigns, :selected_tab, hd(assigns.tab).key)
+      else
+        assigns
+      end
+
+    ~H"""
+    <div id={@id} class="scoria-notebook" {@rest}>
+      <div class="scoria-notebook__header">
+        <p :if={@eyebrow} class="scoria-eyebrow">{@eyebrow}</p>
+        <h2 class="scoria-notebook__title">{@title}</h2>
+      </div>
+      <%= if @empty do %>
+        <div class="scoria-notebook__panel">
+          {render_slot(@empty_slot)}
+        </div>
+      <% else %>
+        <nav class="scoria-notebook__tabbar" role="tablist">
+          <button
+            :for={tab <- @tab}
+            role="tab"
+            id={"#{@id}-tab-#{tab.key}"}
+            aria-selected={to_string(tab.key == @selected_tab)}
+            class={["scoria-notebook__tab", tab.key == @selected_tab && "scoria-notebook__tab--active"]}
+            phx-click={@on_tab_change}
+            phx-value-tab={tab.key}
+          >
+            {tab.label}
+          </button>
+        </nav>
+        <%= for tab <- @tab, tab.key == @selected_tab do %>
+          <div
+            role="tabpanel"
+            class="scoria-notebook__panel"
+            aria-labelledby={"#{@id}-tab-#{tab.key}"}
+          >
+            {render_slot(tab)}
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+    """
+  end
+
+  attr(:label, :string, default: "Advanced raw evidence")
+  slot(:inner_block, required: true)
+
+  @doc "Raw evidence details/pre block (DS-04).
+  Renders a <details>/<summary> with a <pre> code block. Background and font
+  tokens are applied via CSS class — not overridden in HEEx."
+  def raw_evidence(assigns) do
+    ~H"""
+    <details class="scoria-raw-evidence">
+      <summary class="scoria-raw-evidence__summary">{@label}</summary>
+      <pre class="scoria-raw-evidence__pre">{render_slot(@inner_block)}</pre>
+    </details>
+    """
+  end
+
+  # ---------------------------------------------------------------------------
   # DS-01: <.table> — sortable, density-aware data table (plan 12-02)
   # ---------------------------------------------------------------------------
 

@@ -506,6 +506,29 @@
     padding: var(--scoria-space-4);
   }
 
+  /* ---------- Raw evidence details block ---------- */
+  .scoria-raw-evidence {
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-sm);
+    margin-top: var(--scoria-space-2);
+  }
+  .scoria-raw-evidence__summary {
+    font-size: var(--scoria-fs-body);
+    color: var(--scoria-text-muted);
+    cursor: pointer;
+    padding: var(--scoria-space-2) var(--scoria-space-3);
+    user-select: none;
+  }
+  .scoria-raw-evidence__pre {
+    background: var(--scoria-surface-sunken);
+    font-family: var(--scoria-font-mono);
+    font-size: var(--scoria-fs-badge);
+    padding: var(--scoria-space-3);
+    margin: 0;
+    overflow-x: auto;
+    border-top: 1px solid var(--scoria-border);
+  }
+
   /* ---------- Flash banners ---------- */
   .scoria-flash {
     border: 1px solid var(--scoria-tone-neutral-border);
