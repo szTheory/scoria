@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
-status: executing
-last_updated: "2026-06-04T16:43:36.264Z"
+status: verifying
+last_updated: "2026-06-04T17:01:53.888Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 15
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 10
-  completed_plans: 9
-  percent: 7
+  completed_plans: 10
+  percent: 13
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-03 after v3.0 Control Room mileston
 
 Phase: 12 (design-system-component-layer) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-04
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
@@ -67,8 +67,9 @@ Progress: [█████████░] 90%
 - [Phase ?]: RunSummary.run_id is the correct field for downstream run ID linking
 - [Phase ?]: All seeded review candidates need review_status: pending for list_review_queue(%{}) to return them
 - [Phase ?]: Use add_if_not_exists when deleted interim migrations may have partially applied columns
-- [Phase ?]: DS-06 ratchet uses File.exists? guard so mix test stays green before plan 12-05 commits the baseline
-- [Phase ?]: ui.ex-zero assertion tagged :ui_ex_zero excluded until plan 12-02 sweeps flash_tone_class
+- [Phase 12-05]: DS-06 baseline committed; File.exists? guard and :ui_ex_zero tag removed — ratchet runs by default in mix test
+- [Phase 12-05]: Phoenix.Component.update/3 must be qualified in approvals_live — Ecto.Query import creates ambiguity
+- [Phase 12-05]: DS-06 baseline uses Regex.scan count (all occurrences per file) not grep -c (lines with a match) — must stay consistent
 - [Phase ?]: Use Map.get/3 in template instead of :default in slot attr declarations
 - [Phase ?]: empty_slot is the slot name in notebook/1 to avoid conflict with the empty boolean attr
 - [Phase ?]: JS.hide in toast/1 omits to: option — targets self (Pitfall 3 from RESEARCH.md; avoids id interpolation in component)
@@ -89,6 +90,7 @@ Progress: [█████████░] 90%
 | Phase 12-design-system-component-layer P02 | 8min | 2 tasks | 2 files |
 | Phase 12-design-system-component-layer P03 | 10min | 2 tasks | 2 files |
 | Phase 12 P04 | 3min | 2 tasks | 3 files |
+| Phase 12-design-system-component-layer P05 | 17min | 3 tasks | 8 files |
 
 ## Operator Next Steps
 
