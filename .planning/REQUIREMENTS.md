@@ -14,7 +14,7 @@
 - [x] **EVAL-02**: Captured screenshots can be critiqued against a 9-dimension rubric (brand-fit, consistency, hierarchy, affordance/least-surprise, accessibility, responsive, motion, microcopy, density) to produce structured per-screen findings.
 - [x] **EVAL-03**: The screenshot + critique harness ships as committed dev-only tooling (not merge-blocking CI) with documented usage.
 - [x] **EVAL-04**: `dev_seed.exs` populates every dashboard screen — Reviews, Incidents, Eval Workbench, and Prompt Registry included — so each renders at its most useful when clicked through.
-- [ ] **EVAL-05**: A baseline audit produces a ranked design-system gap register and a prioritized fix backlog.
+- [x] **EVAL-05**: A baseline audit produces a ranked design-system gap register and a prioritized fix backlog.
 
 ### Design System Component Layer
 
@@ -83,7 +83,7 @@ Each requirement maps to exactly one phase. Phase numbering continues from v2.16
 | EVAL-02 | Phase 11 — Evaluation engine + seed depth | Complete |
 | EVAL-03 | Phase 11 — Evaluation engine + seed depth | Complete |
 | EVAL-04 | Phase 11 — Evaluation engine + seed depth | Complete |
-| EVAL-05 | Phase 11 — Evaluation engine + seed depth | Pending |
+| EVAL-05 | Phase 11 — Evaluation engine + seed depth | Complete |
 | DS-01 | Phase 12 — Design-system component layer | Pending |
 | DS-02 | Phase 12 — Design-system component layer | Pending |
 | DS-03 | Phase 12 — Design-system component layer | Pending |

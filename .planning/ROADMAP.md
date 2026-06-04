@@ -17,7 +17,7 @@
 
 UI/IA/DX milestone. No net-new backend capability families. Expose components → delete leaked classes → consolidate → orient → polish → prove. Sequenced for compounding reuse: primitives before screens, least-iterated screens before high-traffic, motion/responsive/theme last before the proof sweep.
 
-- [ ] **Phase 11: Evaluation engine + seed depth** — Committed `mix scoria.ui.shots` screenshot+critique harness, 9-dimension rubric, full-screen seed depth, baseline audit → gap register + fix backlog.
+- [x] **Phase 11: Evaluation engine + seed depth** — Committed `mix scoria.ui.shots` screenshot+critique harness, 9-dimension rubric, full-screen seed depth, baseline audit → gap register + fix backlog. (completed 2026-06-04)
 - [ ] **Phase 12: Design-system component layer** — Expose `ui.ex` table/drawer/modal/form/notebook/skeleton/toast components, fix `flash_group`, add executable raw-color drift guard. The enforced token gateway.
 - [ ] **Phase 13: Orientation spine (IA)** — Fix nav active-state, third nav axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, cross-screen quality-loop threading, honest reserved-name stubs.
 - [ ] **Phase 14: Least-iterated screens polish** — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions (zero raw-palette leakage); real Dataset Builder index.
@@ -142,7 +142,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete   | 2026-06-04 |
+| 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 0/? | Not started | - |
 | 13. Orientation spine (IA) | v3.0 | 0/? | Not started | - |
 | 14. Least-iterated screens polish | v3.0 | 0/? | Not started | - |
