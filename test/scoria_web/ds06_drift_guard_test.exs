@@ -49,6 +49,39 @@ defmodule ScoriaWeb.DS06DriftGuardTest do
     assert violations == [], format_failure(violations)
   end
 
+  test "baseline is not stale — no file sits below its committed baseline (WR-01)" do
+    # WR-01: the ratchet only fails on count > baseline, so once a file's palette
+    # usage is reduced (the Phase 12 goal) but the baseline is not lowered, the file
+    # silently re-acquires headroom: a later change can add palette back up to the
+    # stale baseline with the guard staying green, freezing the worst-ever state.
+    # This assertion forces the baseline to be re-committed downward on every
+    # improvement, so the ratchet always tightens and never leaves slack.
+    baseline = load_baseline()
+
+    stale =
+      for {path, baseline_count} <- baseline, baseline_count > 0 do
+        count =
+          if File.exists?(path) do
+            path |> File.read!() |> then(&length(Regex.scan(@palette_regex, &1)))
+          else
+            # A baselined file that no longer exists is also stale: drop its entry.
+            0
+          end
+
+        if count < baseline_count, do: {path, count, baseline_count}
+      end
+      |> Enum.reject(&is_nil/1)
+
+    assert stale == [],
+           """
+           DS-06 drift guard: stale baseline — these files now use FEWER raw palette
+           classes than their committed baseline. Lower the baseline so the ratchet
+           tightens (otherwise palette can be re-introduced up to the stale value):
+           #{Enum.map_join(stale, "\n", fn {path, count, baseline_count} -> "  #{path}: found #{count}, baseline #{baseline_count}" end)}
+             Fix: regenerate #{@baseline_path} from the current codebase and re-commit it.
+           """
+  end
+
   test "lib/scoria_web/ui.ex has zero raw palette matches" do
     # ui.ex is the enforced token gateway — it must never emit raw palette classes.
     source = File.read!("lib/scoria_web/ui.ex")
@@ -66,10 +99,44 @@ defmodule ScoriaWeb.DS06DriftGuardTest do
     @baseline_path
     |> File.read!()
     |> String.split("\n", trim: true)
-    |> Enum.into(%{}, fn line ->
-      [path, count] = String.split(line, ":", parts: 2)
-      {path, String.to_integer(count)}
-    end)
+    |> Enum.into(%{}, &parse_baseline_line/1)
+  end
+
+  # WR-02: a malformed committed baseline line (no colon, non-integer count,
+  # stray whitespace/\r, a colon inside the path) previously crashed with an
+  # opaque MatchError/ArgumentError giving no hint which line was bad. Validate
+  # each field and emit a descriptive drift-guard failure naming the line.
+  # The path is everything before the LAST colon so paths containing a colon
+  # still parse; the count is everything after it.
+  defp parse_baseline_line(line) do
+    case String.split(line, ":") do
+      parts when length(parts) >= 2 ->
+        {count_str, path_parts} = List.pop_at(parts, -1)
+        path = path_parts |> Enum.join(":") |> String.trim()
+        count_str = String.trim(count_str)
+
+        case Integer.parse(count_str) do
+          {count, ""} when path != "" ->
+            {path, count}
+
+          _ ->
+            flunk_baseline(line)
+        end
+
+      _ ->
+        flunk_baseline(line)
+    end
+  end
+
+  defp flunk_baseline(line) do
+    ExUnit.Assertions.flunk("""
+    DS-06 drift guard: malformed baseline entry in #{@baseline_path}
+      offending line: #{inspect(line)}
+      expected format: <path>:<integer-count>
+      Fix: correct the line, or regenerate the baseline with the scanner
+      (Path.wildcard("lib/scoria_web/**/*.{ex,heex}") minus @excluded, emit "path:count"
+      sorted; see 12-05-PLAN.md) and re-commit #{@baseline_path}.
+    """)
   end
 
   defp format_failure(violations) do
