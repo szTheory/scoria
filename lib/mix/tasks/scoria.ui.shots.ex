@@ -47,8 +47,8 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
   Starts the Elixir app (to access ReqLLM), then calls
   `Scoria.UICritique.critique_screen/3` on each screen's canonical state
   (populated × desktop × dark) and writes a findings JSON file alongside
-  the PNG. This pass does NOT aggregate the gap register — that step is
-  handled by `mix scoria.ui.audit` in Plan 05.
+  the PNG. After the per-screen loop completes, aggregates the findings
+  into `priv/shots/gap_register.md` (the stable top-level baseline path).
   """
 
   use Mix.Task
@@ -174,5 +174,123 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
     end
 
     Mix.shell().info("[scoria.ui.shots] Critique pass complete.")
+
+    render_gap_register(out_dir, @screens)
+  end
+
+  # ---------------------------------------------------------------------------
+  # Gap register rendering
+  # ---------------------------------------------------------------------------
+
+  # Aggregates per-screen findings JSON (already written by the critique pass)
+  # into a ranked gap register at priv/shots/gap_register.md.
+  #
+  # Receives out_dir (the date-stamped directory used by the critique pass) as
+  # a parameter — does NOT recompute it via Date.utc_today().
+  #
+  # The OUTPUT file is written to the top-level priv/shots/ directory (NOT
+  # inside out_dir) so the committed baseline path is stable across runs.
+  defp render_gap_register(out_dir, screens) do
+    # Extract the date component from out_dir for the heading
+    date_str = Path.basename(out_dir)
+
+    # Read each screen's populated_dark_desktop.json; skip missing files
+    screen_findings =
+      Enum.flat_map(screens, fn screen ->
+        json_path = Path.join([out_dir, screen, "populated_dark_desktop.json"])
+
+        if File.exists?(json_path) do
+          case Jason.decode(File.read!(json_path)) do
+            {:ok, findings} -> [{screen, findings}]
+
+            {:error, _} ->
+              Mix.shell().info("  ! #{screen}: could not parse populated_dark_desktop.json — skipping")
+              []
+          end
+        else
+          Mix.shell().info("  ! #{screen}: populated_dark_desktop.json not found — skipping")
+          []
+        end
+      end)
+
+    screens_audited = length(screen_findings)
+
+    # Flatten all {screen, dimension, score, findings_list} entries
+    all_entries =
+      Enum.flat_map(screen_findings, fn {screen, findings_map} ->
+        Enum.flat_map(findings_map, fn {dimension, dim_data} ->
+          case dim_data do
+            %{"score" => score, "findings" => findings_list}
+            when is_integer(score) and is_list(findings_list) ->
+              [{screen, dimension, score, findings_list}]
+
+            _ ->
+              []
+          end
+        end)
+      end)
+
+    p0_count = Enum.count(all_entries, fn {_, _, score, _} -> score == 1 end)
+    p1_count = Enum.count(all_entries, fn {_, _, score, _} -> score == 2 end)
+    passing_count = Enum.count(all_entries, fn {_, _, score, _} -> score >= 3 end)
+
+    # Ranked Findings: sort worst-first (score ascending), then screen + dimension
+    ranked_entries =
+      all_entries
+      |> Enum.filter(fn {_, _, score, _} -> score <= 2 end)
+      |> Enum.sort_by(fn {screen, dimension, score, _} -> {score, screen, dimension} end)
+
+    ranked_section =
+      if ranked_entries == [] do
+        "No gaps found in this dimension.\n"
+      else
+        Enum.map_join(ranked_entries, "\n", fn {screen, dimension, score, findings_list} ->
+          findings_text =
+            if findings_list == [] do
+              "> No gaps found in this dimension."
+            else
+              Enum.map_join(findings_list, "\n", fn finding -> "> #{finding}" end)
+            end
+
+          "### #{screen} — #{dimension}: #{score}/5\n#{findings_text}"
+        end)
+      end
+
+    # Fix Backlog: P0 rows (score 1) before P1 rows (score 2)
+    backlog_entries =
+      all_entries
+      |> Enum.filter(fn {_, _, score, _} -> score <= 2 end)
+      |> Enum.sort_by(fn {screen, dimension, score, _} -> {score, screen, dimension} end)
+
+    backlog_rows =
+      Enum.map_join(backlog_entries, "\n", fn {screen, dimension, score, findings_list} ->
+        priority = if score == 1, do: "P0", else: "P1"
+        action = findings_list |> List.first("Review and fix") |> String.slice(0, 80)
+        "| #{priority} | #{screen} | #{dimension} | #{action} |"
+      end)
+
+    markdown = """
+    # Design-System Gap Register — Baseline #{date_str}
+
+    ## Summary
+    - Screens audited: #{screens_audited}
+    - P0 issues (score 1): #{p0_count}
+    - P1 issues (score 2): #{p1_count}
+    - Passing (score ≥ 3): #{passing_count}
+
+    ## Ranked Findings (worst first)
+
+    #{ranked_section}
+
+    ## Fix Backlog (prioritized)
+    | Priority | Screen | Dimension | Action |
+    |----------|--------|-----------|--------|
+    #{backlog_rows}
+    """
+
+    out_path = Path.join([File.cwd!(), "priv", "shots", "gap_register.md"])
+    File.mkdir_p!(Path.dirname(out_path))
+    File.write!(out_path, markdown)
+    Mix.shell().info("==> Wrote priv/shots/gap_register.md")
   end
 end
