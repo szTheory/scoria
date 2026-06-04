@@ -178,6 +178,145 @@ defmodule ScoriaWeb.UI do
     """
   end
 
+  # ---------------------------------------------------------------------------
+  # DS-01: <.table> — sortable, density-aware data table (plan 12-02)
+  # ---------------------------------------------------------------------------
+
+  slot :col, doc: "Table column" do
+    attr :label, :string, required: true
+    attr :key, :atom
+    attr :class, :string
+  end
+
+  slot :empty
+  slot :action
+  slot :filter
+
+  attr :rows, :list, required: true
+  attr :sort_by, :any, default: nil
+  attr :sort_dir, :atom, default: :asc, values: [:asc, :desc]
+  attr :density, :atom, default: :default, values: [:compact, :default, :comfortable]
+  attr :id, :string, required: true
+  attr :page, :integer, default: 1
+  attr :total_pages, :integer, default: 1
+  attr :on_page_change, :string, default: nil
+  attr :rest, :global
+
+  @doc "Sortable, density-aware, paginated data table (DS-01).
+  Renders column headers from typed <:col> slots; emits phx-click='sort' on keyed columns.
+  Uses density modifier classes from density_class/1. Falls back to a default empty state
+  when rows is empty (overridable via <:empty>). Pagination strip shown when total_pages > 1."
+  def table(assigns) do
+    ~H"""
+    <div class="scoria-table-shell">
+      <div :if={@filter != []} class="scoria-table__filter">
+        {render_slot(@filter)}
+      </div>
+      <div class="scoria-table__density-toggle" role="group" aria-label="Row density">
+        <button
+          :for={density_opt <- [:compact, :default, :comfortable]}
+          phx-click="set_density"
+          phx-value-density={density_opt}
+          class={[
+            if(@density == density_opt,
+              do: "scoria-button scoria-button--primary scoria-button--sm",
+              else: "scoria-button scoria-button--ghost scoria-button--sm"
+            )
+          ]}
+        >
+          {density_opt |> Atom.to_string() |> String.capitalize()}
+        </button>
+      </div>
+      <table class={["scoria-table", density_class(@density)]} id={@id} {@rest}>
+        <thead>
+          <tr>
+            <th
+              :for={column <- @col}
+              class={["scoria-table__th", Map.get(column, :class)]}
+              phx-click={Map.get(column, :key) && "sort"}
+              phx-value-by={Map.get(column, :key)}
+            >
+              {column.label}
+              <svg
+                :if={Map.get(column, :key) != nil}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 16 16"
+                width="16"
+                height="16"
+                aria-hidden="true"
+                fill="currentColor"
+                style={
+                  if @sort_by == Map.get(column, :key),
+                    do: "color: var(--scoria-action)",
+                    else: "color: var(--scoria-text-subtle)"
+                }
+              >
+                <path
+                  :if={@sort_by == Map.get(column, :key) and @sort_dir == :desc}
+                  fill-rule="evenodd"
+                  d="M8 4.25a.75.75 0 0 1 .75.75v6.19l1.47-1.47a.75.75 0 1 1 1.06 1.06l-2.75 2.75a.75.75 0 0 1-1.06 0L4.72 11.28a.75.75 0 1 1 1.06-1.06L7.25 11.19V5a.75.75 0 0 1 .75-.75z"
+                  clip-rule="evenodd"
+                />
+                <path
+                  :if={not (@sort_by == Map.get(column, :key) and @sort_dir == :desc)}
+                  fill-rule="evenodd"
+                  d="M8 11.75a.75.75 0 0 1-.75-.75V4.81L5.78 6.28a.75.75 0 1 1-1.06-1.06l2.75-2.75a.75.75 0 0 1 1.06 0l2.75 2.75a.75.75 0 1 1-1.06 1.06L8.75 4.81V11a.75.75 0 0 1-.75.75z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </th>
+            <th :if={@action != []} class="scoria-table__th scoria-table__th--actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :if={@rows == []}>
+            <td colspan={length(@col) + if(@action != [], do: 1, else: 0)}>
+              <%= if @empty != [] do %>
+                {render_slot(@empty)}
+              <% else %>
+                <.empty_state title="No records found">
+                  Adjust your filters or check back when data is available.
+                </.empty_state>
+              <% end %>
+            </td>
+          </tr>
+          <tr :for={row <- @rows}>
+            <td :for={column <- @col} class={Map.get(column, :class)}>{render_slot(column, row)}</td>
+            <td :if={@action != []} class="scoria-table__td--actions">{render_slot(@action, row)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <nav :if={@total_pages > 1} aria-label="Pagination" class="scoria-table__pagination">
+        <button
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+          phx-click={@on_page_change}
+          phx-value-page={@page - 1}
+          disabled={@page <= 1}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.78 3.22a.75.75 0 0 0-1.06 0L4.47 7.47a.75.75 0 0 0 0 1.06l4.25 4.25a.75.75 0 0 0 1.06-1.06L6.06 8l3.72-3.72a.75.75 0 0 0 0-1.06z" clip-rule="evenodd" />
+          </svg>
+        </button>
+        <span class="scoria-table__page-label">Page {@page} of {@total_pages}</span>
+        <button
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+          phx-click={@on_page_change}
+          phx-value-page={@page + 1}
+          disabled={@page >= @total_pages}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+            <path fill-rule="evenodd" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </nav>
+    </div>
+    """
+  end
+
+  defp density_class(:compact), do: "scoria-table--compact"
+  defp density_class(:comfortable), do: "scoria-table--comfortable"
+  defp density_class(:default), do: nil
+
   attr(:flash, :map, default: %{})
 
   @doc "Dashboard flash banners. Single home for flash kind → tone styling (DS-05).
