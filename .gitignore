@@ -37,4 +37,9 @@ priv/shots/**/*.json
 priv/dev/node_modules/
 priv/dev/package-lock.json
 
+# Dev-only Playwright e2e run artifacts (reports/traces/screenshots are transient).
+priv/dev/test-results/
+priv/dev/e2e/test-results/
+priv/dev/e2e/playwright-report/
+
 .env

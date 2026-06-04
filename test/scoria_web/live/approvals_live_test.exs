@@ -245,7 +245,15 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     send(view.pid, {:hitl_request, projection})
     render_click(view, "approve", %{})
 
-    assert render(view) =~ "already decided by another operator"
+    # UAT-2/UAT-3: the error branch surfaces BOTH a fail-tone toast and a
+    # fail-tone flash banner, end-to-end (put_flash + put_toast → flash_group/toast).
+    html = render(view)
+    assert html =~ "already decided by another operator"
+    assert html =~ "scoria-flash--fail"
+    assert html =~ ~s(role="alert")
+    assert html =~ "scoria-toast--fail"
+    # Flash carries a tone icon so status is never communicated by color alone (a11y).
+    assert html =~ "<svg"
   end
 
   test "focused runtime highlights non-matching inbox approval without replacing modal" do
@@ -335,7 +343,16 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     assert render(view) =~ "Approval Required"
   end
 
-  test "approval decision renders scoria-toast in approvals view" do
+  test "approvals inbox boots and renders the toast region shell" do
+    {:ok, _view, html} = live(session_conn(), "/scoria/approvals")
+
+    # UAT-1: the modified screen mounts cleanly and the toast-region wiring is present.
+    assert html =~ "scoria-toast-region"
+    assert html =~ "Approvals"
+    assert html =~ "Approval inbox"
+  end
+
+  test "approve decision renders a pass-tone toast with granted copy" do
     {:ok, view, _html} =
       live(
         session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
@@ -349,7 +366,40 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     render_click(view, "approve", %{})
 
-    eventually(fn -> render(view) =~ "scoria-toast" end)
+    # UAT-2 (server-renderable half): tone, copy, role, dismiss control, and the
+    # phx-mounted auto-dismiss directive all render. The actual timed hide/fade is
+    # JS-driven and is asserted by the Tier 2 Playwright lane (priv/dev/e2e).
+    eventually(fn -> render(view) =~ "scoria-toast--pass" end)
+    html = render(view)
+    assert html =~ "scoria-toast--pass"
+    assert html =~ "Approval granted."
+    assert html =~ ~s(role="status")
+    assert html =~ "phx-mounted"
+    assert html =~ ~s(aria-label="Dismiss")
+    refute html =~ "scoria-toast--warn"
+  end
+
+  test "reject decision renders a warn-tone toast with paused copy" do
+    {:ok, view, _html} =
+      live(
+        session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+        "/scoria/approvals"
+      )
+
+    %{approval: approval} = pending_approval()
+
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+    send(view.pid, {:hitl_request, projection})
+
+    render_click(view, "reject", %{})
+
+    # UAT-2: a rejection keeps the workflow paused, so it must NOT report the green
+    # pass toast — the tone-by-decision distinction is safety-relevant (WR-03).
+    eventually(fn -> render(view) =~ "scoria-toast--warn" end)
+    html = render(view)
+    assert html =~ "scoria-toast--warn"
+    assert html =~ "Approval rejected — workflow remains paused."
+    refute html =~ "scoria-toast--pass"
   end
 
   defp drain_pubsub_messages do

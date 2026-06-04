@@ -17,6 +17,7 @@ import { chromium } from 'playwright';
 import { mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { waitForReady } from './e2e/lib/ready.mjs';
 
 // ---------------------------------------------------------------------------
 // Arg parsing
@@ -64,26 +65,10 @@ function parseArgs(argv) {
 }
 
 // ---------------------------------------------------------------------------
-// Sentinel gating
+// Sentinel gating — shared single source with the e2e lane (priv/dev/e2e/lib/ready.mjs).
+// waitForReady() blocks until data-scoria-ready="true" is set on <html> by
+// phx:page-loading-stop in assets/js/scoria.js.
 // ---------------------------------------------------------------------------
-
-/**
- * Waits for data-scoria-ready="true" on <html>.
- * Set by phx:page-loading-stop in assets/js/scoria.js line 84.
- * Throws with the UI-SPEC missing-sentinel error copy on timeout.
- */
-async function waitForReady(page, timeoutMs = 5000) {
-  try {
-    await page.waitForFunction(
-      () => document.documentElement.getAttribute('data-scoria-ready') === 'true',
-      { timeout: timeoutMs }
-    );
-  } catch {
-    throw new Error(
-      `Error: data-scoria-ready not set on <html> after ${timeoutMs}ms. Is the dev server running?`
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Theme toggle (CSS-only — no sentinel re-wait needed per RESEARCH Pitfall 1)

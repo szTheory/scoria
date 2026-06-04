@@ -67,11 +67,21 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
-    # Before async resolves the loading state should show the skeleton
+    # UAT-4 (before): the loading slot shows the skeleton, not bespoke loading text.
     assert html =~ "scoria-skeleton"
+    assert html =~ ~s(role="status")
     refute html =~ "Loading compacted memories..."
 
+    # UAT-4 (after): once the async assign resolves, the skeleton is REPLACED — it
+    # must not linger — and the load did not fall into the failed state. (The pulse
+    # animation + prefers-reduced-motion are CSS-driven and asserted in the Tier 2
+    # Playwright lane; the lifecycle replacement is the server-observable truth.)
     render_async(view)
+    resolved = render(view)
+    refute resolved =~ "scoria-skeleton"
+    refute resolved =~ "Failed to load memories."
+    # The detail page itself remains mounted and rendered around the resolved slot.
+    assert resolved =~ "Workflow Run"
   end
 
   test "LiveView mounts from persisted workflow records and subscribes for projection updates" do

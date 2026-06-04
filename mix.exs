@@ -156,8 +156,10 @@ defmodule Scoria.MixProject do
         "priv/repo/migrations",
         "priv/repo/knowledge_migrations",
         "priv/static",
-        # priv/dev intentionally excluded — shots.mjs is a dev-only harness script,
-        # not for adopters (D-01: zero Hex footprint for browser automation tooling).
+        # priv/dev intentionally excluded — shots.mjs (screenshots) and e2e/ (the
+        # Playwright assertion lane) are dev-only harness tooling, not for adopters
+        # (D-01: zero Hex footprint for browser automation tooling). Do NOT add a
+        # priv/dev entry here — it would ship Playwright specs + node tooling.
         # priv/shots intentionally excluded — screenshot captures are transient
         # dev-only artifacts; only gap_register.md is committed (per .gitignore rules).
         "mix.exs",
