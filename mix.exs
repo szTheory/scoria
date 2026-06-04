@@ -53,6 +53,10 @@ defmodule Scoria.MixProject do
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
+  # `dev/` holds the dev-only host harness (DevEndpoint/DevRouter) that serves
+  # the dashboard via `mix phx.server`. It is excluded from the Hex package
+  # (see `package/0` files) so adopters never receive it.
+  defp elixirc_paths(:dev), do: ["lib", "dev"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Host-app overlay templates and hex unpack fixtures must not compile in the root suite.
@@ -91,6 +95,11 @@ defmodule Scoria.MixProject do
       {:req_llm, "~> 1.13"},
       {:tiktoken, "~> 0.4.2"},
       {:ex_doc, "~> 0.38", only: :dev, runtime: false},
+      # Dev-only web server + live reload for the dev harness endpoint (dev/).
+      # Scoria is a library — adopters bring their own server — so these are
+      # never shipped to Hex (only: :dev). Bandit backs the DevEndpoint.
+      {:bandit, "~> 1.5", only: :dev},
+      {:phoenix_live_reload, "~> 1.5", only: :dev},
       {:floki, ">= 0.30.0", only: :test},
       {:lazy_html, ">= 0.1.0", only: :test}
     ]
@@ -99,7 +108,10 @@ defmodule Scoria.MixProject do
   defp aliases do
     [
       "assets.build": ["scoria.assets.build"],
-      "assets.deploy": ["scoria.assets.build"]
+      "assets.deploy": ["scoria.assets.build"],
+      # Dev harness convenience: create+migrate (core+knowledge order)+seed the
+      # dev DB in one step. Used by the Docker entrypoint and fresh local setup.
+      "dev.setup": ["scoria.dev.db", "run priv/repo/dev_seed.exs"]
     ]
   end
 
