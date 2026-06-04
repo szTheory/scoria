@@ -146,5 +146,34 @@ These are queued for the next planning pass. They do not alter the phase-12 verd
 
 ---
 
+## Remediation (clean-state pass, 2026-06-04)
+
+A follow-up clean-state pass resolved the open anti-patterns above (verified by
+`mix test` unit assertions and the Tier 2 Playwright e2e lane):
+
+| ID | Resolution |
+|----|------------|
+| CR-01 | Removed `position: fixed` from `.scoria-toast`; the fixed `.scoria-toast-region` (flex column) owns stacking. E2e asserts a toast's computed `position` is not `fixed`. |
+| WR-01 | Skeleton `1..@rows` → `1..@rows//1` (rows=0 → 0 rows; cleared the decreasing-range warning). Unit test for rows=0. |
+| WR-02 | `modal/1` + `drawer/1` now set `aria-labelledby` → the titled `<h2 id="#{@id}-title">`. Unit tests added. |
+| WR-03 + IN-02 | `.scoria-drawer-shell` (fixed, right-anchored) + `.scoria-drawer` (full height, width, z-index, scroll) added; the previously rule-less structural classes (drawer/modal/notebook/table/skeleton) given token-bound layout defaults. |
+| WR-04 | DS-06 `cond` reordered so the `:new_violation` branch is reachable (informative messages). |
+| WR-05 | `table/1` now raises when `total_pages > 1` and `on_page_change` is nil (matches the `<.notebook>` guard) instead of emitting `phx-click={nil}`. Unit test for the raise. |
+| IN-04 | Test-endpoint `secret_key_base` padded well past the 64-char minimum across all dashboard LiveView test endpoints. |
+
+Also fixed (found by the browser e2e, not in the original list): the toast manual-dismiss
+button used a bare `JS.hide()` that hid the button instead of the toast — now targets the
+toast by id (`to: "##{@id}"`). And the keystone enabling all of the above: `dev_seed.exs` now
+seeds reachable pending approvals synchronously (previously the queued approval step was never
+executed, so the inbox was empty — the same root cause behind Phase 11's skipped approvals overlay).
+
+Still deferred (need future-phase screen wiring / un-stubbed data, tracked in STATE.md): the
+WR-03 drawer-float, escape-dismiss, and notebook tab-switch **e2e specs** remain `test.fixme`
+until a screen consumes `<.modal>`/`<.drawer>` and `SRE.remote_invocation_evidence/1` returns
+real data.
+
+---
+
 _Verified: 2026-06-04T18:30:00Z_
 _Verifier: Claude (gsd-verifier)_
+_Remediated: 2026-06-04 (clean-state pass)_

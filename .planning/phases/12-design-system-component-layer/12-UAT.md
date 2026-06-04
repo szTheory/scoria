@@ -65,8 +65,9 @@ blocked: 0
 
 automated_tiers:
   tier1_server_rendered: passing in `mix test` (CI)
-  tier2_browser_active: 1 (skeleton resolution) — passes locally + new `e2e` job in ci.yml
-  tier2_pending_fixme: 6 (toast auto/manual dismiss, CR-01, notebook tab-switch, WR-03, escape-dismiss) — each with a named unlock
+  tier2_browser_active: 4 (toast auto-dismiss, toast manual-dismiss, CR-01 not-fixed, skeleton resolution) — pass locally + `e2e` job in ci.yml
+  tier2_pending_fixme: 3 (notebook tab-switch, WR-03 drawer-float, escape-dismiss) — blocked on future-phase screen wiring / un-stubbed data; each names its unlock
+  note: clean-state pass seeded reachable approvals (dev_seed) + fixed open verification defects (CR-01, WR-01..05, IN-02/04) + a real toast-dismiss bug the browser e2e caught (dismiss button now targets the toast by id, not itself)
 
 ## Gaps
 

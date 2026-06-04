@@ -101,9 +101,11 @@ const SCREENS = [
     overlays: [
       {
         state: 'modal',
-        // Click the first visible button with phx-click="select_approval" (idiomatic Playwright)
-        // Seeded pending approval supplies a real id via phx-value-id attribute on the button
-        selector: 'button[phx-click="select_approval"]',
+        // The inbox row trigger is an <article phx-click="select_approval">, not a
+        // <button> — match any element so the overlay click resolves. (The inbox also
+        // auto-seeds the first pending approval into the modal on mount, so the base
+        // populated screenshot already shows this state.)
+        selector: '[phx-click="select_approval"]',
       },
     ],
   },

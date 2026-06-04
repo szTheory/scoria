@@ -80,25 +80,44 @@ try do
 
   IO.puts("  ✓ billing handoff run")
 
-  # 4. Approval run — creates pending approval in approval_inbox (Pitfall 2)
-  # Must have a real UUID so Plan 03's Approvals overlay can open the detail modal.
-  Application.put_env(:scoria, :workflow_runtime_handlers, %{
-    "approval" => {Scoria.SupportJourney.Handlers, :wait_for_approval}
-  })
+  # 4. Approval runs — pending approvals in the approval_inbox (Pitfall 2).
+  # Create each approval synchronously via mark_waiting_for_approval on a non-queued
+  # ("running") step — mirrors the "focused runtime" test
+  # (test/scoria_web/live/approvals_live_test.exs:251-296). A queued-step +
+  # execute_step path races the live dev Reconciler (which claims queued steps async),
+  # so the pending approval would appear only intermittently and the inbox renders
+  # empty in fresh/CI runs. A "running" step is ignored by the reconciler, and
+  # mark_waiting_for_approval inserts the pending approval immediately. Each approval
+  # has a real UUID so the Approvals overlay can open its detail modal.
+  #
+  # Seed several so the (destructive) approvals UAT/e2e specs each have one to act
+  # on — auto-dismiss + manual-dismiss consume one each, the CR-01 multi-toast spec
+  # consumes two. Runs are additive on re-seed, consistent with the rest of this file.
+  for _ <- 1..5 do
+    {:ok, approval_run} =
+      Scoria.Workflows.create_run(%{
+        root_role_id: "support_agent",
+        tenant_id: SupportJourney.tenant_id(),
+        session_id: SupportJourney.session_id()
+      })
 
-  {:ok, _approval_run} =
-    Scoria.start_run(identity,
-      root_role_id: "support_agent",
-      initial_step: %{
+    {:ok, approval_step} =
+      Scoria.Workflows.create_step(approval_run.id, %{
         sequence: 1,
         kind: "approval",
         role_id: "support_agent",
-        status: "queued"
-      },
-      handlers: %{"approval" => {Scoria.SupportJourney.Handlers, :wait_for_approval}}
-    )
+        status: "running"
+      })
 
-  IO.puts("  ✓ refund-review run (pending approval)")
+    {:ok, _approval} =
+      Scoria.Workflows.mark_waiting_for_approval(approval_run.id, approval_step.id, %{
+        tool_name: SupportJourney.refund_approval_tool(),
+        arguments: %{"ticket_id" => SupportJourney.ticket_fixture()["id"]},
+        reason: "Refund requires operator approval"
+      })
+  end
+
+  IO.puts("  ✓ refund-review runs (5 pending approvals)")
 
   # Keep a reference to completed_run for downstream use (incidents, review candidates)
   {:ok, completed_run}

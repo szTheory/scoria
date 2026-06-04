@@ -86,6 +86,9 @@ Progress: [██████████] 100%
 | Tech debt | ReqLLM streaming adapter (ECOS-02) | deferred |
 | Tech debt | SummarizeWorker dedicated unit test | deferred |
 | Tech debt | Local `mix test.connector` migrate_core! ordering on fresh DB | deferred |
+| e2e (Phase 14/15) | WR-03 drawer-float + escape-dismiss e2e specs — CSS/code fixed in Phase 12, but no screen consumes `<.modal>`/`<.drawer>` yet; `test.fixme` in priv/dev/e2e/uat.spec.mjs until a screen adopts the shells | deferred |
+| e2e (Phase 14/15) | Notebook tab-switch e2e spec — blocked on `SRE.remote_invocation_evidence/1` (stub returns `%{approvals: []}`); `test.fixme` until real evidence is wired | deferred |
+| Phase 13 (IA) | shots overlay capture: connectors `connector_drawer`/`runtime_drawer` (list renders empty in harness pass) + `prompt_release approve_modal` (no release link on `/prompts`) — see 11-HUMAN-UAT.md | deferred |
 | Phase 11-evaluation-engine-seed-depth P01 | 90min | 2 tasks | 2 files |
 | Phase 12-design-system-component-layer P01 | 3min | 2 tasks | 4 files |
 | Phase 12-design-system-component-layer P02 | 8min | 2 tasks | 2 files |

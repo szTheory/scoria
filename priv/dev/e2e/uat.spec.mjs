@@ -11,9 +11,10 @@
 //   mix dev.setup      # creates + migrates the dev DB and applies dev_seed.exs
 //   mix phx.server     # serves the dashboard at PLAYWRIGHT_BASE_URL
 //
-// Seed note: dev_seed.exs creates exactly ONE pending approval for tenant
-// "acme-corp". Approving it consumes it, so only one toast decision can run
-// deterministically per seeded DB (see the manual-dismiss fixme below).
+// Seed note: dev_seed.exs synchronously seeds 5 pending approvals for tenant
+// "acme-corp" (via mark_waiting_for_approval on a non-queued step). Each approval
+// decision is destructive (consumes one), so the toast specs run serially with no
+// retries — auto-dismiss + manual-dismiss take one each, CR-01 takes two.
 
 import { test, expect } from '@playwright/test';
 import { waitForReady } from './lib/ready.mjs';
@@ -21,46 +22,36 @@ import { waitForReady } from './lib/ready.mjs';
 const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4000/scoria';
 const SEEDED_TENANT = 'acme-corp';
 
-// Opens the approval modal for the first pending approval in the seeded inbox,
-// mirroring the selector the screenshot harness uses (priv/dev/shots.mjs).
-//
-// dev_seed.exs seeds an approval *run*; the dev Reconciler converts it into an
-// inbox-visible pending remote approval a few seconds after boot. Poll (reload)
-// until the row appears rather than racing the reconciler — the waitForTimeout is
-// a reconciler poll interval, not a fixed test delay.
+// Opens the approval modal for a pending approval in the seeded inbox. The inbox
+// auto-seeds the first pending approval into the modal on mount, so the approve/
+// reject buttons may already be present; only click a select_approval row (the
+// selector the screenshot harness uses, priv/dev/shots.mjs) when they are not.
 async function openApprovalModal(page) {
-  const trigger = page.locator('button[phx-click="select_approval"]').first();
-
-  for (let attempt = 0; attempt < 12; attempt++) {
-    await page.goto(`${BASE}/approvals?tenant=${SEEDED_TENANT}`);
-    await waitForReady(page);
-    if ((await trigger.count()) > 0) break;
-    await page.waitForTimeout(3000);
+  await page.goto(`${BASE}/approvals?tenant=${SEEDED_TENANT}`);
+  await waitForReady(page);
+  const approve = page.locator('button[phx-click="approve"]');
+  if ((await approve.count()) === 0) {
+    const trigger = page.locator('button[phx-click="select_approval"]').first();
+    await expect(
+      trigger,
+      'expected a seeded pending approval in the inbox (mix dev.setup applies dev_seed.exs)'
+    ).toBeVisible();
+    await trigger.click();
   }
-
-  await expect(
-    trigger,
-    'expected a seeded pending approval to reach the inbox (dev_seed + Reconciler)'
-  ).toBeVisible();
-  await trigger.click();
-  await expect(page.locator('button[phx-click="approve"]')).toBeVisible();
+  await expect(approve).toBeVisible();
 }
 
 test.describe('Phase 12 — toast (DS-05)', () => {
+  // Each decision consumes a seeded approval, so run serially and never retry
+  // (a retry would re-consume approvals it no longer has).
+  test.describe.configure({ mode: 'serial', retries: 0 });
+
   // UAT-2 browser truth: the toast is driven by a server @toasts assign and
   // auto-dismisses via phx-mounted={JS.hide(... time: duration_ms)}. LiveViewTest
-  // (approvals_live_test.exs) already proves the toast HTML + tone-by-decision +
-  // the phx-mounted attribute + the dismiss control render; this would prove the
-  // JS actually fires and the toast goes away unattended in a real browser.
-  //
-  // Pending: the approvals inbox is not deterministically reachable in the running
-  // dev app — the tenant-scoped inbox does not surface the dev_seed pending
-  // approval (the page renders "No pending approvals" for ?tenant=acme-corp even
-  // though Workflows.list_pending_remote_approvals/1 returns rows), so there is no
-  // select_approval row to drive. This is the same approvals-overlay reachability
-  // gap Phase 11's screenshot harness hit (11-HUMAN-UAT.md: approve_modal skipped).
-  // Activate once a seed/route reliably surfaces an inbox approval for the e2e.
-  test.fixme('approval toast renders and auto-dismisses — needs a reachable inbox approval', async ({ page }) => {
+  // (approvals_live_test.exs) proves the toast HTML + tone-by-decision + the
+  // phx-mounted attribute + the dismiss control render; this proves the JS actually
+  // fires and the toast goes away unattended in a real browser.
+  test('approval toast renders and auto-dismisses', async ({ page }) => {
     await openApprovalModal(page);
     await page.locator('button[phx-click="approve"]').click();
 
@@ -71,27 +62,31 @@ test.describe('Phase 12 — toast (DS-05)', () => {
     await expect(toast).toBeHidden({ timeout: 7000 });
   });
 
-  // Manual dismiss is real, wired behavior (phx-click JS.hide on the × button).
-  // Blocked by the same reachable-inbox-approval gap as the auto-dismiss spec
-  // above. Activate alongside it.
-  test.fixme(
-    'manual dismiss (×) button hides the toast — needs a reachable inbox approval',
-    async ({ page }) => {
-      await openApprovalModal(page);
-      await page.locator('button[phx-click="reject"]').click();
-      const toast = page.locator('#toast-region .scoria-toast');
-      await expect(toast).toBeVisible();
-      await page.locator('#toast-region [aria-label="Dismiss"]').first().click();
-      await expect(toast).toBeHidden({ timeout: 2000 });
-    }
-  );
+  // Manual dismiss: the × button (phx-click JS.hide) removes the toast immediately.
+  test('manual dismiss (×) button hides the toast', async ({ page }) => {
+    await openApprovalModal(page);
+    await page.locator('button[phx-click="reject"]').click();
+    const toast = page.locator('#toast-region .scoria-toast');
+    await expect(toast).toBeVisible();
+    await page.locator('#toast-region [aria-label="Dismiss"]').first().click();
+    await expect(toast).toBeHidden({ timeout: 2000 });
+  });
 
-  // CR-01 (12-VERIFICATION.md): .scoria-toast position:fixed inside a fixed
-  // .scoria-toast-region collapses fixed children to zero height, so a second
-  // toast stacks at the same coordinates as the first. Fix lands in Phase 15
-  // (high-traffic screens consume <.toast> at scale) — flip to active in the
-  // same commit as the CSS fix.
-  test.fixme('CR-01: multiple toasts stack without overlapping — fix in Phase 15', async () => {});
+  // CR-01 (12-VERIFICATION.md, now fixed): .scoria-toast was position:fixed inside
+  // the fixed .scoria-toast-region, so every toast pinned to the same bottom-right
+  // corner and overlapped. The fix removes position:fixed from the toast — the
+  // region (flex column) owns stacking, so toasts flow and never collapse onto each
+  // other. Asserting the computed position is not "fixed" verifies the fix
+  // race-free (no dependence on two toasts being visible within the 4s window).
+  test('CR-01: a toast is not position:fixed (region owns stacking)', async ({ page }) => {
+    await openApprovalModal(page);
+    await page.locator('button[phx-click="approve"]').click();
+
+    const toast = page.locator('#toast-region .scoria-toast').first();
+    await expect(toast).toBeVisible();
+    const position = await toast.evaluate((el) => getComputedStyle(el).position);
+    expect(position, 'CR-01: toast must not be position:fixed').not.toBe('fixed');
+  });
 });
 
 test.describe('Phase 12 — skeleton (DS-05)', () => {

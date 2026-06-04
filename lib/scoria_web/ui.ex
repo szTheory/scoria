@@ -211,11 +211,17 @@ defmodule ScoriaWeb.UI do
     ~H"""
     <div :if={@show} id={@id} class="scoria-modal" phx-window-keydown={@on_dismiss} phx-key="Escape" {@rest}>
       <div class="scoria-scrim" phx-click={@on_dismiss} aria-hidden="true"></div>
-      <div class="scoria-modal__panel" role="dialog" aria-modal="true" style={"max-width: #{@max_width}"}>
+      <div
+        class="scoria-modal__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={(@title_slot != [] or @title != nil) && "#{@id}-title"}
+        style={"max-width: #{@max_width}"}
+      >
         <div class="scoria-modal__header">
           <div>
-            <h2 :if={@title_slot != []}>{render_slot(@title_slot)}</h2>
-            <h2 :if={@title_slot == [] and @title != nil}>{@title}</h2>
+            <h2 :if={@title_slot != []} id={"#{@id}-title"}>{render_slot(@title_slot)}</h2>
+            <h2 :if={@title_slot == [] and @title != nil} id={"#{@id}-title"}>{@title}</h2>
           </div>
           <button
             autofocus
@@ -264,12 +270,17 @@ defmodule ScoriaWeb.UI do
         phx-key="Escape"
         aria-hidden="true"
       ></div>
-      <aside class="scoria-drawer" role="dialog" aria-modal="true">
+      <aside
+        class="scoria-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={(@title_slot != [] or @title != nil) && "#{@id}-title"}
+      >
         <div class="scoria-drawer__header">
           <div class="scoria-drawer__header-text">
             <p :if={@eyebrow != []} class="scoria-eyebrow">{render_slot(@eyebrow)}</p>
-            <h2 :if={@title_slot != []}>{render_slot(@title_slot)}</h2>
-            <h2 :if={@title_slot == [] and @title != nil}>{@title}</h2>
+            <h2 :if={@title_slot != []} id={"#{@id}-title"}>{render_slot(@title_slot)}</h2>
+            <h2 :if={@title_slot == [] and @title != nil} id={"#{@id}-title"}>{@title}</h2>
           </div>
           <div class="scoria-drawer__header-actions">
             <div :if={@actions != []}>{render_slot(@actions)}</div>
@@ -357,7 +368,7 @@ defmodule ScoriaWeb.UI do
   def skeleton(assigns) do
     ~H"""
     <div class="scoria-skeleton-group" aria-label="Loading…" role="status" {@rest}>
-      <div :for={_ <- 1..@rows} class={["scoria-skeleton", "scoria-skeleton--text", @class]}></div>
+      <div :for={_ <- 1..@rows//1} class={["scoria-skeleton", "scoria-skeleton--text", @class]}></div>
     </div>
     """
   end
@@ -370,7 +381,9 @@ defmodule ScoriaWeb.UI do
   @doc "Transient toast notification (DS-05).
   Driven by a server @toasts assign. Auto-dismisses via phx-mounted={JS.hide(...)}.
   Manual dismiss X button is also provided. Does NOT use a JS hook (untestable in LiveViewTest).
-  Omit 'to:' on JS.hide so it targets self (Pitfall 3)."
+  The phx-mounted auto-dismiss omits 'to:' so it self-targets the toast div (Pitfall 3);
+  the dismiss button MUST target the toast by id (to: '#id') — a bare JS.hide there would
+  hide the button, not the toast."
   def toast(assigns) do
     ~H"""
     <div
@@ -382,7 +395,7 @@ defmodule ScoriaWeb.UI do
       {toast_icon(@tone)}
       <p>{@message}</p>
       <button
-        phx-click={JS.hide(transition: {"scoria-fade", "opacity-100", "opacity-0"}, time: 100)}
+        phx-click={JS.hide(to: "##{@id}", transition: {"scoria-fade", "opacity-100", "opacity-0"}, time: 100)}
         class="scoria-button scoria-button--ghost scoria-button--sm"
         aria-label="Dismiss"
       >
@@ -587,6 +600,15 @@ defmodule ScoriaWeb.UI do
   Uses density modifier classes from density_class/1. Falls back to a default empty state
   when rows is empty (overridable via <:empty>). Pagination strip shown when total_pages > 1."
   def table(assigns) do
+    # WR-05: a paginated table with no on_page_change handler would render inert
+    # phx-click={nil} prev/next controls (a silent no-op). Fail loudly at render
+    # instead, matching the <.notebook> on_tab_change guard.
+    if assigns.total_pages > 1 and is_nil(assigns.on_page_change) do
+      raise ArgumentError,
+            "<.table> with total_pages > 1 requires on_page_change; " <>
+              "got total_pages=#{assigns.total_pages} and on_page_change=nil"
+    end
+
     ~H"""
     <div class="scoria-table-shell">
       <div :if={@filter != []} class="scoria-table__filter">

@@ -107,6 +107,20 @@ defmodule ScoriaWeb.UIComponentTest do
       assert html =~ ~s(aria-modal="true")
     end
 
+    test "title gives the dialog an accessible name via aria-labelledby (WR-02)" do
+      html =
+        render_component(&ScoriaWeb.UI.modal/1,
+          id: "test-modal",
+          show: true,
+          title: "Confirm deletion",
+          on_dismiss: "close_modal",
+          inner_block: slot_block("Modal content")
+        )
+
+      assert html =~ ~s(aria-labelledby="test-modal-title")
+      assert html =~ ~s(id="test-modal-title")
+    end
+
     test "show: true renders aria-label=Close dialog on close button" do
       html =
         render_component(&ScoriaWeb.UI.modal/1,
@@ -196,6 +210,20 @@ defmodule ScoriaWeb.UIComponentTest do
 
       assert html =~ ~s(role="dialog")
       assert html =~ ~s(aria-modal="true")
+    end
+
+    test "title gives the dialog an accessible name via aria-labelledby (WR-02)" do
+      html =
+        render_component(&ScoriaWeb.UI.drawer/1,
+          id: "test-drawer",
+          show: true,
+          title: "Connector detail",
+          on_dismiss: "close_drawer",
+          inner_block: slot_block("Drawer content")
+        )
+
+      assert html =~ ~s(aria-labelledby="test-drawer-title")
+      assert html =~ ~s(id="test-drawer-title")
     end
 
     test "show: false renders nothing (no drawer, no scrim)" do
@@ -466,6 +494,14 @@ defmodule ScoriaWeb.UIComponentTest do
       html = render_component(&ScoriaWeb.UI.skeleton/1, rows: 1)
       assert html =~ ~s(role="status")
     end
+
+    test "skeleton rows={0} renders zero line elements (WR-01)" do
+      # 1..0//1 is an empty range; the legacy 1..0 was a decreasing [1, 0] and
+      # rendered 2 rows. Guard against that regression.
+      html = render_component(&ScoriaWeb.UI.skeleton/1, rows: 0)
+      count = html |> String.split("scoria-skeleton--text") |> length() |> Kernel.-(1)
+      assert count == 0
+    end
   end
 
   describe "toast/1" do
@@ -513,6 +549,21 @@ defmodule ScoriaWeb.UIComponentTest do
         )
 
       assert html =~ ~s(aria-label="Dismiss")
+    end
+
+    test "manual dismiss targets the toast by id, not the button itself" do
+      # A bare JS.hide on the dismiss button would hide the button and leave the
+      # toast on screen; it must target the toast div (to: \"#id\").
+      html =
+        render_component(&ScoriaWeb.UI.toast/1,
+          id: "toast-dismiss",
+          tone: :neutral,
+          message: "Saved"
+        )
+
+      # The JS.hide target id (#toast-dismiss) appears only in the button's encoded
+      # phx-click — the plain id attribute is "toast-dismiss" without the leading #.
+      assert html =~ "#toast-dismiss"
     end
   end
 
@@ -576,6 +627,17 @@ defmodule ScoriaWeb.UIComponentTest do
         )
 
       assert html =~ "Status"
+    end
+
+    test "total_pages > 1 without on_page_change raises (WR-05)" do
+      assert_raise ArgumentError, ~r/on_page_change/, fn ->
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          total_pages: 3,
+          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
+        )
+      end
     end
 
     test "sortable column emits phx-value-by with key" do

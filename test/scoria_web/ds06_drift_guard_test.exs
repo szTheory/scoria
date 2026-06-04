@@ -39,8 +39,12 @@ defmodule ScoriaWeb.DS06DriftGuardTest do
         baseline_count = Map.get(baseline, path, 0)
 
         cond do
-          count > baseline_count -> {path, count, baseline_count, :regression}
+          # WR-04: check the new-file case first — a file with no baseline entry
+          # (baseline_count == 0) gaining palette is a :new_violation. The generic
+          # :regression branch must come AFTER, or it would shadow this one (when
+          # baseline_count == 0, count > 0 already satisfies count > baseline_count).
           baseline_count == 0 and count > 0 -> {path, count, 0, :new_violation}
+          count > baseline_count -> {path, count, baseline_count, :regression}
           true -> nil
         end
       end
