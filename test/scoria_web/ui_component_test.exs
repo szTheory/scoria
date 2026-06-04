@@ -50,9 +50,102 @@ defmodule ScoriaWeb.UIComponentTest do
       that export render/1 (e.g. MemoryNotebookComponent), not for function components in ui.ex.
   """
 
-  # This smoke test confirms the scaffold is present and the test header compiles.
-  # Downstream plans replace this placeholder with real render_component assertions.
-  test "ui_component_test scaffold present" do
-    assert true
+  # ---------------------------------------------------------------------------
+  # DS-05: flash_group (plan 12-02)
+  # ---------------------------------------------------------------------------
+
+  describe "flash_group/1" do
+    test "renders scoria-flash--fail for string kind 'error'" do
+      html = render_component(&ScoriaWeb.UI.flash_group/1, flash: %{"error" => "boom"})
+      assert html =~ "scoria-flash--fail"
+      assert html =~ "boom"
+    end
+
+    test "renders scoria-flash--info for string kind 'info'" do
+      html = render_component(&ScoriaWeb.UI.flash_group/1, flash: %{"info" => "fyi"})
+      assert html =~ "scoria-flash--info"
+      assert html =~ "fyi"
+    end
+
+    test "renders scoria-flash--pass for string kind 'success'" do
+      html = render_component(&ScoriaWeb.UI.flash_group/1, flash: %{"success" => "done"})
+      assert html =~ "scoria-flash--pass"
+      assert html =~ "done"
+    end
+
+    test "renders scoria-flash--warn for unknown/warning kind" do
+      html = render_component(&ScoriaWeb.UI.flash_group/1, flash: %{"warning" => "watch out"})
+      assert html =~ "scoria-flash--warn"
+      assert html =~ "watch out"
+    end
+
+    test "each flash div carries role=alert" do
+      html = render_component(&ScoriaWeb.UI.flash_group/1, flash: %{"error" => "boom"})
+      assert html =~ ~s(role="alert")
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # DS-01: <.table> (plan 12-02)
+  # ---------------------------------------------------------------------------
+
+  describe "table/1" do
+    test "renders column header from :col label" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          col: [%{label: "Status", key: :status, class: nil, inner_block: []}]
+        )
+
+      assert html =~ "Status"
+    end
+
+    test "sortable column emits phx-value-by with key" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          col: [%{label: "Status", key: :status, class: nil, inner_block: []}]
+        )
+
+      assert html =~ ~s(phx-value-by="status")
+    end
+
+    test "density :compact yields scoria-table--compact" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          density: :compact,
+          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
+        )
+
+      assert html =~ "scoria-table--compact"
+    end
+
+    test "density :default yields no compact or comfortable modifier" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          density: :default,
+          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
+        )
+
+      refute html =~ "scoria-table--compact"
+      refute html =~ "scoria-table--comfortable"
+    end
+
+    test "rows=[] renders default empty state 'No records found'" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
+        )
+
+      assert html =~ "No records found"
+    end
   end
 end
