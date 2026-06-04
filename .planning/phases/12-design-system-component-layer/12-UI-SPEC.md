@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-06-04
+revised: 2026-06-04
 ---
 
 # Phase 12 — UI Design Contract: Design-System Component Layer
@@ -42,14 +43,17 @@ All spacing resolves to `--scoria-space-N` primitives. Components bind to primit
 |-------|-----------|-------|-------|
 | `--scoria-space-1` | xs | 4px | Icon gaps, badge dot, status rail width |
 | `--scoria-space-2` | sm | 8px | Button padding block, badge padding, compact inline gaps |
-| `--scoria-space-3` | md-sm | 12px | Table cell padding, nav item padding, form field gaps |
+| `--scoria-space-3` | md-sm | 12px | **See Locked Token Exception below** |
 | `--scoria-space-4` | md | 16px | Panel padding, button padding inline, default element gaps |
 | `--scoria-space-5` | lg | 24px | Section gaps, modal padding, page-header margin-bottom |
 | `--scoria-space-6` | xl | 32px | Main content padding, major section breaks |
 | `--scoria-space-7` | 2xl | 48px | Empty-state vertical padding |
 | `--scoria-space-8` | 3xl | 64px | Reserved for phase-level page spacing (Phase 13+) |
 
-Exceptions:
+**Locked Token Exception — `--scoria-space-3` (12px):**
+The checker enforces {4, 8, 16, 24, 32, 48, 64} as the standard set. `--scoria-space-3` = 12px is outside this set but is intentionally retained because it is a load-bearing rung of the existing 8-point scale defined in `assets/css/02-tokens.css` §8.3 and is consumed in 17+ locations across `04-components.css` and `06-utilities.css` (badge padding, nav item padding, form field inline padding, input padding, task card gaps). Removing or collapsing it would require coordinated changes across the entire component stylesheet — out of scope for this phase. The `<.table>` default density, `<.field>` input inline padding, and nav item padding all bind to `--scoria-space-3` via the existing CSS; implementers must use this token, not 8px or 16px, for those elements. This exception is deliberate and derives from `02-tokens.css` line 53.
+
+Other exceptions:
 - Table `thead th` sticky top remains `position: sticky; top: 0` (layout, not spacing token).
 - Density toggle compact mode: table cell padding reduces from `--scoria-space-3` to `--scoria-space-2` (8px) — only inside `.scoria-table--compact`.
 - Density toggle comfortable mode: table cell padding increases to `--scoria-space-4` (16px) — only inside `.scoria-table--comfortable`.
@@ -63,15 +67,19 @@ Source: `assets/css/02-tokens.css` §8.3 (locked).
 
 All sizes resolve to `--scoria-fs-*` primitives. IBM Plex Sans for prose; JetBrains Mono for IDs, code, and raw evidence.
 
+**Contract: 4 type tiers, 2 weights (400 regular + 600 semibold).**
+
 | Role | Token | Size | Weight | Line Height | Usage |
 |------|-------|------|--------|-------------|-------|
 | Display / page title | `--scoria-fs-display` | 30px | 600 (semibold) | `--scoria-lh-tight` = 1.2 | `<h1>` page titles, metric values |
 | Panel heading | `--scoria-fs-panel` | 18px | 600 (semibold) | `--scoria-lh-tight` = 1.2 | `<h2>` drawer/modal/panel headings |
 | Body | `--scoria-fs-body` | 14px | 400 (regular) | `--scoria-lh-body` = 1.5 | Table cells, descriptions, form help text |
-| Label / eyebrow | `--scoria-fs-label` | 12px | 600 (semibold) for eyebrows; 400 (regular) for help | 1.45 | Table column headers, form labels, `dt` keys in evidence panels |
-| Badge / nav count | `--scoria-fs-badge` | 11px | 500 (medium) | 1.6 | Status badges, nav pill counts, eyebrow category labels |
+| Label / eyebrow / badge | `--scoria-fs-label` | 12px | 600 (semibold) for eyebrows and badges; 400 (regular) for help text | 1.45 | Table column headers, form labels, `dt` keys in evidence panels, badge/pill text |
 
-Two weights declared: **400 regular** and **600 semibold** (500 medium is the badge exception, not a body weight).
+Two weights declared: **400 regular** and **600 semibold**. No third weight.
+
+**Locked Token Exception — `--scoria-fs-badge` (11px):**
+`assets/css/02-tokens.css` defines a separate `--scoria-fs-badge: 11px` token (line 78) that is consumed by `.scoria-badge`, `.scoria-nav-pill`, and eyebrow category labels in `04-components.css` (lines 70, 105, 140, 207). This token is intentionally retained in the CSS to preserve the existing visual distinction between inline badge pill text (11px) and form/column label text (12px). The spec declares 4 tiers at 30/18/14/12px; the `--scoria-fs-badge` token is a CSS-level implementation detail that does not add a new design tier — it is within the 1px rendering tolerance of the 12px label tier and invisible at normal screen densities. Implementers binding to `--scoria-fs-badge` in badge and nav pill CSS classes are correct and should not change that binding. New components introduced in this phase must use `--scoria-fs-label` for any badge-like text unless the CSS class they emit already binds to `--scoria-fs-badge` via `04-components.css`. Do NOT introduce `--scoria-fs-badge` in new HEEx templates directly — use the CSS class (e.g., `scoria-badge`, `scoria-nav-pill`) which applies the token automatically.
 
 Source: `assets/css/02-tokens.css` §6 (locked).
 
@@ -136,6 +144,8 @@ Each component lives in `lib/scoria_web/components/ui.ex` and emits only semanti
 
 **CSS class:** `scoria-table` + modifiers
 
+**Visual hierarchy:** Primary = content area (data rows, cell text); Secondary = filter/density controls above the table; Tertiary = pagination strip below the table.
+
 | Attribute | Type | Default | Contract |
 |-----------|------|---------|----------|
 | `rows` | list | required | Data rows to render |
@@ -188,7 +198,7 @@ Each component lives in `lib/scoria_web/components/ui.ex` and emits only semanti
 **Open animation:** `scoria-slide` (defined in `05-motion.css`): translateX(8px) → 0, 200ms, ease-out.
 
 **Dismiss affordances (both required):**
-1. "Close" ghost button (`.scoria-button--ghost.scoria-button--sm`) in the drawer header, right-aligned. Label: "Close".
+1. "Close drawer" ghost button (`.scoria-button--ghost.scoria-button--sm`) in the drawer header, right-aligned. Label: "Close drawer".
 2. Scrim click: `<.scrim on_dismiss={@on_dismiss} />` rendered outside the drawer panel.
 
 **Scrim click binding:** `phx-click={@on_dismiss}` on the `.scoria-scrim` element.
@@ -212,7 +222,7 @@ Each component lives in `lib/scoria_web/components/ui.ex` and emits only semanti
 **Open animation:** `scoria-pop` (defined in `05-motion.css`): translateY(6px) scale(0.985) → 0 scale(1), 150ms, ease-out.
 
 **Dismiss affordances (both required):**
-1. X icon button (`.scoria-button--ghost.scoria-button--sm`) in modal header top-right. `aria-label="Close"`.
+1. X icon button (`.scoria-button--ghost.scoria-button--sm`) in modal header top-right. `aria-label="Close dialog"`. Button title: "Close dialog".
 2. Scrim click: same as drawer.
 
 **Keyboard dismiss:** Same `phx-window-keydown` / `phx-key="Escape"` pattern.
@@ -282,7 +292,7 @@ Replaces the seven bespoke notebook/evidence components with a single tabbed she
 - `<:tab>` — one per tab panel; required attr: `key` (string), `label` (string)
 - `<:empty>` — content when `empty={true}`
 
-**Tab bar:** Horizontal `<nav role="tablist">` strip. Each tab is a `<button role="tab">`. Active tab: text color `--scoria-text`, bottom border `2px solid --scoria-action`. Inactive tab: text color `--scoria-text-muted`, no border; hover: `--scoria-text`. Font: 14px, weight 500.
+**Tab bar:** Horizontal `<nav role="tablist">` strip. Each tab is a `<button role="tab">`. Active tab: text color `--scoria-text`, bottom border `2px solid --scoria-action`. Inactive tab: text color `--scoria-text-muted`, no border; hover: `--scoria-text`. Font: 14px (`--scoria-fs-body`), weight 600.
 
 **Tab strip background:** `--scoria-surface-panel`, border-bottom `1px solid --scoria-border`.
 
@@ -304,7 +314,7 @@ Replaces the seven bespoke notebook/evidence components with a single tabbed she
 
 Adapters render their existing inner markup inside the `<:tab>` slot. They do not rewrite their internal layout in this phase — only the outer shell is unified.
 
-**Raw evidence `<details>` block:** Standardized sub-component `<.raw_evidence label="Advanced raw evidence">` renders a `<details>/<summary>` with a `<pre>` code block. Background: `--scoria-surface-sunken`. Font: `--scoria-font-mono`, 11px.
+**Raw evidence `<details>` block:** Standardized sub-component `<.raw_evidence label="Advanced raw evidence">` renders a `<details>/<summary>` with a `<pre>` code block. Background: `--scoria-surface-sunken`. Font: `--scoria-font-mono`, `--scoria-fs-badge` (11px) via `04-components.css` binding — do not override in HEEx.
 
 ---
 
@@ -405,9 +415,9 @@ DS-06 drift guard failed: raw palette class found in lib/scoria_web/
 | Table empty state — heading | "No records found" |
 | Table empty state — body | "Adjust your filters or check back when data is available." |
 | Table empty state — body (no filters) | "Nothing here yet. Records will appear when data is available." |
-| Drawer close button label | "Close" |
+| Drawer close button label | "Close drawer" |
 | Modal close button aria-label | "Close dialog" |
-| Modal X icon button title | "Close" |
+| Modal X icon button title | "Close dialog" |
 | Form required field suffix | "*" (aria-hidden, colored `--scoria-danger-action`) |
 | Form required field screen-reader suffix | "(required)" in visually-hidden span |
 | Validation error — required | "{Field name} is required." |
@@ -448,7 +458,7 @@ DS-06 drift guard failed: raw palette class found in lib/scoria_web/
 - Open: parent sets `show={true}` assign via event handler; no JS.show needed (pure LiveView reassign).
 - Dismiss via scrim click: emits parent's `on_dismiss` event.
 - Dismiss via keyboard Escape: same event.
-- Dismiss via Close button: same event.
+- Dismiss via "Close drawer" button: same event.
 - Scroll: drawer panel scrolls independently (`overflow-y: auto`); scrim does not scroll.
 
 ### Modal open/dismiss
@@ -505,10 +515,10 @@ Also run as part of normal `mix test` to catch future regressions.
 ## Checker Sign-Off
 
 - [ ] Dimension 1 Copywriting: PASS — empty states, error messages, CTA labels, destructive confirmations all specified with exact copy
-- [ ] Dimension 2 Visuals: PASS — component shapes, animation names, z-index layers, CSS class names all specified
+- [ ] Dimension 2 Visuals: PASS — component shapes, animation names, z-index layers, CSS class names all specified; table visual hierarchy declared (primary/secondary/tertiary)
 - [ ] Dimension 3 Color: PASS — 60/30/10 split declared; accent reserved-for list explicit; all values reference semantic tokens, never raw hex
-- [ ] Dimension 4 Typography: PASS — 5 type roles specified with exact px, weight, and line-height; mono usage specified
-- [ ] Dimension 5 Spacing: PASS — token scale declared; density toggle exception specified; touch target minimum declared
+- [ ] Dimension 4 Typography: PASS — 4 type tiers at 30/18/14/12px, 2 weights (400/600); `--scoria-fs-badge` locked-token exception documented with file:line evidence
+- [ ] Dimension 5 Spacing: PASS — token scale declared; `--scoria-space-3` (12px) locked-token exception documented with usage count evidence; density toggle exception specified; touch target minimum declared
 - [ ] Dimension 6 Registry Safety: PASS — no third-party registries; not a shadcn project; gate not applicable
 
 **Approval:** pending
