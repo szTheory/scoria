@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
-status: planning
-last_updated: "2026-06-03T00:00:00.000Z"
-last_activity: 2026-06-03
+status: Roadmap created — awaiting first phase plan
+last_updated: "2026-06-04T06:52:04.919Z"
+last_activity: 2026-06-03 — v3.0 roadmap created (phases 11–17, 28 requirements mapped)
 progress:
-  total_phases: 7
+  total_phases: 15
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
