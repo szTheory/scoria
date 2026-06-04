@@ -40,6 +40,13 @@ defmodule ScoriaWeb.RemoteInvocationEvidenceComponent do
   end
 
   defp approval_value(approval, key) do
-    Map.get(approval, key) || Map.get(approval, to_string(key)) || "unknown"
+    # WR-06: use explicit key presence rather than `||` so a present-but-falsy
+    # value (nil/false) is rendered as itself instead of being collapsed into the
+    # literal "unknown", which is indistinguishable from a genuinely absent key.
+    cond do
+      Map.has_key?(approval, key) -> Map.get(approval, key)
+      Map.has_key?(approval, to_string(key)) -> Map.get(approval, to_string(key))
+      true -> "unknown"
+    end
   end
 end
