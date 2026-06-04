@@ -1,6 +1,8 @@
 defmodule ScoriaWeb.WorkflowLive.Show do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
+  import ScoriaWeb.UI, only: [skeleton: 1]
+
   alias Scoria.Eval
   alias Scoria.Runtime
   alias Scoria.SRE
@@ -208,11 +210,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
         <DelegatedEvidenceComponent.render delegated_handoffs={@delegated_handoffs} />
 
         <.async_result :let={memories} assign={@compacted_memories}>
-          <:loading>
-            <div class="mt-6 flex items-center justify-center rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
-              <p class="text-sm text-stone-500">Loading compacted memories...</p>
-            </div>
-          </:loading>
+          <:loading><.skeleton rows={3} class="mt-6" /></:loading>
           <:failed :let={_failure}>
             <div class="mt-6 flex items-center justify-center rounded-2xl border border-red-200 bg-red-50 p-8 shadow-sm">
               <p class="text-sm text-red-600">Failed to load memories.</p>

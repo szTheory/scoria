@@ -6,7 +6,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   """
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
-  import ScoriaWeb.UI, only: [flash_group: 1]
+  import ScoriaWeb.UI, only: [flash_group: 1, toast: 1]
 
   import Ecto.Query, warn: false
 
@@ -32,6 +32,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         session["actor_id"] || session["user_id"] || session["session_id"] || "operator"
       )
       |> assign(:tenant_id, tenant_id)
+      |> assign(:toasts, [])
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
@@ -102,6 +103,10 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       </div>
 
       <.flash_group flash={@flash} />
+
+      <div id="toast-region" class="scoria-toast-region">
+        <.toast :for={t <- @toasts} id={t.id} tone={t.tone} message={t.message} duration_ms={t.duration_ms} />
+      </div>
 
       <ApprovalInboxComponent.render
         approvals={@approval_inbox}
@@ -187,9 +192,12 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
           updated_socket
           |> assign(:active_approval, nil)
           |> reload_inbox()
+          |> put_toast(tone: :pass, message: "Approval decision recorded.")
         else
           {:error, reason} ->
-            put_flash(socket, :error, approval_error_message(status, reason))
+            socket
+            |> put_flash(:error, approval_error_message(status, reason))
+            |> put_toast(tone: :fail, message: approval_error_message(status, reason))
         end
     end
   end
@@ -274,5 +282,16 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     else
       socket
     end
+  end
+
+  defp put_toast(socket, opts) do
+    toast = %{
+      id: "toast-#{System.unique_integer([:positive])}",
+      tone: Keyword.get(opts, :tone, :neutral),
+      message: Keyword.fetch!(opts, :message),
+      duration_ms: Keyword.get(opts, :duration_ms, 4000)
+    }
+
+    Phoenix.Component.update(socket, :toasts, fn toasts -> [toast | toasts] end)
   end
 end
