@@ -1,7 +1,8 @@
 ---
 phase: 12
 slug: design-system-component-layer
-status: draft
+status: approved
+reviewed_at: 2026-06-04
 shadcn_initialized: false
 preset: none
 created: 2026-06-04
@@ -79,7 +80,7 @@ All sizes resolve to `--scoria-fs-*` primitives. IBM Plex Sans for prose; JetBra
 Two weights declared: **400 regular** and **600 semibold**. No third weight.
 
 **Locked Token Exception — `--scoria-fs-badge` (11px):**
-`assets/css/02-tokens.css` defines a separate `--scoria-fs-badge: 11px` token (line 78) that is consumed by `.scoria-badge`, `.scoria-nav-pill`, and eyebrow category labels in `04-components.css` (lines 70, 105, 140, 207). This token is intentionally retained in the CSS to preserve the existing visual distinction between inline badge pill text (11px) and form/column label text (12px). The spec declares 4 tiers at 30/18/14/12px; the `--scoria-fs-badge` token is a CSS-level implementation detail that does not add a new design tier — it is within the 1px rendering tolerance of the 12px label tier and invisible at normal screen densities. Implementers binding to `--scoria-fs-badge` in badge and nav pill CSS classes are correct and should not change that binding. New components introduced in this phase must use `--scoria-fs-label` for any badge-like text unless the CSS class they emit already binds to `--scoria-fs-badge` via `04-components.css`. Do NOT introduce `--scoria-fs-badge` in new HEEx templates directly — use the CSS class (e.g., `scoria-badge`, `scoria-nav-pill`) which applies the token automatically.
+`assets/css/02-tokens.css` defines a separate `--scoria-fs-badge: 11px` token (line 78) that is consumed by `.scoria-badge` and eyebrow category labels in `04-components.css` (lines 70, 105, 140, 207). This token is intentionally retained in the CSS to preserve the existing visual distinction between inline badge pill text (11px) and form/column label text (12px). The spec declares 4 tiers at 30/18/14/12px; the `--scoria-fs-badge` token is a CSS-level implementation detail that does not add a new design tier — it is within the 1px rendering tolerance of the 12px label tier and invisible at normal screen densities. Implementers binding to `--scoria-fs-badge` in badge CSS classes are correct and should not change that binding. New components introduced in this phase must use `--scoria-fs-label` for any badge-like text unless the CSS class they emit already binds to `--scoria-fs-badge` via `04-components.css`. Do NOT introduce `--scoria-fs-badge` in new HEEx templates directly — use the CSS class (e.g., `.scoria-badge`) which applies the token automatically.
 
 Source: `assets/css/02-tokens.css` §6 (locked).
 
