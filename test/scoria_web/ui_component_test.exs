@@ -226,6 +226,111 @@ defmodule ScoriaWeb.UIComponentTest do
   end
 
   # ---------------------------------------------------------------------------
+  # DS-03: <.field> and <.form_section> (plan 12-03)
+  # ---------------------------------------------------------------------------
+
+  describe "field/1" do
+    test "renders label with for= binding" do
+      html =
+        render_component(&ScoriaWeb.UI.field/1,
+          id: "email",
+          label: "Email address",
+          inner_block: slot_block(~s(<input id="email" />))
+        )
+
+      assert html =~ ~s(for="email")
+      assert html =~ "Email address"
+    end
+
+    test "required: true renders aria-hidden asterisk and sr-only (required)" do
+      html =
+        render_component(&ScoriaWeb.UI.field/1,
+          id: "email",
+          label: "Email",
+          required: true,
+          inner_block: slot_block(~s(<input id="email" />))
+        )
+
+      assert html =~ ~s(aria-hidden="true")
+      assert html =~ "*"
+      assert html =~ "(required)"
+    end
+
+    test "error renders error text and inline svg icon" do
+      html =
+        render_component(&ScoriaWeb.UI.field/1,
+          id: "email",
+          label: "Email",
+          error: "Email is required.",
+          inner_block: slot_block(~s(<input id="email" />))
+        )
+
+      assert html =~ "Email is required."
+      assert html =~ "<svg"
+      assert html =~ "scoria-field__error"
+    end
+
+    test "help text renders below the input slot when @help is set" do
+      html =
+        render_component(&ScoriaWeb.UI.field/1,
+          id: "email",
+          label: "Email",
+          help: "We never share it.",
+          inner_block: slot_block(~s(<input id="email" />))
+        )
+
+      assert html =~ "We never share it."
+      assert html =~ "scoria-field__help"
+    end
+
+    test "caller inner_block input is rendered inside the field wrapper" do
+      html =
+        render_component(&ScoriaWeb.UI.field/1,
+          id: "myinput",
+          label: "Name",
+          inner_block: slot_block(~s(<input id="myinput" class="scoria-input" />))
+        )
+
+      assert html =~ ~s(id="myinput")
+      assert html =~ "scoria-field"
+    end
+  end
+
+  describe "form_section/1" do
+    test "renders title heading" do
+      html =
+        render_component(&ScoriaWeb.UI.form_section/1,
+          title: "Contact Details",
+          inner_block: slot_block("")
+        )
+
+      assert html =~ "Contact Details"
+      assert html =~ "scoria-form-section"
+    end
+
+    test "renders description when provided" do
+      html =
+        render_component(&ScoriaWeb.UI.form_section/1,
+          title: "Contact Details",
+          description: "Your public contact info.",
+          inner_block: slot_block("")
+        )
+
+      assert html =~ "Your public contact info."
+    end
+
+    test "no description element when description is nil" do
+      html =
+        render_component(&ScoriaWeb.UI.form_section/1,
+          title: "Contact Details",
+          inner_block: slot_block("")
+        )
+
+      refute html =~ "Your public contact info."
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # DS-01: <.table> (plan 12-02)
   # ---------------------------------------------------------------------------
 
