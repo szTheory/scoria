@@ -10,6 +10,7 @@ defmodule ScoriaWeb.UI do
   Import into a LiveView/component with `import ScoriaWeb.UI`.
   """
   use Phoenix.Component
+  alias Phoenix.LiveView.JS
 
   @doc """
   Maps a domain status/kind string (or atom) to a semantic tone atom.
@@ -179,20 +180,67 @@ defmodule ScoriaWeb.UI do
 
   attr(:flash, :map, default: %{})
 
-  @doc "Dashboard flash banners. Single home for flash kind → tone styling."
+  @doc "Dashboard flash banners. Single home for flash kind → tone styling (DS-05).
+  Renders semantic scoria-flash--{tone} BEM modifier classes via string-keyed clauses
+  (Phoenix @flash always provides string keys, not atoms). Each banner carries
+  role=\"alert\" and a 16×16 tone icon so status is never communicated by color alone."
   def flash_group(assigns) do
     ~H"""
     <div
       :for={{kind, message} <- @flash}
       id={"flash-#{kind}"}
-      class={["mb-4 rounded-lg border px-4 py-3 text-sm", flash_tone_class(kind)]}
+      role="alert"
+      class={["scoria-flash", flash_modifier(kind)]}
     >
+      {flash_icon(kind)}
       {message}
     </div>
     """
   end
 
-  defp flash_tone_class(:error), do: "border-rose-200 bg-rose-50 text-rose-900"
-  defp flash_tone_class(:info), do: "border-sky-200 bg-sky-50 text-sky-900"
-  defp flash_tone_class(_kind), do: "border-stone-200 bg-stone-50 text-stone-900"
+  defp flash_modifier("error"), do: "scoria-flash--fail"
+  defp flash_modifier("info"), do: "scoria-flash--info"
+  defp flash_modifier("success"), do: "scoria-flash--pass"
+  defp flash_modifier(_kind), do: "scoria-flash--warn"
+
+  # 16×16 inline SVG tone icons — status never by color alone (a11y DS-05).
+  defp flash_icon("error") do
+    assigns = %{}
+
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+      <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM7 5a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0V5zm1 6.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5z" clip-rule="evenodd" />
+    </svg>
+    """
+  end
+
+  defp flash_icon("info") do
+    assigns = %{}
+
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+      <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-1 4a1 1 0 0 1 1-1h.01a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8z" clip-rule="evenodd" />
+    </svg>
+    """
+  end
+
+  defp flash_icon("success") do
+    assigns = %{}
+
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+      <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.78 5.78a.75.75 0 0 0-1.06-1.06L7 9.44 5.28 7.72a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.06 0l4.25-4.25z" clip-rule="evenodd" />
+    </svg>
+    """
+  end
+
+  defp flash_icon(_kind) do
+    assigns = %{}
+
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+      <path fill-rule="evenodd" d="M8.22 1.3a.25.25 0 0 0-.44 0L.36 14.26a.25.25 0 0 0 .22.37h14.84a.25.25 0 0 0 .22-.37L8.22 1.3zm-.72 4.7a.5.5 0 0 1 1 0v3a.5.5 0 0 1-1 0V6zm.75 5.5a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0z" clip-rule="evenodd" />
+    </svg>
+    """
+  end
 end
