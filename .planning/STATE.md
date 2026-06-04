@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: planning
-last_updated: "2026-06-04T02:24:48.940Z"
-last_activity: 2026-06-04
+last_updated: "2026-06-03T00:00:00.000Z"
+last_activity: 2026-06-03
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,21 +17,34 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-05-30 after v2.16 archive)
+See: `.planning/PROJECT.md` (updated 2026-06-03 after v3.0 Control Room milestone start)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Planning next milestone — `/gsd-new-milestone`
+**Current focus:** v3.0 Control Room — admin dashboard UI/UX iteration. Expose `ui.ex` components → delete leaked raw-palette classes → consolidate → orient → polish → prove via a committed screenshot+critique loop.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 11 — Evaluation engine + seed depth (next: `/gsd:plan-phase 11`)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-04 — Milestone v3.0 started
+Status: Roadmap created — awaiting first phase plan
+Last activity: 2026-06-03 — v3.0 roadmap created (phases 11–17, 28 requirements mapped)
+
+Progress: [○○○○○○○] 0/7 phases
+
+## Roadmap (v3.0 Control Room, Phases 11–17)
+
+1. **Phase 11 — Evaluation engine + seed depth** (EVAL-01..05) — `mix scoria.ui.shots` harness, 9-dim rubric, full-screen seed depth, baseline audit → gap register/fix backlog. Foundation; every later phase re-runs this loop.
+2. **Phase 12 — Design-system component layer** (DS-01..06) — `ui.ex` table/drawer/modal/form/notebook/skeleton/toast, fix `flash_group`, raw-color drift guard. The enforced token gateway.
+3. **Phase 13 — Orientation spine (IA)** (IA-01..06) — nav active-state fix, third axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, quality-loop threading, honest reserved-name stubs.
+4. **Phase 14 — Least-iterated screens polish** (SCREEN-01, SCREEN-02) — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions; real Dataset Builder index.
+5. **Phase 15 — High-traffic screens + evidence adapters** (SCREEN-03, SCREEN-04) — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components → thin notebook adapters.
+6. **Phase 16 — Motion + responsive + theme parity** (MOTION-01..04) — brand-tied motion, focus-visible/a11y, mobile-first md/lg/xl, light+dark parity.
+7. **Phase 17 — Consistency sweep + proof** (PROOF-01..03) — re-run audit, rubric-delta + raw-color → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage.
 
 ## Performance Metrics
 
+- **Current milestone:** `v3.0 Control Room` (planning — roadmap created 2026-06-03)
 - **Latest Shipped:** `v2.16 ReqLLM Peer Bump` (2026-05-30)
 - **Previous Shipped:** `v2.15 Connector Adoption Lane` (2026-05-30)
 - **Hex release:** `0.1.1` prepared; publish via release-please pending CI green
@@ -40,26 +53,31 @@ Last activity: 2026-06-04 — Milestone v3.0 started
 
 ### Roadmap Evolution
 
+- **v3.0 (planning):** Control Room UI/IA/DX milestone. Phases 11–17 continue numbering from v2.16's Phase 10.1. Core finding: design system is under-*adopted*, not under-built (~22/25 view files leak raw Tailwind). Sequenced for compounding reuse: primitives (12) before screens (14, 15), least-iterated before high-traffic, cross-cutting motion/parity (16) last before proof (17).
 - **v2.16 (shipped):** ReqLLM `~> 1.13` peer bump — minimal dependency hygiene scope.
 - **v2.15 (shipped):** Named connector adoption lane — PR WAE after knowledge, not in closeout.
-- Phase 10.1 inserted after Phase 10: retroactive VERIFICATION ledgers for phases 08–10.
 
 ### Decisions
 
+- v3.0 keeps the custom token-first scoped CSS architecture; `ui.ex` is the enforced token gateway (no Tailwind/BEM switch) — 2026-06-03
+- v3.0 is UI-only: reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data — 2026-06-03
+- Screenshot+critique harness is committed dev-only tooling, not merge-blocking CI (consistent with LiveViewTest-only posture) — 2026-06-03
+- Full light + dark parity held to the same polish bar; harness captures both themes mechanically — 2026-06-03
 - v2.16 scope: ReqLLM-only — no optional szTheory Hex deps — 2026-05-30
-- ReqLLM streaming adapter (ECOS-02) deferred — 2026-05-30
-- Thin milestone pattern: retroactive VERIFICATION via decimal phase closeout — 2026-05-30
 
 ## Deferred Items
 
 | Category | Item | Status |
 |----------|------|--------|
 | Release | Publish 0.1.1 via release-please + registry semver upgrade smoke | in_progress |
+| Future req | FEAT-RESERVED: real backend + UI for stubbed reserved screens | deferred |
+| Future req | IA-LENS: remembered persona "primary lens" on Status Home | deferred |
+| Future req | CMDK-SEARCH: full-text object search in command palette | deferred |
 | Tech debt | ReqLLM streaming adapter (ECOS-02) | deferred |
 | Tech debt | SummarizeWorker dedicated unit test | deferred |
 | Tech debt | Local `mix test.connector` migrate_core! ordering on fresh DB | deferred |
 
 ## Operator Next Steps
 
-- `/gsd-new-milestone` — start next milestone (questioning → requirements → roadmap)
+- `/gsd:plan-phase 11` — plan the first v3.0 phase (evaluation engine + seed depth)
 - Merge release-please PR when main CI green

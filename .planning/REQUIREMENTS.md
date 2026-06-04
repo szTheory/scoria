@@ -75,22 +75,44 @@ Deferred to a later milestone (acknowledged, not in this roadmap).
 
 ## Traceability
 
-Populated during roadmap creation (each requirement maps to exactly one phase).
+Each requirement maps to exactly one phase. Phase numbering continues from v2.16 (ended at Phase 10.1).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EVAL-01 → EVAL-05 | TBD | Pending |
-| DS-01 → DS-06 | TBD | Pending |
-| IA-01 → IA-06 | TBD | Pending |
-| SCREEN-01 → SCREEN-04 | TBD | Pending |
-| MOTION-01 → MOTION-04 | TBD | Pending |
-| PROOF-01 → PROOF-03 | TBD | Pending |
+| EVAL-01 | Phase 11 — Evaluation engine + seed depth | Pending |
+| EVAL-02 | Phase 11 — Evaluation engine + seed depth | Pending |
+| EVAL-03 | Phase 11 — Evaluation engine + seed depth | Pending |
+| EVAL-04 | Phase 11 — Evaluation engine + seed depth | Pending |
+| EVAL-05 | Phase 11 — Evaluation engine + seed depth | Pending |
+| DS-01 | Phase 12 — Design-system component layer | Pending |
+| DS-02 | Phase 12 — Design-system component layer | Pending |
+| DS-03 | Phase 12 — Design-system component layer | Pending |
+| DS-04 | Phase 12 — Design-system component layer | Pending |
+| DS-05 | Phase 12 — Design-system component layer | Pending |
+| DS-06 | Phase 12 — Design-system component layer | Pending |
+| IA-01 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-02 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-03 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-04 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-05 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-06 | Phase 13 — Orientation spine (IA) | Pending |
+| SCREEN-01 | Phase 14 — Least-iterated screens polish | Pending |
+| SCREEN-02 | Phase 14 — Least-iterated screens polish | Pending |
+| SCREEN-03 | Phase 15 — High-traffic screens + evidence adapters | Pending |
+| SCREEN-04 | Phase 15 — High-traffic screens + evidence adapters | Pending |
+| MOTION-01 | Phase 16 — Motion + responsive + theme parity | Pending |
+| MOTION-02 | Phase 16 — Motion + responsive + theme parity | Pending |
+| MOTION-03 | Phase 16 — Motion + responsive + theme parity | Pending |
+| MOTION-04 | Phase 16 — Motion + responsive + theme parity | Pending |
+| PROOF-01 | Phase 17 — Consistency sweep + proof | Pending |
+| PROOF-02 | Phase 17 — Consistency sweep + proof | Pending |
+| PROOF-03 | Phase 17 — Consistency sweep + proof | Pending |
 
 **Coverage:**
 - v1 requirements: 28 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 28 ⚠️
+- Mapped to phases: 28 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-03*
-*Last updated: 2026-06-03 after milestone v3.0 definition*
+*Last updated: 2026-06-03 after v3.0 roadmap creation (phases 11–17)*
