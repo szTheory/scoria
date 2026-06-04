@@ -18,12 +18,12 @@
 
 ### Design System Component Layer
 
-- [ ] **DS-01**: Operators see consistent tables across screens via a shared `<.table>` component supporting sort, filter/search, pagination, a density toggle, and a first-class empty state.
-- [ ] **DS-02**: Drawers and modals across screens use shared slot-based shells with consistent open/dismiss behavior.
-- [ ] **DS-03**: Forms (eval and prompt editors) use a shared form-control component set with consistent labelling and validation display.
-- [ ] **DS-04**: Evidence panels (trace, citation, semantic, replay, memory, delegated, remote-invocation) render through one unified notebook shell for visual consistency.
-- [ ] **DS-05**: Loading and transient feedback use shared skeleton and toast components, and `flash_group` routes through the token system with no raw-palette classes.
-- [ ] **DS-06**: An executable drift guard fails the build if any raw palette class (`stone-/rose-/sky-/emerald-/amber-/...`) appears under `lib/scoria_web/`.
+- [x] **DS-01**: Operators see consistent tables across screens via a shared `<.table>` component supporting sort, filter/search, pagination, a density toggle, and a first-class empty state.
+- [x] **DS-02**: Drawers and modals across screens use shared slot-based shells with consistent open/dismiss behavior.
+- [x] **DS-03**: Forms (eval and prompt editors) use a shared form-control component set with consistent labelling and validation display.
+- [x] **DS-04**: Evidence panels (trace, citation, semantic, replay, memory, delegated, remote-invocation) render through one unified notebook shell for visual consistency.
+- [x] **DS-05**: Loading and transient feedback use shared skeleton and toast components, and `flash_group` routes through the token system with no raw-palette classes.
+- [x] **DS-06**: An executable drift guard fails the build if any raw palette class (`stone-/rose-/sky-/emerald-/amber-/...`) appears under `lib/scoria_web/`.
 
 ### Information Architecture & Orientation
 
@@ -84,12 +84,12 @@ Each requirement maps to exactly one phase. Phase numbering continues from v2.16
 | EVAL-03 | Phase 11 — Evaluation engine + seed depth | Complete |
 | EVAL-04 | Phase 11 — Evaluation engine + seed depth | Complete |
 | EVAL-05 | Phase 11 — Evaluation engine + seed depth | Complete |
-| DS-01 | Phase 12 — Design-system component layer | Pending |
-| DS-02 | Phase 12 — Design-system component layer | Pending |
-| DS-03 | Phase 12 — Design-system component layer | Pending |
-| DS-04 | Phase 12 — Design-system component layer | Pending |
-| DS-05 | Phase 12 — Design-system component layer | Pending |
-| DS-06 | Phase 12 — Design-system component layer | Pending |
+| DS-01 | Phase 12 — Design-system component layer | Complete |
+| DS-02 | Phase 12 — Design-system component layer | Complete |
+| DS-03 | Phase 12 — Design-system component layer | Complete |
+| DS-04 | Phase 12 — Design-system component layer | Complete |
+| DS-05 | Phase 12 — Design-system component layer | Complete |
+| DS-06 | Phase 12 — Design-system component layer | Complete |
 | IA-01 | Phase 13 — Orientation spine (IA) | Pending |
 | IA-02 | Phase 13 — Orientation spine (IA) | Pending |
 | IA-03 | Phase 13 — Orientation spine (IA) | Pending |

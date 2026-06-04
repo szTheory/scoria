@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: executing
-last_updated: "2026-06-04T15:53:20.533Z"
-last_activity: 2026-06-04 -- Phase 12 planning complete
+last_updated: "2026-06-04T16:16:53.257Z"
+last_activity: 2026-06-04
 progress:
   total_phases: 15
   completed_phases: 1
   total_plans: 10
-  completed_plans: 5
+  completed_plans: 6
   percent: 7
 ---
 
@@ -21,16 +21,16 @@ See: `.planning/PROJECT.md` (updated 2026-06-03 after v3.0 Control Room mileston
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 12 — design system component layer
+**Current focus:** Phase 12 — design-system-component-layer
 
 ## Current Position
 
-Phase: 12
-Plan: Not started
+Phase: 12 (design-system-component-layer) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-06-04 -- Phase 12 planning complete
+Last activity: 2026-06-04
 
-Progress: [████████░░] 80%
+Progress: [██████░░░░] 60%
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
@@ -67,6 +67,8 @@ Progress: [████████░░] 80%
 - [Phase ?]: RunSummary.run_id is the correct field for downstream run ID linking
 - [Phase ?]: All seeded review candidates need review_status: pending for list_review_queue(%{}) to return them
 - [Phase ?]: Use add_if_not_exists when deleted interim migrations may have partially applied columns
+- [Phase ?]: DS-06 ratchet uses File.exists? guard so mix test stays green before plan 12-05 commits the baseline
+- [Phase ?]: ui.ex-zero assertion tagged :ui_ex_zero excluded until plan 12-02 sweeps flash_tone_class
 
 ## Deferred Items
 
@@ -80,6 +82,7 @@ Progress: [████████░░] 80%
 | Tech debt | SummarizeWorker dedicated unit test | deferred |
 | Tech debt | Local `mix test.connector` migrate_core! ordering on fresh DB | deferred |
 | Phase 11-evaluation-engine-seed-depth P01 | 90min | 2 tasks | 2 files |
+| Phase 12-design-system-component-layer P01 | 3min | 2 tasks | 4 files |
 
 ## Operator Next Steps
 

@@ -80,7 +80,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   4. Evidence panels render through one unified `<.notebook>` shell, and loading/transient feedback use shared skeleton and toast components with `flash_group` routed through the token system (no raw-palette classes).
   5. The build fails if any raw palette class (`stone-/rose-/sky-/emerald-/amber-/...`) appears under `lib/scoria_web/`.
 **Plans**: 5 plans
-  - [ ] 12-01-PLAN.md — Wave 0: net-new CSS + skeleton keyframe + DS-06 guard & component-test scaffolds
+  - [x] 12-01-PLAN.md — Wave 0: net-new CSS + skeleton keyframe + DS-06 guard & component-test scaffolds
   - [ ] 12-02-PLAN.md — ui.ex: flash_group semantic fix (zeroes ui.ex) + `<.table>` (DS-05, DS-01)
   - [ ] 12-03-PLAN.md — ui.ex: `<.drawer>`/`<.modal>` + `<.field>`/`<.form_section>` (DS-02, DS-03)
   - [ ] 12-04-PLAN.md — ui.ex: `<.notebook>` shell + `<.skeleton>` + `<.toast>` (DS-04, DS-05)
@@ -148,7 +148,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
-| 12. Design-system component layer | v3.0 | 0/5 | Planned | - |
+| 12. Design-system component layer | v3.0 | 1/5 | In Progress|  |
 | 13. Orientation spine (IA) | v3.0 | 0/? | Not started | - |
 | 14. Least-iterated screens polish | v3.0 | 0/? | Not started | - |
 | 15. High-traffic screens + evidence adapters | v3.0 | 0/? | Not started | - |
