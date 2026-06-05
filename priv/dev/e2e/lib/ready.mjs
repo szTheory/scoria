@@ -11,8 +11,13 @@
 /**
  * Waits for data-scoria-ready="true" on <html>.
  * Throws with the missing-sentinel error copy on timeout.
+ *
+ * Default 15s (not 5s): the FIRST LiveView connect on a cold CI dev server
+ * (fresh BEAM, first WS handshake + asset eval) routinely exceeds 5s, which
+ * flaked the first spec in the serial toast block. Warm loads resolve in well
+ * under a second; the generous ceiling only affects the cold first navigation.
  */
-export async function waitForReady(page, timeoutMs = 5000) {
+export async function waitForReady(page, timeoutMs = 15000) {
   try {
     await page.waitForFunction(
       () => document.documentElement.getAttribute('data-scoria-ready') === 'true',

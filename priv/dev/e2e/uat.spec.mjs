@@ -102,7 +102,7 @@ test.describe('Phase 12 — skeleton (DS-05)', () => {
     await expect(
       firstRun,
       'expected at least one seeded workflow run on /workflows'
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
     await firstRun.click();
     await waitForReady(page);
 
