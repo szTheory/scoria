@@ -2,21 +2,21 @@
 /**
  * check-consistency.mjs
  *
- * Asserts hex-value consistency across the three Scoria token sources:
+ * Asserts hex-value consistency across the four Scoria token sources:
  *   1. brandbook/tokens.css   — docs/marketing SSOT (:root-scoped)
  *   2. assets/css/02-tokens.css — dashboard runtime SSOT (.scoria-root-scoped)
  *   3. brandbook/tokens.json  — structured token object (raw.color block)
+ *   4. brandbook/brand-book.md — canonical guide (the §4 color tables)
  *
  * The check covers PRIMITIVE tokens only (the raw.color block in tokens.json
  * and their corresponding --scoria-* declarations in both CSS files).
  * Semantic tokens are intentionally excluded — they use var() references and
  * color-mix() expressions that vary between dark/light contexts.
  *
- * TODO(21-03): wire in brandbook/brand-book.md as a fourth source.
- *   Extension point: add a parseBrandBookHexes(filePath) function that extracts
- *   hex values from the color table in brand-book.md (markdown table or code block
- *   with #hex patterns), then add it to the comparison set below the "SOURCES"
- *   section. The assertion loop already handles N sources generically.
+ * brand-book.md is a *subset* source: its §4 color tables document representative
+ * palette values (e.g. "Basalt-950 | `#11100F`"), not every token. The check
+ * therefore asserts agreement/membership — any hex in brand-book.md that names a
+ * known token MUST match the CSS hex — and does NOT require completeness.
  *
  * Exit codes:
  *   0  — all sources agree (or only non-primitive tokens differ, which is expected)
@@ -77,6 +77,84 @@ function parseJsonPrimitives(filePath) {
   return map;
 }
 
+/**
+ * Extract documented token hexes from brand-book.md §4 color tables.
+ *
+ * The doc names tokens by their human label ("Basalt-950", "Ember-500",
+ * "Success (pass)" with a light/dark hex pair, etc.). We map each label to the
+ * corresponding --scoria-* CSS token name, normalize the hex to lowercase, and
+ * return a Map<cssTokenName, normalizedHex>.
+ *
+ * Only labels that map cleanly to a single known primitive token are captured;
+ * functional-accent rows that carry a light/dark hex pair are split into the
+ * *-light / *-dark CSS names. Anything we cannot map is skipped (the doc is a
+ * subset source — see file header).
+ */
+function parseBrandBookHexes(filePath) {
+  const text = readFileSync(filePath, 'utf8');
+  const map = new Map();
+
+  // Label → CSS token name for single-hex neutral / brand-scale rows.
+  const SINGLE = {
+    'basalt-950': 'basalt-950',
+    'basalt-900': 'basalt-900',
+    'char-850': 'char-850',
+    'graphite-700': 'graphite-700',
+    'pumice-500': 'pumice-500',
+    'muted-warm': 'muted-warm',
+    'tuff-300': 'tuff-300',
+    'ash-100': 'ash-100',
+    'ash-50': 'ash-50',
+    'white-hot': 'white-hot',
+    'scoria-900': '900',
+    'scoria-800': '800',
+    'scoria-700': '700',
+    'scoria-600': '600',
+    'ember-500': 'ember-500',
+    'molten-400': 'molten-400',
+    'cinder-100': 'cinder-100',
+    'cinder-50': 'cinder-50',
+  };
+
+  // Functional-accent role → [lightCssName, darkCssName] for the light/dark pair rows.
+  const PAIR = {
+    success: ['success-light', 'success-dark'],
+    info: ['info-light', 'info-dark'],
+    warning: ['warning-light', 'warning-dark'],
+    danger: ['danger-light', 'danger-dark'],
+    trace: ['trace-light', 'trace-dark'],
+  };
+
+  const hex = '#[0-9a-fA-F]{3,8}';
+
+  // Single-hex table rows: | <Label> | `#HEX` | ... |
+  for (const [label, cssName] of Object.entries(SINGLE)) {
+    // Match a table row whose first cell is the label (case-insensitive) and
+    // whose next cell is a backticked hex.
+    const re = new RegExp(
+      `\\|\\s*${label.replace('-', '-')}\\s*\\|\\s*\`(${hex})\`\\s*\\|`,
+      'i'
+    );
+    const m = text.match(re);
+    if (m) map.set(cssName, m[1].toLowerCase());
+  }
+
+  // Pair rows: | <Role> (pass) | `#LIGHT` | `#DARK` | ... |
+  for (const [role, [lightName, darkName]] of Object.entries(PAIR)) {
+    const re = new RegExp(
+      `\\|\\s*${role}[^|]*\\|\\s*\`(${hex})\`\\s*\\|\\s*\`(${hex})\`\\s*\\|`,
+      'i'
+    );
+    const m = text.match(re);
+    if (m) {
+      map.set(lightName, m[1].toLowerCase());
+      map.set(darkName, m[2].toLowerCase());
+    }
+  }
+
+  return map;
+}
+
 // ─── Sources ─────────────────────────────────────────────────────────────────
 
 const SOURCES = [
@@ -90,12 +168,11 @@ const SOURCES = [
     path: resolve(REPO_ROOT, 'assets', 'css', '02-tokens.css'),
     parse: parseCssHexTokens,
   },
-  // TODO(21-03): add brand-book.md source here. Example:
-  // {
-  //   label: 'brandbook/brand-book.md',
-  //   path: resolve(REPO_ROOT, 'brandbook', 'brand-book.md'),
-  //   parse: parseBrandBookHexes,
-  // },
+  {
+    label: 'brandbook/brand-book.md',
+    path: resolve(REPO_ROOT, 'brandbook', 'brand-book.md'),
+    parse: parseBrandBookHexes,
+  },
 ];
 
 const JSON_SOURCE = {
@@ -125,42 +202,47 @@ try {
   process.exit(1);
 }
 
-// ─── Assert CSS ↔ CSS ────────────────────────────────────────────────────────
-// For every primitive token present in BOTH CSS files, the hex must match.
-// We determine "primitive" by using the intersection of both CSS maps;
-// semantic tokens (surface/text/link/etc.) are present in both but are NOT
-// bare hex values (they resolve to var() in the runtime file), so they will
-// not be captured by parseCssHexTokens — the regex only matches #hex.
+// ─── Assert cross-source agreement ───────────────────────────────────────────
+// Base = brandbook/tokens.css. Every other source (02-tokens.css, brand-book.md)
+// must AGREE on every token it shares with the base. Sources are subsets — a
+// token absent from a source is simply not asserted (brand-book.md documents a
+// representative subset of the palette; see file header).
+//   - 02-tokens.css: the runtime CSS SSOT (bare #hex declarations).
+//   - brand-book.md: the §4 color tables (membership/agreement only).
 
-console.log('\n── CSS ↔ CSS comparison ─────────────────────────────────────────');
+console.log('\n── Cross-source agreement (base: brandbook/tokens.css) ───────────');
 
 const [primary, ...rest] = cssMaps;
 const cssMismatches = [];
 
-for (const [name, primaryHex] of primary.map) {
-  for (const other of rest) {
-    const otherHex = other.map.get(name);
-    if (otherHex === undefined) continue; // token not present in this source — skip
+for (const other of rest) {
+  let shared = 0;
+  const localMismatches = [];
+  for (const [name, otherHex] of other.map) {
+    const primaryHex = primary.map.get(name);
+    if (primaryHex === undefined) continue; // not a primitive shared with the base — skip
+    shared++;
     if (primaryHex !== otherHex) {
-      cssMismatches.push({
+      const rec = {
         token: `--scoria-${name}`,
         [primary.label]: primaryHex,
         [other.label]: otherHex,
-      });
+      };
+      localMismatches.push(rec);
+      cssMismatches.push(rec);
     }
   }
-}
-
-if (cssMismatches.length === 0) {
-  console.log(`PASS    All shared primitive tokens agree between CSS sources`);
-} else {
-  console.error(`FAIL    ${cssMismatches.length} primitive hex mismatch(es) between CSS sources:`);
-  for (const m of cssMismatches) {
-    const vals = Object.entries(m)
-      .filter(([k]) => k !== 'token')
-      .map(([src, hex]) => `  ${src}: ${hex}`)
-      .join('\n');
-    console.error(`\n  ${m.token}\n${vals}`);
+  if (localMismatches.length === 0) {
+    console.log(`PASS    ${other.label} — ${shared} shared token(s), all agree`);
+  } else {
+    console.error(`FAIL    ${other.label} — ${localMismatches.length} mismatch(es):`);
+    for (const m of localMismatches) {
+      const vals = Object.entries(m)
+        .filter(([k]) => k !== 'token')
+        .map(([src, hex]) => `  ${src}: ${hex}`)
+        .join('\n');
+      console.error(`\n  ${m.token}\n${vals}`);
+    }
   }
 }
 
