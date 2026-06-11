@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
-status: verifying
-last_updated: "2026-06-11T15:56:52.273Z"
-last_activity: 2026-06-11
+status: completed
+last_updated: "2026-06-11T16:04:34.416Z"
+last_activity: 2026-06-11 -- Phase 18 marked complete
 progress:
-  total_phases: 20
+  total_phases: 3
   completed_phases: 3
   total_plans: 12
   completed_plans: 12
-  percent: 15
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v
 
 ## Current Position
 
-Phase: 18 (pressure-test-audit-decision-lock) — COMPLETE (awaiting gate #1 user approval)
+Phase: 18 — COMPLETE
 Plan: 2 of 2 — complete
-Status: 18-02 complete; Sections 8-14 + Decisions Locked written; propagation: not-required confirmed; gate #1 decision summary prepared for orchestrator
-Last activity: 2026-06-11 — 18-02 complete (Sections 8-14 + Decisions Locked + propagation verdict; gate #1 checkpoint reached)
+Status: Phase 18 complete
+Last activity: 2026-06-11 -- Phase 18 marked complete
 
 ## Roadmap (v2.17 Vesicle, Phases 18–22)
 
