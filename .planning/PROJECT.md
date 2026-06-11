@@ -10,22 +10,7 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: v2.17 Vesicle (interjected)
-
-**Goal:** Ship a pressure-tested, repo-canonical Scoria brand system in `brandbook/` — audited brand book, locked design tokens, a user-chosen programmatically generated logo system, and a professional standalone HTML brand book — wired into README, dashboard favicon/mark, and Hex/GitHub/HexDocs copy, without destabilizing the shipped v3.0 design-system work.
-
-**Why interjected:** The brand book (`prompts/scoria-brand-book-deep-research.md`) was AI-generated as a seed and has never been pressure-tested; no logo or brand collateral exists. v3.0 Control Room is paused at a clean phase 12/13 boundary (handoff committed) and resumes after v2.17 ships. Planning versions are decoupled from Hex semver, so v2.17 slots before in-flight v3.0 to keep archive chronology aligned.
-
-**Target features:**
-- 14-section pressure-test audit of the brand book (KEEP/TIGHTEN/REWORK/ADD/REMOVE verdicts, 15-dimension scorecard, WCAG contrast verdicts) → `brandbook/pressure-test.md`, with a user-approved decision lock before any asset generation.
-- Logo divergence: ≥6 curated programmatic SVG mark+lockup options + ≥2 integrated typemark studies in an options gallery (dark/light grounds, 256/64/32/16px, monochrome, in-situ favicon/sidebar mocks) — user chooses the direction.
-- Logo convergence: full variant set (primary dark/light, mark-only, monochrome `currentColor`, with-subtitle, integrated logotype, pixel-snapped favicon, social card).
-- Canonical `brandbook/`: tokens.json/tokens.css, rewritten brand-book.md, examples/*.svg specimens, professional standalone index.html — SVG/text only, < 500KB.
-- Integration: README header + badges, dashboard favicon + sidebar mark (`layouts.ex`), Hex/GitHub/HexDocs description copy.
-
-**Hard constraints (user-emphatic):** No rectangular background shapes behind logomarks (evenodd-punched vesicle negative space); logotype optically tight to the mark; main lockup has no subtitle (separate subtitle variant allowed); integrated type treatments work the motif INTO letterforms, not icon-left-of-text. `brandbook/` becomes the canonical brand source; `assets/css/02-tokens.css` is touched only if the audit finds material contrast/accessibility/coherence failures (one atomic conditional plan incl. `ds06_baseline.txt` regen). Approved plan: `/Users/jon/.claude/plans/we-have-scoria-brand-book-deep-research-majestic-penguin.md`.
-
-## Paused Milestone: v3.0 Control Room (resumes after v2.17)
+## Current Milestone: v3.0 Control Room
 
 **Goal:** Take the embedded `/scoria` operator dashboard to "insane polish" — a tightened, fully-adopted design system, a clear persona/JTBD information architecture, brand-tied motion, full light/dark parity, and seed data that exercises every screen — proven by a committed screenshot+critique evaluation loop.
 
@@ -45,7 +30,15 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 **Key context:** Keep the custom token-first scoped CSS architecture (no Tailwind/BEM switch); `ui.ex` is the enforced token gateway. UI-only milestone — reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data. Plan: `/Users/jon/.claude/plans/another-ui-pass-so-elegant-garden.md`.
 
-## Latest Shipped Milestone: v2.16 ReqLLM Peer Bump (2026-05-30)
+## Latest Shipped Milestone: v2.17 Vesicle (2026-06-11)
+
+**Goal:** Ship a pressure-tested, repo-canonical Scoria brand system in `brandbook/` — audited brand book, locked design tokens, user-chosen programmatically generated logo system, and a professional standalone HTML brand book — wired into README, dashboard favicon/mark, and Hex/GitHub/HexDocs copy.
+
+**Delivered:** brandbook/ canonical brand system (pressure-test.md 1,311 lines, 14 sections; TV-1 "Span rail" mark + LK-B "Mark-as-o" fused lockup chosen across 2 gallery rounds; 8-variant logo set; tokens.json/tokens.css 4-source consistency; brand-book.md 543-line canonical rewrite; standalone index.html 55 KB; 7 examples; 458 KB total); integration (README picture header, dashboard TV-1 mark + data-URI favicon, mix.exs + GitHub descriptions); tagline locked "AI ops for Phoenix apps." (user override at gate #1); mix test 632 green, DS-06 untouched. BRAND-09 conditional did not fire (propagation: not-required). quality-gate.mjs 8/8 PASS.
+
+**Why it mattered:** The AI-generated brand book seed had never been pressure-tested and no logo or collateral existed. v2.17 closed this gap before v3.0 phases 13–17 so the new navigation spine, screen polish, and motion work all ship under a tested brand identity.
+
+## Previous Shipped: v2.16 ReqLLM Peer Bump (2026-05-30)
 
 **Goal:** Keep Scoria's LLM orchestration peer current on Hex without widening product scope.
 
@@ -109,6 +102,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **v2.17 Vesicle shipped (2026-06-11):** Brand system complete — pressure-test.md (1,311 lines), TV-1 mark + LK-B lockup chosen by user (2 rounds), 8-variant logo set, brandbook/ (458 KB, zero binaries), README picture header, dashboard TV-1 mark + data-URI favicon, mix.exs/GitHub descriptions, quality-gate.mjs 8/8 PASS, mix test 632 green, DS-06 untouched. Archived in `.planning/milestones/v2.17-*`.
 - **Phase 12 complete (2026-06-04, v3.0 Control Room):** Design-system component layer — `ui.ex` now exposes table/drawer/modal/field/form_section/notebook/skeleton/toast contracts, `flash_group` routes through semantic tokens, and the DS-06 raw-color drift guard runs unconditionally in `mix test` (baseline `test/support/ds06_baseline.txt`, `ui.ex` at zero raw palette). Known polish debt deferred to Phases 14–16 (toast overlap CR-01, drawer positioning WR-03, dialog `aria-labelledby` WR-02) — see `12-REVIEW.md`.
 - **v2.16 shipped (2026-05-30):** ReqLLM peer bump to `~> 1.13` (1.13.0); archived in `.planning/milestones/v2.16-*`.
 - **v2.15 shipped (2026-05-30):** Connector adoption lane — `mix test.connector`, PR CI WAE after knowledge, drift guards; archived in `.planning/milestones/v2.15-*`.
@@ -210,17 +204,15 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Maintenance release `0.1.1` prepared with adopter-readable CHANGELOG and release-please manifest. — `v2.14` (HEX-03)
 - ✓ Named connector adoption lane `mix test.connector` with VerificationLanes entry, SupportJourney proof, docs truth, and PR CI WAE. — `v2.15` (CONN-LANE-01–03, CONN-DOCS-01–02, CONN-CI-01)
 - ✓ ReqLLM peer dependency bumped to `~> 1.13` (1.13.0); orchestrator, judge runner, compaction worker, and observe adapter verified — `v2.16` (DEPS-01–04)
+- ✓ Brand book pressure-tested (1,311 lines, 14 sections, 15-dim scorecard, 52-pairing WCAG table, 0 FAIL), decisions locked with user approval, `propagation: not-required` machine-readable verdict. — `v2.17 Vesicle` (BRAND-01, BRAND-02)
+- ✓ User chose logo direction from ≥6 programmatic SVG options (2 rounds: TV-1 "Span rail" mark + LK-B "Mark-as-o" fused lockup); all LOGO-01..07 constraints verified. — `v2.17 Vesicle` (BRAND-03)
+- ✓ 8-variant logo set (primary dark/light, mark, monochrome, subtitle, integrated logotype, favicon, social card) with clear-space/min-size spec and optical-correction pass. — `v2.17 Vesicle` (BRAND-04)
+- ✓ Self-contained `brandbook/` with tokens.json/css (4-source hex consistency), 543-line canonical brand-book.md, 7 SVG examples, standalone index.html (file:// offline, zero network refs) — 458 KB, zero binaries. — `v2.17 Vesicle` (BRAND-05, BRAND-06)
+- ✓ Brand live on real surfaces: README picture-element header, dashboard TV-1 mark + data-URI favicon, mix.exs/GitHub descriptions; quality-gate.mjs 8/8 PASS; mix test 632 green; DS-06 byte-identical (BRAND-09 did not fire). — `v2.17 Vesicle` (BRAND-07, BRAND-08)
 
 ### Active
 
-_v2.17 Vesicle — brand system (see Current Milestone above; BRAND-01..08 in `.planning/REQUIREMENTS.md`)._
-
-- [ ] The brand book is pressure-tested with verdict tags, a scorecard, and accessibility contrast checks, and key brand decisions are locked with user approval before assets are generated.
-- [ ] The user chooses a logo direction from a gallery of ≥6 curated options (plus integrated typemark studies) rendered on dark/light grounds at real usage sizes.
-- [ ] A complete logo variant set, canonical tokens, rewritten brand book, and standalone professional HTML brand book live self-contained in `brandbook/` (< 500KB, zero binaries).
-- [ ] The finalized brand is wired into the README header, dashboard favicon/mark, and Hex/GitHub/HexDocs copy, with `mix test` (incl. DS-06) green.
-
-_Paused (v3.0 Control Room — resumes after v2.17; snapshot at `.planning/milestones/v3.0-REQUIREMENTS-paused.md`):_
+_v3.0 Control Room — resumed 2026-06-11 after v2.17 Vesicle interjection (REQUIREMENTS.md current); next step: `/gsd:plan-phase 13`._
 
 - [ ] Operators get a committed dev-only screenshot + LLM-critique evaluation loop and seed data that exercises every dashboard screen.
 - [ ] The design system is fully adopted: shared `ui.ex` components replace hand-rolled markup, with zero raw-palette class leakage enforced by a drift guard.
@@ -277,13 +269,14 @@ _(Release 0.1.1 publish via release-please remains pending, tracked in Release Q
 
 ## Context
 
-- **Latest shipped:** v2.16 ReqLLM peer bump (`~> 1.13`) — archived 2026-05-30.
+- **Latest shipped:** v2.17 Vesicle (brand system) — archived 2026-06-11.
+- v2.16 ReqLLM peer bump (`~> 1.13`) — archived 2026-05-30.
 - v2.15 connector adoption lane (`mix test.connector`) — archived 2026-05-30.
 - v2.12–v2.14 shipped 2026-05-30; v2.13/v2.14 bundled with v2.12 closeout pass.
 - Hex `0.1.1` prepared locally; `0.1.0` live at https://hex.pm/packages/scoria — publish via release-please.
 - CI: policy job (baseline → inventory baseline → compile WAE → lane-contract) → test job (closeout → semantic WAE → ratchet hygiene → full WAE → knowledge WAE → connector WAE → advisory gallery).
 - `Scoria.SupportJourney` + `examples/support_copilot/` gallery; advisory `mix scoria.test.support_copilot` outside closeout.
-- Archives: `.planning/milestones/v2.16-*`, `v2.15-*`, `v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
+- Archives: `.planning/milestones/v2.17-*`, `v2.16-*`, `v2.15-*`, `v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
 
 ## Constraints
 
@@ -325,8 +318,8 @@ _(Release 0.1.1 publish via release-please remains pending, tracked in Release Q
 | v2.15 connector lane as PR WAE after knowledge, not in closeout | Parity with semantic/knowledge lanes; preserve v2.4 closeout contract | ✓ Good — shipped v2.15 |
 | v2.16 minimal ReqLLM-only peer bump; no optional szTheory deps | User chose narrow dependency hygiene scope; Tribunal already current | ✓ Good — shipped v2.16 |
 | Phase 10.1 inserted after audit for v2.16 VERIFICATION gap | Phases 08–10 shipped without GSD execute artifacts; retroactive ledgers | ✓ Good — shipped 10.1 |
-| v2.17 Vesicle interjected before v3.0 phases 13–17 | Brand book never pressure-tested, no logo/collateral exists; clean phase boundary; planning versions decoupled from Hex semver keeps archive chronology aligned | — In progress |
-| `brandbook/` is canonical brand source; dashboard CSS updated only on material audit failures | Avoids thrash to freshly shipped v3.0 token gateway + DS-06 ratchet | — Locked |
+| v2.17 Vesicle interjected before v3.0 phases 13–17 | Brand book never pressure-tested, no logo/collateral exists; clean phase boundary; planning versions decoupled from Hex semver keeps archive chronology aligned | ✓ Good — shipped v2.17 |
+| `brandbook/` is canonical brand source; dashboard CSS updated only on material audit failures | Avoids thrash to freshly shipped v3.0 token gateway + DS-06 ratchet | ✓ Good — shipped v2.17; BRAND-09 did not fire |
 
 ## Milestone History
 
@@ -353,6 +346,7 @@ _(Release 0.1.1 publish via release-please remains pending, tracked in Release Q
 - `v2.10 Hex Consumer Proof & Upgrade Smoke`: Tarball consumer proof, upgrade smoke, registry attest, DOCS-HEX-01 drift guards.
 - `v2.11 Orchestrator Live Wiring`: ORCH-LIVE-01 live trace + HITL from runtime; Phase 01.1 hardening slice.
 - `v2.15 Connector Adoption Lane`: Named `mix test.connector` lane, SupportJourney proof, docs/CI/drift guards; Phase 07.1 process closeout.
+- `v2.17 Vesicle`: Brand system — pressure-tested brand book, programmatically generated logo system (TV-1 mark + LK-B lockup chosen by user), 8-variant logo set, canonical brandbook/ (tokens, brand book, examples, standalone HTML), README/dashboard/Hex integration; quality-gate.mjs 8/8 PASS; BRAND-09 conditional did not fire.
 - `v2.16 ReqLLM Peer Bump`: ReqLLM `~> 1.13` peer bump with integration + CI trust verification; Phase 10.1 process closeout.
 
 ## Archived Planning Notes
@@ -417,4 +411,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-11 — milestone v2.17 Vesicle interjected (v3.0 Control Room paused at phase 12/13 boundary)*
+*Last updated: 2026-06-11 — v2.17 Vesicle shipped and archived; v3.0 Control Room restored as active (next: /gsd:plan-phase 13)*

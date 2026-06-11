@@ -1,5 +1,22 @@
 # Milestones
 
+## v2.17 Vesicle — Brand System (Shipped: 2026-06-11)
+
+**Phases completed:** 5 phases (18–22), 12 plans, 2 user gates + 1 ship-it checkpoint, 8 requirements (+ 1 conditional not-fired)
+
+**Key accomplishments:**
+
+- 14-section brand-book pressure-test (`brandbook/pressure-test.md`, 1,311 lines) with 15-dimension scorecard, 52-pairing WCAG contrast audit (0 FAIL), and suite-coherence assessment vs Threadline + szTheory DNA
+- Gate #1 (Phase 18): user approved Decisions Locked section with tagline override to "AI ops for Phoenix apps." and `propagation: not-required` verdict; BRAND-09 conditional correctly did not fire
+- Gate #2 (Phase 19, 2 rounds): TV-1 "Span rail" mark locked (round 1); LK-B "Mark-as-o" fused lockup locked (round 2, escape path fired as designed); 29 candidates programmatically generated and verified (verify-logos.mjs 19/19 PASS)
+- 8-variant logo set (Phase 20): `logo-primary.svg`, `logo-primary-light.svg`, `logo-mark.svg`, `logo-monochrome.svg` (currentColor), `logo-lockup-subtitle.svg`, `logotype-integrated.svg`, `favicon.svg` (734 bytes, pixel-snapped), `social-card.svg` — optically corrected, user-confirmed "ship it"
+- Canonical `brandbook/` (Phase 21): `tokens.json`/`tokens.css` (4-source hex consistency gate green), `brand-book.md` (543 lines), 7 SVG examples (25.7 KB), `index.html` (55 KB, file:// offline, zero network refs), `README.md` maintenance rules — 458 KB total, zero binaries
+- Integration (Phase 22): README picture-element header, dashboard TV-1 mark + compile-time data-URI favicon (`ScoriaWeb.Assets.favicon_data_uri/0`), `mix.exs` + GitHub descriptions verbatim brand copy; `quality-gate.mjs` 8/8 PASS; mix test 632 green; DS-06 byte-identical; `test/support/ds06_baseline.txt` and `assets/css/02-tokens.css` untouched
+
+**Known deferred at close:** Publish `0.1.1` via release-please (pre-existing release queue); BRAND-MOTION (v3.0 Phase 16 scope); BRAND-SITE (marketing landing page blueprint in brand book only). See `.planning/milestones/v2.17-MILESTONE-AUDIT.md`.
+
+---
+
 ## v2.16 ReqLLM Peer Bump (Shipped: 2026-05-30)
 
 **Phases completed:** 4 phases (08–10 + 10.1 inserted), 4 requirements, 1 plan
