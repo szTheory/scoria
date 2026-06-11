@@ -586,3 +586,608 @@ Verdicts: PASS-AA = ≥4.5:1 · PASS-LARGE = ≥3.0:1 · FAIL = <3.0:1
 ---
 
 *Sections 8–14 and Decisions Locked are written in Phase 18-02.*
+
+---
+
+## SECTION 8 — Logo and mark system
+
+### What type of logo does Scoria need?
+
+**Recommendation: Combination lockup (mark + logotype) as the primary form, with integrated typemark as a first-class variant.**
+
+Scoria should not be a logotype-only brand. The volcanic-cinder mark is central to the identity and meaningfully distinct. A logotype-alone approach would look like any other developer tool library on Hex.pm. The mark works at all sizes the product needs — favicon, sidebar, README header, social card — and it encodes the core metaphor (vesicles = internal AI run structure) in a way that a wordmark cannot.
+
+The mark is not ready as a mascot (too literal) and not appropriate as a monogram (S has no unique geometric resonance with volcanic imagery). The correct system:
+
+1. **Combination lockup** (mark + "Scoria" in IBM Plex Sans SemiBold): primary form for landing pages, README hero, docs header, GitHub OG image.
+2. **Mark only**: favicon, sidebar, package avatar, conference badge.
+3. **Integrated typemark** (the vesicle aperture geometry worked INTO a letterform — the 'o' as a hollow vesicle, or the letterforms with a porous interior): wanted as a first-class variant, not a consolation option. This is the most distinctive execution and is worth attempting in Phase 19 alongside the classical mark-plus-logotype approach.
+4. **Logotype only** (clean wordmark, no mark): acceptable for situations where the mark is too small (email header sub-nav, narrow sidebars). NOT the primary identity.
+
+---
+
+### Logo direction ranking
+
+The four brand-book directions are evaluated against 16px favicon scalability, monochrome survival, distinctiveness vs adjacent OSS/devtools marks, and distinctiveness vs Threadline's mark.
+
+| Rank | Direction | Favicon 16px | Monochrome | Distinctiveness (OSS/devtools) | Distinctiveness (vs Threadline) | Recommended use |
+|---:|---|:---:|:---:|:---:|:---:|---|
+| **#1** | **Trace Vesicle Mark** | ★★★★ | ★★★★ | ★★★★★ | ★★★★★ | PRIMARY — all contexts |
+| **#2** | **Cinder Mark** | ★★★★★ | ★★★★ | ★★★★ | ★★★★ | Strong favicon/icon fallback |
+| **#3** | **Aperture/Vesicle Mark** | ★★★ | ★★★ | ★★★ | ★★★★ | Alternative study for Phase 19 |
+| **#4** | **Cutaway Cone Mark** | ★★ | ★★★ | ★★★ | ★★★ | De-prioritize; weak at small sizes |
+
+**Why Trace Vesicle Mark is #1:** The discipline of aligning holes in a trace-node hierarchy (root → LLM → tool → eval) gives the mark a readable internal logic. At 16px, regularity reads better than organic irregularity. At monochrome, the structured layout survives because the negative-space holes are geometrically distinct, not randomly placed. Against devtools competitors (Langfuse, Arize Phoenix, Braintrust — all using abstract nodes or colorful blobs), a mark with a traceable internal structure is genuinely different. Against Threadline (which uses a path/line motif), the porous cinder silhouette is orthogonal — same studio feel but completely different shape vocabulary.
+
+**Why Cinder Mark is #2:** Simpler geometry = better favicon survival. A loose irregular-polygon cinder with 5–7 holes is highly legible at 16px if the holes are sufficiently sized (≥2px rendered). Easier to execute well than the Trace Vesicle. Use as the fallback if the Trace Vesicle proves too complex to read at ≤20px.
+
+**Why Aperture/Vesicle is #3 not #1:** A central cavity with surrounding smaller cavities risks reading as a camera aperture or eye — both generic and off-metaphor. The "observability" interpretation is too literal and puts it in the same visual space as Arize Phoenix's circular marks. Worth attempting as a study; not recommended as the primary direction.
+
+**Why Cutaway Cone is #4:** At 16px, a cross-section of a cone with visible voids loses the shape silhouette entirely. It is more distinctive at large sizes but distinctiveness at large sizes is the easy problem; the hard one is favicon survival. De-prioritize unless the Phase 19 studies reveal a surprisingly legible simplification.
+
+---
+
+### Phase-19 logo constraints (hard rules — Phase 19 must obey these)
+
+These constraints are locked from 18-CONTEXT and are encoded here as named rules:
+
+**RULE LOGO-01 — No rectangular background shapes.**
+Marks must not use a bounding rectangle, square, rounded square, circle, or any filled container shape as a backdrop. The silhouette of the mark IS the shape. Negative space is created via `fill-rule="evenodd"` punched holes inside the outer path. Any AI tool or generation step that adds a background container must be explicitly rejected and re-run.
+
+**RULE LOGO-02 — Negative space via fill-rule="evenodd" only.**
+All interior holes in the mark are created as inner paths with `fill-rule="evenodd"` or equivalent compound path subtraction. No separate white-filled shapes. This ensures the mark works on any background color without revealing a hidden white rectangle.
+
+**RULE LOGO-03 — Logotype optically tight to mark.**
+In the combination lockup, the gap between the right edge of the mark and the left edge of the "S" in "Scoria" should be approximately 0.35–0.5× the cap height of the logotype. Anything wider reads as two unrelated elements. No decorative spacing, no rule lines between mark and logotype.
+
+**RULE LOGO-04 — No subtitle in the primary lockup.**
+The primary horizontal lockup is `[mark] Scoria` — nothing below, nothing to the right of the wordmark except air. A *separate* subtitle variant (`[mark] / Scoria / AI ops for Phoenix`) is allowed for social cards, slide titles, and conference stickers. The main lockup must never include the tagline or any descriptor text as a mandatory element.
+
+**RULE LOGO-05 — Integrated typemark is a first-class option, not a fallback.**
+Phase 19 must produce at least one typemark study where the vesicle motif is worked INTO the letterforms of "Scoria" — e.g., the 'o' as a hollow vesicle aperture, or the whole word with porous negative-space holes. This is not a font trick; it requires custom path work. It should be evaluated on equal footing with the mark-plus-logotype combination.
+
+**RULE LOGO-06 — 16px favicon test is pass/fail.**
+Every mark candidate produced in Phase 19 must be tested at exactly 16×16px browser-rendered size before it is eligible for advancement to Phase 20. A mark that is attractive at 64px but unreadable at 16px does not pass. The "Trace Vesicle" interpretation must simplify to exactly 3 holes in a vertical or diagonal arrangement at 16px — this is a geometry instruction, not a preference.
+
+**RULE LOGO-07 — Monochrome test is pass/fail.**
+Every mark candidate must be tested in flat monochrome (Basalt-950 fill on transparent, and Ash-50 fill on transparent) before advancement. The mark must be readable without color.
+
+**Phase 19 does not generate production SVGs in Phase 18.** Phase 19 owns all SVG generation. This section defines the constraints and recommendation only. The user approves the direction at gate #2 after Phase 19 produces the options gallery.
+
+---
+
+### Logo system components (to be produced in Phase 19–20)
+
+| Asset | File | Context |
+|---|---|---|
+| Primary lockup | `brandbook/logo-primary.svg` | Landing page, README header, OG image |
+| Mark only | `brandbook/logo-mark.svg` | Favicon source, sidebar, avatar |
+| Logotype only | `brandbook/logo-logotype.svg` | Narrow contexts, email nav |
+| Monochrome (dark) | `brandbook/logo-mark-dark.svg` | Dark mark on transparent (for light surfaces) |
+| Monochrome (light) | `brandbook/logo-mark-light.svg` | Light mark on transparent (for dark surfaces) |
+| Favicon SVG | `brandbook/favicon.svg` | 16px source, simplified 3-hole geometry |
+| Typemark study | `brandbook/logo-typemark.svg` | Integrated letterform variant |
+| Social card | `brandbook/social-card.svg` | OG/Twitter card, 1200×630 |
+
+**Clear space:** Use the largest vesicle in the mark as the unit `v`. Minimum clear space around mark: 1v. Minimum around full lockup: 1.5v.
+
+**Minimum sizes:** Mark 16px (favicon), sidebar 24px, full lockup 112px wide, README/social 240px wide.
+
+---
+
+## SECTION 9 — Visual examples and screenshot guidance
+
+The principle: every visual example in `brandbook/examples/` must be reproducible from source (SVG or CSS-rendered text) by any maintainer without design software. No fake product screenshots. No screenshots of a running dashboard. All examples are either SVG constructions or browser-rendered static HTML.
+
+### Color palette specimen
+
+**Purpose:** Verify the palette at a glance; catch drift when the brand book is updated.
+**Layout:** Two rows — dark surfaces (Basalt-950 through Char-850) in row 1, light surfaces (Ash-50 through Ash-100) in row 2. Below: warm scale (Scoria-900 through Molten-400) in a single row. Below: functional accent pairs (success, info, warning, danger, trace) as light/dark columns.
+**Dimensions:** 1200×400px SVG, responsive.
+**File:** `brandbook/examples/palette.svg`
+**When worth it:** Now. This is the single most useful verification artifact. Run the SVG against the hex values in `assets/css/02-tokens.css` when tokens change.
+
+### Typography specimen
+
+**Purpose:** Confirm typeface rendering, weight ramp, and scale at a glance.
+**Layout:** IBM Plex Sans weight ramp (Regular → SemiBold → Bold) at heading sizes, with the brand tagline as specimen text. JetBrains Mono at 13px with a representative Scoria code snippet. Show fallback rendering note.
+**Dimensions:** 900×500px SVG.
+**File:** `brandbook/examples/typography.svg`
+**When worth it:** Phase 21 (when brand-book.md is written). Not before.
+
+### Component example: buttons and cards
+
+**Purpose:** Reference for engineers building the landing page and docs.
+**Layout:** Primary button, danger button, ghost button in dark and light variants side by side. One eval-regression card (eyebrow + title + metric + monospace metadata) in dark. One docs card in light.
+**Dimensions:** 800×400px SVG.
+**File:** `brandbook/examples/components.svg`
+**When worth it:** Phase 21. Document the anatomy; the dashboard already has the shipped components.
+
+### Code block example
+
+**Purpose:** Canonical code block style reference for README, HexDocs, and landing page.
+**Layout:** Dark code block background (`--scoria-code-bg`), syntax-highlighted Elixir snippet (`Scoria.run/2` example with actor, options), JetBrains Mono 13px. Show Elixir keyword coloring (atoms in Fumarole, strings in Cinder-100, keywords in Molten-400, comments in Pumice-500).
+**Dimensions:** 700×200px SVG (or static HTML fragment).
+**File:** `brandbook/examples/code-block.svg`
+**When worth it:** Phase 21. This is the highest-visibility example for OSS credibility.
+
+### README header mock
+
+**Purpose:** Show how the primary lockup, one-liner, and badge stack should look in a GitHub README.
+**Layout:** Primary logo SVG (centered or left-aligned), one-liner below, badge row (hex.pm, CI, License), then first 5 lines of quickstart code. Dark background (#11100F) or transparent.
+**Dimensions:** 1200×240px SVG.
+**File:** `brandbook/examples/readme-header.svg`
+**When worth it:** Phase 22 (after logo exists). Blocked on Phase 19–20.
+
+### Landing page hero mock
+
+**Purpose:** Show hero layout for landing page build reference.
+**Layout:** Dark basalt background, primary hero gradient, headline left (one sentence, ~3 lines at 56px), product UI trace waterfall right (schematic, not actual screenshot), primary CTA below headline.
+**Content:** Headline: "Trace the run. Prove the change. Ship the agent." Subhead: "Scoria gives Phoenix teams observable, evaluable, production-grade AI ops without the black box." CTA: "Get started" + "View on GitHub".
+**Dimensions:** 1440×700px design reference (SVG or static HTML mock).
+**File:** `brandbook/examples/landing-hero.svg`
+**When worth it:** Phase 22. Blocked on logo and real product UI crops.
+
+### Docs page mock
+
+**Purpose:** Light-mode docs page reference for ExDoc theme work.
+**Layout:** Light ash background, IBM Plex Sans body, JetBrains Mono code blocks, sidebar with mark at 24px, active state in Ember-500 (light mode: Scoria-600).
+**Dimensions:** 1280×800px.
+**File:** `brandbook/examples/docs-page.svg`
+**When worth it:** Phase 21 (when ExDoc theme is being built). Not before.
+
+### Social card (OG/Twitter)
+
+**Purpose:** Standard Open Graph card for GitHub, Twitter, blog posts.
+**Layout:** Dark basalt background with subtle hero gradient, mark top-left, "Scoria" wordmark top-left below mark, one short sentence ("Phoenix-native AI ops"), trace/eval UI fragment bottom-right, footer with URL.
+**Dimensions:** 1200×630 (OG), 800×418 (Twitter). Both from the same SVG template.
+**File:** `brandbook/social-card.svg` (production) + `brandbook/examples/social-card-example.svg` (reference).
+**When worth it:** Phase 22. Blocked on logo.
+
+### Terminal style
+
+**Purpose:** Reference for terminal snippets in README and docs.
+**Layout:** Dark surface (#0C0B0A), prompt in Ember-500 (`$`), command in Ash-50, output in Pumice-500 / `--scoria-text-subtle`. No fake dramatic output; real `mix scoria.install` output.
+**Dimensions:** 700×160px.
+**File:** `brandbook/examples/terminal.svg`
+**When worth it:** Phase 22 (when install commands are stable).
+
+---
+
+**What NOT to produce:** Dashboard screenshots, animated GIFs, raster illustrations, anything that requires a running server, product UI mocks with fake data. These are maintenance traps. If a surface needs a visual example, either (a) produce it as a static SVG schematic or (b) document the layout and let the actual product provide it.
+
+---
+
+## SECTION 10 — Brand voice and microcopy
+
+### Voice system
+
+**KEEP** the brand book's §7 voice system wholesale. It is the strongest section of the document. The principles (calm + exact + useful), the evidence-verb list, the anti-anthropomorphization rules, and the existing microcopy examples are production-ready. The section below confirms the existing system and adds the concrete copy blocks that are missing.
+
+**Voice verdict by context:**
+
+| Context | Current state | Verdict |
+|---|---|---|
+| §7.1 Voice formula | "Calm + exact + useful" | KEEP |
+| §7.2 Voice principles | Evidence verbs, no anthropomorphizing | KEEP |
+| §7.3 Tone-by-context table | Good coverage | KEEP — add: CLI output and MCP gateway UI |
+| §7.4 Word bank | Comprehensive | KEEP |
+| §7.5 Microcopy examples | Production-ready for shipped screens | KEEP + ADD: new surfaces below |
+| §7.6 Docs style | Copy+explain pattern | KEEP |
+| §1.2 One-liner | Accurate but reads like a spec | TIGHTEN (see below) |
+| §1.5 Tagline | Good primary; hierarchy unclear | TIGHTEN (confirmed below) |
+
+---
+
+### Confirmed naming rule
+
+**Product name:** Scoria (never "Scoria AI").
+**Package name:** `:scoria` (Elixir atom/module casing).
+**Feature names:** Trace Explorer, Eval Workbench, Prompt Registry, Replay Playground, Tool Governance, MCP Gateway — unchanged.
+**Suite context note:** Scoria is part of the szTheory Elixir ecosystem alongside Threadline (audit), Sigra (auth), Chimeway (notifications), and Parapet (SRE). This gives adopters context that Scoria is not a lone library but part of a deliberate, operator-first ecosystem.
+
+---
+
+### Concrete copy blocks (ready to use)
+
+**One-line project description (TIGHTENED)**
+Before: "Scoria is the Phoenix-native AI ops layer for tracing, evaluating, replaying, and governing LLM apps."
+After: "Scoria is the Phoenix-native AI ops layer for LLM traces, evals, prompt versions, and tool governance."
+Rationale: "Replaying" is a capability, not a selling point in the one-liner. "Tool governance" is more specific and distinctive than "governing."
+
+**140-character description (for Hex.pm `description:` field)**
+```
+Phoenix-native AI ops: LLM traces, evals, prompt versions, replay, tool governance, and MCP workflows. Ecto-backed, LiveView-included.
+```
+(136 chars — within Hex.pm's 140-char display.)
+
+**GitHub repo description**
+```
+Phoenix-native AI ops: trace, eval, replay, govern. LLM runs, tool approvals, prompt versions, and MCP workflows wired into Phoenix + Ecto + LiveView.
+```
+
+**Hex.pm package description**
+```
+Phoenix-native AI ops: LLM traces, evals, prompt versions, replay, tool governance, and MCP workflows. Ecto-backed, LiveView-included.
+```
+*(Same as 140-char — Hex.pm and the tagline canonical copy should stay in sync.)*
+
+**README opening paragraph**
+```
+Scoria is a batteries-included Phoenix library for production AI features. It records every run — prompt renders, model calls, tool calls, retrieval events, approvals, and eval scores — as structured, queryable traces. You get a LiveView operator UI, an eval flywheel, a prompt version registry, and a tool/MCP governance layer, all wired into Phoenix, Ecto, and OTP without a black-box dependency.
+```
+
+**Landing page hero headline**
+```
+Trace the run.
+Prove the change.
+Ship the agent.
+```
+Three-line treatment; each line is a complete verb phrase. Line 2 is the differentiator (most AI ops tools trace; fewer force you to prove before shipping). Strongly recommended as the primary headline — not the alternate "AI ops for Phoenix apps."
+
+**Landing page subheadline**
+```
+Scoria gives Phoenix teams observable, evaluable, production-grade AI ops: traces, evals, prompt versions, replay, and tool governance — wired into Phoenix, Ecto, and OTP.
+```
+
+**Primary CTA**
+```
+Get started
+```
+*(Not "Try Scoria", not "Start free", not "Book a demo". The library is open source; adopters install it.)*
+
+**Secondary CTA**
+```
+View on GitHub
+```
+
+**Three feature blurbs**
+
+Feature 1 — Trace Explorer
+```
+See inside every run.
+Every prompt render, model call, tool call, retrieval event, and span is recorded as a structured trace. Filter by actor, latency, cost, or eval outcome. Replay any run with a different prompt or model.
+```
+
+Feature 2 — Eval Workbench
+```
+Prove it before you ship it.
+Score runs against baseline datasets. Detect regressions before they reach users. Promote candidates that pass; gate those that don't. The flywheel turns: production traces become eval datasets automatically.
+```
+
+Feature 3 — Tool Governance
+```
+Approve tool calls. Govern MCP actions.
+Dangerous tools require human approval. Non-dangerous tools run automatically. Every approval, denial, and policy version is recorded in the trace. You decide what "safe enough to autoship" means.
+```
+
+**Three "why this exists" bullets**
+```
+• Phoenix teams building AI features needed production observability, not just a logging wrapper.
+• Every AI incident Scoria was designed to prevent has the same cause: invisible behavior. Show the structure.
+• Governance is not a feature you add later. Tool approvals, eval gates, and prompt versions belong in the runtime, not bolted on after the fact.
+```
+
+**Example error message (correct voice)**
+```
+Run failed during lookup_order.
+The tool returned 403 for actor usr_184. Policy refunds_v7 requires actor to have :ops role. Trace ID: trc_8f2a.
+[View trace]  [Open policy]
+```
+
+**Example empty state**
+```
+No eval datasets yet.
+Promote a production trace to start building a regression suite, or add a test case manually.
+[Promote a trace]  [Add manually]
+```
+
+**Example success state**
+```
+Candidate promoted.
+support_refunds@v4 is now the baseline. 12 new dataset items captured from this run.
+[View eval history]
+```
+
+**Example release announcement**
+```
+Scoria v0.2 — Vesicle
+
+This release ships the Eval Workbench: dataset management, scorer configuration, and baseline comparison directly in the LiveView operator UI. It also adds prompt version pinning and a structured MCP approval log.
+
+What changed:
+• Eval datasets: promote traces, add items, edit labels
+• Prompt versions: pin and compare via the registry UI
+• MCP approval log: every gateway decision recorded with actor, tool, and policy version
+• [Migration note: run mix scoria.migrate after upgrading]
+
+If something broke: open an issue with the trace ID and the tool call that failed. Scoria records enough context to help you debug without guessing.
+```
+
+---
+
+**Voice drift prevention:** The §7.5 microcopy examples are the canonical anchor. When a new UI surface ships, add 2–3 microcopy examples in the same format before writing any landing page copy for that surface. The voice is correct; the risk is drift from non-technical collaborators.
+
+---
+
+## SECTION 11 — Landing page and docs blueprint
+
+### Landing page architecture
+
+The landing page should be buildable from the brand book's copy blocks and visual direction without any additional decisions. Every section maps to a brand-system artifact.
+
+**Hero**
+- Dark basalt background with primary hero gradient
+- Headline: "Trace the run. Prove the change. Ship the agent." (three-line, left-aligned)
+- Subheadline: "Scoria gives Phoenix teams observable, evaluable, production-grade AI ops — wired into Phoenix, Ecto, and OTP."
+- Primary CTA: "Get started" → hex.pm or docs. Secondary CTA: "View on GitHub"
+- Visual: trace waterfall or run tree SVG schematic right of headline (NOT a fake dashboard screenshot; a genuine SVG diagram of a run tree with span-kind colors)
+- Voice: confident, concrete, no "powerful" or "seamless"
+
+**Problem**
+- Headline: "AI behavior is invisible by default."
+- Body: 3-bullet problem statement. Bullet 1: You can see the final answer, not the run that produced it. Bullet 2: Regressions are invisible until a user files a ticket. Bullet 3: Tool policies live in code comments, not in a governance layer.
+- Voice: no drama; just what is missing
+
+**Solution**
+- Headline: "Make the fire inspectable."
+- Three-column cards: Trace → Eval → Govern. Each card has an eyebrow (the workflow step), a one-sentence description, and a feature name link.
+- Voice: operator-grade, not aspirational
+
+**Install snippet**
+```
+{:scoria, "~> 0.2"}
+```
+One-liner. Then: `mix scoria.install` and the LiveView router mount. JetBrains Mono, dark code block. Copy button.
+
+**Minimal example**
+```elixir
+{:ok, run} =
+  Scoria.run(MyApp.AI.SupportAgent,
+    input: "Can I get a refund for order A123?",
+    actor: current_user
+  )
+```
+Explain in 2 sentences. Do not pad. Voice: §7.6 copy+explain pattern.
+
+**Core benefits**
+Three compact statements:
+1. Traces are Ecto records — queryable, exportable, not trapped in a vendor.
+2. Evals gate deployments — catch regressions before users do.
+3. Tool approvals are first-class — governance is in the runtime, not a comment.
+
+**How it works**
+Flywheel visualization: Capture → Annotate → Promote → Evaluate → Compare → Gate → Deploy → Monitor. SVG diagram, not an animated graphic. Dark surface. Each node labeled with a feature name. One sentence per node explaining what Scoria does at that step.
+
+**Use cases**
+Four horizontal cards:
+1. Support copilot with tool approvals
+2. RAG pipeline with eval gates
+3. Prompt A/B testing with baseline comparison
+4. MCP agent with full governance log
+Each card: one-sentence description + one `Scoria.run/2` call variant. No screenshots.
+
+**Why not just use Langfuse / Arize Phoenix / Braintrust?**
+Inline comparison table (not adversarial):
+
+| | Scoria | Langfuse | Arize Phoenix | Braintrust |
+|---|---|---|---|---|
+| Phoenix-native | Yes | No | No | No |
+| Ecto-backed storage | Yes | No | No | No |
+| LiveView UI included | Yes | No | No | No |
+| Tool governance | Yes | Limited | No | No |
+| Open source, self-hosted | Yes | Yes (core) | Yes | Partial |
+| Eval flywheel | Yes | Yes | Yes | Yes |
+
+Caption: "Scoria is not a replacement for every AI observability tool. It is the right choice when your stack is Phoenix and you need governance-first, embedded AI ops without a vendor dependency."
+
+**Documentation CTA**
+"Read the docs → hex.pm/packages/scoria or hexdocs.pm/scoria"
+
+**GitHub CTA**
+"View source, open issues, contribute → github.com/sztheory/scoria"
+
+**Community/contribution CTA**
+"Join the szTheory Elixir ecosystem discussion → GitHub Discussions"
+
+**Footer**
+Logo mark (24px) + "Scoria" wordmark. Copyright. Links: Docs, GitHub, Hex.pm, License. No cookie banner unless needed for analytics.
+
+---
+
+### Docs/README architecture
+
+**README structure (binding order):**
+
+1. **Promise** — Primary lockup SVG + one-liner + badges (hex.pm, CI, License). 3 lines max before the first code block. Voice: §7.6.
+2. **Installation** — `mix.exs` deps entry + `mix scoria.install`. One paragraph.
+3. **Quickstart** — 10-line `Scoria.run/2` example. No explanation padding. Copy+explain pattern.
+4. **Example** — A complete, runnable minimal scenario: one agent, one eval, one tool policy. Shows the flywheel in 30 lines of code.
+5. **Concepts** — 5 concepts, one paragraph each: Runs, Traces, Evals, Prompt Versions, Tool Policies. No flowery language.
+6. **API overview** — Link to HexDocs. Do not reproduce the API in the README.
+7. **Common recipes** — 3–5 copy-pasteable code snippets for common patterns: replay, promote, gate, approve.
+8. **Troubleshooting** — 5 known gotchas with exact error messages and fixes. Voice: §7.1 diagnostic.
+9. **Design rationale** — 2 paragraphs: why Phoenix-native, why Ecto-backed. Not marketing; actual engineering reasoning.
+10. **Contribution** — One paragraph + link to CONTRIBUTING.md.
+11. **License** — Apache 2.0 or MIT, one line.
+
+**Tone:** Every README section should feel like a colleague wrote it. Not a landing page. Not a manual. Clear, fast, useful.
+
+---
+
+## SECTION 12 — Repo-ready artifact plan
+
+### Directory structure
+
+```
+brandbook/
+  README.md              — Maintenance rules + usage guide (Phase 21)
+  brand-book.md          — Post-audit brand book rewrite, ~500 lines (Phase 21)
+  pressure-test.md       — This document — the audit (Phase 18, DO NOT MODIFY retroactively)
+  tokens.json            — Structured raw + semantic tokens (Phase 21)
+  tokens.css             — CSS custom properties for non-dashboard consumers (Phase 21)
+  favicon.svg            — 16px-optimized mark (Phase 19–20)
+  logo-primary.svg       — Combination lockup: mark + "Scoria" (Phase 19–20)
+  logo-mark.svg          — Mark only (Phase 19–20)
+  logo-logotype.svg      — Wordmark only (Phase 19–20)
+  logo-mark-dark.svg     — Monochrome: dark mark on transparent (Phase 19–20)
+  logo-mark-light.svg    — Monochrome: light mark on transparent (Phase 19–20)
+  social-card.svg        — OG/Twitter card 1200×630 (Phase 22)
+  tools/
+    contrast-check.mjs   — WCAG checker (Phase 18-01, committed)
+  examples/
+    palette.svg          — Color palette specimen (Phase 21)
+    typography.svg       — Type specimen (Phase 21)
+    components.svg       — Button + card examples (Phase 21)
+    code-block.svg       — Code block style reference (Phase 21)
+    readme-header.svg    — README header mock (Phase 22)
+    landing-hero.svg     — Landing hero design reference (Phase 22)
+    terminal.svg         — Terminal snippet style (Phase 22)
+```
+
+### File commitment rules
+
+| Status | Files | Rule |
+|---|---|---|
+| Committed now | `pressure-test.md`, `tools/contrast-check.mjs` | Done (Phase 18) |
+| Committed Phase 19–20 | Logo SVG variants (7 files) | After user gate #2 |
+| Committed Phase 21 | `brand-book.md`, `tokens.json`, `tokens.css`, `examples/` (5 files), `README.md` | After audit-driven rewrite |
+| Committed Phase 22 | `social-card.svg`, `examples/readme-header.svg`, `examples/landing-hero.svg`, `examples/terminal.svg` | After integration pass |
+| NOT committed | Raster exports (PNG/WebP), AI generation prompts, intermediate WIP SVG variants | Prevent binary bloat; keep <500KB total |
+| Needs manual review | Any SVG containing embedded raster, any file >50KB | Flag in PR; audit against budget |
+| Historical input — DO NOT TOUCH | `prompts/scoria-brand-book-deep-research.md` | Source-of-truth seed document; read-only forever |
+
+### Budget constraint
+
+Total `brandbook/` budget: **<500KB** for all text and SVG artifacts combined. Raster exports go to `priv/static/images/` only if needed for a shipped product surface (README OG image); they are not part of the brandbook/ canon.
+
+### Naming conventions
+
+- All files: lowercase, hyphen-separated, no version suffixes in filenames (git history tracks versions)
+- Logo variants: `logo-{type}-{variant}.svg` pattern (e.g., `logo-mark-dark.svg`, `logo-primary.svg`)
+- Examples: `{subject}.svg` (descriptive, not numbered)
+- Tools: `{function}.mjs` (ESM, no npm install required)
+
+### CI/lint checks (add to `mix test` or a dedicated task)
+
+```bash
+# LOGO-01 compliance: reject any SVG with a rectangle wrapping the mark
+grep -rn '<rect' brandbook/logo-*.svg && echo "FAIL: rectangular background shape found" || echo "PASS: no rect in logo files"
+
+# LOGO-02 compliance: every logo SVG should use evenodd
+grep -rn 'fill-rule="evenodd"' brandbook/logo-*.svg | wc -l
+
+# Budget check
+du -sh brandbook/ && [ "$(du -sk brandbook/ | cut -f1)" -lt 512 ] && echo "PASS: within 500KB" || echo "FAIL: brandbook/ exceeds 500KB"
+
+# Hex consistency check (logo hex values match token file)
+# — Phase 21 task: write a mjs script that reads tokens.json and validates logo SVG hex values
+```
+
+---
+
+## SECTION 13 — Prioritized action plan
+
+### Do now (Phase 19 — unblocked, highest leverage)
+
+**1. Execute Trace Vesicle Mark and Cinder Mark as committed SVG options.**
+Both are the top-ranked directions. Phase 19 should produce ≥6 mark/lockup variants (at minimum: Trace Vesicle + Cinder as marks, each with combination lockup and integrated typemark study) plus the options gallery (`options-gallery.html`). Test every candidate at 16px favicon and monochrome before including in the gallery. Value: unblocks every visual-identity test that is currently blocked.
+
+**2. Implement LOGO-01 through LOGO-05 constraints in the Phase 19 generation process.**
+The no-rect / evenodd / tight-lockup / no-subtitle / integrated-typemark rules are hard constraints, not preferences. Any generation step (manual or AI-assisted) that violates them produces disqualified output. Encoding them as named rules (as this section does) means Phase 19 can reference them by ID rather than re-litigating.
+
+**3. Test at 16px favicon explicitly.**
+At least one revision pass on each mark candidate must happen at exactly 16px rendered size. The 3-hole simplification rule is a specific instruction: reduce to exactly 3 holes in a vertical or diagonal arrangement at 16px.
+
+### Do next (Phase 20 — after gate #2)
+
+**4. Produce the full variant set from the approved direction.**
+Primary lockup, mark only, logotype only, two monochrome variants, favicon SVG, social card template. Clear-space spec and minimum-size documentation. Manual optical correction pass — particularly the tight tracking between mark and logotype.
+
+**5. Clarify §5.5 accessibility rules in `brand-book.md`.**
+The Pumice-500 / `--scoria-text-subtle` boundary case is now fully documented here (Section 5 of this audit). When Phase 21 rewrites `brand-book.md`, the §5.5 accessibility rules table must be reworked to explicitly state: "Pumice-500 / `--scoria-text-subtle` is PASS-LARGE only (3.91–4.48:1). Use exclusively for UI icons, sort indicators, and muted metadata (≥18px or ≥14px bold). Never for body text." The shipped usage (sort icon fill in `ui.ex:653`) is compliant.
+
+### Do next (Phase 21 — parallel-eligible with Phase 20)
+
+**6. Build `brandbook/tokens.json` and `brandbook/tokens.css` from the token direction in Section 7 of this audit.**
+The gap tokens (focus-ring width/offset, state tokens, code-block tokens, callout tokens) are specified in Section 7 and should be added. The existing `assets/css/02-tokens.css` is the upstream source; `brandbook/tokens.css` is the downstream export for non-dashboard consumers.
+
+**7. Rewrite `brand-book.md` post-audit.**
+Target: ~500 lines. Keep §1–§7 (identity, personality, narrative, visual, color, typography, voice). Split §8–§12 UI guidance into a separate `brandbook/ui-guide.md`. The brand book should rarely change; the UI guide will evolve with features.
+
+**8. Add §5.8 "Token propagation policy" to the brand book.**
+Document the BRAND-09 conditional explicitly: cosmetic brand-book updates do not propagate; WCAG AA failures, accessibility defects, and coherence breaks do.
+
+**9. Produce `examples/palette.svg`, `examples/typography.svg`, `examples/components.svg`, `examples/code-block.svg`.**
+Static SVG verification artifacts. The code-block example is the most useful for README and HexDocs.
+
+**10. Add suite-context note in brand-book.md §1.**
+"Scoria is part of the szTheory Elixir ecosystem alongside Threadline (audit), Sigra (auth), Chimeway (notifications), and Parapet (SRE). Each library is visually distinct but shares IBM Plex Sans / JetBrains Mono and an operator-first DX philosophy."
+
+### Defer (Phase 22)
+
+**11. Wire README header, badges, social card, and favicon into the repo.**
+Phase 22 delivers: `mix.exs` description update, GitHub repo description, HexDocs intro, README header SVG, `favicon.svg` in `priv/static/`, `social-card.svg`. These all depend on the logo existing (Phase 19–20).
+
+**12. Phase 22 contrast propagation check.**
+Re-run `brandbook/tools/contrast-check.mjs` against the final token set and confirm the verdict has not changed. If tokens changed materially in Phase 21, the propagation verdict must be re-evaluated.
+
+**13. Architecture diagram style spec and "Why not Langfuse" copy.**
+Both are Nice-to-have (N1, N5 in Section 5 gaps). Add to landing page and brand-book.md when the landing page build begins.
+
+### Do not do
+
+**14. Do NOT generate a logo that uses a rectangular background container.**
+No exceptions. If AI-assisted generation produces container shapes, the output is discarded and regenerated. This is not a style preference; it is a hard identity rule (LOGO-01).
+
+**15. Do NOT create PNG/WebP brand artifacts until a specific shipped surface requires them.**
+Rasters bloat git history and cannot be trivially updated. Every brandbook artifact is SVG-first. Raster exports are generated at build time from SVG sources, not committed.
+
+**16. Do NOT touch `assets/css/02-tokens.css`, `test/support/ds06_baseline.txt`, or `priv/static` CSS in Phase 19–21.**
+Propagation verdict is `not-required` (see Decisions Locked). These files are only touched in Phase 22 BRAND-09 conditional, and only if a new contrast audit discovers a material failure.
+
+**17. Do NOT redesign the color system.**
+The palette is sound. 46/52 pairings PASS-AA; 6 PASS-LARGE with no FAIL. The warm volcanic palette is a genuine differentiator. No material change is warranted. Cosmetic preferences (e.g., "I prefer a slightly warmer Ash-50") stay brandbook-only and do not trigger a token rewrite.
+
+**18. Do NOT add a tagline or subtitle to the primary lockup.**
+The "AI ops for Phoenix" subtitle in the brand book's §4.4 secondary stacked lockup is allowed for social cards and stickers. It must not appear in the primary horizontal lockup. LOGO-04 is a hard rule.
+
+---
+
+## SECTION 14 — Final quality gate
+
+**Eight questions. Direct answers.**
+
+---
+
+**1. Could a designer build from this?**
+
+Yes — after Section 8's logo ranking and constraint encoding, a designer has: ranked direction (#1 Trace Vesicle Mark), hard rules (LOGO-01 through LOGO-07), the full palette with hex values, the typography system (IBM Plex Sans + JetBrains Mono with weight ramp and scale), spacing/radius tokens, clearspace and minimum-size rules, and the visual examples plan. The one remaining gap is that no SVG files exist yet — that is Phase 19's job, not this audit's.
+
+**2. Could an engineer implement from this?**
+
+Yes — an engineer gets: `assets/css/02-tokens.css` (already committed, already the source of runtime tokens), the Section 7 token gap spec (focus-ring width, state tokens, code-block tokens, callout tokens), the component anatomy from §8 of the brand book (buttons, cards, badges, trace explorer), the voice system (§7), and the copy blocks from Section 10. The README structure and landing page architecture (Section 11) are immediately actionable.
+
+**3. Could a maintainer keep it consistent?**
+
+Yes — with one condition: the brand book needs the §5.8 propagation policy written into it explicitly (Phase 21 task). Right now the policy lives in 18-CONTEXT.md and this audit document. Once it is in `brand-book.md`, future maintainers have a clear rule: cosmetic delta stays brand-book-only; WCAG failure triggers propagation. The LOGO-01 through LOGO-07 rules encoded in this section, plus the planned CI grep check, provide a lightweight enforcement layer.
+
+**4. Could a contributor understand it?**
+
+Yes — the brand DNA (Section 2) is extractable and memorable. "Volcanic clarity for production AI systems." "The field engineer." "Calm + exact + useful." "Trace the run. Prove the change. Ship the agent." These are not corporate brand-book filler; they are decision-making tools. A contributor who reads Sections 1–2 of this audit (and §1–§7 of the brand book) understands the identity well enough to write a PR description, a README improvement, or an error message without drifting.
+
+**5. Could it support marketing without becoming cheesy?**
+
+Yes — the brand book explicitly prohibits the cheesy patterns. "No 'revolutionary.'" "No 'seamless.'" "No 'next-generation.'" "No anthropomorphizing the model." The word bank and anti-trait list are unusually specific. The copy blocks in Section 10 are production-ready and don't cheat by using vague claims. The comparison table in Section 11 is factual, not adversarial. The risk is drift — not the starting point.
+
+**6. Could it survive dark mode, small sizes, docs pages, and social previews?**
+
+Dark mode: yes — dark-first color system with full semantic re-point for light. Small sizes: pending Phase 19 logo execution, but the 16px test rule (LOGO-06) is now a hard gate. Docs pages: yes — light-mode surface spec is correct (intentionally warm Ash-50/#FAF5EF, confirmed in Section 4). Social previews: blocked on logo; the social card spec in Section 9 is ready to build from. Token pairings are sound (52 pairings, 0 FAIL).
+
+**7. Does it feel specific to this library?**
+
+Yes — and this is the most important answer. The volcanic metaphor is not borrowed from a competitor. "Vesicle" names the milestone. "Scoria" names the library and is also a real geological material. The trace-node vesicle alignment in the logo direction is the brand differentiator at the smallest size (16px favicon). The word bank — trace, span, scorer, baseline, gate, replay, approval, redaction — is this library's domain language, not generic AI tool language. The "do not anthropomorphize the model" voice principle is a direct response to the actual product context.
+
+**8. Does it avoid unnecessary brand thrash?**
+
+Yes — the propagation verdict is `not-required`. No changes to `assets/css/02-tokens.css`. No changes to `priv/static`. No changes to `test/support/ds06_baseline.txt`. The color system is confirmed sound. Typography is confirmed keep. Voice is confirmed keep. The only net-new work is the logo (Phase 19–20), the brand-book rewrite and token export (Phase 21), and the integration pass (Phase 22). None of these constitute thrash; they are additive work on a system that is already strong.
