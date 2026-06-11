@@ -93,15 +93,34 @@ console.log('─'.repeat(70));
 }
 
 // =============================================================================
-// LOGO-03: Each lockup SVG root carries data-gap-ratio in [0.35, 0.5]
+// LOGO-03: Each SIDE-BY-SIDE lockup SVG root carries data-gap-ratio in [0.35,0.5]
+//
+// Round-2 escape (19-02b) introduced integrated/stacked/overlap lockups (LK-B
+// mark-as-o, LK-C stacked, LK-D overlap, LK-E counter-punch, LK-F mark-as-tittle)
+// where the mark and wordmark are NOT placed side-by-side, so a horizontal
+// data-gap-ratio is undefined by construction. Per the 19-02b brief
+// ("LOGO-03 data-gap-ratio applies to side-by-side lockups; stacked/integrated
+// forms may exempt with a documented reason"), such files declare an explicit
+// machine-readable exemption marker on the root <svg>:
+//   data-integrated="true"   — mark fused into a letterform (LK-B/E/F)
+//   data-gap-exempt="..."    — relationship is overlap/stack, not a gap (LK-C/D)
+// Side-by-side lockups (round-1 *-lockup.svg and LK-A) MUST still carry a valid
+// data-gap-ratio. This keeps LOGO-03 enforced where it is meaningful and
+// documents the exemption where it is not.
 // =============================================================================
 {
   const violations = [];
+  let exemptCount = 0;
   for (const f of lockupFiles) {
     const src = readCandidate(f);
+    const exempt = /data-integrated="true"/.test(src) || /data-gap-exempt="/.test(src);
+    if (exempt) {
+      exemptCount++;
+      continue; // documented stacked/integrated/overlap form — gap is undefined
+    }
     const m = src.match(/data-gap-ratio="([^"]+)"/);
     if (!m) {
-      violations.push(`${f}: missing data-gap-ratio attribute`);
+      violations.push(`${f}: missing data-gap-ratio attribute (and no exemption marker)`);
     } else {
       const val = parseFloat(m[1]);
       if (isNaN(val) || val < 0.35 || val > 0.5) {
@@ -112,7 +131,7 @@ console.log('─'.repeat(70));
   check(
     'LOGO-03',
     violations.length === 0,
-    `All ${lockupFiles.length} lockup SVGs carry data-gap-ratio in [0.35, 0.5]`,
+    `All ${lockupFiles.length - exemptCount} side-by-side lockup SVGs carry data-gap-ratio in [0.35, 0.5] (${exemptCount} integrated/stacked/overlap forms documented-exempt)`,
     violations.join(' | ')
   );
 }
@@ -285,14 +304,21 @@ console.log('─'.repeat(70));
       continue;
     }
     const [minX, minY] = parts;
-    if (Math.abs(minX) > 200 || Math.abs(minY) > 200) {
+    // The ±200 bound catches accidental padding boxes. A vertical/stacked lockup
+    // (LK-C) legitimately needs a tall negative-Y origin because the mark stacks
+    // far above the baseline-anchored wordmark; allow ±300 on Y for stacked forms
+    // (declared via data-gap-exempt or data-variant="LK-C"). X stays tight (±200)
+    // since nothing here is laid out far off-origin horizontally.
+    const isStacked = /data-gap-exempt="stack"/.test(src) || /data-variant="LK-C"/.test(src);
+    const yBound = isStacked ? 300 : 200;
+    if (Math.abs(minX) > 200 || Math.abs(minY) > yBound) {
       violations.push(`${f}: viewBox origin (${minX},${minY}) far from 0`);
     }
   }
   check(
     'STRUCT-VIEWBOX',
     violations.length === 0,
-    `All ${allSvgFiles.length} candidates have viewBox with origin near 0`,
+    `All ${allSvgFiles.length} candidates have viewBox with origin near 0 (stacked lockups allowed ±300 on Y)`,
     violations.join(' | ')
   );
 }
