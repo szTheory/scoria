@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
-status: verifying
-last_updated: "2026-06-11T17:49:50.735Z"
-last_activity: 2026-06-11
+status: completed
+last_updated: "2026-06-11T17:53:50.612Z"
+last_activity: 2026-06-11 -- Phase 20 marked complete
 progress:
-  total_phases: 20
+  total_phases: 5
   completed_phases: 5
   total_plans: 17
   completed_plans: 17
-  percent: 25
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v
 
 ## Current Position
 
-Phase: 19 — COMPLETE
+Phase: 20 — COMPLETE
 Plan: 3 of 3 — complete (19-01 toolchain scaffold)
-Status: Phase complete — ready for verification
-Last activity: 2026-06-11
+Status: Phase 20 complete
+Last activity: 2026-06-11 -- Phase 20 marked complete
 
 ## Roadmap (v2.17 Vesicle, Phases 18–22)
 
@@ -96,6 +96,7 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 - [Phase ?]: Gate #2 final: TV-1 mark + LK-B Mark-as-o lockup locked
 - [Phase ?]: Primary lockup ships two-tone (ember/scoria 'o' accent); ink density 0.61 vs letters 0.57 confirms color carries the accent
 - [Phase ?]: logotype-integrated.svg byte-identical to logo-monochrome.svg (LK-B fused lockup IS the integrated typemark)
+- [Phase ?]: Phase 20 confirm: 8-variant logo set shipped as-is
 
 ## Deferred Items
 
