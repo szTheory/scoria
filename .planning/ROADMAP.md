@@ -88,7 +88,10 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   3. The gallery includes in-situ mocks: browser-tab favicon strip, 24px dashboard sidebar slot, and README header band.
   4. No option contains a rectangular background shape (enforced by geometry); all marks use `fill-rule="evenodd"`; logotype is optically tight to the mark; main lockup has no subtitle.
   5. The gallery includes a ranked recommendation and a documented "none of these → second round" escape path; the user's chosen direction is recorded before Phase 20 begins.
-**Plans**: TBD (~3 plans)
+**Plans**: 3 plans
+  - [ ] 19-01-PLAN.md — Generation toolchain in brandbook/tools/ (package.json, geometry+evenodd-hole library, woff2->opentype.js wordmark with integrated-glyph hook, lockup composer, smoke test)
+  - [ ] 19-02-PLAN.md — 6 hand-tuned mark presets (TV-1/TV-2/CM-1/CM-2/AP-1 + 6th) + 2 integrated typemark studies; candidate SVGs + standalone options-gallery.html with full evidence rows
+  - [ ] 19-03-PLAN.md — Scripted LOGO-01..07 + gallery verification sweep, finalized ranked recommendation, gate #2 checkpoint:decision (user picks direction or second round)
 **Checkpoint**: Gate #2 — user choice of logo direction required before proceeding
 
 ### Phase 20: Logo convergence — full variant set
