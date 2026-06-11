@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scoria Brand Book</title>
+<meta name="description" content="Scoria Brand Book — volcanic clarity for production AI systems. AI ops for Phoenix apps.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+/* ============================================================
+ * Scoria design tokens — inlined from brandbook/tokens.css so this
+ * page is fully self-contained and opens from file:// with no
+ * network requests. Hexes are identical to tokens.css / tokens.json /
+ * assets/css/02-tokens.css (verified by tools/check-consistency.mjs).
+ * Dark (volcanic dark-first) is the default.
+ * ============================================================ */
+:root {
+  color-scheme: dark;
+
+  /* PRIMITIVE: neutrals */
+  --scoria-basalt-950: #11100f;
+  --scoria-basalt-900: #181513;
+  --scoria-char-850: #211c19;
+  --scoria-graphite-700: #3a332f;
+  --scoria-pumice-500: #88786d;
+  --scoria-tuff-300: #cdbbac;
+  --scoria-ash-100: #efe6de;
+  --scoria-ash-50: #faf5ef;
+  --scoria-white-hot: #fff9f3;
+  --scoria-muted-warm: #bdaea3;
+
+  /* PRIMITIVE: warm brand scale */
+  --scoria-900: #3b1912;
+  --scoria-800: #5c2418;
+  --scoria-700: #8d3826;
+  --scoria-600: #b94f31;
+  --scoria-ember-500: #e65a32;
+  --scoria-molten-400: #ff7a4d;
+  --scoria-cinder-100: #f8d6c8;
+  --scoria-cinder-50: #fff0ea;
+
+  /* PRIMITIVE: functional accent pairs */
+  --scoria-success-light: #536a39;
+  --scoria-success-dark: #a7c76f;
+  --scoria-info-light: #2a6c69;
+  --scoria-info-dark: #7dd8d1;
+  --scoria-warning-light: #7a5a16;
+  --scoria-warning-dark: #ffd166;
+  --scoria-danger-light: #9e2f20;
+  --scoria-danger-dark: #ff6b4a;
+  --scoria-trace-light: #6a55a7;
+  --scoria-trace-dark: #b798ff;
+
+  /* PRIMITIVE: space / radius */
+  --scoria-space-1: 4px;
+  --scoria-space-2: 8px;
+  --scoria-space-3: 12px;
+  --scoria-space-4: 16px;
+  --scoria-space-5: 24px;
+  --scoria-space-6: 32px;
+  --scoria-space-7: 48px;
+  --scoria-space-8: 64px;
+  --scoria-space-9: 96px;
+  --scoria-radius-sm: 6px;
+  --scoria-radius-md: 10px;
+  --scoria-radius-lg: 16px;
+  --scoria-radius-xl: 24px;
+  --scoria-radius-pill: 999px;
+
+  /* PRIMITIVE: type — system fallback stacks first; no webfont loaded */
+  --scoria-font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --scoria-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", monospace;
+  --scoria-tracking-eyebrow: 0.16em;
+
+  /* PRIMITIVE: motion */
+  --scoria-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --scoria-dur-mid: 150ms;
+
+  /* SEMANTIC — DARK (default) */
+  --scoria-surface-app: var(--scoria-basalt-950);
+  --scoria-surface-panel: var(--scoria-basalt-900);
+  --scoria-surface-panel-raised: var(--scoria-char-850);
+  --scoria-surface-sunken: #0c0b0a;
+  --scoria-text: var(--scoria-ash-50);
+  --scoria-text-muted: var(--scoria-muted-warm);
+  --scoria-text-subtle: var(--scoria-pumice-500);
+  --scoria-text-onaccent: var(--scoria-basalt-950);
+  --scoria-link: var(--scoria-ember-500);
+  --scoria-link-hover: var(--scoria-molten-400);
+  --scoria-border: rgba(239, 230, 222, 0.1);
+  --scoria-border-strong: rgba(239, 230, 222, 0.2);
+  --scoria-focus-ring: var(--scoria-molten-400);
+  --scoria-action: var(--scoria-ember-500);
+  --scoria-action-hover: var(--scoria-molten-400);
+  --scoria-action-fg: var(--scoria-basalt-950);
+  --scoria-shadow-panel: 0 0 0 1px rgba(239, 230, 222, 0.06), 0 18px 60px rgba(17, 16, 15, 0.42);
+  --scoria-glow-ember: 0 0 0 1px color-mix(in srgb, var(--scoria-ember-500) 40%, transparent),
+    0 0 18px color-mix(in srgb, var(--scoria-ember-500) 22%, transparent);
+
+  /* tone family */
+  --scoria-tone-pass-fg: var(--scoria-success-dark);
+  --scoria-tone-pass-bg: color-mix(in srgb, var(--scoria-success-dark) 14%, transparent);
+  --scoria-tone-pass-border: color-mix(in srgb, var(--scoria-success-dark) 32%, transparent);
+  --scoria-tone-warn-fg: var(--scoria-warning-dark);
+  --scoria-tone-warn-bg: color-mix(in srgb, var(--scoria-warning-dark) 14%, transparent);
+  --scoria-tone-warn-border: color-mix(in srgb, var(--scoria-warning-dark) 32%, transparent);
+  --scoria-tone-fail-fg: var(--scoria-danger-dark);
+  --scoria-tone-fail-bg: color-mix(in srgb, var(--scoria-danger-dark) 14%, transparent);
+  --scoria-tone-fail-border: color-mix(in srgb, var(--scoria-danger-dark) 32%, transparent);
+}
+
+/* SEMANTIC — LIGHT (used by light inset cards via [data-theme="light"]) */
+[data-theme="light"] {
+  color-scheme: light;
+  --scoria-surface-app: var(--scoria-ash-50);
+  --scoria-surface-panel: var(--scoria-white-hot);
+  --scoria-surface-panel-raised: #ffffff;
+  --scoria-surface-sunken: #f1e8de;
+  --scoria-text: var(--scoria-basalt-950);
+  --scoria-text-muted: var(--scoria-graphite-700);
+  --scoria-text-subtle: var(--scoria-pumice-500);
+  --scoria-text-onaccent: var(--scoria-white-hot);
+  --scoria-link: var(--scoria-600);
+  --scoria-link-hover: var(--scoria-700);
+  --scoria-border: rgba(58, 51, 47, 0.16);
+  --scoria-border-strong: rgba(58, 51, 47, 0.28);
+  --scoria-focus-ring: var(--scoria-600);
+  --scoria-action: var(--scoria-600);
+  --scoria-action-hover: var(--scoria-700);
+  --scoria-action-fg: var(--scoria-white-hot);
+  --scoria-shadow-panel: 0 0 0 1px rgba(58, 51, 47, 0.06), 0 12px 32px rgba(58, 51, 47, 0.1);
+}
+
+/* ============================================================
+ * Page styling — built entirely from the tokens above.
+ * ============================================================ */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--scoria-surface-app);
+  color: var(--scoria-text);
+  font-family: var(--scoria-font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+code, pre, .mono { font-family: var(--scoria-font-mono); }
+a { color: var(--scoria-link); text-decoration: none; }
+a:hover { color: var(--scoria-link-hover); text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--scoria-focus-ring); outline-offset: 2px; border-radius: 4px; }
+img { max-width: 100%; height: auto; display: block; }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 var(--scoria-space-6); }
+.measure { max-width: 70ch; }
+
+/* sticky table-of-contents nav */
+.nav {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--scoria-surface-app) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--scoria-border);
+}
+.nav .wrap { display: flex; align-items: center; gap: var(--scoria-space-5); height: 56px; flex-wrap: wrap; }
+.nav .brand { display: flex; align-items: center; gap: var(--scoria-space-2); font-weight: 600; letter-spacing: -0.01em; }
+.nav .brand .dot { width: 12px; height: 12px; border-radius: var(--scoria-radius-pill); background: var(--scoria-ember-500); box-shadow: var(--scoria-glow-ember); }
+.nav ul { display: flex; gap: var(--scoria-space-4); list-style: none; margin: 0; padding: 0; overflow-x: auto; }
+.nav a {
+  color: var(--scoria-text-muted); font-size: 13px; white-space: nowrap;
+  letter-spacing: 0.02em; text-decoration: none;
+}
+.nav a:hover { color: var(--scoria-text); }
+
+/* sections */
+section { padding: var(--scoria-space-9) 0; border-bottom: 1px solid var(--scoria-border); }
+.sec-num {
+  font-family: var(--scoria-font-mono);
+  font-size: clamp(48px, 8vw, 88px);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--scoria-graphite-700);
+  margin: 0 0 var(--scoria-space-2);
+  letter-spacing: -0.03em;
+}
+.eyebrow {
+  font-family: var(--scoria-font-mono);
+  font-size: 12px;
+  letter-spacing: var(--scoria-tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--scoria-ember-500);
+  margin: 0 0 var(--scoria-space-3);
+}
+h1, h2, h3, h4 { letter-spacing: -0.02em; line-height: 1.15; }
+h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 600; margin: 0 0 var(--scoria-space-4); }
+h3 { font-size: 20px; font-weight: 600; margin: var(--scoria-space-7) 0 var(--scoria-space-3); }
+h4 { font-size: 15px; font-weight: 600; margin: var(--scoria-space-5) 0 var(--scoria-space-2); }
+.lede { font-size: 18px; color: var(--scoria-text-muted); max-width: 70ch; }
+p { max-width: 72ch; }
+.muted { color: var(--scoria-text-muted); }
+.subtle { color: var(--scoria-text-subtle); }
+
+/* hero */
+.hero { padding: var(--scoria-space-9) 0 var(--scoria-space-8); border-bottom: 1px solid var(--scoria-border); }
+.hero-logo { max-width: 360px; margin-bottom: var(--scoria-space-7); }
+.tagline { font-size: clamp(20px, 3vw, 28px); font-weight: 600; margin: 0 0 var(--scoria-space-3); letter-spacing: -0.02em; }
+.oneliner { font-size: 18px; color: var(--scoria-text-muted); max-width: 64ch; margin: 0 0 var(--scoria-space-7); }
+.verb-triplet {
+  font-size: clamp(36px, 7vw, 72px);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+.verb-triplet span { display: block; }
+.verb-triplet .accent { color: var(--scoria-molten-400); }
+.hero-meta { margin-top: var(--scoria-space-6); font-family: var(--scoria-font-mono); font-size: 13px; color: var(--scoria-text-subtle); }
+
+/* cards / grids */
+.grid { display: grid; gap: var(--scoria-space-4); }
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.card {
+  background: var(--scoria-surface-panel);
+  border: 1px solid var(--scoria-border);
+  border-radius: var(--scoria-radius-lg);
+  padding: var(--scoria-space-5);
+  box-shadow: var(--scoria-shadow-panel);
+}
+.card h4 { margin-top: 0; }
+.card.brand-edge { border-left: 3px solid var(--scoria-ember-500); }
+
+/* light inset panel (for the logo-on-light comparison + light specimens) */
+.panel-light {
+  background: var(--scoria-ash-50);
+  color: var(--scoria-basalt-950);
+  border: 1px solid var(--scoria-border-strong);
+  border-radius: var(--scoria-radius-lg);
+  padding: var(--scoria-space-6);
+}
+.panel-dark {
+  background: var(--scoria-basalt-950);
+  border: 1px solid var(--scoria-border-strong);
+  border-radius: var(--scoria-radius-lg);
+  padding: var(--scoria-space-6);
+}
+.ground-label {
+  font-family: var(--scoria-font-mono); font-size: 11px;
+  letter-spacing: var(--scoria-tracking-eyebrow); text-transform: uppercase;
+  margin: 0 0 var(--scoria-space-4); opacity: 0.7;
+}
+
+/* swatches */
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--scoria-space-3); }
+.swatch {
+  border: 1px solid var(--scoria-border);
+  border-radius: var(--scoria-radius-md);
+  overflow: hidden;
+  background: var(--scoria-surface-panel);
+}
+.swatch .chip { height: 64px; }
+.swatch .body { padding: var(--scoria-space-3); }
+.swatch .name { font-size: 13px; font-weight: 500; }
+.swatch .hex { font-family: var(--scoria-font-mono); font-size: 12px; color: var(--scoria-text-subtle); text-transform: uppercase; }
+
+/* tables */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+caption { text-align: left; color: var(--scoria-text-muted); font-size: 13px; margin-bottom: var(--scoria-space-3); }
+th, td { text-align: left; padding: var(--scoria-space-2) var(--scoria-space-3); border-bottom: 1px solid var(--scoria-border); vertical-align: top; }
+th { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--scoria-text-subtle); font-weight: 500; }
+td.num { text-align: right; font-family: var(--scoria-font-mono); }
+.scroll-x { overflow-x: auto; border: 1px solid var(--scoria-border); border-radius: var(--scoria-radius-lg); }
+.scroll-x table th, .scroll-x table td { white-space: nowrap; }
+
+/* verdict badges */
+.verdict { display: inline-block; font-family: var(--scoria-font-mono); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--scoria-radius-pill); border: 1px solid; letter-spacing: 0.02em; }
+.v-aa { color: var(--scoria-tone-pass-fg); background: var(--scoria-tone-pass-bg); border-color: var(--scoria-tone-pass-border); }
+.v-large { color: var(--scoria-tone-warn-fg); background: var(--scoria-tone-warn-bg); border-color: var(--scoria-tone-warn-border); }
+.v-fail { color: var(--scoria-tone-fail-fg); background: var(--scoria-tone-fail-bg); border-color: var(--scoria-tone-fail-border); }
+
+/* say/dont */
+.say td:first-child { color: var(--scoria-tone-pass-fg); }
+.say td:last-child { color: var(--scoria-text-subtle); }
+
+/* code blocks */
+pre {
+  background: var(--scoria-surface-sunken);
+  border: 1px solid var(--scoria-border);
+  border-radius: var(--scoria-radius-md);
+  padding: var(--scoria-space-4);
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--scoria-ash-100);
+}
+code.inline { background: var(--scoria-surface-panel-raised); padding: 1px 6px; border-radius: 4px; font-size: 0.9em; color: var(--scoria-cinder-100); }
+.k { color: var(--scoria-molten-400); }
+.s { color: var(--scoria-cinder-100); }
+.a { color: var(--scoria-info-dark); }
+.c { color: var(--scoria-pumice-500); }
+.m { color: var(--scoria-ash-50); }
+
+/* type specimen */
+.specimen { display: grid; gap: var(--scoria-space-4); }
+.spec-row { display: grid; grid-template-columns: 120px 1fr; gap: var(--scoria-space-5); align-items: baseline; border-bottom: 1px solid var(--scoria-border); padding-bottom: var(--scoria-space-4); }
+.spec-row .lbl { font-family: var(--scoria-font-mono); font-size: 12px; color: var(--scoria-text-subtle); }
+.s-display { font-size: 48px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; }
+.s-title { font-size: 24px; font-weight: 600; }
+.s-body { font-size: 16px; }
+.s-mono { font-family: var(--scoria-font-mono); font-size: 15px; }
+
+/* dl */
+dl.rules { display: grid; grid-template-columns: max-content 1fr; gap: var(--scoria-space-2) var(--scoria-space-5); margin: 0; }
+dl.rules dt { font-weight: 600; color: var(--scoria-text); }
+dl.rules dd { margin: 0; color: var(--scoria-text-muted); }
+
+ul.tight { padding-left: 1.2em; }
+ul.tight li { margin-bottom: var(--scoria-space-2); max-width: 72ch; }
+
+/* footer */
+footer { padding: var(--scoria-space-8) 0; color: var(--scoria-text-subtle); font-size: 14px; }
+footer .wrap { display: flex; justify-content: space-between; gap: var(--scoria-space-5); flex-wrap: wrap; align-items: center; }
+
+.legend { display: flex; gap: var(--scoria-space-4); flex-wrap: wrap; margin: var(--scoria-space-4) 0; align-items: center; }
+
+@media (max-width: 860px) {
+  .cols-2, .cols-3, .cols-4 { grid-template-columns: 1fr; }
+  .spec-row { grid-template-columns: 1fr; gap: var(--scoria-space-2); }
+  dl.rules { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <span class="brand"><span class="dot"></span> Scoria Brand Book</span>
+    <ul>
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#dna">DNA</a></li>
+      <li><a href="#logo">Logo</a></li>
+      <li><a href="#color">Color</a></li>
+      <li><a href="#type">Type</a></li>
+      <li><a href="#voice">Voice</a></li>
+      <li><a href="#ui">UI</a></li>
+      <li><a href="#blueprints">Blueprints</a></li>
+      <li><a href="#artifacts">Artifacts</a></li>
+      <li><a href="#qa">QA gate</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap">
+    <img class="hero-logo" src="logo-primary.svg" alt="Scoria — fused mark-as-o lockup on dark ground" width="360">
+    <p class="tagline">AI ops for Phoenix apps.</p>
+    <p class="oneliner">Scoria is the Phoenix-native AI ops layer for LLM traces, evals, prompt versions, and tool governance.</p>
+    <p class="verb-triplet">
+      <span>Trace the run.</span>
+      <span class="accent">Prove the change.</span>
+      <span>Ship the agent.</span>
+    </p>
+    <p class="hero-meta">Brand Book · v2.17 Vesicle · volcanic clarity for production AI systems</p>
+  </div>
+</header>
+
+<!-- ============ 01 EXECUTIVE SUMMARY ============ -->
+<section id="summary">
+  <div class="wrap">
+    <p class="sec-num">01</p>
+    <p class="eyebrow">Executive judgment</p>
+    <h2>Strong enough to build from. Distinct enough to matter.</h2>
+    <p class="lede">A 52-pairing WCAG audit found zero FAIL verdicts; the color system is sound. The brand has a specific conceptual center, a coherent warm dark-first palette, a two-tier token system, and a voice formula that is the strongest part of the identity.</p>
+    <div class="grid cols-3" style="margin-top: var(--scoria-space-7)">
+      <div class="card brand-edge">
+        <h4>Conceptual center</h4>
+        <p class="muted">Volcanic clarity, porous structure, field-engineer archetype. The metaphor is load-bearing — vesicle cavities map to the internal structure of an AI run.</p>
+      </div>
+      <div class="card brand-edge">
+        <h4>Genuinely distinct</h4>
+        <p class="muted">Langfuse, Arize Phoenix, and Braintrust all read as modern blue-purple SaaS. Scoria's dark-basalt-first, warm-accented, field-engineer register is a different category.</p>
+      </div>
+      <div class="card brand-edge">
+        <h4>Calm during an incident</h4>
+        <p class="muted">The emotional target is not exciting or aspirational — it is reliable. A control room that stays composed when runs fail, tools are blocked, or evals regress.</p>
+      </div>
+    </div>
+    <h3>What must never change</h3>
+    <ul class="tight muted">
+      <li>The "volcanic not fiery" archetype, and the prohibition on phoenix birds, flames, and robots.</li>
+      <li>The dark-first color strategy with warm scoria / ember accents.</li>
+      <li>The voice formula: <strong style="color:var(--scoria-text)">calm + exact + useful</strong>.</li>
+      <li>The name <strong style="color:var(--scoria-text)">Scoria</strong> (never "Scoria AI") and the field-engineer archetype.</li>
+      <li>The IBM Plex Sans + JetBrains Mono type pairing.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 02 BRAND DNA ============ -->
+<section id="dna">
+  <div class="wrap">
+    <p class="sec-num">02</p>
+    <p class="eyebrow">Brand DNA</p>
+    <h2>Volcanic clarity for production AI systems.</h2>
+    <p class="lede">AI runs are porous — prompt renders, model calls, tool calls, retrieval events, guardrails, eval scores. Scoria makes that internal structure visible, inspectable, and governable.</p>
+    <div class="grid cols-2" style="margin-top: var(--scoria-space-6)">
+      <div class="card">
+        <h4>Personality</h4>
+        <dl class="rules">
+          <dt>Grounded</dt><dd>Claims are evidence-based: traces, scores, costs, versions, policies.</dd>
+          <dt>Composed</dt><dd>Calm when runs fail, tools are blocked, evals regress.</dd>
+          <dt>Operator-grade</dt><dd>Built for production debugging, not demos.</dd>
+          <dt>OSS-practical</dt><dd>Clear docs, copy-pasteable examples, no corporate fog.</dd>
+          <dt>Volcanic</dt><dd>Warmth and texture allowed; flames and lava gimmicks are not.</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <h4>Anti-traits (hard prohibitions)</h4>
+        <p class="muted">Magical / autonomous-feeling · hype-coded ("revolutionary," "10x," "sentient") · phoenix-bird or flame imagery · generic AI aesthetics (neon blue-purple, glassmorphism, sparkles) · black-box oracle positioning · enterprise compliance drag.</p>
+        <h4>Archetype</h4>
+        <p class="muted">The field engineer, not the oracle — the person who catches the regression before it ships, not the one who promises to eliminate regressions forever.</p>
+      </div>
+    </div>
+    <h3>Audience</h3>
+    <p class="muted">Phoenix / Elixir backend engineers building chat, copilots, RAG, tool-using agents, or MCP workflows. Small teams, indie engineers, and platform / SRE engineers who debug, replay, and govern AI behavior in production. Not enterprise compliance buyers, AI researchers, or Python-first developers.</p>
+  </div>
+</section>
+
+<!-- ============ 03 LOGO SYSTEM ============ -->
+<section id="logo">
+  <div class="wrap">
+    <p class="sec-num">03</p>
+    <p class="eyebrow">Logo &amp; mark system</p>
+    <h2>The mark is the 'o' in Scoria.</h2>
+    <p class="lede">Geometry is frozen. The chosen direction is the TV-1 "Span rail" mark fused into the LK-B "Mark-as-o" lockup — a porous cinder whose vesicle holes trace a downward span rail (root → LLM → tool → eval). The metaphor survives at every size, including the 16px favicon.</p>
+
+    <h3>On both grounds</h3>
+    <div class="grid cols-2" style="margin-top: var(--scoria-space-4)">
+      <div class="panel-dark">
+        <p class="ground-label" style="color:var(--scoria-tuff-300)">Dark ground · logo-primary.svg</p>
+        <img src="logo-primary.svg" alt="Scoria primary lockup on dark ground" width="300">
+      </div>
+      <div class="panel-light">
+        <p class="ground-label" style="color:var(--scoria-graphite-700)">Light ground · logo-primary-light.svg</p>
+        <img src="logo-primary-light.svg" alt="Scoria primary lockup on light ground" width="300">
+      </div>
+    </div>
+
+    <div class="grid cols-3" style="margin-top: var(--scoria-space-4)">
+      <div class="panel-dark">
+        <p class="ground-label" style="color:var(--scoria-tuff-300)">Mark · logo-mark.svg</p>
+        <img src="logo-mark.svg" alt="Scoria mark" width="96">
+      </div>
+      <div class="panel-dark">
+        <p class="ground-label" style="color:var(--scoria-tuff-300)">Monochrome · logo-monochrome.svg</p>
+        <img src="logo-monochrome.svg" alt="Scoria monochrome lockup" width="220">
+      </div>
+      <div class="panel-light">
+        <p class="ground-label" style="color:var(--scoria-graphite-700)">Subtitle lockup · social/sticker only</p>
+        <img src="logo-lockup-subtitle.svg" alt="Scoria subtitle lockup" width="220">
+      </div>
+    </div>
+
+    <h3>Two-tone primary rule</h3>
+    <p class="muted">The primary lockup is two-tone: surface-ink letters with the mark-'o' in the brand accent. The color, not weight, carries the accent (the 'o' is ~7% denser — a deliberate focal accent, not a heavier glyph).</p>
+    <div class="scroll-x" style="margin-top: var(--scoria-space-4)">
+      <table>
+        <thead><tr><th>Surface</th><th>Letters</th><th>Mark-'o'</th></tr></thead>
+        <tbody>
+          <tr><td>Dark (logo-primary.svg)</td><td>White-Hot <code class="inline">#FFF9F3</code></td><td><span style="color:var(--scoria-ember-500)">Ember-500</span> <code class="inline">#E65A32</code></td></tr>
+          <tr><td>Light (logo-primary-light.svg)</td><td>Basalt-950 <code class="inline">#11100F</code></td><td><span style="color:var(--scoria-600)">Scoria-600</span> <code class="inline">#B94F31</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid cols-2" style="margin-top: var(--scoria-space-6)">
+      <div class="card">
+        <h4>Usage rules</h4>
+        <dl class="rules">
+          <dt>Clear space</dt><dd>cap-height / 2 (≈ 38.4u) on all four sides.</dd>
+          <dt>Min lockup</dt><dd>≥ 120px wide.</dd>
+          <dt>Min mark</dt><dd>≥ 20px (below this the trace-tree holes merge).</dd>
+          <dt>Favicon</dt><dd>exact at 16px and 32px.</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <h4>Misuse (do not)</h4>
+        <ul class="tight muted" style="margin-top:0">
+          <li>No rectangular / square / circular background container — the silhouette <em>is</em> the shape.</li>
+          <li>No subtitle or tagline inside the primary lockup.</li>
+          <li>No redrawing hole coordinates, added strokes, or recoloring outside the two-tone pairs.</li>
+          <li>No phoenix bird, flame, or "S" monogram substitution.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 COLOR ============ -->
+<section id="color">
+  <div class="wrap">
+    <p class="sec-num">04</p>
+    <p class="eyebrow">Color</p>
+    <h2>Locked palette — no deltas.</h2>
+    <p class="lede">A warm, dark-first volcanic palette is a genuine differentiator. Hex values are identical to <code class="inline">assets/css/02-tokens.css</code> (runtime SSOT) and <code class="inline">brandbook/tokens.css</code> (docs SSOT), verified by <code class="inline">tools/check-consistency.mjs</code>.</p>
+
+    <h3>Dark neutrals</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="chip" style="background:#11100f"></div><div class="body"><div class="name">Basalt-950</div><div class="hex">#11100F</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#181513"></div><div class="body"><div class="name">Basalt-900</div><div class="hex">#181513</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#211c19"></div><div class="body"><div class="name">Char-850</div><div class="hex">#211C19</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#3a332f"></div><div class="body"><div class="name">Graphite-700</div><div class="hex">#3A332F</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#0c0b0a"></div><div class="body"><div class="name">Surface-sunken</div><div class="hex">#0C0B0A</div></div></div>
+    </div>
+
+    <h3>Warm text scale</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="chip" style="background:#88786d"></div><div class="body"><div class="name">Pumice-500</div><div class="hex">#88786D</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#bdaea3"></div><div class="body"><div class="name">Muted-warm</div><div class="hex">#BDAEA3</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#cdbbac"></div><div class="body"><div class="name">Tuff-300</div><div class="hex">#CDBBAC</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#efe6de"></div><div class="body"><div class="name">Ash-100</div><div class="hex">#EFE6DE</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#faf5ef"></div><div class="body"><div class="name">Ash-50</div><div class="hex">#FAF5EF</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#fff9f3"></div><div class="body"><div class="name">White-Hot</div><div class="hex">#FFF9F3</div></div></div>
+    </div>
+
+    <h3>Warm brand scale</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="chip" style="background:#3b1912"></div><div class="body"><div class="name">Scoria-900</div><div class="hex">#3B1912</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#5c2418"></div><div class="body"><div class="name">Scoria-800</div><div class="hex">#5C2418</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#8d3826"></div><div class="body"><div class="name">Scoria-700</div><div class="hex">#8D3826</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#b94f31"></div><div class="body"><div class="name">Scoria-600</div><div class="hex">#B94F31</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#e65a32"></div><div class="body"><div class="name">Ember-500</div><div class="hex">#E65A32</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#ff7a4d"></div><div class="body"><div class="name">Molten-400</div><div class="hex">#FF7A4D</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#f8d6c8"></div><div class="body"><div class="name">Cinder-100</div><div class="hex">#F8D6C8</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#fff0ea"></div><div class="body"><div class="name">Cinder-50</div><div class="hex">#FFF0EA</div></div></div>
+    </div>
+
+    <h3>Functional accent pairs (light fg / dark fg)</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="chip" style="background:#536a39"></div><div class="body"><div class="name">Success-light</div><div class="hex">#536A39</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#a7c76f"></div><div class="body"><div class="name">Success-dark</div><div class="hex">#A7C76F</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#2a6c69"></div><div class="body"><div class="name">Info-light</div><div class="hex">#2A6C69</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#7dd8d1"></div><div class="body"><div class="name">Info-dark</div><div class="hex">#7DD8D1</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#7a5a16"></div><div class="body"><div class="name">Warning-light</div><div class="hex">#7A5A16</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#ffd166"></div><div class="body"><div class="name">Warning-dark</div><div class="hex">#FFD166</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#9e2f20"></div><div class="body"><div class="name">Danger-light</div><div class="hex">#9E2F20</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#ff6b4a"></div><div class="body"><div class="name">Danger-dark</div><div class="hex">#FF6B4A</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#6a55a7"></div><div class="body"><div class="name">Trace-light</div><div class="hex">#6A55A7</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#b798ff"></div><div class="body"><div class="name">Trace-dark</div><div class="hex">#B798FF</div></div></div>
+    </div>
+
+    <div class="card brand-edge" style="margin-top: var(--scoria-space-6)">
+      <h4>Two load-bearing contrast constraints</h4>
+      <p class="muted"><strong style="color:var(--scoria-tone-warn-fg)">Pumice-500 / text-subtle (#88786D) is PASS-LARGE only</strong> (3.91–4.48:1). Use only for muted UI metadata — 12–13px monospaced trace IDs, timestamps, icon labels. Never for running body text.</p>
+      <p class="muted"><strong style="color:var(--scoria-tone-warn-fg)">Scoria-600 on Basalt-950 = 3.82:1 — PASS-LARGE (negative control)</strong>. Do not use Scoria-600 as normal-size dark-mode body text; it is a links/actions color on <em>light</em> surfaces.</p>
+    </div>
+
+    <h3>The domain differentiator: palette specimen</h3>
+    <img src="examples/palette.svg" alt="Scoria palette swatch specimen, both surface groups" style="border:1px solid var(--scoria-border);border-radius:var(--scoria-radius-lg)">
+
+    <h3>Full WCAG 2.1 contrast audit — 52 pairings</h3>
+    <p class="legend">
+      <span class="verdict v-aa">PASS-AA</span> ≥ 4.5:1
+      <span class="verdict v-large">PASS-LARGE</span> ≥ 3.0:1 (large text / UI only)
+      <span class="verdict v-fail">FAIL</span> &lt; 3.0:1
+      <span class="muted">— Result: <strong style="color:var(--scoria-tone-pass-fg)">46 PASS-AA · 6 PASS-LARGE · 0 FAIL</strong></span>
+    </p>
+    <div class="scroll-x">
+      <table>
+        <caption>Documented — brand-book §5.4 / §5.5 pairings, then resolved semantic pairings from assets/css/02-tokens.css.</caption>
+        <thead><tr><th>Foreground</th><th>Background</th><th class="num">Ratio</th><th>Verdict</th><th>Usage</th></tr></thead>
+        <tbody>
+          <tr><td>White-Hot</td><td>Basalt-950</td><td class="num">18.19:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>main text, dark</td></tr>
+          <tr><td>Ash-50</td><td>Basalt-950</td><td class="num">17.53:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>main text, dark</td></tr>
+          <tr><td>Ash-100</td><td>Basalt-900</td><td class="num">14.75:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>body text, dark</td></tr>
+          <tr><td>Muted-warm</td><td>Basalt-950</td><td class="num">8.82:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>muted text, dark</td></tr>
+          <tr><td>Basalt-950</td><td>Ash-50</td><td class="num">17.53:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>main text, light</td></tr>
+          <tr><td>Graphite-700</td><td>Ash-50</td><td class="num">11.43:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>secondary text, light</td></tr>
+          <tr><td>Scoria-600</td><td>Ash-50</td><td class="num">4.58:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>links, light</td></tr>
+          <tr><td>Scoria-700</td><td>Ash-50</td><td class="num">7.11:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>outlines/links, light</td></tr>
+          <tr><td>Ember-500</td><td>Basalt-950</td><td class="num">5.32:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>links/actions, dark</td></tr>
+          <tr><td>Molten-400</td><td>Basalt-950</td><td class="num">7.37:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>high-emphasis, dark</td></tr>
+          <tr><td>Pumice-500</td><td>Basalt-950</td><td class="num">4.48:1</td><td><span class="verdict v-large">PASS-LARGE</span></td><td>RISK: muted labels, dark</td></tr>
+          <tr><td>Scoria-600</td><td>Basalt-950</td><td class="num">3.82:1</td><td><span class="verdict v-large">PASS-LARGE</span></td><td>NEGATIVE CONTROL — §5.5 warns against</td></tr>
+          <tr><td>Success-dark</td><td>Basalt-950</td><td class="num">9.99:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Success-dark on Basalt-950</td></tr>
+          <tr><td>Info-dark</td><td>Basalt-950</td><td class="num">11.42:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Info-dark on Basalt-950</td></tr>
+          <tr><td>Warning-dark</td><td>Basalt-950</td><td class="num">13.18:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Warning-dark on Basalt-950</td></tr>
+          <tr><td>Danger-dark</td><td>Basalt-950</td><td class="num">6.75:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Danger-dark on Basalt-950</td></tr>
+          <tr><td>Trace-dark</td><td>Basalt-950</td><td class="num">8.10:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Trace-dark on Basalt-950</td></tr>
+          <tr><td>Success-light</td><td>Ash-50</td><td class="num">5.55:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Success-light on Ash-50</td></tr>
+          <tr><td>Info-light</td><td>Ash-50</td><td class="num">5.62:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Info-light on Ash-50</td></tr>
+          <tr><td>Warning-light</td><td>Ash-50</td><td class="num">5.87:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Warning-light on Ash-50 (RISK: Sulfur)</td></tr>
+          <tr><td>Danger-light</td><td>Ash-50</td><td class="num">6.72:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Danger-light on Ash-50</td></tr>
+          <tr><td>Trace-light</td><td>Ash-50</td><td class="num">5.58:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>Trace-light on Ash-50</td></tr>
+          <tr><td>text (#FAF5EF)</td><td>surface-app (#11100F)</td><td class="num">17.53:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>text-muted (#BDAEA3)</td><td>surface-app (#11100F)</td><td class="num">8.82:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>text-subtle (#88786D)</td><td>surface-app (#11100F)</td><td class="num">4.48:1</td><td><span class="verdict v-large">PASS-LARGE</span></td><td>shipped dark</td></tr>
+          <tr><td>link (#E65A32)</td><td>surface-app (#11100F)</td><td class="num">5.32:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>text (#FAF5EF)</td><td>surface-panel (#181513)</td><td class="num">16.77:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>text-muted (#BDAEA3)</td><td>surface-panel (#181513)</td><td class="num">8.44:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>text-subtle (#88786D)</td><td>surface-panel (#181513)</td><td class="num">4.29:1</td><td><span class="verdict v-large">PASS-LARGE</span></td><td>shipped dark</td></tr>
+          <tr><td>action-fg (#11100F)</td><td>action (#E65A32)</td><td class="num">5.32:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>tone-neutral-fg (#CDBBAC)</td><td>Basalt-950</td><td class="num">10.23:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>tone-pass-fg (#A7C76F)</td><td>Basalt-950</td><td class="num">9.99:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>tone-info-fg (#7DD8D1)</td><td>Basalt-950</td><td class="num">11.42:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>tone-warn-fg (#FFD166)</td><td>Basalt-950</td><td class="num">13.18:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>tone-fail-fg (#FF6B4A)</td><td>Basalt-950</td><td class="num">6.75:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>tone-trace-fg (#B798FF)</td><td>Basalt-950</td><td class="num">8.10:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>tone-brand-fg (#FF7A4D)</td><td>Basalt-950</td><td class="num">7.37:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped dark</td></tr>
+          <tr><td>text (#11100F)</td><td>surface-app (#FAF5EF)</td><td class="num">17.53:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>text-muted (#3A332F)</td><td>surface-app (#FAF5EF)</td><td class="num">11.43:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>text-subtle (#88786D)</td><td>surface-app (#FAF5EF)</td><td class="num">3.91:1</td><td><span class="verdict v-large">PASS-LARGE</span></td><td>shipped light</td></tr>
+          <tr><td>link (#B94F31)</td><td>surface-app (#FAF5EF)</td><td class="num">4.58:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>text (#11100F)</td><td>surface-panel (#FFF9F3)</td><td class="num">18.19:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>text-muted (#3A332F)</td><td>surface-panel (#FFF9F3)</td><td class="num">11.86:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>text-subtle (#88786D)</td><td>surface-panel (#FFF9F3)</td><td class="num">4.06:1</td><td><span class="verdict v-large">PASS-LARGE</span></td><td>shipped light</td></tr>
+          <tr><td>action-fg (#FFF9F3)</td><td>action (#B94F31)</td><td class="num">4.76:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>tone-neutral-fg (#3A332F)</td><td>Ash-50</td><td class="num">11.43:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>tone-pass-fg (#536A39)</td><td>Ash-50</td><td class="num">5.55:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>tone-info-fg (#2A6C69)</td><td>Ash-50</td><td class="num">5.62:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>tone-warn-fg (#7A5A16)</td><td>Ash-50</td><td class="num">5.87:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>tone-fail-fg (#9E2F20)</td><td>Ash-50</td><td class="num">6.72:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>tone-trace-fg (#6A55A7)</td><td>Ash-50</td><td class="num">5.58:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+          <tr><td>tone-brand-fg (#8D3826)</td><td>Ash-50</td><td class="num">7.11:1</td><td><span class="verdict v-aa">PASS-AA</span></td><td>shipped light</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 TYPOGRAPHY ============ -->
+<section id="type">
+  <div class="wrap">
+    <p class="sec-num">05</p>
+    <p class="eyebrow">Typography</p>
+    <h2>IBM Plex Sans + JetBrains Mono.</h2>
+    <p class="lede">Plex Sans is technically neutral, license-safe (OFL), and consistent across the szTheory ecosystem. JetBrains Mono handles Elixir identifiers, trace IDs, model IDs, and token counts. Restraint is the rule — no weight below 400, no decorative weights.</p>
+    <div class="specimen" style="margin-top: var(--scoria-space-6)">
+      <div class="spec-row"><span class="lbl">Display 700</span><span class="s-display">Make the fire inspectable.</span></div>
+      <div class="spec-row"><span class="lbl">Title 600</span><span class="s-title">Trace the run. Prove the change. Ship the agent.</span></div>
+      <div class="spec-row"><span class="lbl">Body 400</span><span class="s-body">Scoria records every run — prompt renders, model calls, tool calls, retrieval events, approvals, and eval scores — as structured, queryable traces.</span></div>
+      <div class="spec-row"><span class="lbl">Mono 400</span><span class="s-mono">trc_8f2a · support_refunds@v4 · gpt-4o · 1,284 tok · 412ms</span></div>
+    </div>
+    <h3>Type scale</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Role</th><th>Size</th><th>Token</th></tr></thead>
+        <tbody>
+          <tr><td>Display / hero</td><td>56px</td><td><code class="inline">--scoria-fs-display</code></td></tr>
+          <tr><td>Page title</td><td>24px</td><td><code class="inline">--scoria-fs-title</code></td></tr>
+          <tr><td>Panel title</td><td>18px</td><td><code class="inline">--scoria-fs-panel</code></td></tr>
+          <tr><td>Table / body</td><td>14px</td><td><code class="inline">--scoria-fs-body</code></td></tr>
+          <tr><td>Metric number</td><td>30px</td><td><code class="inline">--scoria-fs-metric</code></td></tr>
+          <tr><td>Badge</td><td>11px</td><td><code class="inline">--scoria-fs-badge</code></td></tr>
+          <tr><td>Code / meta</td><td>12px</td><td><code class="inline">--scoria-fs-label</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="margin-top:var(--scoria-space-4)">Trace IDs, span labels, timestamps, token counts, and code are <strong style="color:var(--scoria-text)">always</strong> JetBrains Mono.</p>
+    <h3>Specimen</h3>
+    <img src="examples/typography.svg" alt="Scoria typography specimen" style="border:1px solid var(--scoria-border);border-radius:var(--scoria-radius-lg)">
+  </div>
+</section>
+
+<!-- ============ 06 VOICE ============ -->
+<section id="voice">
+  <div class="wrap">
+    <p class="sec-num">06</p>
+    <p class="eyebrow">Voice &amp; microcopy</p>
+    <h2>Calm + exact + useful.</h2>
+    <p class="lede">This is the strongest part of the brand. When a new surface ships, write 2–3 microcopy examples in this format before writing any landing-page copy for it. Say what happened, then the next action.</p>
+
+    <h3>Say this, not this</h3>
+    <div class="scroll-x">
+      <table class="say">
+        <thead><tr><th>Say this</th><th>Not this</th></tr></thead>
+        <tbody>
+          <tr><td>Run failed during <code class="inline">lookup_order</code>. The tool returned 403 for actor usr_184.</td><td>Something went wrong.</td></tr>
+          <tr><td>support_refunds@v4 is now the baseline.</td><td>Successfully updated!</td></tr>
+          <tr><td>No eval datasets yet. Promote a production trace to start a regression suite.</td><td>Nothing here.</td></tr>
+          <tr><td>Running support_agent: rendering prompt, calling model, waiting for tool result.</td><td>The AI is thinking…</td></tr>
+          <tr><td>3 tool calls require approval.</td><td>Action needed! ⚠️</td></tr>
+          <tr><td>Scored 47/50 against baseline support_v3. 3 regressions.</td><td>Evaluation complete.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Microcopy in the wild — error / empty / success</h3>
+    <div class="grid cols-3">
+      <div class="card">
+        <h4 style="color:var(--scoria-tone-fail-fg)">Error</h4>
+        <p style="font-size:14px">Run failed during <code class="inline">lookup_order</code>. The tool returned 403 for actor usr_184. Policy refunds_v7 requires actor to have <code class="inline">:ops</code> role. Trace ID: trc_8f2a.</p>
+      </div>
+      <div class="card">
+        <h4 class="subtle">Empty</h4>
+        <p style="font-size:14px">No eval datasets yet. Promote a production trace to start building a regression suite, or add a test case manually.</p>
+      </div>
+      <div class="card">
+        <h4 style="color:var(--scoria-tone-pass-fg)">Success</h4>
+        <p style="font-size:14px">Candidate promoted. support_refunds@v4 is now the baseline. 12 new dataset items captured from this run.</p>
+      </div>
+    </div>
+
+    <h3>Word bank</h3>
+    <p class="muted"><strong style="color:var(--scoria-text)">Use:</strong> runs, spans, traces, evals, scorers, baselines, prompts, prompt versions, approvals, denials, policies, connectors, replay, promote, gate, redaction.</p>
+    <p class="muted"><strong style="color:var(--scoria-text)">Avoid:</strong> revolutionary, seamless, powerful, next-generation, magic, autonomous, hallucination-free, 10x.</p>
+  </div>
+</section>
+
+<!-- ============ 07 UI GUIDANCE ============ -->
+<section id="ui">
+  <div class="wrap">
+    <p class="sec-num">07</p>
+    <p class="eyebrow">UI guidance</p>
+    <h2>Status is never color-only.</h2>
+    <p class="lede">The shipped dashboard components live in <code class="inline">lib/scoria_web/ui.ex</code> — that file is the implementation SSOT. This section governs brand expression, not component anatomy.</p>
+    <div class="grid cols-2" style="margin-top: var(--scoria-space-6)">
+      <div class="card">
+        <h4>States</h4>
+        <p class="muted">Every interactive element has an explicit token set: default / hover / active / focus / disabled / selected. Hover, active, and selected resolve to ember (dark) / scoria-600 (light) tints. Disabled is <code class="inline">opacity: 0.38</code> + <code class="inline">cursor: not-allowed</code>.</p>
+      </div>
+      <div class="card">
+        <h4>Hard accessibility rule</h4>
+        <p class="muted">Every badge and span carries a text label (Pass, Fail, Warning, Pending) visible at all times. Color is secondary confirmation, never the primary differentiator.</p>
+        <p class="legend" style="margin-bottom:0">
+          <span class="verdict v-aa">Pass</span>
+          <span class="verdict v-large">Warning</span>
+          <span class="verdict v-fail">Fail</span>
+        </p>
+      </div>
+    </div>
+    <h3>Code blocks &amp; terminals</h3>
+    <p class="muted">Code ground is <code class="inline">#0C0B0A</code> dark / <code class="inline">#F1E8DE</code> light. Elixir mapping: atoms in Info-dark, strings in Cinder-100, keywords in Molten-400, comments in Pumice-500, modules in Ash-50. No fake dramatic output — real <code class="inline">mix scoria.install</code> results only.</p>
+    <pre><span class="c"># Real output, evidence voice — never theatrical.</span>
+<span class="m">Scoria</span>.<span class="k">run</span>(<span class="a">:support_agent</span>, <span class="s">"refund order 8842"</span>)
+<span class="c">#=> %Scoria.Run{</span>
+<span class="c">#=>   trace_id: "trc_8f2a",</span>
+<span class="c">#=>   spans: [:prompt, :llm, :tool, :eval],</span>
+<span class="c">#=>   status: :completed</span>
+<span class="c">#=> }</span></pre>
+    <div class="grid cols-2" style="margin-top: var(--scoria-space-5)">
+      <img src="examples/components.svg" alt="Scoria component specimen — buttons, badges, callout, card" style="border:1px solid var(--scoria-border);border-radius:var(--scoria-radius-lg)">
+      <img src="examples/terminal.svg" alt="Scoria terminal specimen — mix scoria.install" style="border:1px solid var(--scoria-border);border-radius:var(--scoria-radius-lg)">
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 BLUEPRINTS ============ -->
+<section id="blueprints">
+  <div class="wrap">
+    <p class="sec-num">08</p>
+    <p class="eyebrow">Landing &amp; docs blueprints</p>
+    <h2>Marketing and docs share a technical spine.</h2>
+    <p class="lede">Capture → annotate → promote → evaluate → compare → gate → deploy → monitor. The landing page and the README tell the same story at different lengths.</p>
+    <div class="grid cols-2" style="margin-top: var(--scoria-space-5)">
+      <img src="examples/landing-hero.svg" alt="Scoria landing-page hero blueprint" style="border:1px solid var(--scoria-border);border-radius:var(--scoria-radius-lg)">
+      <img src="examples/docs-page.svg" alt="Scoria docs page blueprint" style="border:1px solid var(--scoria-border);border-radius:var(--scoria-radius-lg)">
+    </div>
+    <div class="grid cols-2" style="margin-top: var(--scoria-space-6)">
+      <div class="card">
+        <h4>Landing page (order)</h4>
+        <ol class="tight muted" style="margin-top:0">
+          <li>Hero — verb-triplet headline + run-tree schematic, never a fake screenshot.</li>
+          <li>Problem — "AI behavior is invisible by default."</li>
+          <li>Solution — "Make the fire inspectable." Trace → Eval → Govern.</li>
+          <li>Install — <code class="inline">{:scoria, "~> 0.2"}</code> + <code class="inline">mix scoria.install</code>.</li>
+          <li>Minimal example, core benefits, how-it-works flywheel, use cases.</li>
+          <li>Why not Langfuse / Arize / Braintrust — factual table.</li>
+          <li>Footer — mark + wordmark, Docs · GitHub · Hex.pm · License.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>README (binding order)</h4>
+        <p class="muted">Promise (lockup + one-liner + badges) → Installation → Quickstart → Example → Concepts → API overview (link to HexDocs) → Common recipes → Troubleshooting → Design rationale → Contribution → License.</p>
+        <p class="subtle" style="font-size:13px">Badges: Hex.pm version · CI · License — standard shields.io, no custom Ember fills. Every section reads like a colleague wrote it.</p>
+      </div>
+    </div>
+    <h3>README header specimen</h3>
+    <img src="examples/readme-header.svg" alt="Scoria README header band" style="border:1px solid var(--scoria-border);border-radius:var(--scoria-radius-lg)">
+  </div>
+</section>
+
+<!-- ============ 09 ARTIFACT INDEX ============ -->
+<section id="artifacts">
+  <div class="wrap">
+    <p class="sec-num">09</p>
+    <p class="eyebrow">Artifact index</p>
+    <h2>What lives where in brandbook/.</h2>
+    <p class="lede">The brandbook directory ships as a unit. SVG and text only — no binaries, no font files. Logos regenerate from <code class="inline">tools/</code>; never hand-edit geometry.</p>
+    <div class="scroll-x" style="margin-top: var(--scoria-space-5)">
+      <table>
+        <thead><tr><th>Artifact</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">brand-book.md</code></td><td>Canonical guide — source of truth for identity, copy, color, type, voice.</td></tr>
+          <tr><td><code class="inline">index.html</code></td><td>This standalone brand book (BRAND-06).</td></tr>
+          <tr><td><code class="inline">tokens.css</code> / <code class="inline">tokens.json</code></td><td>Design tokens — docs/marketing SSOT (:root-scoped) + structured object.</td></tr>
+          <tr><td><code class="inline">logo-primary.svg</code> / <code class="inline">-light.svg</code></td><td>Fused lockup, dark / light grounds (two-tone).</td></tr>
+          <tr><td><code class="inline">logo-mark.svg</code></td><td>Mark only — favicon source, sidebar, package avatar.</td></tr>
+          <tr><td><code class="inline">logo-monochrome.svg</code> / <code class="inline">logotype-integrated.svg</code></td><td>Single-currentColor lockup (byte-identical pair).</td></tr>
+          <tr><td><code class="inline">favicon.svg</code></td><td>16px-tuned mark: 3 holes, even-grid snap.</td></tr>
+          <tr><td><code class="inline">social-card.svg</code></td><td>OG / Twitter card, 1280×640 (the one documented &lt;rect&gt; exemption).</td></tr>
+          <tr><td><code class="inline">examples/*.svg</code></td><td>7 visual specimens: palette, typography, components, terminal, readme-header, landing-hero, docs-page.</td></tr>
+          <tr><td><code class="inline">tools/check-consistency.mjs</code></td><td>Hex consistency gate across tokens.json ↔ tokens.css ↔ 02-tokens.css ↔ brand-book.md.</td></tr>
+          <tr><td><code class="inline">pressure-test.md</code></td><td>The QA audit this rewrite applies.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 QA GATE ============ -->
+<section id="qa">
+  <div class="wrap">
+    <p class="sec-num">10</p>
+    <p class="eyebrow">QA / quality gate</p>
+    <h2>Could a designer build from this? Yes.</h2>
+    <p class="lede">Eight questions, direct answers — from <code class="inline">pressure-test.md</code> §14. The propagation verdict is <code class="inline">not-required</code>: no changes to the shipped runtime tokens on accessibility grounds.</p>
+    <div class="grid cols-2" style="margin-top: var(--scoria-space-6)">
+      <div class="card"><h4>Build from it?</h4><p class="muted">Yes — ranked direction, hard logo rules, the full palette with hex values, the type system, spacing/radius tokens, clearspace and minimum-size rules.</p></div>
+      <div class="card"><h4>Implement from it?</h4><p class="muted">Yes — <code class="inline">assets/css/02-tokens.css</code> is shipped; the token spec, component anatomy, voice system, and copy blocks are immediately actionable.</p></div>
+      <div class="card"><h4>Keep it consistent?</h4><p class="muted">Yes — the propagation policy is written into brand-book.md: cosmetic delta stays brand-book-only; a WCAG failure triggers propagation. The consistency gate enforces hex agreement across four sources.</p></div>
+      <div class="card"><h4>Survive small sizes &amp; social?</h4><p class="muted">Dark mode: yes. 16px favicon: hard gate. Docs pages: warm Ash-50 light surface confirmed. Token pairings: 52 pairings, 0 FAIL.</p></div>
+    </div>
+    <div class="card brand-edge" style="margin-top: var(--scoria-space-6)">
+      <h4>Quality gate summary</h4>
+      <p class="muted">52 contrast pairings audited — <strong style="color:var(--scoria-tone-pass-fg)">46 PASS-AA, 6 PASS-LARGE, 0 FAIL</strong>. The 6 PASS-LARGE pairings are all text-subtle / Pumice-500 in muted-metadata contexts and the documented Scoria-600 negative control. No emergency propagation to the runtime tokens is required on accessibility grounds. Hex consistency is enforced by <code class="inline">tools/check-consistency.mjs</code> across tokens.json ↔ tokens.css ↔ 02-tokens.css ↔ brand-book.md.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Scoria Brand Book · v2.17 Vesicle · volcanic clarity for production AI systems.</span>
+    <span class="subtle mono">brand-book.md is the source of truth · examples are SVG/text only</span>
+  </div>
+</footer>
+
+</body>
+</html>
