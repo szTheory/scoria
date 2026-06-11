@@ -9,7 +9,7 @@
  * Prints one PASS/FAIL line per check with a brief description.
  */
 
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -19,6 +19,11 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const CANDIDATES_DIR = resolve(__dir, 'candidates');
 const GALLERY_FILE   = resolve(__dir, 'options-gallery.html');
 const BRANDBOOK_DIR  = resolve(__dir, '..');
+
+// Phase 20: the gallery HTML files and losing candidates are pruned in this
+// phase. Gallery-completeness + full-candidate-set checks therefore SKIP
+// gracefully (pass with a "pruned in Phase 20" note) once the gallery is gone.
+const GALLERY_PRESENT = existsSync(GALLERY_FILE);
 
 // --- Helpers -----------------------------------------------------------------
 let failures = 0;
@@ -170,12 +175,19 @@ console.log('─'.repeat(70));
 // LOGO-05: >=2 typemark studies (TYPE-*.svg files)
 // =============================================================================
 {
-  check(
-    'LOGO-05',
-    typeFiles.length >= 2,
-    `${typeFiles.length} integrated typemark studies present (${typeFiles.join(', ')})`,
-    `Only ${typeFiles.length} TYPE-*.svg found (need >=2)`
-  );
+  if (typeFiles.length === 0) {
+    // Phase 20: TYPE-1/TYPE-2 ring-o/porous-a typemark STUDIES were rejected at
+    // gate #2b and pruned — the LK-B fused lockup IS the integrated typemark now
+    // (shipped as logotype-integrated.svg). The >=2-study gate no longer applies.
+    pass('LOGO-05', 'typemarks pruned in Phase 20 (LK-B fused lockup is the integrated typemark) — skipped');
+  } else {
+    check(
+      'LOGO-05',
+      typeFiles.length >= 2,
+      `${typeFiles.length} integrated typemark studies present (${typeFiles.join(', ')})`,
+      `Only ${typeFiles.length} TYPE-*.svg found (need >=2)`
+    );
+  }
 }
 
 // =============================================================================
@@ -324,130 +336,232 @@ console.log('─'.repeat(70));
 }
 
 // =============================================================================
-// GALLERY: Standalone (zero external http(s) refs, zero <img)
+// GALLERY: completeness checks — Phase 20 prunes the gallery HTML files, so
+// these SKIP gracefully (pass with a "pruned in Phase 20" note) when absent.
+// They served gate #2 and live on in git history; the ROOT-* checks below are
+// the Phase 20 gate.
 // =============================================================================
-{
-  const gallery = readFileSync(GALLERY_FILE, 'utf8');
-
-  // External HTTP refs (SVG xmlns is excepted — it's never fetched)
-  const httpMatches = gallery.match(/https?:\/\/(?!www\.w3\.org\/2000\/svg)[^\s"<>]+/g) || [];
-  check(
-    'GALLERY-STANDALONE',
-    httpMatches.length === 0,
-    'Gallery has zero external network references',
-    `External refs found: ${httpMatches.slice(0, 5).join(', ')}`
-  );
-
-  // No <img tags
-  const imgCount = (gallery.match(/<img/g) || []).length;
-  check(
-    'GALLERY-NO-IMG',
-    imgCount === 0,
-    'Gallery has zero <img> tags (fully inline SVG)',
-    `${imgCount} <img> tag(s) found`
-  );
+if (!GALLERY_PRESENT) {
+  pass('GALLERY-*', 'gallery HTML pruned in Phase 20 — gallery-completeness checks skipped (ROOT-* checks gate the converged set)');
+} else {
+  // GALLERY: Standalone (zero external http(s) refs, zero <img)
+  {
+    const gallery = readFileSync(GALLERY_FILE, 'utf8');
+    const httpMatches = gallery.match(/https?:\/\/(?!www\.w3\.org\/2000\/svg)[^\s"<>]+/g) || [];
+    check('GALLERY-STANDALONE', httpMatches.length === 0,
+      'Gallery has zero external network references',
+      `External refs found: ${httpMatches.slice(0, 5).join(', ')}`);
+    const imgCount = (gallery.match(/<img/g) || []).length;
+    check('GALLERY-NO-IMG', imgCount === 0,
+      'Gallery has zero <img> tags (fully inline SVG)',
+      `${imgCount} <img> tag(s) found`);
+  }
+  // GALLERY: Both grounds present (#11100F and #FAF5EF)
+  {
+    const gallery = readFileSync(GALLERY_FILE, 'utf8');
+    const hasDark  = gallery.includes('#11100F');
+    const hasLight = gallery.includes('#FAF5EF');
+    check('GALLERY-GROUNDS', hasDark && hasLight,
+      'Gallery has both dark (#11100F) and light (#FAF5EF) grounds',
+      `Missing: ${hasDark ? '' : '#11100F '}${hasLight ? '' : '#FAF5EF'}`);
+  }
+  // GALLERY: Full size ramp (256/64/32/16)
+  {
+    const gallery = readFileSync(GALLERY_FILE, 'utf8');
+    const sizes = [256, 64, 32, 16];
+    const missing = sizes.filter(s => !gallery.includes(`width="${s}"`));
+    check('GALLERY-SIZE-RAMP', missing.length === 0,
+      'Gallery includes all sizes: 256 / 64 / 32 / 16px',
+      `Missing width values: ${missing.join(', ')}`);
+  }
+  // GALLERY: Mock keywords (monochrome, favicon, sidebar, readme)
+  {
+    const gallery = readFileSync(GALLERY_FILE, 'utf8').toLowerCase();
+    const KEYWORDS = ['monochrome', 'favicon', 'sidebar', 'readme'];
+    const missing = KEYWORDS.filter(k => !gallery.includes(k));
+    check('GALLERY-MOCKS', missing.length === 0,
+      `Gallery references all mock contexts: ${KEYWORDS.join(', ')}`,
+      `Missing keywords: ${missing.join(', ')}`);
+  }
+  // GALLERY: All stable option IDs present (>=6 marks + 2 typemarks)
+  {
+    const gallery = readFileSync(GALLERY_FILE, 'utf8');
+    const REQUIRED_IDS = ['TV-1', 'TV-2', 'TV-3', 'CM-1', 'CM-2', 'AP-1', 'TYPE-1', 'TYPE-2'];
+    const missing = REQUIRED_IDS.filter(id => !gallery.includes(id));
+    check('GALLERY-IDS', missing.length === 0,
+      `All stable option IDs present: ${REQUIRED_IDS.join(', ')}`,
+      `Missing IDs: ${missing.join(', ')}`);
+  }
+  // GALLERY: Ranked recommendation block present (names a specific ID)
+  {
+    const gallery = readFileSync(GALLERY_FILE, 'utf8');
+    const hasRecommend  = /recommend/i.test(gallery);
+    const hasPick       = /TV-1|CM-1|CM-2/i.test(gallery) && /recommend|pick|primary/i.test(gallery);
+    check('GALLERY-RECOMMEND', hasRecommend && hasPick,
+      'Gallery has a ranked recommendation block naming a specific option ID',
+      'Recommendation block missing or does not name a specific option ID');
+  }
+  // GALLERY: Second-round escape note present
+  {
+    const gallery = readFileSync(GALLERY_FILE, 'utf8');
+    const hasEscape = /second round|none of these/i.test(gallery);
+    check('GALLERY-ESCAPE', hasEscape,
+      'Gallery includes "none of these → second round" escape note',
+      'Escape note missing (need "second round" or "none of these")');
+  }
 }
 
 // =============================================================================
-// GALLERY: Both grounds present (#11100F and #FAF5EF)
+// ROOT-* : Phase 20 converged variant gate — the 8 census SVGs at brandbook/ root
 // =============================================================================
 {
-  const gallery = readFileSync(GALLERY_FILE, 'utf8');
-  const hasDark  = gallery.includes('#11100F');
-  const hasLight = gallery.includes('#FAF5EF');
-  check(
-    'GALLERY-GROUNDS',
-    hasDark && hasLight,
-    'Gallery has both dark (#11100F) and light (#FAF5EF) grounds',
-    `Missing: ${hasDark ? '' : '#11100F '}${hasLight ? '' : '#FAF5EF'}`
-  );
+  const ROOT_NAMES = [
+    'logo-primary.svg',
+    'logo-primary-light.svg',
+    'logo-mark.svg',
+    'logo-monochrome.svg',
+    'logo-lockup-subtitle.svg',
+    'logotype-integrated.svg',
+    'favicon.svg',
+    'social-card.svg',
+  ];
+  const SOCIAL = 'social-card.svg';
+  const readRoot = (f) => readFileSync(join(BRANDBOOK_DIR, f), 'utf8');
+  const present = ROOT_NAMES.filter((f) => existsSync(join(BRANDBOOK_DIR, f)));
+
+  // ROOT-EXISTS: all 8 census filenames at brandbook/ root
+  {
+    const missing = ROOT_NAMES.filter((f) => !existsSync(join(BRANDBOOK_DIR, f)));
+    check('ROOT-EXISTS', missing.length === 0,
+      `All 8 root variant SVGs present: ${ROOT_NAMES.join(', ')}`,
+      `Missing root SVGs: ${missing.join(', ')}`);
+  }
+
+  // ROOT-NORECT: no <rect in any root SVG EXCEPT social-card.svg, which is
+  // allowed EXACTLY ONE card-ground rect (documented exemption — 20-CONTEXT:
+  // "the card IS a bounded artwork, not a logo background").
+  {
+    const offenders = [];
+    for (const f of present) {
+      const rectCount = (readRoot(f).match(/<rect/g) || []).length;
+      if (f === SOCIAL) {
+        if (rectCount !== 1) offenders.push(`${f}: expected exactly 1 card-ground rect, found ${rectCount}`);
+      } else if (rectCount !== 0) {
+        offenders.push(`${f}: ${rectCount} <rect> (none allowed)`);
+      }
+    }
+    check('ROOT-NORECT', offenders.length === 0,
+      'No <rect> in the 7 logo SVGs; social-card.svg has exactly its 1 documented card-ground rect',
+      offenders.join(' | '));
+  }
+
+  // ROOT-EVENODD: every root logo path uses fill-rule="evenodd" (holes punched)
+  {
+    const offenders = present.filter((f) => !readRoot(f).includes('fill-rule="evenodd"'));
+    check('ROOT-EVENODD', offenders.length === 0,
+      `All ${present.length} root SVGs carry fill-rule="evenodd" (mark holes punched)`,
+      `Missing evenodd in: ${offenders.join(', ')}`);
+  }
+
+  // ROOT-STROKE: no active stroke attributes (reuse the candidate stroke logic)
+  {
+    const offenders = present.filter((f) => {
+      const src = readRoot(f);
+      return /stroke(?!=[-a-z])/.test(src) &&
+        !src.split('\n').every(line =>
+          !line.includes('stroke') ||
+          line.includes('stroke="none"') ||
+          line.includes('stroke-width="0"'));
+    });
+    check('ROOT-STROKE', offenders.length === 0,
+      `No active stroke attributes in ${present.length} root SVGs`,
+      `Stroke found in: ${offenders.join(', ')}`);
+  }
+
+  // ROOT-VIEWBOX: every root SVG has a viewBox; logo viewBoxes tight near origin.
+  // social-card is the bounded 0 0 1280 640 canvas — exempt from the tight-origin bound.
+  {
+    const violations = [];
+    for (const f of present) {
+      const m = readRoot(f).match(/viewBox="([^"]+)"/);
+      if (!m) { violations.push(`${f}: no viewBox`); continue; }
+      const parts = m[1].split(/\s+/).map(Number);
+      if (parts.length < 4 || parts.some(isNaN)) { violations.push(`${f}: malformed viewBox "${m[1]}"`); continue; }
+      if (f === SOCIAL) continue; // bounded card canvas — exempt from tight-origin
+      const [minX, minY] = parts;
+      if (Math.abs(minX) > 200 || Math.abs(minY) > 200) {
+        violations.push(`${f}: viewBox origin (${minX},${minY}) far from 0`);
+      }
+    }
+    check('ROOT-VIEWBOX', violations.length === 0,
+      `All ${present.length} root SVGs have a viewBox; logo viewBoxes tight near origin (social-card exempt)`,
+      violations.join(' | '));
+  }
+
+  // ROOT-DECIMALS: all coordinates ≤2 decimal places across the 8 files
+  {
+    const offenders = present.filter((f) => /[0-9]\.[0-9]{3,}/.test(readRoot(f)));
+    check('ROOT-DECIMALS', offenders.length === 0,
+      `All coordinates ≤2 decimal places across ${present.length} root SVGs`,
+      `3+ decimal places found in: ${offenders.join(', ')}`);
+  }
+
+  // ROOT-CURRENTCOLOR: logo-monochrome.svg and logotype-integrated.svg use currentColor
+  {
+    const need = ['logo-monochrome.svg', 'logotype-integrated.svg'].filter((f) => present.includes(f));
+    const offenders = need.filter((f) => !readRoot(f).includes('currentColor'));
+    check('ROOT-CURRENTCOLOR', offenders.length === 0,
+      'logo-monochrome.svg and logotype-integrated.svg use currentColor (single-color, holes intact)',
+      `Missing currentColor in: ${offenders.join(', ')}`);
+  }
+
+  // ROOT-FAVICON: favicon.svg ≤1024 bytes AND exactly 3 hole subpaths (M-count − 1)
+  {
+    const violations = [];
+    const fav = 'favicon.svg';
+    if (!present.includes(fav)) {
+      violations.push('favicon.svg missing');
+    } else {
+      const bytes = statSync(join(BRANDBOOK_DIR, fav)).size;
+      if (bytes > 1024) violations.push(`favicon.svg is ${bytes} bytes (>1024)`);
+      const d = readRoot(fav).match(/<path[^>]*\sd="([^"]+)"/)?.[1] || '';
+      const holeCount = (d.match(/M/g) || []).length - 1;
+      if (holeCount !== 3) violations.push(`favicon.svg has ${holeCount} holes (expected 3)`);
+    }
+    check('ROOT-FAVICON', violations.length === 0,
+      'favicon.svg ≤1024 bytes with exactly 3 hole subpaths',
+      violations.join(' | '));
+  }
+
+  // ROOT-SUBTITLE: logo-lockup-subtitle.svg carries the tagline; the OTHER logo
+  // SVGs do NOT (social-card MAY carry the tagline — exempt).
+  {
+    const TAGLINE = 'AI ops for Phoenix apps.';
+    const violations = [];
+    const subtitle = 'logo-lockup-subtitle.svg';
+    if (present.includes(subtitle) && !readRoot(subtitle).includes(TAGLINE)) {
+      violations.push(`${subtitle}: missing tagline "${TAGLINE}"`);
+    }
+    for (const f of present) {
+      if (f === subtitle || f === SOCIAL) continue; // subtitle must carry it; social may
+      if (readRoot(f).includes(TAGLINE) || /AI\s+ops/i.test(readRoot(f))) {
+        violations.push(`${f}: unexpected tagline text`);
+      }
+    }
+    check('ROOT-SUBTITLE', violations.length === 0,
+      'logo-lockup-subtitle.svg carries the tagline; the other logo SVGs carry none (social-card exempt)',
+      violations.join(' | '));
+  }
 }
 
 // =============================================================================
-// GALLERY: Full size ramp (256/64/32/16)
-// =============================================================================
-{
-  const gallery = readFileSync(GALLERY_FILE, 'utf8');
-  const sizes = [256, 64, 32, 16];
-  const missing = sizes.filter(s => !gallery.includes(`width="${s}"`));
-  check(
-    'GALLERY-SIZE-RAMP',
-    missing.length === 0,
-    'Gallery includes all sizes: 256 / 64 / 32 / 16px',
-    `Missing width values: ${missing.join(', ')}`
-  );
-}
-
-// =============================================================================
-// GALLERY: Mock keywords (monochrome, favicon, sidebar, readme)
-// =============================================================================
-{
-  const gallery = readFileSync(GALLERY_FILE, 'utf8').toLowerCase();
-  const KEYWORDS = ['monochrome', 'favicon', 'sidebar', 'readme'];
-  const missing = KEYWORDS.filter(k => !gallery.includes(k));
-  check(
-    'GALLERY-MOCKS',
-    missing.length === 0,
-    `Gallery references all mock contexts: ${KEYWORDS.join(', ')}`,
-    `Missing keywords: ${missing.join(', ')}`
-  );
-}
-
-// =============================================================================
-// GALLERY: All stable option IDs present (>=6 marks + 2 typemarks)
-// =============================================================================
-{
-  const gallery = readFileSync(GALLERY_FILE, 'utf8');
-  const REQUIRED_IDS = ['TV-1', 'TV-2', 'TV-3', 'CM-1', 'CM-2', 'AP-1', 'TYPE-1', 'TYPE-2'];
-  const missing = REQUIRED_IDS.filter(id => !gallery.includes(id));
-  check(
-    'GALLERY-IDS',
-    missing.length === 0,
-    `All stable option IDs present: ${REQUIRED_IDS.join(', ')}`,
-    `Missing IDs: ${missing.join(', ')}`
-  );
-}
-
-// =============================================================================
-// GALLERY: Ranked recommendation block present (names a specific ID)
-// =============================================================================
-{
-  const gallery = readFileSync(GALLERY_FILE, 'utf8');
-  const hasRecommend  = /recommend/i.test(gallery);
-  const hasPick       = /TV-1|CM-1|CM-2/i.test(gallery) && /recommend|pick|primary/i.test(gallery);
-  check(
-    'GALLERY-RECOMMEND',
-    hasRecommend && hasPick,
-    'Gallery has a ranked recommendation block naming a specific option ID',
-    'Recommendation block missing or does not name a specific option ID'
-  );
-}
-
-// =============================================================================
-// GALLERY: Second-round escape note present
-// =============================================================================
-{
-  const gallery = readFileSync(GALLERY_FILE, 'utf8');
-  const hasEscape = /second round|none of these/i.test(gallery);
-  check(
-    'GALLERY-ESCAPE',
-    hasEscape,
-    'Gallery includes "none of these → second round" escape note',
-    'Escape note missing (need "second round" or "none of these")'
-  );
-}
-
-// =============================================================================
-// BUDGET: brandbook/ source artifacts < 1024 KB (Phase 19 tooling budget)
+// BUDGET: brandbook/ source artifacts < 500 KB (final BRAND-05 target)
 //
-// The §8 pressure-test.md budget (<500 KB) applies to the final brandbook/ root
-// (Phase 20+: logo-*.svg + brand-book.md + examples/). Phase 19 produces a
-// 320 KB standalone gallery (options-gallery.html) that inlines all 23 candidate
-// SVGs — this is intentional tooling output and exceeds the Phase 20 target.
-//
-// This check uses 1024 KB as the Phase 19 tooling budget (excluding node_modules).
-// After gate #2 and Phase 20, all tooling artifacts are pruned and the final
-// brandbook/ root must satisfy the original <500 KB constraint.
+// The §8 pressure-test.md budget (<500 KB) applies to the final brandbook/ root.
+// Phase 19 temporarily relaxed this to 1024 KB because the standalone galleries
+// inlined all candidate SVGs. Phase 20 PRUNES both gallery HTML files and the
+// losing candidates, so the threshold returns to the original <500 KB target
+// (excluding node_modules, which is gitignored).
 // =============================================================================
 {
   function walkSize(dir, excludeDir) {
@@ -468,14 +582,14 @@ console.log('─'.repeat(70));
   const nodeModulesDir = resolve(BRANDBOOK_DIR, 'tools', 'node_modules');
   const totalBytes = walkSize(BRANDBOOK_DIR, nodeModulesDir);
   const totalKB = Math.round(totalBytes / 1024);
-  // Phase 19 tooling budget: 1024 KB (gallery inlines 23 SVGs; Phase 20 target is <500 KB)
-  const BUDGET_KB = 1024;
+  // Phase 20 final target: <500 KB (galleries + losing candidates pruned).
+  const BUDGET_KB = 500;
 
   check(
     'BUDGET',
     totalKB < BUDGET_KB,
-    `brandbook/ text+SVG artifacts: ${totalKB} KB (Phase 19 tooling budget: <${BUDGET_KB} KB; Phase 20 final target: <500 KB)`,
-    `brandbook/ text+SVG artifacts: ${totalKB} KB — EXCEEDS ${BUDGET_KB} KB Phase 19 tooling budget`
+    `brandbook/ text+SVG artifacts: ${totalKB} KB (Phase 20 final target: <${BUDGET_KB} KB)`,
+    `brandbook/ text+SVG artifacts: ${totalKB} KB — EXCEEDS ${BUDGET_KB} KB final target`
   );
 }
 
@@ -484,7 +598,7 @@ console.log('─'.repeat(70));
 // =============================================================================
 console.log('─'.repeat(70));
 if (failures === 0) {
-  console.log(`\nAll checks PASSED — ${allSvgFiles.length} candidates verified, gallery complete.\n`);
+  console.log(`\nAll checks PASSED — ${allSvgFiles.length} candidates + 8 root variants verified.\n`);
   process.exit(0);
 } else {
   console.log(`\n${failures} check(s) FAILED.\n`);
