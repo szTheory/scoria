@@ -236,7 +236,7 @@ The mark itself is a porous cinder whose vesicle holes trace a downward span rai
 | `logotype-integrated.svg` | Byte-identical to `logo-monochrome.svg` (the fused lockup *is* the integrated typemark) |
 | `favicon.svg` | 16px-tuned mark: 3 holes, even-grid snap, all radii ≥1.5px at 16px |
 | `social-card.svg` | OG/Twitter card, `1280×640` (the one documented `<rect>` exemption) |
-| *mono pair* | Dark mark / light mark on transparent, derived from `logo-mark.svg` |
+| `logo-lockup-subtitle.svg` | Lockup + tagline, **dark colorway only** — social cards and stickers; on light surfaces use `logo-primary-light.svg` and set the tagline as text |
 
 ### Two-tone primary rule (ship)
 
