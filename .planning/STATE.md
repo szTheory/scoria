@@ -1,46 +1,35 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.17
-milestone_name: Vesicle
-status: completed
-last_updated: "2026-06-11T19:28:34.193Z"
-last_activity: 2026-06-11 -- Phase 22 marked complete
+milestone: v3.0
+milestone_name: Control Room
+status: in_progress
+last_updated: "2026-06-11T20:00:00Z"
+last_activity: 2026-06-11 -- v2.17 Vesicle archived; v3.0 Control Room restored as active
 progress:
   total_phases: 7
-  completed_phases: 7
-  total_plans: 22
-  completed_plans: 22
-  percent: 100
+  completed_phases: 2
+  total_plans: 10
+  completed_plans: 10
+  percent: 29
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v3.0 paused)
+See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle shipped and archived; v3.0 Control Room active)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 19 — logo-divergence-user-choice
+**Current focus:** Phase 13 — Orientation spine (IA) — ready to plan (resumed after v2.17 interjection)
 
 ## Current Position
 
-Phase: 22 — COMPLETE
-Plan: 3 of 3 — complete (19-01 toolchain scaffold)
-Status: Phase 22 complete
-Last activity: 2026-06-11 -- Phase 22 marked complete
+Phase: 13
+Status: Ready to plan
+Last activity: 2026-06-11 -- v2.17 Vesicle archived; v3.0 Control Room restored as active
 
-## Roadmap (v2.17 Vesicle, Phases 18–22)
-
-1. **Phase 18 — Pressure-test audit + decision lock** (BRAND-01, BRAND-02) — 14-section pressure test → `brandbook/pressure-test.md`; WCAG contrast script in `brandbook/tools/`; suite-coherence vs Threadline + szTheory DNA; Decisions Locked section → user approval gate #1.
-2. **Phase 19 — Logo divergence + user choice** (BRAND-03) — generation tooling in `brandbook/tools/` (faceted-polygon geometry, evenodd holes, opentype.js glyph outlines); ≥6 mark/lockup options + ≥2 integrated typemark studies; `options-gallery.html` (dark+light, 256/64/32/16px, monochrome, favicon/sidebar/README mocks) → user choice gate #2 with ranked recommendation and second-round escape.
-3. **Phase 20 — Logo convergence: full variant set** (BRAND-04) — chosen direction → all 8 logo variants; clear-space/min-size spec; manual optical-correction pass; lightweight confirm checkpoint.
-4. **Phase 21 — Tokens + brand book + standalone HTML** (BRAND-05, BRAND-06) — `tokens.json` + `tokens.css`; `brand-book.md` post-audit rewrite; `examples/*.svg` ×7; professional standalone `index.html` (file:// offline-safe); `brandbook/README.md` maintenance rules. Non-logo plans can start parallel with Phase 20.
-5. **Phase 22 — Integration + final quality gate** (BRAND-07, BRAND-08; conditional BRAND-09) — README header + badges; dashboard favicon + sidebar mark swap (`layouts.ex`); `mix.exs`/GitHub/HexDocs copy; conditional token-propagation plan if Phase 18 verdict requires; scripted final quality gate.
-
-## Roadmap (v3.0 Control Room, Phases 11–17) — PAUSED
-
-Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
+## Roadmap (v3.0 Control Room, Phases 11–17)
 
 1. **Phase 11 — Evaluation engine + seed depth** (EVAL-01..05) — `mix scoria.ui.shots` harness, 9-dim rubric, full-screen seed depth, baseline audit → gap register/fix backlog. **COMPLETE 2026-06-04**
 2. **Phase 12 — Design-system component layer** (DS-01..06) — `ui.ex` table/drawer/modal/form/notebook/skeleton/toast, fix `flash_group`, raw-color drift guard. The enforced token gateway. **COMPLETE 2026-06-04**
@@ -52,17 +41,17 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 
 ## Performance Metrics
 
-- **Current milestone:** `v2.17 Vesicle` (ready to plan — roadmap created 2026-06-11)
-- **Latest Shipped:** `v2.16 ReqLLM Peer Bump` (2026-05-30)
-- **Previous Shipped:** `v2.15 Connector Adoption Lane` (2026-05-30)
+- **Current milestone:** `v3.0 Control Room` (resumed 2026-06-11 after v2.17 Vesicle interjection)
+- **Latest Shipped:** `v2.17 Vesicle` (2026-06-11) — brand system, phases 18–22
+- **Previous Shipped:** `v2.16 ReqLLM Peer Bump` (2026-05-30)
 - **Hex release:** `0.1.1` prepared; publish via release-please pending CI green
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- **v2.17 (in progress):** Brand system milestone. Interjected before v3.0 phases 13–17 because brand book was AI-generated seed, never pressure-tested, and no logo/collateral exists. Phases 18–22 (globally monotonic past v3.0's reserved 11–17 block). Planning versions decoupled from Hex semver keeps archive chronology aligned.
-- **v3.0 (paused):** Control Room UI/IA/DX milestone. Phases 11–17. Phases 11–12 complete (2026-06-04). Core finding: design system is under-*adopted* (~22/25 view files leak raw Tailwind). Paused at clean 12/13 boundary; resumes after v2.17 archive.
+- **v3.0 (resumed):** Control Room UI/IA/DX milestone. Phases 11–17. Phases 11–12 complete (2026-06-04). Core finding: design system is under-*adopted* (~22/25 view files leak raw Tailwind). Paused at clean 12/13 boundary for v2.17 interjection; now resumed. Next: Phase 13 orientation spine.
+- **v2.17 (shipped):** Brand system milestone. Interjected before v3.0 phases 13–17 because brand book was AI-generated seed, never pressure-tested, and no logo/collateral existed. Phases 18–22 (globally monotonic past v3.0's reserved 11–17 block). All 8 mandatory requirements satisfied; BRAND-09 conditional did not fire. Archived in `.planning/milestones/v2.17-*`.
 - **v2.16 (shipped):** ReqLLM `~> 1.13` peer bump — minimal dependency hygiene scope.
 - **v2.15 (shipped):** Named connector adoption lane — PR WAE after knowledge, not in closeout.
 
@@ -70,7 +59,7 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 
 - [Phase 19-01]: opentype.js ^1.3.5 (1.x line) pinned for parse(ArrayBuffer)+Font.getPath API; wawoff2 CJS default import only; data-gap-ratio on lockup SVG root is machine-checkable LOGO-03 contract asserted by smoke.mjs and 19-03 — 2026-06-11
 - [Phase 18-02]: propagation: not-required — CONFIRMED. --scoria-text-subtle sole shipped usage is ui.ex:653 (16x16 SVG sort icon, UI component context); WCAG 2.1 SC 1.4.11 ≥3:1 satisfied; assets/css/02-tokens.css untouched; BRAND-09 conditional does not fire — 2026-06-11
-- [Phase 18-02]: Final tagline locked — "Trace the run. Prove the change. Ship the agent."; one-liner tightened (nouns over gerunds); naming confirmed Scoria (never Scoria AI); palette deltas: none; typography IBM Plex Sans + JetBrains Mono confirmed KEEP — 2026-06-11
+- [Phase 18-02]: Final tagline locked — "AI ops for Phoenix apps." (user override; audit-recommended verb triplet "Trace the run. Prove the change. Ship the agent." demoted to hero-headline treatment); one-liner tightened (nouns over gerunds); naming confirmed Scoria (never Scoria AI); palette deltas: none; typography IBM Plex Sans + JetBrains Mono confirmed KEEP — 2026-06-11
 - [Phase 18-02]: Logo direction ranked — Trace Vesicle Mark #1, Cinder Mark #2 fallback; LOGO-01–07 hard constraints encoded for Phase 19 (no-rect, evenodd, tight lockup, no subtitle, integrated typemark first-class, 16px pass/fail, monochrome pass/fail) — 2026-06-11
 - [Phase 18-01]: Propagation verdict presumption = not-required — 52 shipped pairings audited, 0 FAIL, 6 PASS-LARGE; pending 18-02 usage audit of --scoria-text-subtle in actual rendered text — 2026-06-11
 - [Phase 18-01]: --scoria-text-subtle (#88786D Pumice-500) is PASS-LARGE (3.91–4.48:1 across surfaces); acceptable for muted UI labels/icons, prohibited for running body text — 2026-06-11
@@ -113,18 +102,15 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 | e2e (Phase 14/15) | WR-03 drawer-float + escape-dismiss e2e specs — CSS/code fixed in Phase 12, but no screen consumes `<.modal>`/`<.drawer>` yet; `test.fixme` in priv/dev/e2e/uat.spec.mjs until a screen adopts the shells | deferred |
 | e2e (Phase 14/15) | Notebook tab-switch e2e spec — blocked on `SRE.remote_invocation_evidence/1` (stub returns `%{approvals: []}`); `test.fixme` until real evidence is wired | deferred |
 | Phase 13 (IA) | shots overlay capture: connectors `connector_drawer`/`runtime_drawer` (list renders empty in harness pass) + `prompt_release approve_modal` (no release link on `/prompts`) — see 11-HUMAN-UAT.md | deferred |
+| v2.17 | BRAND-MOTION: brand-motion guidelines applied beyond dashboard (v3.0 Phase 16 scope) | deferred |
+| v2.17 | BRAND-SITE: Marketing landing page / docs site build-out (brand book includes blueprints only) | deferred |
 | Phase 11-evaluation-engine-seed-depth P01 | 90min | 2 tasks | 2 files |
 | Phase 12-design-system-component-layer P01 | 3min | 2 tasks | 4 files |
 | Phase 12-design-system-component-layer P02 | 8min | 2 tasks | 2 files |
 | Phase 12-design-system-component-layer P03 | 10min | 2 tasks | 2 files |
 | Phase 12 P04 | 3min | 2 tasks | 3 files |
 | Phase 12-design-system-component-layer P05 | 17min | 3 tasks | 8 files |
-| Phase 18-pressure-test-audit-decision-lock P01 | 90min | 2 tasks | 2 files |
-| Phase 19 P02 | 14min | 3 tasks | 27 files |
-| Phase 19 P03 | 12 | 2 tasks | 3 files |
-| Phase 20 P01 | 22min | 3 tasks | 13 files |
-| Phase 22-integration-quality-gate P02 | 10min | 2 tasks | 2 files |
 
 ## Operator Next Steps
 
-- `/gsd:plan-phase 18` — plan the first v2.17 phase (pressure-test audit + decision lock)
+- `/gsd:plan-phase 13` — plan Phase 13 (Orientation spine / IA) to resume v3.0 Control Room

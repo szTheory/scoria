@@ -1,81 +1,118 @@
-# Requirements: Scoria — v2.17 Vesicle (Brand System)
+# Requirements: Scoria — v3.0 Control Room
 
-**Defined:** 2026-06-11
+**Defined:** 2026-06-03
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
-**Milestone goal:** Ship a pressure-tested, repo-canonical Scoria brand system in `brandbook/` — audited brand book, locked design tokens, a user-chosen programmatically generated logo system, and a professional standalone HTML brand book — wired into README, dashboard favicon/mark, and Hex/GitHub/HexDocs copy, without destabilizing the shipped v3.0 design-system work.
+**Milestone goal:** Take the embedded `/scoria` operator dashboard to "insane polish" — a fully-adopted design system, a clear persona/JTBD information architecture, brand-tied motion, full light/dark parity, and seed data that exercises every screen — proven by a committed screenshot+critique evaluation loop.
 
-> Interjected milestone: v3.0 Control Room is paused at the phase 12/13 boundary (snapshot: `.planning/milestones/v3.0-REQUIREMENTS-paused.md`). Approved milestone plan: `/Users/jon/.claude/plans/we-have-scoria-brand-book-deep-research-majestic-penguin.md`. Source brand book: `prompts/scoria-brand-book-deep-research.md` (treated as a seed, not gospel). Sibling precedent: `/Users/jon/projects/threadline/brandbook/` (rhyme, don't clone). Suite lens: `prompts/sztheory-elixir-dna.md`.
+> UI/IA/DX milestone. No net-new backend capability families. Keep the custom token-first scoped CSS architecture; `lib/scoria_web/ui.ex` becomes the enforced token gateway.
 
 ## v1 Requirements
 
-### Audit & Decisions
+### Evaluation & Seed Depth
 
-- [x] **BRAND-01**: A maintainer can read `brandbook/pressure-test.md` containing the full 14-section pressure-test of the brand book: every element tagged KEEP/TIGHTEN/REWORK/ADD/REMOVE, a 1–10 scorecard across 15 dimensions, surface stress tests (GitHub/HexDocs/dashboard/terminal/favicon/social), gaps ranked by severity, a programmatic WCAG-AA contrast verdict on all documented token pairings, a suite-coherence assessment vs the Threadline brandbook and szTheory DNA, and an explicit verdict on whether `assets/css/02-tokens.css` requires propagation (material failures only).
-- [x] **BRAND-02**: The user has approved a Decisions Locked section (final tagline, palette/typography deltas if any, naming, dashboard-propagation verdict) before any logo or asset generation begins.
+- [x] **EVAL-01**: A maintainer can run `mix scoria.ui.shots` to capture every dashboard screen across its state matrix (empty / populated / modal-open / drawer-open × light / dark × mobile / desktop) against the local dev server, gated on the existing `data-scoria-ready` sentinel.
+- [x] **EVAL-02**: Captured screenshots can be critiqued against a 9-dimension rubric (brand-fit, consistency, hierarchy, affordance/least-surprise, accessibility, responsive, motion, microcopy, density) to produce structured per-screen findings.
+- [x] **EVAL-03**: The screenshot + critique harness ships as committed dev-only tooling (not merge-blocking CI) with documented usage.
+- [x] **EVAL-04**: `dev_seed.exs` populates every dashboard screen — Reviews, Incidents, Eval Workbench, and Prompt Registry included — so each renders at its most useful when clicked through.
+- [x] **EVAL-05**: A baseline audit produces a ranked design-system gap register and a prioritized fix backlog.
 
-### Logo System
+### Design System Component Layer
 
-- [x] **BRAND-03**: The user can choose a logo direction from an options gallery presenting ≥6 genuinely distinct programmatic SVG mark+lockup options and ≥2 integrated logotype-only studies — rendered on dark AND light grounds at 256/64/32/16px with a monochrome row and in-situ mocks (browser-tab favicon strip, 24px dashboard sidebar, README header band) — with a ranked recommendation and a "none of these → second round" escape. Constraints enforced: zero rectangular background shapes (evenodd-punched negative space), logotype optically tight to the mark, no subtitle in the main lockup.
-- [x] **BRAND-04**: The chosen direction is refined into a complete committed variant set: `logo-primary.svg` (dark), `logo-primary-light.svg`, `logo-mark.svg`, `logo-monochrome.svg` (currentColor), `logo-lockup-subtitle.svg`, `logotype-integrated.svg`, `favicon.svg` (simplified pixel-snapped path), `social-card.svg` — each with tight viewBoxes, clear-space/min-size rules, and a manual optical-correction pass.
+- [x] **DS-01**: Operators see consistent tables across screens via a shared `<.table>` component supporting sort, filter/search, pagination, a density toggle, and a first-class empty state.
+- [x] **DS-02**: Drawers and modals across screens use shared slot-based shells with consistent open/dismiss behavior.
+- [x] **DS-03**: Forms (eval and prompt editors) use a shared form-control component set with consistent labelling and validation display.
+- [x] **DS-04**: Evidence panels (trace, citation, semantic, replay, memory, delegated, remote-invocation) render through one unified notebook shell for visual consistency.
+- [x] **DS-05**: Loading and transient feedback use shared skeleton and toast components, and `flash_group` routes through the token system with no raw-palette classes.
+- [x] **DS-06**: An executable drift guard fails the build if any raw palette class (`stone-/rose-/sky-/emerald-/amber-/...`) appears under `lib/scoria_web/`.
 
-### Canonical Brandbook
+### Information Architecture & Orientation
 
-- [x] **BRAND-05**: A maintainer can use a self-contained `brandbook/` directory as the canonical brand source: `README.md` (maintenance rules), `brand-book.md` (post-audit rewrite, no filler), `pressure-test.md`, `tokens.json`, `tokens.css` (naming reconciled with `assets/css/02-tokens.css`), logo SVGs, `examples/*.svg` (palette, typography, components, terminal, readme-header, landing-hero, docs-page), and reproducible generation tooling in `brandbook/tools/` — SVG/text only, total < 500KB, zero binaries.
-- [x] **BRAND-06**: A reviewer can open `brandbook/index.html` directly from `file://` as a professional, standalone HTML brand book covering identity, logo system, color, typography, tokens, voice/microcopy, UI guidance, and landing/docs blueprints — with no load-bearing network dependencies.
+- [ ] **IA-01**: Sidebar navigation is organized into three task-tempo groups (Operate / Improve / Configure) and the active screen is always reflected in the nav.
+- [ ] **IA-02**: A newcomer landing on the dashboard sees a Status Home that states what Scoria does and surfaces what needs attention now, with one-click paths to each persona's primary jobs — without adding a click for returning power users.
+- [ ] **IA-03**: Operators can orient on every screen via object-aware breadcrumbs.
+- [ ] **IA-04**: Power users can navigate to any screen or object and run key actions from a `⌘K` command palette and keyboard shortcuts.
+- [ ] **IA-05**: Related screens are threaded so the quality loop (incident → run → trace → replay → promote-to-dataset → eval → gate prompt release) is navigable without context loss.
+- [ ] **IA-06**: Reserved brand-name capabilities (Cost Ledger, Replay Playground, MCP Gateway, Tool Registry, Feedback Inbox) appear in the IA as honest "coming soon" screens with no fabricated data.
 
-### Integration
+### Screen Polish
 
-- [x] **BRAND-07**: The finalized brand is live on real surfaces: README header uses the chosen lockup (GitHub dark/light-aware) with an aligned badge row; the `/scoria` dashboard serves the new `favicon.svg` and the new mark in the sidebar brand slot (`lib/scoria_web/components/layouts.ex`); `mix.exs` package description, GitHub repo description, and HexDocs front copy use the finalized voice.
+- [ ] **SCREEN-01**: Review Queue, Incidents, Eval Workbench, and Prompt Registry / Release Workbench render through shared components with zero raw-palette leakage and meet the rubric bar.
+- [ ] **SCREEN-02**: A real Dataset Builder index is the canonical promote-to-dataset destination, converging the previously duplicated promote affordances.
+- [ ] **SCREEN-03**: Live Ops, Workflows / Trace Explorer, Approvals, and Connectors render through shared components and meet the rubric bar; the home page's inline god-page buttons are replaced with design-system deep-links.
+- [ ] **SCREEN-04**: The evidence components are thin adapters over the unified notebook shell with no duplicated layout logic.
 
-### Quality Gate
+### Motion, Responsive & Theme Parity
 
-- [x] **BRAND-08**: The milestone passes a scripted final quality gate: all documented fg/bg token pairs meet WCAG AA (≥4.5:1 normal / ≥3:1 large); 16px favicon legibility and monochrome-with-holes-intact reviews pass; no `<rect>` backgrounds in any logo SVG (grep-enforced) and all marks use `fill-rule="evenodd"`; `index.html` works offline; `du -s brandbook/` < 500KB with an html/md/json/css/svg-only extension allowlist; tokens.json ↔ tokens.css ↔ brand-book.md hex values are consistent; `mix test` is green including the DS-06 baseline (untouched unless conditional propagation fired).
+- [ ] **MOTION-01**: Interactions carry restrained, brand-tied motion (origin-aware, ≤200ms, transform/opacity-only) that respects `prefers-reduced-motion` and avoids the brand antipatterns (fire/sparkle/bounce, infinite loops, layout-property animation).
+- [ ] **MOTION-02**: Every interactive element has a visible focus-visible state and status is never conveyed by color alone.
+- [ ] **MOTION-03**: The dashboard is usable mobile-first; the shell and tables adapt intentionally at the `md / lg / xl` breakpoints.
+- [ ] **MOTION-04**: Every screen meets the polish bar in both light and dark themes, with WCAG AA contrast in both.
 
-### Conditional
+### Proof & Docs
 
-- [ ] **BRAND-09** *(fires only if BRAND-01's verdict requires it)*: Material contrast/accessibility/coherence failures found by the audit are propagated into `assets/css/02-tokens.css`, the precompiled `priv/static` CSS, and a deliberately regenerated `test/support/ds06_baseline.txt` in one atomic plan, with the full test suite green and no semantic custom-property renames.
+- [ ] **PROOF-01**: A final audit shows rubric-score improvement (baseline → final) per screen and a raw-color-class count of zero.
+- [ ] **PROOF-02**: Before/after contact sheets document the iteration as a basis for future passes.
+- [ ] **PROOF-03**: `docs/MAINTAINERS.md` documents the design-system component catalog and how to run the screenshot harness.
 
 ## Future Requirements
 
-Deferred to later milestones (acknowledged, not in this roadmap).
+Deferred to a later milestone (acknowledged, not in this roadmap).
 
-- **BRAND-MOTION**: Brand-motion guidelines applied beyond the dashboard (docs site, landing page animations) — v3.0 Phase 16 owns dashboard motion.
-- **BRAND-SITE**: An actual marketing landing page / docs site build-out — this milestone ships the *blueprint sections* in the brand book only.
-- **BRAND-SWAG**: Sticker/print collateral — only if a real event need appears.
-- **BRAND-SUITE**: Cross-library brand architecture formalization for the szTheory suite (shared grid/badge/docs patterns extracted from Threadline + Scoria precedents).
+- **FEAT-RESERVED**: Real backend + UI for the currently-stubbed reserved screens (Cost Ledger, Replay Playground, MCP Gateway, Tool Registry, Feedback Inbox) as those capabilities land.
+- **IA-LENS**: Remembered soft "primary lens" persona preference on the Status Home (ship Status Home without it first; add if the static home proves insufficient).
+- **CMDK-SEARCH**: Full-text object search in the command palette (v1 ships nav + recent objects + static actions).
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Building a marketing website or docs site | Brand book includes blueprints; building pages is a separate milestone. |
-| Binary raster assets (PNG exports, font files) | Repo-size discipline; SVG/text-first. Fonts already self-hosted under `priv/fonts/` for the dashboard. |
-| Cosmetic re-theming of the shipped dashboard | `assets/css/02-tokens.css` changes only on material audit failures (BRAND-09); avoids thrash to v3.0's token gateway + DS-06 ratchet. |
-| Mascots, 3D renders, AI-generated raster imagery | Off-brand (calm field-engineer archetype), not source-controllable, craft risk. |
-| Renaming the library or changing feature naming | "Scoria" and feature names (Trace Explorer, Eval Workbench, …) are validated; audit may TIGHTEN copy, not rename. |
-| v3.0 phases 13–17 work | Paused milestone; resumes after v2.17 archive. |
+| Net-new runtime / eval / connector capabilities | This is a UI/IA/DX milestone; backend scope stays frozen. |
+| Switching CSS architecture to real Tailwind or pure BEM | Keep momentum on the custom token-first scoped system; switching would invite override hell and discard the existing foundation. |
+| Rewriting the token layer or `.scoria-root` scoping | The token SSOT is sound; the gap is adoption, not the tokens. |
+| Browser tests in merge-blocking CI | Harness is dev-only, consistent with the repo's LiveViewTest-only posture. |
+| Fake/seeded data for stubbed reserved screens | Violates brand voice ("evidence over intuition"); stubs say "not yet available". |
+| Marketing landing page / docs site redesign | Covered separately by the brand book; out of dashboard scope. |
 
 ## Traceability
 
-Each requirement maps to exactly one phase. Phase numbering continues from v3.0's reserved block (11–17); v2.17 takes phases 18–22.
+Each requirement maps to exactly one phase. Phase numbering continues from v2.16 (ended at Phase 10.1).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRAND-01 | Phase 18 — Pressure-test audit + decision lock | Complete |
-| BRAND-02 | Phase 18 — Pressure-test audit + decision lock | Complete |
-| BRAND-03 | Phase 19 — Logo divergence + user choice | Complete |
-| BRAND-04 | Phase 20 — Logo convergence: full variant set | Complete |
-| BRAND-05 | Phase 21 — Tokens + brand book + standalone HTML | Complete |
-| BRAND-06 | Phase 21 — Tokens + brand book + standalone HTML | Complete |
-| BRAND-07 | Phase 22 — Integration + final quality gate | Complete |
-| BRAND-08 | Phase 22 — Integration + final quality gate | Complete |
-| BRAND-09 | Phase 22 — Integration + final quality gate (conditional plan) | Conditional |
+| EVAL-01 | Phase 11 — Evaluation engine + seed depth | Complete |
+| EVAL-02 | Phase 11 — Evaluation engine + seed depth | Complete |
+| EVAL-03 | Phase 11 — Evaluation engine + seed depth | Complete |
+| EVAL-04 | Phase 11 — Evaluation engine + seed depth | Complete |
+| EVAL-05 | Phase 11 — Evaluation engine + seed depth | Complete |
+| DS-01 | Phase 12 — Design-system component layer | Complete |
+| DS-02 | Phase 12 — Design-system component layer | Complete |
+| DS-03 | Phase 12 — Design-system component layer | Complete |
+| DS-04 | Phase 12 — Design-system component layer | Complete |
+| DS-05 | Phase 12 — Design-system component layer | Complete |
+| DS-06 | Phase 12 — Design-system component layer | Complete |
+| IA-01 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-02 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-03 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-04 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-05 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-06 | Phase 13 — Orientation spine (IA) | Pending |
+| SCREEN-01 | Phase 14 — Least-iterated screens polish | Pending |
+| SCREEN-02 | Phase 14 — Least-iterated screens polish | Pending |
+| SCREEN-03 | Phase 15 — High-traffic screens + evidence adapters | Pending |
+| SCREEN-04 | Phase 15 — High-traffic screens + evidence adapters | Pending |
+| MOTION-01 | Phase 16 — Motion + responsive + theme parity | Pending |
+| MOTION-02 | Phase 16 — Motion + responsive + theme parity | Pending |
+| MOTION-03 | Phase 16 — Motion + responsive + theme parity | Pending |
+| MOTION-04 | Phase 16 — Motion + responsive + theme parity | Pending |
+| PROOF-01 | Phase 17 — Consistency sweep + proof | Pending |
+| PROOF-02 | Phase 17 — Consistency sweep + proof | Pending |
+| PROOF-03 | Phase 17 — Consistency sweep + proof | Pending |
 
 **Coverage:**
-- v1 requirements: 8 (+1 conditional)
-- Mapped to phases: 9 ✓
+- v1 requirements: 28 total
+- Mapped to phases: 28 ✓
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-06-11*
-*Last updated: 2026-06-11 at v2.17 milestone start*
+*Requirements defined: 2026-06-03*
+*Last updated: 2026-06-03 after v3.0 roadmap creation (phases 11–17)*

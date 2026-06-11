@@ -1,11 +1,11 @@
 # Roadmap: Scoria
 
-**Last updated:** 2026-06-11 (milestone v2.17 Vesicle interjected; v3.0 Control Room paused)
+**Last updated:** 2026-06-11 (v2.17 Vesicle shipped; v3.0 Control Room restored as active)
 
 ## Milestones
 
-- 🚧 **v2.17 Vesicle** — Phases 18–22 (brand system) — IN PROGRESS (interjected)
-- ⏸ **v3.0 Control Room** — Phases 11–17 (admin dashboard UI/UX iteration) — PAUSED (resumes after v2.17)
+- 🚧 **v3.0 Control Room** — Phases 11–17 (admin dashboard UI/UX iteration) — IN PROGRESS
+- ✅ **v2.17 Vesicle** — Phases 18–22 (brand system, interjected) — SHIPPED 2026-06-11 — [archive](milestones/v2.17-ROADMAP.md)
 - ✅ **v2.16 ReqLLM Peer Bump** — Phases 08–10 + 10.1 (shipped 2026-05-30) — [archive](milestones/v2.16-ROADMAP.md)
 - ✅ **v2.15 Connector Adoption Lane** — Phases 05–07 + 07.1 (shipped 2026-05-30) — [archive](milestones/v2.15-ROADMAP.md)
 - ✅ **v2.14 Maintenance Release** — `0.1.1` prep (shipped 2026-05-30)
@@ -14,19 +14,7 @@
 
 ## Phases
 
-### v2.17 Vesicle (Phases 18–22)
-
-Brand system milestone. Pressure-test the AI-generated brand book, lock decisions, generate and choose a logo system programmatically, build the full variant set, author canonical brandbook/ collateral, and wire into README / dashboard / Hex copy. No net-new runtime capability. SVG/text-first; `brandbook/` becomes canonical; dashboard CSS touched only on material audit failures.
-
-- [x] **Phase 18: Pressure-test audit + decision lock** — 14-section brand-book pressure test → `brandbook/pressure-test.md`; WCAG contrast script in `brandbook/tools/`; suite-coherence vs Threadline + szTheory DNA; Decisions Locked section → **user approval gate #1** (approved 2026-06-11; tagline override "AI ops for Phoenix apps."; propagation: not-required → BRAND-09 will not fire). (completed 2026-06-11)
-- [x] **Phase 19: Logo divergence + user choice** — generation tooling in `brandbook/tools/`; 6 marks + 2 typemark studies (round 1) + 6 lockup relationships (round 2, escape fired); **gate #2: TV-1 "Span rail" mark + LK-B "Mark-as-o" fused lockup locked**, TYPE-1/2 rejected; 29 candidates, verify-logos 19/19 PASS. (completed 2026-06-11)
-- [x] **Phase 20: Logo convergence — full variant set** — 8 root variants shipped from frozen TV-1/LK-B artwork (two-tone ember 'o' primary); variant-spec.md clear-space/min-size; verifier 21/21 PASS; galleries + 24 losing candidates pruned (463KB); **user confirmed "ship it"** at checkpoint. (completed 2026-06-11)
-- [x] **Phase 21: Tokens + brand book + standalone HTML** — two-tier tokens.json/tokens.css (hex-identical to 02-tokens.css, 4-source consistency gate green); brand-book.md 543-line post-audit canonical rewrite with final copy blocks; 7 example SVGs (25.7KB); standalone index.html (55KB, zero network refs); README maintenance rules; brandbook at 436KB. (completed 2026-06-11)
-- [x] **Phase 22: Integration + final quality gate** — README picture-element brand header + verbatim opener; dashboard TV-1 mark + compile-time data-URI favicon; mix.exs/GitHub descriptions verbatim brand copy; BRAND-09 did not fire (propagation not-required); quality-gate.mjs 8/8 PASS (458KB, mix test 632 green, DS-06 byte-identical). (completed 2026-06-11)
-
----
-
-### v3.0 Control Room (Phases 11–17) — PAUSED (resumes after v2.17)
+### v3.0 Control Room (Phases 11–17)
 
 UI/IA/DX milestone. No net-new backend capability families. Expose components → delete leaked classes → consolidate → orient → polish → prove. Sequenced for compounding reuse: primitives before screens, least-iterated screens before high-traffic, motion/responsive/theme last before the proof sweep.
 
@@ -37,6 +25,19 @@ UI/IA/DX milestone. No net-new backend capability families. Expose components �
 - [ ] **Phase 15: High-traffic screens + evidence adapters** — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components as thin notebook-shell adapters.
 - [ ] **Phase 16: Motion + responsive + theme parity** — Restrained brand-tied motion, focus-visible/a11y, mobile-first responsive across md/lg/xl, full light+dark parity.
 - [ ] **Phase 17: Consistency sweep + proof** — Re-run audit loop, rubric-delta + raw-color count → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage.
+
+<details>
+<summary>✅ v2.17 Vesicle (Phases 18–22) — SHIPPED 2026-06-11</summary>
+
+- [x] Phase 18: Pressure-test audit + decision lock — gate #1 approved 2026-06-11 (tagline override "AI ops for Phoenix apps."; propagation: not-required) — completed 2026-06-11
+- [x] Phase 19: Logo divergence + user choice — gate #2 (2 rounds): TV-1 "Span rail" mark + LK-B "Mark-as-o" fused lockup locked — completed 2026-06-11
+- [x] Phase 20: Logo convergence — full variant set — 8 root variants, user confirmed "ship it" — completed 2026-06-11
+- [x] Phase 21: Tokens + brand book + standalone HTML — tokens.json/css, brand-book.md 543 lines, 7 examples, index.html 55 KB — completed 2026-06-11
+- [x] Phase 22: Integration + final quality gate — quality-gate.mjs 8/8 PASS, 458 KB, mix test 632 green, DS-06 untouched — completed 2026-06-11
+
+Full details: `.planning/milestones/v2.17-ROADMAP.md`
+
+</details>
 
 <details>
 <summary>✅ v2.16 ReqLLM Peer Bump (Phases 08–10 + 10.1) — SHIPPED 2026-05-30</summary>
@@ -63,78 +64,6 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 </details>
 
 ## Phase Details
-
-### Phase 18: Pressure-test audit + decision lock
-**Goal**: The brand book is validated — every section rated and tagged, accessibility checked programmatically, suite coherence assessed — and key brand decisions are locked with user approval before any asset generation begins.
-**Depends on**: Nothing (first v2.17 phase)
-**Requirements**: BRAND-01, BRAND-02
-**Success Criteria** (what must be TRUE):
-  1. A maintainer can read `brandbook/pressure-test.md` with all 14 sections tagged (KEEP/TIGHTEN/REWORK/ADD/REMOVE), a 1–10 scorecard across 15 dimensions, gaps ranked by severity, and surface stress-test notes (GitHub/HexDocs/dashboard/terminal/favicon/social).
-  2. A runnable script in `brandbook/tools/` produces a WCAG-AA contrast verdict table for all documented token pairings; the table is embedded in `pressure-test.md`.
-  3. The pressure test includes an explicit suite-coherence assessment vs the Threadline brandbook and `szTheory` DNA, and an explicit verdict on whether `assets/css/02-tokens.css` requires propagation.
-  4. A Decisions Locked section records the final choices (tagline, palette/typography deltas if any, naming, propagation verdict), and the user has approved it at gate #1 before Phase 19 begins.
-**Plans**: 2 plans
-  - [x] 18-01-PLAN.md — Contrast checker + pressure-test Sections 1-7 (exec judgment, brand DNA, 15-dim scorecard, stress tests, gaps, upgrades, token spec) with embedded WCAG table
-  - [x] 18-02-PLAN.md — Pressure-test Sections 8-14 (logo ranking + Phase-19 constraints, voice, blueprints, artifacts, actions, quality gate) + Decisions Locked + propagation verdict + gate #1 checkpoint
-**Checkpoint**: Gate #1 — user approval of Decisions Locked section required before proceeding
-
-### Phase 19: Logo divergence + user choice
-**Goal**: The user can choose a logo direction from a gallery of genuinely distinct, programmatically generated options rendered at real usage sizes — with an explicit escape if none fits.
-**Depends on**: Phase 18 (brand decisions locked before logo generation)
-**Requirements**: BRAND-03
-**Success Criteria** (what must be TRUE):
-  1. Committed generation tooling in `brandbook/tools/` produces faceted-polygon vesicle silhouettes with evenodd-punched holes; a separate script outlines IBM Plex Sans glyphs via opentype.js for integrated typemark studies.
-  2. `brandbook/tools/options-gallery.html` presents ≥6 genuinely distinct mark+lockup options and ≥2 integrated logotype-only studies rendered on dark AND light grounds at 256/64/32/16px with a monochrome row.
-  3. The gallery includes in-situ mocks: browser-tab favicon strip, 24px dashboard sidebar slot, and README header band.
-  4. No option contains a rectangular background shape (enforced by geometry); all marks use `fill-rule="evenodd"`; logotype is optically tight to the mark; main lockup has no subtitle.
-  5. The gallery includes a ranked recommendation and a documented "none of these → second round" escape path; the user's chosen direction is recorded before Phase 20 begins.
-**Plans**: 3 plans
-  - [x] 19-01-PLAN.md — Generation toolchain in brandbook/tools/ (package.json, geometry+evenodd-hole library, woff2->opentype.js wordmark with integrated-glyph hook, lockup composer, smoke test)
-  - [x] 19-02-PLAN.md — 6 hand-tuned mark presets (TV-1/TV-2/CM-1/CM-2/AP-1 + 6th) + 2 integrated typemark studies; candidate SVGs + standalone options-gallery.html with full evidence rows
-  - [x] 19-03-PLAN.md — Scripted LOGO-01..07 + gallery verification sweep, finalized ranked recommendation, gate #2 checkpoint:decision (user picks direction or second round)
-**Checkpoint**: Gate #2 — user choice of logo direction required before proceeding
-
-### Phase 20: Logo convergence — full variant set
-**Goal**: The chosen direction becomes a complete, committed logo variant set ready for integration — with every usage context covered and optical quality verified.
-**Depends on**: Phase 19 (user choice recorded)
-**Requirements**: BRAND-04
-**Success Criteria** (what must be TRUE):
-  1. All eight variants are committed: `logo-primary.svg` (dark ground), `logo-primary-light.svg`, `logo-mark.svg`, `logo-monochrome.svg` (currentColor), `logo-lockup-subtitle.svg`, `logotype-integrated.svg`, `favicon.svg` (pixel-snapped simplified path), `social-card.svg`.
-  2. Every variant has a tight viewBox, and `brandbook/brand-book.md` (or a companion spec) documents clear-space rules and minimum display sizes.
-  3. A manual optical-correction pass has been applied: fills only (no strokes), baseline alignment confirmed, favicon path legible at 16px.
-  4. A lightweight confirm checkpoint (screenshot strip) has been reviewed and accepted before Phase 21/22 integration work proceeds.
-**Plans**: 2 plans
-  - [x] 20-01-PLAN.md — Generate + optically correct the 8 root variants (census colorways, frozen TV-1/LK-B geometry), write variant-spec.md (clear-space/min-size + optical pass), extend verify-logos.mjs with ROOT-* checks, prune losing candidates + both galleries
-  - [x] 20-02-PLAN.md — Lightweight standalone final-variants.html confirm strip + full verification + checkpoint:confirm (orchestrator-presented ship-it/adjust)
-**Checkpoint**: Lightweight confirm — screenshot strip review before proceeding
-
-### Phase 21: Tokens + brand book + standalone HTML
-**Goal**: `brandbook/` is a self-contained, professional canonical brand source — tokens, rewritten brand book, SVG specimens, and a standalone HTML brand book that opens offline.
-**Depends on**: Phase 18 (decisions locked drive token reconciliation); can start non-logo plans in parallel with Phase 20
-**Requirements**: BRAND-05, BRAND-06
-**Success Criteria** (what must be TRUE):
-  1. `brandbook/tokens.json` and `brandbook/tokens.css` are present with naming reconciled with `assets/css/02-tokens.css` so future propagation is mechanical.
-  2. `brandbook/brand-book.md` is a post-audit rewrite with no filler — content aligned to KEEP/TIGHTEN/REWORK verdicts, accurate voice/copy guidance, and complete UI guidance sections.
-  3. `brandbook/examples/` contains ≥7 SVG specimens covering: palette swatch sheet, typography scale, component reference, terminal/code block, readme-header, landing-hero, and docs-page.
-  4. `brandbook/index.html` opens directly from `file://` with no load-bearing network dependencies, covers identity, logo system, color, typography, tokens, voice/microcopy, UI guidance, and landing/docs blueprints in a professional layout.
-  5. `brandbook/` total size is < 500KB and contains only html/md/json/css/svg file types (zero binaries).
-  6. `brandbook/README.md` documents maintenance rules for keeping the brandbook current.
-**Plans**: TBD (~3 plans)
-**UI hint**: yes
-
-### Phase 22: Integration + final quality gate
-**Goal**: The finalized brand is live on real surfaces and passes a scripted quality gate — no manual spot-checks; evidence is reproducible.
-**Depends on**: Phase 20 (logo variants committed), Phase 21 (tokens + brand book complete)
-**Requirements**: BRAND-07, BRAND-08, BRAND-09 (conditional)
-**Success Criteria** (what must be TRUE):
-  1. The README header uses the chosen lockup in a GitHub dark/light-aware `<picture>` block with an aligned badge row; the dashboard serves `favicon.svg` and displays the new mark in the 24px sidebar brand slot (`lib/scoria_web/components/layouts.ex`).
-  2. `mix.exs` package description, GitHub repo description, and HexDocs front copy use the finalized brand voice.
-  3. A scripted gate verifies: all documented fg/bg token pairs meet WCAG AA (≥4.5:1 normal / ≥3:1 large); no `<rect>` elements in any logo SVG (grep); all logo paths use `fill-rule="evenodd"`; `index.html` opens offline; `du -s brandbook/` < 500KB with extension allowlist; tokens.json ↔ tokens.css ↔ brand-book.md hex values consistent.
-  4. `mix test` is green including the DS-06 raw-color drift guard baseline (untouched unless BRAND-09 conditional plan fired).
-  5. If Phase 18 recorded a propagation verdict of "required": one atomic conditional plan has updated `assets/css/02-tokens.css`, the precompiled `priv/static` CSS, and `test/support/ds06_baseline.txt`, with no semantic custom-property renames and `mix test` green.
-**Plans**: TBD (~2 plans + 1 conditional)
-
----
 
 ### Phase 11: Evaluation engine + seed depth
 **Goal**: A maintainer can mechanically capture and critique every dashboard screen, and every screen renders at its most useful — establishing the proof loop every later phase re-runs.
@@ -232,18 +161,18 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete   | 2026-06-11 |
-| 19. Logo divergence + user choice | v2.17 | 3/3 | Complete   | 2026-06-11 |
-| 20. Logo convergence — full variant set | v2.17 | 2/2 | Complete   | 2026-06-11 |
-| 21. Tokens + brand book + standalone HTML | v2.17 | 1/3 | In Progress|  |
-| 22. Integration + final quality gate | v2.17 | 2/2 | Complete   | 2026-06-11 |
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete    | 2026-06-04 |
-| 13. Orientation spine (IA) | v3.0 | 0/? | Paused | - |
-| 14. Least-iterated screens polish | v3.0 | 0/? | Paused | - |
-| 15. High-traffic screens + evidence adapters | v3.0 | 0/? | Paused | - |
-| 16. Motion + responsive + theme parity | v3.0 | 0/? | Paused | - |
-| 17. Consistency sweep + proof | v3.0 | 0/? | Paused | - |
+| 13. Orientation spine (IA) | v3.0 | 0/? | Not started | - |
+| 14. Least-iterated screens polish | v3.0 | 0/? | Not started | - |
+| 15. High-traffic screens + evidence adapters | v3.0 | 0/? | Not started | - |
+| 16. Motion + responsive + theme parity | v3.0 | 0/? | Not started | - |
+| 17. Consistency sweep + proof | v3.0 | 0/? | Not started | - |
+| 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete | 2026-06-11 |
+| 19. Logo divergence + user choice | v2.17 | 3/3 | Complete | 2026-06-11 |
+| 20. Logo convergence — full variant set | v2.17 | 2/2 | Complete | 2026-06-11 |
+| 21. Tokens + brand book + standalone HTML | v2.17 | 3/3 | Complete | 2026-06-11 |
+| 22. Integration + final quality gate | v2.17 | 2/2 | Complete | 2026-06-11 |
 | 08 | v2.16 | — | Complete | 2026-05-30 |
 | 09 | v2.16 | — | Complete | 2026-05-30 |
 | 10 | v2.16 | — | Complete | 2026-05-30 |
