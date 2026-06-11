@@ -15,7 +15,7 @@
 
 ### Logo System
 
-- [ ] **BRAND-03**: The user can choose a logo direction from an options gallery presenting ≥6 genuinely distinct programmatic SVG mark+lockup options and ≥2 integrated logotype-only studies — rendered on dark AND light grounds at 256/64/32/16px with a monochrome row and in-situ mocks (browser-tab favicon strip, 24px dashboard sidebar, README header band) — with a ranked recommendation and a "none of these → second round" escape. Constraints enforced: zero rectangular background shapes (evenodd-punched negative space), logotype optically tight to the mark, no subtitle in the main lockup.
+- [x] **BRAND-03**: The user can choose a logo direction from an options gallery presenting ≥6 genuinely distinct programmatic SVG mark+lockup options and ≥2 integrated logotype-only studies — rendered on dark AND light grounds at 256/64/32/16px with a monochrome row and in-situ mocks (browser-tab favicon strip, 24px dashboard sidebar, README header band) — with a ranked recommendation and a "none of these → second round" escape. Constraints enforced: zero rectangular background shapes (evenodd-punched negative space), logotype optically tight to the mark, no subtitle in the main lockup.
 - [ ] **BRAND-04**: The chosen direction is refined into a complete committed variant set: `logo-primary.svg` (dark), `logo-primary-light.svg`, `logo-mark.svg`, `logo-monochrome.svg` (currentColor), `logo-lockup-subtitle.svg`, `logotype-integrated.svg`, `favicon.svg` (simplified pixel-snapped path), `social-card.svg` — each with tight viewBoxes, clear-space/min-size rules, and a manual optical-correction pass.
 
 ### Canonical Brandbook
@@ -63,7 +63,7 @@ Each requirement maps to exactly one phase. Phase numbering continues from v3.0'
 |-------------|-------|--------|
 | BRAND-01 | Phase 18 — Pressure-test audit + decision lock | Complete |
 | BRAND-02 | Phase 18 — Pressure-test audit + decision lock | Complete |
-| BRAND-03 | Phase 19 — Logo divergence + user choice | Pending |
+| BRAND-03 | Phase 19 — Logo divergence + user choice | Complete |
 | BRAND-04 | Phase 20 — Logo convergence: full variant set | Pending |
 | BRAND-05 | Phase 21 — Tokens + brand book + standalone HTML | Pending |
 | BRAND-06 | Phase 21 — Tokens + brand book + standalone HTML | Pending |
