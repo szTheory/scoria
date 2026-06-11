@@ -89,7 +89,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   4. No option contains a rectangular background shape (enforced by geometry); all marks use `fill-rule="evenodd"`; logotype is optically tight to the mark; main lockup has no subtitle.
   5. The gallery includes a ranked recommendation and a documented "none of these → second round" escape path; the user's chosen direction is recorded before Phase 20 begins.
 **Plans**: 3 plans
-  - [ ] 19-01-PLAN.md — Generation toolchain in brandbook/tools/ (package.json, geometry+evenodd-hole library, woff2->opentype.js wordmark with integrated-glyph hook, lockup composer, smoke test)
+  - [x] 19-01-PLAN.md — Generation toolchain in brandbook/tools/ (package.json, geometry+evenodd-hole library, woff2->opentype.js wordmark with integrated-glyph hook, lockup composer, smoke test)
   - [ ] 19-02-PLAN.md — 6 hand-tuned mark presets (TV-1/TV-2/CM-1/CM-2/AP-1 + 6th) + 2 integrated typemark studies; candidate SVGs + standalone options-gallery.html with full evidence rows
   - [ ] 19-03-PLAN.md — Scripted LOGO-01..07 + gallery verification sweep, finalized ranked recommendation, gate #2 checkpoint:decision (user picks direction or second round)
 **Checkpoint**: Gate #2 — user choice of logo direction required before proceeding
@@ -231,7 +231,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete   | 2026-06-11 |
-| 19. Logo divergence + user choice | v2.17 | 0/~3 | Not started | - |
+| 19. Logo divergence + user choice | v2.17 | 1/3 | In Progress|  |
 | 20. Logo convergence — full variant set | v2.17 | 0/~2 | Not started | - |
 | 21. Tokens + brand book + standalone HTML | v2.17 | 0/~3 | Not started | - |
 | 22. Integration + final quality gate | v2.17 | 0/~2 | Not started | - |

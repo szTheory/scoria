@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
-status: completed
-last_updated: "2026-06-11T16:04:34.416Z"
-last_activity: 2026-06-11 -- Phase 18 marked complete
+status: verifying
+last_updated: "2026-06-11T16:28:32.101Z"
+last_activity: 2026-06-11
 progress:
-  total_phases: 3
+  total_phases: 20
   completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_plans: 15
+  completed_plans: 13
+  percent: 15
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 18 — pressure-test-audit-decision-lock
+**Current focus:** Phase 19 — logo-divergence-user-choice
 
 ## Current Position
 
-Phase: 18 — COMPLETE
-Plan: 2 of 2 — complete
-Status: Phase 18 complete
-Last activity: 2026-06-11 -- Phase 18 marked complete
+Phase: 19 — in progress
+Plan: 1 of 3 — complete (19-01 toolchain scaffold)
+Status: Plan 1 complete — toolchain passes smoke test
+Last activity: 2026-06-11
 
 ## Roadmap (v2.17 Vesicle, Phases 18–22)
 
@@ -68,6 +68,7 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 
 ### Decisions
 
+- [Phase 19-01]: opentype.js ^1.3.5 (1.x line) pinned for parse(ArrayBuffer)+Font.getPath API; wawoff2 CJS default import only; data-gap-ratio on lockup SVG root is machine-checkable LOGO-03 contract asserted by smoke.mjs and 19-03 — 2026-06-11
 - [Phase 18-02]: propagation: not-required — CONFIRMED. --scoria-text-subtle sole shipped usage is ui.ex:653 (16x16 SVG sort icon, UI component context); WCAG 2.1 SC 1.4.11 ≥3:1 satisfied; assets/css/02-tokens.css untouched; BRAND-09 conditional does not fire — 2026-06-11
 - [Phase 18-02]: Final tagline locked — "Trace the run. Prove the change. Ship the agent."; one-liner tightened (nouns over gerunds); naming confirmed Scoria (never Scoria AI); palette deltas: none; typography IBM Plex Sans + JetBrains Mono confirmed KEEP — 2026-06-11
 - [Phase 18-02]: Logo direction ranked — Trace Vesicle Mark #1, Cinder Mark #2 fallback; LOGO-01–07 hard constraints encoded for Phase 19 (no-rect, evenodd, tight lockup, no subtitle, integrated typemark first-class, 16px pass/fail, monochrome pass/fail) — 2026-06-11
