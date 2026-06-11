@@ -153,5 +153,69 @@ None. verify-logos.mjs reads files only (no writes, no network). The gallery rem
 - No Phase 20 leak: zero files in `brandbook/*.svg` (confirmed)
 
 ---
+
+## Second round (gate #2b — escape #2 fired)
+
+**Trigger.** At gate #2 the user fired the "none of these → second round" escape a second time with three directives: (1) mark direction **LOCKED to TV-1 "Span rail"** (geometry frozen, optical micro-tuning only); (2) the round-1 integrated typemarks **TYPE-1 (ring 'o') and TYPE-2 (porous 'a') REJECTED** — diagnose before replacing; (3) diverge the **mark↔wordmark RELATIONSHIP**, not just "mark left of text."
+
+### Diagnosis of the rejected typemarks (numeric, before redesign)
+
+- **TYPE-1 ring 'o' read as a degree symbol / typo.** The replacement was a *perfect circle* (outerR = oW/2 = 24.25u), but IBM Plex's humanist 'o' is **taller than wide** (54.6u × 48.5u). The ring therefore sat **6.1u shorter** than every neighbouring x-height letter — it under-filled the x-height band and floated, reading as an undersized geometric circle dropped into humanist type. A mechanical even-weight ring (12u all around) beside Plex's modulated strokes compounded the "foreign object" effect.
+- **TYPE-2 porous 'a' read as rendering noise.** The bowl punches (r 3.2, r 2.4) sat in an 18×14u bowl counter — specks too small to register as intent; at any real size they read as dirt/compression artifact, not the cinder motif.
+
+These diagnoses (confirmed via font-metric extraction) drove the replacement designs to fix the root cause rather than guess.
+
+### Deliverables (all on the LOCKED TV-1 geometry)
+
+Six new `LK-*` lockup candidates written to `brandbook/tools/candidates/` and presented in the standalone `brandbook/tools/options-gallery-round2.html`:
+
+| ID | Concept | How it answers the critique |
+| --- | --- | --- |
+| **LK-A** | Classic tight (baseline) | The current mark-left lockup, kept UNCHANGED as the reference point. |
+| **LK-B** | **Mark-as-o** (recommended) | The TV-1 mark IS the 'o'. At x-height the mark is 56.7u wide vs the 'o' advance 56.3u (0.4u diff → kerning undisturbed); the mark's holes become the letter's counter. Root hole micro-tuned r 13→14.6 so ink density 0.61 ≈ the 'o'-letter's 0.57 (not bolder). The honest version of the rejected ring-'o'. |
+| **LK-C** | Stacked | Mark centered ABOVE the word (square/social/app-tile reading) — a genuinely different vertical relationship. |
+| **LK-D** | Overlap | Mark notches 0.12×width behind the leading 'S' (word draws on top → 'S' stays legible) — boundary-breaking tension. |
+| **LK-E** | Counter-punch | TV-1 trace tree punched THROUGH the capital 'S', three nodes verified fully on the S spine, diameters clamped to [stem×0.55, stem×0.8]=[7.0,10.2]u. Replaces the porous-'a': motif in ONE capital, sized to read as intent. |
+| **LK-F** | Mark-as-tittle | The 'i' dot becomes a tiny TV-1 mark — integration with zero letterform distortion and zero small-size legibility risk. Replaces the ring-'o' route with a non-deforming one. |
+
+### Ranked recommendation (for gate #2b)
+
+1. **LK-B "Mark-as-o"** — primary. The rare case where metaphor and typography agree; one fused object, legible (mid-word 'o' never carries small-size load alone), the honest answer to "fully integrated."
+2. **LK-C "Stacked"** — adopt as a COMPANION (square/social/app contexts) regardless of the horizontal pick.
+3. **LK-F "Mark-as-tittle"** — safe micro-integration fallback if LK-B feels too bold in dense UI.
+4. **LK-E "Counter-punch"** — distinctive, wants size; strong hero/wordmark-only treatment.
+5. **LK-D "Overlap"** — good energy, keep as alternate.
+6. **LK-A "Classic tight"** — baseline reference.
+
+**My pick:** LK-B as primary + LK-C as the square/social companion — covers horizontal and vertical contexts with one fused identity and answers both halves of the user's note. "None → third round" escape retained; TV-1 stays locked either way.
+
+### Toolchain + verification (second round)
+
+- `brandbook/tools/lib/lockup-variants.mjs` — six relationship composers, all on locked TV-1 (LK-B applies the one documented optical micro-tune). Includes local glyph-contour splitting (tittle removal) and S-spine ink probing.
+- `brandbook/tools/generate-round2.mjs` — emits LK-A..F alongside round-1 candidates.
+- `brandbook/tools/gallery-round2.mjs` → `options-gallery-round2.html` — standalone (0 external refs), both grounds, full+small sizes, monochrome rows, diagnosis block, ranked recommendation, escape note.
+- `brandbook/tools/verify-logos.mjs` extended (Rule 3, per brief): **LOGO-03** now applies only to side-by-side lockups; integrated/stacked/overlap forms carry machine-readable exemption markers (`data-integrated="true"` for LK-B/E/F, `data-gap-exempt="stack|overlap"` for LK-C/D) and are documented-exempt. **STRUCT-VIEWBOX** allows ±300 on Y for stacked lockups (LK-C's mark stacks far above the baseline-anchored word). `node verify-logos.mjs` still exits **0** (29 candidates verified).
+
+### Geometry validation (math as eyes — no rasterizer in env)
+
+- LK-B: mark occupies x 111.22–167.87 (o-advance 111.4–167.7), y −53.38–1.18 (x-height band) — no collision with 'c' (ends 109.4) or 'r' (starts 174.6).
+- LK-E: all three S-spine holes verified 16/16 rim points on-ink (center + rim ray-cast against flattened 'S' contour).
+- LK-D: mark vertically centered at cap-band mid (−35.5), right edge 13u into the 'S' bbox with the word on top.
+- LK-F: mark centered exactly on the tittle position (219.8, −67.2), original dot contour removed.
+
+### Second-round commits
+
+- `ca13a47` feat(19-02b): round-2 lockup-variant toolchain on locked TV-1 mark
+- `e62ac68` feat(19-02b): six round-2 lockup candidates (LK-A..LK-F)
+- `8a861d7` feat(19-02b): round-2 gallery with rejection diagnosis + recommendation
+
+### Second-round self-check: PASSED
+
+- `brandbook/tools/candidates/LK-{A,B,C,D,E,F}-lockup.svg` — 6 files exist, no NaN/Infinity, sane viewBoxes (confirmed)
+- `brandbook/tools/options-gallery-round2.html` — exists, 0 external refs, both grounds, all 6 IDs (confirmed)
+- `node brandbook/tools/verify-logos.mjs` — exits 0 (confirmed)
+- Commits `ca13a47`, `e62ac68`, `8a861d7` — present in git log
+
+---
 *Phase: 19-logo-divergence-user-choice*
-*Completed: 2026-06-11*
+*Completed: 2026-06-11 · Second round appended 2026-06-11*
