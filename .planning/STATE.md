@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Control Room
-status: ready_to_plan
-last_updated: 2026-06-04T17:27:15.273Z
-last_activity: 2026-06-04
+milestone: v2.17
+milestone_name: Vesicle
+status: planning
+last_updated: "2026-06-11T15:17:04.231Z"
+last_activity: 2026-06-11
 progress:
-  total_phases: 15
-  completed_phases: 2
-  total_plans: 10
-  completed_plans: 10
-  percent: 13
-stopped_at: Phase 12 complete (5/5) — ready to discuss Phase 13
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -26,12 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-03 after v3.0 Control Room mileston
 
 ## Current Position
 
-Phase: 13
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-06-04
-
-Progress: [██████████] 100%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-11 — Milestone v2.17 started
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
