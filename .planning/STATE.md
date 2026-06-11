@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
-status: completed
-last_updated: "2026-06-11T17:53:50.612Z"
-last_activity: 2026-06-11 -- Phase 20 marked complete
+status: verifying
+last_updated: "2026-06-11T18:19:06.728Z"
+last_activity: 2026-06-11
 progress:
-  total_phases: 5
+  total_phases: 20
   completed_phases: 5
-  total_plans: 17
-  completed_plans: 17
-  percent: 100
+  total_plans: 20
+  completed_plans: 18
+  percent: 25
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v
 
 Phase: 20 — COMPLETE
 Plan: 3 of 3 — complete (19-01 toolchain scaffold)
-Status: Phase 20 complete
-Last activity: 2026-06-11 -- Phase 20 marked complete
+Status: Phase complete — ready for verification
+Last activity: 2026-06-11
 
 ## Roadmap (v2.17 Vesicle, Phases 18–22)
 

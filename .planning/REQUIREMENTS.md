@@ -20,7 +20,7 @@
 
 ### Canonical Brandbook
 
-- [ ] **BRAND-05**: A maintainer can use a self-contained `brandbook/` directory as the canonical brand source: `README.md` (maintenance rules), `brand-book.md` (post-audit rewrite, no filler), `pressure-test.md`, `tokens.json`, `tokens.css` (naming reconciled with `assets/css/02-tokens.css`), logo SVGs, `examples/*.svg` (palette, typography, components, terminal, readme-header, landing-hero, docs-page), and reproducible generation tooling in `brandbook/tools/` — SVG/text only, total < 500KB, zero binaries.
+- [x] **BRAND-05**: A maintainer can use a self-contained `brandbook/` directory as the canonical brand source: `README.md` (maintenance rules), `brand-book.md` (post-audit rewrite, no filler), `pressure-test.md`, `tokens.json`, `tokens.css` (naming reconciled with `assets/css/02-tokens.css`), logo SVGs, `examples/*.svg` (palette, typography, components, terminal, readme-header, landing-hero, docs-page), and reproducible generation tooling in `brandbook/tools/` — SVG/text only, total < 500KB, zero binaries.
 - [ ] **BRAND-06**: A reviewer can open `brandbook/index.html` directly from `file://` as a professional, standalone HTML brand book covering identity, logo system, color, typography, tokens, voice/microcopy, UI guidance, and landing/docs blueprints — with no load-bearing network dependencies.
 
 ### Integration
@@ -65,7 +65,7 @@ Each requirement maps to exactly one phase. Phase numbering continues from v3.0'
 | BRAND-02 | Phase 18 — Pressure-test audit + decision lock | Complete |
 | BRAND-03 | Phase 19 — Logo divergence + user choice | Complete |
 | BRAND-04 | Phase 20 — Logo convergence: full variant set | Complete |
-| BRAND-05 | Phase 21 — Tokens + brand book + standalone HTML | Pending |
+| BRAND-05 | Phase 21 — Tokens + brand book + standalone HTML | Complete |
 | BRAND-06 | Phase 21 — Tokens + brand book + standalone HTML | Pending |
 | BRAND-07 | Phase 22 — Integration + final quality gate | Pending |
 | BRAND-08 | Phase 22 — Integration + final quality gate | Pending |
