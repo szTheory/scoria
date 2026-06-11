@@ -116,7 +116,7 @@ defmodule Scoria.MixProject do
   end
 
   defp description do
-    "Phoenix-native AI runtime and operator surface for durable runs, approvals, replay, evaluation, and bounded semantic reuse."
+    "Phoenix-native AI ops: LLM traces, evals, prompt versions, replay, tool governance, and MCP workflows. Ecto-backed, LiveView-included."
   end
 
   defp docs do
