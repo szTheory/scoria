@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
-status: completed
-last_updated: "2026-06-11T17:19:13.084Z"
-last_activity: 2026-06-11 -- Phase 19 marked complete
+status: verifying
+last_updated: "2026-06-11T17:45:22.791Z"
+last_activity: 2026-06-11
 progress:
-  total_phases: 4
+  total_phases: 20
   completed_phases: 4
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_plans: 17
+  completed_plans: 16
+  percent: 20
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v
 
 Phase: 19 — COMPLETE
 Plan: 3 of 3 — complete (19-01 toolchain scaffold)
-Status: Phase 19 complete
-Last activity: 2026-06-11 -- Phase 19 marked complete
+Status: Phase complete — ready for verification
+Last activity: 2026-06-11
 
 ## Roadmap (v2.17 Vesicle, Phases 18–22)
 
@@ -94,6 +94,8 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 - [Phase ?]: JS.hide in toast/1 omits to: option — targets self (Pitfall 3 from RESEARCH.md; avoids id interpolation in component)
 - [Phase ?]: Gate #2 partial: TV-1 mark locked; typemarks rejected; second round for lockup variations
 - [Phase ?]: Gate #2 final: TV-1 mark + LK-B Mark-as-o lockup locked
+- [Phase ?]: Primary lockup ships two-tone (ember/scoria 'o' accent); ink density 0.61 vs letters 0.57 confirms color carries the accent
+- [Phase ?]: logotype-integrated.svg byte-identical to logo-monochrome.svg (LK-B fused lockup IS the integrated typemark)
 
 ## Deferred Items
 
@@ -118,6 +120,7 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 | Phase 18-pressure-test-audit-decision-lock P01 | 90min | 2 tasks | 2 files |
 | Phase 19 P02 | 14min | 3 tasks | 27 files |
 | Phase 19 P03 | 12 | 2 tasks | 3 files |
+| Phase 20 P01 | 22min | 3 tasks | 13 files |
 
 ## Operator Next Steps
 
