@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
 status: verifying
-last_updated: "2026-06-11T19:17:07.380Z"
+last_updated: "2026-06-11T19:24:02.301Z"
 last_activity: 2026-06-11
 progress:
   total_phases: 20
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 22
-  completed_plans: 21
-  percent: 30
+  completed_plans: 22
+  percent: 35
 ---
 
 # Project State
@@ -97,6 +97,7 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 - [Phase ?]: Primary lockup ships two-tone (ember/scoria 'o' accent); ink density 0.61 vs letters 0.57 confirms color carries the accent
 - [Phase ?]: logotype-integrated.svg byte-identical to logo-monochrome.svg (LK-B fused lockup IS the integrated typemark)
 - [Phase ?]: Phase 20 confirm: 8-variant logo set shipped as-is
+- [Phase ?]: DASHBOARD-MARK scoped to brand_mark/1 body: function-body regex extraction isolates check from icon/1 circles (nav icons); file-wide check would false-FAIL
 
 ## Deferred Items
 
@@ -122,6 +123,7 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 | Phase 19 P02 | 14min | 3 tasks | 27 files |
 | Phase 19 P03 | 12 | 2 tasks | 3 files |
 | Phase 20 P01 | 22min | 3 tasks | 13 files |
+| Phase 22-integration-quality-gate P02 | 10min | 2 tasks | 2 files |
 
 ## Operator Next Steps
 

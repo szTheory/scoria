@@ -25,11 +25,11 @@
 
 ### Integration
 
-- [ ] **BRAND-07**: The finalized brand is live on real surfaces: README header uses the chosen lockup (GitHub dark/light-aware) with an aligned badge row; the `/scoria` dashboard serves the new `favicon.svg` and the new mark in the sidebar brand slot (`lib/scoria_web/components/layouts.ex`); `mix.exs` package description, GitHub repo description, and HexDocs front copy use the finalized voice.
+- [x] **BRAND-07**: The finalized brand is live on real surfaces: README header uses the chosen lockup (GitHub dark/light-aware) with an aligned badge row; the `/scoria` dashboard serves the new `favicon.svg` and the new mark in the sidebar brand slot (`lib/scoria_web/components/layouts.ex`); `mix.exs` package description, GitHub repo description, and HexDocs front copy use the finalized voice.
 
 ### Quality Gate
 
-- [ ] **BRAND-08**: The milestone passes a scripted final quality gate: all documented fg/bg token pairs meet WCAG AA (≥4.5:1 normal / ≥3:1 large); 16px favicon legibility and monochrome-with-holes-intact reviews pass; no `<rect>` backgrounds in any logo SVG (grep-enforced) and all marks use `fill-rule="evenodd"`; `index.html` works offline; `du -s brandbook/` < 500KB with an html/md/json/css/svg-only extension allowlist; tokens.json ↔ tokens.css ↔ brand-book.md hex values are consistent; `mix test` is green including the DS-06 baseline (untouched unless conditional propagation fired).
+- [x] **BRAND-08**: The milestone passes a scripted final quality gate: all documented fg/bg token pairs meet WCAG AA (≥4.5:1 normal / ≥3:1 large); 16px favicon legibility and monochrome-with-holes-intact reviews pass; no `<rect>` backgrounds in any logo SVG (grep-enforced) and all marks use `fill-rule="evenodd"`; `index.html` works offline; `du -s brandbook/` < 500KB with an html/md/json/css/svg-only extension allowlist; tokens.json ↔ tokens.css ↔ brand-book.md hex values are consistent; `mix test` is green including the DS-06 baseline (untouched unless conditional propagation fired).
 
 ### Conditional
 
@@ -67,8 +67,8 @@ Each requirement maps to exactly one phase. Phase numbering continues from v3.0'
 | BRAND-04 | Phase 20 — Logo convergence: full variant set | Complete |
 | BRAND-05 | Phase 21 — Tokens + brand book + standalone HTML | Complete |
 | BRAND-06 | Phase 21 — Tokens + brand book + standalone HTML | Complete |
-| BRAND-07 | Phase 22 — Integration + final quality gate | Pending |
-| BRAND-08 | Phase 22 — Integration + final quality gate | Pending |
+| BRAND-07 | Phase 22 — Integration + final quality gate | Complete |
+| BRAND-08 | Phase 22 — Integration + final quality gate | Complete |
 | BRAND-09 | Phase 22 — Integration + final quality gate (conditional plan) | Conditional |
 
 **Coverage:**
