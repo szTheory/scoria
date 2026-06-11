@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-06-11T15:13:59Z",
+  "phase": "12",
+  "phase_name": "design-system-component-layer",
+  "phase_dir": ".planning/phases/12-design-system-component-layer",
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
+  "completed_tasks": [],
+  "remaining_tasks": [],
+  "blockers": [],
+  "human_actions_pending": [
+    {
+      "action": "Merge release-please PR for 0.1.1 when main CI is green",
+      "context": "Pre-existing release queue item from v2.14, independent of this pause",
+      "blocking": false
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Interject standalone milestone v2.17 \"Vesicle\" (brand system) before continuing v3.0 Control Room",
+      "rationale": "User wants a full GSD milestone for the brand book pressure-test + brandbook/ artifact buildout this week. v2.17 slots before in-flight v3.0 so version order stays aligned in archives; planning versions are decoupled from Hex semver.",
+      "phase": "milestone-boundary"
+    },
+    {
+      "decision": "brandbook/ becomes canonical brand source; dashboard CSS (assets/css/02-tokens.css) only updated if audit finds material contrast/accessibility/coherence failures",
+      "rationale": "Avoid thrash to freshly shipped v3.0 token gateway + DS-06 ratchet",
+      "phase": "milestone-boundary"
+    }
+  ],
+  "uncommitted_files": [],
+  "next_action": "After v2.17 Vesicle ships (audit + archive): /gsd:resume-work then /gsd:plan-phase 13 (orientation spine) to continue v3.0 Control Room",
+  "context_notes": "v3.0 Control Room paused cleanly at milestone-internal boundary: Phases 11-12 complete (all plans executed, UAT automated into CI), Phases 13-17 not yet planned. No mid-phase work in flight. Branch v2.17-brand-vesicle created off docker-dx-multi-instance (which is strictly ahead of main). Approved v2.17 plan: /Users/jon/.claude/plans/we-have-scoria-brand-book-deep-research-majestic-penguin.md — 5 phases (18-22): pressure-test audit + decision lock (user gate #1), logo divergence + choice gallery (user gate #2), logo convergence, tokens + brand-book.md + standalone index.html, integration + quality gate. Logo constraints: no rect backgrounds (evenodd-punched vesicles), tight lockups, no subtitle in main lockup, integrated typemark studies, 6 curated options."
+}
