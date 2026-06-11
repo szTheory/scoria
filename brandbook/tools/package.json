@@ -9,7 +9,8 @@
   },
   "scripts": {
     "smoke": "node smoke.mjs",
-    "generate": "node generate.mjs"
+    "generate": "node generate.mjs",
+    "verify": "node verify-logos.mjs"
   },
   "dependencies": {
     "opentype.js": "^1.3.5",
