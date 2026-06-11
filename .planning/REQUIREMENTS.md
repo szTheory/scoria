@@ -11,7 +11,7 @@
 ### Audit & Decisions
 
 - [x] **BRAND-01**: A maintainer can read `brandbook/pressure-test.md` containing the full 14-section pressure-test of the brand book: every element tagged KEEP/TIGHTEN/REWORK/ADD/REMOVE, a 1–10 scorecard across 15 dimensions, surface stress tests (GitHub/HexDocs/dashboard/terminal/favicon/social), gaps ranked by severity, a programmatic WCAG-AA contrast verdict on all documented token pairings, a suite-coherence assessment vs the Threadline brandbook and szTheory DNA, and an explicit verdict on whether `assets/css/02-tokens.css` requires propagation (material failures only).
-- [ ] **BRAND-02**: The user has approved a Decisions Locked section (final tagline, palette/typography deltas if any, naming, dashboard-propagation verdict) before any logo or asset generation begins.
+- [x] **BRAND-02**: The user has approved a Decisions Locked section (final tagline, palette/typography deltas if any, naming, dashboard-propagation verdict) before any logo or asset generation begins.
 
 ### Logo System
 
@@ -62,7 +62,7 @@ Each requirement maps to exactly one phase. Phase numbering continues from v3.0'
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | BRAND-01 | Phase 18 — Pressure-test audit + decision lock | Complete |
-| BRAND-02 | Phase 18 — Pressure-test audit + decision lock | Pending |
+| BRAND-02 | Phase 18 — Pressure-test audit + decision lock | Complete |
 | BRAND-03 | Phase 19 — Logo divergence + user choice | Pending |
 | BRAND-04 | Phase 20 — Logo convergence: full variant set | Pending |
 | BRAND-05 | Phase 21 — Tokens + brand book + standalone HTML | Pending |

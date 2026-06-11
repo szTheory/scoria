@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
-status: executing
-last_updated: "2026-06-11T15:47:07.043Z"
+status: verifying
+last_updated: "2026-06-11T15:56:52.273Z"
 last_activity: 2026-06-11
 progress:
   total_phases: 20
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 11
-  percent: 10
+  completed_plans: 12
+  percent: 15
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v
 
 ## Current Position
 
-Phase: 18 (pressure-test-audit-decision-lock) — EXECUTING
-Plan: 2 of 2
-Status: 18-01 complete; 18-02 pending decisions-lock + Sections 8-14
-Last activity: 2026-06-11 -- 18-01 complete (contrast checker + pressure-test Sections 1-7)
+Phase: 18 (pressure-test-audit-decision-lock) — COMPLETE (awaiting gate #1 user approval)
+Plan: 2 of 2 — complete
+Status: 18-02 complete; Sections 8-14 + Decisions Locked written; propagation: not-required confirmed; gate #1 decision summary prepared for orchestrator
+Last activity: 2026-06-11 — 18-02 complete (Sections 8-14 + Decisions Locked + propagation verdict; gate #1 checkpoint reached)
 
 ## Roadmap (v2.17 Vesicle, Phases 18–22)
 
@@ -68,6 +68,9 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 
 ### Decisions
 
+- [Phase 18-02]: propagation: not-required — CONFIRMED. --scoria-text-subtle sole shipped usage is ui.ex:653 (16x16 SVG sort icon, UI component context); WCAG 2.1 SC 1.4.11 ≥3:1 satisfied; assets/css/02-tokens.css untouched; BRAND-09 conditional does not fire — 2026-06-11
+- [Phase 18-02]: Final tagline locked — "Trace the run. Prove the change. Ship the agent."; one-liner tightened (nouns over gerunds); naming confirmed Scoria (never Scoria AI); palette deltas: none; typography IBM Plex Sans + JetBrains Mono confirmed KEEP — 2026-06-11
+- [Phase 18-02]: Logo direction ranked — Trace Vesicle Mark #1, Cinder Mark #2 fallback; LOGO-01–07 hard constraints encoded for Phase 19 (no-rect, evenodd, tight lockup, no subtitle, integrated typemark first-class, 16px pass/fail, monochrome pass/fail) — 2026-06-11
 - [Phase 18-01]: Propagation verdict presumption = not-required — 52 shipped pairings audited, 0 FAIL, 6 PASS-LARGE; pending 18-02 usage audit of --scoria-text-subtle in actual rendered text — 2026-06-11
 - [Phase 18-01]: --scoria-text-subtle (#88786D Pumice-500) is PASS-LARGE (3.91–4.48:1 across surfaces); acceptable for muted UI labels/icons, prohibited for running body text — 2026-06-11
 - [Phase 18-01]: Warning-light (#7A5A16 Sulfur) on Ash-50 = 5.87:1 PASS-AA; 18-CONTEXT known-risk flag was overcautious, no fix needed — 2026-06-11
