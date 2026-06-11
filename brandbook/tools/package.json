@@ -10,6 +10,7 @@
   "scripts": {
     "smoke": "node smoke.mjs",
     "generate": "node generate.mjs",
+    "converge": "node converge.mjs",
     "verify": "node verify-logos.mjs"
   },
   "dependencies": {
