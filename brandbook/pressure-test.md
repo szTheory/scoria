@@ -1202,14 +1202,15 @@ Yes — the propagation verdict is `not-required`. No changes to `assets/css/02-
 
 ### Final tagline
 
-**Locked: "Trace the run. Prove the change. Ship the agent."**
+**Locked: "AI ops for Phoenix apps."** *(user override at gate #1, 2026-06-11)*
 
-The brand book's primary candidate is confirmed as the final tagline. Rationale: it is the only option that is both action-verb-led AND encodes the product's unique differentiation. "AI ops for Phoenix apps" is the strongest single-line descriptor for the hero subheadline or Hex.pm description but is too narrow for the top position — it tells you what category, not why Scoria over any other AI ops tool. "Make the fire inspectable" is poetic and true but opaque on first read for a developer landing on the page from a search. The three-line treatment ("Trace the run. / Prove the change. / Ship the agent.") reads as a landing hero headline; the single-line form is the full sentence.
+The user selected the short category descriptor as THE tagline. Rationale: it is the cleanest, bluntest statement of what Scoria is — instantly parseable on Hex.pm, GitHub, social cards, and the subtitle lockup variant. The audit's recommended verb triplet remains approved as the *hero headline treatment*: the landing page hero may still lead with the three-line "Trace the run. / Prove the change. / Ship the agent." with "AI ops for Phoenix apps." as the canonical one-phrase tagline everywhere a single short descriptor is needed.
 
-Alternate taglines (approved for secondary contexts):
-- "AI ops for Phoenix apps." — hero subheadline, Hex.pm description prefix, social card footer
-- "Make the fire inspectable." — stickers, conference slide backgrounds, release announcement tagline
-- "A Phoenix-native control plane for LLM traces, evals, prompts, tools, and MCP." — full technical positioning, README intro, HexDocs meta description
+Tagline hierarchy (locked):
+- **Primary tagline:** "AI ops for Phoenix apps." — subtitle lockup variant, Hex.pm description prefix, social card footer, GitHub repo description suffix, anywhere a single short descriptor is required
+- "Trace the run. Prove the change. Ship the agent." — landing hero headline (three-line treatment), launch post, README hero — secondary
+- "Make the fire inspectable." — stickers, conference slide backgrounds, release announcement tagline — secondary
+- "A Phoenix-native control plane for LLM traces, evals, prompts, tools, and MCP." — full technical positioning, README intro, HexDocs meta description — secondary
 
 Do-not-use list stands unchanged from §1.5 of the brand book.
 
@@ -1302,3 +1303,9 @@ If future development adds `--scoria-text-subtle` to body text, running text, or
 ---
 
 *Contrast evidence: Section 5 (C2) and Section 7 contrast table of this document. Usage evidence: `lib/scoria_web/ui.ex:653` (Phase 18-02 grep audit, 2026-06-11). Tool: `brandbook/tools/contrast-check.mjs`.*
+
+---
+
+### Gate #1 record
+
+**Approved by user: 2026-06-11.** Decisions as locked above, with one override applied: primary tagline is "AI ops for Phoenix apps." (the audit's recommended verb triplet was demoted to hero-headline treatment). One-liner: tightened version approved. Naming, palette (no deltas), typography (KEEP), logo ranking, and `propagation: not-required` approved as recommended. Phase 19 logo generation is unblocked.
