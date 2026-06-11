@@ -1,11 +1,11 @@
 # Scoria logo — variant spec & optical-correction pass
 
-**Phase 20 (convergence).** The chosen direction — **TV-1 "Span rail" mark + LK-B
-"Mark-as-o" fused lockup** — graduated to the 8-variant root set at `brandbook/`.
-Geometry is **frozen** at gate #2: this pass recolors, derives, snaps, and tunes;
-it never redraws a silhouette or hole coordinate. This document records the manual
-optical-correction review (numerically) and the clear-space / min-size rules that
-Phase 21's `brand-book.md` consumes.
+How the 8-variant root set at `brandbook/` derives from the canonical artwork —
+the porous-cinder mark fused into the wordmark as the 'o'. The geometry is
+**canonical**: every variant recolors, derives, snaps, or tunes; none redraws a
+silhouette or hole coordinate. This document records the manual optical-correction
+review (numerically) and the clear-space / min-size rules that `brand-book.md`
+consumes.
 
 ---
 
@@ -19,19 +19,19 @@ Phase 21's `brand-book.md` consumes.
 | Dark (`logo-primary.svg`) | White-Hot `#FFF9F3` | Ember-500 `#E65A32` |
 | Light (`logo-primary-light.svg`) | Basalt-950 `#11100F` | Scoria-600 `#B94F31` |
 
-This follows the §8 audit lean ("reserve ember 'o' for the primary lockup").
+The ember accent is reserved for the primary lockup's 'o' — nowhere else.
 
 **Ink-density justification (the proxy that gates the call).** The risk with a
 two-tone accent glyph is that the accented 'o' reads as *bolder* than its
 neighbours rather than as a deliberate focal accent. The measured ink densities:
 
-- Mark-'o' (after the 19-02b root-hole micro-tune r 13→14.6): **0.61**
+- Mark-'o' (after the root-hole micro-tune r 13→14.6): **0.61**
 - Round letters ('o' reference): **0.57**
 
 A 0.61 vs 0.57 gap is **~7%** — within the band where the two-tone color contrast
 reads as *intentional accent*, not as extra weight. Without the root-hole tune the
 mark ran ~11% bolder (0.61 would have been ~0.68 against 0.57), which is why the
-micro-tune was applied at glyph scale in 19-02b and is preserved verbatim here.
+micro-tune was applied at glyph scale and is preserved verbatim here.
 The color difference, not a weight difference, carries the accent — confirmed
 deliberate, not a heavier glyph.
 
@@ -47,7 +47,7 @@ pair to single-tone if a future review overrides this call.
 The substituted mark-'o' must occupy the same x-height band as Plex's humanist
 'o' (which overshoots slightly past the x-height and baseline) so it neither looks
 clipped (too small) nor floating (mis-centered). Measured occupancy of the mark
-in the fused lockup (frozen LK-B group transform, recomputed this pass):
+in the fused lockup (the canonical mark-group transform, recomputed for this review):
 
 - **x: 111.22 → 167.87** — the 'o' advance slot is 111.4 → 167.7; the mark fills
   it with 0.2u of breathing room each side. No collision with 'c' (ends 109.4) or
@@ -57,7 +57,7 @@ in the fused lockup (frozen LK-B group transform, recomputed this pass):
 - **width 56.64u vs the 'o' advance 56.30u** — a 0.34u difference, so kerning is
   undisturbed and the word reads as one fused object.
 
-No adjustment required — the frozen LK-B placement already satisfies the overshoot
+No adjustment required — the canonical placement already satisfies the overshoot
 and baseline criteria. Recorded here as the optical confirmation.
 
 ---
@@ -66,7 +66,7 @@ and baseline criteria. Recorded here as the optical confirmation.
 
 `logotype-integrated.svg` is shipped **byte-identical** to `logo-monochrome.svg`.
 
-Rationale: LK-B *is* the integrated logotype (the mark fused as the 'o' makes the
+Rationale: the fused lockup *is* the integrated logotype (the mark fused as the 'o' makes the
 wordmark and mark a single object). The canonical "typemark" deliverable is
 therefore the single-color (`currentColor`) form of that fused lockup — which is
 exactly `logo-monochrome.svg`. Maintaining two separate tunings would create two
@@ -79,8 +79,9 @@ colorway (two-tone vs single `currentColor`), not in geometry.
 
 ## 4. Favicon legibility — 3 holes, all ≥1.5px at 16px, even 16-grid snap
 
-`favicon.svg` re-emits the TV-1 `holes16` 3-hole simplification with the outer
-silhouette copied verbatim from `candidates/TV-1-fav.svg` and the three hole
+`favicon.svg` re-emits the mark's `holes16` 3-hole simplification with the outer
+silhouette copied verbatim from its source preset (preserved in `candidates/TV-1-fav.svg`,
+a historical generation artifact) and the three hole
 subpaths replaced by circles snapped to **even integers on the 16-unit grid**
 (centers AND radii rounded to the nearest even value via `Math.round(n/2)*2`).
 
@@ -102,17 +103,16 @@ by stripping `<title>`/`<desc>` to a minimal `aria-label="Scoria favicon"`.
 
 **Ship rule: clear space = cap-height / 2 around the lockup bounding box.**
 
-The lockup cap-height (the 'S'/'c'/'r' cap band) is **76.8u** in the frozen LK-B
+The lockup cap-height (the 'S'/'c'/'r' cap band) is **76.8u** in the lockup
 coordinate space (viewBox `2.9 -75.6 284 77.8`, the cap band running y −74.6 → 1.2).
 Clear space is therefore **≈38.4u** of empty margin on all four sides of the lockup
 bounding box — no other element, text, or edge intrudes within that margin.
 
-*Alternate (pressure-test §8):* §8 phrases clear space as "the largest vesicle =
-unit *v*; keep 1.5*v* around the lockup." The largest vesicle (the root hole) is
-≈14.6u at glyph scale; 1.5*v* ≈ 21.9u — a *tighter* margin than cap-height/2. We
-ship the **cap-height/2 (≈38.4u)** rule because it scales with the lockup rather
-than with a single internal feature and gives the fused mark more room to read at
-small sizes. The §8 unit-*v* phrasing is noted as the looser alternate.
+*Alternate:* an acceptable looser phrasing is "the largest vesicle = unit *v*;
+keep 1.5*v* around the lockup." The largest vesicle (the root hole) is ≈14.6u at
+glyph scale; 1.5*v* ≈ 21.9u — a *tighter* margin than cap-height/2. We ship the
+**cap-height/2 (≈38.4u)** rule because it scales with the lockup rather than with
+a single internal feature and gives the fused mark more room to read at small sizes.
 
 ---
 
@@ -120,7 +120,7 @@ small sizes. The §8 unit-*v* phrasing is noted as the looser alternate.
 
 | Asset | Min size (ship) | Note |
 | --- | --- | --- |
-| Primary lockup | **≥120px wide** | §8 says ≥112px; we ship ≥120 for the fused mark's small-size hole legibility, and note the §8 ≥112 alternate. |
+| Primary lockup | **≥120px wide** | a ≥112px floor is technically workable, but ≥120 ships for the fused mark's small-size hole legibility. |
 | Mark alone (`logo-mark.svg`) | **≥20px** | below this the trace-tree holes start merging. |
 | Favicon | **exact at 16px and 32px** | the `holes16` simplification is tuned for 16px; 32px renders the same path crisply. |
 

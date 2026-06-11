@@ -1,13 +1,13 @@
 # Scoria Brand Book
 
-**The canonical brand guide.** Post-audit rewrite (v2.17 Vesicle). This file replaces the
-1,618-line deep-research draft (`prompts/scoria-brand-book-deep-research.md`, kept as history)
-as the source of truth for identity, copy, color, type, and voice. Every line here is meant to
-be buildable — if a section does not help someone make a real decision, it does not belong.
+**The canonical brand guide** — the source of truth for identity, copy, color, type, and voice.
+Every line here is meant to be buildable: if a section does not help someone make a real
+decision, it does not belong.
 
 Companion artifacts: `tokens.css` / `tokens.json` (the design tokens), `examples/*.svg` (visual
-specimens), `index.html` (the standalone brand book), `pressure-test.md` (the QA audit this
-rewrite applies), and the eight shipped logo SVGs at the root of `brandbook/`.
+specimens), `index.html` (the standalone brand book), `pressure-test.md` (historical QA record —
+the audit whose verdicts this guide absorbed), and the eight shipped logo SVGs at the root of
+`brandbook/`.
 
 ---
 
@@ -71,7 +71,7 @@ Chimeway (notifications), and Parapet (SRE). Each library is visually distinct b
 common typographic system (IBM Plex Sans / JetBrains Mono) and an operator-first DX philosophy.
 This belongs in the README design-rationale section and §1 here — not in the product UI.
 
-### Tagline hierarchy (locked at gate #1)
+### Tagline hierarchy
 
 - **Primary tagline: "AI ops for Phoenix apps."** — the canonical one-phrase descriptor.
   Use anywhere a single short line is required: subtitle lockup variant, Hex.pm description
@@ -83,7 +83,7 @@ This belongs in the README design-rationale section and §1 here — not in the 
 - **Full technical positioning (secondary):** "A Phoenix-native control plane for LLM traces,
   evals, prompts, tools, and MCP."
 
-### One-liner (locked, tightened)
+### One-liner
 
 > Scoria is the Phoenix-native AI ops layer for LLM traces, evals, prompt versions, and tool
 > governance.
@@ -96,7 +96,7 @@ distinctive than "governing LLM apps".
 
 ## 2. Ready-to-paste copy blocks
 
-These are **final**. Phase 22 pastes them verbatim into `mix.exs`, the GitHub repo description,
+These are **final** — paste them verbatim into `mix.exs`, the GitHub repo description,
 the README, HexDocs, and the landing page. Do not reduce any block to a "v1" or placeholder.
 
 ### 140-character description (Hex.pm `description:` field)
@@ -219,10 +219,11 @@ If something broke: open an issue with the trace ID and the tool call that faile
 
 ## 3. Logo & mark system
 
-Eight SVG variants ship at the root of `brandbook/`. **Geometry is frozen** (gate #2). The
-chosen direction is **TV-1 "Span rail" mark + LK-B "Mark-as-o" fused lockup** — the mark
-*is* the 'o' in "Scoria". The mark is a porous cinder whose vesicle holes trace a downward
-span rail (root → LLM → tool → eval): the brand metaphor at every size, including the 16px favicon.
+Eight SVG variants ship at the root of `brandbook/`. The mark does not sit beside the wordmark —
+it is **fused into it as the 'o' in "Scoria"**, so the logo is one object, not an icon plus text.
+The mark itself is a porous cinder whose vesicle holes trace a downward span rail
+(root → LLM → tool → eval): the brand metaphor at every size, including the 16px favicon.
+**The geometry is canonical** — recolor and derive from it; never redraw it.
 
 ### The eight variants
 
@@ -232,7 +233,7 @@ span rail (root → LLM → tool → eval): the brand metaphor at every size, in
 | `logo-primary-light.svg` | Fused lockup, **light** ground (two-tone) — docs header, light marketing |
 | `logo-mark.svg` | Mark only — favicon source (≥20px), sidebar, package avatar |
 | `logo-monochrome.svg` | Single-`currentColor` fused lockup — any ground, print, embeds |
-| `logotype-integrated.svg` | Byte-identical to `logo-monochrome.svg` (LK-B *is* the integrated typemark) |
+| `logotype-integrated.svg` | Byte-identical to `logo-monochrome.svg` (the fused lockup *is* the integrated typemark) |
 | `favicon.svg` | 16px-tuned mark: 3 holes, even-grid snap, all radii ≥1.5px at 16px |
 | `social-card.svg` | OG/Twitter card, `1280×640` (the one documented `<rect>` exemption) |
 | *mono pair* | Dark mark / light mark on transparent, derived from `logo-mark.svg` |
@@ -250,12 +251,31 @@ The accent 'o' is ~7% denser than the round letters — within the band that rea
 *deliberate focal accent*, not as a heavier glyph. The color, not weight, carries the accent.
 `logo-monochrome.svg` and `logotype-integrated.svg` are single-tone by definition.
 
+The wordmark letterforms are IBM Plex Sans SemiBold (600) converted to outlines — the logo
+SVGs are self-contained and never require the font to be installed.
+
+### Monochrome usage
+
+`logo-monochrome.svg` is drawn in `currentColor`: one artwork that takes whatever ink you give
+it. There is no separate black file and white file.
+
+- **When:** single-ink contexts only — print, engraving and embossing, stamps, partner
+  co-branding strips, embedded badges, and anywhere brand color is unavailable or would clash.
+  When full color is available, use the two-tone primary; monochrome is the fallback, never
+  the default.
+- **Which ink:** near-black Basalt-950 `#11100F` on light grounds; warm white White-Hot
+  `#FFF9F3` on dark grounds. Never mid-gray, and never an ink that fails 3:1 contrast against
+  its ground.
+- **Embedding:** loaded via `<img>`, `currentColor` renders black — fine on light surfaces.
+  On dark surfaces, inline the SVG (or reference it with `<use>`) so it inherits the CSS
+  `color` you set.
+
 ### Usage rules
 
 - **Clear space = cap-height / 2 ≈ 38.4u** of empty margin on all four sides of the lockup
-  bounding box. No element, text, or edge intrudes. (Pressure-test §8's looser "1.5× largest
-  vesicle ≈ 21.9u" is noted as the alternate; we ship the cap-height/2 rule because it scales
-  with the lockup, not a single internal feature.)
+  bounding box. No element, text, or edge intrudes. (An acceptable looser approximation is
+  "1.5× the largest vesicle ≈ 21.9u"; the cap-height/2 rule ships because it scales with the
+  lockup, not with a single internal feature.)
 - **Minimum sizes:** primary lockup **≥120px wide**; mark alone **≥20px** (below this the
   trace-tree holes merge); favicon **exact at 16px and 32px**.
 - **Logotype optically tight to mark** — the mark is fused as the 'o'; the word reads as one object.
@@ -274,7 +294,7 @@ The accent 'o' is ~7% denser than the round letters — within the band that rea
 
 ## 4. Color
 
-The palette is **locked — no deltas**. A 52-pairing WCAG audit (`tools/contrast-check.mjs`)
+The palette is **fixed**. A 52-pairing WCAG audit (`tools/contrast-check.mjs`)
 found zero FAIL verdicts. Hex values here are identical to `assets/css/02-tokens.css` (the
 dashboard runtime SSOT) and `brandbook/tokens.css` (the docs/marketing SSOT). The warm,
 dark-first volcanic palette is a genuine differentiator — do not redesign it.
@@ -353,20 +373,20 @@ The full 52-pairing table lives in `index.html`. Two constraints are load-bearin
 All other 46 pairings are PASS-AA. No emergency propagation to `assets/css/02-tokens.css` is
 required on accessibility grounds.
 
-### Token propagation policy (BRAND-09)
+### Token propagation policy
 
 `assets/css/02-tokens.css` (`.scoria-root`-scoped) is the **runtime SSOT**; `brandbook/tokens.css`
-(`:root`-scoped) is the **docs/marketing SSOT**. Hex values must stay identical. **Only** WCAG AA
-failures, accessibility defects, or genuine coherence breaks trigger a propagation pass to the
-runtime tokens — never cosmetic preference. Rationale: a token change requires a DS-06
-test-baseline update; that cost is only justified by material failures. The Phase 18 audit
-verdict is `propagation: not-required`.
+(`:root`-scoped) is the **docs/marketing SSOT**. Hex values must stay identical (enforced by
+`tools/check-consistency.mjs`). **Only** WCAG AA failures, accessibility defects, or genuine
+coherence breaks trigger a propagation pass to the runtime tokens — never cosmetic preference.
+Rationale: a token change requires a DS-06 test-baseline update; that cost is only justified by
+material failures. The current audit (`tools/contrast-check.mjs`, 52 pairings) found none.
 
 ---
 
 ## 5. Typography
 
-**IBM Plex Sans + JetBrains Mono — confirmed KEEP.** Plex Sans is technically neutral,
+**IBM Plex Sans + JetBrains Mono — two typefaces, never a third.** Plex Sans is technically neutral,
 license-safe (OFL), and consistent across the szTheory ecosystem. JetBrains Mono is designed
 for developer contexts and handles Elixir identifiers, trace IDs, model IDs, and token counts well.
 
@@ -539,5 +559,4 @@ wrote it — not a landing page, not a manual. Clear, fast, useful.
 
 ---
 
-*Canonical guide · v2.17 Vesicle · applies every KEEP/TIGHTEN/REWORK verdict from
-`pressure-test.md`. Copy blocks in §2 are final and consumed verbatim by Phase 22.*
+*Canonical guide. Copy blocks in §2 are final — paste them verbatim.*

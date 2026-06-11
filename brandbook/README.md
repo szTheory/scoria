@@ -6,9 +6,9 @@ Open `index.html` directly in a browser to review the visual brand book.
 The Markdown files are the durable source text:
 
 - `brand-book.md` — the canonical brand guide (identity, positioning, logo system, color, typography, voice, UI guidance, blueprints).
-- `pressure-test.md` — brand QA record (audit verdicts, contrast table, decisions locked).
+- `pressure-test.md` — historical brand QA record (audit verdicts and contrast table this system absorbed).
 - `tokens.json` and `tokens.css` — docs/marketing implementation tokens (structured object + `:root` custom properties).
-- `logo-primary.svg` — primary lockup for dark surfaces (LK-B Mark-as-o fused).
+- `logo-primary.svg` — primary lockup for dark surfaces (the mark fused into the wordmark as the 'o').
 - `logo-primary-light.svg` — primary lockup for light surfaces (README, GitHub, documentation).
 - `logo-mark.svg` — standalone mark (favicon and sidebar contexts).
 - `logo-monochrome.svg` / `logotype-integrated.svg` — monochrome and integrated variants.
@@ -48,7 +48,7 @@ This script asserts that `brandbook/tokens.css`, `assets/css/02-tokens.css`, and
 - `tools/candidates/` contains historical exploration outputs. These are preserved for reference; do not treat them as current system files.
 - Prefer SVG for all visual assets. Use `<text>` elements with system-fallback font stacks in example SVGs (not embedded font binaries).
 - Keep each SVG file under 12 KB; the total `examples/` directory under 60 KB.
-- Do not edit the repo-root `README.md` or `mix.exs` from this directory (Phase 22 scope).
+- Do not edit the repo-root `README.md` or `mix.exs` from this directory — those are product-integration surfaces; change them deliberately, sourcing copy from `brand-book.md` §2.
 - Never use `@import` or network font refs in `tokens.css`. The file must be self-contained.
 
 ## Best Current Defaults
@@ -64,7 +64,7 @@ Prove the change.
 Ship the agent.
 ```
 
-**Logo system:** LK-B Mark-as-o fused lockup is the primary. The full 8-variant set:
+**Logo system:** the fused lockup — the mark as the 'o' in "Scoria" — is the primary. The full 8-variant set:
 `logo-primary.svg` (dark), `logo-primary-light.svg` (light), `logo-mark.svg`, `logo-monochrome.svg`,
 `logotype-integrated.svg`, `logo-lockup-subtitle.svg`, `favicon.svg`, `social-card.svg`.
 Use the primary on dark backgrounds. Use the light variant on light/README/GitHub surfaces.
