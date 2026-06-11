@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
-status: ready_to_plan
-last_updated: "2026-06-11"
+status: executing
+last_updated: "2026-06-11T15:47:07.043Z"
 last_activity: 2026-06-11
 progress:
-  total_phases: 5
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 20
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 11
+  percent: 10
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 18 — pressure-test audit + decision lock
+**Current focus:** Phase 18 — pressure-test-audit-decision-lock
 
 ## Current Position
 
-Phase: 18
-Plan: not started
-Status: Ready to plan
-Last activity: 2026-06-11 — v2.17 roadmap created
+Phase: 18 (pressure-test-audit-decision-lock) — EXECUTING
+Plan: 2 of 2
+Status: 18-01 complete; 18-02 pending decisions-lock + Sections 8-14
+Last activity: 2026-06-11 -- 18-01 complete (contrast checker + pressure-test Sections 1-7)
 
 ## Roadmap (v2.17 Vesicle, Phases 18–22)
 
@@ -68,6 +68,9 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 
 ### Decisions
 
+- [Phase 18-01]: Propagation verdict presumption = not-required — 52 shipped pairings audited, 0 FAIL, 6 PASS-LARGE; pending 18-02 usage audit of --scoria-text-subtle in actual rendered text — 2026-06-11
+- [Phase 18-01]: --scoria-text-subtle (#88786D Pumice-500) is PASS-LARGE (3.91–4.48:1 across surfaces); acceptable for muted UI labels/icons, prohibited for running body text — 2026-06-11
+- [Phase 18-01]: Warning-light (#7A5A16 Sulfur) on Ash-50 = 5.87:1 PASS-AA; 18-CONTEXT known-risk flag was overcautious, no fix needed — 2026-06-11
 - v2.17: `brandbook/` is canonical brand source; `assets/css/02-tokens.css` touched only on material audit failures (BRAND-09 conditional) — avoids thrash to v3.0 token gateway + DS-06 ratchet — 2026-06-11
 - v2.17: Logo constraints locked — no rect backgrounds, evenodd holes, logotype optically tight to mark, no subtitle in main lockup, integrated type works motif INTO letterforms — 2026-06-11
 - v2.17: User approval gates at end of Phase 18 (decisions lock) and Phase 19 (logo choice) — 2026-06-11
@@ -106,6 +109,7 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 | Phase 12-design-system-component-layer P03 | 10min | 2 tasks | 2 files |
 | Phase 12 P04 | 3min | 2 tasks | 3 files |
 | Phase 12-design-system-component-layer P05 | 17min | 3 tasks | 8 files |
+| Phase 18-pressure-test-audit-decision-lock P01 | 90min | 2 tasks | 2 files |
 
 ## Operator Next Steps
 

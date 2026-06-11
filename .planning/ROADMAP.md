@@ -74,7 +74,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   3. The pressure test includes an explicit suite-coherence assessment vs the Threadline brandbook and `szTheory` DNA, and an explicit verdict on whether `assets/css/02-tokens.css` requires propagation.
   4. A Decisions Locked section records the final choices (tagline, palette/typography deltas if any, naming, propagation verdict), and the user has approved it at gate #1 before Phase 19 begins.
 **Plans**: 2 plans
-  - [ ] 18-01-PLAN.md — Contrast checker + pressure-test Sections 1-7 (exec judgment, brand DNA, 15-dim scorecard, stress tests, gaps, upgrades, token spec) with embedded WCAG table
+  - [x] 18-01-PLAN.md — Contrast checker + pressure-test Sections 1-7 (exec judgment, brand DNA, 15-dim scorecard, stress tests, gaps, upgrades, token spec) with embedded WCAG table
   - [ ] 18-02-PLAN.md — Pressure-test Sections 8-14 (logo ranking + Phase-19 constraints, voice, blueprints, artifacts, actions, quality gate) + Decisions Locked + propagation verdict + gate #1 checkpoint
 **Checkpoint**: Gate #1 — user approval of Decisions Locked section required before proceeding
 
@@ -227,7 +227,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 18. Pressure-test audit + decision lock | v2.17 | 0/~2 | Not started | - |
+| 18. Pressure-test audit + decision lock | v2.17 | 1/2 | In Progress|  |
 | 19. Logo divergence + user choice | v2.17 | 0/~3 | Not started | - |
 | 20. Logo convergence — full variant set | v2.17 | 0/~2 | Not started | - |
 | 21. Tokens + brand book + standalone HTML | v2.17 | 0/~3 | Not started | - |
