@@ -13,22 +13,17 @@ defmodule ScoriaWeb.Layouts do
 
   embed_templates("layouts/*")
 
-  @doc "Porous-cinder brand mark (negative-space vesicles evoke a trace tree)."
+  @doc "TV-1 Span rail brand mark (evenodd vesicle holes; pixel-snapped 3-hole geometry from favicon)."
   attr(:class, :string, default: nil)
 
   def brand_mark(assigns) do
     ~H"""
-    <svg class={["scoria-brand__mark", @class]} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg class={["scoria-brand__mark", @class]} viewBox="-53.32 -52.98 99.66 96.07" fill="none" aria-hidden="true">
       <path
-        d="M5.2 4.6C8 2.4 16 2 19.2 5.2c3 3 2.6 11-0.6 14.2-3 3-11.2 2.8-14.2-0.4C1.2 15.8 2 6.9 5.2 4.6Z"
         fill="var(--scoria-ember-500)"
-        opacity="0.16"
-        stroke="var(--scoria-ember-500)"
-        stroke-width="1.1"
+        fill-rule="evenodd"
+        d="M0,-51.98L35.48,-36.24Q41.88,-33.4,42.43,-26.42L44.79,3.37Q45.34,10.35,40.4,15.31L23.06,32.67Q18.12,37.63,11.17,38.44L-13.32,41.28Q-20.27,42.09,-25.37,37.29L-47.22,16.74Q-52.32,11.94,-50.51,5.18L-42.31,-25.54Q-40.5,-32.3,-34.2,-35.36ZM-10,-24C-10,-30.63,-15.37,-36,-22,-36C-28.63,-36,-34,-30.63,-34,-24C-34,-17.37,-28.63,-12,-22,-12C-15.37,-12,-10,-17.37,-10,-24ZM12,0C12,-5.52,7.52,-10,2,-10C-3.52,-10,-8,-5.52,-8,0C-8,5.52,-3.52,10,2,10C7.52,10,12,5.52,12,0ZM36,26C36,20.48,31.52,16,26,16C20.48,16,16,20.48,16,26C16,31.52,20.48,36,26,36C31.52,36,36,31.52,36,26Z"
       />
-      <circle cx="10" cy="9" r="2.1" fill="var(--scoria-ember-500)" />
-      <circle cx="15.4" cy="12.6" r="1.3" fill="var(--scoria-molten-400)" />
-      <circle cx="9.2" cy="15" r="1" fill="var(--scoria-molten-400)" opacity="0.8" />
     </svg>
     """
   end
