@@ -78,10 +78,14 @@ export const TV_1 = {
   ],
   // LOGO-06: 16px favicon simplification — EXACTLY 3 holes, vertical/diagonal.
   // Keep the three largest nodes; drop the tiny leaf that vanishes sub-2px.
+  // Tuned (verified by generate-time geometry math) so each hole clears ≥1.5px
+  // AND the inter-hole webs survive: holes spread to the silhouette's diagonal
+  // extremes with edge-gaps ≥ 0.5× the smaller radius so they read as 3 holes,
+  // not one merged blob, at 16px.
   holes16: [
-    { cx: -15, cy: -20, r: 15 },
-    { cx: 2, cy: 2, r: 11 },
-    { cx: 17, cy: 22, r: 8 },
+    { cx: -23, cy: -24, r: 12 }, // root (upper-left)
+    { cx: 1, cy: 0, r: 10.5 }, // mid (center)
+    { cx: 25, cy: 25, r: 10 }, // leaf (lower-right)
   ],
 };
 
@@ -117,10 +121,12 @@ export const TV_2 = {
     { cx: 34, cy: 22, r: 6, edgeBite: true }, // leaf bleeding the right edge (notch)
   ],
   // LOGO-06: 3-hole favicon — root + the two strongest branch nodes, diagonal.
+  // Spread to the diagonal extremes so the webs survive at 16px and the three
+  // holes stay distinct (each ≥1.5px, edge-gap ≥ 0.5× smaller radius).
   holes16: [
-    { cx: -16, cy: -20, r: 15 },
-    { cx: 2, cy: 0, r: 11 },
-    { cx: 18, cy: 18, r: 8 },
+    { cx: -25, cy: -25, r: 12.5 },
+    { cx: 1, cy: 0, r: 11.5 },
+    { cx: 27, cy: 25, r: 11 },
   ],
 };
 
@@ -285,11 +291,14 @@ export const TV_3 = {
     { cx: 14, cy: 4, r: 6.5 }, // child (marching right)
     { cx: 30, cy: 10, r: 4.5 }, // trailing leaf
   ],
-  // LOGO-06: 3-hole favicon — root + two strongest cross nodes, shallow diagonal.
+  // LOGO-06: 3-hole favicon — root + two cross nodes along a SHALLOW horizontal
+  // diagonal (preserving TV-3's left-to-right cross-rail identity at favicon
+  // size). Spread to the horizontal extremes so webs survive and holes stay
+  // distinct at 16px (each ≥1.5px, edge-gap ≥ 0.5× smaller radius).
   holes16: [
-    { cx: -22, cy: -8, r: 15 },
-    { cx: 0, cy: 0, r: 11 },
-    { cx: 22, cy: 8, r: 8 },
+    { cx: -30, cy: -8, r: 12 },
+    { cx: -1, cy: 0, r: 11 },
+    { cx: 28, cy: 8, r: 10.5 },
   ],
 };
 
