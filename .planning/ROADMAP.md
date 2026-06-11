@@ -103,7 +103,9 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   2. Every variant has a tight viewBox, and `brandbook/brand-book.md` (or a companion spec) documents clear-space rules and minimum display sizes.
   3. A manual optical-correction pass has been applied: fills only (no strokes), baseline alignment confirmed, favicon path legible at 16px.
   4. A lightweight confirm checkpoint (screenshot strip) has been reviewed and accepted before Phase 21/22 integration work proceeds.
-**Plans**: TBD (~2 plans)
+**Plans**: 2 plans
+  - [ ] 20-01-PLAN.md — Generate + optically correct the 8 root variants (census colorways, frozen TV-1/LK-B geometry), write variant-spec.md (clear-space/min-size + optical pass), extend verify-logos.mjs with ROOT-* checks, prune losing candidates + both galleries
+  - [ ] 20-02-PLAN.md — Lightweight standalone final-variants.html confirm strip + full verification + checkpoint:confirm (orchestrator-presented ship-it/adjust)
 **Checkpoint**: Lightweight confirm — screenshot strip review before proceeding
 
 ### Phase 21: Tokens + brand book + standalone HTML
@@ -232,7 +234,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 |-------|-----------|----------------|--------|-----------|
 | 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete   | 2026-06-11 |
 | 19. Logo divergence + user choice | v2.17 | 3/3 | Complete   | 2026-06-11 |
-| 20. Logo convergence — full variant set | v2.17 | 0/~2 | Not started | - |
+| 20. Logo convergence — full variant set | v2.17 | 0/2 | Not started | - |
 | 21. Tokens + brand book + standalone HTML | v2.17 | 0/~3 | Not started | - |
 | 22. Integration + final quality gate | v2.17 | 0/~2 | Not started | - |
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
