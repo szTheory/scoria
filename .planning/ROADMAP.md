@@ -84,7 +84,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 **Requirements**: BRAND-03
 **Success Criteria** (what must be TRUE):
   1. Committed generation tooling in `brandbook/tools/` produces faceted-polygon vesicle silhouettes with evenodd-punched holes; a separate script outlines IBM Plex Sans glyphs via opentype.js for integrated typemark studies.
-  2. `brandbook/options-gallery.html` presents ≥6 genuinely distinct mark+lockup options and ≥2 integrated logotype-only studies rendered on dark AND light grounds at 256/64/32/16px with a monochrome row.
+  2. `brandbook/tools/options-gallery.html` presents ≥6 genuinely distinct mark+lockup options and ≥2 integrated logotype-only studies rendered on dark AND light grounds at 256/64/32/16px with a monochrome row.
   3. The gallery includes in-situ mocks: browser-tab favicon strip, 24px dashboard sidebar slot, and README header band.
   4. No option contains a rectangular background shape (enforced by geometry); all marks use `fill-rule="evenodd"`; logotype is optically tight to the mark; main lockup has no subtitle.
   5. The gallery includes a ranked recommendation and a documented "none of these → second round" escape path; the user's chosen direction is recorded before Phase 20 begins.
