@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
-status: executing
-last_updated: "2026-06-11T16:50:07.445Z"
-last_activity: 2026-06-11
+status: completed
+last_updated: "2026-06-11T17:19:13.084Z"
+last_activity: 2026-06-11 -- Phase 19 marked complete
 progress:
-  total_phases: 20
+  total_phases: 4
   completed_phases: 4
   total_plans: 15
   completed_plans: 15
-  percent: 20
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v
 
 ## Current Position
 
-Phase: 19 — in progress
+Phase: 19 — COMPLETE
 Plan: 3 of 3 — complete (19-01 toolchain scaffold)
-Status: Ready to execute
-Last activity: 2026-06-11
+Status: Phase 19 complete
+Last activity: 2026-06-11 -- Phase 19 marked complete
 
 ## Roadmap (v2.17 Vesicle, Phases 18–22)
 
@@ -92,6 +92,8 @@ Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
 - [Phase ?]: Use Map.get/3 in template instead of :default in slot attr declarations
 - [Phase ?]: empty_slot is the slot name in notebook/1 to avoid conflict with the empty boolean attr
 - [Phase ?]: JS.hide in toast/1 omits to: option — targets self (Pitfall 3 from RESEARCH.md; avoids id interpolation in component)
+- [Phase ?]: Gate #2 partial: TV-1 mark locked; typemarks rejected; second round for lockup variations
+- [Phase ?]: Gate #2 final: TV-1 mark + LK-B Mark-as-o lockup locked
 
 ## Deferred Items
 
