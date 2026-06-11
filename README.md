@@ -1,4 +1,8 @@
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="brandbook/logo-primary.svg"><img src="brandbook/logo-primary-light.svg" alt="Scoria" width="360"></picture></p>
+
 # Scoria
+
+AI ops for Phoenix apps.
 
 [![CI](https://github.com/szTheory/scoria/actions/workflows/ci.yml/badge.svg)](https://github.com/szTheory/scoria/actions/workflows/ci.yml)
 [![Hex.pm](https://img.shields.io/hexpm/v/scoria.svg)](https://hex.pm/packages/scoria)
@@ -7,7 +11,7 @@
 [![Elixir](https://img.shields.io/badge/Elixir-1.19%2B-4B275F.svg)](https://elixir-lang.org/)
 [![Phoenix](https://img.shields.io/badge/Phoenix-1.7%2B-FD4F00.svg)](https://www.phoenixframework.org/)
 
-Scoria is the Phoenix-native runtime and operator surface for identity-aware AI runs. It gives a host app one public place to normalize actor, tenant, and session identity, start durable runs, resume an exact paused run by `run_id`, and inspect operator evidence at `/scoria` without turning the dashboard into the app's source of business truth.
+Scoria is a batteries-included Phoenix library for production AI features. It records every run — prompt renders, model calls, tool calls, retrieval events, approvals, and eval scores — as structured, queryable traces. You get a LiveView operator UI, an eval flywheel, a prompt version registry, and a tool/MCP governance layer, all wired into Phoenix, Ecto, and OTP without a black-box dependency.
 
 Scoria is a Phoenix-native runtime with a narrow public surface — **start with the default runtime**, add lanes only when needed:
 
