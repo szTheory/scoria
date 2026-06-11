@@ -236,7 +236,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | 19. Logo divergence + user choice | v2.17 | 3/3 | Complete   | 2026-06-11 |
 | 20. Logo convergence — full variant set | v2.17 | 2/2 | Complete   | 2026-06-11 |
 | 21. Tokens + brand book + standalone HTML | v2.17 | 1/3 | In Progress|  |
-| 22. Integration + final quality gate | v2.17 | 0/~2 | Not started | - |
+| 22. Integration + final quality gate | v2.17 | 1/2 | In Progress|  |
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 13. Orientation spine (IA) | v3.0 | 0/? | Paused | - |
