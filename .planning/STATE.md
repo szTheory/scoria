@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v2.17
 milestone_name: Vesicle
-status: planning
-last_updated: "2026-06-11T15:17:04.231Z"
+status: ready_to_plan
+last_updated: "2026-06-11"
 last_activity: 2026-06-11
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,23 +17,33 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-06-03 after v3.0 Control Room milestone start)
+See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle interjected; v3.0 paused)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 13 — orientation spine (ia)
+**Current focus:** Phase 18 — pressure-test audit + decision lock
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-06-11 — Milestone v2.17 started
+Phase: 18
+Plan: not started
+Status: Ready to plan
+Last activity: 2026-06-11 — v2.17 roadmap created
 
-## Roadmap (v3.0 Control Room, Phases 11–17)
+## Roadmap (v2.17 Vesicle, Phases 18–22)
 
-1. **Phase 11 — Evaluation engine + seed depth** (EVAL-01..05) — `mix scoria.ui.shots` harness, 9-dim rubric, full-screen seed depth, baseline audit → gap register/fix backlog. Foundation; every later phase re-runs this loop.
-2. **Phase 12 — Design-system component layer** (DS-01..06) — `ui.ex` table/drawer/modal/form/notebook/skeleton/toast, fix `flash_group`, raw-color drift guard. The enforced token gateway.
+1. **Phase 18 — Pressure-test audit + decision lock** (BRAND-01, BRAND-02) — 14-section pressure test → `brandbook/pressure-test.md`; WCAG contrast script in `brandbook/tools/`; suite-coherence vs Threadline + szTheory DNA; Decisions Locked section → user approval gate #1.
+2. **Phase 19 — Logo divergence + user choice** (BRAND-03) — generation tooling in `brandbook/tools/` (faceted-polygon geometry, evenodd holes, opentype.js glyph outlines); ≥6 mark/lockup options + ≥2 integrated typemark studies; `options-gallery.html` (dark+light, 256/64/32/16px, monochrome, favicon/sidebar/README mocks) → user choice gate #2 with ranked recommendation and second-round escape.
+3. **Phase 20 — Logo convergence: full variant set** (BRAND-04) — chosen direction → all 8 logo variants; clear-space/min-size spec; manual optical-correction pass; lightweight confirm checkpoint.
+4. **Phase 21 — Tokens + brand book + standalone HTML** (BRAND-05, BRAND-06) — `tokens.json` + `tokens.css`; `brand-book.md` post-audit rewrite; `examples/*.svg` ×7; professional standalone `index.html` (file:// offline-safe); `brandbook/README.md` maintenance rules. Non-logo plans can start parallel with Phase 20.
+5. **Phase 22 — Integration + final quality gate** (BRAND-07, BRAND-08; conditional BRAND-09) — README header + badges; dashboard favicon + sidebar mark swap (`layouts.ex`); `mix.exs`/GitHub/HexDocs copy; conditional token-propagation plan if Phase 18 verdict requires; scripted final quality gate.
+
+## Roadmap (v3.0 Control Room, Phases 11–17) — PAUSED
+
+Paused at phase 12/13 boundary. Resume after v2.17 milestone archive.
+
+1. **Phase 11 — Evaluation engine + seed depth** (EVAL-01..05) — `mix scoria.ui.shots` harness, 9-dim rubric, full-screen seed depth, baseline audit → gap register/fix backlog. **COMPLETE 2026-06-04**
+2. **Phase 12 — Design-system component layer** (DS-01..06) — `ui.ex` table/drawer/modal/form/notebook/skeleton/toast, fix `flash_group`, raw-color drift guard. The enforced token gateway. **COMPLETE 2026-06-04**
 3. **Phase 13 — Orientation spine (IA)** (IA-01..06) — nav active-state fix, third axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, quality-loop threading, honest reserved-name stubs.
 4. **Phase 14 — Least-iterated screens polish** (SCREEN-01, SCREEN-02) — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions; real Dataset Builder index.
 5. **Phase 15 — High-traffic screens + evidence adapters** (SCREEN-03, SCREEN-04) — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components → thin notebook adapters.
@@ -42,7 +52,7 @@ Last activity: 2026-06-11 — Milestone v2.17 started
 
 ## Performance Metrics
 
-- **Current milestone:** `v3.0 Control Room` (planning — roadmap created 2026-06-03)
+- **Current milestone:** `v2.17 Vesicle` (ready to plan — roadmap created 2026-06-11)
 - **Latest Shipped:** `v2.16 ReqLLM Peer Bump` (2026-05-30)
 - **Previous Shipped:** `v2.15 Connector Adoption Lane` (2026-05-30)
 - **Hex release:** `0.1.1` prepared; publish via release-please pending CI green
@@ -51,12 +61,16 @@ Last activity: 2026-06-11 — Milestone v2.17 started
 
 ### Roadmap Evolution
 
-- **v3.0 (planning):** Control Room UI/IA/DX milestone. Phases 11–17 continue numbering from v2.16's Phase 10.1. Core finding: design system is under-*adopted*, not under-built (~22/25 view files leak raw Tailwind). Sequenced for compounding reuse: primitives (12) before screens (14, 15), least-iterated before high-traffic, cross-cutting motion/parity (16) last before proof (17).
+- **v2.17 (in progress):** Brand system milestone. Interjected before v3.0 phases 13–17 because brand book was AI-generated seed, never pressure-tested, and no logo/collateral exists. Phases 18–22 (globally monotonic past v3.0's reserved 11–17 block). Planning versions decoupled from Hex semver keeps archive chronology aligned.
+- **v3.0 (paused):** Control Room UI/IA/DX milestone. Phases 11–17. Phases 11–12 complete (2026-06-04). Core finding: design system is under-*adopted* (~22/25 view files leak raw Tailwind). Paused at clean 12/13 boundary; resumes after v2.17 archive.
 - **v2.16 (shipped):** ReqLLM `~> 1.13` peer bump — minimal dependency hygiene scope.
 - **v2.15 (shipped):** Named connector adoption lane — PR WAE after knowledge, not in closeout.
 
 ### Decisions
 
+- v2.17: `brandbook/` is canonical brand source; `assets/css/02-tokens.css` touched only on material audit failures (BRAND-09 conditional) — avoids thrash to v3.0 token gateway + DS-06 ratchet — 2026-06-11
+- v2.17: Logo constraints locked — no rect backgrounds, evenodd holes, logotype optically tight to mark, no subtitle in main lockup, integrated type works motif INTO letterforms — 2026-06-11
+- v2.17: User approval gates at end of Phase 18 (decisions lock) and Phase 19 (logo choice) — 2026-06-11
 - v3.0 keeps the custom token-first scoped CSS architecture; `ui.ex` is the enforced token gateway (no Tailwind/BEM switch) — 2026-06-03
 - v3.0 is UI-only: reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data — 2026-06-03
 - Screenshot+critique harness is committed dev-only tooling, not merge-blocking CI (consistent with LiveViewTest-only posture) — 2026-06-03
@@ -95,5 +109,4 @@ Last activity: 2026-06-11 — Milestone v2.17 started
 
 ## Operator Next Steps
 
-- `/gsd:plan-phase 11` — plan the first v3.0 phase (evaluation engine + seed depth)
-- Merge release-please PR when main CI green
+- `/gsd:plan-phase 18` — plan the first v2.17 phase (pressure-test audit + decision lock)
