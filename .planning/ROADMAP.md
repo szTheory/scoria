@@ -73,7 +73,9 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   2. A runnable script in `brandbook/tools/` produces a WCAG-AA contrast verdict table for all documented token pairings; the table is embedded in `pressure-test.md`.
   3. The pressure test includes an explicit suite-coherence assessment vs the Threadline brandbook and `szTheory` DNA, and an explicit verdict on whether `assets/css/02-tokens.css` requires propagation.
   4. A Decisions Locked section records the final choices (tagline, palette/typography deltas if any, naming, propagation verdict), and the user has approved it at gate #1 before Phase 19 begins.
-**Plans**: TBD (~2 plans)
+**Plans**: 2 plans
+  - [ ] 18-01-PLAN.md — Contrast checker + pressure-test Sections 1-7 (exec judgment, brand DNA, 15-dim scorecard, stress tests, gaps, upgrades, token spec) with embedded WCAG table
+  - [ ] 18-02-PLAN.md — Pressure-test Sections 8-14 (logo ranking + Phase-19 constraints, voice, blueprints, artifacts, actions, quality gate) + Decisions Locked + propagation verdict + gate #1 checkpoint
 **Checkpoint**: Gate #1 — user approval of Decisions Locked section required before proceeding
 
 ### Phase 19: Logo divergence + user choice
