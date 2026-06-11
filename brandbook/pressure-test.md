@@ -1191,3 +1191,114 @@ Yes — and this is the most important answer. The volcanic metaphor is not borr
 **8. Does it avoid unnecessary brand thrash?**
 
 Yes — the propagation verdict is `not-required`. No changes to `assets/css/02-tokens.css`. No changes to `priv/static`. No changes to `test/support/ds06_baseline.txt`. The color system is confirmed sound. Typography is confirmed keep. Voice is confirmed keep. The only net-new work is the logo (Phase 19–20), the brand-book rewrite and token export (Phase 21), and the integration pass (Phase 22). None of these constitute thrash; they are additive work on a system that is already strong.
+
+---
+
+## Decisions Locked
+
+*Approved at gate #1 before Phase 19 begins. Phases 19, 21, and 22 read back this section.*
+
+---
+
+### Final tagline
+
+**Locked: "Trace the run. Prove the change. Ship the agent."**
+
+The brand book's primary candidate is confirmed as the final tagline. Rationale: it is the only option that is both action-verb-led AND encodes the product's unique differentiation. "AI ops for Phoenix apps" is the strongest single-line descriptor for the hero subheadline or Hex.pm description but is too narrow for the top position — it tells you what category, not why Scoria over any other AI ops tool. "Make the fire inspectable" is poetic and true but opaque on first read for a developer landing on the page from a search. The three-line treatment ("Trace the run. / Prove the change. / Ship the agent.") reads as a landing hero headline; the single-line form is the full sentence.
+
+Alternate taglines (approved for secondary contexts):
+- "AI ops for Phoenix apps." — hero subheadline, Hex.pm description prefix, social card footer
+- "Make the fire inspectable." — stickers, conference slide backgrounds, release announcement tagline
+- "A Phoenix-native control plane for LLM traces, evals, prompts, tools, and MCP." — full technical positioning, README intro, HexDocs meta description
+
+Do-not-use list stands unchanged from §1.5 of the brand book.
+
+---
+
+### One-liner
+
+**Locked (TIGHTENED):** "Scoria is the Phoenix-native AI ops layer for LLM traces, evals, prompt versions, and tool governance."
+
+Before: "Scoria is the Phoenix-native AI ops layer for tracing, evaluating, replaying, and governing LLM apps."
+Change: "tool governance" (specific, distinctive) replaces "governing LLM apps" (generic). "LLM traces, evals, prompt versions" (nouns) replace "tracing, evaluating, replaying" (gerunds). Nouns are scannable in the Hex.pm listing and README one-liner context; gerunds are slower.
+
+---
+
+### Naming confirmation
+
+- Product name: **Scoria** — never "Scoria AI", never "ScoriaAI", never "SCORIA", never "Scoria Platform"
+- Package atom: `:scoria` — never `:scoria_ai`
+- Feature names: **unchanged** — Trace Explorer, Eval Workbench, Prompt Registry, Replay Playground, Tool Governance, MCP Gateway
+- Suite context: Scoria belongs to the szTheory Elixir ecosystem alongside Threadline, Sigra, Chimeway, and Parapet. This context should appear in §1 of the brand book rewrite and in the README design-rationale section, not in the product UI.
+
+---
+
+### Palette deltas
+
+**Palette deltas: none** (cosmetic preferences stay brandbook-only).
+
+The 52-pairing contrast audit confirms the palette is fundamentally sound. No FAIL verdicts. The six PASS-LARGE pairings are all `--scoria-text-subtle` on various surfaces and the Scoria-600 negative-control pairing — both are documented constraints, not defects. No hex value changes are warranted.
+
+Brandbook-only notes (do not propagate):
+- The warm panel background (#FFF9F3 White-Hot) is intentional. Do not substitute neutral white (#FFFFFF).
+- Pumice-500 (#88786D) as `--scoria-text-subtle` is intentionally below normal-text AA. Use for UI icons, sort indicators, and 12–13px monospaced metadata only.
+
+---
+
+### Typography confirmation
+
+**Typography: IBM Plex Sans + JetBrains Mono — confirmed KEEP.**
+
+No material reason to change. IBM Plex Sans is technically neutral, license-safe (OFL), has sufficient weight range for marketing and product UI, and is consistent with the szTheory ecosystem. JetBrains Mono is explicitly designed for developer contexts, handles Elixir code identifiers well, and is the correct choice for trace IDs, model IDs, token counts, and span labels.
+
+Optional accessibility mode: Atkinson Hyperlegible as a docs/UI opt-in body font. Not the default. Not a priority until a user need is documented.
+
+No font changes needed in `assets/css/02-tokens.css`. The shipped font-family stacks are correct.
+
+---
+
+### Logo-direction guidance for Phase 19
+
+**Ranked recommendation (from Section 8 of this audit):**
+
+1. **Trace Vesicle Mark** — RECOMMENDED PRIMARY. Holes in a trace-node hierarchy (root → LLM → tool → eval). Most distinctive vs. competitors and Threadline. Best favicon-survival discipline (regularity reads better than organic randomness at 16px). Phase 19 must execute this direction and the integrated typemark variant.
+2. **Cinder Mark** — RECOMMENDED AS FALLBACK. Irregular-polygon cinder with 5–7 holes. Simpler geometry = more reliable favicon survival. If Trace Vesicle proves too complex at ≤20px, Cinder Mark is the approved fallback.
+3. **Aperture/Vesicle Mark** — STUDY ONLY. Worth including in the options gallery for comparison. Not recommended as primary due to generic "camera aperture / eye" visual overlap with competitor marks.
+4. **Cutaway Cone Mark** — DEPRIORITIZE. Poor favicon survival at 16px; weak silhouette when simplified. Include in gallery only if the Phase 19 exploration reveals a surprising simplification.
+
+**Hard constraints that Phase 19 must enforce (see Section 8 rules):**
+- LOGO-01: No rectangular background shapes
+- LOGO-02: Negative space via fill-rule="evenodd" punched holes
+- LOGO-03: Logotype optically tight to mark (~0.35–0.5× cap height gap)
+- LOGO-04: No subtitle in primary lockup (subtitle variant allowed)
+- LOGO-05: Integrated typemark is a first-class option (motif INTO letterforms)
+- LOGO-06: 16px favicon test is pass/fail before advancement
+- LOGO-07: Monochrome test (mark-on-transparent) is pass/fail before advancement
+
+**No SVG is generated in Phase 18.** Phase 19 owns all logo generation.
+
+---
+
+### Propagation verdict
+
+**Usage audit:** `--scoria-text-subtle` (#88786D Pumice-500) appears in `lib/scoria_web/ui.ex:653` as the fill color for a 16×16px SVG sort-direction icon in the table header component. This is a UI component context (icon fill), not running body text. PASS-LARGE (≥3:1) is sufficient for non-text UI components per WCAG 2.1 SC 1.4.11 (Non-text Contrast, threshold 3:1). No other usage of `--scoria-text-subtle` found in `lib/scoria_web/`.
+
+**Verdict:**
+
+```
+propagation: not-required
+```
+
+Rule satisfied: no shipped fg/bg pairing falls below WCAG AA for its context of use. The four `--scoria-text-subtle` pairings (4.48:1, 4.29:1, 3.91:1, 4.06:1) are PASS-LARGE; the single shipped usage is a UI icon fill, not body text. WCAG 2.1 SC 1.4.11 requires ≥3:1 for non-text UI components; all four ratios satisfy this.
+
+**What this means:**
+- `assets/css/02-tokens.css` is NOT touched in Phase 19, 20, or 21.
+- `test/support/ds06_baseline.txt` is NOT updated.
+- `priv/static` CSS is NOT modified.
+- Phase 22's BRAND-09 conditional does NOT fire.
+
+If future development adds `--scoria-text-subtle` to body text, running text, or any text content smaller than 18px regular / 14px bold, the propagation verdict must be re-evaluated and a new token (`--scoria-text-subtle-aa`) added at a higher contrast value before that usage ships.
+
+---
+
+*Contrast evidence: Section 5 (C2) and Section 7 contrast table of this document. Usage evidence: `lib/scoria_web/ui.ex:653` (Phase 18-02 grep audit, 2026-06-11). Tool: `brandbook/tools/contrast-check.mjs`.*
