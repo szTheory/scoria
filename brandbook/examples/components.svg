@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" role="img" aria-labelledby="title desc">
+  <title id="title">Scoria component specimen</title>
+  <desc id="desc">Buttons, status badges, a callout, and an eval-regression card rendered in brand tokens.</desc>
+  <rect width="960" height="460" fill="#11100f"/>
+  <text x="48" y="56" fill="#fff9f3" font-family="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="600">Components</text>
+  <text x="48" y="82" fill="#88786d" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" letter-spacing="2">BUTTONS · BADGES · CALLOUT · CARD</text>
+  <g font-family="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">
+    <!-- Buttons -->
+    <rect x="48" y="110" width="150" height="46" rx="7" fill="#e65a32"/><text x="76" y="139" fill="#11100f" font-size="15" font-weight="600">Get started</text>
+    <rect x="214" y="110" width="150" height="46" rx="7" fill="#181513" stroke="#3a332f"/><text x="240" y="139" fill="#faf5ef" font-size="15" font-weight="600">View on GitHub</text>
+    <rect x="380" y="110" width="120" height="46" rx="7" fill="none" stroke="#ff6b4a"/><text x="406" y="139" fill="#ff6b4a" font-size="15" font-weight="600">Deny</text>
+    <!-- Badges: every status carries a text label -->
+    <rect x="48" y="184" width="76" height="28" rx="14" fill="none" stroke="#a7c76f"/><text x="68" y="203" fill="#a7c76f" font-size="13" font-weight="600">Pass</text>
+    <rect x="136" y="184" width="76" height="28" rx="14" fill="none" stroke="#ff6b4a"/><text x="158" y="203" fill="#ff6b4a" font-size="13" font-weight="600">Fail</text>
+    <rect x="224" y="184" width="96" height="28" rx="14" fill="none" stroke="#ffd166"/><text x="244" y="203" fill="#ffd166" font-size="13" font-weight="600">Warning</text>
+    <rect x="332" y="184" width="96" height="28" rx="14" fill="none" stroke="#b798ff"/><text x="354" y="203" fill="#b798ff" font-size="13" font-weight="600">Trace</text>
+    <!-- Callout -->
+    <rect x="48" y="240" width="400" height="92" rx="8" fill="#0c0b0a" stroke="#7dd8d1"/>
+    <rect x="48" y="240" width="4" height="92" rx="2" fill="#7dd8d1"/>
+    <text x="68" y="270" fill="#7dd8d1" font-size="13" font-weight="600" font-family="'JetBrains Mono', ui-monospace, monospace">NOTE</text>
+    <text x="68" y="296" fill="#faf5ef" font-size="14">Tool approvals are first-class — governance</text>
+    <text x="68" y="316" fill="#faf5ef" font-size="14">lives in the runtime, not a code comment.</text>
+    <!-- Eval-regression card -->
+    <rect x="488" y="110" width="424" height="222" rx="10" fill="#181513" stroke="#3a332f"/>
+    <text x="512" y="142" fill="#88786d" font-size="11" letter-spacing="2" font-family="'JetBrains Mono', ui-monospace, monospace">EVAL REGRESSION</text>
+    <text x="512" y="176" fill="#fff9f3" font-size="22" font-weight="600">support_refunds@v4</text>
+    <text x="512" y="220" fill="#a7c76f" font-size="34" font-weight="700" font-family="'JetBrains Mono', ui-monospace, monospace">47/50</text>
+    <rect x="652" y="196" width="92" height="28" rx="14" fill="none" stroke="#ff6b4a"/><text x="668" y="215" fill="#ff6b4a" font-size="13" font-weight="600" font-family="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif">3 regress</text>
+    <text x="512" y="262" fill="#88786d" font-size="12" font-family="'JetBrains Mono', ui-monospace, monospace">baseline: support_v3 · trc_8f2a · 842ms</text>
+    <rect x="512" y="284" width="120" height="38" rx="7" fill="#e65a32"/><text x="536" y="309" fill="#11100f" font-size="14" font-weight="600">Promote</text>
+    <rect x="648" y="284" width="120" height="38" rx="7" fill="#181513" stroke="#3a332f"/><text x="672" y="309" fill="#faf5ef" font-size="14" font-weight="600">Gate</text>
+  </g>
+</svg>
