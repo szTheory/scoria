@@ -19,6 +19,27 @@ defmodule ScoriaWeb.DashboardNavTest do
     assert Enum.map(configure.items, & &1.label) == ["Connectors", "MCP Gateway", "Tool Registry"]
   end
 
+  test "Improve places Dataset Builder between Review Queue and Eval Workbench" do
+    improve = DashboardNav.groups() |> Enum.find(&(&1.label == "Improve"))
+
+    assert Enum.map(improve.items, & &1.label) == [
+             "Review Queue",
+             "Dataset Builder",
+             "Eval Workbench",
+             "Prompt Registry",
+             "Replay Playground",
+             "Cost Ledger",
+             "Feedback Inbox"
+           ]
+
+    assert %{key: :datasets, path: "/datasets", icon: :grid, aliases: aliases} =
+             Enum.find(improve.items, &(&1.label == "Dataset Builder"))
+
+    assert "dataset" in aliases
+    assert "datasets" in aliases
+    assert "builder" in aliases
+  end
+
   test "a noun appears in only one nav group and Connectors is only Configure" do
     labels =
       DashboardNav.groups()
@@ -79,6 +100,13 @@ defmodule ScoriaWeb.DashboardNavTest do
 
     assert "traces" in aliases
 
+    assert %{label: "Dataset Builder", path: "/scoria/datasets", aliases: aliases, kbd: "g d"} =
+             Enum.find(navigate.rows, &(&1.label == "Dataset Builder"))
+
+    assert "dataset" in aliases
+    assert "datasets" in aliases
+    assert "builder" in aliases
+
     assert %{label: "Replay Playground", path: "/scoria/coming/replay-playground", soon?: true} =
              Enum.find(navigate.rows, &(&1.label == "Replay Playground"))
 
@@ -97,6 +125,7 @@ defmodule ScoriaWeb.DashboardNavTest do
 
   test "active keys cover workflow index and coming-soon screens" do
     assert DashboardNav.active_key(ScoriaWeb.WorkflowLive.Index, %{}) == :runs
+    assert DashboardNav.active_key(ScoriaWeb.DatasetLive.Index, %{}) == :datasets
 
     assert DashboardNav.active_key(ScoriaWeb.ComingSoonLive, %{"screen" => "cost-ledger"}) ==
              :cost_ledger

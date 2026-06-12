@@ -55,6 +55,13 @@ defmodule ScoriaWeb.DashboardNav do
           aliases: ["review", "reviews", "queue"]
         },
         %{
+          key: :datasets,
+          label: "Dataset Builder",
+          path: "/datasets",
+          icon: :grid,
+          aliases: ["dataset", "datasets", "builder"]
+        },
+        %{
           key: :evals,
           label: "Eval Workbench",
           path: "/eval_specs",
@@ -132,6 +139,7 @@ defmodule ScoriaWeb.DashboardNav do
     ScoriaWeb.WorkflowLive.Index => :runs,
     ScoriaWeb.WorkflowLive.Show => :runs,
     ScoriaWeb.ReviewQueueLive => :reviews,
+    ScoriaWeb.DatasetLive.Index => :datasets,
     ScoriaWeb.EvalSpecLive.Index => :evals,
     ScoriaWeb.PromptLive.Index => :prompts,
     ScoriaWeb.PromptLive.ReleaseWorkbenchLive => :prompts
@@ -144,6 +152,7 @@ defmodule ScoriaWeb.DashboardNav do
     incidents: "g i",
     connectors: "g c",
     reviews: "g q",
+    datasets: "g d",
     evals: "g e",
     prompts: "g p"
   }
@@ -238,6 +247,7 @@ defmodule ScoriaWeb.DashboardNav do
         ScoriaWeb.ConnectorsLive.Index -> "/connectors"
         ScoriaWeb.IncidentsLive.Index -> "/incidents"
         ScoriaWeb.ReviewQueueLive -> "/reviews"
+        ScoriaWeb.DatasetLive.Index -> "/datasets"
         ScoriaWeb.EvalSpecLive.Index -> "/eval_specs"
         ScoriaWeb.PromptLive.Index -> "/prompts"
         ScoriaWeb.WorkflowLive.Index -> "/workflows"
@@ -254,7 +264,7 @@ defmodule ScoriaWeb.DashboardNav do
   defp strip_known_prefixes(path) do
     path
     |> String.replace(
-      ~r{/(workflows|prompts|reviews|eval_specs|approvals|connectors|incidents|coming)(/.*)?$},
+      ~r{/(workflows|prompts|reviews|datasets|eval_specs|approvals|connectors|incidents|coming)(/.*)?$},
       ""
     )
   end
