@@ -93,6 +93,126 @@ defmodule ScoriaWeb.UIComponentTest do
   defp slot_block(content),
     do: [%{inner_block: fn _changed, _arg -> content end, __slot__: :inner_block}]
 
+  # ---------------------------------------------------------------------------
+  # IA-02/03/04/06: Orientation spine primitives (phase 13-01)
+  # ---------------------------------------------------------------------------
+
+  describe "attention_card/1" do
+    test "renders a count, detail copy, and one-click destination without chart language" do
+      html =
+        render_component(&ScoriaWeb.UI.attention_card/1,
+          count: "3",
+          label: "Approvals pending",
+          detail: "3 tool calls require approval.",
+          cta: "Review approvals",
+          path: "/approvals"
+        )
+
+      assert html =~ "3"
+      assert html =~ "Approvals pending"
+      assert html =~ "3 tool calls require approval."
+      assert html =~ "Review approvals"
+      assert html =~ ~s(href="/approvals")
+      refute html =~ "chart"
+      refute html =~ "sparkline"
+    end
+  end
+
+  describe "object_header/1" do
+    test "renders breadcrumbs, copyable id, status, and origin return chip" do
+      html =
+        render_component(&ScoriaWeb.UI.object_header/1,
+          parent_label: "Runs",
+          parent_path: "/workflows",
+          object_type: "Run",
+          object_id: "trc_01J8ABCDEFGQK4",
+          status: "failed",
+          key_scalar: "support_agent",
+          origin: %{noun: "incident", id: "inc_42", path: "/incidents"},
+          provenance: "Replayed from run trc_01J8ABC via prompt pr_9 - Jun 9"
+        )
+
+      assert html =~ "Runs"
+      assert html =~ "trc_01J8...QK4"
+      assert html =~ ~s(data-copy="trc_01J8ABCDEFGQK4")
+      assert html =~ ~s(title="trc_01J8ABCDEFGQK4")
+      assert html =~ "Run"
+      assert html =~ "Failed"
+      assert html =~ "support_agent"
+      assert html =~ "Replayed from run"
+      assert html =~ "← Back to incident inc_42"
+    end
+  end
+
+  describe "stub_page/1" do
+    test "renders honest coming-soon copy and no fake populated surface" do
+      html =
+        render_component(&ScoriaWeb.UI.stub_page/1,
+          title: "Cost Ledger",
+          description:
+            "Cost Ledger will reconcile model spend per run, tenant, and prompt version.",
+          tracking_url: "https://github.com/szTheory/scoria/issues?q=is%3Aissue+Cost+Ledger",
+          works_today: [
+            %{label: "Inspect per-span usage in Runs", path: "/workflows"},
+            %{label: "Review campaign cost in Eval Workbench", path: "/eval_specs"}
+          ]
+        )
+
+      assert html =~ "Cost Ledger"
+      assert html =~ "Soon"
+      assert html =~ "What works today"
+      assert html =~ "Track progress"
+      assert html =~ "Inspect per-span usage in Runs"
+      refute html =~ "mock chart"
+      refute html =~ "sample row"
+      refute html =~ "skeleton"
+    end
+  end
+
+  describe "kbd/1" do
+    test "renders shortcut text in a semantic keyboard chip" do
+      html = render_component(&ScoriaWeb.UI.kbd/1, inner_block: slot_block("Cmd K"))
+
+      assert html =~ "<kbd"
+      assert html =~ "scoria-kbd"
+      assert html =~ "Cmd K"
+    end
+  end
+
+  describe "command_palette/1" do
+    test "renders accessible dialog, listbox rows, shortcuts, and locked empty copy" do
+      html =
+        render_component(&ScoriaWeb.UI.command_palette/1,
+          id: "scoria-command",
+          sections: [
+            %{
+              label: "Navigate",
+              rows: [
+                %{
+                  id: "nav-runs",
+                  label: "Runs",
+                  path: "/workflows",
+                  aliases: ["workflows"],
+                  kbd: "g r"
+                }
+              ]
+            }
+          ]
+        )
+
+      assert html =~ ~s(role="dialog")
+      assert html =~ ~s(aria-modal="true")
+      assert html =~ ~s(role="listbox")
+      assert html =~ ~s(role="option")
+      assert html =~ ~s(aria-activedescendant)
+      assert html =~ "Runs"
+      assert html =~ "g r"
+
+      assert html =~
+               "No matches. The palette covers screens, recent objects, and actions — full object search lands in a later release."
+    end
+  end
+
   describe "modal/1" do
     test "show: true renders role=dialog and aria-modal=true" do
       html =
