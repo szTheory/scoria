@@ -152,6 +152,7 @@ defmodule ScoriaWeb.UI do
   attr(:value, :string, required: true)
   attr(:copy, :string, default: nil)
   attr(:id, :string, default: nil)
+  attr(:title, :string, default: "Click to copy")
   attr(:class, :string, default: nil)
 
   @doc "Copyable monospace identifier (run/trace/actor IDs). Uses the CopyId JS hook.
@@ -167,9 +168,218 @@ defmodule ScoriaWeb.UI do
       end)
 
     ~H"""
-    <span class={["scoria-id", @class]} phx-hook="CopyId" id={@id} data-copy={@copy || @value} title="Click to copy">
+    <span class={["scoria-id", @class]} phx-hook="CopyId" id={@id} data-copy={@copy || @value} title={@title}>
       {@value}
     </span>
+    """
+  end
+
+  attr(:count, :any, required: true)
+  attr(:label, :string, required: true)
+  attr(:detail, :string, required: true)
+  attr(:cta, :string, required: true)
+  attr(:path, :string, required: true)
+  attr(:tone, :atom, default: :neutral)
+  attr(:class, :string, default: nil)
+
+  @doc "Status Home attention card for nonzero actionable states."
+  def attention_card(assigns) do
+    ~H"""
+    <a href={@path} class={["scoria-attention-card", "scoria-attention-card--#{@tone}", @class]}>
+      <span class="scoria-attention-card__count">{@count}</span>
+      <span class="scoria-attention-card__body">
+        <span class="scoria-attention-card__label">{@label}</span>
+        <span class="scoria-attention-card__detail">{@detail}</span>
+      </span>
+      <span class="scoria-attention-card__cta">{@cta}</span>
+    </a>
+    """
+  end
+
+  attr(:parent_label, :string, required: true)
+  attr(:parent_path, :string, required: true)
+  attr(:object_type, :string, required: true)
+  attr(:object_id, :string, required: true)
+  attr(:status, :any, default: nil)
+  attr(:key_scalar, :string, default: nil)
+  attr(:provenance, :string, default: nil)
+  attr(:origin, :map, default: nil)
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+
+  @doc "Object-page orientation header: parent crumb, copyable ID, status, provenance, and return context."
+  def object_header(assigns) do
+    assigns =
+      assigns
+      |> assign(:display_id, middle_truncate(assigns.object_id))
+      |> assign(:status_text, assigns.status && status_label(assigns.status))
+      |> assign(:status_tone, assigns.status && tone(assigns.status))
+      |> assign(:origin_label, origin_label(assigns.origin))
+
+    ~H"""
+    <header
+      class={["scoria-object-header", @class]}
+      phx-hook="RecordRecentObject"
+      data-scoria-kind={@object_type}
+      data-scoria-id={@object_id}
+      data-scoria-label={"#{@object_type} #{@display_id}"}
+      {@rest}
+    >
+      <nav class="scoria-object-header__crumbs" aria-label="Object breadcrumbs">
+        <a href={@parent_path}>{@parent_label}</a>
+        <span class="scoria-breadcrumbs__sep" aria-hidden="true">/</span>
+        <span title={@object_id}>{@display_id}</span>
+      </nav>
+      <div class="scoria-object-header__identity">
+        <.badge tone={:neutral} label={@object_type} />
+        <.id
+          id={"object-id-#{:erlang.phash2(@object_id)}"}
+          value={@display_id}
+          copy={@object_id}
+          title={@object_id}
+          class="scoria-object-header__id"
+        />
+        <.badge :if={@status_text} tone={@status_tone} label={@status_text} />
+        <span :if={@key_scalar} class="scoria-object-header__scalar">{@key_scalar}</span>
+      </div>
+      <div :if={@provenance || @origin_label} class="scoria-object-header__context">
+        <p :if={@provenance} class="scoria-object-header__provenance">{@provenance}</p>
+        <a :if={@origin_label} class="scoria-object-header__origin" href={@origin.path}>
+          {@origin_label}
+        </a>
+      </div>
+    </header>
+    """
+  end
+
+  attr(:title, :string, required: true)
+  attr(:description, :string, required: true)
+  attr(:works_today, :list, default: [])
+  attr(:tracking_url, :string, default: nil)
+  attr(:class, :string, default: nil)
+
+  @doc "Honest reserved-capability stub page. Future-tense only; no fake rows or charts."
+  def stub_page(assigns) do
+    ~H"""
+    <section class={["scoria-stub", @class]}>
+      <div class="scoria-stub__header">
+        <h1>{@title}</h1>
+        <.badge tone={:neutral} label="Soon" />
+      </div>
+      <p class="scoria-stub__description">{@description}</p>
+      <div class="scoria-stub__today">
+        <h2>What works today</h2>
+        <ul>
+          <li :for={item <- @works_today}>
+            <a href={Map.fetch!(item, :path)}>{Map.fetch!(item, :label)}</a>
+          </li>
+        </ul>
+      </div>
+      <a :if={@tracking_url} class="scoria-stub__track" href={@tracking_url}>
+        Track progress
+      </a>
+    </section>
+    """
+  end
+
+  attr(:class, :string, default: nil)
+  slot(:inner_block, required: true)
+
+  @doc "Keyboard shortcut chip."
+  def kbd(assigns) do
+    ~H"""
+    <kbd class={["scoria-kbd", @class]}>{render_slot(@inner_block)}</kbd>
+    """
+  end
+
+  attr(:id, :string, required: true)
+  attr(:sections, :list, default: [])
+  attr(:title, :string, default: "Open command palette")
+  attr(:placeholder, :string, default: "Search screens, recent objects, and actions")
+
+  attr(:empty_copy, :string,
+    default:
+      "No matches. The palette covers screens, recent objects, and actions — full object search lands in a later release."
+  )
+
+  attr(:class, :string, default: nil)
+
+  @doc "Server-rendered command palette shell. Client-side filtering lives in assets/js/scoria.js."
+  def command_palette(assigns) do
+    assigns = assign(assigns, :active_id, first_command_id(assigns.sections))
+
+    ~H"""
+    <div
+      id={@id}
+      class={["scoria-command", @class]}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={"#{@id}-title"}
+      phx-hook="CommandPalette"
+      data-state="closed"
+    >
+      <div class="scoria-command__scrim" data-command-close aria-hidden="true"></div>
+      <section class="scoria-command__panel">
+        <header class="scoria-command__header">
+          <h2 id={"#{@id}-title"}>{@title}</h2>
+          <.kbd>Esc</.kbd>
+        </header>
+        <input
+          id={"#{@id}-input"}
+          class="scoria-command__input"
+          type="search"
+          placeholder={@placeholder}
+          autocomplete="off"
+          data-command-input
+        />
+        <div
+          id={"#{@id}-listbox"}
+          class="scoria-command__list"
+          role="listbox"
+          aria-activedescendant={@active_id}
+          data-command-list
+        >
+          <section :for={section <- @sections} class="scoria-command__section" data-command-section>
+            <h3>{Map.fetch!(section, :label)}</h3>
+            <div class="scoria-command__rows">
+              <%= for row <- Map.get(section, :rows, []) do %>
+                <a
+                  :if={command_row_path(row)}
+                  id={command_row_id(row)}
+                  href={command_row_path(row)}
+                  class="scoria-command__row"
+                  role="option"
+                  aria-selected="false"
+                  data-command-row
+                  data-command-search={command_row_search(row)}
+                >
+                  <span>
+                    <span class="scoria-command__label">{command_row_label(row)}</span>
+                    <.badge :if={Map.get(row, :soon?, false)} tone={:neutral} label="Soon" />
+                  </span>
+                  <.kbd :if={command_row_kbd(row)}>{command_row_kbd(row)}</.kbd>
+                </a>
+                <button
+                  :if={!command_row_path(row)}
+                  id={command_row_id(row)}
+                  type="button"
+                  class="scoria-command__row"
+                  role="option"
+                  aria-selected="false"
+                  data-command-row
+                  data-command-action={Map.get(row, :action)}
+                  data-command-search={command_row_search(row)}
+                >
+                  <span class="scoria-command__label">{command_row_label(row)}</span>
+                  <.kbd :if={command_row_kbd(row)}>{command_row_kbd(row)}</.kbd>
+                </button>
+              <% end %>
+            </div>
+          </section>
+          <p class="scoria-command__empty" data-command-empty hidden>{@empty_copy}</p>
+        </div>
+      </section>
+    </div>
     """
   end
 
@@ -471,8 +681,8 @@ defmodule ScoriaWeb.UI do
   attr(:rest, :global)
 
   slot :tab, doc: "One tab panel" do
-    attr :key, :string, required: true
-    attr :label, :string, required: true
+    attr(:key, :string, required: true)
+    attr(:label, :string, required: true)
   end
 
   slot(:empty_slot)
@@ -576,24 +786,24 @@ defmodule ScoriaWeb.UI do
   # ---------------------------------------------------------------------------
 
   slot :col, doc: "Table column" do
-    attr :label, :string, required: true
-    attr :key, :atom
-    attr :class, :string
+    attr(:label, :string, required: true)
+    attr(:key, :atom)
+    attr(:class, :string)
   end
 
-  slot :empty
-  slot :action
-  slot :filter
+  slot(:empty)
+  slot(:action)
+  slot(:filter)
 
-  attr :rows, :list, required: true
-  attr :sort_by, :any, default: nil
-  attr :sort_dir, :atom, default: :asc, values: [:asc, :desc]
-  attr :density, :atom, default: :default, values: [:compact, :default, :comfortable]
-  attr :id, :string, required: true
-  attr :page, :integer, default: 1
-  attr :total_pages, :integer, default: 1
-  attr :on_page_change, :string, default: nil
-  attr :rest, :global
+  attr(:rows, :list, required: true)
+  attr(:sort_by, :any, default: nil)
+  attr(:sort_dir, :atom, default: :asc, values: [:asc, :desc])
+  attr(:density, :atom, default: :default, values: [:compact, :default, :comfortable])
+  attr(:id, :string, required: true)
+  attr(:page, :integer, default: 1)
+  attr(:total_pages, :integer, default: 1)
+  attr(:on_page_change, :string, default: nil)
+  attr(:rest, :global)
 
   @doc "Sortable, density-aware, paginated data table (DS-01).
   Renders column headers from typed <:col> slots; emits phx-click='sort' on keyed columns.
@@ -737,6 +947,44 @@ defmodule ScoriaWeb.UI do
       {message}
     </div>
     """
+  end
+
+  defp middle_truncate(value) when is_binary(value) do
+    if String.length(value) > 15 do
+      String.slice(value, 0, 8) <> "..." <> String.slice(value, -3, 3)
+    else
+      value
+    end
+  end
+
+  defp middle_truncate(value), do: to_string(value)
+
+  defp origin_label(%{noun: noun, id: id}) when is_binary(noun) and is_binary(id) do
+    "← Back to #{noun} #{id}"
+  end
+
+  defp origin_label(_origin), do: nil
+
+  defp first_command_id(sections) do
+    sections
+    |> Enum.flat_map(&Map.get(&1, :rows, []))
+    |> List.first()
+    |> case do
+      nil -> nil
+      row -> command_row_id(row)
+    end
+  end
+
+  defp command_row_id(row),
+    do: Map.get(row, :id) || "command-#{:erlang.phash2(command_row_label(row))}"
+
+  defp command_row_label(row), do: Map.fetch!(row, :label)
+  defp command_row_path(row), do: Map.get(row, :path)
+  defp command_row_kbd(row), do: Map.get(row, :kbd)
+
+  defp command_row_search(row) do
+    aliases = row |> Map.get(:aliases, []) |> Enum.join(" ")
+    [command_row_label(row), aliases] |> Enum.reject(&(&1 in [nil, ""])) |> Enum.join(" ")
   end
 
   defp flash_modifier("error"), do: "scoria-flash--fail"

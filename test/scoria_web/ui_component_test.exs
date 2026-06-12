@@ -501,13 +501,15 @@ defmodule ScoriaWeb.UIComponentTest do
           title: "Evidence",
           selected_tab: "trace",
           on_tab_change: "change_tab",
-          tab: tab_slot("trace", "Trace", "trace content") ++ tab_slot("memory", "Memory", "memory content")
+          tab:
+            tab_slot("trace", "Trace", "trace content") ++
+              tab_slot("memory", "Memory", "memory content")
         )
 
       assert html =~ ~s(role="tablist")
       assert html =~ ~s(role="tab")
       # Two tab buttons present
-      assert (html |> String.split(~s(role="tab")) |> length()) > 2
+      assert html |> String.split(~s(role="tab")) |> length() > 2
       assert html =~ "Trace"
       assert html =~ "Memory"
     end
@@ -519,7 +521,9 @@ defmodule ScoriaWeb.UIComponentTest do
           title: "Evidence",
           selected_tab: "trace",
           on_tab_change: "change_tab",
-          tab: tab_slot("trace", "Trace", "trace content") ++ tab_slot("memory", "Memory", "memory content")
+          tab:
+            tab_slot("trace", "Trace", "trace content") ++
+              tab_slot("memory", "Memory", "memory content")
         )
 
       assert html =~ ~s(aria-selected="true")

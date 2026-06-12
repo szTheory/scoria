@@ -35,6 +35,20 @@
   .scoria-disclose {
     transition: opacity var(--scoria-dur-mid) var(--scoria-ease-out);
   }
+
+  .scoria-command {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--scoria-dur-fast) var(--scoria-ease-out);
+  }
+  .scoria-command[data-state="open"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .scoria-command[data-state="closed"] {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* Unlayered so it reliably wins: kill motion when the user asks for less. */
