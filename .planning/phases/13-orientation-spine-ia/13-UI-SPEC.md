@@ -309,7 +309,7 @@ Origin context:
 
 - Query param shape: `?from={noun}:{id}`.
 - Allowlisted nouns only; unknown values are ignored silently.
-- Return chip copy: `Back to {noun} {id}`.
+- Return chip copy: `← Back to {noun} {id}`. Locked D-21 example: `← Back to incident inc_42`.
 - The chip is never the only way back.
 
 ### Quality-Loop Link Verbs
@@ -386,12 +386,12 @@ Example:
 | Primary CTA - attention card | "Review approvals" / "Open incidents" / "View connector health" / "Review flagged runs" |
 | Palette open button/title | "Open command palette" |
 | Palette search placeholder | "Search screens, recent objects, and actions" |
-| Palette empty state | "No matches. The palette covers screens, recent objects, and actions - full object search lands in a later release." |
+| Palette empty state | "No matches. The palette covers screens, recent objects, and actions — full object search lands in a later release." |
 | Shortcuts overlay title | "Keyboard shortcuts" |
 | Stub badge | "Soon" |
 | Stub section heading | "What works today" |
 | Stub tracking link label | "Track progress" |
-| Object return chip | "Back to {noun} {id}" |
+| Object return chip | "← Back to incident inc_42" |
 | Copy ID title after click | "Copied" |
 | Command action | "Toggle theme" |
 | Command action | "Copy current page URL" |
