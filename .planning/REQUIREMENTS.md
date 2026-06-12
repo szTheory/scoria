@@ -27,7 +27,7 @@
 
 ### Information Architecture & Orientation
 
-- [ ] **IA-01**: Sidebar navigation is organized into three task-tempo groups (Operate / Improve / Configure) and the active screen is always reflected in the nav.
+- [x] **IA-01**: Sidebar navigation is organized into three task-tempo groups (Operate / Improve / Configure) and the active screen is always reflected in the nav.
 - [x] **IA-02**: A newcomer landing on the dashboard sees a Status Home that states what Scoria does and surfaces what needs attention now, with one-click paths to each persona's primary jobs — without adding a click for returning power users.
 - [x] **IA-03**: Operators can orient on every screen via object-aware breadcrumbs.
 - [x] **IA-04**: Power users can navigate to any screen or object and run key actions from a `⌘K` command palette and keyboard shortcuts.
@@ -90,7 +90,7 @@ Each requirement maps to exactly one phase. Phase numbering continues from v2.16
 | DS-04 | Phase 12 — Design-system component layer | Complete |
 | DS-05 | Phase 12 — Design-system component layer | Complete |
 | DS-06 | Phase 12 — Design-system component layer | Complete |
-| IA-01 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-01 | Phase 13 — Orientation spine (IA) | Complete |
 | IA-02 | Phase 13 — Orientation spine (IA) | Complete |
 | IA-03 | Phase 13 — Orientation spine (IA) | Complete |
 | IA-04 | Phase 13 — Orientation spine (IA) | Complete |
