@@ -55,7 +55,7 @@ created: 2026-06-12
 - [ ] `test/scoria_web/live/dataset_live/index_test.exs` - cover route/index rendering, non-stub copy, source affordances, and promotion-context reconstruction.
 - [ ] `test/scoria_web/dashboard_nav_test.exs` - update for Dataset Builder nav item, shortcut, command-palette row, and stub exclusion.
 - [ ] `test/scoria_web/router_test.exs` - update if route coverage asserts the known dashboard route set.
-- [ ] `test/support/ds06_baseline.txt` - lower or remove every in-scope row after each shared-component conversion.
+- [ ] `test/support/ds06_baseline.txt` - remove every in-scope row after each shared-component conversion reaches zero raw-palette matches.
 
 ---
 

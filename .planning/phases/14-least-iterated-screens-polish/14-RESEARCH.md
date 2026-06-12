@@ -367,11 +367,11 @@ end
 
 | File | Current Baseline Count | Phase 14 Action |
 |------|------------------------|-----------------|
-| `lib/scoria_web/live/review_queue_live.ex` | 76 | Convert to shared components and remove/lower row. [VERIFIED: test/support/ds06_baseline.txt] |
-| `lib/scoria_web/live/incidents_live/index.ex` | 10 | Convert shell/list to shared components and remove/lower row. [VERIFIED: test/support/ds06_baseline.txt] |
-| `lib/scoria_web/components/incident_evidence_component.ex` | 69 | Convert allowed evidence exception to notebook/panel adapter and remove/lower row. [VERIFIED: test/support/ds06_baseline.txt] |
-| `lib/scoria_web/live/dataset_live/promote_component.ex` | 68 | Reuse/refactor under Dataset Builder and remove/lower row if touched. [VERIFIED: test/support/ds06_baseline.txt] |
-| `lib/scoria_web/live/prompt_live/release_workbench_live.ex` | 37 | Convert comparison panels/notices/modals/rail and remove/lower row. [VERIFIED: test/support/ds06_baseline.txt] |
+| `lib/scoria_web/live/review_queue_live.ex` | 76 | Convert to shared components, reach zero raw-palette matches, and remove the baseline row. [VERIFIED: test/support/ds06_baseline.txt] |
+| `lib/scoria_web/live/incidents_live/index.ex` | 10 | Convert shell/list to shared components, reach zero raw-palette matches, and remove the baseline row. [VERIFIED: test/support/ds06_baseline.txt] |
+| `lib/scoria_web/components/incident_evidence_component.ex` | 69 | Convert allowed evidence exception to notebook/panel adapter, reach zero raw-palette matches, and remove the baseline row. [VERIFIED: test/support/ds06_baseline.txt] |
+| `lib/scoria_web/live/dataset_live/promote_component.ex` | 68 | Reuse/refactor under Dataset Builder, reach zero raw-palette matches, and remove the baseline row. [VERIFIED: test/support/ds06_baseline.txt] |
+| `lib/scoria_web/live/prompt_live/release_workbench_live.ex` | 37 | Convert comparison panels/notices/modals/rail, reach zero raw-palette matches, and remove the baseline row. [VERIFIED: test/support/ds06_baseline.txt] |
 | `lib/scoria_web/live/eval_spec_live/index.ex` | 0 currently | Convert raw HTML to shared components; no baseline row exists. [VERIFIED: codebase grep] |
 | `lib/scoria_web/live/prompt_live/index.ex` | 0 currently | Convert raw HTML to shared components; no baseline row exists. [VERIFIED: codebase grep] |
 | `lib/scoria_web/dashboard_nav.ex` / `router.ex` | 0 currently | Add route/nav without palette classes. [VERIFIED: codebase grep] |
@@ -383,17 +383,15 @@ end
 | A1 | Workflow-source promotion context can be reconstructed from existing run/detail/comparison records without adding backend APIs. [ASSUMED] | Architecture Patterns | Planner may need a small query/helper extraction from `WorkflowLive.Show` or runtime context to avoid duplicating private LiveView helper logic. |
 | A2 | Dataset Builder does not need create/edit/seal dataset management beyond listing open/sealed datasets and promotion target selection. [ASSUMED] | Summary / Don't Hand-Roll | If user expects full dataset CRUD, Phase 14 scope would expand beyond locked decisions. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should `DatasetLive.PromoteComponent` be visually converted before or after embedding in `/datasets`?**  
+1. **RESOLVED — `DatasetLive.PromoteComponent` is visually converted in the same slice that embeds it in `/datasets`.**  
    - What we know: It has 68 raw-palette baseline matches and already owns promotion form behavior. [VERIFIED: codebase grep]  
-   - What's unclear: Whether the cleanest plan is to convert it in the Dataset Builder slice or as a follow-up slice. [ASSUMED]  
-   - Recommendation: Convert it in the same slice that embeds it; otherwise `/datasets` cannot honestly hit zero raw-palette leakage for the promotion surface. [VERIFIED: 14-CONTEXT.md]
+   - Decision: Plan 14-02 embeds and converts the component in one slice so `/datasets` can honestly reach zero raw-palette leakage for the promotion surface. [VERIFIED: 14-CONTEXT.md]
 
-2. **Should Dataset Builder's promotion surface be a drawer or modal?**  
+2. **RESOLVED — Dataset Builder uses a drawer-first promotion surface.**  
    - What we know: User left drawer vs modal to planner discretion. [VERIFIED: 14-CONTEXT.md]  
-   - What's unclear: Best fit depends on how much dataset context should remain visible during promotion. [ASSUMED]  
-   - Recommendation: Use `<.drawer>` for review/workflow promotion context so the dataset table remains the canonical backdrop; use `<.modal>` only if the form becomes too wide for the drawer. [ASSUMED]
+   - Decision: Plan 14-02 uses `<.drawer id="dataset-promote-drawer">` for review/workflow promotion context so the dataset table remains the canonical backdrop; `<.modal>` remains reserved only for future cases where an existing backed form cannot fit responsibly inside the drawer. [ASSUMED]
 
 ## Environment Availability
 

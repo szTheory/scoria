@@ -245,15 +245,15 @@ Prohibited copy:
 
 ## DS-06 Raw-Palette Contract
 
-Phase 14 must shrink or remove in-scope raw-palette baseline rows for every touched screen:
+Phase 14 must remove in-scope raw-palette leakage for every touched screen/component. Nonzero baseline rows are deleted only after the corresponding file reaches zero DS-06 raw-palette matches.
 
 | File | Current Baseline | Contract |
 |------|------------------|----------|
-| `lib/scoria_web/live/review_queue_live.ex` | 76 | Convert to shared components; lower/remove row |
-| `lib/scoria_web/live/incidents_live/index.ex` | 10 | Convert shell/list; lower/remove row |
-| `lib/scoria_web/components/incident_evidence_component.ex` | 69 | Convert allowed evidence exception; lower/remove row |
-| `lib/scoria_web/live/dataset_live/promote_component.ex` | 68 | Convert if touched for Dataset Builder embedding; lower/remove row |
-| `lib/scoria_web/live/prompt_live/release_workbench_live.ex` | 37 | Convert comparison/notice/modal/rail UI; lower/remove row |
+| `lib/scoria_web/live/review_queue_live.ex` | 76 | Convert to shared components; reach zero matches; remove row |
+| `lib/scoria_web/live/incidents_live/index.ex` | 10 | Convert shell/list; reach zero matches; remove row |
+| `lib/scoria_web/components/incident_evidence_component.ex` | 69 | Convert allowed evidence exception; reach zero matches; remove row |
+| `lib/scoria_web/live/dataset_live/promote_component.ex` | 68 | Convert for Dataset Builder embedding; reach zero matches; remove row |
+| `lib/scoria_web/live/prompt_live/release_workbench_live.ex` | 37 | Convert comparison/notice/modal/rail UI; reach zero matches; remove row |
 | `lib/scoria_web/live/eval_spec_live/index.ex` | 0 | Keep at zero while converting to shared components |
 | `lib/scoria_web/live/prompt_live/index.ex` | 0 | Keep at zero while converting to shared components |
 | `lib/scoria_web/dashboard_nav.ex` and `lib/scoria_web/router.ex` | 0 | Add Dataset Builder without palette classes |
