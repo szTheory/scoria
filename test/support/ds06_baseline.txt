@@ -13,6 +13,5 @@ lib/scoria_web/live/approvals_live/index.ex:9
 lib/scoria_web/live/connectors_live/index.ex:20
 lib/scoria_web/live/orchestrator_live.ex:26
 lib/scoria_web/live/prompt_live/release_workbench_live.ex:37
-lib/scoria_web/live/review_queue_live.ex:76
 lib/scoria_web/live/workflow_live/index.ex:4
 lib/scoria_web/live/workflow_live/show.ex:50
