@@ -26,6 +26,13 @@ defmodule ScoriaWeb.RouterTest do
              Phoenix.LiveView.Plug
   end
 
+  test "scoria_dashboard macro mounts dataset builder live view" do
+    assert %{
+             plug: Phoenix.LiveView.Plug,
+             phoenix_live_view: {ScoriaWeb.DatasetLive.Index, :index, _, _, _}
+           } = Phoenix.Router.route_info(DummyRouter, "GET", "/scoria/datasets", nil)
+  end
+
   test "scoria_dashboard macro mounts coming-soon live view" do
     assert %{plug: Phoenix.LiveView.Plug} =
              Phoenix.Router.route_info(DummyRouter, "GET", "/scoria/coming/cost-ledger", nil)
