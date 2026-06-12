@@ -1,21 +1,24 @@
 defmodule ScoriaWeb.WorkflowLive.Show do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
-  import ScoriaWeb.UI, only: [skeleton: 1]
+  import ScoriaWeb.UI, only: [object_header: 1, skeleton: 1]
 
   alias Scoria.Eval
   alias Scoria.Runtime
   alias Scoria.SRE
   alias Scoria.Workflows
+
   alias ScoriaWeb.{
     DelegatedEvidenceComponent,
     MemoryNotebookComponent,
     RemoteInvocationEvidenceComponent,
     WorkflowDetailPanelComponent
   }
+
   alias ScoriaWeb.WorkflowTreeComponent
 
   @comparison_sources ~w(original replay)
+  @origin_nouns ~w(incident review run dataset eval prompt)
 
   @impl true
   def mount(%{"id" => run_id} = params, _session, socket) do
@@ -37,6 +40,16 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   end
 
   @impl true
+  def handle_params(params, _uri, socket) do
+    {:noreply,
+     assign(
+       socket,
+       :origin_context,
+       origin_context(params["from"], socket.assigns[:scoria_base] || "")
+     )}
+  end
+
+  @impl true
   def handle_event("select_step", %{"id" => step_id}, socket) do
     {:noreply, assign_selection(socket, step_id)}
   end
@@ -44,7 +57,10 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   @impl true
   def handle_event("select_comparison_source", %{"source" => source}, socket)
       when source in @comparison_sources do
-    {:noreply, socket |> assign(:selected_source_variant, source) |> assign_selection(socket.assigns.selected_step_id)}
+    {:noreply,
+     socket
+     |> assign(:selected_source_variant, source)
+     |> assign_selection(socket.assigns.selected_step_id)}
   end
 
   @impl true
@@ -89,20 +105,20 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     ~H"""
     <div class="min-h-screen bg-stone-50 px-6 py-8 text-stone-900">
       <div class="mx-auto max-w-7xl">
-        <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p class="text-xs uppercase tracking-[0.3em] text-stone-500">Scoria Workflow</p>
-            <h1 class="text-3xl font-semibold">Workflow Run</h1>
-            <p class="text-sm text-stone-600">Run <span class="font-mono"><%= @run.id %></span></p>
-            <a :if={@run.session_id} href={"/scoria?runtime=#{@run.session_id}"} class="mt-2 inline-flex items-center gap-2 text-sm font-medium text-blue-700 underline">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd" /></svg>
-              View associated runtime presence
-            </a>
-          </div>
-          <div class="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold">
-            <span class="workflow-run-status"><%= @run.status %></span>
-          </div>
-        </header>
+        <.object_header
+          parent_label="Runs"
+          parent_path={(assigns[:scoria_base] || "") <> "/workflows"}
+          object_type="Run"
+          object_id={@run.id}
+          status={@run.status}
+          key_scalar={run_key_scalar(@run)}
+          provenance={replay_provenance(@run, @replay_provenance_strip)}
+          origin={@origin_context}
+        />
+
+        <a :if={@run.session_id} href={"/scoria?runtime=#{@run.session_id}"} class="mb-6 inline-flex items-center gap-2 text-sm font-medium text-blue-700 underline">
+          View associated runtime presence
+        </a>
 
         <section
           :if={@run.execution_mode == "replay" and map_size(@replay_provenance_strip) > 0}
@@ -258,7 +274,9 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     detail = Runtime.get_run_detail!(run_id)
     steps = decorate_steps(detail.steps)
     selected_step_id = socket.assigns[:selected_step_id] || default_step_id(steps)
-    selected_source_variant = default_source_variant(run, socket.assigns[:selected_source_variant])
+
+    selected_source_variant =
+      default_source_variant(run, socket.assigns[:selected_source_variant])
 
     socket
     |> assign(:page_title, "Workflow Run")
@@ -329,8 +347,9 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   defp default_step_id([]), do: nil
   defp default_step_id([step | _]), do: step.id
 
-  defp default_source_variant(%{execution_mode: "replay"}, current) when current in @comparison_sources,
-    do: current
+  defp default_source_variant(%{execution_mode: "replay"}, current)
+       when current in @comparison_sources,
+       do: current
 
   defp default_source_variant(%{execution_mode: "replay"}, _current), do: "replay"
 
@@ -338,7 +357,9 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   defp default_source_variant(_run, _current), do: "original"
 
   defp selected_comparison_entry(nil, _source_variant), do: nil
-  defp selected_comparison_entry(comparison, source_variant), do: Map.get(comparison, String.to_existing_atom(source_variant))
+
+  defp selected_comparison_entry(comparison, source_variant),
+    do: Map.get(comparison, String.to_existing_atom(source_variant))
 
   defp promotion_context(nil), do: nil
 
@@ -373,7 +394,8 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   defp provenance_value(nil), do: "not available"
   defp provenance_value(value), do: value
 
-  defp override_summary(%{live_tool_allowlist: allowlist}) when is_list(allowlist) and allowlist != [] do
+  defp override_summary(%{live_tool_allowlist: allowlist})
+       when is_list(allowlist) and allowlist != [] do
     "live tool allowlist: " <> Enum.join(allowlist, ", ")
   end
 
@@ -385,11 +407,59 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     "#{disposition} (#{reason})"
   end
 
-  defp disposition_summary(%{replay_disposition: disposition}) when is_binary(disposition), do: disposition
+  defp disposition_summary(%{replay_disposition: disposition}) when is_binary(disposition),
+    do: disposition
+
   defp disposition_summary(_strip), do: "No replay disposition recorded"
 
   defp variant_label("replay"), do: "Replay trace"
   defp variant_label(_variant), do: "Original trace"
+
+  defp run_key_scalar(%{session_id: session_id}) when is_binary(session_id),
+    do: "session #{session_id}"
+
+  defp run_key_scalar(%{root_role_id: role_id}) when is_binary(role_id), do: role_id
+  defp run_key_scalar(_run), do: nil
+
+  defp replay_provenance(%{execution_mode: "replay"} = run, strip) when is_map(strip) do
+    source_run_id = Map.get(strip, :source_run_id) || run.source_run_id
+    source_checkpoint_id = Map.get(strip, :source_checkpoint_id) || run.source_checkpoint_id
+
+    if source_run_id do
+      "Replayed from run #{source_run_id} via checkpoint #{provenance_value(source_checkpoint_id)} - #{run_date(run)}"
+    end
+  end
+
+  defp replay_provenance(_run, _strip), do: nil
+
+  defp run_date(%{inserted_at: %DateTime{} = inserted_at}) do
+    inserted_at
+    |> DateTime.to_date()
+    |> Date.to_iso8601()
+  end
+
+  defp run_date(_run), do: "date unavailable"
+
+  defp origin_context(nil, _base_path), do: nil
+
+  defp origin_context(from, base_path) when is_binary(from) do
+    case String.split(from, ":", parts: 2) do
+      [noun, id] when noun in @origin_nouns and id != "" ->
+        %{noun: noun, id: id, path: origin_path(noun, id, base_path)}
+
+      _ ->
+        nil
+    end
+  end
+
+  defp origin_context(_from, _base_path), do: nil
+
+  defp origin_path("incident", _id, base_path), do: base_path <> "/incidents"
+  defp origin_path("review", _id, base_path), do: base_path <> "/reviews"
+  defp origin_path("run", id, base_path), do: base_path <> "/workflows/#{id}"
+  defp origin_path("dataset", _id, base_path), do: base_path <> "/eval_specs"
+  defp origin_path("eval", _id, base_path), do: base_path <> "/eval_specs"
+  defp origin_path("prompt", _id, base_path), do: base_path <> "/prompts"
 
   defp load_review_candidate(_run_id, nil), do: nil
 

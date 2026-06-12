@@ -1,12 +1,15 @@
 defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
   import Ecto.Query, warn: false
+  import ScoriaWeb.UI, only: [object_header: 1]
 
   alias Scoria.Repo
   alias Scoria.PromptRegistry
   alias Scoria.PromptRegistry.PromptTemplate
   alias Scoria.Eval.EvalRun
   alias Scoria.Workflows.PromptRelease
+
+  @origin_nouns ~w(incident review run dataset eval prompt)
 
   @impl true
   def mount(%{"id" => id}, session, socket) do
@@ -16,13 +19,14 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
 
     # Fetch draft template
     draft = PromptRegistry.get_prompt_template!(id)
-    
+
     active =
       Repo.one(
-        from p in PromptTemplate,
+        from(p in PromptTemplate,
           where: p.entity_id == ^draft.entity_id and p.status == "active",
           order_by: [desc: p.version],
           limit: 1
+        )
       )
 
     socket =
@@ -42,23 +46,39 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
     {:ok, socket}
   end
 
+  @impl true
+  def handle_params(params, _uri, socket) do
+    {:noreply,
+     assign(
+       socket,
+       :origin_context,
+       origin_context(params["from"], socket.assigns[:scoria_base] || "")
+     )}
+  end
+
   defp fetch_eval_run(nil), do: nil
+
   defp fetch_eval_run(prompt_id) do
     Repo.one(
-      from r in EvalRun,
+      from(r in EvalRun,
         where: r.prompt_template_id == ^prompt_id,
         order_by: [desc: r.inserted_at],
         limit: 1
+      )
     )
   end
 
   defp fetch_pending_approval(prompt_id) do
     alias Scoria.Observe.Approval
+
     Repo.one(
-      from a in Approval,
-        where: a.tool_name == "prompt_release" and a.status == "pending" and fragment("?->>'template_id' = ?", a.arguments, ^prompt_id),
+      from(a in Approval,
+        where:
+          a.tool_name == "prompt_release" and a.status == "pending" and
+            fragment("?->>'template_id' = ?", a.arguments, ^prompt_id),
         order_by: [desc: a.inserted_at],
         limit: 1
+      )
     )
   end
 
@@ -83,9 +103,11 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
     draft_id = socket.assigns.draft.id
     actor_id = socket.assigns.actor_id
     alias Scoria.Workflows.PromptRelease
+
     case PromptRelease.start_release_workflow(draft_id, actor_id) do
       {:ok, _} ->
         {:noreply, assign(socket, pending_approval: fetch_pending_approval(draft_id))}
+
       _ ->
         {:noreply, assign(socket, rejection_notice: "Failed to request release.")}
     end
@@ -99,12 +121,20 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
     if approval do
       case PromptRelease.approve(approval.id, "approved", %{actor_id: actor_id}) do
         {:ok, _} ->
-          {:noreply, assign(socket, show_approve_modal: false, approval_notice: "Prompt Release Approved.", pending_approval: nil)}
+          {:noreply,
+           assign(socket,
+             show_approve_modal: false,
+             approval_notice: "Prompt Release Approved.",
+             pending_approval: nil
+           )}
+
         _ ->
-          {:noreply, assign(socket, show_approve_modal: false, rejection_notice: "Failed to approve.")}
+          {:noreply,
+           assign(socket, show_approve_modal: false, rejection_notice: "Failed to approve.")}
       end
     else
-      {:noreply, assign(socket, show_approve_modal: false, rejection_notice: "No pending approval found.")}
+      {:noreply,
+       assign(socket, show_approve_modal: false, rejection_notice: "No pending approval found.")}
     end
   end
 
@@ -116,12 +146,20 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
     if approval do
       case PromptRelease.approve(approval.id, "rejected", %{actor_id: actor_id}) do
         {:ok, _} ->
-          {:noreply, assign(socket, show_reject_modal: false, rejection_notice: "Prompt Release Rejected.", pending_approval: nil)}
+          {:noreply,
+           assign(socket,
+             show_reject_modal: false,
+             rejection_notice: "Prompt Release Rejected.",
+             pending_approval: nil
+           )}
+
         _ ->
-          {:noreply, assign(socket, show_reject_modal: false, rejection_notice: "Failed to reject.")}
+          {:noreply,
+           assign(socket, show_reject_modal: false, rejection_notice: "Failed to reject.")}
       end
     else
-      {:noreply, assign(socket, show_reject_modal: false, rejection_notice: "No pending approval found.")}
+      {:noreply,
+       assign(socket, show_reject_modal: false, rejection_notice: "No pending approval found.")}
     end
   end
 
@@ -129,19 +167,17 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-5xl py-8">
-      <!-- Status Strip -->
-      <div class="mb-6 flex items-center gap-4 border-b border-stone-200 pb-4">
-        <h1 class="text-xl font-semibold">Release Workbench</h1>
-        <%= if @draft.status == "draft" do %>
-          <span class="inline-flex items-center rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-            Draft blocked
-          </span>
-        <% else %>
-          <span class="inline-flex items-center rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-            Active
-          </span>
-        <% end %>
-      </div>
+      <.object_header
+        parent_label="Prompt Registry"
+        parent_path={(assigns[:scoria_base] || "") <> "/prompts"}
+        object_type="Prompt"
+        object_id={@draft.id}
+        status={prompt_release_status(@draft)}
+        key_scalar={"v#{@draft.version}"}
+        origin={@origin_context}
+      />
+
+      <p class="scoria-eyebrow">Release Workbench</p>
 
       <%= if @approval_notice do %>
         <div class="mb-6 rounded-md bg-emerald-50 p-4 border border-emerald-200">
@@ -270,9 +306,12 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
 
   defp can_approve?(_draft, draft_run, _active, active_run) do
     case {draft_run, active_run} do
-      {nil, _} -> false
+      {nil, _} ->
+        false
+
       {d, nil} ->
         d.status == "completed"
+
       {d, a} ->
         d.status == "completed" and
           a.status == "completed" and
@@ -280,4 +319,29 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
           to_string(d.eval_spec_version) == to_string(a.eval_spec_version)
     end
   end
+
+  defp prompt_release_status(%{status: "draft"}), do: "draft_blocked"
+  defp prompt_release_status(%{status: status}) when is_binary(status), do: status
+  defp prompt_release_status(_draft), do: "draft_blocked"
+
+  defp origin_context(nil, _base_path), do: nil
+
+  defp origin_context(from, base_path) when is_binary(from) do
+    case String.split(from, ":", parts: 2) do
+      [noun, id] when noun in @origin_nouns and id != "" ->
+        %{noun: noun, id: id, path: origin_path(noun, id, base_path)}
+
+      _ ->
+        nil
+    end
+  end
+
+  defp origin_context(_from, _base_path), do: nil
+
+  defp origin_path("incident", _id, base_path), do: base_path <> "/incidents"
+  defp origin_path("review", _id, base_path), do: base_path <> "/reviews"
+  defp origin_path("run", id, base_path), do: base_path <> "/workflows/#{id}"
+  defp origin_path("dataset", _id, base_path), do: base_path <> "/eval_specs"
+  defp origin_path("eval", _id, base_path), do: base_path <> "/eval_specs"
+  defp origin_path("prompt", _id, base_path), do: base_path <> "/prompts"
 end

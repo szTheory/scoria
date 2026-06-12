@@ -112,7 +112,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     assert html =~ "Workflow Run"
     assert html =~ run.id
-    assert html =~ "running"
+    assert html =~ "Running"
     assert html =~ "tool"
 
     render_async(view)
@@ -196,7 +196,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     {:ok, view, _html} = live(conn, "/scoria/workflows/#{run.id}")
 
-    assert render(view) =~ "running"
+    assert render(view) =~ "Running"
 
     {:ok, _step} = Workflows.complete_step(step.id, %{"ok" => true})
 
