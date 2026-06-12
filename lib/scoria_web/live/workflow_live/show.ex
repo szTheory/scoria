@@ -1,11 +1,15 @@
 defmodule ScoriaWeb.WorkflowLive.Show do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
+  import Ecto.Query, warn: false
   import ScoriaWeb.UI, only: [object_header: 1, skeleton: 1]
 
   alias Scoria.Eval
+  alias Scoria.PromptRegistry.PromptTemplate
+  alias Scoria.Repo
   alias Scoria.Runtime
   alias Scoria.SRE
+  alias Scoria.SRE.Incident
   alias Scoria.Workflows
 
   alias ScoriaWeb.{
@@ -69,6 +73,11 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   end
 
   @impl true
+  def handle_event("open_promote_next_step", %{"step-id" => step_id}, socket) do
+    {:noreply, assign(socket, :promote_step_id, step_id)}
+  end
+
+  @impl true
   def handle_event("close_modal", _params, socket) do
     {:noreply, assign(socket, :promote_step_id, nil)}
   end
@@ -115,6 +124,35 @@ defmodule ScoriaWeb.WorkflowLive.Show do
           provenance={replay_provenance(@run, @replay_provenance_strip)}
           origin={@origin_context}
         />
+
+        <div class="mb-6 flex flex-wrap gap-3" aria-label="Run next steps">
+          <a href={replay_run_path(@run, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">
+            Replay run
+          </a>
+          <button
+            type="button"
+            phx-click="open_promote_next_step"
+            phx-value-step-id={@selected_step_id || ""}
+            disabled={promote_span_disabled?(@selected_step_id, @promotion_context)}
+            class="scoria-button scoria-button--primary scoria-button--sm"
+          >
+            Promote span to dataset
+          </button>
+          <a
+            :if={@linked_incident}
+            href={linked_incident_path(@run, assigns[:scoria_base] || "")}
+            class="scoria-button scoria-button--ghost scoria-button--sm"
+          >
+            Open incident
+          </a>
+          <a
+            :if={@prompt_target_id}
+            href={prompt_release_path(@prompt_target_id, @run, assigns[:scoria_base] || "")}
+            class="scoria-button scoria-button--ghost scoria-button--sm"
+          >
+            Open prompt
+          </a>
+        </div>
 
         <a :if={@run.session_id} href={"/scoria?runtime=#{@run.session_id}"} class="mb-6 inline-flex items-center gap-2 text-sm font-medium text-blue-700 underline">
           View associated runtime presence
@@ -261,6 +299,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
               id="promote-component"
               step={Enum.find(@steps, &(&1.id == @promote_step_id))}
               promotion_context={@promotion_context}
+              scoria_base={assigns[:scoria_base] || ""}
             />
           </div>
         </div>
@@ -281,6 +320,8 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     socket
     |> assign(:page_title, "Workflow Run")
     |> assign(:run, run)
+    |> assign(:linked_incident, linked_incident(run.id))
+    |> assign(:prompt_target_id, prompt_target_id(run))
     |> assign(:run_detail, detail)
     |> assign(:steps, steps)
     |> assign(:events, run.events)
@@ -460,6 +501,72 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   defp origin_path("dataset", _id, base_path), do: base_path <> "/eval_specs"
   defp origin_path("eval", _id, base_path), do: base_path <> "/eval_specs"
   defp origin_path("prompt", _id, base_path), do: base_path <> "/prompts"
+
+  defp promote_span_disabled?(nil, _promotion_context), do: true
+  defp promote_span_disabled?(_step_id, nil), do: true
+  defp promote_span_disabled?(_step_id, _promotion_context), do: false
+
+  defp replay_run_path(run, base_path) do
+    "#{base_path}/coming/replay-playground?#{origin_query("run", run.id)}"
+  end
+
+  defp linked_incident_path(run, base_path) do
+    "#{base_path}/incidents?#{origin_query("run", run.id)}"
+  end
+
+  defp prompt_release_path(prompt_id, run, base_path) do
+    "#{base_path}/prompts/#{prompt_id}/release?#{origin_query("run", run.id)}"
+  end
+
+  defp origin_query(noun, id), do: URI.encode_query([{"from", "#{noun}:#{id}"}])
+
+  defp linked_incident(run_id) do
+    Incident
+    |> where([incident], incident.workflow_run_id == ^run_id)
+    |> order_by([incident], desc: incident.last_seen_at)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  defp prompt_target_id(run) do
+    [run.metadata, run.replay_overrides]
+    |> Kernel.++(
+      Enum.flat_map(run.steps, &[&1.projected_context, &1.result_envelope, &1.handoff_input])
+    )
+    |> Kernel.++(Enum.flat_map(run.checkpoints, &[&1.metadata, &1.snapshot]))
+    |> Kernel.++(Enum.map(run.events, & &1.payload))
+    |> Enum.find_value(&prompt_candidate_id/1)
+    |> existing_prompt_id()
+  end
+
+  defp prompt_candidate_id(value) when is_map(value) do
+    direct =
+      value["prompt_template_id"] ||
+        value[:prompt_template_id] ||
+        value["template_id"] ||
+        value[:template_id] ||
+        value["prompt_ref"] ||
+        value[:prompt_ref]
+
+    direct || Enum.find_value(Map.values(value), &prompt_candidate_id/1)
+  end
+
+  defp prompt_candidate_id(values) when is_list(values),
+    do: Enum.find_value(values, &prompt_candidate_id/1)
+
+  defp prompt_candidate_id(value) when is_binary(value), do: nil
+  defp prompt_candidate_id(_value), do: nil
+
+  defp existing_prompt_id(nil), do: nil
+
+  defp existing_prompt_id(candidate) do
+    with {:ok, prompt_id} <- Ecto.UUID.cast(candidate),
+         true <- Repo.exists?(from(prompt in PromptTemplate, where: prompt.id == ^prompt_id)) do
+      prompt_id
+    else
+      _ -> nil
+    end
+  end
 
   defp load_review_candidate(_run_id, nil), do: nil
 

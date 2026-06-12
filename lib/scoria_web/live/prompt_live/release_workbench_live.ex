@@ -179,6 +179,23 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
 
       <p class="scoria-eyebrow">Release Workbench</p>
 
+      <div class="mb-6 flex flex-wrap gap-3" aria-label="Prompt release next steps">
+        <a
+          :if={@draft_run}
+          href={eval_results_path(@draft_run, @draft, assigns[:scoria_base] || "")}
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+        >
+          View eval results
+        </a>
+        <a
+          :if={@active_run}
+          href={eval_results_path(@active_run, @draft, assigns[:scoria_base] || "")}
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+        >
+          View baseline runs
+        </a>
+      </div>
+
       <%= if @approval_notice do %>
         <div class="mb-6 rounded-md bg-emerald-50 p-4 border border-emerald-200">
           <p class="text-sm text-emerald-800"><%= @approval_notice %></p>
@@ -344,4 +361,14 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   defp origin_path("dataset", _id, base_path), do: base_path <> "/eval_specs"
   defp origin_path("eval", _id, base_path), do: base_path <> "/eval_specs"
   defp origin_path("prompt", _id, base_path), do: base_path <> "/prompts"
+
+  defp eval_results_path(eval_run, draft, base_path) do
+    query =
+      URI.encode_query([
+        {"prompt_template_id", eval_run.prompt_template_id},
+        {"from", "prompt:#{draft.id}"}
+      ])
+
+    "#{base_path}/eval_specs?#{query}#eval-run-#{eval_run.id}"
+  end
 end

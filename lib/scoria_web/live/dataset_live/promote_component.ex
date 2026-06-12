@@ -11,10 +11,19 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
     promotion_context = assigns[:promotion_context] || %{}
     form_params = socket.assigns[:form_params] || initial_form_params(promotion_context)
     {open_datasets, sealed_datasets} = load_dataset_groups()
+
+    source_run_links_by_dataset_id =
+      source_run_links_by_dataset_id(open_datasets ++ sealed_datasets)
+
     selected_open_dataset_id = selected_open_dataset_id(form_params, open_datasets)
     baseline_target_id = socket.assigns[:baseline_target_id]
     baseline_target = find_dataset(sealed_datasets, baseline_target_id)
-    mode = if(socket.assigns[:mode] == :baseline_confirm and baseline_target, do: :baseline_confirm, else: :draft)
+
+    mode =
+      if(socket.assigns[:mode] == :baseline_confirm and baseline_target,
+        do: :baseline_confirm,
+        else: :draft
+      )
 
     {:ok,
      socket
@@ -22,6 +31,8 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
      |> assign(:promotion_context, promotion_context)
      |> assign(:open_datasets, open_datasets)
      |> assign(:sealed_datasets, sealed_datasets)
+     |> assign(:source_run_links_by_dataset_id, source_run_links_by_dataset_id)
+     |> assign(:scoria_base, assigns[:scoria_base] || Map.get(socket.assigns, :scoria_base, ""))
      |> assign(:selected_open_dataset_id, selected_open_dataset_id)
      |> assign(:baseline_target_id, baseline_target_id)
      |> assign(:mode, mode)
@@ -94,7 +105,8 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
         {:noreply, assign_form(socket, params, changeset)}
 
       {:error, %Jason.DecodeError{}} ->
-        {:noreply, assign_form(socket, params, add_error(changeset, :expected_output, "must be valid JSON"))}
+        {:noreply,
+         assign_form(socket, params, add_error(changeset, :expected_output, "must be valid JSON"))}
 
       {:error, %Ecto.Changeset{} = result_changeset} ->
         message = first_error(result_changeset, :dataset_id, "failed to promote snapshot")
@@ -109,7 +121,12 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
          |> assign_form(params, add_error(changeset, :dataset_id, message))}
 
       _other ->
-        {:noreply, assign_form(socket, params, add_error(changeset, :dataset_id, "failed to promote snapshot"))}
+        {:noreply,
+         assign_form(
+           socket,
+           params,
+           add_error(changeset, :dataset_id, "failed to promote snapshot")
+         )}
     end
   end
 
@@ -117,7 +134,9 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
   def handle_event("request_baseline_approval", _params, socket) do
     params = socket.assigns.form_params
     changeset = promotion_form(params, action: :validate)
-    baseline_target = find_dataset(socket.assigns.sealed_datasets, socket.assigns.baseline_target_id)
+
+    baseline_target =
+      find_dataset(socket.assigns.sealed_datasets, socket.assigns.baseline_target_id)
 
     with true <- changeset.valid?,
          %{} = dataset <- baseline_target,
@@ -146,13 +165,18 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
          socket
          |> refresh_datasets()
          |> assign(:mode, :draft)
-         |> assign_form(params, add_error(changeset, :dataset_id, "cannot add or modify items in a sealed dataset"))}
+         |> assign_form(
+           params,
+           add_error(changeset, :dataset_id, "cannot add or modify items in a sealed dataset")
+         )}
 
       {:error, %Jason.DecodeError{}} ->
-        {:noreply, assign_form(socket, params, add_error(changeset, :expected_output, "must be valid JSON"))}
+        {:noreply,
+         assign_form(socket, params, add_error(changeset, :expected_output, "must be valid JSON"))}
 
       {:error, %Ecto.Changeset{} = result_changeset} ->
-        message = first_error(result_changeset, :dataset_id, "failed to request baseline approval")
+        message =
+          first_error(result_changeset, :dataset_id, "failed to request baseline approval")
 
         {:noreply,
          socket
@@ -160,7 +184,12 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
          |> assign_form(params, add_error(changeset, :dataset_id, message))}
 
       _other ->
-        {:noreply, assign_form(socket, params, add_error(changeset, :dataset_id, "failed to request baseline approval"))}
+        {:noreply,
+         assign_form(
+           socket,
+           params,
+           add_error(changeset, :dataset_id, "failed to request baseline approval")
+         )}
     end
   end
 
@@ -171,9 +200,18 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
     assigns =
       assigns
       |> assign(:baseline_target, baseline_target)
-      |> assign(:source_variant, read_context_value(assigns.promotion_context, :source_variant) || "original")
-      |> assign(:source_label, variant_label(read_context_value(assigns.promotion_context, :source_variant)))
-      |> assign(:snapshot, read_context_value(assigns.promotion_context, :promotion_snapshot) || %{})
+      |> assign(
+        :source_variant,
+        read_context_value(assigns.promotion_context, :source_variant) || "original"
+      )
+      |> assign(
+        :source_label,
+        variant_label(read_context_value(assigns.promotion_context, :source_variant))
+      )
+      |> assign(
+        :snapshot,
+        read_context_value(assigns.promotion_context, :promotion_snapshot) || %{}
+      )
 
     ~H"""
     <div id={@id} class="promote-dataset-modal">
@@ -262,28 +300,39 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
               </div>
 
               <div :if={@open_datasets != []} class="mt-4 space-y-3">
-                <button
-                  :for={dataset <- @open_datasets}
-                  type="button"
-                  phx-click="select_open_dataset"
-                  phx-value-dataset-id={dataset.id}
-                  phx-target={@myself}
-                  class={[
-                    "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left",
-                    if(@selected_open_dataset_id == dataset.id,
-                      do: "border-blue-400 bg-blue-50",
-                      else: "border-stone-200 bg-stone-50 hover:border-stone-300 hover:bg-white"
-                    )
-                  ]}
-                >
-                  <span>
-                    <span class="block text-sm font-semibold text-stone-900"><%= dataset.name %></span>
-                    <span class="mt-1 block text-xs font-mono text-stone-500">v<%= dataset.version %></span>
-                  </span>
-                  <span class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-                    <%= if @selected_open_dataset_id == dataset.id, do: "Selected", else: "Select" %>
-                  </span>
-                </button>
+                <div :for={dataset <- @open_datasets}>
+                  <button
+                    type="button"
+                    phx-click="select_open_dataset"
+                    phx-value-dataset-id={dataset.id}
+                    phx-target={@myself}
+                    class={[
+                      "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left",
+                      if(@selected_open_dataset_id == dataset.id,
+                        do: "border-blue-400 bg-blue-50",
+                        else: "border-stone-200 bg-stone-50 hover:border-stone-300 hover:bg-white"
+                      )
+                    ]}
+                  >
+                    <span>
+                      <span class="block text-sm font-semibold text-stone-900"><%= dataset.name %></span>
+                      <span class="mt-1 block text-xs font-mono text-stone-500">v<%= dataset.version %></span>
+                    </span>
+                    <span class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                      <%= if @selected_open_dataset_id == dataset.id, do: "Selected", else: "Select" %>
+                    </span>
+                  </button>
+
+                  <div :if={source_run_links(@source_run_links_by_dataset_id, dataset.id) != []} class="mt-2 flex flex-wrap gap-2">
+                    <a
+                      :for={source <- source_run_links(@source_run_links_by_dataset_id, dataset.id)}
+                      href={source_run_path(source, @scoria_base)}
+                      class="scoria-button scoria-button--ghost scoria-button--sm"
+                    >
+                      Open source run
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -320,6 +369,16 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
                   >
                     Request baseline approval
                   </button>
+
+                  <div :if={source_run_links(@source_run_links_by_dataset_id, dataset.id) != []} class="flex flex-wrap gap-2">
+                    <a
+                      :for={source <- source_run_links(@source_run_links_by_dataset_id, dataset.id)}
+                      href={source_run_path(source, @scoria_base)}
+                      class="scoria-button scoria-button--ghost scoria-button--sm"
+                    >
+                      Open source run
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -427,9 +486,13 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
   defp refresh_datasets(socket) do
     {open_datasets, sealed_datasets} = load_dataset_groups()
 
+    source_run_links_by_dataset_id =
+      source_run_links_by_dataset_id(open_datasets ++ sealed_datasets)
+
     socket
     |> assign(:open_datasets, open_datasets)
     |> assign(:sealed_datasets, sealed_datasets)
+    |> assign(:source_run_links_by_dataset_id, source_run_links_by_dataset_id)
   end
 
   defp assign_form(socket, params, changeset) do
@@ -452,6 +515,36 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
   defp find_dataset(_datasets, nil), do: nil
   defp find_dataset(datasets, dataset_id), do: Enum.find(datasets, &(&1.id == dataset_id))
 
+  defp source_run_links_by_dataset_id(datasets) do
+    Map.new(datasets, fn dataset -> {dataset.id, source_run_links_for_dataset(dataset)} end)
+  end
+
+  defp source_run_links_for_dataset(dataset) do
+    dataset.id
+    |> Eval.list_dataset_items()
+    |> Enum.flat_map(fn item ->
+      case item_source_run_id(item) do
+        nil -> []
+        run_id -> [%{run_id: run_id, origin_id: item.id}]
+      end
+    end)
+    |> Enum.uniq_by(&{&1.run_id, &1.origin_id})
+  end
+
+  defp item_source_run_id(item) do
+    metadata = item.metadata || %{}
+    read_context_value(metadata, :source_run_id) || read_context_value(metadata, :workflow_run_id)
+  end
+
+  defp source_run_links(source_run_links_by_dataset_id, dataset_id) do
+    Map.get(source_run_links_by_dataset_id, dataset_id, [])
+  end
+
+  defp source_run_path(source, base_path) do
+    query = URI.encode_query([{"from", "dataset:#{source.origin_id}"}])
+    "#{base_path}/workflows/#{source.run_id}?#{query}"
+  end
+
   defp variant_label("replay"), do: "Replay trace"
   defp variant_label(_variant), do: "Original trace"
 
@@ -462,7 +555,9 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
   defp normalize_string(nil), do: ""
   defp normalize_string(value), do: to_string(value)
 
-  defp read_context_value(context, key) when is_map(context), do: Map.get(context, key, Map.get(context, to_string(key)))
+  defp read_context_value(context, key) when is_map(context),
+    do: Map.get(context, key, Map.get(context, to_string(key)))
+
   defp read_context_value(_context, _key), do: nil
 
   defp first_error(changeset, field, fallback) do

@@ -1,8 +1,23 @@
 defmodule ScoriaWeb.EvalSpecLive.Index do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
+  import Ecto.Query, warn: false
   import ScoriaWeb.UI, only: [empty_state: 1]
   alias Scoria.Eval
-  alias Scoria.Eval.EvalSpec
+  alias Scoria.Eval.{EvalRun, EvalSpec}
+  alias Scoria.Repo
+
+  @regressed_score_statuses ~w(failed regressed regression)
+  @run_id_keys [
+    {"workflow_run_id", :workflow_run_id},
+    {"run_id", :run_id},
+    {"source_run_id", :source_run_id},
+    {"regressed_run_id", :regressed_run_id}
+  ]
+  @run_ids_keys [
+    {"workflow_run_ids", :workflow_run_ids},
+    {"run_ids", :run_ids},
+    {"regressed_run_ids", :regressed_run_ids}
+  ]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -10,6 +25,7 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
      socket
      |> assign(:page_title, "Eval Workbench")
      |> assign(:eval_specs, Eval.list_eval_specs())
+     |> assign(:eval_runs, list_eval_runs())
      |> assign(:edit_spec, nil)
      |> assign(:form, nil)}
   end
@@ -18,6 +34,7 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
   def handle_event("edit", %{"id" => id}, socket) do
     spec = Eval.get_eval_spec!(id)
     changeset = EvalSpec.changeset(spec, %{})
+
     {:noreply,
      socket
      |> assign(:edit_spec, spec)
@@ -32,17 +49,20 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
   @impl true
   def handle_event("save", %{"eval_spec" => spec_params}, socket) do
     spec = socket.assigns.edit_spec
-    
+
     # We might need to decode rubric if it comes as JSON string, but for now
     # let's try to pass it directly. Ecto might need map for JSONB.
-    parsed_params = 
+    parsed_params =
       case Map.get(spec_params, "rubric") do
         rubric_str when is_binary(rubric_str) and rubric_str != "" ->
           case Jason.decode(rubric_str) do
             {:ok, json} -> Map.put(spec_params, "rubric", json)
-            {:error, _} -> spec_params # Will let Ecto validation catch it
+            # Will let Ecto validation catch it
+            {:error, _} -> spec_params
           end
-        _ -> spec_params
+
+        _ ->
+          spec_params
       end
 
     case Eval.update_eval_spec(spec, parsed_params) do
@@ -51,7 +71,8 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
          socket
          |> assign(:edit_spec, nil)
          |> assign(:form, nil)
-         |> assign(:eval_specs, Eval.list_eval_specs())}
+         |> assign(:eval_specs, Eval.list_eval_specs())
+         |> assign(:eval_runs, list_eval_runs())}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
@@ -124,10 +145,108 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
             <% end %>
           </tbody>
         </table>
+
+        <section :if={@eval_runs != []} id="eval-results">
+          <h2>Eval results</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Status</th>
+                <th>Prompt</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr :for={run <- @eval_runs} id={"eval-run-#{run.id}"}>
+                <td><%= run.id %></td>
+                <td><%= run.status %></td>
+                <td><%= run.prompt_version || "n/a" %></td>
+                <td>
+                  <a
+                    :if={run.prompt_template_id}
+                    href={prompt_release_path(run, assigns[:scoria_base] || "")}
+                    class="scoria-button scoria-button--ghost scoria-button--sm"
+                  >
+                    Open prompt release
+                  </a>
+                  <a
+                    :if={regressed_run_ids(run) != []}
+                    href={regressed_runs_path(run, assigns[:scoria_base] || "")}
+                    class="scoria-button scoria-button--ghost scoria-button--sm"
+                  >
+                    Open regressed runs
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
       <% end %>
     </div>
     """
   end
+
+  defp list_eval_runs do
+    EvalRun
+    |> order_by([run], desc: run.inserted_at)
+    |> limit(20)
+    |> preload(:scores)
+    |> Repo.all()
+  end
+
+  defp prompt_release_path(run, base_path) do
+    "#{base_path}/prompts/#{run.prompt_template_id}/release?#{origin_query(run)}"
+  end
+
+  defp regressed_runs_path(run, base_path) do
+    run_id = run |> regressed_run_ids() |> List.first()
+    "#{base_path}/workflows/#{run_id}?#{origin_query(run)}"
+  end
+
+  defp origin_query(run), do: URI.encode_query([{"from", "eval:#{run.id}"}])
+
+  defp regressed_run_ids(run) do
+    run.scores
+    |> Enum.filter(&(&1.status in @regressed_score_statuses))
+    |> Enum.flat_map(fn score ->
+      run_ids_from_map(score.evidence_refs || %{}) ++ run_ids_from_map(score.metadata || %{})
+    end)
+    |> Enum.uniq()
+  end
+
+  defp run_ids_from_map(map) when is_map(map) do
+    single_ids =
+      Enum.flat_map(@run_id_keys, fn {string_key, atom_key} ->
+        map |> read_map_value(string_key, atom_key) |> normalize_run_ids()
+      end)
+
+    multi_ids =
+      Enum.flat_map(@run_ids_keys, fn {string_key, atom_key} ->
+        map |> read_map_value(string_key, atom_key) |> normalize_run_ids()
+      end)
+
+    single_ids ++ multi_ids
+  end
+
+  defp run_ids_from_map(_value), do: []
+
+  defp read_map_value(map, string_key, atom_key),
+    do: Map.get(map, string_key) || Map.get(map, atom_key)
+
+  defp normalize_run_ids(nil), do: []
+
+  defp normalize_run_ids(values) when is_list(values),
+    do: Enum.flat_map(values, &normalize_run_ids/1)
+
+  defp normalize_run_ids(value) when is_binary(value) do
+    case Ecto.UUID.cast(value) do
+      {:ok, run_id} -> [run_id]
+      :error -> []
+    end
+  end
+
+  defp normalize_run_ids(_value), do: []
 
   defp encode_rubric(nil), do: ""
   defp encode_rubric(val) when is_map(val), do: Jason.encode!(val, pretty: true)
