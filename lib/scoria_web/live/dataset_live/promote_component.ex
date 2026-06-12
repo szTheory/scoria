@@ -2,6 +2,7 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
   use Phoenix.LiveComponent
 
   import Ecto.Changeset
+  import ScoriaWeb.UI
 
   alias Scoria.Eval
   alias Scoria.Workflows
@@ -218,157 +219,99 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
       <.form for={@form} phx-change="validate" phx-submit="save" phx-target={@myself} class="space-y-6">
         <input type="hidden" name={@form[:dataset_id].name} value={@form[:dataset_id].value || ""} />
 
-        <div class="space-y-2">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Draft promotion</p>
-          <h2 class="text-2xl font-semibold text-stone-900">
+        <.panel variant={:raised}>
+          <:eyebrow>Draft promotion</:eyebrow>
+          <:title>
             <%= if @mode == :baseline_confirm, do: "Baseline Promotion Approval", else: "Promote Trace to Draft Dataset" %>
-          </h2>
-          <p class="text-sm text-stone-600">
+          </:title>
+          <p>
             <%= @source_label %> stays frozen as one dataset snapshot, with workflow provenance preserved on insert or approval request.
           </p>
-        </div>
+        </.panel>
 
-        <section class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-          <div class="flex flex-wrap items-center gap-2 text-xs text-stone-700">
-            <span class="rounded-full border border-stone-300 bg-white px-3 py-1"><%= @source_label %></span>
-            <span class="rounded-full border border-stone-300 bg-white px-3 py-1">
-              run <span class="font-mono"><%= read_context_value(@promotion_context, :workflow_run_id) %></span>
-            </span>
-            <span class="rounded-full border border-stone-300 bg-white px-3 py-1">
-              step <span class="font-mono"><%= read_context_value(@promotion_context, :workflow_step_id) %></span>
-            </span>
+        <.form_section
+          title="Source evidence"
+          description="Stable workflow identifiers and escaped source evidence reconstructed by Dataset Builder."
+        >
+          <div class="flex flex-wrap items-center gap-2">
+            <.badge tone={:trace} label={@source_label} />
+            <.badge tone={:neutral} label={"run #{read_context_value(@promotion_context, :workflow_run_id)}"} />
+            <.badge tone={:neutral} label={"step #{read_context_value(@promotion_context, :workflow_step_id)}"} />
           </div>
 
-          <div class="mt-4 grid gap-4 lg:grid-cols-2">
-            <div class="rounded-xl border border-stone-200 bg-white p-4">
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">Promotion Snapshot Summary</p>
-              <pre class="mt-3 overflow-x-auto whitespace-pre-wrap text-xs text-stone-700"><%= Jason.encode_to_iodata!(@snapshot, pretty: true) %></pre>
-            </div>
+          <.raw_evidence label="Promotion snapshot summary">
+            {Jason.encode_to_iodata!(@snapshot, pretty: true)}
+          </.raw_evidence>
+        </.form_section>
 
-            <div class="rounded-xl border border-stone-200 bg-white p-4">
-              <label class="block text-xs font-semibold uppercase tracking-[0.16em] text-stone-500" for={@form[:notes].id}>Operator Notes</label>
+        <.form_section
+          title="Promotion details"
+          description="Operator notes and expected output are stored with the dataset item or approval request."
+        >
+          <div class="grid gap-4 lg:grid-cols-2">
+            <.field id={@form[:notes].id} label="Operator Notes">
               <textarea
                 id={@form[:notes].id}
                 name={@form[:notes].name}
                 rows="5"
-                class="mt-3 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-900"
+                class="w-full rounded-xl border px-3 py-2 text-sm"
               ><%= @form[:notes].value %></textarea>
+            </.field>
 
-              <label class="mt-4 block text-xs font-semibold uppercase tracking-[0.16em] text-stone-500" for={@form[:expected_output].id}>Expected Output (JSON)</label>
+            <.field
+              id={@form[:expected_output].id}
+              label="Expected Output (JSON)"
+              error={field_error(@form, :expected_output)}
+            >
               <textarea
                 id={@form[:expected_output].id}
                 name={@form[:expected_output].name}
                 rows="7"
-                class="mt-3 w-full rounded-xl border border-stone-300 px-3 py-2 font-mono text-sm text-stone-900"
+                class="w-full rounded-xl border px-3 py-2 font-mono text-sm"
               ><%= @form[:expected_output].value %></textarea>
-              <%= for error <- Keyword.get_values(@form.errors || [], :expected_output) do %>
-                <p class="mt-2 text-sm text-rose-700"><%= translate_error(error) %></p>
-              <% end %>
-            </div>
+            </.field>
           </div>
-        </section>
+        </.form_section>
 
         <%= if @mode == :baseline_confirm do %>
-          <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Approval required</p>
-            <h3 class="mt-2 text-lg font-semibold text-stone-900">Baseline Promotion Approval</h3>
-            <p class="mt-3 text-sm text-stone-700">
+          <.panel variant={:raised}>
+            <:eyebrow>Approval required</:eyebrow>
+            <:title>Baseline Promotion Approval</:title>
+            <p>
               Promote this draft evidence into a sealed release-driving baseline?
               The baseline dataset will remain immutable until an explicit approval workflow records the decision.
             </p>
 
-            <div :if={@baseline_target} class="mt-4 rounded-xl border border-amber-200 bg-white p-4 text-sm text-stone-700">
-              <p class="font-semibold text-stone-900"><%= @baseline_target.name %></p>
-              <p class="mt-1 font-mono">v<%= @baseline_target.version %></p>
+            <div :if={@baseline_target} class="mt-4">
+              <p><strong><%= @baseline_target.name %></strong></p>
+              <p class="font-mono">v<%= @baseline_target.version %></p>
             </div>
-          </section>
+          </.panel>
         <% else %>
-          <section class="space-y-4">
-            <div class="rounded-2xl border border-stone-200 bg-white p-4">
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Open draft datasets</p>
-                  <h3 class="mt-1 text-lg font-semibold text-stone-900">Selectable targets</h3>
-                </div>
-                <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                  Draft open
-                </span>
-              </div>
+          <div class="space-y-4">
+            <.form_section title="Open draft datasets" description="Only draft/open datasets accept direct promotion.">
+              <.badge tone={:pass} label="Draft open" />
 
-              <div :if={@open_datasets == []} class="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-600">
+              <.empty_state :if={@open_datasets == []} title="No open datasets">
                 Only draft/open datasets accept direct promotion; sealed baselines require approval.
-              </div>
+              </.empty_state>
 
               <div :if={@open_datasets != []} class="mt-4 space-y-3">
-                <div :for={dataset <- @open_datasets}>
-                  <button
+                <div :for={dataset <- @open_datasets} class="space-y-2">
+                  <.button
                     type="button"
+                    variant={if(@selected_open_dataset_id == dataset.id, do: :primary, else: :ghost)}
                     phx-click="select_open_dataset"
                     phx-value-dataset-id={dataset.id}
                     phx-target={@myself}
-                    class={[
-                      "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left",
-                      if(@selected_open_dataset_id == dataset.id,
-                        do: "border-blue-400 bg-blue-50",
-                        else: "border-stone-200 bg-stone-50 hover:border-stone-300 hover:bg-white"
-                      )
-                    ]}
+                    class="w-full justify-between"
                   >
                     <span>
-                      <span class="block text-sm font-semibold text-stone-900"><%= dataset.name %></span>
-                      <span class="mt-1 block text-xs font-mono text-stone-500">v<%= dataset.version %></span>
+                      <span><%= dataset.name %></span>
+                      <span class="ml-2 font-mono">v<%= dataset.version %></span>
                     </span>
-                    <span class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
-                      <%= if @selected_open_dataset_id == dataset.id, do: "Selected", else: "Select" %>
-                    </span>
-                  </button>
-
-                  <div :if={source_run_links(@source_run_links_by_dataset_id, dataset.id) != []} class="mt-2 flex flex-wrap gap-2">
-                    <a
-                      :for={source <- source_run_links(@source_run_links_by_dataset_id, dataset.id)}
-                      href={source_run_path(source, @scoria_base)}
-                      class="scoria-button scoria-button--ghost scoria-button--sm"
-                    >
-                      Open source run
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="rounded-2xl border border-stone-200 bg-white p-4">
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Sealed baseline</p>
-                  <h3 class="mt-1 text-lg font-semibold text-stone-900">Approval required</h3>
-                </div>
-                <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
-                  Approval required
-                </span>
-              </div>
-
-              <div class="mt-4 space-y-3">
-                <div
-                  :for={dataset <- @sealed_datasets}
-                  class="flex items-center justify-between gap-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3"
-                >
-                  <div>
-                    <p class="text-sm font-semibold text-stone-900"><%= dataset.name %></p>
-                    <p class="mt-1 text-xs font-mono text-stone-500">v<%= dataset.version %></p>
-                    <p class="mt-2 text-xs text-stone-600">
-                      This sealed baseline is immutable until an explicit approval workflow records the decision.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    phx-click="select_sealed_dataset"
-                    phx-value-dataset-id={dataset.id}
-                    phx-target={@myself}
-                    class="rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-amber-700 hover:bg-amber-50"
-                  >
-                    Request baseline approval
-                  </button>
+                    <span><%= if @selected_open_dataset_id == dataset.id, do: "Selected", else: "Select" %></span>
+                  </.button>
 
                   <div :if={source_run_links(@source_run_links_by_dataset_id, dataset.id) != []} class="flex flex-wrap gap-2">
                     <a
@@ -381,47 +324,92 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
                   </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </.form_section>
+
+            <.form_section
+              title="Sealed baseline"
+              description="Sealed baselines stay immutable until an explicit approval workflow records the decision."
+            >
+              <.badge tone={:warn} label="Approval required" />
+
+              <.empty_state :if={@sealed_datasets == []} title="No sealed baselines">
+                Only draft/open datasets accept direct promotion; sealed baselines require approval.
+              </.empty_state>
+
+              <div :if={@sealed_datasets != []} class="mt-4 space-y-3">
+                <div
+                  :for={dataset <- @sealed_datasets}
+                  class="flex flex-wrap items-center justify-between gap-4 rounded-xl border px-4 py-3"
+                >
+                  <div>
+                    <p><strong><%= dataset.name %></strong></p>
+                    <p class="font-mono">v<%= dataset.version %></p>
+                    <p>This sealed baseline is immutable until an explicit approval workflow records the decision.</p>
+                  </div>
+
+                  <.button
+                    type="button"
+                    variant={:ghost}
+                    size={:sm}
+                    phx-click="select_sealed_dataset"
+                    phx-value-dataset-id={dataset.id}
+                    phx-target={@myself}
+                  >
+                    Request baseline approval
+                  </.button>
+
+                  <div :if={source_run_links(@source_run_links_by_dataset_id, dataset.id) != []} class="flex flex-wrap gap-2">
+                    <a
+                      :for={source <- source_run_links(@source_run_links_by_dataset_id, dataset.id)}
+                      href={source_run_path(source, @scoria_base)}
+                      class="scoria-button scoria-button--ghost scoria-button--sm"
+                    >
+                      Open source run
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </.form_section>
+          </div>
         <% end %>
 
-        <%= for error <- Keyword.get_values(@form.errors || [], :dataset_id) do %>
-          <p class="text-sm text-rose-700"><%= translate_error(error) %></p>
-        <% end %>
+        <.field :if={field_error(@form, :dataset_id)} id={@form[:dataset_id].id} label="Dataset target" error={field_error(@form, :dataset_id)}>
+          <input type="hidden" />
+        </.field>
 
         <div class="flex justify-end gap-3">
-          <button
+          <.button
             :if={@mode == :baseline_confirm}
             type="button"
+            variant={:ghost}
             phx-click="back_to_draft"
             phx-target={@myself}
-            class="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700"
           >
             Back
-          </button>
+          </.button>
 
-          <button type="button" phx-click="close_modal" class="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700">
+          <.button type="button" variant={:ghost} phx-click="close_modal">
             Cancel
-          </button>
+          </.button>
 
-          <button
+          <.button
             :if={@mode == :draft}
             type="submit"
+            variant={:primary}
             phx-disable-with="Promoting snapshot..."
-            class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
           >
             Promote snapshot
-          </button>
+          </.button>
 
-          <button
+          <.button
             :if={@mode == :baseline_confirm}
             type="button"
+            variant={:primary}
             phx-click="request_baseline_approval"
             phx-target={@myself}
-            class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
           >
             Confirm baseline request
-          </button>
+          </.button>
         </div>
       </.form>
     </div>
@@ -564,6 +552,16 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
     case changeset.errors[field] do
       {message, _opts} -> message
       _other -> fallback
+    end
+  end
+
+  defp field_error(form, field) do
+    form.errors
+    |> Keyword.get_values(field)
+    |> List.first()
+    |> case do
+      nil -> nil
+      error -> translate_error(error)
     end
   end
 

@@ -80,7 +80,7 @@ defmodule ScoriaWeb.UI do
 
   attr(:rest, :global,
     include:
-      ~w(phx-click phx-value-id phx-value-approval-id phx-disable-with disabled form name value href)
+      ~w(phx-click phx-target phx-value-id phx-value-approval-id phx-value-dataset-id phx-disable-with disabled form name value href)
   )
 
   slot(:inner_block, required: true)

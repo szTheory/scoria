@@ -76,6 +76,7 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponentTest do
   alias Scoria.Workflows
 
   @endpoint ScoriaWeb.DatasetLive.PromoteComponentTest.Endpoint
+  @palette_regex ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.DatasetLive.PromoteComponentTest.Endpoint,
@@ -129,6 +130,60 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponentTest do
     assert item.metadata["source_variant"] == "original"
     assert item.expected_output == %{"result" => "success"}
     assert item.input["notes"] == "operator note"
+  end
+
+  test "requests sealed baseline approval and notifies the parent LiveView" do
+    {:ok, sealed_dataset} = Eval.create_dataset(%{name: "Release Approval QA", version: "8"})
+    {:ok, _sealed_dataset} = Eval.seal_dataset(sealed_dataset)
+
+    {:ok, view, _html} = mount_component(persisted_promotion_context())
+
+    view
+    |> element(
+      "button[phx-click='select_sealed_dataset'][phx-value-dataset-id='#{sealed_dataset.id}']"
+    )
+    |> render_click()
+
+    view
+    |> element("button[phx-click='request_baseline_approval']", "Confirm baseline request")
+    |> render_click()
+
+    assert render(view) =~ "baseline:Release Approval QA:8"
+  end
+
+  test "invalid expected-output JSON renders a visible field error" do
+    {:ok, open_dataset} = Eval.create_dataset(%{name: "Invalid JSON QA", version: "3"})
+    {:ok, view, _html} = mount_component(build_promotion_context("original"))
+
+    view
+    |> element(
+      "button[phx-click='select_open_dataset'][phx-value-dataset-id='#{open_dataset.id}']"
+    )
+    |> render_click()
+
+    html =
+      render_submit(element(view, "form"), %{
+        "promotion" => %{
+          "dataset_id" => "#{open_dataset.id}",
+          "notes" => "bad json",
+          "expected_output" => ~s({"result":)
+        }
+      })
+
+    assert html =~ "must be valid JSON"
+    assert html =~ "scoria-field__error"
+  end
+
+  test "component source uses shared form surfaces and has no raw palette leakage" do
+    path = "lib/scoria_web/live/dataset_live/promote_component.ex"
+    source = File.read!(path)
+
+    assert source =~ "<.form_section"
+    assert source =~ "<.field"
+    assert source =~ "<.button"
+    assert source =~ "<.badge"
+    assert source =~ "<.empty_state"
+    assert Regex.scan(@palette_regex, source) == []
   end
 
   test "dataset rows with promoted workflow metadata link back to their source run" do
@@ -286,6 +341,48 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponentTest do
       },
       promotion_snapshot: %{
         recorded_outcome: %{"kind" => "result", "value" => %{"foo" => "bar"}}
+      },
+      notes: "",
+      expected_output: %{}
+    }
+  end
+
+  defp persisted_promotion_context do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        actor_id: "operator-baseline",
+        tenant_id: "tenant-baseline",
+        session_id: "session-baseline"
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "tool_call",
+        role_id: "executor",
+        status: "completed",
+        projected_context: %{"prompt" => "baseline prompt"},
+        result_envelope: %{"output" => %{"answer" => "baseline"}}
+      })
+
+    %{
+      workflow_run_id: run.id,
+      workflow_step_id: step.id,
+      source_variant: "original",
+      provenance: %{
+        workflow_run_id: run.id,
+        workflow_step_id: step.id,
+        source_variant: "original",
+        execution_mode: "live"
+      },
+      checkpoint_output: %{
+        projected_context: %{"prompt" => "baseline prompt"},
+        recorded_outcome: %{"kind" => "result", "value" => %{"answer" => "baseline"}}
+      },
+      safety: %{},
+      promotion_snapshot: %{
+        recorded_outcome: %{"kind" => "result", "value" => %{"answer" => "baseline"}}
       },
       notes: "",
       expected_output: %{}

@@ -8,6 +8,16 @@ defmodule ScoriaWeb.DatasetLive.Index do
   import ScoriaWeb.UI
 
   alias Scoria.Eval
+  alias Scoria.Runtime
+  alias ScoriaWeb.DatasetLive.PromoteComponent
+
+  @promotion_modes ~w(review workflow)
+  @workflow_source_variants ~w(original replay)
+  @promotion_not_found %{
+    title: "Promotion source not found",
+    body:
+      "The source ID no longer resolves. Return to the originating run or review item and open Dataset Builder again."
+  }
 
   @impl true
   def mount(_params, _session, socket) do
@@ -21,7 +31,15 @@ defmodule ScoriaWeb.DatasetLive.Index do
      |> assign(:sort_dir, :desc)
      |> assign(:dataset_rows, rows)
      |> assign(:datasets, sort_rows(rows, :updated_at, :desc))
-     |> assign(:metrics, metrics(rows))}
+     |> assign(:metrics, metrics(rows))
+     |> assign(:promotion_context, nil)
+     |> assign(:promotion_source, nil)
+     |> assign(:promotion_error, nil)}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign_promotion_params(socket, params)}
   end
 
   @impl true
@@ -38,6 +56,10 @@ defmodule ScoriaWeb.DatasetLive.Index do
      |> assign(:sort_by, sort_by)
      |> assign(:sort_dir, sort_dir)
      |> assign(:datasets, sort_rows(socket.assigns.dataset_rows, sort_by, sort_dir))}
+  end
+
+  def handle_event("close_promote", _params, socket) do
+    {:noreply, push_patch(socket, to: dataset_path(socket.assigns[:scoria_base] || ""))}
   end
 
   @impl true
@@ -101,7 +123,139 @@ defmodule ScoriaWeb.DatasetLive.Index do
         </:col>
       </.table>
     </.panel>
+
+    <.panel :if={@promotion_error} variant={:flat} class="mt-6">
+      <.empty_state title={@promotion_error.title}>
+        {@promotion_error.body}
+      </.empty_state>
+    </.panel>
+
+    <.drawer
+      id="dataset-promote-drawer"
+      show={@promotion_context != nil}
+      on_dismiss="close_promote"
+      title="Promote traced evidence"
+    >
+      <:eyebrow>Dataset Builder</:eyebrow>
+      <.panel :if={@promotion_source} variant={:raised} class="mb-4">
+        <:eyebrow>{@promotion_source.eyebrow}</:eyebrow>
+        <:title>{@promotion_source.title}</:title>
+        <p>{@promotion_source.body}</p>
+      </.panel>
+      <.live_component
+        module={PromoteComponent}
+        id="dataset-builder-promote"
+        promotion_context={@promotion_context}
+        scoria_base={assigns[:scoria_base] || ""}
+      />
+    </.drawer>
     """
+  end
+
+  defp assign_promotion_params(socket, %{"promote" => promote} = params)
+       when promote in @promotion_modes do
+    case promotion_from_params(promote, params) do
+      {:ok, promotion_context, promotion_source} ->
+        socket
+        |> assign(:promotion_context, promotion_context)
+        |> assign(:promotion_source, promotion_source)
+        |> assign(:promotion_error, nil)
+
+      :error ->
+        socket
+        |> assign(:promotion_context, nil)
+        |> assign(:promotion_source, nil)
+        |> assign(:promotion_error, @promotion_not_found)
+    end
+  end
+
+  defp assign_promotion_params(socket, _params) do
+    socket
+    |> assign(:promotion_context, nil)
+    |> assign(:promotion_source, nil)
+    |> assign(:promotion_error, nil)
+  end
+
+  defp promotion_from_params("review", %{"review_candidate_id" => review_candidate_id})
+       when is_binary(review_candidate_id) and review_candidate_id != "" do
+    case Eval.get_review_candidate(review_candidate_id) do
+      %{promotion_context: promotion_context} = candidate when is_map(promotion_context) ->
+        {:ok, promotion_context,
+         %{
+           eyebrow: "Review candidate",
+           title: "Review candidate source",
+           body: candidate.rationale || "Scored review evidence is ready for dataset promotion."
+         }}
+
+      _ ->
+        :error
+    end
+  end
+
+  defp promotion_from_params("workflow", %{
+         "run_id" => run_id,
+         "step_id" => step_id,
+         "source_variant" => source_variant
+       })
+       when is_binary(run_id) and run_id != "" and is_binary(step_id) and step_id != "" and
+              source_variant in @workflow_source_variants do
+    with {:ok, context} <- workflow_promotion_context(run_id, step_id, source_variant) do
+      {:ok, context,
+       %{
+         eyebrow: "Workflow evidence",
+         title: variant_label(source_variant),
+         body: "Promotion context was reconstructed from persisted run and step evidence."
+       }}
+    else
+      _ -> :error
+    end
+  end
+
+  defp promotion_from_params(_promote, _params), do: :error
+
+  defp workflow_promotion_context(run_id, step_id, source_variant) do
+    detail = Runtime.get_run_detail!(run_id)
+    source_key = String.to_existing_atom(source_variant)
+
+    detail.comparison_by_step
+    |> Map.get(step_id)
+    |> selected_comparison_entry(source_key)
+    |> promotion_context()
+  rescue
+    _ -> :error
+  end
+
+  defp selected_comparison_entry(nil, _source_key), do: nil
+  defp selected_comparison_entry(comparison, source_key), do: Map.get(comparison, source_key)
+
+  defp promotion_context(nil), do: :error
+
+  defp promotion_context(selected_entry) do
+    provenance = Map.get(selected_entry, :provenance, %{})
+    checkpoint_output = Map.get(selected_entry, :checkpoint_output, %{})
+    safety = Map.get(selected_entry, :safety, %{})
+    promotion_snapshot = Map.get(selected_entry, :promotion_snapshot, %{})
+
+    with %{
+           workflow_run_id: workflow_run_id,
+           workflow_step_id: workflow_step_id,
+           source_variant: source_variant
+         } <- provenance do
+      {:ok,
+       %{
+         workflow_run_id: workflow_run_id,
+         workflow_step_id: workflow_step_id,
+         source_variant: source_variant,
+         provenance: provenance,
+         checkpoint_output: checkpoint_output,
+         safety: safety,
+         promotion_snapshot: promotion_snapshot,
+         notes: "",
+         expected_output: %{}
+       }}
+    else
+      _ -> :error
+    end
   end
 
   defp dataset_rows do
@@ -204,10 +358,17 @@ defmodule ScoriaWeb.DatasetLive.Index do
   defp format_ts(%DateTime{} = dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M")
   defp format_ts(other), do: to_string(other)
 
-  defp dataset_path(base_path, dataset_id) do
+  defp dataset_path(base_path) do
     base_path
     |> to_string()
     |> String.trim_trailing("/")
-    |> Kernel.<>("/datasets?dataset_id=#{dataset_id}")
+    |> Kernel.<>("/datasets")
   end
+
+  defp dataset_path(base_path, dataset_id) do
+    dataset_path(base_path) <> "?dataset_id=#{dataset_id}"
+  end
+
+  defp variant_label("replay"), do: "Replay trace"
+  defp variant_label(_variant), do: "Original trace"
 end
