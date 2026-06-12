@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: planning
-last_updated: "2026-06-12T15:22:31.529Z"
+last_updated: "2026-06-12T15:57:40.899Z"
 last_activity: 2026-06-12
 progress:
   total_phases: 20
@@ -25,9 +25,9 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle shipped and ar
 
 ## Current Position
 
-Phase: 13 (orientation-spine-ia) — COMPLETE
-Plan: 8 of 8
-Status: Complete; ready to plan Phase 14
+Phase: 14 (least-iterated-screens-polish) — UI-SPEC APPROVED
+Plan: 0 of ?
+Status: UI design contract approved; ready to plan Phase 14
 Last activity: 2026-06-12
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
