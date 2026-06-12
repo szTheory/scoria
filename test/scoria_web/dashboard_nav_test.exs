@@ -63,6 +63,35 @@ defmodule ScoriaWeb.DashboardNavTest do
     assert "tools" in aliases
   end
 
+  test "command_sections derives navigate rows and actions from the nav source of truth" do
+    sections = DashboardNav.command_sections("/scoria")
+
+    assert Enum.map(sections, & &1.label) == ["Recent", "Navigate", "Actions"]
+
+    navigate = Enum.find(sections, &(&1.label == "Navigate"))
+    actions = Enum.find(sections, &(&1.label == "Actions"))
+    nav_labels = DashboardNav.groups() |> Enum.flat_map(& &1.items) |> Enum.map(& &1.label)
+
+    assert Enum.map(navigate.rows, & &1.label) == nav_labels
+    assert %{label: "Runs", path: "/scoria/workflows", aliases: aliases, kbd: "g r"} = Enum.find(navigate.rows, &(&1.label == "Runs"))
+    assert "traces" in aliases
+
+    assert %{label: "Replay Playground", path: "/scoria/coming/replay-playground", soon?: true} =
+             Enum.find(navigate.rows, &(&1.label == "Replay Playground"))
+
+    assert Enum.map(actions.rows, & &1.label) == [
+             "Toggle theme",
+             "Keyboard shortcuts",
+             "Copy current page URL"
+           ]
+
+    assert Enum.map(actions.rows, & &1.action) == [
+             "toggle-theme",
+             "show-shortcuts",
+             "copy-url"
+           ]
+  end
+
   test "active keys cover workflow index and coming-soon screens" do
     assert DashboardNav.active_key(ScoriaWeb.WorkflowLive.Index, %{}) == :runs
 

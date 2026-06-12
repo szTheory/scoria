@@ -118,6 +118,30 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     refute html =~ "Review flagged runs"
   end
 
+  test "dashboard shell renders command palette and keyboard shortcut affordances" do
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria")
+
+    html = render_async(view)
+
+    assert html =~ "Open command palette"
+    assert html =~ "Search screens, recent objects, and actions"
+    assert html =~ "Keyboard shortcuts"
+
+    assert html =~
+             "No matches. The palette covers screens, recent objects, and actions — full object search lands in a later release."
+
+    assert html =~ ~s(role="dialog")
+    assert html =~ ~s(aria-modal="true")
+    assert html =~ ~s(role="listbox")
+    assert html =~ "Replay Playground"
+    assert html =~ "Soon"
+  end
+
   test "Status Home renders nonzero attention cards from read-model counts" do
     tenant_id = "tenant-status-attention"
     status_home_fixture(tenant_id)
