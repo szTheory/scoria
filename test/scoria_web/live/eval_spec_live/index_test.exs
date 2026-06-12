@@ -62,6 +62,53 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     refute html =~ "<tbody>"
   end
 
+  test "renders exact empty state copy when no eval runs exist" do
+    {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Empty Run Dataset", state: :sealed})
+
+    {:ok, _spec} =
+      Scoria.Eval.create_eval_spec(%{
+        name: "Empty Run Spec",
+        description: "No runs have executed yet",
+        dataset_id: dataset.id,
+        dataset_version: dataset.version,
+        eval_mode: :offline_replay,
+        subject: %{
+          subject_kind: :prompt_template,
+          prompt_entity_id: Ecto.UUID.generate(),
+          prompt_template_id: Ecto.UUID.generate(),
+          prompt_version: 1
+        },
+        scorers: [
+          %{
+            metric_key: "accuracy",
+            scorer_kind: :llm_judge,
+            judge_prompt_template_id: Ecto.UUID.generate(),
+            judge_prompt_version: 1,
+            judge_provider: "openai",
+            judge_model: "gpt-4o-mini",
+            weight: 1.0
+          }
+        ],
+        threshold_policy: %{
+          pass_rate_gte: 0.8,
+          mean_score_gte: 0.8,
+          max_latency_ms: 100
+        }
+      })
+
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
+
+    {:ok, _view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+
+    assert html =~ "No eval runs yet"
+
+    assert html =~
+             "Promote a production trace to a dataset, then run an eval to compare prompt behavior against a baseline."
+  end
+
   test "renders eval specs and handles editing" do
     {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Test Dataset", state: :sealed})
 
@@ -112,6 +159,14 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     # Click edit
     html = render_click(view, "edit", %{"id" => spec.id})
     assert html =~ "Edit Rubric: Helpfulness"
+    assert html =~ "scoria-form-section"
+    assert html =~ "scoria-field"
+
+    html = render_click(view, "cancel_edit")
+    refute html =~ "Edit Rubric:"
+
+    html = render_click(view, "edit", %{"id" => spec.id})
+    assert html =~ "Edit Rubric: Helpfulness"
 
     # Submit form
     html =
@@ -134,6 +189,62 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     assert new_spec.name == "Helpfulness V2"
     assert new_spec.version == 2
     assert new_spec.entity_id == spec.entity_id
+  end
+
+  test "renders invalid rubric JSON as visible field error text" do
+    {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Validation Dataset", state: :sealed})
+
+    {:ok, spec} =
+      Scoria.Eval.create_eval_spec(%{
+        name: "Validation Spec",
+        description: "Checks invalid rubric JSON",
+        dataset_id: dataset.id,
+        dataset_version: dataset.version,
+        eval_mode: :offline_replay,
+        subject: %{
+          subject_kind: :prompt_template,
+          prompt_entity_id: Ecto.UUID.generate(),
+          prompt_template_id: Ecto.UUID.generate(),
+          prompt_version: 1
+        },
+        scorers: [
+          %{
+            metric_key: "accuracy",
+            scorer_kind: :llm_judge,
+            judge_prompt_template_id: Ecto.UUID.generate(),
+            judge_prompt_version: 1,
+            judge_provider: "openai",
+            judge_model: "gpt-4o-mini",
+            weight: 1.0
+          }
+        ],
+        threshold_policy: %{
+          pass_rate_gte: 0.8,
+          mean_score_gte: 0.8,
+          max_latency_ms: 100
+        }
+      })
+
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
+
+    {:ok, view, _html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+
+    render_click(view, "edit", %{"id" => spec.id})
+
+    html =
+      render_submit(view, "save", %{
+        "eval_spec" => %{
+          "name" => "Validation Spec",
+          "description" => "Checks invalid rubric JSON",
+          "rubric" => "{not valid json"
+        }
+      })
+
+    assert html =~ "scoria-field__error"
+    assert html =~ "is invalid"
   end
 
   test "renders eval result links to prompt release and regressed source runs" do
@@ -218,16 +329,30 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
 
     {:ok, _view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
     decoded_html = URI.decode_www_form(html)
+    eval_html = eval_workbench_html(html)
+    eval_html_downcase = String.downcase(eval_html)
 
     assert html =~ "Eval results"
     assert html =~ "Open prompt release"
     assert html =~ "Open regressed runs"
+    assert eval_html =~ ~s(<table class="scoria-table)
+    assert eval_html =~ "scoria-badge"
+    assert eval_html =~ "Running"
     assert decoded_html =~ "/prompts/#{prompt.id}/release?from=eval:#{eval_run.id}"
     assert decoded_html =~ "/workflows/#{source_run.id}?from=eval:#{eval_run.id}"
 
-    html_downcase = String.downcase(html)
-    refute html_downcase =~ "stepper"
-    refute html_downcase =~ "wizard"
-    refute html_downcase =~ "current step"
+    refute eval_html_downcase =~ "stepper"
+    refute eval_html_downcase =~ "wizard"
+    refute eval_html_downcase =~ "playground"
+    refute eval_html_downcase =~ "current step"
+    refute eval_html_downcase =~ "experiment"
+    refute eval_html_downcase =~ "chart"
+  end
+
+  defp eval_workbench_html(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find(".eval-spec-index")
+    |> Floki.raw_html()
   end
 end
