@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: executing
-last_updated: "2026-06-12T20:54:00.000Z"
-last_activity: 2026-06-12 -- Phase 14 Wave 4 complete
+last_updated: "2026-06-12T20:58:00.000Z"
+last_activity: 2026-06-12 -- Phase 14 complete
 progress:
   total_phases: 20
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 24
   completed_plans: 24
-  percent: 15
+  percent: 20
 ---
 
 # Project State
@@ -21,22 +21,22 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle shipped and ar
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 14 — least-iterated-screens-polish
+**Current focus:** Phase 15 — high-traffic-screens + evidence adapters
 
 ## Current Position
 
-Phase: 14 (least-iterated-screens-polish) — VERIFYING
-Plan: 6 of 6
-Status: Phase 14 implementation complete (6/6 plans complete; verification next)
-Last activity: 2026-06-12 -- Phase 14 Wave 4 complete
+Phase: 15 (high-traffic-screens + evidence adapters) — READY
+Plan: 0 of TBD
+Status: Phase 14 complete; Phase 15 ready for planning
+Last activity: 2026-06-12 -- Phase 14 complete
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
 1. **Phase 11 — Evaluation engine + seed depth** (EVAL-01..05) — `mix scoria.ui.shots` harness, 9-dim rubric, full-screen seed depth, baseline audit → gap register/fix backlog. **COMPLETE 2026-06-04**
 2. **Phase 12 — Design-system component layer** (DS-01..06) — `ui.ex` table/drawer/modal/form/notebook/skeleton/toast, fix `flash_group`, raw-color drift guard. The enforced token gateway. **COMPLETE 2026-06-04**
 3. **Phase 13 — Orientation spine (IA)** (IA-01..06) — nav active-state fix, third axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, quality-loop threading, honest reserved-name stubs. **COMPLETE 2026-06-12**
-4. **Phase 14 — Least-iterated screens polish** (SCREEN-01, SCREEN-02) — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions; real Dataset Builder index. **IMPLEMENTATION COMPLETE 2026-06-12; VERIFYING**
-5. **Phase 15 — High-traffic screens + evidence adapters** (SCREEN-03, SCREEN-04) — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components → thin notebook adapters.
+4. **Phase 14 — Least-iterated screens polish** (SCREEN-01, SCREEN-02) — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions; real Dataset Builder index. **COMPLETE 2026-06-12**
+5. **Phase 15 — High-traffic screens + evidence adapters** (SCREEN-03, SCREEN-04) — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components → thin notebook adapters. **NEXT**
 6. **Phase 16 — Motion + responsive + theme parity** (MOTION-01..04) — brand-tied motion, focus-visible/a11y, mobile-first md/lg/xl, light+dark parity.
 7. **Phase 17 — Consistency sweep + proof** (PROOF-01..03) — re-run audit, rubric-delta + raw-color → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage.
 
@@ -51,7 +51,7 @@ Last activity: 2026-06-12 -- Phase 14 Wave 4 complete
 
 ### Roadmap Evolution
 
-- **v3.0 (resumed):** Control Room UI/IA/DX milestone. Phases 11–17. Phases 11–13 complete (Phase 13 completed 2026-06-12). Core finding: design system is under-*adopted* (~22/25 view files leak raw Tailwind). Paused at clean 12/13 boundary for v2.17 interjection; now resumed. Next: Phase 14 least-iterated screens polish.
+- **v3.0 (resumed):** Control Room UI/IA/DX milestone. Phases 11–17. Phases 11–14 complete (Phase 14 completed 2026-06-12). Core finding: design system is under-*adopted* (~22/25 view files leak raw Tailwind). Paused at clean 12/13 boundary for v2.17 interjection; now resumed. Next: Phase 15 high-traffic screens + evidence adapters.
 - **v2.17 (shipped):** Brand system milestone. Interjected before v3.0 phases 13–17 because brand book was AI-generated seed, never pressure-tested, and no logo/collateral existed. Phases 18–22 (globally monotonic past v3.0's reserved 11–17 block). All 8 mandatory requirements satisfied; BRAND-09 conditional did not fire. Archived in `.planning/milestones/v2.17-*`.
 - **v2.16 (shipped):** ReqLLM `~> 1.13` peer bump — minimal dependency hygiene scope.
 - **v2.15 (shipped):** Named connector adoption lane — PR WAE after knowledge, not in closeout.
@@ -124,4 +124,4 @@ Last activity: 2026-06-12 -- Phase 14 Wave 4 complete
 
 ## Operator Next Steps
 
-- `/gsd:plan-phase 14` — plan Phase 14 (Least-iterated screens polish)
+- `/gsd:plan-phase 15` — plan Phase 15 (High-traffic screens + evidence adapters)
