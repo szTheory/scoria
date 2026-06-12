@@ -137,11 +137,42 @@ defmodule ScoriaWeb.DashboardNav do
     ScoriaWeb.PromptLive.ReleaseWorkbenchLive => :prompts
   }
 
+  @g_chords %{
+    live_ops: "g h",
+    approvals: "g a",
+    runs: "g r",
+    incidents: "g i",
+    connectors: "g c",
+    reviews: "g q",
+    evals: "g e",
+    prompts: "g p"
+  }
+
+  @actions [
+    %{id: "command-action-toggle-theme", label: "Toggle theme", action: "toggle-theme"},
+    %{
+      id: "command-action-shortcuts",
+      label: "Keyboard shortcuts",
+      action: "show-shortcuts",
+      kbd: "?"
+    },
+    %{id: "command-action-copy-url", label: "Copy current page URL", action: "copy-url"}
+  ]
+
   @doc "Nav groups for the sidebar."
   def groups do
     Enum.map(@groups, fn group ->
       %{group | items: Enum.map(group.items, &normalize_item/1)}
     end)
+  end
+
+  @doc "Command palette sections derived from the dashboard navigation source of truth."
+  def command_sections(base_path) do
+    [
+      %{label: "Recent", rows: []},
+      %{label: "Navigate", rows: navigate_command_rows(base_path)},
+      %{label: "Actions", rows: @actions}
+    ]
   end
 
   @doc "Active nav key for a LiveView module."
@@ -233,4 +264,35 @@ defmodule ScoriaWeb.DashboardNav do
   end
 
   defp normalize_item(item), do: item
+
+  defp navigate_command_rows(base_path) do
+    groups()
+    |> Enum.flat_map(& &1.items)
+    |> Enum.map(fn item ->
+      %{
+        id: "command-nav-#{item.key}",
+        label: item.label,
+        path: dashboard_path(base_path, item.path),
+        aliases: item.aliases,
+        kbd: Map.get(@g_chords, item.key),
+        soon?: Map.get(item, :soon?, false)
+      }
+    end)
+  end
+
+  defp dashboard_path(base_path, "/") do
+    normalize_base(base_path) <> "/"
+  end
+
+  defp dashboard_path(base_path, path) do
+    normalize_base(base_path) <> path
+  end
+
+  defp normalize_base(nil), do: ""
+
+  defp normalize_base(base_path) do
+    base_path
+    |> to_string()
+    |> String.trim_trailing("/")
+  end
 end

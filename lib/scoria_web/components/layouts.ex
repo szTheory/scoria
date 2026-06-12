@@ -9,6 +9,8 @@ defmodule ScoriaWeb.Layouts do
   """
   use Phoenix.Component
 
+  import ScoriaWeb.UI, only: [command_palette: 1, kbd: 1]
+
   alias ScoriaWeb.DashboardNav
 
   embed_templates("layouts/*")
@@ -63,4 +65,7 @@ defmodule ScoriaWeb.Layouts do
 
   @doc "Nav groups passthrough for the shell template."
   def nav_groups, do: DashboardNav.groups()
+
+  @doc "Command palette sections for the shell template."
+  def command_sections(base_path), do: DashboardNav.command_sections(base_path)
 end

@@ -73,7 +73,10 @@ defmodule ScoriaWeb.DashboardNavTest do
     nav_labels = DashboardNav.groups() |> Enum.flat_map(& &1.items) |> Enum.map(& &1.label)
 
     assert Enum.map(navigate.rows, & &1.label) == nav_labels
-    assert %{label: "Runs", path: "/scoria/workflows", aliases: aliases, kbd: "g r"} = Enum.find(navigate.rows, &(&1.label == "Runs"))
+
+    assert %{label: "Runs", path: "/scoria/workflows", aliases: aliases, kbd: "g r"} =
+             Enum.find(navigate.rows, &(&1.label == "Runs"))
+
     assert "traces" in aliases
 
     assert %{label: "Replay Playground", path: "/scoria/coming/replay-playground", soon?: true} =

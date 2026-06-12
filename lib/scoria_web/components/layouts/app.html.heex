@@ -1,4 +1,4 @@
-<div class="scoria-shell">
+<div class="scoria-shell" data-scoria-base={assigns[:scoria_base] || ""}>
   <aside class="scoria-sidebar">
     <a class="scoria-brand" href={(assigns[:scoria_base] || "") <> "/"}>
       <.brand_mark /> Scoria
@@ -29,6 +29,18 @@
     </div>
     <div class="ml-auto flex items-center gap-3">
       <button
+        id="scoria-command-open"
+        type="button"
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        title="Open command palette"
+        aria-label="Open command palette"
+        aria-controls="scoria-command-palette"
+        data-command-open
+      >
+        <span>Open command palette</span>
+        <.kbd><span data-command-primary-kbd>Cmd K</span></.kbd>
+      </button>
+      <button
         type="button"
         class="scoria-button scoria-button--ghost scoria-button--sm"
         phx-hook="ThemeToggle"
@@ -40,6 +52,79 @@
       </button>
     </div>
   </header>
+
+  <.command_palette
+    id="scoria-command-palette"
+    sections={command_sections(assigns[:scoria_base] || "")}
+  />
+
+  <div
+    id="scoria-shortcuts"
+    class="scoria-command"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="scoria-shortcuts-title"
+    data-shortcuts-overlay
+    data-state="closed"
+    hidden
+  >
+    <div class="scoria-command__scrim" data-shortcuts-close aria-hidden="true"></div>
+    <section class="scoria-command__panel" tabindex="-1" data-shortcuts-panel>
+      <header class="scoria-command__header">
+        <h2 id="scoria-shortcuts-title">Keyboard shortcuts</h2>
+        <button
+          type="button"
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+          aria-label="Close keyboard shortcuts"
+          data-shortcuts-close
+        >
+          <.kbd>Esc</.kbd>
+        </button>
+      </header>
+      <div class="scoria-command__list">
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Open command palette</span>
+          <.kbd><span data-command-primary-kbd>Cmd K</span></.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Keyboard shortcuts</span>
+          <.kbd>?</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Home</span>
+          <.kbd>g h</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Approvals</span>
+          <.kbd>g a</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Runs</span>
+          <.kbd>g r</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Incidents</span>
+          <.kbd>g i</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Connectors</span>
+          <.kbd>g c</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Review Queue</span>
+          <.kbd>g q</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Eval Workbench</span>
+          <.kbd>g e</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Prompt Registry</span>
+          <.kbd>g p</.kbd>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <main class="scoria-main">
     {@inner_content}

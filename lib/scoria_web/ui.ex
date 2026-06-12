@@ -351,6 +351,7 @@ defmodule ScoriaWeb.UI do
                   role="option"
                   aria-selected="false"
                   data-command-row
+                  data-command-kbd={command_row_kbd(row)}
                   data-command-search={command_row_search(row)}
                 >
                   <span>
@@ -368,6 +369,7 @@ defmodule ScoriaWeb.UI do
                   aria-selected="false"
                   data-command-row
                   data-command-action={Map.get(row, :action)}
+                  data-command-kbd={command_row_kbd(row)}
                   data-command-search={command_row_search(row)}
                 >
                   <span class="scoria-command__label">{command_row_label(row)}</span>
