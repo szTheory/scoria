@@ -161,6 +161,27 @@
     white-space: nowrap;
   }
 
+  .scoria-home__identity {
+    margin-top: var(--scoria-space-1);
+    max-width: 760px;
+    color: var(--scoria-text-muted);
+  }
+  .scoria-home__attention {
+    margin-bottom: var(--scoria-space-5);
+  }
+  .scoria-home__attention-grid {
+    display: grid;
+    gap: var(--scoria-space-3);
+  }
+  .scoria-home__clear,
+  .scoria-traces__empty {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-body);
+  }
+  .scoria-traces__empty {
+    margin-bottom: var(--scoria-space-4);
+  }
+
   .scoria-object-header {
     display: flex;
     flex-direction: column;

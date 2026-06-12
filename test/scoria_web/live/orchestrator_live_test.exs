@@ -59,7 +59,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.OrchestratorLiveTest.Endpoint,
-      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
+      secret_key_base:
+        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "112345678"],
       debug_errors: true
@@ -83,7 +84,9 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
-    {:ok, _view, html} = live(conn, "/scoria")
+    {:ok, view, _html} = live(conn, "/scoria")
+    html = render_async(view)
+
     assert html =~ "scoria-dashboard"
   end
 
@@ -103,7 +106,10 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
              "Every AI run in this app, traced. Approve tools, triage incidents, and gate prompt releases from here."
 
     assert html =~ "Nothing needs attention. 0 approvals pending, 0 open incidents."
-    assert html =~ "No traces yet. Run your first chat response or MCP request to see the run tree."
+
+    assert html =~
+             "No traces yet. Run your first chat response or MCP request to see the run tree."
+
     assert html =~ ~s(id="traces-list")
 
     refute html =~ "Review approvals"
@@ -139,6 +145,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
+    render_async(view)
 
     # Send a dummy trace message simulating PubSub broadcast
     trace = %{id: "trace-123", spans: [%{id: "span-1", name: "llm_call", depth: 0}]}
@@ -157,6 +164,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
+    render_async(view)
+
     trace_id = "trace-incr-1"
 
     send(view.pid, {:trace_opened, %{id: trace_id, tenant_id: "default"}})
@@ -175,6 +184,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
+    render_async(view)
+
     trace_id = "trace-dup-1"
     header = %{id: trace_id, tenant_id: "default"}
 
@@ -194,6 +205,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
+    render_async(view)
+
     trace_id = "trace-upsert-1"
     span_id = "span-same"
 
@@ -213,6 +226,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, html} = live(conn, "/scoria")
+    render_async(view)
 
     refute html =~ "token-stream"
 
@@ -238,6 +252,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
+    render_async(view)
 
     trace = %{id: "trace-evidence", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
     send(view.pid, {:new_trace, trace})
@@ -256,6 +271,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
+    render_async(view)
 
     trace = %{id: "trace-combined", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
     send(view.pid, {:new_trace, trace})
@@ -279,6 +295,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
+    render_async(view)
 
     trace = %{id: "trace-actions", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
     send(view.pid, {:new_trace, trace})
@@ -299,8 +316,10 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
 
-    {:ok, _view, html} =
+    {:ok, view, _html} =
       live(conn, "/scoria?runtime=session-review&review_candidate_id=#{candidate.id}")
+
+    html = render_async(view)
 
     assert html =~ "Review candidate context"
     assert html =~ candidate.score_explanation
@@ -358,7 +377,10 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   defp review_candidate_fixture(attrs \\ %{}) do
     tenant_id = Map.get(attrs, :tenant_id, "tenant-review")
     session_id = Map.get(attrs, :session_id, "session-review")
-    score_explanation = Map.get(attrs, :score_explanation, "Queue evidence on the runtime landing surface")
+
+    score_explanation =
+      Map.get(attrs, :score_explanation, "Queue evidence on the runtime landing surface")
+
     dedupe_suffix = Map.get(attrs, :dedupe_suffix, "orchestrator")
 
     {:ok, trace} =
