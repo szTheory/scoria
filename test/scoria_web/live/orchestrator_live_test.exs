@@ -31,9 +31,12 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
+  alias Scoria.Connectors.Connector
+  alias Scoria.Observe.Approval
   alias Scoria.Repo
   alias Scoria.Repo.Trace
   alias Scoria.Eval.OnlineScoreCandidate
+  alias Scoria.SRE.Incident
   alias Scoria.Workflows.{Run, Step}
 
   @endpoint ScoriaWeb.OrchestratorLiveTest.Endpoint
@@ -84,6 +87,51 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert html =~ "scoria-dashboard"
   end
 
+  test "Status Home renders exact orientation copy and day-zero stream empty state" do
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria?tenant=tenant-status-empty")
+
+    html = render_async(view)
+
+    assert html =~ "Home"
+
+    assert html =~
+             "Every AI run in this app, traced. Approve tools, triage incidents, and gate prompt releases from here."
+
+    assert html =~ "Nothing needs attention. 0 approvals pending, 0 open incidents."
+    assert html =~ "No traces yet. Run your first chat response or MCP request to see the run tree."
+    assert html =~ ~s(id="traces-list")
+
+    refute html =~ "Review approvals"
+    refute html =~ "Open incidents"
+    refute html =~ "View connector health"
+    refute html =~ "Review flagged runs"
+  end
+
+  test "Status Home renders nonzero attention cards from read-model counts" do
+    tenant_id = "tenant-status-attention"
+    status_home_fixture(tenant_id)
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+
+    {:ok, view, _html} = live(conn, "/scoria?tenant=#{tenant_id}")
+
+    html = render_async(view)
+
+    assert html =~ "Review approvals"
+    assert html =~ "Open incidents"
+    assert html =~ "View connector health"
+    assert html =~ "Review flagged runs"
+    refute html =~ "Nothing needs attention. 0 approvals pending, 0 open incidents."
+  end
+
   test "OrchestratorLive subscribes to PubSub and renders streaming traces" do
     conn =
       build_conn()
@@ -99,6 +147,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     # Render again to see if it streamed the trace using the component
     assert render(view) =~ "llm_call"
     assert render(view) =~ "trace-tree"
+    assert render(view) =~ ~s(id="traces-list")
   end
 
   test "trace_opened and trace_span sequence renders span name incrementally" do
@@ -258,11 +307,64 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert html =~ candidate.trace_id
   end
 
-  defp review_candidate_fixture do
+  defp status_home_fixture(tenant_id) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    Repo.insert!(
+      Approval.changeset(%Approval{}, %{
+        tool_name: "deploy_prompt",
+        status: "pending",
+        tenant_id: tenant_id,
+        reason: "Prompt release gate"
+      })
+    )
+
+    Repo.insert!(
+      Incident.changeset(%Incident{}, %{
+        tenant_id: tenant_id,
+        incident_key: "#{tenant_id}:critical-budget",
+        severity: "critical",
+        status: "open",
+        summary: "Budget breaker opened",
+        routing_class: "page",
+        dedupe_key: "#{tenant_id}:critical-budget",
+        first_seen_at: now,
+        last_seen_at: now
+      })
+    )
+
+    Repo.insert!(
+      Connector.changeset(%Connector{}, %{
+        tenant_id: tenant_id,
+        key: "#{tenant_id}-mcp",
+        label: "Tenant MCP",
+        endpoint_url: "https://example.com/mcp",
+        transport_kind: "sse",
+        auth_mode: "none",
+        status: "degraded",
+        health_state: "degraded",
+        last_refresh_status: "error"
+      })
+    )
+
+    review_candidate_fixture(%{
+      tenant_id: tenant_id,
+      session_id: "#{tenant_id}-session",
+      score_explanation: "Flagged run requires operator review",
+      dedupe_suffix: "status-home"
+    })
+  end
+
+  defp review_candidate_fixture(attrs \\ %{}) do
+    tenant_id = Map.get(attrs, :tenant_id, "tenant-review")
+    session_id = Map.get(attrs, :session_id, "session-review")
+    score_explanation = Map.get(attrs, :score_explanation, "Queue evidence on the runtime landing surface")
+    dedupe_suffix = Map.get(attrs, :dedupe_suffix, "orchestrator")
+
     {:ok, trace} =
       %Trace{}
       |> Trace.changeset(%{
-        session_id: "session-review",
+        session_id: session_id,
         attributes: %{"env" => "prod"}
       })
       |> Repo.insert()
@@ -271,7 +373,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
       %Run{}
       |> Run.changeset(%{
         root_role_id: "assistant",
-        tenant_id: "tenant-review",
+        tenant_id: tenant_id,
         session_id: trace.session_id,
         status: "running",
         execution_mode: "live"
@@ -291,15 +393,15 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
 
     Repo.insert!(
       OnlineScoreCandidate.changeset(%OnlineScoreCandidate{}, %{
-        tenant_id: "tenant-review",
+        tenant_id: tenant_id,
         trace_id: trace.id,
         workflow_run_id: run.id,
         workflow_step_id: step.id,
-        dedupe_key: "tenant-review:#{trace.id}:orchestrator",
+        dedupe_key: "#{tenant_id}:#{trace.id}:#{dedupe_suffix}",
         status: "needs_review",
         review_status: "pending",
         score_status: "failed",
-        score_explanation: "Queue evidence on the runtime landing surface",
+        score_explanation: score_explanation,
         scorer_kind: "deterministic_rule",
         scorer_version: "policy-rules@2026.05.23",
         sampling_metadata: %{"sample_reason" => "policy_trigger"}
