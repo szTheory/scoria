@@ -392,6 +392,11 @@
         }
       }
 
+      if (this.shortcutsOpen() && e.key === "Tab") {
+        this.trapFocus(e, this.shortcutOverlay);
+        return;
+      }
+
       if (editableTarget(e.target)) return;
 
       var key = e.key ? e.key.toLowerCase() : "";

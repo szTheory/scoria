@@ -205,6 +205,7 @@ defmodule ScoriaWeb.UI do
   attr(:provenance, :string, default: nil)
   attr(:origin, :map, default: nil)
   attr(:class, :string, default: nil)
+  attr(:id, :string, default: nil)
   attr(:rest, :global)
 
   @doc "Object-page orientation header: parent crumb, copyable ID, status, provenance, and return context."
@@ -218,6 +219,7 @@ defmodule ScoriaWeb.UI do
 
     ~H"""
     <header
+      id={@id || "scoria-object-header-#{:erlang.phash2(@object_id)}"}
       class={["scoria-object-header", @class]}
       phx-hook="RecordRecentObject"
       data-scoria-kind={@object_type}

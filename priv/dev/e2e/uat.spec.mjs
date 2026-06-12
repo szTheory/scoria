@@ -106,7 +106,9 @@ test.describe('Phase 12 — skeleton (DS-05)', () => {
     await firstRun.click();
     await waitForReady(page);
 
-    await expect(page.getByRole('heading', { name: 'Workflow Run' })).toBeVisible();
+    const objectHeader = page.locator('.scoria-object-header');
+    await expect(objectHeader).toBeVisible();
+    await expect(objectHeader.getByText('Run', { exact: true })).toBeVisible();
     await expect(page.locator('.scoria-skeleton')).toHaveCount(0);
     await expect(page.getByText('Failed to load memories.')).toHaveCount(0);
   });
