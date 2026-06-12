@@ -825,6 +825,108 @@
     border-top: 1px solid var(--scoria-border);
   }
 
+  /* ---------- Evidence primitives ---------- */
+  .scoria-evidence-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-3);
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-surface-panel);
+    padding: var(--scoria-space-4);
+  }
+  .scoria-evidence-section__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--scoria-space-3);
+  }
+  .scoria-evidence-section__heading {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-1);
+  }
+  .scoria-evidence-section__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-evidence-section__title {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-body);
+    font-weight: 600;
+    line-height: var(--scoria-lh-tight);
+  }
+  .scoria-evidence-section__description {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+    line-height: var(--scoria-lh-body);
+  }
+  .scoria-evidence-section__actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-evidence-section__body {
+    min-width: 0;
+  }
+  .scoria-evidence-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-2);
+    margin: 0;
+  }
+  .scoria-evidence-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.36fr) minmax(0, 1fr);
+    gap: var(--scoria-space-3);
+    align-items: baseline;
+    padding-bottom: var(--scoria-space-2);
+    border-bottom: 1px solid var(--scoria-border);
+  }
+  .scoria-evidence-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+  .scoria-evidence-row__label {
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-label);
+    font-weight: 600;
+  }
+  .scoria-evidence-row__value {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-body);
+    overflow-wrap: anywhere;
+  }
+  .scoria-evidence-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-evidence-empty {
+    border: 1px dashed var(--scoria-border-strong);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-surface-sunken);
+    color: var(--scoria-text-muted);
+    padding: var(--scoria-space-4);
+  }
+  .scoria-evidence-empty__title {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-body);
+    font-weight: 600;
+    margin-bottom: var(--scoria-space-1);
+  }
+  .scoria-evidence-empty__body {
+    font-size: var(--scoria-fs-body);
+    line-height: var(--scoria-lh-body);
+  }
+  /* ---------- End evidence primitives ---------- */
+
   /* ---------- Flash banners ---------- */
   .scoria-flash {
     border: 1px solid var(--scoria-tone-neutral-border);

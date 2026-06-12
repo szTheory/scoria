@@ -93,6 +93,9 @@ defmodule ScoriaWeb.UIComponentTest do
   defp slot_block(content),
     do: [%{inner_block: fn _changed, _arg -> content end, __slot__: :inner_block}]
 
+  defp safe_slot_block(content),
+    do: [%{inner_block: fn _changed, _arg -> {:safe, content} end, __slot__: :inner_block}]
+
   # ---------------------------------------------------------------------------
   # IA-02/03/04/06: Orientation spine primitives (phase 13-01)
   # ---------------------------------------------------------------------------
@@ -610,7 +613,7 @@ defmodule ScoriaWeb.UIComponentTest do
           tone: :trace,
           badge: "Trace",
           inner_block: slot_block("Evidence body"),
-          actions: slot_block(~s(<a href="/workflows/run_123">Open trace</a>))
+          actions: safe_slot_block(~s(<a href="/workflows/run_123">Open trace</a>))
         )
 
       assert html =~ "scoria-evidence-section"
@@ -665,7 +668,10 @@ defmodule ScoriaWeb.UIComponentTest do
     test "renders caller-provided compact action content" do
       html =
         render_component(&ScoriaWeb.UI.evidence_action_row/1,
-          inner_block: slot_block(~s(<a class="scoria-button scoria-button--ghost" href="/runs">Open trace</a>))
+          inner_block:
+            safe_slot_block(
+              ~s(<a class="scoria-button scoria-button--ghost" href="/runs">Open trace</a>)
+            )
         )
 
       assert html =~ "scoria-evidence-action-row"
@@ -705,7 +711,9 @@ defmodule ScoriaWeb.UIComponentTest do
         |> List.first()
 
       refute evidence_css =~ ~r/#[0-9a-fA-F]{3,8}\b/
-      refute evidence_css =~ ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
+
+      refute evidence_css =~
+               ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
     end
   end
 

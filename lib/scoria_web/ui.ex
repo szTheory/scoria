@@ -786,6 +786,89 @@ defmodule ScoriaWeb.UI do
     """
   end
 
+  attr(:title, :string, required: true)
+  attr(:description, :string, default: nil)
+
+  attr(:tone, :atom,
+    default: :neutral,
+    values: [:pass, :info, :warn, :fail, :trace, :brand, :neutral]
+  )
+
+  attr(:badge, :string, default: nil)
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+  slot(:actions)
+  slot(:inner_block, required: true)
+
+  @doc "Notebook-scoped evidence section with optional status badge and action slot."
+  def evidence_section(assigns) do
+    ~H"""
+    <section class={["scoria-evidence-section", @class]} {@rest}>
+      <div class="scoria-evidence-section__header">
+        <div class="scoria-evidence-section__heading">
+          <div class="scoria-evidence-section__title-row">
+            <h3 class="scoria-evidence-section__title">{@title}</h3>
+            <.badge :if={@badge} tone={@tone} label={@badge} />
+          </div>
+          <p :if={@description} class="scoria-evidence-section__description">{@description}</p>
+        </div>
+        <div :if={@actions != []} class="scoria-evidence-section__actions">
+          {render_slot(@actions)}
+        </div>
+      </div>
+      <div class="scoria-evidence-section__body">
+        {render_slot(@inner_block)}
+      </div>
+    </section>
+    """
+  end
+
+  attr(:rows, :list, required: true)
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+
+  @doc "Stable key-value evidence rows for adapter-projected values."
+  def evidence_rows(assigns) do
+    assigns = assign(assigns, :normalized_rows, normalize_evidence_rows(assigns.rows))
+
+    ~H"""
+    <dl class={["scoria-evidence-rows", @class]} {@rest}>
+      <div :for={row <- @normalized_rows} class="scoria-evidence-row">
+        <dt class="scoria-evidence-row__label">{row.label}</dt>
+        <dd class="scoria-evidence-row__value">{row.value}</dd>
+      </div>
+    </dl>
+    """
+  end
+
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+  slot(:inner_block, required: true)
+
+  @doc "Compact evidence action/link row. Callers own the action/link semantics."
+  def evidence_action_row(assigns) do
+    ~H"""
+    <div class={["scoria-evidence-action-row", @class]} {@rest}>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  attr(:title, :string, required: true)
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+  slot(:inner_block, required: true)
+
+  @doc "Notebook-scoped evidence empty state."
+  def evidence_empty(assigns) do
+    ~H"""
+    <div class={["scoria-evidence-empty", @class]} {@rest}>
+      <p class="scoria-evidence-empty__title">{@title}</p>
+      <div class="scoria-evidence-empty__body">{render_slot(@inner_block)}</div>
+    </div>
+    """
+  end
+
   # ---------------------------------------------------------------------------
   # DS-01: <.table> — sortable, density-aware data table (plan 12-02)
   # ---------------------------------------------------------------------------
@@ -969,6 +1052,28 @@ defmodule ScoriaWeb.UI do
   end
 
   defp origin_label(_origin), do: nil
+
+  defp normalize_evidence_rows(rows) do
+    Enum.map(rows, fn
+      {label, value} ->
+        %{label: evidence_text(label), value: evidence_text(value)}
+
+      row when is_map(row) ->
+        %{
+          label: evidence_text(Map.get(row, :label) || Map.get(row, "label")),
+          value: evidence_text(Map.get(row, :value) || Map.get(row, "value"))
+        }
+
+      value ->
+        %{label: "", value: evidence_text(value)}
+    end)
+  end
+
+  defp evidence_text(nil), do: "Not recorded"
+  defp evidence_text(value) when is_binary(value), do: value
+  defp evidence_text(value) when is_atom(value), do: status_label(value)
+  defp evidence_text(value) when is_integer(value) or is_float(value), do: to_string(value)
+  defp evidence_text(value), do: inspect(value)
 
   defp first_command_id(sections) do
     sections
