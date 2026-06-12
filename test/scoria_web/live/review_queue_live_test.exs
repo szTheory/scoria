@@ -46,7 +46,8 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.ReviewQueueLiveTest.Endpoint,
-      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
+      secret_key_base:
+        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "112345678"],
       debug_errors: true
@@ -71,8 +72,18 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
   end
 
   test "/scoria/reviews renders the queue summary, detail rail, and deep links", _ctx do
-    first = candidate_fixture(%{status: "needs_review", sampling_metadata: %{"sample_reason" => "policy_trigger"}})
-    second = candidate_fixture(%{status: "promotion_candidate", score_status: "passed", score_explanation: "Ready to promote"})
+    first =
+      candidate_fixture(%{
+        status: "needs_review",
+        sampling_metadata: %{"sample_reason" => "policy_trigger"}
+      })
+
+    second =
+      candidate_fixture(%{
+        status: "promotion_candidate",
+        score_status: "passed",
+        score_explanation: "Ready to promote"
+      })
 
     {:ok, view, html} = live(test_conn(), "/scoria/reviews")
 
@@ -80,13 +91,15 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     assert html =~ "policy triggered"
     assert html =~ first.score_explanation
     assert html =~ "Dismiss candidate"
-    assert html =~ "Promote candidate"
+    assert html =~ "Promote to dataset"
     assert html =~ "Request baseline approval"
     assert html =~ "phx-disable-with=\"Dismissing candidate...\""
-    assert html =~ "phx-disable-with=\"Promoting candidate...\""
+    assert html =~ "phx-disable-with=\"Promoting to dataset...\""
     assert html =~ "phx-disable-with=\"Requesting baseline approval...\""
     assert html =~ "Open draft datasets"
     assert html =~ "Sealed baseline"
+    assert html =~ "Open run"
+    refute html =~ "Open workflow"
 
     html =
       view
@@ -94,17 +107,37 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
       |> render_click()
 
     assert html =~ second.score_explanation
-    assert html =~ "/scoria/workflows/#{second.workflow_run_id}?review_candidate_id=#{second.id}"
+    open_run_href = link_href(html, "Open run")
+
+    assert URI.decode_www_form(open_run_href) ==
+             "/scoria/workflows/#{second.workflow_run_id}?review_candidate_id=#{second.id}&from=review:#{second.id}"
+
     assert html =~ "/scoria?runtime="
     assert html =~ "Inspect one scored candidate at a time before promoting or dismissing it."
 
     render_async(view)
   end
 
-  test "queue actions dismiss, promote, and request baseline approval from the detail rail", %{open_dataset: open_dataset, sealed_dataset: sealed_dataset} do
-    candidate = candidate_fixture(%{status: "promotion_candidate", score_status: "passed", score_explanation: "Promote from queue"})
-    approval_candidate = candidate_fixture(%{status: "promotion_candidate", score_status: "passed", score_explanation: "Request approval"})
-    dismiss_candidate = candidate_fixture(%{status: "needs_review", score_explanation: "Dismiss this"})
+  test "queue actions dismiss, promote, and request baseline approval from the detail rail", %{
+    open_dataset: open_dataset,
+    sealed_dataset: sealed_dataset
+  } do
+    candidate =
+      candidate_fixture(%{
+        status: "promotion_candidate",
+        score_status: "passed",
+        score_explanation: "Promote from queue"
+      })
+
+    approval_candidate =
+      candidate_fixture(%{
+        status: "promotion_candidate",
+        score_status: "passed",
+        score_explanation: "Request approval"
+      })
+
+    dismiss_candidate =
+      candidate_fixture(%{status: "needs_review", score_explanation: "Dismiss this"})
 
     {:ok, view, _html} = live(test_conn(), "/scoria/reviews")
 
@@ -128,7 +161,9 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     |> render_click()
 
     view
-    |> element("button[phx-click='select_sealed_dataset'][phx-value-dataset-id='#{sealed_dataset.id}']")
+    |> element(
+      "button[phx-click='select_sealed_dataset'][phx-value-dataset-id='#{sealed_dataset.id}']"
+    )
     |> render_click()
 
     approval_html =
@@ -164,6 +199,15 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.ReviewQueueLiveTest.Endpoint)
   end
 
+  defp link_href(html, label) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("a")
+    |> Enum.find(fn link -> link |> Floki.text() |> String.trim() == label end)
+    |> Floki.attribute("href")
+    |> List.first()
+  end
+
   defp candidate_fixture(overrides) do
     %{trace: trace, run: run, step: step} = workflow_trace_fixture()
 
@@ -182,7 +226,10 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
           score_explanation: "Needs review",
           scorer_kind: "deterministic_rule",
           scorer_version: "policy-rules@2026.05.23",
-          sampling_metadata: %{"sample_reason" => "production_sample", "sample_window" => "2026-05-23T22"},
+          sampling_metadata: %{
+            "sample_reason" => "production_sample",
+            "sample_window" => "2026-05-23T22"
+          },
           evidence_refs: %{"trace_id" => trace.id},
           promotion_snapshot: %{
             "source_variant" => "replay",

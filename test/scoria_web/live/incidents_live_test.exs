@@ -39,7 +39,8 @@ defmodule ScoriaWeb.IncidentsLiveTest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.IncidentsLiveTest.Endpoint,
-      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
+      secret_key_base:
+        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "446655443"]
     )
@@ -142,5 +143,25 @@ defmodule ScoriaWeb.IncidentsLiveTest do
 
     html = render_click(view, "select_incident", %{"id" => review.id})
     assert html =~ "trace-review"
+  end
+
+  test "selected incident renders context-preserving run and trace next-step links" do
+    incident =
+      seed_incident!(%{
+        incident_key: "inc-threading",
+        summary: "Trace needs operator review",
+        trace_id: "trace-threading"
+      })
+
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents")
+    decoded_html = URI.decode_www_form(html)
+
+    assert html =~ "Open run"
+    assert html =~ "Open trace at failing span"
+
+    assert decoded_html =~
+             "/scoria/workflows/#{incident.workflow_run_id}?from=incident:#{incident.id}"
+
+    assert decoded_html =~ "/scoria?from=incident:#{incident.id}#traces-trace-threading"
   end
 end
