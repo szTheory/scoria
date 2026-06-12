@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: planning
-last_updated: "2026-06-12T21:23:58.684Z"
-last_activity: 2026-06-12 -- Phase 14 complete
+last_updated: "2026-06-12T21:43:25.953Z"
+last_activity: 2026-06-12 -- Phase 15 UI-SPEC approved
 progress:
   total_phases: 20
   completed_phases: 4
@@ -27,8 +27,8 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle shipped and ar
 
 Phase: 15 (high-traffic-screens + evidence adapters) — READY
 Plan: 0 of TBD
-Status: Phase 14 complete; Phase 15 ready for planning
-Last activity: 2026-06-12 -- Phase 14 complete
+Status: Phase 15 UI-SPEC approved; ready for planning
+Last activity: 2026-06-12 -- Phase 15 UI-SPEC approved
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
