@@ -37,6 +37,7 @@ defmodule ScoriaWeb.Router do
           live("/", ScoriaWeb.OrchestratorLive, :index)
           live("/approvals", ScoriaWeb.ApprovalsLive.Index, :index)
           live("/reviews", ScoriaWeb.ReviewQueueLive, :index)
+          live("/datasets", ScoriaWeb.DatasetLive.Index, :index)
           live("/workflows", ScoriaWeb.WorkflowLive.Index, :index)
           live("/workflows/:id", ScoriaWeb.WorkflowLive.Show, :show)
           live("/connectors", ScoriaWeb.ConnectorsLive.Index, :index)
