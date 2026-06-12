@@ -50,30 +50,15 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
   def handle_event("save", %{"eval_spec" => spec_params}, socket) do
     spec = socket.assigns.edit_spec
 
-    # We might need to decode rubric if it comes as JSON string, but for now
-    # let's try to pass it directly. Ecto might need map for JSONB.
-    parsed_params =
-      case Map.get(spec_params, "rubric") do
-        rubric_str when is_binary(rubric_str) and rubric_str != "" ->
-          case Jason.decode(rubric_str) do
-            {:ok, json} -> Map.put(spec_params, "rubric", json)
-            # Will let Ecto validation catch it
-            {:error, _} -> spec_params
-          end
-
-        _ ->
-          spec_params
-      end
-
-    case Eval.update_eval_spec(spec, parsed_params) do
-      {:ok, _new_spec} ->
-        {:noreply,
-         socket
-         |> assign(:edit_spec, nil)
-         |> assign(:form, nil)
-         |> assign(:eval_specs, Eval.list_eval_specs())
-         |> assign(:eval_runs, list_eval_runs())}
-
+    with {:ok, parsed_params} <- parse_eval_spec_params(spec, spec_params),
+         {:ok, _new_spec} <- Eval.update_eval_spec(spec, parsed_params) do
+      {:noreply,
+       socket
+       |> assign(:edit_spec, nil)
+       |> assign(:form, nil)
+       |> assign(:eval_specs, Eval.list_eval_specs())
+       |> assign(:eval_runs, list_eval_runs())}
+    else
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
     end
@@ -89,32 +74,39 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
         <div class="edit-form">
           <h2>Edit Rubric: <%= @edit_spec.name %> (v<%= @edit_spec.version %>)</h2>
           <.form for={@form} phx-submit="save">
-            <div>
-              <label>Name</label>
-              <input type="text" name={@form[:name].name} value={@form[:name].value} required />
-              <%= for error <- Keyword.get_values(@form.errors || [], :name) do %>
-                <span class="error"><%= translate_error(error) %></span>
-              <% end %>
-            </div>
+            <.form_section
+              title="Rubric version"
+              description="Update the backed rubric fields. Saving creates the next immutable version."
+            >
+              <.field id="eval-spec-name" label="Name" required error={field_error(@form, :name)}>
+                <input id="eval-spec-name" type="text" name={@form[:name].name} value={@form[:name].value} required />
+              </.field>
 
-            <div>
-              <label>Description</label>
-              <textarea name={@form[:description].name} required><%= @form[:description].value %></textarea>
-              <%= for error <- Keyword.get_values(@form.errors || [], :description) do %>
-                <span class="error"><%= translate_error(error) %></span>
-              <% end %>
-            </div>
+              <.field
+                id="eval-spec-description"
+                label="Description"
+                required
+                error={field_error(@form, :description)}
+              >
+                <textarea id="eval-spec-description" name={@form[:description].name} required><%= @form[
+                  :description
+                ].value %></textarea>
+              </.field>
 
-            <div>
-              <label>Rubric (JSON string)</label>
-              <textarea name={@form[:rubric].name} rows="5"><%= encode_rubric(@form[:rubric].value) %></textarea>
-              <%= for error <- Keyword.get_values(@form.errors || [], :rubric) do %>
-                <span class="error"><%= translate_error(error) %></span>
-              <% end %>
-            </div>
+              <.field
+                id="eval-spec-rubric"
+                label="Rubric (JSON string)"
+                help="Paste valid JSON. Malformed JSON is rejected before a new version is saved."
+                error={field_error(@form, :rubric)}
+              >
+                <textarea id="eval-spec-rubric" name={@form[:rubric].name} rows="5"><%= encode_rubric(@form[
+                  :rubric
+                ].value) %></textarea>
+              </.field>
+            </.form_section>
 
-            <button type="submit" phx-disable-with="Saving...">Save New Version</button>
-            <button type="button" phx-click="cancel_edit">Cancel</button>
+            <.button type="submit" phx-disable-with="Saving...">Save New Version</.button>
+            <.button type="button" variant={:ghost} phx-click="cancel_edit">Keep current version</.button>
           </.form>
         </div>
       <% else %>
@@ -193,6 +185,28 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
     |> Repo.all()
   end
 
+  defp parse_eval_spec_params(spec, spec_params) do
+    case Map.get(spec_params, "rubric") do
+      rubric_str when is_binary(rubric_str) and rubric_str != "" ->
+        case Jason.decode(rubric_str) do
+          {:ok, json} ->
+            {:ok, Map.put(spec_params, "rubric", json)}
+
+          {:error, _} ->
+            changeset =
+              spec
+              |> EvalSpec.changeset(spec_params)
+              |> Ecto.Changeset.add_error(:rubric, "is invalid")
+              |> Map.put(:action, :validate)
+
+            {:error, changeset}
+        end
+
+      _ ->
+        {:ok, spec_params}
+    end
+  end
+
   defp prompt_release_path(run, base_path) do
     "#{base_path}/prompts/#{run.prompt_template_id}/release?#{origin_query(run)}"
   end
@@ -249,6 +263,13 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
   defp encode_rubric(nil), do: ""
   defp encode_rubric(val) when is_map(val), do: Jason.encode!(val, pretty: true)
   defp encode_rubric(val), do: to_string(val)
+
+  defp field_error(form, field) do
+    case Keyword.get_values(form.errors || [], field) do
+      [] -> nil
+      errors -> Enum.map_join(errors, ", ", &translate_error/1)
+    end
+  end
 
   defp translate_error({msg, opts}) do
     Enum.reduce(opts, msg, fn {key, value}, acc ->
