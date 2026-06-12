@@ -1,7 +1,7 @@
 defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
   import Ecto.Query, warn: false
-  import ScoriaWeb.UI, only: [object_header: 1]
+  import ScoriaWeb.UI
 
   alias Scoria.Repo
   alias Scoria.PromptRegistry
@@ -196,127 +196,128 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
         </a>
       </div>
 
-      <%= if @approval_notice do %>
-        <div class="mb-6 rounded-md bg-emerald-50 p-4 border border-emerald-200">
-          <p class="text-sm text-emerald-800"><%= @approval_notice %></p>
-        </div>
-      <% end %>
+      <.panel :if={@approval_notice} class="mb-6" role="status">
+        <.badge tone={:pass} label="Release approved" />
+        <p><%= @approval_notice %></p>
+      </.panel>
 
-      <%= if @rejection_notice do %>
-        <div class="mb-6 rounded-md bg-rose-50 p-4 border border-rose-200">
-          <p class="text-sm text-rose-800"><%= @rejection_notice %></p>
-        </div>
-      <% end %>
+      <.panel :if={@rejection_notice} class="mb-6" role="status">
+        <.badge tone={:fail} label="Release notice" />
+        <p><%= @rejection_notice %></p>
+      </.panel>
 
-      <!-- Comparison Deck -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Draft Column -->
-        <div class="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
-          <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-4">Draft Candidate (v<%= @draft.version %>)</h2>
+        <.panel variant={:raised}>
+          <:eyebrow>Candidate</:eyebrow>
+          <:title>Draft Candidate (v<%= @draft.version %>)</:title>
+          <:actions>
+            <.badge tone={tone(@draft.status)} label={status_label(@draft.status)} />
+          </:actions>
           
           <%= if @draft_run do %>
             <div class="space-y-4">
               <div class="flex justify-between">
-                <span class="text-sm text-stone-600">Dataset</span>
+                <span class="text-sm">Dataset</span>
                 <span class="text-sm font-medium"><%= @draft_run.dataset_version %></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-stone-600">Eval Spec</span>
+                <span class="text-sm">Eval Spec</span>
                 <span class="text-sm font-medium"><%= @draft_run.eval_spec_version %></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-stone-600">Items Passed</span>
+                <span class="text-sm">Items Passed</span>
                 <span class="text-sm font-medium"><%= @draft_run.passed_items %> / <%= @draft_run.total_items %></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-stone-600">Avg Latency</span>
+                <span class="text-sm">Avg Latency</span>
                 <span class="text-sm font-medium"><%= @draft_run.avg_latency_ms %>ms</span>
               </div>
             </div>
           <% else %>
-            <p class="text-sm text-stone-500">No eval run evidence ready.</p>
+            <p class="text-sm">No eval run evidence ready.</p>
           <% end %>
-        </div>
+        </.panel>
 
-        <!-- Active Column -->
-        <div class="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
-          <h2 class="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-4">Active Baseline <%= if @active do %>(v<%= @active.version %>)<% end %></h2>
+        <.panel variant={:raised}>
+          <:eyebrow>Baseline</:eyebrow>
+          <:title>Active Baseline <%= if @active do %>(v<%= @active.version %>)<% end %></:title>
+          <:actions>
+            <.badge :if={@active} tone={tone(@active.status)} label={status_label(@active.status)} />
+          </:actions>
           
           <%= if @active_run do %>
             <div class="space-y-4">
               <div class="flex justify-between">
-                <span class="text-sm text-stone-600">Dataset</span>
+                <span class="text-sm">Dataset</span>
                 <span class="text-sm font-medium"><%= @active_run.dataset_version %></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-stone-600">Eval Spec</span>
+                <span class="text-sm">Eval Spec</span>
                 <span class="text-sm font-medium"><%= @active_run.eval_spec_version %></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-stone-600">Items Passed</span>
+                <span class="text-sm">Items Passed</span>
                 <span class="text-sm font-medium"><%= @active_run.passed_items %> / <%= @active_run.total_items %></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-stone-600">Avg Latency</span>
+                <span class="text-sm">Avg Latency</span>
                 <span class="text-sm font-medium"><%= @active_run.avg_latency_ms %>ms</span>
               </div>
             </div>
           <% else %>
-            <p class="text-sm text-stone-500">No baseline eval run found.</p>
+            <p class="text-sm">No baseline eval run found.</p>
           <% end %>
-        </div>
+        </.panel>
       </div>
 
-      <!-- Approval Rail -->
-      <div class="mt-12 flex items-center justify-between border-t border-stone-200 pt-6">
+      <div class="mt-12 flex items-center justify-between border-t pt-6">
         <%= if is_nil(@pending_approval) do %>
           <div></div>
-          <button phx-click="request_release" disabled={!can_approve?(@draft, @draft_run, @active, @active_run)} class="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+          <.button phx-click="request_release" disabled={!can_approve?(@draft, @draft_run, @active, @active_run)}>
             Request Release
-          </button>
+          </.button>
         <% else %>
-          <button phx-click="open_reject" class="px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded" disabled={@draft.status != "draft"}>
+          <.button variant={:danger} phx-click="open_reject" disabled={@draft.status != "draft"}>
             Reject Release
-          </button>
+          </.button>
 
-          <button phx-click="open_approve" class="px-4 py-2 text-sm font-medium bg-green-600 text-white hover:bg-green-700 rounded disabled:opacity-50 disabled:cursor-not-allowed" disabled={!can_approve?(@draft, @draft_run, @active, @active_run)}>
+          <.button phx-click="open_approve" disabled={!can_approve?(@draft, @draft_run, @active, @active_run)}>
             Approve Prompt Release
-          </button>
+          </.button>
         <% end %>
       </div>
 
-      <!-- Approve Modal -->
-      <%= if @show_approve_modal do %>
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-            <h3 class="mb-4 text-lg font-semibold">Approve Release?</h3>
-            <p class="mb-6 text-sm text-stone-600">
-              This will activate Draft v<%= @draft.version %> and demote the current active version.
-              Production traffic will begin using the new prompt immediately.
-            </p>
-            <div class="flex justify-end gap-3">
-              <button phx-click="close_approve" class="px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 rounded">Cancel</button>
-              <button phx-click="approve_release" class="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded">Confirm Approval</button>
-            </div>
-          </div>
-        </div>
-      <% end %>
+      <.modal
+        id="approve-release-modal"
+        show={@show_approve_modal}
+        on_dismiss="close_approve"
+        title="Approve Release?"
+      >
+        <p>
+          This will activate Draft v<%= @draft.version %> and demote the current active version.
+          Production traffic will begin using the new prompt immediately.
+        </p>
+        <:footer>
+          <.button variant={:ghost} phx-click="close_approve">Cancel</.button>
+          <.button phx-click="approve_release">Confirm Approval</.button>
+        </:footer>
+      </.modal>
 
-      <!-- Reject Modal -->
-      <%= if @show_reject_modal do %>
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-            <h3 class="mb-4 text-lg font-semibold">Reject this draft release?</h3>
-            <p class="mb-6 text-sm text-stone-600">
-              Production traffic will stay on the current active prompt and the workflow will remain paused until a new approval decision is recorded.
-            </p>
-            <div class="flex justify-end gap-3">
-              <button phx-click="close_reject" class="px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 rounded">Cancel</button>
-              <button phx-click="reject_release" class="px-4 py-2 text-sm font-medium bg-rose-600 text-white hover:bg-rose-700 rounded">Confirm Rejection</button>
-            </div>
-          </div>
-        </div>
-      <% end %>
+      <.modal
+        id="reject-release-modal"
+        show={@show_reject_modal}
+        on_dismiss="close_reject"
+        title="Reject this release candidate?"
+      >
+        <p>
+          The active baseline stays unchanged. The release workflow remains paused until a new
+          approval decision is recorded.
+        </p>
+        <:footer>
+          <.button variant={:ghost} phx-click="close_reject">Keep comparing</.button>
+          <.button variant={:danger} phx-click="reject_release">Reject release candidate</.button>
+        </:footer>
+      </.modal>
     </div>
     """
   end

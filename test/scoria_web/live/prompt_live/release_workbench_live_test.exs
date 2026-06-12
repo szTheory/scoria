@@ -295,9 +295,9 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
       {:ok, view, _html} = live(conn, "/scoria/prompts/#{draft.id}/release")
 
       view |> element("button", "Reject Release") |> render_click()
-      assert render(view) =~ "Reject this draft release?"
+      assert render(view) =~ "Reject this release candidate?"
 
-      view |> element("button", "Confirm Rejection") |> render_click()
+      view |> element("button", "Reject release candidate") |> render_click()
       assert render(view) =~ "Prompt Release Rejected."
 
       render_async(view)
