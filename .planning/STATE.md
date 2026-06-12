@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: executing
-last_updated: "2026-06-12T01:47:37.440Z"
-last_activity: 2026-06-12 -- Phase 13 planning complete
+last_updated: "2026-06-12T01:59:44.250Z"
+last_activity: 2026-06-12
 progress:
   total_phases: 20
   completed_phases: 2
   total_plans: 18
-  completed_plans: 10
+  completed_plans: 11
   percent: 10
 ---
 
@@ -21,13 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle shipped and ar
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 13 — Orientation spine (IA) — ready to plan (resumed after v2.17 interjection)
+**Current focus:** Phase 13 — orientation-spine-ia
 
 ## Current Position
 
-Phase: 13
+Phase: 13 (orientation-spine-ia) — EXECUTING
+Plan: 2 of 8
 Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 13 planning complete
+Last activity: 2026-06-12
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
@@ -110,6 +111,7 @@ Last activity: 2026-06-12 -- Phase 13 planning complete
 | Phase 12-design-system-component-layer P03 | 10min | 2 tasks | 2 files |
 | Phase 12 P04 | 3min | 2 tasks | 3 files |
 | Phase 12-design-system-component-layer P05 | 17min | 3 tasks | 8 files |
+| Phase 13 P01 | 4 min | 2 tasks | 4 files |
 
 ## Operator Next Steps
 
