@@ -111,7 +111,15 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   3. Operators can orient on every screen via object-aware breadcrumbs.
   4. Power users can navigate to any screen or object and run key actions from a `⌘K` command palette and keyboard shortcuts.
   5. Related screens are threaded so the quality loop (incident → run → trace → replay → promote-to-dataset → eval → gate prompt release) is navigable without context loss, and reserved brand-name capabilities (Cost Ledger, Replay Playground, MCP Gateway, Tool Registry, Feedback Inbox) appear as honest "coming soon" screens with no fabricated data.
-**Plans**: TBD
+**Plans**: 8 plans
+  - [ ] 13-01-PLAN.md — Shared IA UI primitives for attention cards, object headers, command palette, and stubs
+  - [ ] 13-02-PLAN.md — DashboardNav grouped SSOT, Home relabel, active-state fix, and Soon nav metadata
+  - [ ] 13-03-PLAN.md — Shared coming-soon route and honest reserved capability stub pages
+  - [ ] 13-04-PLAN.md — Status Home at `/` with attention strip and preserved live run stream
+  - [ ] 13-05-PLAN.md — Object-aware headers and allowlisted origin context on object pages
+  - [ ] 13-06-PLAN.md — Command palette, recents, keyboard shortcuts, and manual browser checkpoint
+  - [ ] 13-07-PLAN.md — Incident and Review Queue ingress threading into run evidence
+  - [ ] 13-08-PLAN.md — Run and Prompt Release Workbench egress threading through quality-loop verbs
 **UI hint**: yes
 
 ### Phase 14: Least-iterated screens polish
@@ -163,7 +171,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 |-------|-----------|----------------|--------|-----------|
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete    | 2026-06-04 |
-| 13. Orientation spine (IA) | v3.0 | 0/? | Not started | - |
+| 13. Orientation spine (IA) | v3.0 | 0/8 | Not started | - |
 | 14. Least-iterated screens polish | v3.0 | 0/? | Not started | - |
 | 15. High-traffic screens + evidence adapters | v3.0 | 0/? | Not started | - |
 | 16. Motion + responsive + theme parity | v3.0 | 0/? | Not started | - |
