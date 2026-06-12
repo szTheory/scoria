@@ -39,7 +39,8 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest.Endpoint,
-      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
+      secret_key_base:
+        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "112345678"],
       debug_errors: true
@@ -51,68 +52,79 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
-    
+
     start_supervised!(ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest.Endpoint)
 
     # Create an active prompt
-    {:ok, draft} = PromptRegistry.create_draft_template(%{
-      system_message: "Active system",
-      user_template: "Active user"
-    })
+    {:ok, draft} =
+      PromptRegistry.create_draft_template(%{
+        system_message: "Active system",
+        user_template: "Active user"
+      })
+
     {:ok, active} = PromptRegistry.transition_status(draft, "active")
 
     # Create a new draft
-    {:ok, draft2} = PromptRegistry.create_draft_template(%{
-      entity_id: active.entity_id,
-      version: active.version + 1,
-      system_message: "Draft system",
-      user_template: "Draft user"
-    })
+    {:ok, draft2} =
+      PromptRegistry.create_draft_template(%{
+        entity_id: active.entity_id,
+        version: active.version + 1,
+        system_message: "Draft system",
+        user_template: "Draft user"
+      })
 
     # Create dataset and eval spec
     {:ok, dataset} = Eval.create_dataset(%{name: "Test Dataset", state: :sealed})
-    {:ok, spec} = Eval.create_eval_spec(%{
-      name: "Test Spec",
-      dataset_id: dataset.id,
-      dataset_version: dataset.version,
-      eval_mode: :offline_replay,
-      subject: %{
-        subject_kind: :prompt_template,
-        prompt_entity_id: draft2.entity_id,
-        prompt_template_id: draft2.id,
-        prompt_version: draft2.version
-      },
-      scorers: [
-        %{
-          metric_key: "accuracy",
-          scorer_kind: :llm_judge,
-          judge_prompt_template_id: Ecto.UUID.generate(),
-          judge_prompt_version: 1,
-          judge_provider: "openai",
-          judge_model: "gpt-4o-mini",
-          weight: 1.0
+
+    {:ok, spec} =
+      Eval.create_eval_spec(%{
+        name: "Test Spec",
+        dataset_id: dataset.id,
+        dataset_version: dataset.version,
+        eval_mode: :offline_replay,
+        subject: %{
+          subject_kind: :prompt_template,
+          prompt_entity_id: draft2.entity_id,
+          prompt_template_id: draft2.id,
+          prompt_version: draft2.version
+        },
+        scorers: [
+          %{
+            metric_key: "accuracy",
+            scorer_kind: :llm_judge,
+            judge_prompt_template_id: Ecto.UUID.generate(),
+            judge_prompt_version: 1,
+            judge_provider: "openai",
+            judge_model: "gpt-4o-mini",
+            weight: 1.0
+          }
+        ],
+        threshold_policy: %{
+          pass_rate_gte: 0.8,
+          mean_score_gte: 0.8,
+          max_latency_ms: 100
         }
-      ],
-      threshold_policy: %{
-        pass_rate_gte: 0.8,
-        mean_score_gte: 0.8,
-        max_latency_ms: 100
-      }
-    })
+      })
 
     %{
-      draft: draft2, 
-      active: active, 
-      dataset: dataset, 
+      draft: draft2,
+      active: active,
+      dataset: dataset,
       spec: spec,
-      conn: build_conn() |> Plug.Test.init_test_session(%{}) |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest.Endpoint)
+      conn:
+        build_conn()
+        |> Plug.Test.init_test_session(%{})
+        |> Plug.Conn.put_private(
+          :phoenix_endpoint,
+          ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest.Endpoint
+        )
     }
   end
 
   describe "Task 1: Scaffold ReleaseWorkbenchLive Component" do
     test "mounts and renders comparison deck", %{conn: conn, draft: draft} do
       {:ok, view, _html} = live(conn, "/scoria/prompts/#{draft.id}/release")
-      
+
       # Test 1 & 2
       assert render(view) =~ "Release Workbench"
       assert render(view) =~ "Draft Candidate"
@@ -120,6 +132,36 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
       # Test 3
       assert render(view) =~ "Draft blocked"
+
+      render_async(view)
+    end
+
+    test "renders prompt object header with registry crumb, copyable ID, and eval origin chip", %{
+      conn: conn,
+      draft: draft
+    } do
+      {:ok, view, html} = live(conn, "/scoria/prompts/#{draft.id}/release?from=eval:eval_9")
+
+      assert html =~ "scoria-object-header"
+      assert html =~ "Prompt Registry"
+      assert html =~ "Prompt"
+      assert html =~ ~s(data-copy="#{draft.id}")
+      assert html =~ "Draft blocked"
+      assert html =~ "← Back to eval eval_9"
+
+      render_async(view)
+    end
+
+    test "release workbench recomputes origin context on route-param updates", %{
+      conn: conn,
+      draft: draft
+    } do
+      {:ok, view, html} = live(conn, "/scoria/prompts/#{draft.id}/release")
+
+      refute html =~ "← Back to eval eval_9"
+
+      html = render_patch(view, "/scoria/prompts/#{draft.id}/release?from=eval:eval_9")
+      assert html =~ "← Back to eval eval_9"
 
       render_async(view)
     end
@@ -133,14 +175,21 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
       render_async(view)
     end
 
-    test "Clicking Approve Prompt Release triggers approval and updates UI", %{conn: conn, draft: draft, active: active, spec: spec} do
+    test "Clicking Approve Prompt Release triggers approval and updates UI", %{
+      conn: conn,
+      draft: draft,
+      active: active,
+      spec: spec
+    } do
       # Create complete aligned EvalRuns
-      {:ok, active_run} = Eval.create_eval_run(%{
-        eval_spec_id: spec.id,
-        runner_mode: "offline_replay",
-        prompt_template_id: active.id,
-        prompt_version: active.version
-      })
+      {:ok, active_run} =
+        Eval.create_eval_run(%{
+          eval_spec_id: spec.id,
+          runner_mode: "offline_replay",
+          prompt_template_id: active.id,
+          prompt_version: active.version
+        })
+
       Eval.complete_eval_run(active_run, %{
         total_items: 10,
         passed_items: 10,
@@ -149,12 +198,14 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
         total_cost_usd: Decimal.new("0.10")
       })
 
-      {:ok, draft_run} = Eval.create_eval_run(%{
-        eval_spec_id: spec.id,
-        runner_mode: "offline_replay",
-        prompt_template_id: draft.id,
-        prompt_version: draft.version
-      })
+      {:ok, draft_run} =
+        Eval.create_eval_run(%{
+          eval_spec_id: spec.id,
+          runner_mode: "offline_replay",
+          prompt_template_id: draft.id,
+          prompt_version: draft.version
+        })
+
       Eval.complete_eval_run(draft_run, %{
         total_items: 10,
         passed_items: 10,

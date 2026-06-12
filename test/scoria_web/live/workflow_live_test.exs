@@ -41,7 +41,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.WorkflowLiveTest.Endpoint,
-      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
+      secret_key_base:
+        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "87654321"],
       debug_errors: true
@@ -117,6 +118,66 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     render_async(view)
   end
 
+  test "run page renders object header identity, copyable ID, status, and allowlisted origin chip" do
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", status: "running"})
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}?from=incident:inc_42")
+
+    assert html =~ "scoria-object-header"
+    assert html =~ "Runs"
+    assert html =~ "Run"
+    assert html =~ ~s(data-copy="#{run.id}")
+    assert html =~ "Running"
+    assert html =~ "← Back to incident inc_42"
+
+    render_async(view)
+  end
+
+  test "run page ignores unknown origins without rendering a return chip or error" do
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", status: "running"})
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}?from=unknown:123")
+
+    assert html =~ "Workflow Run"
+    refute html =~ "← Back to unknown"
+    refute html =~ "Capability not found"
+    refute html =~ "Unknown origin"
+
+    render_async(view)
+  end
+
+  test "run page recomputes origin context on route-param updates" do
+    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", status: "running"})
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
+
+    refute html =~ "← Back to incident inc_42"
+
+    html = render_patch(view, "/scoria/workflows/#{run.id}?from=incident:inc_42")
+    assert html =~ "← Back to incident inc_42"
+
+    html = render_patch(view, "/scoria/workflows/#{run.id}?from=unknown:123")
+    refute html =~ "← Back to incident inc_42"
+    refute html =~ "← Back to unknown"
+
+    render_async(view)
+  end
+
   test "run page renders lifecycle badges and responds to run and step updates without owning truth" do
     {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
 
@@ -187,7 +248,11 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         kind: "review",
         role_id: "critic",
         status: "running",
-        projected_context: %{"draft_answer" => "hello", "task" => "policy review", "tone" => "calm"}
+        projected_context: %{
+          "draft_answer" => "hello",
+          "task" => "policy review",
+          "tone" => "calm"
+        }
       })
 
     conn =
@@ -252,13 +317,17 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     {:ok, pending_view, pending_html} = live(conn, "/scoria/workflows/#{pending_run.id}")
 
     assert empty_html =~ "No Delegated Handoffs Recorded"
+
     assert empty_html =~
              "This run stayed on the default runtime lane. No bounded handoff is required for first adoption; use Scoria.start_handoff_run/3 only when a same-run delegation needs narrow projected context."
 
     assert empty_html =~ "Timeline"
 
     assert pending_html =~ "child step pending"
-    assert pending_html =~ "The handoff is recorded, but delegated execution has not produced a child-step readback yet."
+
+    assert pending_html =~
+             "The handoff is recorded, but delegated execution has not produced a child-step readback yet."
+
     assert pending_html =~ "Trace-First Workflow Tree"
 
     render_async(empty_view)
@@ -286,7 +355,9 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     assert html =~ "No Replay Comparison Available"
     assert html =~ "Promote Trace to Draft Dataset"
-    assert html =~ "Original trace cannot be promoted until Scoria resolves a frozen promotion snapshot"
+
+    assert html =~
+             "Original trace cannot be promoted until Scoria resolves a frozen promotion snapshot"
 
     render_async(view)
   end
@@ -506,6 +577,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     {:ok, view, html} = live(conn, "/scoria/workflows/#{replay_run.id}")
 
     assert html =~ "Replay branch"
+    assert html =~ "Replayed from run"
     assert html =~ "source checkpoint"
     assert html =~ "execution mode"
     assert html =~ "historical_stub"
@@ -522,8 +594,16 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     assert toggled_html =~ "Original trace is active for this draft-dataset promotion."
 
-    send(view.pid, {:promote_successful, %{source_variant: "replay", dataset_name: "Draft QA", dataset_version: "3"}})
-    send(view.pid, {:baseline_promotion_requested, %{dataset_name: "Release QA", dataset_version: "7"}})
+    send(
+      view.pid,
+      {:promote_successful,
+       %{source_variant: "replay", dataset_name: "Draft QA", dataset_version: "3"}}
+    )
+
+    send(
+      view.pid,
+      {:baseline_promotion_requested, %{dataset_name: "Release QA", dataset_version: "7"}}
+    )
 
     promoted_html = render(view)
 
@@ -537,7 +617,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "promotion modal starts with a blank notes field" do
-    {:ok, source_run} = Workflows.create_run(%{root_role_id: "executor", session_id: "source-session"})
+    {:ok, source_run} =
+      Workflows.create_run(%{root_role_id: "executor", session_id: "source-session"})
 
     {:ok, source_step} =
       Workflows.create_step(source_run.id, %{
@@ -627,7 +708,8 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "workflow deep links preserve review candidate evidence on the run page" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", session_id: "candidate-session"})
+    {:ok, run} =
+      Workflows.create_run(%{root_role_id: "executor", session_id: "candidate-session"})
 
     {:ok, step} =
       Workflows.create_step(run.id, %{
