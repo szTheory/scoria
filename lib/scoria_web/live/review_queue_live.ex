@@ -221,8 +221,8 @@ defmodule ScoriaWeb.ReviewQueueLive do
               </dl>
 
               <div class="mt-6 flex flex-wrap gap-3">
-                <a href={@selected_candidate.workflow_path} class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Open workflow</a>
-                <a href={@selected_candidate.runtime_path} class="rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">View runtime context</a>
+                <a href={review_run_path(@selected_candidate, assigns[:scoria_base] || "")} class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Open run</a>
+                <a href={review_runtime_path(@selected_candidate, assigns[:scoria_base] || "")} class="rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">View runtime context</a>
               </div>
 
               <div class="mt-6 grid gap-4 lg:grid-cols-2">
@@ -273,8 +273,8 @@ defmodule ScoriaWeb.ReviewQueueLive do
                 <button type="button" phx-click="dismiss_candidate" phx-disable-with="Dismissing candidate..." class="rounded-xl border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700">
                   Dismiss candidate
                 </button>
-                <button type="button" phx-click="promote_candidate" phx-disable-with="Promoting candidate..." class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
-                  Promote candidate
+                <button type="button" phx-click="promote_candidate" phx-disable-with="Promoting to dataset..." class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
+                  Promote to dataset
                 </button>
                 <button type="button" phx-click="request_baseline_approval" phx-disable-with="Requesting baseline approval..." class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white">
                   Request baseline approval
@@ -302,7 +302,9 @@ defmodule ScoriaWeb.ReviewQueueLive do
   defp refresh_queue(socket, reset_selection \\ true) do
     rows = Eval.list_review_queue(socket.assigns.filters)
     summary = Eval.summarize_review_queue(socket.assigns.filters)
-    {open_datasets, sealed_datasets} = Eval.list_datasets() |> Enum.split_with(&(&1.state == :open))
+
+    {open_datasets, sealed_datasets} =
+      Eval.list_datasets() |> Enum.split_with(&(&1.state == :open))
 
     selected_candidate_id =
       if reset_selection do
@@ -319,21 +321,56 @@ defmodule ScoriaWeb.ReviewQueueLive do
     |> assign(:selected_candidate_id, selected_candidate_id)
     |> assign(
       :selected_open_dataset_id,
-      socket.assigns.selected_open_dataset_id || (List.first(open_datasets) && List.first(open_datasets).id)
+      socket.assigns.selected_open_dataset_id ||
+        (List.first(open_datasets) && List.first(open_datasets).id)
     )
     |> assign(
       :selected_sealed_dataset_id,
-      socket.assigns.selected_sealed_dataset_id || (List.first(sealed_datasets) && List.first(sealed_datasets).id)
+      socket.assigns.selected_sealed_dataset_id ||
+        (List.first(sealed_datasets) && List.first(sealed_datasets).id)
     )
     |> refresh_selection()
   end
 
   defp refresh_selection(socket) do
-    assign(socket, :selected_candidate, Eval.get_review_candidate(socket.assigns.selected_candidate_id))
+    assign(
+      socket,
+      :selected_candidate,
+      Eval.get_review_candidate(socket.assigns.selected_candidate_id)
+    )
   end
 
   defp parse_id(nil), do: nil
   defp parse_id(""), do: nil
   defp parse_id(value) when is_integer(value), do: value
   defp parse_id(value) when is_binary(value), do: String.to_integer(value)
+
+  defp review_run_path(candidate, base) do
+    query =
+      URI.encode_query([
+        {"review_candidate_id", candidate.id},
+        {"from", review_origin(candidate)}
+      ])
+
+    "#{base}/workflows/#{candidate.workflow_run_id}?#{query}"
+  end
+
+  defp review_runtime_path(candidate, base) do
+    query_params =
+      [
+        runtime_query_param(candidate),
+        {"review_candidate_id", candidate.id},
+        {"from", review_origin(candidate)}
+      ]
+      |> Enum.reject(&is_nil/1)
+
+    "#{home_path(base)}?#{URI.encode_query(query_params)}"
+  end
+
+  defp runtime_query_param(%{runtime_id: nil}), do: nil
+  defp runtime_query_param(%{runtime_id: runtime_id}), do: {"runtime", runtime_id}
+
+  defp review_origin(candidate), do: "review:#{candidate.id}"
+  defp home_path(""), do: "/"
+  defp home_path(base), do: base
 end

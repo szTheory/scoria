@@ -24,6 +24,7 @@ defmodule ScoriaWeb.IncidentsLive.Index do
       |> assign(:tenant_id, tenant_id)
       |> assign(:incidents, incidents)
       |> assign(:summary, OperatorSurface.incidents_summary(tenant_id))
+      |> assign(:selected_incident, selected)
       |> assign(:selected_incident_id, selected && selected.id)
       |> assign(:incident_evidence, evidence_for(selected))
 
@@ -39,6 +40,7 @@ defmodule ScoriaWeb.IncidentsLive.Index do
       incident ->
         {:noreply,
          socket
+         |> assign(:selected_incident, incident)
          |> assign(:selected_incident_id, incident.id)
          |> assign(:incident_evidence, evidence_for(incident))}
     end
@@ -104,6 +106,22 @@ defmodule ScoriaWeb.IncidentsLive.Index do
           </section>
 
           <div>
+            <div :if={@selected_incident} class="mb-4 flex flex-wrap gap-3">
+              <a
+                :if={@selected_incident.workflow_run_id}
+                href={incident_run_path(@selected_incident, assigns[:scoria_base] || "")}
+                class="scoria-button scoria-button--primary scoria-button--sm"
+              >
+                Open run
+              </a>
+              <a
+                :if={@selected_incident.trace_id}
+                href={incident_trace_path(@selected_incident, assigns[:scoria_base] || "")}
+                class="scoria-button scoria-button--ghost scoria-button--sm"
+              >
+                Open trace at failing span
+              </a>
+            </div>
             <IncidentEvidenceComponent.render :if={@incident_evidence} evidence={@incident_evidence} />
           </div>
         </div>
@@ -127,6 +145,20 @@ defmodule ScoriaWeb.IncidentsLive.Index do
   defp status_tone("open"), do: :warn
   defp status_tone(status) when status in ["resolved", "closed"], do: :pass
   defp status_tone(_), do: :neutral
+
+  defp incident_run_path(incident, base) do
+    query = URI.encode_query([{"from", incident_origin(incident)}])
+    "#{base}/workflows/#{incident.workflow_run_id}?#{query}"
+  end
+
+  defp incident_trace_path(incident, base) do
+    query = URI.encode_query([{"from", incident_origin(incident)}])
+    "#{home_path(base)}?#{query}#traces-#{URI.encode_www_form(to_string(incident.trace_id))}"
+  end
+
+  defp incident_origin(incident), do: "incident:#{incident.id}"
+  defp home_path(""), do: "/"
+  defp home_path(base), do: base
 
   defp short_id(nil), do: "—"
   defp short_id(id), do: id |> to_string() |> String.slice(0, 8)
