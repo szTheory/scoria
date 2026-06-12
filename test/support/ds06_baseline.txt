@@ -13,7 +13,6 @@ lib/scoria_web/components/workflow_tree_component.ex:1
 lib/scoria_web/live/approvals_live/index.ex:9
 lib/scoria_web/live/connectors_live/index.ex:20
 lib/scoria_web/live/dataset_live/promote_component.ex:68
-lib/scoria_web/live/incidents_live/index.ex:10
 lib/scoria_web/live/orchestrator_live.ex:26
 lib/scoria_web/live/prompt_live/release_workbench_live.ex:37
 lib/scoria_web/live/review_queue_live.ex:76
