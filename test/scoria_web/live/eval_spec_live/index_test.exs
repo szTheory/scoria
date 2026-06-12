@@ -62,6 +62,53 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     refute html =~ "<tbody>"
   end
 
+  test "renders exact empty state copy when no eval runs exist" do
+    {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Empty Run Dataset", state: :sealed})
+
+    {:ok, _spec} =
+      Scoria.Eval.create_eval_spec(%{
+        name: "Empty Run Spec",
+        description: "No runs have executed yet",
+        dataset_id: dataset.id,
+        dataset_version: dataset.version,
+        eval_mode: :offline_replay,
+        subject: %{
+          subject_kind: :prompt_template,
+          prompt_entity_id: Ecto.UUID.generate(),
+          prompt_template_id: Ecto.UUID.generate(),
+          prompt_version: 1
+        },
+        scorers: [
+          %{
+            metric_key: "accuracy",
+            scorer_kind: :llm_judge,
+            judge_prompt_template_id: Ecto.UUID.generate(),
+            judge_prompt_version: 1,
+            judge_provider: "openai",
+            judge_model: "gpt-4o-mini",
+            weight: 1.0
+          }
+        ],
+        threshold_policy: %{
+          pass_rate_gte: 0.8,
+          mean_score_gte: 0.8,
+          max_latency_ms: 100
+        }
+      })
+
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
+
+    {:ok, _view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+
+    assert html =~ "No eval runs yet"
+
+    assert html =~
+             "Promote a production trace to a dataset, then run an eval to compare prompt behavior against a baseline."
+  end
+
   test "renders eval specs and handles editing" do
     {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Test Dataset", state: :sealed})
 
@@ -222,12 +269,18 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     assert html =~ "Eval results"
     assert html =~ "Open prompt release"
     assert html =~ "Open regressed runs"
+    assert html =~ ~s(<table class="scoria-table)
+    assert html =~ "scoria-badge"
+    assert html =~ "Running"
     assert decoded_html =~ "/prompts/#{prompt.id}/release?from=eval:#{eval_run.id}"
     assert decoded_html =~ "/workflows/#{source_run.id}?from=eval:#{eval_run.id}"
 
     html_downcase = String.downcase(html)
     refute html_downcase =~ "stepper"
     refute html_downcase =~ "wizard"
+    refute html_downcase =~ "playground"
     refute html_downcase =~ "current step"
+    refute html_downcase =~ "experiment"
+    refute html_downcase =~ "chart"
   end
 end
