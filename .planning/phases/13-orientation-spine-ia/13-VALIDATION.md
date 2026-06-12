@@ -1,10 +1,11 @@
 ---
 phase: 13
 slug: orientation-spine-ia
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-11
+revised: 2026-06-11
 ---
 
 # Phase 13 — Validation Strategy
@@ -44,7 +45,7 @@ created: 2026-06-11
 | IA-02 | `/scoria` renders Home copy, exact identity line, nonzero attention cards or all-clear, day-0 empty copy, and existing live trace stream still works | LiveView | `mix test test/scoria_web/live/orchestrator_live_test.exs test/scoria_web/live/orchestrator_live_integration_test.exs` | ✅ | ⬜ pending |
 | IA-03 | Object pages render parent crumb, truncated copyable object ID, identity row, and optional allowlisted origin chip | component + LiveView | `mix test test/scoria_web/ui_component_test.exs test/scoria_web/live/workflow_live_test.exs` | ✅ | ⬜ pending |
 | IA-04 | Layout renders accessible command palette markup/data from nav SSOT; visible `Cmd+K` hint and `?` overlay are present | component/Layout + manual keyboard lane | `mix test test/scoria_web/ui_component_test.exs test/scoria_web/live/orchestrator_live_test.exs` | ✅ | ⬜ pending |
-| IA-05 | Review/run/release surfaces expose consistent next-step verbs and preserve `?from=` context where applicable | LiveView | `mix test test/scoria_web/live/review_queue_live_test.exs test/scoria_web/live/workflow_live_test.exs test/scoria_web/live/prompt_live_test.exs` | ✅ | ⬜ pending |
+| IA-05 | Review/run/dataset/eval/release surfaces expose consistent next-step verbs and preserve `?from=` context where applicable | LiveView | `mix test test/scoria_web/live/review_queue_live_test.exs test/scoria_web/live/workflow_live_test.exs test/scoria_web/live/prompt_live_test.exs test/scoria_web/live/dataset_live/promote_component_test.exs test/scoria_web/live/eval_spec_live/index_test.exs` | ✅ | ⬜ pending |
 | IA-06 | Five reserved capabilities appear as Soon in nav/palette and route to one honest shared stub page | unit + route + LiveView | `mix test test/scoria_web/dashboard_nav_test.exs test/scoria_web/router_test.exs test/scoria_web/live/coming_soon_live_test.exs` | ❌ W0 (`dashboard_nav_test.exs`, `coming_soon_live_test.exs`) | ⬜ pending |
 | DS-06 | Phase 13 does not grow raw Tailwind palette usage | unit | `mix test test/scoria_web/ds06_drift_guard_test.exs` | ✅ | ⬜ pending |
 
@@ -54,10 +55,12 @@ created: 2026-06-11
 
 ## Wave 0 Requirements
 
-- [ ] `test/scoria_web/dashboard_nav_test.exs` — unit coverage for nav groups, active keys, stub metadata, command metadata, and base derivation.
-- [ ] `test/scoria_web/live/coming_soon_live_test.exs` — LiveView coverage for the shared stub page once the route/module exists.
-- [ ] Existing `test/scoria_web/router_test.exs` extended for `/scoria/coming/:screen`.
-- [ ] Existing `test/scoria_web/ui_component_test.exs` extended for `object_header/1` and any palette/stub shell components.
+- [x] Plan 13-02 Task 1 creates `test/scoria_web/dashboard_nav_test.exs` before production nav changes, covering nav groups, active keys, stub metadata, command metadata, and base derivation.
+- [x] Plan 13-03 Task 1 creates `test/scoria_web/live/coming_soon_live_test.exs` before production stub changes, covering the shared stub page once the route/module exists.
+- [x] Plan 13-03 Task 1 extends existing `test/scoria_web/router_test.exs` for `/scoria/coming/:screen`.
+- [x] Plan 13-01 Task 1 extends existing `test/scoria_web/ui_component_test.exs` for `object_header/1` and palette/stub shell components.
+
+Wave 0 is complete at the plan-strategy level: every missing scaffold is created by a test-first Task 1 before the corresponding production Task 2, and every task has an executable `<automated>` verification command.
 
 ---
 
@@ -74,11 +77,11 @@ created: 2026-06-11
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 90s for focused web suite
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or explicit Wave 0 scaffold tasks
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all missing scaffold references before production edits
+- [x] No watch-mode flags
+- [x] Feedback latency < 90s for focused web suite
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-06-11

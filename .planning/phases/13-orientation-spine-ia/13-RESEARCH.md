@@ -246,12 +246,15 @@ Some IA-04 behavior is client-side only and not fully observable in LiveViewTest
 - Full web suite before verification: `mix test test/scoria_web/`
 - Full suite before closeout: `mix test`
 
-## Open Questions for Planner
+## Planner Resolutions
 
-- Whether to implement a small `ComingSoonLive` module under `lib/scoria_web/live/coming_soon_live.ex` or keep it as a component-backed LiveView. A LiveView module is preferred because router macro route_info tests can assert the plug.
-- Whether Status Home review queue depth should be a new `OperatorSurface.review_queue_summary/1` helper or deferred to Phase 14 if the existing Eval query shape is not cheap enough.
-- Whether `object_header/1` lands only on `WorkflowLive.Show` in this phase or also on `PromptLive.ReleaseWorkbenchLive`. IA-03 says every object screen; there are few object screens, so doing both is feasible.
-- Exact GitHub tracking issue URLs for stubs. If no canonical issue IDs exist, use a generic repository issue-search link or omit numeric IDs rather than inventing numbers.
+Status: resolved 2026-06-11 during plan revision iteration 1.
+
+- `ComingSoonLive` is implemented as `lib/scoria_web/live/coming_soon_live.ex`, not only as a component-backed route. Plan 13-03 uses the LiveView module so router tests can assert `/coming/:screen` mounts inside the dashboard session.
+- Status Home review queue depth is included in Phase 13 through `OperatorSurface.status_home_summary/1`, using existing read-only Eval APIs and rescue-to-zero semantics. It is not deferred to Phase 14 because IA-02 requires the attention strip now and no new persistence is needed.
+- `object_header/1` lands on both `WorkflowLive.Show` and `PromptLive.ReleaseWorkbenchLive` in Plan 13-05. IA-03 applies to object screens, and these two object pages are in Phase 13 scope.
+- Stub tracking links use repository issue-search URLs under `https://github.com/szTheory/scoria/issues?q=is%3Aissue+<encoded-label>` when canonical issue IDs are absent. Plans must not fabricate numeric issue IDs.
+- IA-05 quality-loop threading covers the complete UI-SPEC verb table. Plans 13-07 and 13-08 cover Incident, Run show, Review item, Dataset row, Eval result, and Release Workbench links, including `Open source run`, `Open prompt release`, and `Open regressed runs` with `?from=` context where stable source IDs exist.
 
 ---
 
