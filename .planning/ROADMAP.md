@@ -132,7 +132,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 **Plans**: 6 plans
   - [x] 14-01-PLAN.md - Dataset Builder route, navigation, and real index shell (SCREEN-02)
   - [x] 14-02-PLAN.md - Dataset Builder promotion reconstruction and PromoteComponent conversion (SCREEN-02)
-  - [ ] 14-03-PLAN.md - Review Queue shared-component conversion and Dataset Builder promotion ingress (SCREEN-01, SCREEN-02)
+  - [x] 14-03-PLAN.md - Review Queue shared-component conversion and Dataset Builder promotion ingress (SCREEN-01, SCREEN-02)
   - [x] 14-04-PLAN.md - Incidents screen and IncidentEvidenceComponent conversion (SCREEN-01)
   - [x] 14-05-PLAN.md - Eval Workbench shared-component conversion (SCREEN-01)
   - [ ] 14-06-PLAN.md - Prompt Registry and Release Workbench conversion (SCREEN-01)
@@ -178,7 +178,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 13. Orientation spine (IA) | v3.0 | 8/8 | Complete    | 2026-06-12 |
-| 14. Least-iterated screens polish | v3.0 | 4/6 | In Progress|  |
+| 14. Least-iterated screens polish | v3.0 | 5/6 | In Progress|  |
 | 15. High-traffic screens + evidence adapters | v3.0 | 0/? | Not started | - |
 | 16. Motion + responsive + theme parity | v3.0 | 0/? | Not started | - |
 | 17. Consistency sweep + proof | v3.0 | 0/? | Not started | - |

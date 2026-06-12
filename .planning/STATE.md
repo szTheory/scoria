@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: executing
-last_updated: "2026-06-12T18:16:21.305Z"
-last_activity: 2026-06-12 -- Phase 14 Wave 2 complete
+last_updated: "2026-06-12T20:49:04.936Z"
+last_activity: 2026-06-12 -- Phase 14 Wave 3 complete
 progress:
   total_phases: 20
   completed_phases: 3
   total_plans: 24
-  completed_plans: 22
+  completed_plans: 23
   percent: 15
 ---
 
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle shipped and ar
 ## Current Position
 
 Phase: 14 (least-iterated-screens-polish) — EXECUTING
-Plan: 5 of 6
-Status: Executing Phase 14 (4/6 plans complete; Wave 3 next)
-Last activity: 2026-06-12 -- Phase 14 Wave 2 complete
+Plan: 6 of 6
+Status: Executing Phase 14 (5/6 plans complete; Wave 4 next)
+Last activity: 2026-06-12 -- Phase 14 Wave 3 complete
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
@@ -119,6 +119,7 @@ Last activity: 2026-06-12 -- Phase 14 Wave 2 complete
 | Phase 13 P13-06 | 45 min | - tasks | - files |
 | Phase 13 P13-07 | 6 min | - tasks | - files |
 | Phase 13 P13-08 | 13 min | 2 tasks | 11 files |
+| Phase 14 P03 | 14 min | 2 tasks | 6 files |
 
 ## Operator Next Steps
 
