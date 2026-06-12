@@ -31,7 +31,7 @@
 - [x] **IA-02**: A newcomer landing on the dashboard sees a Status Home that states what Scoria does and surfaces what needs attention now, with one-click paths to each persona's primary jobs — without adding a click for returning power users.
 - [x] **IA-03**: Operators can orient on every screen via object-aware breadcrumbs.
 - [x] **IA-04**: Power users can navigate to any screen or object and run key actions from a `⌘K` command palette and keyboard shortcuts.
-- [ ] **IA-05**: Related screens are threaded so the quality loop (incident → run → trace → replay → promote-to-dataset → eval → gate prompt release) is navigable without context loss.
+- [x] **IA-05**: Related screens are threaded so the quality loop (incident → run → trace → replay → promote-to-dataset → eval → gate prompt release) is navigable without context loss.
 - [x] **IA-06**: Reserved brand-name capabilities (Cost Ledger, Replay Playground, MCP Gateway, Tool Registry, Feedback Inbox) appear in the IA as honest "coming soon" screens with no fabricated data.
 
 ### Screen Polish
@@ -94,7 +94,7 @@ Each requirement maps to exactly one phase. Phase numbering continues from v2.16
 | IA-02 | Phase 13 — Orientation spine (IA) | Complete |
 | IA-03 | Phase 13 — Orientation spine (IA) | Complete |
 | IA-04 | Phase 13 — Orientation spine (IA) | Complete |
-| IA-05 | Phase 13 — Orientation spine (IA) | Pending |
+| IA-05 | Phase 13 — Orientation spine (IA) | Complete |
 | IA-06 | Phase 13 — Orientation spine (IA) | Complete |
 | SCREEN-01 | Phase 14 — Least-iterated screens polish | Pending |
 | SCREEN-02 | Phase 14 — Least-iterated screens polish | Pending |
