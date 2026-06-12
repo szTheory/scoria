@@ -598,6 +598,118 @@ defmodule ScoriaWeb.UIComponentTest do
   end
 
   # ---------------------------------------------------------------------------
+  # SCREEN-04: Evidence primitives (phase 15-01)
+  # ---------------------------------------------------------------------------
+
+  describe "evidence_section/1" do
+    test "renders title, description, actions, badge, and body content" do
+      html =
+        render_component(&ScoriaWeb.UI.evidence_section/1,
+          title: "Semantic summary",
+          description: "Compatibility, provenance, and lifecycle evidence.",
+          tone: :trace,
+          badge: "Trace",
+          inner_block: slot_block("Evidence body"),
+          actions: slot_block(~s(<a href="/workflows/run_123">Open trace</a>))
+        )
+
+      assert html =~ "scoria-evidence-section"
+      assert html =~ "scoria-evidence-section__header"
+      assert html =~ "Semantic summary"
+      assert html =~ "Compatibility, provenance, and lifecycle evidence."
+      assert html =~ "Trace"
+      assert html =~ ~s(href="/workflows/run_123")
+      assert html =~ "Evidence body"
+    end
+  end
+
+  describe "evidence_rows/1" do
+    test "renders stable tuple and map rows in list order" do
+      html =
+        render_component(&ScoriaWeb.UI.evidence_rows/1,
+          rows: [
+            {"Runtime", "worker-1"},
+            %{label: "Status", value: "active"},
+            %{"label" => "Tokens", "value" => 42}
+          ]
+        )
+
+      assert html =~ "scoria-evidence-rows"
+      assert html =~ "scoria-evidence-row"
+      assert html =~ "Runtime"
+      assert html =~ "worker-1"
+      assert html =~ "Status"
+      assert html =~ "active"
+      assert html =~ "Tokens"
+      assert html =~ "42"
+
+      assert String.match?(
+               html,
+               ~r/Runtime.*worker-1.*Status.*active.*Tokens.*42/s
+             )
+    end
+
+    test "escapes unsafe row values" do
+      html =
+        render_component(&ScoriaWeb.UI.evidence_rows/1,
+          rows: [{"Unsafe", ~S|<script>alert("x")</script>|}]
+        )
+
+      assert html =~ "Unsafe"
+      assert html =~ "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;"
+      refute html =~ ~S|<script>alert("x")</script>|
+    end
+  end
+
+  describe "evidence_action_row/1" do
+    test "renders caller-provided compact action content" do
+      html =
+        render_component(&ScoriaWeb.UI.evidence_action_row/1,
+          inner_block: slot_block(~s(<a class="scoria-button scoria-button--ghost" href="/runs">Open trace</a>))
+        )
+
+      assert html =~ "scoria-evidence-action-row"
+      assert html =~ "Open trace"
+      assert html =~ ~s(href="/runs")
+    end
+  end
+
+  describe "evidence_empty/1" do
+    test "renders notebook-scoped empty title and body copy" do
+      html =
+        render_component(&ScoriaWeb.UI.evidence_empty/1,
+          title: "No memory evidence",
+          inner_block: slot_block("Memory summaries appear after the runtime archives context.")
+        )
+
+      assert html =~ "scoria-evidence-empty"
+      assert html =~ "No memory evidence"
+      assert html =~ "Memory summaries appear after the runtime archives context."
+    end
+  end
+
+  describe "evidence primitive CSS" do
+    test "declares token-bound class families without raw hex colors" do
+      css = File.read!("assets/css/04-components.css")
+
+      assert css =~ ".scoria-evidence-section"
+      assert css =~ ".scoria-evidence-rows"
+      assert css =~ ".scoria-evidence-action-row"
+      assert css =~ ".scoria-evidence-empty"
+
+      evidence_css =
+        css
+        |> String.split("/* ---------- Evidence primitives ---------- */")
+        |> List.last()
+        |> String.split("/* ---------- End evidence primitives ---------- */")
+        |> List.first()
+
+      refute evidence_css =~ ~r/#[0-9a-fA-F]{3,8}\b/
+      refute evidence_css =~ ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # DS-05: <.skeleton> and <.toast> (plan 12-04)
   # ---------------------------------------------------------------------------
 
