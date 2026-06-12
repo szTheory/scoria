@@ -1,6 +1,6 @@
 # Roadmap: Scoria
 
-**Last updated:** 2026-06-11 (v2.17 Vesicle shipped; v3.0 Control Room restored as active)
+**Last updated:** 2026-06-12 (Phase 13 Orientation spine completed; v3.0 Control Room active)
 
 ## Milestones
 
@@ -20,7 +20,7 @@ UI/IA/DX milestone. No net-new backend capability families. Expose components �
 
 - [x] **Phase 11: Evaluation engine + seed depth** — Committed `mix scoria.ui.shots` screenshot+critique harness, 9-dimension rubric, full-screen seed depth, baseline audit → gap register + fix backlog. (completed 2026-06-04)
 - [x] **Phase 12: Design-system component layer** — Expose `ui.ex` table/drawer/modal/form/notebook/skeleton/toast components, fix `flash_group`, add executable raw-color drift guard. The enforced token gateway. (completed 2026-06-04)
-- [ ] **Phase 13: Orientation spine (IA)** — Fix nav active-state, third nav axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, cross-screen quality-loop threading, honest reserved-name stubs.
+- [x] **Phase 13: Orientation spine (IA)** — Fix nav active-state, third nav axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, cross-screen quality-loop threading, honest reserved-name stubs. (completed 2026-06-12)
 - [ ] **Phase 14: Least-iterated screens polish** — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions (zero raw-palette leakage); real Dataset Builder index.
 - [ ] **Phase 15: High-traffic screens + evidence adapters** — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components as thin notebook-shell adapters.
 - [ ] **Phase 16: Motion + responsive + theme parity** — Restrained brand-tied motion, focus-visible/a11y, mobile-first responsive across md/lg/xl, full light+dark parity.
@@ -119,7 +119,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   - [x] 13-05-PLAN.md — Object-aware headers and allowlisted origin context on object pages
   - [x] 13-06-PLAN.md — Command palette, recents, keyboard shortcuts, and automated browser checkpoint
   - [x] 13-07-PLAN.md — Incident and Review Queue ingress threading into run evidence
-  - [ ] 13-08-PLAN.md — Run and Prompt Release Workbench egress threading through quality-loop verbs
+  - [x] 13-08-PLAN.md — Run and Prompt Release Workbench egress threading through quality-loop verbs
 **UI hint**: yes
 
 ### Phase 14: Least-iterated screens polish
@@ -171,7 +171,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 |-------|-----------|----------------|--------|-----------|
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete    | 2026-06-04 |
-| 13. Orientation spine (IA) | v3.0 | 7/8 | In Progress|  |
+| 13. Orientation spine (IA) | v3.0 | 8/8 | Complete    | 2026-06-12 |
 | 14. Least-iterated screens polish | v3.0 | 0/? | Not started | - |
 | 15. High-traffic screens + evidence adapters | v3.0 | 0/? | Not started | - |
 | 16. Motion + responsive + theme parity | v3.0 | 0/? | Not started | - |

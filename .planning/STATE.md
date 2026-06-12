@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: executing
-last_updated: "2026-06-12T14:35:10.369Z"
+last_updated: "2026-06-12T14:48:14.000Z"
 last_activity: 2026-06-12
 progress:
   total_phases: 20
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 18
-  completed_plans: 17
-  percent: 10
+  completed_plans: 18
+  percent: 15
 ---
 
 # Project State
@@ -21,20 +21,20 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle shipped and ar
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 13 — orientation-spine-ia
+**Current focus:** Phase 14 — least-iterated screens polish
 
 ## Current Position
 
-Phase: 13 (orientation-spine-ia) — EXECUTING
+Phase: 13 (orientation-spine-ia) — COMPLETE
 Plan: 8 of 8
-Status: Ready to execute
+Status: Complete; ready to plan Phase 14
 Last activity: 2026-06-12
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
 1. **Phase 11 — Evaluation engine + seed depth** (EVAL-01..05) — `mix scoria.ui.shots` harness, 9-dim rubric, full-screen seed depth, baseline audit → gap register/fix backlog. **COMPLETE 2026-06-04**
 2. **Phase 12 — Design-system component layer** (DS-01..06) — `ui.ex` table/drawer/modal/form/notebook/skeleton/toast, fix `flash_group`, raw-color drift guard. The enforced token gateway. **COMPLETE 2026-06-04**
-3. **Phase 13 — Orientation spine (IA)** (IA-01..06) — nav active-state fix, third axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, quality-loop threading, honest reserved-name stubs.
+3. **Phase 13 — Orientation spine (IA)** (IA-01..06) — nav active-state fix, third axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, quality-loop threading, honest reserved-name stubs. **COMPLETE 2026-06-12**
 4. **Phase 14 — Least-iterated screens polish** (SCREEN-01, SCREEN-02) — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions; real Dataset Builder index.
 5. **Phase 15 — High-traffic screens + evidence adapters** (SCREEN-03, SCREEN-04) — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components → thin notebook adapters.
 6. **Phase 16 — Motion + responsive + theme parity** (MOTION-01..04) — brand-tied motion, focus-visible/a11y, mobile-first md/lg/xl, light+dark parity.
@@ -51,7 +51,7 @@ Last activity: 2026-06-12
 
 ### Roadmap Evolution
 
-- **v3.0 (resumed):** Control Room UI/IA/DX milestone. Phases 11–17. Phases 11–12 complete (2026-06-04). Core finding: design system is under-*adopted* (~22/25 view files leak raw Tailwind). Paused at clean 12/13 boundary for v2.17 interjection; now resumed. Next: Phase 13 orientation spine.
+- **v3.0 (resumed):** Control Room UI/IA/DX milestone. Phases 11–17. Phases 11–13 complete (Phase 13 completed 2026-06-12). Core finding: design system is under-*adopted* (~22/25 view files leak raw Tailwind). Paused at clean 12/13 boundary for v2.17 interjection; now resumed. Next: Phase 14 least-iterated screens polish.
 - **v2.17 (shipped):** Brand system milestone. Interjected before v3.0 phases 13–17 because brand book was AI-generated seed, never pressure-tested, and no logo/collateral existed. Phases 18–22 (globally monotonic past v3.0's reserved 11–17 block). All 8 mandatory requirements satisfied; BRAND-09 conditional did not fire. Archived in `.planning/milestones/v2.17-*`.
 - **v2.16 (shipped):** ReqLLM `~> 1.13` peer bump — minimal dependency hygiene scope.
 - **v2.15 (shipped):** Named connector adoption lane — PR WAE after knowledge, not in closeout.
@@ -118,7 +118,8 @@ Last activity: 2026-06-12
 | Phase 13 P13-05 | 10 min | - tasks | - files |
 | Phase 13 P13-06 | 45 min | - tasks | - files |
 | Phase 13 P13-07 | 6 min | - tasks | - files |
+| Phase 13 P13-08 | 13 min | 2 tasks | 11 files |
 
 ## Operator Next Steps
 
-- `/gsd:plan-phase 13` — plan Phase 13 (Orientation spine / IA) to resume v3.0 Control Room
+- `/gsd:plan-phase 14` — plan Phase 14 (Least-iterated screens polish)
