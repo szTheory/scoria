@@ -84,6 +84,12 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
       span_id = Ecto.UUID.generate()
       now = DateTime.utc_now()
 
+      Repo.insert!(%Trace{
+        id: trace_id,
+        session_id: run.session_id,
+        attributes: %{"tenant_id" => run.tenant_id}
+      })
+
       :telemetry.execute(
         [:scoria, :observe, :span, :stop],
         %{},
@@ -184,7 +190,9 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
     {:ok, buffer_name: buffer_name, buffer_pid: buffer_pid}
   end
 
-  test "token delta coalesces into span preview via producer path" do
+  test "token delta coalesces into span preview via producer path", %{
+    buffer_name: buffer_name
+  } do
     unique = Integer.to_string(System.unique_integer([:positive]))
     tenant_id = "orch-token-delta-" <> unique
     session_id = "orch-token-delta-session-" <> unique
@@ -221,9 +229,13 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
       html = render(view)
       html =~ Handlers.token_delta_span_name() and html =~ "Hello world"
     end)
+
+    force_buffer_flush(buffer_name)
   end
 
-  test "live trace appears in orchestrator without send/2" do
+  test "live trace appears in orchestrator without send/2", %{
+    buffer_name: buffer_name
+  } do
     unique = Integer.to_string(System.unique_integer([:positive]))
     tenant_id = "orch-int-tenant-" <> unique
     session_id = "orch-int-session-" <> unique
@@ -258,6 +270,8 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
     eventually(fn ->
       assert render(view) =~ Handlers.span_name()
     end)
+
+    force_buffer_flush(buffer_name)
   end
 
   test "reconnect hydrates redacted span attributes from DB" do
@@ -274,6 +288,7 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
 
     {:ok, view, _html} = live(conn, "/scoria")
     :ok = Ecto.Adapters.SQL.Sandbox.allow(Scoria.Repo, self(), view.pid)
+    render_async(view)
     render_disconnect(view)
 
     trace_id = Ecto.UUID.generate()
@@ -319,6 +334,7 @@ defmodule ScoriaWeb.OrchestratorLiveIntegrationTest do
       |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
+    render_async(view)
 
     render_disconnect(view)
 

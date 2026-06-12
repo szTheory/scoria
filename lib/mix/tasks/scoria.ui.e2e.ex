@@ -11,12 +11,14 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
   picked up automatically (the lane is `testDir`-driven), so a future phase adds
   a spec file with no new mix task.
 
-  Like `mix scoria.ui.shots`, this task does **not** start the Elixir app or boot
-  a web server — the Node/Playwright process drives an already-running dev server.
+  Like `mix scoria.ui.shots`, this task does **not** boot a web server — the
+  Node/Playwright process drives an already-running dev server. It starts only
+  Repo/PubSub locally to top up destructive e2e fixtures before Playwright runs,
+  unless `--no-seed-approvals` is passed.
 
   ## Usage
 
-      mix scoria.ui.e2e [--base-url http://localhost:4000/scoria]
+      mix scoria.ui.e2e [--base-url http://localhost:4000/scoria] [--no-seed-approvals]
 
   ## Prerequisites
 
@@ -26,7 +28,7 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
           npm --prefix priv/dev ci
           npx --prefix priv/dev playwright install --with-deps chromium
 
-    * The dev server running with seed data applied:
+    * The dev database created and migrated, and the dev server running:
 
           mix dev.setup
           mix phx.server
@@ -39,13 +41,15 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
 
     * Spec files are dev-only and excluded from the Hex package (`priv/dev` is not
       in `mix.exs` `files:`).
-    * `dev_seed.exs` creates exactly one pending approval for tenant `acme-corp`;
-      the toast specs are written around that (see `priv/dev/e2e/uat.spec.mjs`).
+    * The toast specs make destructive approval decisions. This task tops up
+      pending approval fixtures for tenant `acme-corp` before Playwright runs so
+      local and CI reruns are repeatable.
   """
 
   use Mix.Task
 
-  @switches [base_url: :string, url: :string]
+  @pending_approval_floor 5
+  @switches [base_url: :string, url: :string, seed_approvals: :boolean]
 
   @impl Mix.Task
   def run(args) do
@@ -71,6 +75,10 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
     base_url = opts[:base_url] || opts[:url] || "http://localhost:4000/scoria"
     priv_dev = Path.join([File.cwd!(), "priv", "dev"])
 
+    if Keyword.get(opts, :seed_approvals, true) do
+      ensure_pending_approval_fixtures!()
+    end
+
     Mix.shell().info("[scoria.ui.e2e] Running Playwright e2e against #{base_url} ...")
 
     # Discrete args list — never a shell command string (T-11-04 injection mitigation).
@@ -85,11 +93,114 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
            into: IO.stream()
          ) do
       {_, 0} ->
-        Mix.shell().info("[scoria.ui.e2e] Done. Report: priv/dev/e2e/playwright-report/index.html")
+        Mix.shell().info(
+          "[scoria.ui.e2e] Done. Report: priv/dev/e2e/playwright-report/index.html"
+        )
+
         :ok
 
       {_, code} ->
         Mix.raise("playwright e2e exited with code #{code}")
     end
+  end
+
+  defp ensure_pending_approval_fixtures! do
+    start_fixture_services!()
+
+    tenant_id = Scoria.SupportJourney.tenant_id()
+
+    existing =
+      %{tenant_id: tenant_id}
+      |> Scoria.Workflows.list_pending_remote_approvals()
+      |> length()
+
+    missing = max(@pending_approval_floor - existing, 0)
+
+    if missing > 0 do
+      for _ <- 1..missing do
+        create_pending_approval_fixture!()
+      end
+    end
+
+    available = existing + missing
+
+    Mix.shell().info(
+      "[scoria.ui.e2e] Pending approval fixtures ready: #{available} for tenant #{tenant_id}"
+    )
+  rescue
+    error ->
+      Mix.raise("""
+      Could not prepare e2e approval fixtures: #{Exception.message(error)}
+
+      Ensure the dev database is created and migrated, then re-run:
+
+          mix dev.setup
+          mix phx.server
+          mix scoria.ui.e2e
+      """)
+  end
+
+  defp start_fixture_services! do
+    {:ok, _} = Application.ensure_all_started(:ecto_sql)
+    {:ok, _} = Application.ensure_all_started(:postgrex)
+    {:ok, _} = Application.ensure_all_started(:phoenix_pubsub)
+
+    start_repo!()
+    start_pubsub!()
+  end
+
+  defp start_repo! do
+    case Process.whereis(Scoria.Repo) do
+      nil ->
+        case Scoria.Repo.start_link() do
+          {:ok, _pid} -> :ok
+          {:error, {:already_started, _pid}} -> :ok
+          {:error, reason} -> raise "could not start Scoria.Repo: #{inspect(reason)}"
+        end
+
+      _pid ->
+        :ok
+    end
+  end
+
+  defp start_pubsub! do
+    case Process.whereis(Scoria.PubSub) do
+      nil ->
+        case Phoenix.PubSub.Supervisor.start_link(name: Scoria.PubSub) do
+          {:ok, _pid} -> :ok
+          {:error, {:already_started, _pid}} -> :ok
+          {:error, reason} -> raise "could not start Scoria.PubSub: #{inspect(reason)}"
+        end
+
+      _pid ->
+        :ok
+    end
+  end
+
+  defp create_pending_approval_fixture! do
+    support = Scoria.SupportJourney
+    workflows = Scoria.Workflows
+
+    {:ok, approval_run} =
+      workflows.create_run(%{
+        root_role_id: "support_agent",
+        tenant_id: support.tenant_id(),
+        session_id: support.session_id()
+      })
+
+    {:ok, approval_step} =
+      workflows.create_step(approval_run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "support_agent",
+        status: "running"
+      })
+
+    {:ok, _approval} =
+      workflows.mark_waiting_for_approval(approval_run.id, approval_step.id, %{
+        tool_name: support.refund_approval_tool(),
+        arguments: %{"ticket_id" => support.ticket_fixture()["id"]},
+        reason: "Refund requires operator approval"
+      })
   end
 end

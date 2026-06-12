@@ -8,13 +8,13 @@
 // complement, not a duplicate.
 //
 // Prerequisites (owned by `mix scoria.ui.e2e` caller / CI):
-//   mix dev.setup      # creates + migrates the dev DB and applies dev_seed.exs
+//   mix dev.setup      # creates + migrates the dev DB
 //   mix phx.server     # serves the dashboard at PLAYWRIGHT_BASE_URL
 //
-// Seed note: dev_seed.exs synchronously seeds 5 pending approvals for tenant
-// "acme-corp" (via mark_waiting_for_approval on a non-queued step). Each approval
-// decision is destructive (consumes one), so the toast specs run serially with no
-// retries — auto-dismiss + manual-dismiss take one each, CR-01 takes two.
+// Fixture note: mix scoria.ui.e2e tops up 5 pending approvals for tenant
+// "acme-corp" before Playwright starts (via mark_waiting_for_approval on a
+// non-queued step). Each approval decision is destructive, so the toast specs run
+// serially with no retries.
 
 import { test, expect } from '@playwright/test';
 import { waitForReady } from './lib/ready.mjs';
