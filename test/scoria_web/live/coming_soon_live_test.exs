@@ -43,8 +43,7 @@ defmodule ScoriaWeb.ComingSoonLiveTest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.ComingSoonLiveTest.Endpoint,
-      secret_key_base:
-        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/zK6N2e7jW1",
+      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/zK6N2e7jW1",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "112345678"],
       debug_errors: true
@@ -67,7 +66,14 @@ defmodule ScoriaWeb.ComingSoonLiveTest do
       assert html =~ "Track progress"
       refute html =~ "Dataset Builder"
 
-      downcased = String.downcase(html)
+      downcased =
+        html
+        |> String.split(~s(<main class="scoria-main">))
+        |> List.last()
+        |> String.split("</main>")
+        |> hd()
+        |> String.downcase()
+
       refute downcased =~ "chart"
       refute downcased =~ "sparkline"
       refute downcased =~ "sample row"

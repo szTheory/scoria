@@ -44,6 +44,7 @@ defmodule ScoriaWeb.Router do
           live("/eval_specs", ScoriaWeb.EvalSpecLive.Index, :index)
           live("/prompts", ScoriaWeb.PromptLive.Index, :index)
           live("/prompts/:id/release", ScoriaWeb.PromptLive.ReleaseWorkbenchLive, :index)
+          live("/coming/:screen", ScoriaWeb.ComingSoonLive, :show)
         end
       end
     end
