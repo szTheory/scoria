@@ -64,14 +64,18 @@ defmodule ScoriaWeb.ComingSoonLiveTest do
       assert html =~ "Soon"
       assert html =~ "What works today"
       assert html =~ "Track progress"
-      refute html =~ "Dataset Builder"
 
-      downcased =
+      main =
         html
         |> String.split(~s(<main class="scoria-main">))
         |> List.last()
         |> String.split("</main>")
         |> hd()
+
+      refute main =~ "Dataset Builder"
+
+      downcased =
+        main
         |> String.downcase()
 
       refute downcased =~ "chart"
