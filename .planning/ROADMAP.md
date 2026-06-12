@@ -129,7 +129,13 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 **Success Criteria** (what must be TRUE):
   1. Review Queue, Incidents, Eval Workbench, and Prompt Registry / Release Workbench render through shared components with zero raw-palette leakage and meet the rubric bar.
   2. A real Dataset Builder index is the canonical promote-to-dataset destination, converging the previously duplicated promote affordances.
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 14-01-PLAN.md - Dataset Builder route, navigation, and real index shell (SCREEN-02)
+  - [ ] 14-02-PLAN.md - Dataset Builder promotion reconstruction and PromoteComponent conversion (SCREEN-02)
+  - [ ] 14-03-PLAN.md - Review Queue shared-component conversion and Dataset Builder promotion ingress (SCREEN-01, SCREEN-02)
+  - [ ] 14-04-PLAN.md - Incidents screen and IncidentEvidenceComponent conversion (SCREEN-01)
+  - [ ] 14-05-PLAN.md - Eval Workbench shared-component conversion (SCREEN-01)
+  - [ ] 14-06-PLAN.md - Prompt Registry and Release Workbench conversion (SCREEN-01)
 **UI hint**: yes
 
 ### Phase 15: High-traffic screens + evidence adapters
