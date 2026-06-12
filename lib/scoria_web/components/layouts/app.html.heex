@@ -15,6 +15,7 @@
         >
           <.icon name={item.icon} />
           <span>{item.label}</span>
+          <span :if={item[:soon?]} class="scoria-nav__soon">Soon</span>
         </.link>
       </div>
     </nav>

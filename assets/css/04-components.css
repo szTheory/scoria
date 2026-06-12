@@ -110,6 +110,15 @@
     padding: 0 var(--scoria-space-2);
     line-height: 1.6;
   }
+  .scoria-nav__soon {
+    margin-left: auto;
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-pill);
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-badge);
+    padding: 0 var(--scoria-space-2);
+    line-height: 1.6;
+  }
 
   /* ---------- Phase 13 IA primitives ---------- */
   .scoria-attention-card {

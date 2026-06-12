@@ -14,19 +14,112 @@ defmodule ScoriaWeb.DashboardNav do
     %{
       label: "Operate",
       items: [
-        %{key: :live_ops, label: "Live Ops", path: "/", icon: :pulse},
-        %{key: :approvals, label: "Approvals", path: "/approvals", icon: :inbox},
-        %{key: :runs, label: "Runs", path: "/workflows", icon: :tree},
-        %{key: :incidents, label: "Incidents", path: "/incidents", icon: :alert},
-        %{key: :connectors, label: "Connectors", path: "/connectors", icon: :plug}
+        %{
+          key: :live_ops,
+          label: "Home",
+          path: "/",
+          icon: :pulse,
+          aliases: ["home", "live ops", "status"]
+        },
+        %{
+          key: :approvals,
+          label: "Approvals",
+          path: "/approvals",
+          icon: :inbox,
+          aliases: ["approvals", "approval"]
+        },
+        %{
+          key: :runs,
+          label: "Runs",
+          path: "/workflows",
+          icon: :tree,
+          aliases: ["runs", "workflows", "traces"]
+        },
+        %{
+          key: :incidents,
+          label: "Incidents",
+          path: "/incidents",
+          icon: :alert,
+          aliases: ["incidents", "incident"]
+        }
       ]
     },
     %{
       label: "Improve",
       items: [
-        %{key: :reviews, label: "Review Queue", path: "/reviews", icon: :flag},
-        %{key: :evals, label: "Eval Workbench", path: "/eval_specs", icon: :grid},
-        %{key: :prompts, label: "Prompt Registry", path: "/prompts", icon: :doc}
+        %{
+          key: :reviews,
+          label: "Review Queue",
+          path: "/reviews",
+          icon: :flag,
+          aliases: ["review", "reviews", "queue"]
+        },
+        %{
+          key: :evals,
+          label: "Eval Workbench",
+          path: "/eval_specs",
+          icon: :grid,
+          aliases: ["eval", "evals", "evaluation"]
+        },
+        %{
+          key: :prompts,
+          label: "Prompt Registry",
+          path: "/prompts",
+          icon: :doc,
+          aliases: ["prompt", "prompts", "registry"]
+        },
+        %{
+          key: :replay_playground,
+          label: "Replay Playground",
+          icon: :pulse,
+          aliases: ["replay", "playground"],
+          soon?: true,
+          stub_slug: "replay-playground"
+        },
+        %{
+          key: :cost_ledger,
+          label: "Cost Ledger",
+          icon: :grid,
+          aliases: ["cost", "ledger", "spend"],
+          soon?: true,
+          stub_slug: "cost-ledger"
+        },
+        %{
+          key: :feedback_inbox,
+          label: "Feedback Inbox",
+          icon: :inbox,
+          aliases: ["feedback", "inbox"],
+          soon?: true,
+          stub_slug: "feedback-inbox"
+        }
+      ]
+    },
+    %{
+      label: "Configure",
+      items: [
+        %{
+          key: :connectors,
+          label: "Connectors",
+          path: "/connectors",
+          icon: :plug,
+          aliases: ["connectors", "connector"]
+        },
+        %{
+          key: :mcp_gateway,
+          label: "MCP Gateway",
+          icon: :plug,
+          aliases: ["mcp", "gateway"],
+          soon?: true,
+          stub_slug: "mcp-gateway"
+        },
+        %{
+          key: :tool_registry,
+          label: "Tool Registry",
+          icon: :doc,
+          aliases: ["tools", "tool", "registry"],
+          soon?: true,
+          stub_slug: "tool-registry"
+        }
       ]
     }
   ]
@@ -36,6 +129,7 @@ defmodule ScoriaWeb.DashboardNav do
     ScoriaWeb.ApprovalsLive.Index => :approvals,
     ScoriaWeb.ConnectorsLive.Index => :connectors,
     ScoriaWeb.IncidentsLive.Index => :incidents,
+    ScoriaWeb.WorkflowLive.Index => :runs,
     ScoriaWeb.WorkflowLive.Show => :runs,
     ScoriaWeb.ReviewQueueLive => :reviews,
     ScoriaWeb.EvalSpecLive.Index => :evals,
@@ -44,33 +138,63 @@ defmodule ScoriaWeb.DashboardNav do
   }
 
   @doc "Nav groups for the sidebar."
-  def groups, do: @groups
+  def groups do
+    Enum.map(@groups, fn group ->
+      %{group | items: Enum.map(group.items, &normalize_item/1)}
+    end)
+  end
 
   @doc "Active nav key for a LiveView module."
-  def active_key(view), do: Map.get(@views, view, nil)
+  def active_key(view), do: active_key(view, %{})
+
+  @doc "Active nav key for a LiveView module and route params."
+  def active_key(ScoriaWeb.ComingSoonLive, %{"screen" => screen}), do: stub_key_for_slug(screen)
+  def active_key(view, _params), do: Map.get(@views, view, nil)
+
+  @doc "Allowlisted coming-soon screens from the nav source of truth."
+  def stub_screens do
+    groups()
+    |> Enum.flat_map(& &1.items)
+    |> Enum.filter(&Map.get(&1, :soon?, false))
+  end
+
+  @doc "Lookup coming-soon metadata by slug."
+  def stub_screen(slug) when is_binary(slug),
+    do: Enum.find(stub_screens(), &(&1.stub_slug == slug))
+
+  def stub_screen(_slug), do: nil
+
+  @doc "Lookup coming-soon nav key by slug."
+  def stub_key_for_slug(slug) do
+    case stub_screen(slug) do
+      %{key: key} -> key
+      _ -> nil
+    end
+  end
 
   @doc """
   on_mount hook: assigns `:scoria_nav` (active key) and `:scoria_base` (mount prefix) so the
   shell can render active state and absolute links regardless of mount path.
   """
-  def on_mount(:default, _params, _session, socket) do
+  def on_mount(:default, params, _session, socket) do
     socket =
       socket
-      |> assign(:scoria_nav, active_key(socket.view))
+      |> assign(:scoria_nav, active_key(socket.view, params))
       |> attach_hook(:scoria_base, :handle_params, &assign_base/3)
 
     {:cont, socket}
   end
 
   # Derive the dashboard mount prefix from the current URI by stripping the matched live path.
-  defp assign_base(_params, uri, socket) do
+  defp assign_base(params, uri, socket) do
     base =
       case socket.assigns[:scoria_base] do
         nil -> derive_base(uri, socket.view)
         existing -> existing
       end
 
-    {:cont, assign(socket, :scoria_base, base)}
+    {:cont,
+     socket |> assign(:scoria_base, base) |> assign(:scoria_nav, active_key(socket.view, params))}
   end
 
   defp derive_base(uri, view) do
@@ -85,6 +209,7 @@ defmodule ScoriaWeb.DashboardNav do
         ScoriaWeb.ReviewQueueLive -> "/reviews"
         ScoriaWeb.EvalSpecLive.Index -> "/eval_specs"
         ScoriaWeb.PromptLive.Index -> "/prompts"
+        ScoriaWeb.WorkflowLive.Index -> "/workflows"
         _ -> nil
       end
 
@@ -98,8 +223,14 @@ defmodule ScoriaWeb.DashboardNav do
   defp strip_known_prefixes(path) do
     path
     |> String.replace(
-      ~r{/(workflows|prompts|reviews|eval_specs|approvals|connectors|incidents)(/.*)?$},
+      ~r{/(workflows|prompts|reviews|eval_specs|approvals|connectors|incidents|coming)(/.*)?$},
       ""
     )
   end
+
+  defp normalize_item(%{soon?: true, stub_slug: slug} = item) do
+    Map.put(item, :path, "/coming/#{slug}")
+  end
+
+  defp normalize_item(item), do: item
 end
