@@ -1,7 +1,7 @@
 defmodule ScoriaWeb.EvalSpecLive.Index do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
   import Ecto.Query, warn: false
-  import ScoriaWeb.UI, only: [empty_state: 1]
+  import ScoriaWeb.UI
   alias Scoria.Eval
   alias Scoria.Eval.{EvalRun, EvalSpec}
   alias Scoria.Repo
@@ -118,70 +118,68 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
           </.form>
         </div>
       <% else %>
-        <.empty_state :if={@eval_specs == []} title="No evaluation rubrics yet">
-          Define a rubric with scorers and a threshold policy and it will appear here,
-          ready to gate releases on measurable eval deltas.
-        </.empty_state>
+        <.panel>
+          <:eyebrow>Evaluation</:eyebrow>
+          <:title>Rubrics</:title>
+          <.empty_state :if={@eval_specs == []} title="No evaluation rubrics yet">
+            Define a rubric with scorers and a threshold policy and it will appear here,
+            ready to gate releases on measurable eval deltas.
+          </.empty_state>
 
-        <table :if={@eval_specs != []}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Version</th>
-              <th>Description</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= for spec <- @eval_specs do %>
-              <tr id={"spec-#{spec.id}"}>
-                <td><%= spec.name %></td>
-                <td><%= spec.version %></td>
-                <td><%= spec.description %></td>
-                <td>
-                  <button phx-click="edit" phx-value-id={spec.id}>Edit</button>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+          <.table :if={@eval_specs != []} id="eval-specs" rows={@eval_specs} density={:compact}>
+            <:col :let={spec} label="Name" key={:name}>{spec.name}</:col>
+            <:col :let={spec} label="Version" key={:version}>
+              <.badge tone={:neutral} label={"v#{spec.version}"} />
+            </:col>
+            <:col :let={spec} label="Description">{spec.description}</:col>
+            <:action :let={spec}>
+              <.button variant={:ghost} size={:sm} phx-click="edit" phx-value-id={spec.id}>
+                Edit
+              </.button>
+            </:action>
+          </.table>
+        </.panel>
 
-        <section :if={@eval_runs != []} id="eval-results">
-          <h2>Eval results</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Run</th>
-                <th>Status</th>
-                <th>Prompt</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr :for={run <- @eval_runs} id={"eval-run-#{run.id}"}>
-                <td><%= run.id %></td>
-                <td><%= run.status %></td>
-                <td><%= run.prompt_version || "n/a" %></td>
-                <td>
-                  <a
-                    :if={run.prompt_template_id}
-                    href={prompt_release_path(run, assigns[:scoria_base] || "")}
-                    class="scoria-button scoria-button--ghost scoria-button--sm"
-                  >
-                    Open prompt release
-                  </a>
-                  <a
-                    :if={regressed_run_ids(run) != []}
-                    href={regressed_runs_path(run, assigns[:scoria_base] || "")}
-                    class="scoria-button scoria-button--ghost scoria-button--sm"
-                  >
-                    Open regressed runs
-                  </a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
+        <.panel id="eval-results">
+          <:eyebrow>Results</:eyebrow>
+          <:title>Eval results</:title>
+
+          <.empty_state :if={@eval_runs == []} title="No eval runs yet">
+            Promote a production trace to a dataset, then run an eval to compare prompt behavior against a baseline.
+          </.empty_state>
+
+          <.table :if={@eval_runs != []} id="eval-runs" rows={@eval_runs} density={:compact}>
+            <:col :let={run} label="Run">
+              <.id id={"eval-run-id-#{run.id}"} value={run.id} />
+            </:col>
+            <:col :let={run} label="Status" key={:status}>
+              <.badge tone={tone(run.status)} label={status_label(run.status)} />
+            </:col>
+            <:col :let={run} label="Prompt">
+              <%= if run.prompt_version do %>
+                v<%= run.prompt_version %>
+              <% else %>
+                n/a
+              <% end %>
+            </:col>
+            <:action :let={run}>
+              <a
+                :if={run.prompt_template_id}
+                href={prompt_release_path(run, assigns[:scoria_base] || "")}
+                class="scoria-button scoria-button--ghost scoria-button--sm"
+              >
+                Open prompt release
+              </a>
+              <a
+                :if={regressed_run_ids(run) != []}
+                href={regressed_runs_path(run, assigns[:scoria_base] || "")}
+                class="scoria-button scoria-button--ghost scoria-button--sm"
+              >
+                Open regressed runs
+              </a>
+            </:action>
+          </.table>
+        </.panel>
       <% end %>
     </div>
     """

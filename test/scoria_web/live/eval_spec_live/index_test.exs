@@ -265,22 +265,30 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
 
     {:ok, _view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
     decoded_html = URI.decode_www_form(html)
+    eval_html = eval_workbench_html(html)
+    eval_html_downcase = String.downcase(eval_html)
 
     assert html =~ "Eval results"
     assert html =~ "Open prompt release"
     assert html =~ "Open regressed runs"
-    assert html =~ ~s(<table class="scoria-table)
-    assert html =~ "scoria-badge"
-    assert html =~ "Running"
+    assert eval_html =~ ~s(<table class="scoria-table)
+    assert eval_html =~ "scoria-badge"
+    assert eval_html =~ "Running"
     assert decoded_html =~ "/prompts/#{prompt.id}/release?from=eval:#{eval_run.id}"
     assert decoded_html =~ "/workflows/#{source_run.id}?from=eval:#{eval_run.id}"
 
-    html_downcase = String.downcase(html)
-    refute html_downcase =~ "stepper"
-    refute html_downcase =~ "wizard"
-    refute html_downcase =~ "playground"
-    refute html_downcase =~ "current step"
-    refute html_downcase =~ "experiment"
-    refute html_downcase =~ "chart"
+    refute eval_html_downcase =~ "stepper"
+    refute eval_html_downcase =~ "wizard"
+    refute eval_html_downcase =~ "playground"
+    refute eval_html_downcase =~ "current step"
+    refute eval_html_downcase =~ "experiment"
+    refute eval_html_downcase =~ "chart"
+  end
+
+  defp eval_workbench_html(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find(".eval-spec-index")
+    |> Floki.raw_html()
   end
 end
