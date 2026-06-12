@@ -2,7 +2,6 @@ lib/scoria_web/components/approval_inbox_component.ex:12
 lib/scoria_web/components/citation_evidence_component.ex:18
 lib/scoria_web/components/connector_detail_drawer_component.ex:9
 lib/scoria_web/components/delegated_evidence_component.ex:46
-lib/scoria_web/components/incident_evidence_component.ex:69
 lib/scoria_web/components/memory_notebook_component.ex:19
 lib/scoria_web/components/replay_evidence_notebook_component.ex:24
 lib/scoria_web/components/runtime_detail_drawer_component.ex:38
@@ -13,7 +12,6 @@ lib/scoria_web/components/workflow_tree_component.ex:1
 lib/scoria_web/live/approvals_live/index.ex:9
 lib/scoria_web/live/connectors_live/index.ex:20
 lib/scoria_web/live/dataset_live/promote_component.ex:68
-lib/scoria_web/live/incidents_live/index.ex:10
 lib/scoria_web/live/orchestrator_live.ex:26
 lib/scoria_web/live/prompt_live/release_workbench_live.ex:37
 lib/scoria_web/live/review_queue_live.ex:76

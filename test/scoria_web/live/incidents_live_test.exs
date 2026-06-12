@@ -85,7 +85,11 @@ defmodule ScoriaWeb.IncidentsLiveTest do
     {:ok, _view, html} = live(session_conn(), "/scoria/incidents")
 
     assert html =~ "Incidents"
-    assert html =~ "No incidents"
+    assert html =~ "No open incidents"
+
+    assert html =~
+             "Runtime failures, breaker trips, and delivery issues will appear here with links back to the affected run."
+
     refute html =~ "Tenant incidents"
   end
 
@@ -143,6 +147,29 @@ defmodule ScoriaWeb.IncidentsLiveTest do
 
     html = render_click(view, "select_incident", %{"id" => review.id})
     assert html =~ "trace-review"
+  end
+
+  test "incident severity and status badges include visible text" do
+    seed_incident!(%{
+      incident_key: "inc-visible-state",
+      summary: "Pager state needs text",
+      severity: "critical",
+      routing_class: "page",
+      status: "open",
+      trace_id: "trace-visible-state"
+    })
+
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents")
+
+    badge_text =
+      html
+      |> Floki.parse_document!()
+      |> Floki.find(".scoria-badge")
+      |> Enum.map(&(&1 |> Floki.text() |> String.trim()))
+
+    assert "critical" in badge_text
+    assert "page" in badge_text
+    assert "open" in badge_text
   end
 
   test "selected incident renders context-preserving run and trace next-step links" do
