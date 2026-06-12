@@ -39,7 +39,7 @@
 - [x] **SCREEN-01**: Review Queue, Incidents, Eval Workbench, and Prompt Registry / Release Workbench render through shared components with zero raw-palette leakage and meet the rubric bar.
 - [x] **SCREEN-02**: A real Dataset Builder index is the canonical promote-to-dataset destination, converging the previously duplicated promote affordances.
 - [ ] **SCREEN-03**: Live Ops, Workflows / Trace Explorer, Approvals, and Connectors render through shared components and meet the rubric bar; the home page's inline god-page buttons are replaced with design-system deep-links.
-- [ ] **SCREEN-04**: The evidence components are thin adapters over the unified notebook shell with no duplicated layout logic.
+- [x] **SCREEN-04**: The evidence components are thin adapters over the unified notebook shell with no duplicated layout logic.
 
 ### Motion, Responsive & Theme Parity
 
@@ -99,7 +99,7 @@ Each requirement maps to exactly one phase. Phase numbering continues from v2.16
 | SCREEN-01 | Phase 14 — Least-iterated screens polish | Complete |
 | SCREEN-02 | Phase 14 — Least-iterated screens polish | Complete |
 | SCREEN-03 | Phase 15 — High-traffic screens + evidence adapters | Pending |
-| SCREEN-04 | Phase 15 — High-traffic screens + evidence adapters | Pending |
+| SCREEN-04 | Phase 15 — High-traffic screens + evidence adapters | Complete |
 | MOTION-01 | Phase 16 — Motion + responsive + theme parity | Pending |
 | MOTION-02 | Phase 16 — Motion + responsive + theme parity | Pending |
 | MOTION-03 | Phase 16 — Motion + responsive + theme parity | Pending |
