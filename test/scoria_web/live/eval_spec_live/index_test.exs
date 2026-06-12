@@ -30,10 +30,13 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
   @endpoint ScoriaWeb.EvalSpecLive.IndexTest.Endpoint
 
   alias Scoria.Eval
+  alias Scoria.PromptRegistry
+  alias Scoria.Workflows
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint,
-      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
+      secret_key_base:
+        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "112345678"],
       debug_errors: true
@@ -131,5 +134,100 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     assert new_spec.name == "Helpfulness V2"
     assert new_spec.version == 2
     assert new_spec.entity_id == spec.entity_id
+  end
+
+  test "renders eval result links to prompt release and regressed source runs" do
+    {:ok, prompt} =
+      PromptRegistry.create_draft_template(%{
+        system_message: "Eval result system",
+        user_template: "Eval result user"
+      })
+
+    {:ok, dataset} =
+      Scoria.Eval.create_dataset(%{
+        name: "Regression Dataset",
+        items: [
+          %{
+            input: %{"question" => "ready?"},
+            expected_output: %{"answer" => "ready"}
+          }
+        ]
+      })
+
+    {:ok, dataset} = Scoria.Eval.seal_dataset(dataset)
+
+    [dataset_item] = Eval.list_dataset_items(dataset.id)
+
+    {:ok, spec} =
+      Scoria.Eval.create_eval_spec(%{
+        name: "Regression Spec",
+        description: "Finds quality regressions",
+        dataset_id: dataset.id,
+        dataset_version: dataset.version,
+        eval_mode: :offline_replay,
+        subject: %{
+          subject_kind: :prompt_template,
+          prompt_entity_id: prompt.entity_id,
+          prompt_template_id: prompt.id,
+          prompt_version: prompt.version
+        },
+        scorers: [
+          %{
+            metric_key: "accuracy",
+            scorer_kind: :llm_judge,
+            judge_prompt_template_id: Ecto.UUID.generate(),
+            judge_prompt_version: 1,
+            judge_provider: "openai",
+            judge_model: "gpt-4o-mini",
+            weight: 1.0
+          }
+        ],
+        threshold_policy: %{
+          pass_rate_gte: 0.8,
+          mean_score_gte: 0.8,
+          max_latency_ms: 100
+        }
+      })
+
+    {:ok, source_run} = Workflows.create_run(%{root_role_id: "executor"})
+
+    {:ok, eval_run} =
+      Eval.create_eval_run(%{
+        eval_spec_id: spec.id,
+        runner_mode: :offline_replay,
+        prompt_template_id: prompt.id,
+        prompt_version: prompt.version
+      })
+
+    {:ok, _eval_run, _scores} =
+      Eval.record_eval_scores(eval_run, [
+        %{
+          dataset_item_id: dataset_item.id,
+          scorer_kind: "llm_judge",
+          status: "failed",
+          score: 0.2,
+          explanation: "Regression found",
+          evidence_refs: %{"workflow_run_id" => source_run.id}
+        }
+      ])
+
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
+
+    {:ok, _view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+    decoded_html = URI.decode_www_form(html)
+
+    assert html =~ "Eval results"
+    assert html =~ "Open prompt release"
+    assert html =~ "Open regressed runs"
+    assert decoded_html =~ "/prompts/#{prompt.id}/release?from=eval:#{eval_run.id}"
+    assert decoded_html =~ "/workflows/#{source_run.id}?from=eval:#{eval_run.id}"
+
+    html_downcase = String.downcase(html)
+    refute html_downcase =~ "stepper"
+    refute html_downcase =~ "wizard"
+    refute html_downcase =~ "current step"
   end
 end

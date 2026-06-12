@@ -165,6 +165,65 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
       render_async(view)
     end
+
+    test "release workbench renders flat eval and baseline-run next-step verbs", %{
+      conn: conn,
+      draft: draft,
+      active: active,
+      spec: spec
+    } do
+      {:ok, active_run} =
+        Eval.create_eval_run(%{
+          eval_spec_id: spec.id,
+          runner_mode: "offline_replay",
+          prompt_template_id: active.id,
+          prompt_version: active.version
+        })
+
+      Eval.complete_eval_run(active_run, %{
+        total_items: 10,
+        passed_items: 10,
+        failed_items: 0,
+        avg_latency_ms: 100,
+        total_cost_usd: Decimal.new("0.10")
+      })
+
+      {:ok, draft_run} =
+        Eval.create_eval_run(%{
+          eval_spec_id: spec.id,
+          runner_mode: "offline_replay",
+          prompt_template_id: draft.id,
+          prompt_version: draft.version
+        })
+
+      Eval.complete_eval_run(draft_run, %{
+        total_items: 10,
+        passed_items: 9,
+        failed_items: 1,
+        avg_latency_ms: 90,
+        total_cost_usd: Decimal.new("0.09")
+      })
+
+      {:ok, view, html} = live(conn, "/scoria/prompts/#{draft.id}/release")
+      eval_results_href = html |> link_href("View eval results") |> URI.decode_www_form()
+      baseline_runs_href = html |> link_href("View baseline runs") |> URI.decode_www_form()
+
+      assert html =~ "View eval results"
+      assert html =~ "View baseline runs"
+
+      assert eval_results_href ==
+               "/scoria/eval_specs?prompt_template_id=#{draft.id}&from=prompt:#{draft.id}#eval-run-#{draft_run.id}"
+
+      assert baseline_runs_href ==
+               "/scoria/eval_specs?prompt_template_id=#{active.id}&from=prompt:#{draft.id}#eval-run-#{active_run.id}"
+
+      html_downcase = String.downcase(html)
+      refute html_downcase =~ "stepper"
+      refute html_downcase =~ "wizard"
+      refute html_downcase =~ "current step"
+
+      render_async(view)
+    end
   end
 
   describe "Task 2: Implement Approval Rail & CTA Interactions" do
@@ -243,5 +302,14 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
       render_async(view)
     end
+  end
+
+  defp link_href(html, label) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("a")
+    |> Enum.find(fn link -> link |> Floki.text() |> String.trim() == label end)
+    |> Floki.attribute("href")
+    |> List.first()
   end
 end

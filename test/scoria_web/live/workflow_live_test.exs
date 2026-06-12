@@ -32,9 +32,11 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   import Phoenix.LiveViewTest
 
   alias Scoria.Eval.OnlineScoreCandidate
+  alias Scoria.PromptRegistry
   alias Scoria.Repo
   alias Scoria.Repo.Trace
   alias Scoria.SemanticCache
+  alias Scoria.SRE.Incident
   alias Scoria.Workflows
 
   @endpoint ScoriaWeb.WorkflowLiveTest.Endpoint
@@ -174,6 +176,86 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     html = render_patch(view, "/scoria/workflows/#{run.id}?from=unknown:123")
     refute html =~ "← Back to incident inc_42"
     refute html =~ "← Back to unknown"
+
+    render_async(view)
+  end
+
+  test "run page renders flat quality-loop next-step verbs when backing context exists" do
+    {:ok, prompt} =
+      PromptRegistry.create_draft_template(%{
+        system_message: "Quality loop system",
+        user_template: "Quality loop user"
+      })
+
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        status: "running",
+        metadata: %{"prompt_template_id" => prompt.id}
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "tool",
+        role_id: "executor",
+        status: "completed",
+        projected_context: %{"input" => "quality-loop"},
+        result_envelope: %{"output" => %{"answer" => "ready"}}
+      })
+
+    {:ok, _checkpoint} =
+      Workflows.append_checkpoint(run.id, step.id, %{
+        transition: "tool_completed",
+        status: "completed",
+        snapshot: %{"recorded_outcome" => %{"answer" => "ready"}}
+      })
+
+    {:ok, _event} =
+      Workflows.append_event(run.id, step.id, %{
+        event_type: "step_completed",
+        payload: %{"recorded_outcome" => %{"answer" => "ready"}}
+      })
+
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    {:ok, _incident} =
+      %Incident{}
+      |> Incident.changeset(%{
+        tenant_id: "default",
+        incident_key: "quality-loop-threading",
+        severity: "warning",
+        status: "open",
+        summary: "Quality loop incident",
+        routing_class: "review",
+        dedupe_key: Ecto.UUID.generate(),
+        first_seen_at: now,
+        last_seen_at: now,
+        workflow_run_id: run.id,
+        trace_id: "trace-quality-loop"
+      })
+      |> Repo.insert()
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
+    decoded_html = URI.decode_www_form(html)
+
+    assert html =~ "Replay run"
+    assert html =~ "Promote span to dataset"
+    assert html =~ "Open incident"
+    assert html =~ "Open prompt"
+    assert decoded_html =~ "/scoria/coming/replay-playground?from=run:#{run.id}"
+    assert decoded_html =~ "/scoria/incidents?from=run:#{run.id}"
+    assert decoded_html =~ "/scoria/prompts/#{prompt.id}/release?from=run:#{run.id}"
+
+    html_downcase = String.downcase(html)
+    refute html_downcase =~ "stepper"
+    refute html_downcase =~ "wizard"
+    refute html_downcase =~ "current step"
 
     render_async(view)
   end
