@@ -21,7 +21,7 @@ UI/IA/DX milestone. No net-new backend capability families. Expose components �
 - [x] **Phase 11: Evaluation engine + seed depth** — Committed `mix scoria.ui.shots` screenshot+critique harness, 9-dimension rubric, full-screen seed depth, baseline audit → gap register + fix backlog. (completed 2026-06-04)
 - [x] **Phase 12: Design-system component layer** — Expose `ui.ex` table/drawer/modal/form/notebook/skeleton/toast components, fix `flash_group`, add executable raw-color drift guard. The enforced token gateway. (completed 2026-06-04)
 - [x] **Phase 13: Orientation spine (IA)** — Fix nav active-state, third nav axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, cross-screen quality-loop threading, honest reserved-name stubs. (completed 2026-06-12)
-- [ ] **Phase 14: Least-iterated screens polish** — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions (zero raw-palette leakage); real Dataset Builder index.
+- [x] **Phase 14: Least-iterated screens polish** — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions (zero raw-palette leakage); real Dataset Builder index.
 - [ ] **Phase 15: High-traffic screens + evidence adapters** — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components as thin notebook-shell adapters.
 - [ ] **Phase 16: Motion + responsive + theme parity** — Restrained brand-tied motion, focus-visible/a11y, mobile-first responsive across md/lg/xl, full light+dark parity.
 - [ ] **Phase 17: Consistency sweep + proof** — Re-run audit loop, rubric-delta + raw-color count → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage.
@@ -135,7 +135,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   - [x] 14-03-PLAN.md - Review Queue shared-component conversion and Dataset Builder promotion ingress (SCREEN-01, SCREEN-02)
   - [x] 14-04-PLAN.md - Incidents screen and IncidentEvidenceComponent conversion (SCREEN-01)
   - [x] 14-05-PLAN.md - Eval Workbench shared-component conversion (SCREEN-01)
-  - [ ] 14-06-PLAN.md - Prompt Registry and Release Workbench conversion (SCREEN-01)
+  - [x] 14-06-PLAN.md - Prompt Registry and Release Workbench conversion (SCREEN-01)
 **UI hint**: yes
 
 ### Phase 15: High-traffic screens + evidence adapters

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
 status: executing
-last_updated: "2026-06-12T20:49:04.936Z"
-last_activity: 2026-06-12 -- Phase 14 Wave 3 complete
+last_updated: "2026-06-12T20:54:00.000Z"
+last_activity: 2026-06-12 -- Phase 14 Wave 4 complete
 progress:
   total_phases: 20
   completed_phases: 3
   total_plans: 24
-  completed_plans: 23
+  completed_plans: 24
   percent: 15
 ---
 
@@ -25,17 +25,17 @@ See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle shipped and ar
 
 ## Current Position
 
-Phase: 14 (least-iterated-screens-polish) — EXECUTING
+Phase: 14 (least-iterated-screens-polish) — VERIFYING
 Plan: 6 of 6
-Status: Executing Phase 14 (5/6 plans complete; Wave 4 next)
-Last activity: 2026-06-12 -- Phase 14 Wave 3 complete
+Status: Phase 14 implementation complete (6/6 plans complete; verification next)
+Last activity: 2026-06-12 -- Phase 14 Wave 4 complete
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 
 1. **Phase 11 — Evaluation engine + seed depth** (EVAL-01..05) — `mix scoria.ui.shots` harness, 9-dim rubric, full-screen seed depth, baseline audit → gap register/fix backlog. **COMPLETE 2026-06-04**
 2. **Phase 12 — Design-system component layer** (DS-01..06) — `ui.ex` table/drawer/modal/form/notebook/skeleton/toast, fix `flash_group`, raw-color drift guard. The enforced token gateway. **COMPLETE 2026-06-04**
 3. **Phase 13 — Orientation spine (IA)** (IA-01..06) — nav active-state fix, third axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, quality-loop threading, honest reserved-name stubs. **COMPLETE 2026-06-12**
-4. **Phase 14 — Least-iterated screens polish** (SCREEN-01, SCREEN-02) — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions; real Dataset Builder index.
+4. **Phase 14 — Least-iterated screens polish** (SCREEN-01, SCREEN-02) — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions; real Dataset Builder index. **IMPLEMENTATION COMPLETE 2026-06-12; VERIFYING**
 5. **Phase 15 — High-traffic screens + evidence adapters** (SCREEN-03, SCREEN-04) — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components → thin notebook adapters.
 6. **Phase 16 — Motion + responsive + theme parity** (MOTION-01..04) — brand-tied motion, focus-visible/a11y, mobile-first md/lg/xl, light+dark parity.
 7. **Phase 17 — Consistency sweep + proof** (PROOF-01..03) — re-run audit, rubric-delta + raw-color → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage.
@@ -120,6 +120,7 @@ Last activity: 2026-06-12 -- Phase 14 Wave 3 complete
 | Phase 13 P13-07 | 6 min | - tasks | - files |
 | Phase 13 P13-08 | 13 min | 2 tasks | 11 files |
 | Phase 14 P03 | 14 min | 2 tasks | 6 files |
+| Phase 14 P06 | 10 min | 2 tasks | 5 files |
 
 ## Operator Next Steps
 
