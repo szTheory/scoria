@@ -245,10 +245,16 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     decoded_html = URI.decode_www_form(html)
 
     assert html =~ "Replay run"
-    assert html =~ "Promote span to dataset"
+    assert html =~ "Promote in Dataset Builder"
     assert html =~ "Open incident"
     assert html =~ "Open prompt"
     assert decoded_html =~ "/scoria/coming/replay-playground?from=run:#{run.id}"
+    assert decoded_html =~ "/scoria/datasets?"
+    assert decoded_html =~ "promote=workflow"
+    assert decoded_html =~ "run_id=#{run.id}"
+    assert decoded_html =~ "step_id=#{step.id}"
+    assert decoded_html =~ "source_variant=original"
+    assert decoded_html =~ "from=run:#{run.id}"
     assert decoded_html =~ "/scoria/incidents?from=run:#{run.id}"
     assert decoded_html =~ "/scoria/prompts/#{prompt.id}/release?from=run:#{run.id}"
 

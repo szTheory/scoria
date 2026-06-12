@@ -129,15 +129,13 @@ defmodule ScoriaWeb.WorkflowLive.Show do
           <a href={replay_run_path(@run, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">
             Replay run
           </a>
-          <button
-            type="button"
-            phx-click="open_promote_next_step"
-            phx-value-step-id={@selected_step_id || ""}
-            disabled={promote_span_disabled?(@selected_step_id, @promotion_context)}
+          <a
+            :if={!promote_span_disabled?(@selected_step_id, %{})}
+            href={workflow_dataset_builder_path(@run, @selected_step_id, @selected_source_variant, assigns[:scoria_base] || "")}
             class="scoria-button scoria-button--primary scoria-button--sm"
           >
-            Promote span to dataset
-          </button>
+            Promote in Dataset Builder
+          </a>
           <a
             :if={@linked_incident}
             href={linked_incident_path(@run, assigns[:scoria_base] || "")}
@@ -503,7 +501,6 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   defp origin_path("prompt", _id, base_path), do: base_path <> "/prompts"
 
   defp promote_span_disabled?(nil, _promotion_context), do: true
-  defp promote_span_disabled?(_step_id, nil), do: true
   defp promote_span_disabled?(_step_id, _promotion_context), do: false
 
   defp replay_run_path(run, base_path) do
@@ -516,6 +513,19 @@ defmodule ScoriaWeb.WorkflowLive.Show do
 
   defp prompt_release_path(prompt_id, run, base_path) do
     "#{base_path}/prompts/#{prompt_id}/release?#{origin_query("run", run.id)}"
+  end
+
+  defp workflow_dataset_builder_path(run, step_id, source_variant, base_path) do
+    query =
+      URI.encode_query([
+        {"promote", "workflow"},
+        {"run_id", run.id},
+        {"step_id", step_id},
+        {"source_variant", source_variant},
+        {"from", "run:#{run.id}"}
+      ])
+
+    "#{base_path}/datasets?#{query}"
   end
 
   defp origin_query(noun, id), do: URI.encode_query([{"from", "#{noun}:#{id}"}])

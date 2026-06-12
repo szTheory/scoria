@@ -1,6 +1,8 @@
 defmodule ScoriaWeb.ReviewQueueLive do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
+  import ScoriaWeb.UI
+
   alias Scoria.Eval
 
   @impl true
@@ -17,8 +19,6 @@ defmodule ScoriaWeb.ReviewQueueLive do
      |> assign(:filters, filters)
      |> assign(:notice, nil)
      |> assign(:selected_candidate_id, Map.get(params, "review_candidate_id"))
-     |> assign(:selected_open_dataset_id, nil)
-     |> assign(:selected_sealed_dataset_id, nil)
      |> refresh_queue()}
   end
 
@@ -30,16 +30,6 @@ defmodule ScoriaWeb.ReviewQueueLive do
   @impl true
   def handle_event("change_filters", %{"filters" => params}, socket) do
     {:noreply, socket |> assign(:filters, params) |> refresh_queue()}
-  end
-
-  @impl true
-  def handle_event("select_open_dataset", %{"dataset-id" => dataset_id}, socket) do
-    {:noreply, assign(socket, :selected_open_dataset_id, parse_id(dataset_id))}
-  end
-
-  @impl true
-  def handle_event("select_sealed_dataset", %{"dataset-id" => dataset_id}, socket) do
-    {:noreply, assign(socket, :selected_sealed_dataset_id, parse_id(dataset_id))}
   end
 
   @impl true
@@ -56,243 +46,149 @@ defmodule ScoriaWeb.ReviewQueueLive do
   end
 
   @impl true
-  def handle_event("promote_candidate", _params, socket) do
-    with %{} = candidate <- socket.assigns.selected_candidate,
-         dataset_id when is_integer(dataset_id) <- socket.assigns.selected_open_dataset_id,
-         {:ok, updated} <-
-           Eval.promote_review_candidate(candidate.id, %{
-             dataset_id: dataset_id,
-             notes: "queue promotion",
-             expected_output: %{}
-           }) do
-      {:noreply,
-       socket
-       |> assign(:notice, "Candidate promoted")
-       |> assign(:selected_candidate, updated)
-       |> refresh_queue(false)}
-    else
-      _ -> {:noreply, assign(socket, :notice, "Select an open dataset first")}
-    end
-  end
-
-  @impl true
-  def handle_event("request_baseline_approval", _params, socket) do
-    with %{} = candidate <- socket.assigns.selected_candidate,
-         dataset_id when is_integer(dataset_id) <- socket.assigns.selected_sealed_dataset_id,
-         {:ok, updated} <-
-           Eval.request_review_candidate_baseline_approval(candidate.id, %{
-             dataset_id: dataset_id,
-             notes: "queue baseline request",
-             expected_output: %{}
-           }) do
-      {:noreply,
-       socket
-       |> assign(:notice, "Baseline approval requested")
-       |> assign(:selected_candidate, updated)
-       |> refresh_queue(false)}
-    else
-      _ -> {:noreply, assign(socket, :notice, "Select a sealed dataset first")}
-    end
-  end
-
-  @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-stone-50 px-6 py-8 text-stone-900">
+    <div class="min-h-screen px-6 py-8">
       <div class="mx-auto max-w-7xl">
         <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p class="text-xs uppercase tracking-[0.24em] text-stone-500">Scoria Reviews</p>
-            <h1 class="text-3xl font-semibold">Review flagged traces</h1>
-            <p class="mt-2 text-sm text-stone-600">Inspect one scored candidate at a time before promoting or dismissing it.</p>
+            <h1 class="text-3xl font-semibold">Review Queue</h1>
+            <p class="mt-2 text-sm">Review flagged traces before they become datasets, baselines, or dismissed noise.</p>
           </div>
-          <a href="/scoria" class="text-sm font-medium text-blue-700 underline">Back to dashboard</a>
+          <a href="/scoria" class="scoria-button scoria-button--ghost scoria-button--sm">Back to dashboard</a>
         </header>
 
         <section class="mb-6 grid gap-4 md:grid-cols-4">
-          <article class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-            <p class="text-xs uppercase tracking-[0.18em] text-stone-500">flagged items</p>
-            <p class="mt-2 text-2xl font-semibold"><%= @summary.total_flagged %></p>
-          </article>
-          <article class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-            <p class="text-xs uppercase tracking-[0.18em] text-stone-500">low quality</p>
-            <p class="mt-2 text-2xl font-semibold"><%= @summary.low_quality_count %></p>
-          </article>
-          <article class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-            <p class="text-xs uppercase tracking-[0.18em] text-stone-500">policy triggered</p>
-            <p class="mt-2 text-2xl font-semibold"><%= @summary.policy_triggered_count %></p>
-          </article>
-          <article class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-            <p class="text-xs uppercase tracking-[0.18em] text-stone-500">promotion candidate</p>
-            <p class="mt-2 text-2xl font-semibold"><%= @summary.promotion_candidate_count %></p>
-          </article>
+          <.metric label="Flagged items" value={to_string(@summary.total_flagged)} />
+          <.metric label="Low quality" value={to_string(@summary.low_quality_count)} />
+          <.metric label="Policy triggered" value={to_string(@summary.policy_triggered_count)} />
+          <.metric label="Promotion candidate" value={to_string(@summary.promotion_candidate_count)} />
         </section>
 
         <%= if @notice do %>
-          <section class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 shadow-sm">
+          <section class="mb-6 scoria-panel text-sm">
             <%= @notice %>
           </section>
         <% end %>
 
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]">
-          <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-            <form phx-change="change_filters" class="mb-4 grid gap-3 md:grid-cols-3">
-              <label class="text-sm text-stone-700">
-                Review state
-                <select name="filters[review_status]" class="mt-1 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm">
-                  <option value="pending" selected={@filters["review_status"] == "pending"}>needs review</option>
-                  <option value="" selected={@filters["review_status"] in [nil, ""]}>all active</option>
-                  <option value="in_review" selected={@filters["review_status"] == "in_review"}>in review</option>
-                </select>
-              </label>
-              <label class="text-sm text-stone-700">
-                Severity
-                <select name="filters[severity]" class="mt-1 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm">
-                  <option value="" selected={@filters["severity"] in [nil, ""]}>all severities</option>
-                  <option value="policy_triggered" selected={@filters["severity"] == "policy_triggered"}>policy triggered</option>
-                  <option value="low_quality" selected={@filters["severity"] == "low_quality"}>low quality</option>
-                  <option value="promotion_candidate" selected={@filters["severity"] == "promotion_candidate"}>promotion candidate</option>
-                </select>
-              </label>
-              <label class="text-sm text-stone-700">
-                Promotion state
-                <select name="filters[promotion_state]" class="mt-1 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm">
-                  <option value="" selected={@filters["promotion_state"] in [nil, ""]}>all states</option>
-                  <option value="promotion_candidate" selected={@filters["promotion_state"] == "promotion_candidate"}>promotion candidate</option>
-                  <option value="approval_requested" selected={@filters["promotion_state"] == "approval_requested"}>approval requested</option>
-                </select>
-              </label>
-            </form>
+          <.panel>
+            <:title>Flagged traces</:title>
+            <.table id="review-queue" rows={@queue_rows} density={:compact}>
+              <:filter>
+                <form phx-change="change_filters" class="grid gap-3 md:grid-cols-3">
+                  <.field id="review-status-filter" label="Review state">
+                    <select id="review-status-filter" name="filters[review_status]" class="scoria-input">
+                      <option value="pending" selected={@filters["review_status"] == "pending"}>needs review</option>
+                      <option value="" selected={@filters["review_status"] in [nil, ""]}>all active</option>
+                      <option value="in_review" selected={@filters["review_status"] == "in_review"}>in review</option>
+                    </select>
+                  </.field>
+                  <.field id="severity-filter" label="Severity">
+                    <select id="severity-filter" name="filters[severity]" class="scoria-input">
+                      <option value="" selected={@filters["severity"] in [nil, ""]}>all severities</option>
+                      <option value="policy_triggered" selected={@filters["severity"] == "policy_triggered"}>policy triggered</option>
+                      <option value="low_quality" selected={@filters["severity"] == "low_quality"}>low quality</option>
+                      <option value="promotion_candidate" selected={@filters["severity"] == "promotion_candidate"}>promotion candidate</option>
+                    </select>
+                  </.field>
+                  <.field id="promotion-state-filter" label="Promotion state">
+                    <select id="promotion-state-filter" name="filters[promotion_state]" class="scoria-input">
+                      <option value="" selected={@filters["promotion_state"] in [nil, ""]}>all states</option>
+                      <option value="promotion_candidate" selected={@filters["promotion_state"] == "promotion_candidate"}>promotion candidate</option>
+                      <option value="approval_requested" selected={@filters["promotion_state"] == "approval_requested"}>approval requested</option>
+                    </select>
+                  </.field>
+                </form>
+              </:filter>
+              <:col :let={row} label="Candidate">
+                <p class="font-semibold"><%= row.rationale %></p>
+                <p class="mt-1 text-xs">
+                  trace <span class="font-mono"><%= row.trace_id %></span> · run <span class="font-mono"><%= row.workflow_run_id %></span>
+                </p>
+              </:col>
+              <:col :let={row} label="Severity">
+                <.badge tone={tone(row.severity)} label={status_label(row.severity)} />
+              </:col>
+              <:col :let={row} label="Score">
+                <.badge tone={tone(row.score_status)} label={status_label(row.score_status || row.status)} />
+              </:col>
+              <:col :let={row} label="Sample">
+                <%= row.sample_reason || row.status %>
+              </:col>
+              <:col :let={row} label="Promotion">
+                <%= promotion_label(row) %>
+              </:col>
+              <:action :let={row}>
+                <.button
+                  type="button"
+                  variant={if(@selected_candidate_id == row.id, do: :primary, else: :ghost)}
+                  size={:sm}
+                  phx-click="select_candidate"
+                  phx-value-id={row.id}
+                  aria-current={@selected_candidate_id == row.id && "true"}
+                >
+                  <%= if @selected_candidate_id == row.id, do: "Selected", else: "Select" %>
+                </.button>
+              </:action>
+              <:empty>
+                <.empty_state title="No flagged traces for this filter set">
+                  Production traces that fail scoring, trigger policy, or look promotion-ready will appear here.
+                </.empty_state>
+              </:empty>
+            </.table>
+          </.panel>
 
-            <div :if={@queue_rows == []} class="rounded-2xl border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600">
-              <h2 class="text-lg font-semibold text-stone-900">No traces need review</h2>
-              <p class="mt-2">Scoria has not produced any low-quality, policy-triggered, or promotion-ready traces for this filter set yet.</p>
-            </div>
-
-            <div :if={@queue_rows != []} class="space-y-3">
-              <button
-                :for={row <- @queue_rows}
-                type="button"
-                phx-click="select_candidate"
-                phx-value-id={row.id}
-                class={[
-                  "w-full rounded-2xl border p-4 text-left shadow-sm",
-                  if(@selected_candidate_id == row.id,
-                    do: "border-blue-300 bg-blue-50",
-                    else: "border-stone-200 bg-white"
-                  )
-                ]}
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-sm font-semibold text-stone-900"><%= row.rationale %></p>
-                    <p class="mt-1 text-xs uppercase tracking-[0.18em] text-stone-500"><%= row.severity %></p>
-                  </div>
-                  <span class="rounded-full border border-stone-300 bg-white px-3 py-1 text-xs font-semibold"><%= row.score_status || row.status %></span>
-                </div>
-                <div class="mt-3 flex flex-wrap gap-2 text-xs text-stone-600">
-                  <span>trace <span class="font-mono"><%= row.trace_id %></span></span>
-                  <span>run <span class="font-mono"><%= row.workflow_run_id %></span></span>
-                  <span><%= row.sample_reason || row.status %></span>
-                </div>
-              </button>
-            </div>
-          </section>
-
-          <section class="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <.panel>
             <%= if @selected_candidate do %>
-              <p class="text-xs uppercase tracking-[0.18em] text-stone-500">Detail rail</p>
-              <h2 class="mt-2 text-2xl font-semibold text-stone-900"><%= @selected_candidate.rationale %></h2>
-              <div class="mt-4 flex flex-wrap gap-2 text-xs text-stone-700">
-                <span class="rounded-full border border-stone-300 bg-stone-50 px-3 py-1"><%= @selected_candidate.severity %></span>
-                <span class="rounded-full border border-stone-300 bg-stone-50 px-3 py-1"><%= @selected_candidate.status %></span>
-                <span class="rounded-full border border-stone-300 bg-stone-50 px-3 py-1">score <%= @selected_candidate.score || "n/a" %></span>
+              <p class="scoria-eyebrow">Detail rail</p>
+              <h2 class="mt-2 text-2xl font-semibold"><%= @selected_candidate.rationale %></h2>
+              <div class="mt-4 flex flex-wrap gap-2 text-xs">
+                <.badge tone={tone(@selected_candidate.severity)} label={status_label(@selected_candidate.severity)} />
+                <.badge tone={tone(@selected_candidate.status)} label={status_label(@selected_candidate.status)} />
+                <.badge tone={:neutral} label={"score #{@selected_candidate.score || "n/a"}"} />
               </div>
 
-              <dl class="mt-6 grid gap-4 text-sm text-stone-700">
-                <div class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-                  <dt class="text-xs uppercase tracking-[0.18em] text-stone-500">Scoring provenance</dt>
+              <dl class="mt-6 grid gap-4 text-sm">
+                <div class="scoria-panel">
+                  <dt class="scoria-eyebrow">Scoring provenance</dt>
                   <dd class="mt-2"><%= @selected_candidate.scorer_kind %> · <%= @selected_candidate.scorer_version %></dd>
                 </div>
-                <div class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-                  <dt class="text-xs uppercase tracking-[0.18em] text-stone-500">Sampling provenance</dt>
+                <div class="scoria-panel">
+                  <dt class="scoria-eyebrow">Sampling provenance</dt>
                   <dd class="mt-2 font-mono text-xs"><%= inspect(@selected_candidate.sampling_provenance) %></dd>
                 </div>
               </dl>
 
               <div class="mt-6 flex flex-wrap gap-3">
-                <a href={review_run_path(@selected_candidate, assigns[:scoria_base] || "")} class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Open run</a>
-                <a href={review_runtime_path(@selected_candidate, assigns[:scoria_base] || "")} class="rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">View runtime context</a>
-              </div>
-
-              <div class="mt-6 grid gap-4 lg:grid-cols-2">
-                <section class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-                  <p class="text-xs uppercase tracking-[0.18em] text-stone-500">Open draft datasets</p>
-                  <div class="mt-3 space-y-2">
-                    <button
-                      :for={dataset <- @open_datasets}
-                      type="button"
-                      phx-click="select_open_dataset"
-                      phx-value-dataset-id={dataset.id}
-                      class={[
-                        "w-full rounded-xl border px-3 py-2 text-left text-sm",
-                        if(@selected_open_dataset_id == dataset.id,
-                          do: "border-blue-300 bg-white text-blue-700",
-                          else: "border-stone-300 bg-white text-stone-700"
-                        )
-                      ]}
-                    >
-                      <%= dataset.name %> <span class="font-mono">v<%= dataset.version %></span>
-                    </button>
-                  </div>
-                </section>
-
-                <section class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                  <p class="text-xs uppercase tracking-[0.18em] text-amber-700">Sealed baseline</p>
-                  <div class="mt-3 space-y-2">
-                    <button
-                      :for={dataset <- @sealed_datasets}
-                      type="button"
-                      phx-click="select_sealed_dataset"
-                      phx-value-dataset-id={dataset.id}
-                      class={[
-                        "w-full rounded-xl border px-3 py-2 text-left text-sm",
-                        if(@selected_sealed_dataset_id == dataset.id,
-                          do: "border-amber-300 bg-white text-amber-800",
-                          else: "border-amber-200 bg-white text-stone-700"
-                        )
-                      ]}
-                    >
-                      <%= dataset.name %> <span class="font-mono">v<%= dataset.version %></span>
-                    </button>
-                  </div>
-                </section>
+                <a href={review_run_path(@selected_candidate, assigns[:scoria_base] || "")} class="scoria-button scoria-button--primary scoria-button--sm">Open run</a>
+                <a href={review_runtime_path(@selected_candidate, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">View runtime context</a>
               </div>
 
               <div class="mt-6 flex flex-wrap gap-3">
-                <button type="button" phx-click="dismiss_candidate" phx-disable-with="Dismissing candidate..." class="rounded-xl border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700">
+                <.button type="button" phx-click="dismiss_candidate" phx-disable-with="Dismissing candidate..." variant={:danger} size={:sm}>
                   Dismiss candidate
-                </button>
-                <button type="button" phx-click="promote_candidate" phx-disable-with="Promoting to dataset..." class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
-                  Promote to dataset
-                </button>
-                <button type="button" phx-click="request_baseline_approval" phx-disable-with="Requesting baseline approval..." class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white">
-                  Request baseline approval
-                </button>
+                </.button>
+                <a href={review_dataset_builder_path(@selected_candidate, assigns[:scoria_base] || "")} class="scoria-button scoria-button--primary scoria-button--sm">
+                  Promote in Dataset Builder
+                </a>
+                <a href={review_dataset_builder_path(@selected_candidate, assigns[:scoria_base] || "", "baseline")} class="scoria-button scoria-button--ghost scoria-button--sm">
+                  Request baseline approval in Dataset Builder
+                </a>
               </div>
 
               <%= if @selected_candidate.dataset_ref do %>
-                <p class="mt-4 text-sm text-emerald-700">
+                <p class="mt-4 text-sm">
                   Promoted to <span class="font-semibold"><%= @selected_candidate.dataset_ref["dataset_name"] %></span>
                   <span class="font-mono">v<%= @selected_candidate.dataset_ref["dataset_version"] %></span>.
                 </p>
               <% end %>
             <% else %>
-              <div class="rounded-2xl border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600">
+              <div class="scoria-empty">
                 Select a queue row to inspect its evidence and actions.
               </div>
             <% end %>
-          </section>
+          </.panel>
         </div>
       </div>
     </div>
@@ -302,9 +198,6 @@ defmodule ScoriaWeb.ReviewQueueLive do
   defp refresh_queue(socket, reset_selection \\ true) do
     rows = Eval.list_review_queue(socket.assigns.filters)
     summary = Eval.summarize_review_queue(socket.assigns.filters)
-
-    {open_datasets, sealed_datasets} =
-      Eval.list_datasets() |> Enum.split_with(&(&1.state == :open))
 
     selected_candidate_id =
       if reset_selection do
@@ -316,19 +209,7 @@ defmodule ScoriaWeb.ReviewQueueLive do
     socket
     |> assign(:queue_rows, rows)
     |> assign(:summary, summary)
-    |> assign(:open_datasets, open_datasets)
-    |> assign(:sealed_datasets, sealed_datasets)
     |> assign(:selected_candidate_id, selected_candidate_id)
-    |> assign(
-      :selected_open_dataset_id,
-      socket.assigns.selected_open_dataset_id ||
-        (List.first(open_datasets) && List.first(open_datasets).id)
-    )
-    |> assign(
-      :selected_sealed_dataset_id,
-      socket.assigns.selected_sealed_dataset_id ||
-        (List.first(sealed_datasets) && List.first(sealed_datasets).id)
-    )
     |> refresh_selection()
   end
 
@@ -339,11 +220,6 @@ defmodule ScoriaWeb.ReviewQueueLive do
       Eval.get_review_candidate(socket.assigns.selected_candidate_id)
     )
   end
-
-  defp parse_id(nil), do: nil
-  defp parse_id(""), do: nil
-  defp parse_id(value) when is_integer(value), do: value
-  defp parse_id(value) when is_binary(value), do: String.to_integer(value)
 
   defp review_run_path(candidate, base) do
     query =
@@ -369,6 +245,21 @@ defmodule ScoriaWeb.ReviewQueueLive do
 
   defp runtime_query_param(%{runtime_id: nil}), do: nil
   defp runtime_query_param(%{runtime_id: runtime_id}), do: {"runtime", runtime_id}
+
+  defp review_dataset_builder_path(candidate, base, intent \\ "promotion") do
+    query =
+      URI.encode_query([
+        {"promote", "review"},
+        {"review_candidate_id", candidate.id},
+        {"intent", intent},
+        {"from", review_origin(candidate)}
+      ])
+
+    "#{base}/datasets?#{query}"
+  end
+
+  defp promotion_label(%{promotion_state: state}) when is_binary(state), do: status_label(state)
+  defp promotion_label(%{status: status}), do: status_label(status)
 
   defp review_origin(candidate), do: "review:#{candidate.id}"
   defp home_path(""), do: "/"

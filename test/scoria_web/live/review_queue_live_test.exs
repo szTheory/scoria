@@ -87,17 +87,21 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
 
     {:ok, view, html} = live(test_conn(), "/scoria/reviews")
 
-    assert html =~ "Review flagged traces"
+    assert html =~ "Review Queue"
+
+    assert html =~
+             "Review flagged traces before they become datasets, baselines, or dismissed noise."
+
     assert html =~ "policy triggered"
     assert html =~ first.score_explanation
     assert html =~ "Dismiss candidate"
-    assert html =~ "Promote to dataset"
-    assert html =~ "Request baseline approval"
+    assert html =~ "Promote in Dataset Builder"
+    assert html =~ "Request baseline approval in Dataset Builder"
     assert html =~ "phx-disable-with=\"Dismissing candidate...\""
-    assert html =~ "phx-disable-with=\"Promoting to dataset...\""
-    assert html =~ "phx-disable-with=\"Requesting baseline approval...\""
-    assert html =~ "Open draft datasets"
-    assert html =~ "Sealed baseline"
+    refute html =~ "phx-click=\"promote_candidate\""
+    refute html =~ "phx-click=\"request_baseline_approval\""
+    refute html =~ "Open draft datasets"
+    refute html =~ "Sealed baseline"
     assert html =~ "Open run"
     refute html =~ "Open workflow"
 
@@ -112,16 +116,32 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     assert URI.decode_www_form(open_run_href) ==
              "/scoria/workflows/#{second.workflow_run_id}?review_candidate_id=#{second.id}&from=review:#{second.id}"
 
+    promote_href = link_href(html, "Promote in Dataset Builder")
+
+    assert URI.decode_www_form(promote_href) ==
+             "/scoria/datasets?promote=review&review_candidate_id=#{second.id}&intent=promotion&from=review:#{second.id}"
+
+    baseline_href = link_href(html, "Request baseline approval in Dataset Builder")
+
+    assert URI.decode_www_form(baseline_href) ==
+             "/scoria/datasets?promote=review&review_candidate_id=#{second.id}&intent=baseline&from=review:#{second.id}"
+
     assert html =~ "/scoria?runtime="
-    assert html =~ "Inspect one scored candidate at a time before promoting or dismissing it."
+    assert html =~ ~s(id="review-queue")
+    assert html =~ "Candidate"
+    assert html =~ "Severity"
+    assert html =~ "Score"
+    assert html =~ "Sample"
+    assert html =~ "Promotion"
+    assert html =~ "Action"
+    assert html =~ "Selected"
+    assert html =~ ~s(aria-current="true")
 
     render_async(view)
   end
 
-  test "queue actions dismiss, promote, and request baseline approval from the detail rail", %{
-    open_dataset: open_dataset,
-    sealed_dataset: sealed_dataset
-  } do
+  test "queue actions dismiss from the detail rail and route promotion ownership elsewhere",
+       _ctx do
     candidate =
       candidate_fixture(%{
         status: "promotion_candidate",
@@ -145,38 +165,19 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     |> element("button[phx-click='select_candidate'][phx-value-id='#{candidate.id}']")
     |> render_click()
 
-    promoted_html =
-      view
-      |> element("button[phx-click='promote_candidate']")
-      |> render_click()
-
-    assert promoted_html =~ "Candidate promoted"
-    assert promoted_html =~ "Promote from queue"
-    assert promoted_html =~ "Draft QA"
-    assert promoted_html =~ "Promoted to"
-    assert [_item] = Eval.list_dataset_items(open_dataset.id)
+    selected_html = render(view)
+    assert selected_html =~ "Promote in Dataset Builder"
+    refute selected_html =~ "Promote to dataset"
+    refute selected_html =~ "phx-click=\"promote_candidate\""
 
     view
     |> element("button[phx-click='select_candidate'][phx-value-id='#{approval_candidate.id}']")
     |> render_click()
 
-    view
-    |> element(
-      "button[phx-click='select_sealed_dataset'][phx-value-dataset-id='#{sealed_dataset.id}']"
-    )
-    |> render_click()
-
-    approval_html =
-      view
-      |> element("button[phx-click='request_baseline_approval']")
-      |> render_click()
-
-    assert approval_html =~ "Baseline approval requested"
-    assert approval_html =~ "Request approval"
-    assert approval_html =~ "Sealed baseline"
-    assert approval_html =~ "Request baseline approval"
-    assert Repo.aggregate(Approval, :count) == 1
-    assert [] == Eval.list_dataset_items(sealed_dataset.id)
+    approval_html = render(view)
+    assert approval_html =~ "Request baseline approval in Dataset Builder"
+    refute approval_html =~ "phx-click=\"request_baseline_approval\""
+    assert Repo.aggregate(Approval, :count) == 0
 
     view
     |> element("button[phx-click='select_candidate'][phx-value-id='#{dismiss_candidate.id}']")
