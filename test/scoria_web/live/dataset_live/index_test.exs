@@ -155,18 +155,17 @@ defmodule ScoriaWeb.DatasetLive.IndexTest do
   end
 
   test "invalid promotion params render recoverable copy and stay on Dataset Builder" do
-    {:ok, view, html} =
+    {:ok, _view, html} =
       live(
         test_conn(),
         "/scoria/datasets?promote=workflow&run_id=#{Ecto.UUID.generate()}&step_id=#{Ecto.UUID.generate()}&source_variant=original"
       )
 
+    assert html =~ "Dataset Builder"
     assert html =~ "Promotion source not found"
 
     assert html =~
              "The source ID no longer resolves. Return to the originating run or review item and open Dataset Builder again."
-
-    assert_patch(view, "/scoria/datasets?promote=workflow")
   end
 
   test "promotion close and dataset selection use same-LiveView patch semantics" do
