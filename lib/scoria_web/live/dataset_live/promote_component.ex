@@ -5,6 +5,7 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
   import ScoriaWeb.UI
 
   alias Scoria.Eval
+  alias Scoria.Eval.DatasetPromotion
   alias Scoria.Workflows
 
   @impl true
@@ -81,7 +82,7 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
          {:ok, expected_output} <- decode_expected_output(get_field(changeset, :expected_output)),
          dataset_id when is_integer(dataset_id) <- get_field(changeset, :dataset_id),
          promotion_attrs <-
-           Eval.DatasetPromotion.build_promotion_attrs(
+           DatasetPromotion.build_promotion_attrs(
              socket.assigns.promotion_context,
              dataset_id,
              get_field(changeset, :notes),
@@ -143,7 +144,7 @@ defmodule ScoriaWeb.DatasetLive.PromoteComponent do
          %{} = dataset <- baseline_target,
          {:ok, expected_output} <- decode_expected_output(get_field(changeset, :expected_output)),
          request_attrs <-
-           Eval.DatasetPromotion.build_promotion_attrs(
+           DatasetPromotion.build_promotion_attrs(
              socket.assigns.promotion_context,
              dataset.id,
              get_field(changeset, :notes),

@@ -9,7 +9,6 @@ defmodule ScoriaWeb.DatasetLive.Index do
 
   alias Scoria.Eval
   alias Scoria.Runtime
-  alias ScoriaWeb.DatasetLive.PromoteComponent
 
   @promotion_modes ~w(review workflow)
   @workflow_source_variants ~w(original replay)
@@ -143,7 +142,7 @@ defmodule ScoriaWeb.DatasetLive.Index do
         <p>{@promotion_source.body}</p>
       </.panel>
       <.live_component
-        module={PromoteComponent}
+        module={ScoriaWeb.DatasetLive.PromoteComponent}
         id="dataset-builder-promote"
         promotion_context={@promotion_context}
         scoria_base={assigns[:scoria_base] || ""}
