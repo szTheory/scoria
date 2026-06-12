@@ -159,6 +159,14 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     # Click edit
     html = render_click(view, "edit", %{"id" => spec.id})
     assert html =~ "Edit Rubric: Helpfulness"
+    assert html =~ "scoria-form-section"
+    assert html =~ "scoria-field"
+
+    html = render_click(view, "cancel_edit")
+    refute html =~ "Edit Rubric:"
+
+    html = render_click(view, "edit", %{"id" => spec.id})
+    assert html =~ "Edit Rubric: Helpfulness"
 
     # Submit form
     html =
@@ -181,6 +189,62 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     assert new_spec.name == "Helpfulness V2"
     assert new_spec.version == 2
     assert new_spec.entity_id == spec.entity_id
+  end
+
+  test "renders invalid rubric JSON as visible field error text" do
+    {:ok, dataset} = Scoria.Eval.create_dataset(%{name: "Validation Dataset", state: :sealed})
+
+    {:ok, spec} =
+      Scoria.Eval.create_eval_spec(%{
+        name: "Validation Spec",
+        description: "Checks invalid rubric JSON",
+        dataset_id: dataset.id,
+        dataset_version: dataset.version,
+        eval_mode: :offline_replay,
+        subject: %{
+          subject_kind: :prompt_template,
+          prompt_entity_id: Ecto.UUID.generate(),
+          prompt_template_id: Ecto.UUID.generate(),
+          prompt_version: 1
+        },
+        scorers: [
+          %{
+            metric_key: "accuracy",
+            scorer_kind: :llm_judge,
+            judge_prompt_template_id: Ecto.UUID.generate(),
+            judge_prompt_version: 1,
+            judge_provider: "openai",
+            judge_model: "gpt-4o-mini",
+            weight: 1.0
+          }
+        ],
+        threshold_policy: %{
+          pass_rate_gte: 0.8,
+          mean_score_gte: 0.8,
+          max_latency_ms: 100
+        }
+      })
+
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
+
+    {:ok, view, _html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+
+    render_click(view, "edit", %{"id" => spec.id})
+
+    html =
+      render_submit(view, "save", %{
+        "eval_spec" => %{
+          "name" => "Validation Spec",
+          "description" => "Checks invalid rubric JSON",
+          "rubric" => "{not valid json"
+        }
+      })
+
+    assert html =~ "scoria-field__error"
+    assert html =~ "is invalid"
   end
 
   test "renders eval result links to prompt release and regressed source runs" do
