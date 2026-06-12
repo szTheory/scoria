@@ -115,7 +115,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   - [x] 13-01-PLAN.md — Shared IA UI primitives for attention cards, object headers, command palette, and stubs
   - [x] 13-02-PLAN.md — DashboardNav grouped SSOT, Home relabel, active-state fix, and Soon nav metadata
   - [x] 13-03-PLAN.md — Shared coming-soon route and honest reserved capability stub pages
-  - [ ] 13-04-PLAN.md — Status Home at `/` with attention strip and preserved live run stream
+  - [x] 13-04-PLAN.md — Status Home at `/` with attention strip and preserved live run stream
   - [ ] 13-05-PLAN.md — Object-aware headers and allowlisted origin context on object pages
   - [ ] 13-06-PLAN.md — Command palette, recents, keyboard shortcuts, and manual browser checkpoint
   - [ ] 13-07-PLAN.md — Incident and Review Queue ingress threading into run evidence
@@ -171,7 +171,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 |-------|-----------|----------------|--------|-----------|
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete    | 2026-06-04 |
-| 13. Orientation spine (IA) | v3.0 | 3/8 | In Progress|  |
+| 13. Orientation spine (IA) | v3.0 | 4/8 | In Progress|  |
 | 14. Least-iterated screens polish | v3.0 | 0/? | Not started | - |
 | 15. High-traffic screens + evidence adapters | v3.0 | 0/? | Not started | - |
 | 16. Motion + responsive + theme parity | v3.0 | 0/? | Not started | - |
