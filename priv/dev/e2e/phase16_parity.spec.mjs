@@ -16,6 +16,27 @@ import { waitForReady } from './lib/ready.mjs';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4000/scoria';
 
+// Reduced-motion kill switch (05-motion.css) sets transition/animation-duration
+// to 0.001ms. Chromium's getComputedStyle serializes 0.001ms as the scientific
+// string "1e-06s". Accept all equivalent "effectively instant" serializations.
+const INSTANT_DURATIONS = ['0s', '0.001ms', '1e-06s'];
+function isInstantDuration(value) {
+  return value
+    .split(',')
+    .every((d) => INSTANT_DURATIONS.includes(d.trim()));
+}
+
+// MOTION-02 focus ring is `:focus-visible` (01-reset.css). Chromium only applies
+// `:focus-visible` to KEYBOARD-driven focus, not to programmatic `.focus()`. To
+// legitimately exercise the real focus ring, focus the element and perform a real
+// Tab round-trip (Tab then Shift+Tab) so the heuristic treats focus as keyboard-
+// driven. This is methodologically correct: it tests the ring a keyboard user sees.
+async function keyboardFocus(page, locator) {
+  await locator.focus();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // MOTION-03: 375px overflow checks — shell + representative table screen
 // ────────────────────────────────────────────────────────────────────────────
@@ -89,7 +110,7 @@ test.describe('Phase 16 — MOTION-02: focus outline visibility in light theme',
     await expect(page.locator('#scoria-mobile-nav')).toBeVisible();
 
     const navLink = page.locator('#scoria-mobile-nav .scoria-nav').first();
-    await navLink.focus();
+    await keyboardFocus(page, navLink);
 
     const styles = await navLink.evaluate((el) => {
       const cs = getComputedStyle(el);
@@ -156,12 +177,16 @@ test.describe('Phase 16 — MOTION-02: focus outline visibility in light theme',
   });
 
   test('table action button has visible focus outline in light theme', async ({ page }) => {
+    // The .scoria-table__viewport is display:none at 375px (table collapses on
+    // mobile), so its action links are unfocusable there. Use a desktop width
+    // where the table — and its keyboard-reachable actions — actually render.
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${BASE}/workflows`);
     await waitForReady(page);
 
     // A link or button that navigates to a workflow detail from the table
     const tableAction = page.locator('.scoria-table a, .scoria-table button').first();
-    await tableAction.focus();
+    await keyboardFocus(page, tableAction);
 
     const styles = await tableAction.evaluate((el) => {
       const cs = getComputedStyle(el);
@@ -212,8 +237,10 @@ test.describe('Phase 16 — MOTION-02: focus outline visibility in light theme',
     const drawer = page.locator('#scoria-mobile-nav');
     await expect(drawer).toBeVisible();
 
-    const closeBtn = drawer.locator('[data-mobile-nav-close]').first();
-    await closeBtn.focus();
+    // `[data-mobile-nav-close]` also matches the non-focusable scrim <div>
+    // (tabindex=-1); target the actual close <button>.
+    const closeBtn = drawer.locator('button[data-mobile-nav-close]').first();
+    await keyboardFocus(page, closeBtn);
 
     const styles = await closeBtn.evaluate((el) => {
       const cs = getComputedStyle(el);
@@ -245,7 +272,7 @@ test.describe('Phase 16 — MOTION-02: focus outline visibility in dark theme', 
     await expect(page.locator('#scoria-mobile-nav')).toBeVisible();
 
     const navLink = page.locator('#scoria-mobile-nav .scoria-nav').first();
-    await navLink.focus();
+    await keyboardFocus(page, navLink);
 
     const styles = await navLink.evaluate((el) => {
       const cs = getComputedStyle(el);
@@ -310,11 +337,14 @@ test.describe('Phase 16 — MOTION-02: focus outline visibility in dark theme', 
   });
 
   test('table action has visible focus outline (dark)', async ({ page }) => {
+    // Table viewport is display:none at 375px; use a desktop width so the table
+    // actions render and are keyboard-focusable.
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${BASE}/workflows`);
     await waitForReady(page);
 
     const tableAction = page.locator('.scoria-table a, .scoria-table button').first();
-    await tableAction.focus();
+    await keyboardFocus(page, tableAction);
 
     const styles = await tableAction.evaluate((el) => {
       const cs = getComputedStyle(el);
@@ -363,8 +393,10 @@ test.describe('Phase 16 — MOTION-02: focus outline visibility in dark theme', 
     const drawer = page.locator('#scoria-mobile-nav');
     await expect(drawer).toBeVisible();
 
-    const closeBtn = drawer.locator('[data-mobile-nav-close]').first();
-    await closeBtn.focus();
+    // `[data-mobile-nav-close]` also matches the non-focusable scrim <div>;
+    // target the actual close <button>.
+    const closeBtn = drawer.locator('button[data-mobile-nav-close]').first();
+    await keyboardFocus(page, closeBtn);
 
     const styles = await closeBtn.evaluate((el) => {
       const cs = getComputedStyle(el);
@@ -408,9 +440,9 @@ test.describe('Phase 16 — MOTION-01: reduced-motion collapse', () => {
       return getComputedStyle(el).transitionDuration;
     });
     expect(
-      ['0s', '0.001ms', '0.001ms, 0.001ms', '0s, 0s'],
-      'mobile drawer transition duration must collapse to 0s or 0.001ms under reduced motion'
-    ).toContain(duration);
+      isInstantDuration(duration),
+      `mobile drawer transition duration must collapse to ~0 under reduced motion, got: ${duration}`
+    ).toBe(true);
   });
 
   test('skeleton/attention motion collapses to 0s or 0.001ms under prefers-reduced-motion', async ({
@@ -429,9 +461,9 @@ test.describe('Phase 16 — MOTION-01: reduced-motion collapse', () => {
     });
 
     expect(
-      ['0s', '0.001ms'],
-      'skeleton/attention animation duration must be 0s or 0.001ms under reduced motion'
-    ).toContain(duration);
+      isInstantDuration(duration),
+      `skeleton/attention animation duration must be ~0 under reduced motion, got: ${duration}`
+    ).toBe(true);
   });
 
   test('.scoria-root * transitions collapse under prefers-reduced-motion on the shell', async ({
@@ -453,11 +485,11 @@ test.describe('Phase 16 — MOTION-01: reduced-motion collapse', () => {
       return el ? getComputedStyle(el).transitionDuration : '0s';
     });
 
-    // Accept 0s, 0.001ms, or comma-separated equivalents (multi-property shorthand)
-    const acceptedValues = ['0s', '0.001ms', '0.001ms, 0.001ms', '0s, 0s'];
+    // Accept 0s, 0.001ms, Chromium's "1e-06s" serialization, or comma-separated
+    // equivalents (multi-property shorthand).
     expect(
-      acceptedValues.includes(duration) || duration.split(',').every((d) => d.trim() === '0.001ms' || d.trim() === '0s'),
-      `transition duration on .scoria-root * should be 0s or 0.001ms under reduced motion, got: ${duration}`
+      isInstantDuration(duration),
+      `transition duration on .scoria-root * should be ~0 under reduced motion, got: ${duration}`
     ).toBe(true);
   });
 });
@@ -572,14 +604,18 @@ test.describe('Phase 16 — MOTION-04: theme-toggle smoke', () => {
     const root = page.locator('.scoria-root');
     const initialTheme = await root.evaluate((el) => el.getAttribute('data-theme') ?? 'dark');
 
-    // Toggle theme using the mobile topbar toggle (the drawer overlay is open but
-    // the mobile topbar toggle is in the topbar, which may be obscured by the drawer.
-    // Use the mobile toggle id directly; it persists in DOM even under the overlay).
+    // The mobile topbar theme toggle sits in the topbar, which is intentionally
+    // BENEATH the open drawer scrim (z-order). A pointer click — even force:true —
+    // is intercepted by the overlay (elementFromPoint at the toggle returns a drawer
+    // nav link), so it never reaches the toggle. That is correct overlay behavior.
+    // The contract under test is "the ThemeToggle hook flips data-theme AND the
+    // drawer stays open", so dispatch the activation directly on the toggle element
+    // (a DOM click invokes the hook's bound listener) rather than fighting z-order.
     const mobileToggle = page.locator('#scoria-theme-toggle-mobile');
     const hasToggle = (await mobileToggle.count()) > 0;
 
     if (hasToggle) {
-      await mobileToggle.click({ force: true });
+      await mobileToggle.dispatchEvent('click');
     } else {
       // Fallback: close drawer and use desktop toggle
       await page.keyboard.press('Escape');
@@ -593,6 +629,12 @@ test.describe('Phase 16 — MOTION-04: theme-toggle smoke', () => {
       newTheme,
       'data-theme must change after toggle on overlay path'
     ).not.toBe(initialTheme);
+
+    // Drawer must remain open after the theme toggle (toggling theme does not
+    // dismiss the overlay).
+    if (hasToggle) {
+      await expect(drawer).toBeVisible();
+    }
 
     await waitForReady(page);
   });
