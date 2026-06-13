@@ -175,9 +175,9 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   2. Before/after contact sheets document the iteration as a basis for future passes.
   3. `docs/MAINTAINERS.md` documents the design-system component catalog and how to run the screenshot harness.
 **Plans**: 3 plans
-  - [ ] 17-01-PLAN.md — Capture final shots + re-run critique + author gap_register_final.md (PROOF-01)
+  - [x] 17-01-PLAN.md — Capture final shots + re-run critique + author gap_register_final.md (PROOF-01)
   - [ ] 17-02-PLAN.md — Contact-sheet generator + .gitignore + contact_sheet_index.md + MAINTAINERS command (PROOF-02)
-  - [ ] 17-03-PLAN.md — ui.ex @doc backfill + mix docs catalog + MAINTAINERS catalog section (PROOF-03)
+  - [x] 17-03-PLAN.md — ui.ex @doc backfill + mix docs catalog + MAINTAINERS catalog section (PROOF-03)
 **UI hint**: yes
 
 ## Progress
@@ -190,7 +190,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | 14. Least-iterated screens polish | v3.0 | 5/6 | In Progress|  |
 | 15. High-traffic screens + evidence adapters | v3.0 | 5/5 | Complete    | 2026-06-13 |
 | 16. Motion + responsive + theme parity | v3.0 | 6/6 | Complete    | 2026-06-13 |
-| 17. Consistency sweep + proof | v3.0 | 0/? | Not started | - |
+| 17. Consistency sweep + proof | v3.0 | 2/3 | In Progress|  |
 | 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete | 2026-06-11 |
 | 19. Logo divergence + user choice | v2.17 | 3/3 | Complete | 2026-06-11 |
 | 20. Logo convergence — full variant set | v2.17 | 2/2 | Complete | 2026-06-11 |
