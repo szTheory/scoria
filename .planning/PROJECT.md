@@ -102,7 +102,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
-- **Phase 15 complete (2026-06-13, v3.0 Control Room):** High-traffic control-room screens now use shared table/drawer/modal/notebook primitives across Live Ops, Workflows, Approvals, and Connectors; remaining evidence adapters are thin notebook/evidence adapters; DS-06 raw-palette baseline is zero. SCREEN-03 and SCREEN-04 are complete. Next: Phase 16 motion + responsive + theme parity.
+- **Phase 16 complete (2026-06-13, v3.0 Control Room):** Motion + responsive + theme parity (MOTION-01..04). Mobile-first dashboard shell + accessible off-canvas nav drawer (Hooks.MobileNav), responsive `table/1` (overflow viewport + opt-in `mobile_summary` cards on the 4 scan tables), named responsive grid classes replacing unsupported `sm:/lg:/xl:grid-cols` utilities, and focus-visible/non-color-only-status/motion-contract hardening with full light+dark parity. Mechanically proven by `priv/dev/e2e/phase16_parity.spec.mjs` (22/22 Playwright, MOTION-01..04). Next: Phase 17 consistency sweep + proof.
+- **Phase 15 complete (2026-06-13, v3.0 Control Room):** High-traffic control-room screens now use shared table/drawer/modal/notebook primitives across Live Ops, Workflows, Approvals, and Connectors; remaining evidence adapters are thin notebook/evidence adapters; DS-06 raw-palette baseline is zero. SCREEN-03 and SCREEN-04 are complete.
 - **v2.17 Vesicle shipped (2026-06-11):** Brand system complete — pressure-test.md (1,311 lines), TV-1 mark + LK-B lockup chosen by user (2 rounds), 8-variant logo set, brandbook/ (458 KB, zero binaries), README picture header, dashboard TV-1 mark + data-URI favicon, mix.exs/GitHub descriptions, quality-gate.mjs 8/8 PASS, mix test 632 green, DS-06 untouched. Archived in `.planning/milestones/v2.17-*`.
 - **Phase 12 complete (2026-06-04, v3.0 Control Room):** Design-system component layer — `ui.ex` now exposes table/drawer/modal/field/form_section/notebook/skeleton/toast contracts, `flash_group` routes through semantic tokens, and the DS-06 raw-color drift guard runs unconditionally in `mix test` (baseline `test/support/ds06_baseline.txt`, `ui.ex` at zero raw palette). Known polish debt deferred to Phases 14–16 (toast overlap CR-01, drawer positioning WR-03, dialog `aria-labelledby` WR-02) — see `12-REVIEW.md`.
 - **v2.16 shipped (2026-05-30):** ReqLLM peer bump to `~> 1.13` (1.13.0); archived in `.planning/milestones/v2.16-*`.
@@ -412,4 +413,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-13 — Phase 15 complete; v3.0 Control Room continues with Phase 16 motion + responsive + theme parity (next: /gsd:discuss-phase 16)*
+*Last updated: 2026-06-13 — Phase 16 complete; v3.0 Control Room continues with Phase 17 consistency sweep + proof (next: /gsd:discuss-phase 17)*
