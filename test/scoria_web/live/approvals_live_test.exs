@@ -57,7 +57,8 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.ApprovalsLiveTest.Endpoint,
-      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
+      secret_key_base:
+        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "112345678"],
       debug_errors: true
@@ -107,8 +108,35 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     assert html =~ "Approvals"
     assert html =~ "Approval inbox"
-    assert html =~ "No pending approvals."
+    assert html =~ "No approvals waiting"
     refute html =~ "Approval Required"
+  end
+
+  test "approvals source uses shared table, drawer, and final modal contracts" do
+    live_source = File.read!("lib/scoria_web/live/approvals_live/index.ex")
+    inbox_source = File.read!("lib/scoria_web/components/approval_inbox_component.ex")
+
+    assert live_source =~ "<.drawer"
+    assert live_source =~ "<.modal"
+    assert live_source =~ "Approve workflow"
+    assert live_source =~ "Reject approval"
+    assert live_source =~ "Keep reviewing"
+    assert inbox_source =~ "<.table"
+    assert inbox_source =~ ~s(id="approvals")
+
+    for forbidden <- [
+          "stone-",
+          "gray-",
+          "emerald-",
+          "amber-",
+          "rose-",
+          "red-",
+          "blue-",
+          "bg-black"
+        ] do
+      refute live_source =~ forbidden
+      refute inbox_source =~ forbidden
+    end
   end
 
   test "HITL approval request renders modal and handles approve" do
@@ -127,9 +155,8 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     assert html =~ "Approval Required"
     assert html =~ "test_tool"
     assert html =~ "Requires approval"
-    assert html =~ "Approve decision"
-    assert html =~ "Reject decision"
-    assert html =~ "Decide later"
+    assert html =~ "Approve workflow"
+    assert html =~ "Reject approval"
     assert html =~ "durably"
     assert html =~ "arguments_preview" or html =~ "prod"
 
@@ -196,6 +223,13 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     send(view.pid, {:hitl_request, projection})
     assert render(view) =~ "Approval Required"
+
+    html =
+      view
+      |> element("button[phx-click='open_decision_modal'][phx-value-decision='approve']")
+      |> render_click()
+
+    assert html =~ "Keep reviewing"
 
     render_click(view, "dismiss_approval", %{})
 
@@ -320,7 +354,7 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     assert html =~ "run_a_tool"
     assert html =~ "Approval Required"
     assert html =~ "run_b_tool"
-    assert html =~ "ring-2 ring-amber-400"
+    assert html =~ ~s(data-highlight="true")
   end
 
   test "matching focus opens modal for same workflow run" do

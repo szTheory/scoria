@@ -294,7 +294,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
       html = render(view)
 
       html =~ "Approval Required" and html =~ "publish" and html =~ "other_tool" and
-        html =~ "ring-2 ring-amber-400"
+        html =~ ~s(data-highlight="true")
     end)
   end
 
