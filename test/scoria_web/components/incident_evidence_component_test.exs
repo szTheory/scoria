@@ -5,6 +5,24 @@ defmodule ScoriaWeb.Components.IncidentEvidenceComponentTest do
 
   alias ScoriaWeb.IncidentEvidenceComponent
 
+  @palette_regex ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
+
+  test "incident and remote invocation adapters use shared notebook evidence primitives" do
+    adapter_paths = [
+      "lib/scoria_web/components/incident_evidence_component.ex",
+      "lib/scoria_web/components/remote_invocation_evidence_component.ex"
+    ]
+
+    for path <- adapter_paths do
+      source = File.read!(path)
+
+      assert source =~ "<.notebook"
+      assert source =~ "evidence_section"
+      assert source =~ "evidence_rows"
+      refute source =~ @palette_regex
+    end
+  end
+
   test "renders incident evidence through the notebook adapter" do
     html = render_component(&IncidentEvidenceComponent.render/1, evidence: evidence())
 

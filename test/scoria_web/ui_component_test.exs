@@ -855,6 +855,14 @@ defmodule ScoriaWeb.UIComponentTest do
 
       assert html =~ "scoria-notebook"
     end
+
+    test "uses shared evidence sections and rows instead of local panel chrome" do
+      source = File.read!("lib/scoria_web/components/remote_invocation_evidence_component.ex")
+
+      assert source =~ "evidence_section"
+      assert source =~ "evidence_rows"
+      refute source =~ "scoria-panel scoria-panel--raised"
+    end
   end
 
   # ---------------------------------------------------------------------------
