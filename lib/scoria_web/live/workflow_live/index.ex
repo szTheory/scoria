@@ -67,9 +67,27 @@ defmodule ScoriaWeb.WorkflowLive.Index do
             Open trace
           </.link>
         </:action>
+        <:mobile_summary :let={run}>
+          <div class="scoria-mobile-summary">
+            <div class="scoria-mobile-summary__label">
+              <span class="font-mono">{short_id(run.id)}</span>
+            </div>
+            <div class="scoria-mobile-summary__status">
+              <.badge tone={tone(run.status)} label={status_label(run.status)} />
+            </div>
+            <div class="scoria-mobile-summary__meta">
+              {format_ts(run.started_at || run.inserted_at)}
+            </div>
+            <div class="scoria-mobile-summary__action">
+              <.link navigate={(assigns[:scoria_base] || "") <> "/workflows/#{run.id}"} class="scoria-button scoria-button--ghost scoria-button--sm">
+                Open trace
+              </.link>
+            </div>
+          </div>
+        </:mobile_summary>
         <:empty>
-          <.empty_state title="No runs yet">
-            The first durable workflow run will appear here with its trace, status, and runtime context.
+          <.empty_state title="No runs match this view">
+            Adjust your filters or check back when data is available.
           </.empty_state>
         </:empty>
       </.table>

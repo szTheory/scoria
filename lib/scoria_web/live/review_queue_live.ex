@@ -131,9 +131,30 @@ defmodule ScoriaWeb.ReviewQueueLive do
                   <%= if @selected_candidate_id == row.id, do: "Selected", else: "Select" %>
                 </.button>
               </:action>
+              <:mobile_summary :let={row}>
+                <div class="scoria-mobile-summary">
+                  <div class="scoria-mobile-summary__label">
+                    <%= row.rationale %>
+                  </div>
+                  <div class="scoria-mobile-summary__status">
+                    <.badge tone={tone(row.severity)} label={status_label(row.severity)} />
+                  </div>
+                  <div class="scoria-mobile-summary__meta">
+                    <%= promotion_label(row) %>
+                  </div>
+                  <div class="scoria-mobile-summary__action">
+                    <a
+                      href={review_run_path(row, assigns[:scoria_base] || "")}
+                      class="scoria-button scoria-button--ghost scoria-button--sm"
+                    >
+                      Open run
+                    </a>
+                  </div>
+                </div>
+              </:mobile_summary>
               <:empty>
-                <.empty_state title="No flagged traces for this filter set">
-                  Production traces that fail scoring, trigger policy, or look promotion-ready will appear here.
+                <.empty_state title="No review candidates match this view">
+                  Adjust your filters or check back when data is available.
                 </.empty_state>
               </:empty>
             </.table>
