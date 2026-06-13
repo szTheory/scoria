@@ -121,6 +121,12 @@ Below `md` (`<768px`):
 - Global breadcrumbs must be compact; object identity and provenance stay in `<.object_header>` and page content.
 - Page-level horizontal overflow must be zero at 375px viewport width except inside intentional table/evidence scroll containers.
 
+Primary visual hierarchy:
+- On mobile, the sticky topbar is the first focal point because it carries orientation, navigation access, command access, and theme access.
+- The page object header is the second focal point; it carries the current run, incident, connector, dataset, prompt, or approval identity plus origin/provenance.
+- The active work region is the third focal point: table scan summaries, selected detail, evidence notebook, or modal/drawer task content depending on the screen.
+- Do not let badges, density controls, decorative motion, or secondary metadata visually outrank the page object and active operator task.
+
 At `md` and above (`>=768px`):
 - Restore the desktop sidebar grid with the existing `DashboardNav` IA groups.
 - Keep desktop topbar command palette and theme controls.
@@ -207,10 +213,10 @@ New Phase 16 copy is expected only for the mobile nav drawer, table mobile summa
 
 | Element | Copy |
 |---------|------|
-| Primary CTA | `Open trace` for run summaries; `Inspect` for connector summaries; `Open dataset` for dataset summaries; use the existing domain verb where a table already has one |
+| Primary CTA | `Open trace` for run summaries; `Inspect connector` for connector summaries; `Open dataset` for dataset summaries; use the existing domain verb plus noun where a table already has one |
 | Mobile nav open | `Menu` with `aria-label="Open navigation"` |
 | Mobile nav close | `Close navigation` |
-| Empty state heading | Keep existing `<.empty_state>` headings; default remains `No records found` when a table has no domain-specific copy |
+| Empty state heading | Use domain-specific headings for touched surfaces: `No runs match this view`, `No review candidates match this view`, `No connectors match this view`, `No datasets match this view`, `No approvals match this view`; fallback for any other touched table is `No matching records yet` |
 | Empty state body | `Adjust your filters or check back when data is available.` unless the parent screen already has sharper domain copy |
 | Error state | `This view could not render responsively. Use the table scroll area or widen the viewport, then try again.` only for developer/test-visible fallback; avoid shipping this to normal users unless a real failure path exists |
 | Destructive confirmation | No new destructive actions in Phase 16. Existing destructive/decision modals keep their current confirmation copy and danger styling. |
