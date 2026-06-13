@@ -1,5 +1,6 @@
 # Screenshot harness outputs (PNG captures and JSON critique results are transient
-# dev-only artifacts). Only gap_register.md is committed to the repository.
+# dev-only artifacts). The top-level .md audit outputs are committed; everything
+# else (date-stamped capture subdirs, PNG/JSON/HTML artifacts) is ignored.
 #
 # Pattern rationale:
 #   */        — ignores all date-stamped capture subdirectories (e.g. 2026-06-04/)
@@ -7,9 +8,13 @@
 #   *.json    — ignores all per-screen critique findings JSON files
 #   *.html    — ignores generated contact-sheet HTML (contact_sheet.html)
 #
-# gap_register.md is tracked because it is the committed baseline audit output
-# (EVAL-03 / PROOF-03). It is explicitly negated below to override the *.md rule
-# if one were ever added, and it is not matched by any of the rules above.
+# The committed top-level docs are the audit outputs:
+#   gap_register.md        — baseline audit output (EVAL-03 / PROOF-03)
+#   gap_register_final.md  — final-pass audit output
+#   contact_sheet_index.md — index for the generated contact sheet
+# None of these are matched by the rules above (they live at the top level, not
+# under a */ subdir, and .md is not in the *.png/*.json/*.html set). gap_register.md
+# is additionally negated below to override a *.md rule if one were ever added.
 
 */
 *.png
