@@ -127,6 +127,33 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert resolved =~ "Workflow Run"
   end
 
+  test "workflow show source uses shared shells and mount-prefix-safe runtime links" do
+    source = File.read!("lib/scoria_web/live/workflow_live/show.ex")
+    detail_source = File.read!("lib/scoria_web/components/workflow_detail_panel_component.ex")
+
+    assert source =~ "<.modal"
+    assert source =~ "<.object_header"
+    assert source =~ "View associated runtime presence"
+    refute source =~ ~s(href={"/scoria?runtime=)
+
+    for forbidden <- [
+          "bg-stone-50",
+          "text-stone-900",
+          "border-blue-200",
+          "bg-emerald-50",
+          "bg-black/50"
+        ] do
+      refute source =~ forbidden
+    end
+
+    assert detail_source =~ "promotion_disabled?"
+    assert detail_source =~ "ReplayEvidenceNotebookComponent.render"
+
+    for forbidden <- ["stone-", "gray-", "emerald-", "amber-", "rose-", "red-", "blue-"] do
+      refute detail_source =~ forbidden
+    end
+  end
+
   test "LiveView mounts from persisted workflow records and subscribes for projection updates" do
     {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
 

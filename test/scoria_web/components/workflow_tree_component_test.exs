@@ -16,4 +16,15 @@ defmodule ScoriaWeb.WorkflowTreeComponentTest do
     assert html =~ "handoff"
     assert html =~ ~s(--indent-level: 1)
   end
+
+  test "workflow tree source keeps selection behavior without raw palette classes" do
+    source = File.read!("lib/scoria_web/components/workflow_tree_component.ex")
+
+    assert source =~ ~s(phx-click="select_step")
+    assert source =~ "workflow-tree-row"
+
+    for forbidden <- ["stone-", "gray-", "emerald-", "amber-", "rose-", "red-", "blue-"] do
+      refute source =~ forbidden
+    end
+  end
 end
