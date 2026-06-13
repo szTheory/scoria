@@ -649,7 +649,7 @@ removing illegal node: "${(i.outerHTML||i.nodeValue).trim()}"
         // Update opener aria-expanded
         var openerEl = document.querySelector("[data-mobile-nav-open]");
         if (openerEl) openerEl.setAttribute("aria-expanded", "false");
-        // Delay hidden so the CSS fade/slide can run (~120ms per D-19)
+        // Delay hidden so the CSS fade/slide can run (200ms scoria-slide, D-15/D-19)
         clearTimeout(self.closeTimer);
         self.closeTimer = setTimeout(function () {
           self.el.hidden = true;

@@ -1597,6 +1597,53 @@
     flex-direction: column;
   }
 
+  /* Per-row summary card: object label + status on a row, then meta, then a
+     full-width primary action (44px touch target). Object-shaped scan card. */
+  .scoria-mobile-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label  status"
+      "meta   meta"
+      "action action";
+    align-items: start;
+    gap: var(--scoria-space-2) var(--scoria-space-3);
+    padding: var(--scoria-space-4);
+    background: var(--scoria-surface-panel-raised);
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-md);
+  }
+
+  .scoria-mobile-summary__label {
+    grid-area: label;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+    color: var(--scoria-text);
+  }
+
+  .scoria-mobile-summary__status {
+    grid-area: status;
+    justify-self: end;
+  }
+
+  .scoria-mobile-summary__meta {
+    grid-area: meta;
+    font-size: 0.8125rem;
+    color: var(--scoria-text-muted);
+  }
+
+  .scoria-mobile-summary__action {
+    grid-area: action;
+    margin-top: var(--scoria-space-1);
+  }
+
+  .scoria-mobile-summary__action .scoria-button,
+  .scoria-mobile-summary__action .scoria-link {
+    width: 100%;
+    justify-content: center;
+  }
+
   /* Below md (< 768px): summary-enabled tables swap viewport for summary cards */
   @media (max-width: 767px) {
     .scoria-table-shell--has-summary .scoria-table__viewport {

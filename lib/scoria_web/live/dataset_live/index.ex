@@ -348,7 +348,10 @@ defmodule ScoriaWeb.DatasetLive.Index do
     items
     |> Enum.map(&(&1.inserted_at || &1.updated_at))
     |> Enum.reject(&is_nil/1)
-    |> Enum.max(DateTime)
+    |> case do
+      [] -> nil
+      timestamps -> Enum.max(timestamps, DateTime)
+    end
   end
 
   defp source_label([]), do: "No source yet"
