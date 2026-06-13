@@ -302,3 +302,18 @@ The five remaining tenant-scoped screens (Live Ops, Approvals, Workflows, Incide
 - `priv/dev/shots.mjs` is **checked into git** (committed dev tooling, D-01) but **excluded from the shipped Hex package** via explicit `priv/` subdirectory inclusions in `mix.exs package.files`.
 - `priv/shots/` screenshot captures are **gitignored** (PNG/JSON); only `gap_register.md` is committed.
 - The `scoria.ui.shots` Mix task is **not registered in CI** (`cli.preferred_envs` does not list it) — it runs only when maintainers explicitly invoke it.
+
+### Contact-sheet generation
+
+After capturing two dated shot sets, generate the before/after contact sheet:
+
+```bash
+node priv/dev/contact_sheet.mjs \
+  --before priv/shots/2026-06-04 \
+  --after priv/shots/<final-date> \
+  --out priv/shots/contact_sheet.html
+```
+
+The generated HTML is gitignored (`*.html` in `priv/shots/.gitignore`).
+`priv/shots/contact_sheet_index.md` (committed) records the dir pair and per-screen delta notes.
+For future milestone passes, substitute new baseline and final dirs — no code changes needed.
