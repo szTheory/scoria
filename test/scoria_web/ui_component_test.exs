@@ -981,4 +981,173 @@ defmodule ScoriaWeb.UIComponentTest do
       assert html =~ "No records found"
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Phase 16-02: table/1 overflow viewport + opt-in mobile_summary slot
+  # ---------------------------------------------------------------------------
+
+  describe "table/1 responsive viewport (16-02)" do
+    test "wraps <table> in scoria-table__viewport div with tabindex=0 (default, no mobile_summary)" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
+        )
+
+      assert html =~ ~s(class="scoria-table__viewport")
+      assert html =~ ~s(tabindex="0")
+      assert html =~ "<table"
+    end
+
+    test "no mobile_summary slot => no scoria-table__mobile-summaries container" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [%{name: "Alice"}],
+          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}]
+        )
+
+      refute html =~ "scoria-table__mobile-summaries"
+    end
+
+    test "mobile_summary slot => scoria-table__mobile-summaries container rendered" do
+      summary_slot = [
+        %{
+          inner_block: fn _changed, row -> "Summary: #{row.name}" end,
+          __slot__: :mobile_summary
+        }
+      ]
+
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [%{name: "Alice"}, %{name: "Bob"}],
+          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}],
+          mobile_summary: summary_slot
+        )
+
+      assert html =~ "scoria-table__mobile-summaries"
+      assert html =~ "Summary: Alice"
+      assert html =~ "Summary: Bob"
+    end
+
+    test "mobile_summary with two rows yields two summary blocks" do
+      summary_slot = [
+        %{
+          inner_block: fn _changed, row -> ~s(<div class="summary-item">#{row.name}</div>) end,
+          __slot__: :mobile_summary
+        }
+      ]
+
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [%{name: "Alice"}, %{name: "Bob"}],
+          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}],
+          mobile_summary: summary_slot
+        )
+
+      assert html =~ "Alice"
+      assert html =~ "Bob"
+    end
+
+    test "<table> element is still present when mobile_summary slot is provided (desktop semantics preserved)" do
+      summary_slot = [
+        %{
+          inner_block: fn _changed, _row -> "summary" end,
+          __slot__: :mobile_summary
+        }
+      ]
+
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [%{name: "Alice"}],
+          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}],
+          mobile_summary: summary_slot
+        )
+
+      assert html =~ "<table"
+      assert html =~ "scoria-table__viewport"
+    end
+
+    test "sorted column header carries aria-sort=ascending when sort_dir is :asc" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          sort_by: :name,
+          sort_dir: :asc,
+          on_sort: "sort",
+          col: [%{label: "Name", key: :name, class: nil, inner_block: []}]
+        )
+
+      assert html =~ ~s(aria-sort="ascending")
+    end
+
+    test "sorted column header carries aria-sort=descending when sort_dir is :desc" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          sort_by: :name,
+          sort_dir: :desc,
+          on_sort: "sort",
+          col: [%{label: "Name", key: :name, class: nil, inner_block: []}]
+        )
+
+      assert html =~ ~s(aria-sort="descending")
+    end
+
+    test "unsorted sortable column header carries aria-sort=none" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          sort_by: :name,
+          sort_dir: :asc,
+          on_sort: "sort",
+          col: [
+            %{label: "Name", key: :name, class: nil, inner_block: []},
+            %{label: "Status", key: :status, class: nil, inner_block: []}
+          ]
+        )
+
+      # sorted column gets ascending
+      assert html =~ ~s(aria-sort="ascending")
+      # non-sorted sortable column gets none
+      assert html =~ ~s(aria-sort="none")
+    end
+
+    test "scoria-table-shell gets has-summary modifier class when mobile_summary slot is provided" do
+      summary_slot = [
+        %{
+          inner_block: fn _changed, _row -> "summary" end,
+          __slot__: :mobile_summary
+        }
+      ]
+
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [%{name: "Alice"}],
+          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}],
+          mobile_summary: summary_slot
+        )
+
+      assert html =~ "scoria-table-shell--has-summary"
+    end
+
+    test "scoria-table-shell does NOT get has-summary modifier when mobile_summary slot is absent" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
+        )
+
+      refute html =~ "scoria-table-shell--has-summary"
+    end
+  end
 end

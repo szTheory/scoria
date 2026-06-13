@@ -1152,6 +1152,46 @@
   .scoria-table__filter { display: flex; align-items: center; gap: var(--scoria-space-2); }
   .scoria-table__density-toggle { display: flex; align-items: center; gap: var(--scoria-space-1); }
   .scoria-table__td--actions { text-align: right; white-space: nowrap; }
+
+  /* ---------- Table responsive viewport (16-02) ---------- */
+  /* D-13: keyboard-reachable horizontal scroll container.
+     sticky thead still works inside overflow-x: auto — vertical sticky is unaffected
+     by horizontal overflow direction. */
+  .scoria-table__viewport {
+    overflow-x: auto;
+  }
+
+  /* D-08/D-10: opt-in mobile summary cards — hidden by default (desktop-first display).
+     scoria-table-shell--has-summary tables show summaries below md and hide the viewport. */
+  .scoria-table__mobile-summaries {
+    display: none;
+    padding: var(--scoria-space-4);
+    background: var(--scoria-surface-panel);
+    gap: var(--scoria-space-4);
+    flex-direction: column;
+  }
+
+  /* Below md (< 768px): summary-enabled tables swap viewport for summary cards */
+  @media (max-width: 767px) {
+    .scoria-table-shell--has-summary .scoria-table__viewport {
+      display: none;
+    }
+    .scoria-table-shell--has-summary .scoria-table__mobile-summaries {
+      display: flex;
+    }
+  }
+
+  /* At md and above: always hide summaries, always show the viewport */
+  @media (min-width: 768px) {
+    .scoria-table__mobile-summaries {
+      display: none !important;
+    }
+    .scoria-table-shell--has-summary .scoria-table__viewport {
+      display: block;
+    }
+  }
+  /* --------------------------------------------------------- */
+
   .scoria-table__pagination {
     display: flex;
     align-items: center;
