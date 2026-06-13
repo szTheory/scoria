@@ -102,7 +102,9 @@ defmodule ScoriaWeb.UI do
   attr(:class, :string, default: nil)
   slot(:inner_block, required: true)
 
-  @doc "Small uppercase category/status label (brand book card eyebrow)."
+  @doc "Small uppercase category/status label (brand book card eyebrow).
+Used in panel headers, object headers, and card hierarchy labeling to
+provide a typographic tier above the primary title."
   def eyebrow(assigns) do
     ~H"""
     <p class={["scoria-eyebrow", @class]}>{render_slot(@inner_block)}</p>
@@ -183,7 +185,11 @@ defmodule ScoriaWeb.UI do
   attr(:tone, :atom, default: :neutral)
   attr(:class, :string, default: nil)
 
-  @doc "Status Home attention card for nonzero actionable states."
+  @doc "Status Home attention strip card for nonzero actionable states.
+Renders as an `<a>` tag — callers pass a `path`, not a click handler.
+Attrs: `count` (numeric highlight), `label` (category name), `detail`
+(supporting copy), `cta` (call-to-action text), `path` (link target),
+`tone` (semantic tone atom controlling color treatment, default `:neutral`)."
   def attention_card(assigns) do
     ~H"""
     <a href={@path} class={["scoria-attention-card", "scoria-attention-card--#{@tone}", @class]}>
@@ -288,7 +294,9 @@ defmodule ScoriaWeb.UI do
   attr(:class, :string, default: nil)
   slot(:inner_block, required: true)
 
-  @doc "Keyboard shortcut chip."
+  @doc "Keyboard shortcut chip. Renders a `<kbd>` element styled with the
+brand-book monospace treatment. Used inline in command palette rows and
+help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
   def kbd(assigns) do
     ~H"""
     <kbd class={["scoria-kbd", @class]}>{render_slot(@inner_block)}</kbd>
@@ -800,7 +808,13 @@ defmodule ScoriaWeb.UI do
   slot(:actions)
   slot(:inner_block, required: true)
 
-  @doc "Notebook-scoped evidence section with optional status badge and action slot."
+  @doc "Notebook-scoped evidence section with optional status badge and action slot.
+Used inside `<.notebook>` `:tab` slot panels to group a titled block of
+evidence content. Attrs: `title` (section heading), `description` (optional
+supporting copy), `tone` (semantic tone atom for the badge color),
+`badge` (optional badge label — rendered only when present).
+Slots: `:actions` for action buttons rendered in the section header;
+`:inner_block` (required) for evidence rows and action rows."
   def evidence_section(assigns) do
     ~H"""
     <section class={["scoria-evidence-section", @class]} {@rest}>
@@ -827,7 +841,12 @@ defmodule ScoriaWeb.UI do
   attr(:class, :string, default: nil)
   attr(:rest, :global)
 
-  @doc "Stable key-value evidence rows for adapter-projected values."
+  @doc "Stable key-value evidence rows for adapter-projected values.
+Renders a `<dl>` of `<dt>/<dd>` pairs. The `:rows` attr accepts a list of
+either `%{label: _, value: _}` maps or `{label, value}` two-tuples — both
+forms are normalized by `normalize_evidence_rows/1` before rendering.
+Use inside `<.evidence_section>` `:inner_block` for structured label-value
+evidence data (e.g. model name, token count, latency)."
   def evidence_rows(assigns) do
     assigns = assign(assigns, :normalized_rows, normalize_evidence_rows(assigns.rows))
 
@@ -845,7 +864,11 @@ defmodule ScoriaWeb.UI do
   attr(:rest, :global)
   slot(:inner_block, required: true)
 
-  @doc "Compact evidence action/link row. Callers own the action/link semantics."
+  @doc "Compact evidence action/link row. Callers own the action/link semantics.
+Used for per-section action links in evidence panels (e.g. \"View trace\",
+\"Open replay\", \"Go to approval\"). Renders `:inner_block` inside a flex
+container with consistent action-row spacing — place `<a>` or `<.button>`
+elements inside."
   def evidence_action_row(assigns) do
     ~H"""
     <div class={["scoria-evidence-action-row", @class]} {@rest}>
@@ -859,7 +882,11 @@ defmodule ScoriaWeb.UI do
   attr(:rest, :global)
   slot(:inner_block, required: true)
 
-  @doc "Notebook-scoped evidence empty state."
+  @doc "Notebook-scoped evidence empty state. Used for empty `:tab` slot panels
+in `<.notebook>` when no evidence data is available for a section. The
+`:title` attr is required and names what is absent (e.g. \"No approvals\",
+\"No connector invocations\"). Optional `:inner_block` can provide
+supplementary copy or a link."
   def evidence_empty(assigns) do
     ~H"""
     <div class={["scoria-evidence-empty", @class]} {@rest}>
