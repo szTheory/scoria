@@ -161,8 +161,8 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   - [x] 16-01-PLAN.md — Mobile-first shell + accessible off-canvas nav drawer (MOTION-01, MOTION-03)
   - [x] 16-02-PLAN.md — table/1 overflow viewport + opt-in mobile summary slot (MOTION-02, MOTION-03)
   - [x] 16-03-PLAN.md — Replace unsupported responsive utilities + workflow mobile stack (MOTION-03)
-  - [ ] 16-04-PLAN.md — Mobile summary adoption on Runs/Review Queue/Connectors/Dataset Builder (MOTION-03, MOTION-02)
-  - [ ] 16-05-PLAN.md — Focus/status/motion hardening + both-theme parity (human checkpoint) (MOTION-01, MOTION-02, MOTION-04)
+  - [x] 16-04-PLAN.md — Mobile summary adoption on Runs/Review Queue/Connectors/Dataset Builder (MOTION-03, MOTION-02)
+  - [x] 16-05-PLAN.md — Focus/status/motion hardening + both-theme parity (human checkpoint) (MOTION-01, MOTION-02, MOTION-04)
   - [ ] 16-06-PLAN.md — Targeted Playwright parity smoke + optional contrast guard (MOTION-01..04)
 **UI hint**: yes
 
@@ -186,7 +186,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | 13. Orientation spine (IA) | v3.0 | 8/8 | Complete    | 2026-06-12 |
 | 14. Least-iterated screens polish | v3.0 | 5/6 | In Progress|  |
 | 15. High-traffic screens + evidence adapters | v3.0 | 5/5 | Complete    | 2026-06-13 |
-| 16. Motion + responsive + theme parity | v3.0 | 3/6 | In Progress|  |
+| 16. Motion + responsive + theme parity | v3.0 | 5/6 | In Progress|  |
 | 17. Consistency sweep + proof | v3.0 | 0/? | Not started | - |
 | 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete | 2026-06-11 |
 | 19. Logo divergence + user choice | v2.17 | 3/3 | Complete | 2026-06-11 |
