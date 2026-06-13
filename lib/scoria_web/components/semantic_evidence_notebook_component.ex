@@ -19,7 +19,7 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
             title="Semantic evidence groups"
             description="Workflow evidence keeps semantic verdict, compatibility, provenance, lifecycle, and append-only events on one page."
           >
-            <div class="grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
+            <div class="scoria-evidence-split">
               <div class="space-y-4">
                 <.group_section title="Summary" group={read_group(@semantic_evidence, :summary)} />
                 <.group_section title="Compatibility" group={read_group(@semantic_evidence, :compatibility)} />

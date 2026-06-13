@@ -44,7 +44,7 @@ defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
             </:actions>
 
             <%= if comparison_ready?(@selected_comparison_entry) do %>
-              <div class="grid gap-4 xl:grid-cols-[1.25fr,0.9fr]">
+              <div class="scoria-evidence-split">
                 <div class="space-y-4">
                   <.group_section title="Provenance" group={read_group(@selected_comparison_entry, :provenance)} />
                   <.group_section title="Overrides" group={read_group(@selected_comparison_entry, :overrides)} />

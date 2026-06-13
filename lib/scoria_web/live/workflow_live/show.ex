@@ -220,7 +220,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
         ]} />
       </.panel>
 
-      <div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+      <div class="scoria-page-split">
         <.panel class="scoria-panel--flush">
           <:title>Trace-First Workflow Tree</:title>
           <WorkflowTreeComponent.workflow_tree steps={@steps} selected_step_id={@selected_step_id} />
