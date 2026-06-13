@@ -158,7 +158,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   3. The dashboard is usable mobile-first; the shell and tables adapt intentionally at the `md / lg / xl` breakpoints.
   4. Every screen meets the polish bar in both light and dark themes, with WCAG AA contrast in both.
 **Plans**: 6 plans
-  - [ ] 16-01-PLAN.md — Mobile-first shell + accessible off-canvas nav drawer (MOTION-01, MOTION-03)
+  - [x] 16-01-PLAN.md — Mobile-first shell + accessible off-canvas nav drawer (MOTION-01, MOTION-03)
   - [ ] 16-02-PLAN.md — table/1 overflow viewport + opt-in mobile summary slot (MOTION-02, MOTION-03)
   - [ ] 16-03-PLAN.md — Replace unsupported responsive utilities + workflow mobile stack (MOTION-03)
   - [ ] 16-04-PLAN.md — Mobile summary adoption on Runs/Review Queue/Connectors/Dataset Builder (MOTION-03, MOTION-02)
@@ -186,7 +186,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | 13. Orientation spine (IA) | v3.0 | 8/8 | Complete    | 2026-06-12 |
 | 14. Least-iterated screens polish | v3.0 | 5/6 | In Progress|  |
 | 15. High-traffic screens + evidence adapters | v3.0 | 5/5 | Complete    | 2026-06-13 |
-| 16. Motion + responsive + theme parity | v3.0 | 0/6 | Planned | - |
+| 16. Motion + responsive + theme parity | v3.0 | 1/6 | In Progress|  |
 | 17. Consistency sweep + proof | v3.0 | 0/? | Not started | - |
 | 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete | 2026-06-11 |
 | 19. Logo divergence + user choice | v2.17 | 3/3 | Complete | 2026-06-11 |
