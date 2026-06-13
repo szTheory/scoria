@@ -1,5 +1,5 @@
 <div class="scoria-shell" data-scoria-base={assigns[:scoria_base] || ""}>
-  <%# Mobile sticky topbar — shown below 768px, hidden at >=768px (D-02, D-05) %>
+  <%!-- Mobile sticky topbar — shown below 768px, hidden at >=768px (D-02, D-05) --%>
   <header class="scoria-mobile-topbar">
     <a class="scoria-mobile-topbar__brand" href={(assigns[:scoria_base] || "") <> "/"}>
       <.brand_mark /> Scoria
@@ -37,7 +37,7 @@
     </div>
   </header>
 
-  <%# Off-canvas mobile nav drawer — mirrors the shortcuts overlay accessibility contract %>
+  <%!-- Off-canvas mobile nav drawer — mirrors the shortcuts overlay accessibility contract --%>
   <div
     id="scoria-mobile-nav"
     class="scoria-mobile-drawer-shell"
