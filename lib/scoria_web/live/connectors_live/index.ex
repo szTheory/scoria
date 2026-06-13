@@ -83,7 +83,12 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
         <.panel class="scoria-panel--flush">
           <:eyebrow>external runtimes</:eyebrow>
           <:title>Runtime posture</:title>
-          <.table id="runtime-presence" rows={@runtimes} density={@connector_table_density}>
+          <.table
+            id="runtime-presence"
+            rows={@runtimes}
+            density={@connector_table_density}
+            on_density_change="set_density"
+          >
             <:col :let={runtime} label="Runtime">
               <span class="font-mono"><%= short_id(runtime.id) %></span>
             </:col>
@@ -120,7 +125,12 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
         <.panel class="scoria-panel--flush">
           <:eyebrow>connector fleet</:eyebrow>
           <:title>Connector posture</:title>
-          <.table id="connector-fleet" rows={@connector_fleet} density={@connector_table_density}>
+          <.table
+            id="connector-fleet"
+            rows={@connector_fleet}
+            density={@connector_table_density}
+            on_density_change="set_density"
+          >
             <:col :let={connector} label="Connector">
               <span class="font-semibold"><%= connector.connector_label %></span>
             </:col>

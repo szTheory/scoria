@@ -891,12 +891,14 @@ defmodule ScoriaWeb.UI do
   attr(:page, :integer, default: 1)
   attr(:total_pages, :integer, default: 1)
   attr(:on_page_change, :string, default: nil)
+  attr(:on_density_change, :string, default: nil)
   attr(:rest, :global)
 
   @doc "Sortable, density-aware, paginated data table (DS-01).
   Renders column headers from typed <:col> slots; emits phx-click='sort' on keyed columns.
   Uses density modifier classes from density_class/1. Falls back to a default empty state
-  when rows is empty (overridable via <:empty>). Pagination strip shown when total_pages > 1."
+  when rows is empty (overridable via <:empty>). Pagination strip shown when total_pages > 1.
+  Density controls render only when on_density_change is supplied by the parent LiveView."
   def table(assigns) do
     # WR-05: a paginated table with no on_page_change handler would render inert
     # phx-click={nil} prev/next controls (a silent no-op). Fail loudly at render
@@ -912,10 +914,10 @@ defmodule ScoriaWeb.UI do
       <div :if={@filter != []} class="scoria-table__filter">
         {render_slot(@filter)}
       </div>
-      <div class="scoria-table__density-toggle" role="group" aria-label="Row density">
+      <div :if={@on_density_change} class="scoria-table__density-toggle" role="group" aria-label="Row density">
         <button
           :for={density_opt <- [:compact, :default, :comfortable]}
-          phx-click="set_density"
+          phx-click={@on_density_change}
           phx-value-density={density_opt}
           class={[
             if(@density == density_opt,

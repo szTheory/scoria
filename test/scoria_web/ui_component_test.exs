@@ -928,6 +928,34 @@ defmodule ScoriaWeb.UIComponentTest do
       refute html =~ "scoria-table--comfortable"
     end
 
+    test "density controls are opt-in to avoid unowned LiveView events" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          density: :compact,
+          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
+        )
+
+      refute html =~ "Row density"
+      refute html =~ ~s(phx-click="set_density")
+    end
+
+    test "density controls use caller-owned event when supplied" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          density: :compact,
+          on_density_change: "set_density",
+          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
+        )
+
+      assert html =~ "Row density"
+      assert html =~ ~s(phx-click="set_density")
+      assert html =~ ~s(phx-value-density="compact")
+    end
+
     test "rows=[] renders default empty state 'No records found'" do
       html =
         render_component(&ScoriaWeb.UI.table/1,

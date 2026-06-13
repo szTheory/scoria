@@ -49,7 +49,7 @@ defmodule ScoriaWeb.WorkflowLive.Index do
     </div>
 
     <.panel variant={:flat} class="scoria-panel--flush">
-      <.table id="runs" rows={@runs} density={@run_table_density}>
+      <.table id="runs" rows={@runs} density={@run_table_density} on_density_change="set_density">
         <:col :let={run} label="Run">
           <.id value={short_id(run.id)} copy={run.id} />
         </:col>

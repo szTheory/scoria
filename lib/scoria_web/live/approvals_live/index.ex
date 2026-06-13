@@ -143,6 +143,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         approvals={@approval_inbox}
         highlight_approval_id={@highlighted_approval_id}
         density={@approval_table_density}
+        on_density_change="set_density"
         select_event="select_approval"
       />
 

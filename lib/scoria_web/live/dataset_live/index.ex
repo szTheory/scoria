@@ -91,6 +91,7 @@ defmodule ScoriaWeb.DatasetLive.Index do
         density={@density}
         sort_by={@sort_by}
         sort_dir={@sort_dir}
+        on_density_change="set_density"
       >
         <:empty>
           <.empty_state title="No datasets yet">

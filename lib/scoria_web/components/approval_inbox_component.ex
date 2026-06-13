@@ -6,6 +6,7 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
   attr(:approvals, :list, required: true)
   attr(:highlight_approval_id, :string, default: nil)
   attr(:density, :atom, default: :compact)
+  attr(:on_density_change, :string, default: nil)
   attr(:select_event, :string, default: nil)
 
   def render(assigns) do
@@ -14,7 +15,12 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
       <:eyebrow>approvals</:eyebrow>
       <:title>Approval inbox</:title>
 
-      <.table id="approvals" rows={@approvals} density={@density}>
+      <.table
+        id="approvals"
+        rows={@approvals}
+        density={@density}
+        on_density_change={@on_density_change}
+      >
         <:col :let={approval} label="Approval">
           <span data-highlight={approval_field(approval, :id) == @highlight_approval_id && "true"}>
             <span class="font-semibold"><%= approval_field(approval, :tool_name) %></span>
