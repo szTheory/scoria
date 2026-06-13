@@ -2,6 +2,17 @@
  * Motion layer (§12 + emilkowalski rules): small named set, transform/opacity only,
  * ease-out for user-initiated motion, all under ~300ms, all interruptible,
  * all collapse to 0 under prefers-reduced-motion.
+ *
+ * Phase 16 (D-15–D-22) motion-contract conformance (verified 16-05):
+ *  - No transition-all; no layout-property keyframes; no infinite interaction loops.
+ *  - scoria-pop (modal): opacity+scale/Y at 150ms (dur-mid). D-17 ✓
+ *    scrim: scoria-fade at 100ms (dur-fast). D-17 ✓
+ *  - scoria-slide (drawer): opacity+translateX at 200ms (dur-slow ≤ cap). D-15 ✓
+ *  - scoria-skeleton-pulse (D-20 exception): opacity 0.4→0.8 only; no shimmer/transform.
+ *    infinite is the loading-state exception (D-20); collapses under reduced-motion. ✓
+ *  - scoria-approval-pulse (D-21 exception): border-color pulse, 2 cycles, finite. ✓
+ *  - prefers-reduced-motion kill switch: unlayered, authoritative, collapses all. ✓
+ *  - All keyframes centralized here (no one-offs in components/LiveViews). D-16 ✓
  */
 @layer scoria.components {
   @keyframes scoria-fade {

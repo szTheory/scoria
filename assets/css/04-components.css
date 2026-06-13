@@ -138,6 +138,8 @@
     width: min(280px, 85vw);
     height: 100%;
     overflow-y: auto;
+    /* D-23: allow focus ring to paint at scroll boundaries inside the nav drawer */
+    overflow-clip-margin: 4px;
     background: var(--scoria-surface-panel);
     border-right: 1px solid var(--scoria-border-strong);
     box-shadow: var(--scoria-shadow-raised);
@@ -751,6 +753,8 @@
     width: min(420px, 100%);
     height: 100%;
     overflow-y: auto;
+    /* D-23: allow focus ring (2px outline + 2px offset) to paint at scroll boundaries */
+    overflow-clip-margin: 4px;
     border-left: 1px solid var(--scoria-border-strong);
     background: var(--scoria-surface-panel-raised);
     box-shadow: var(--scoria-shadow-raised);
@@ -1156,9 +1160,13 @@
   /* ---------- Table responsive viewport (16-02) ---------- */
   /* D-13: keyboard-reachable horizontal scroll container.
      sticky thead still works inside overflow-x: auto — vertical sticky is unaffected
-     by horizontal overflow direction. */
+     by horizontal overflow direction.
+     D-23: overflow-clip-margin allows the :focus-visible outline (2px solid + 2px offset)
+     to paint 4px outside the clip boundary so interactive elements at the scroll edges
+     keep a visible ring without suppressing overflow entirely. */
   .scoria-table__viewport {
     overflow-x: auto;
+    overflow-clip-margin: 4px;
   }
 
   /* D-08/D-10: opt-in mobile summary cards — hidden by default (desktop-first display).
