@@ -111,7 +111,9 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
       |> render_click()
 
     assert html =~ second.score_explanation
-    open_run_href = link_href(html, "Open run")
+    # Scope to the detail-rail primary link: the per-row mobile_summary slot (16-04)
+    # also renders an "Open run" link (ghost), which would otherwise shadow this lookup.
+    open_run_href = link_href(html, "Open run", "a.scoria-button--primary")
 
     assert URI.decode_www_form(open_run_href) ==
              "/scoria/workflows/#{second.workflow_run_id}?review_candidate_id=#{second.id}&from=review:#{second.id}"
@@ -200,10 +202,10 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.ReviewQueueLiveTest.Endpoint)
   end
 
-  defp link_href(html, label) do
+  defp link_href(html, label, selector \\ "a") do
     html
     |> Floki.parse_document!()
-    |> Floki.find("a")
+    |> Floki.find(selector)
     |> Enum.find(fn link -> link |> Floki.text() |> String.trim() == label end)
     |> Floki.attribute("href")
     |> List.first()

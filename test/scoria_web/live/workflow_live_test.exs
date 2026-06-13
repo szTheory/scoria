@@ -70,10 +70,10 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     assert html =~ "Runs"
     assert html =~ "Inspect recorded workflow runs and open the trace that explains them."
-    assert html =~ "No runs yet"
+    assert html =~ "No runs match this view"
 
     assert html =~
-             "The first durable workflow run will appear here with its trace, status, and runtime context."
+             "Adjust your filters or check back when data is available."
   end
 
   test "runs index renders persisted runs in the shared table with one Open trace action" do

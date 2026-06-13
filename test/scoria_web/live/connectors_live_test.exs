@@ -67,7 +67,7 @@ defmodule ScoriaWeb.ConnectorsLiveTest do
     assert html =~ "Runtime posture"
     assert html =~ "Connector posture"
     assert html =~ "No runtimes connected"
-    assert html =~ "No connectors registered"
+    assert html =~ "No connectors match this view"
   end
 
   test "connectors source uses shared tables and parent-owned drawers" do

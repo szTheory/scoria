@@ -63,8 +63,8 @@ defmodule ScoriaWeb.DatasetLive.IndexTest do
 
     assert html =~ "Dataset Builder"
     assert html =~ "Curate production traces into eval datasets and baseline approval requests."
-    assert html =~ "No datasets yet"
-    assert html =~ "Promote a flagged trace or workflow source to start a regression dataset."
+    assert html =~ "No datasets match this view"
+    assert html =~ "Adjust your filters or check back when data is available."
   end
 
   test "/scoria/datasets renders real open and sealed dataset rows" do
