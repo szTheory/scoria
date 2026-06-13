@@ -16,6 +16,11 @@
     from { opacity: 0; transform: translateX(8px); }
     to { opacity: 1; transform: translateX(0); }
   }
+  /* Edge-origin slide from inline-start (left) for mobile nav drawer. */
+  @keyframes scoria-slide-inline-start {
+    from { opacity: 0; transform: translateX(-100%); }
+    to { opacity: 1; transform: translateX(0); }
+  }
   @keyframes scoria-approval-pulse {
     0%, 100% { border-color: var(--scoria-tone-warn-border); }
     50% { border-color: var(--scoria-tone-warn-fg); }

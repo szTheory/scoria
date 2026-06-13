@@ -508,6 +508,100 @@
     },
   };
 
+  // Mobile off-canvas nav drawer open/close/trap/restore.
+  // Reuses focusableElements and trapFocus helpers from CommandPalette.
+  // JS owns only open/close/focus/hidden-delay — motion is CSS-owned via data-state (D-19).
+  Hooks.MobileNav = {
+    mounted: function () {
+      var self = this;
+      this.panel = this.el.querySelector(".scoria-mobile-drawer");
+      this.closeTimer = null;
+      this.restoreFocus = null;
+
+      this.openNav = function (opener) {
+        clearTimeout(self.closeTimer);
+        self.restoreFocus = opener || document.activeElement;
+        self.el.hidden = false;
+        self.el.setAttribute("data-state", "open");
+        // Update opener aria-expanded
+        var openerEl = document.querySelector("[data-mobile-nav-open]");
+        if (openerEl) openerEl.setAttribute("aria-expanded", "true");
+        // Move focus into the panel
+        if (self.panel) self.panel.focus({ preventScroll: true });
+      };
+
+      this.closeNav = function (restore) {
+        self.el.setAttribute("data-state", "closed");
+        // Update opener aria-expanded
+        var openerEl = document.querySelector("[data-mobile-nav-open]");
+        if (openerEl) openerEl.setAttribute("aria-expanded", "false");
+        // Delay hidden so the CSS fade/slide can run (~120ms per D-19)
+        clearTimeout(self.closeTimer);
+        self.closeTimer = setTimeout(function () {
+          self.el.hidden = true;
+        }, 200);
+        if (restore && self.restoreFocus && self.restoreFocus.focus) {
+          self.restoreFocus.focus({ preventScroll: true });
+        }
+      };
+
+      this.isOpen = function () {
+        return !self.el.hidden && self.el.getAttribute("data-state") === "open";
+      };
+
+      // Open button click
+      this.openHandler = function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest("[data-mobile-nav-open]") : null;
+        if (btn) self.openNav(btn);
+      };
+
+      // Close button / scrim click
+      this.closeHandler = function (e) {
+        var closeEl = e.target && e.target.closest ? e.target.closest("[data-mobile-nav-close]") : null;
+        if (closeEl && self.isOpen()) self.closeNav(true);
+      };
+
+      // Keyboard: Escape dismiss + focus trap
+      this.keydownHandler = function (e) {
+        if (!self.isOpen()) return;
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          self.closeNav(true);
+          return;
+        }
+        if (e.key === "Tab" && self.panel) {
+          self.trapFocusInPanel(e);
+        }
+      };
+
+      this.trapFocusInPanel = function (e) {
+        var focusables = focusableElements(self.panel);
+        if (focusables.length === 0) return;
+        var first = focusables[0];
+        var last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      };
+
+      document.addEventListener("click", this.openHandler);
+      document.addEventListener("click", this.closeHandler);
+      document.addEventListener("keydown", this.keydownHandler, true);
+    },
+
+    destroyed: function () {
+      document.removeEventListener("click", this.openHandler);
+      document.removeEventListener("click", this.closeHandler);
+      document.removeEventListener("keydown", this.keydownHandler, true);
+      clearTimeout(this.closeTimer);
+    },
+  };
+
   Hooks.RecordRecentObject = {
     mounted: function () {
       var kind = this.el.getAttribute("data-scoria-kind");

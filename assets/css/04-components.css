@@ -3,26 +3,42 @@
  * All values come from semantic tokens — never raw hex, never a per-component color map.
  */
 @layer scoria.components {
-  /* ---------- App shell (nav + content) ---------- */
+  /* ---------- App shell (nav + content) — mobile-first ---------- */
+  /* Default (mobile, <768px): single column, no sidebar */
   .scoria-shell {
     display: grid;
-    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr;
-    grid-template-areas: "sidebar topbar" "sidebar main";
+    grid-template-areas: "topbar" "main";
     min-height: 100vh;
   }
+  /* Hide the desktop sidebar on mobile */
   .scoria-sidebar {
-    grid-area: sidebar;
-    border-right: 1px solid var(--scoria-border);
-    background: var(--scoria-surface-panel);
-    padding: var(--scoria-space-4) var(--scoria-space-3);
-    display: flex;
-    flex-direction: column;
-    gap: var(--scoria-space-5);
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
+    display: none;
+  }
+  /* Desktop layout restored at >=768px */
+  @media (min-width: 768px) {
+    .scoria-shell {
+      grid-template-columns: 248px minmax(0, 1fr);
+      grid-template-areas: "sidebar topbar" "sidebar main";
+    }
+    .scoria-sidebar {
+      display: flex;
+      grid-area: sidebar;
+      border-right: 1px solid var(--scoria-border);
+      background: var(--scoria-surface-panel);
+      padding: var(--scoria-space-4) var(--scoria-space-3);
+      flex-direction: column;
+      gap: var(--scoria-space-5);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    /* Hide mobile-only topbar at desktop breakpoint */
+    .scoria-mobile-topbar {
+      display: none;
+    }
   }
   .scoria-topbar {
     grid-area: topbar;
@@ -42,6 +58,135 @@
     padding: var(--scoria-space-6);
     max-width: 1280px;
     width: 100%;
+  }
+
+  /* ---------- Mobile topbar (hidden at >=768px) ---------- */
+  .scoria-mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    padding: var(--scoria-space-2) var(--scoria-space-4);
+    background: var(--scoria-surface-panel);
+    border-bottom: 1px solid var(--scoria-border);
+    position: sticky;
+    top: 0;
+    z-index: var(--scoria-z-sticky);
+    min-height: 44px;
+  }
+  .scoria-mobile-topbar__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    font-weight: 600;
+    font-size: var(--scoria-fs-label);
+    color: var(--scoria-text);
+    text-decoration: none;
+    flex: none;
+  }
+  .scoria-mobile-topbar__brand mark {
+    width: 20px;
+    height: 20px;
+    flex: none;
+  }
+  .scoria-mobile-topbar__title {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--scoria-fs-label);
+    color: var(--scoria-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 var(--scoria-space-2);
+  }
+  .scoria-mobile-topbar__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    margin-left: auto;
+    flex: none;
+  }
+  /* Ensure all topbar interactive controls have 44px hit target */
+  .scoria-mobile-topbar .scoria-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* ---------- Mobile off-canvas nav drawer ---------- */
+  .scoria-mobile-drawer-shell {
+    position: fixed;
+    inset: 0;
+    z-index: var(--scoria-z-modal);
+    pointer-events: none;
+  }
+  .scoria-mobile-drawer-shell[data-state="open"] {
+    pointer-events: auto;
+  }
+  .scoria-mobile-drawer__scrim {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--scoria-surface-app) 60%, transparent);
+    opacity: 0;
+    transition: opacity var(--scoria-dur-fast) var(--scoria-ease-out);
+  }
+  .scoria-mobile-drawer-shell[data-state="open"] .scoria-mobile-drawer__scrim {
+    opacity: 1;
+  }
+  .scoria-mobile-drawer {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: min(280px, 85vw);
+    height: 100%;
+    overflow-y: auto;
+    background: var(--scoria-surface-panel);
+    border-right: 1px solid var(--scoria-border-strong);
+    box-shadow: var(--scoria-shadow-raised);
+    display: flex;
+    flex-direction: column;
+    /* Edge-origin slide from the start (left) edge + opacity fade */
+    transform: translateX(-100%);
+    opacity: 0;
+    transition: transform var(--scoria-dur-mid) var(--scoria-ease-out),
+      opacity var(--scoria-dur-mid) var(--scoria-ease-out);
+    z-index: 1;
+  }
+  .scoria-mobile-drawer-shell[data-state="open"] .scoria-mobile-drawer {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  .scoria-mobile-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--scoria-space-3) var(--scoria-space-4);
+    border-bottom: 1px solid var(--scoria-border);
+    flex: none;
+    min-height: 44px;
+  }
+  .scoria-mobile-drawer__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    font-weight: 600;
+    font-size: var(--scoria-fs-label);
+    color: var(--scoria-text);
+    text-decoration: none;
+  }
+  .scoria-mobile-drawer__close {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .scoria-mobile-drawer__nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--scoria-space-4) var(--scoria-space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-5);
+  }
+  /* Ensure drawer nav rows have 44px hit target */
+  .scoria-mobile-drawer .scoria-nav {
+    min-height: 44px;
   }
 
   /* Brand lockup */
