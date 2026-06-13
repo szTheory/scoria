@@ -174,7 +174,10 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   1. A final audit shows rubric-score improvement (baseline → final) per screen and a raw-color-class count of zero.
   2. Before/after contact sheets document the iteration as a basis for future passes.
   3. `docs/MAINTAINERS.md` documents the design-system component catalog and how to run the screenshot harness.
-**Plans**: TBD
+**Plans**: 3 plans
+  - [ ] 17-01-PLAN.md — Capture final shots + re-run critique + author gap_register_final.md (PROOF-01)
+  - [ ] 17-02-PLAN.md — Contact-sheet generator + .gitignore + contact_sheet_index.md + MAINTAINERS command (PROOF-02)
+  - [ ] 17-03-PLAN.md — ui.ex @doc backfill + mix docs catalog + MAINTAINERS catalog section (PROOF-03)
 **UI hint**: yes
 
 ## Progress
