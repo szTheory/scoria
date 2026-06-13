@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
-status: executing
-last_updated: "2026-06-13T06:30:49.270Z"
+status: ready_to_plan
+last_updated: 2026-06-13T15:03:51.545Z
 last_activity: 2026-06-13 -- Phase 16 execution started
 progress:
   total_phases: 20
   completed_phases: 5
   total_plans: 35
-  completed_plans: 29
+  completed_plans: 35
   percent: 25
+stopped_at: Phase 16 complete (6/6) — ready to discuss Phase 17
 ---
 
 # Project State
@@ -21,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-13 — Phase 15 complete; v3.0 Cont
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 16 — motion-responsive-theme-parity
+**Current focus:** Phase 17 — consistency sweep + proof
 
 ## Current Position
 
-Phase: 16 (motion-responsive-theme-parity) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 16
-Last activity: 2026-06-13 -- Phase 16 execution started
+Phase: 17
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-06-13
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
 

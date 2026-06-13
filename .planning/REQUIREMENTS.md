@@ -43,10 +43,10 @@
 
 ### Motion, Responsive & Theme Parity
 
-- [ ] **MOTION-01**: Interactions carry restrained, brand-tied motion (origin-aware, ≤200ms, transform/opacity-only) that respects `prefers-reduced-motion` and avoids the brand antipatterns (fire/sparkle/bounce, infinite loops, layout-property animation).
-- [ ] **MOTION-02**: Every interactive element has a visible focus-visible state and status is never conveyed by color alone.
-- [ ] **MOTION-03**: The dashboard is usable mobile-first; the shell and tables adapt intentionally at the `md / lg / xl` breakpoints.
-- [ ] **MOTION-04**: Every screen meets the polish bar in both light and dark themes, with WCAG AA contrast in both.
+- [x] **MOTION-01**: Interactions carry restrained, brand-tied motion (origin-aware, ≤200ms, transform/opacity-only) that respects `prefers-reduced-motion` and avoids the brand antipatterns (fire/sparkle/bounce, infinite loops, layout-property animation).
+- [x] **MOTION-02**: Every interactive element has a visible focus-visible state and status is never conveyed by color alone.
+- [x] **MOTION-03**: The dashboard is usable mobile-first; the shell and tables adapt intentionally at the `md / lg / xl` breakpoints.
+- [x] **MOTION-04**: Every screen meets the polish bar in both light and dark themes, with WCAG AA contrast in both.
 
 ### Proof & Docs
 
@@ -100,10 +100,10 @@ Each requirement maps to exactly one phase. Phase numbering continues from v2.16
 | SCREEN-02 | Phase 14 — Least-iterated screens polish | Complete |
 | SCREEN-03 | Phase 15 — High-traffic screens + evidence adapters | Complete |
 | SCREEN-04 | Phase 15 — High-traffic screens + evidence adapters | Complete |
-| MOTION-01 | Phase 16 — Motion + responsive + theme parity | Pending |
-| MOTION-02 | Phase 16 — Motion + responsive + theme parity | Pending |
-| MOTION-03 | Phase 16 — Motion + responsive + theme parity | Pending |
-| MOTION-04 | Phase 16 — Motion + responsive + theme parity | Pending |
+| MOTION-01 | Phase 16 — Motion + responsive + theme parity | Complete |
+| MOTION-02 | Phase 16 — Motion + responsive + theme parity | Complete |
+| MOTION-03 | Phase 16 — Motion + responsive + theme parity | Complete |
+| MOTION-04 | Phase 16 — Motion + responsive + theme parity | Complete |
 | PROOF-01 | Phase 17 — Consistency sweep + proof | Pending |
 | PROOF-02 | Phase 17 — Consistency sweep + proof | Pending |
 | PROOF-03 | Phase 17 — Consistency sweep + proof | Pending |
