@@ -179,7 +179,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | 12. Design-system component layer | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 13. Orientation spine (IA) | v3.0 | 8/8 | Complete    | 2026-06-12 |
 | 14. Least-iterated screens polish | v3.0 | 5/6 | In Progress|  |
-| 15. High-traffic screens + evidence adapters | v3.0 | 3/5 | In Progress|  |
+| 15. High-traffic screens + evidence adapters | v3.0 | 4/5 | In Progress|  |
 | 16. Motion + responsive + theme parity | v3.0 | 0/? | Not started | - |
 | 17. Consistency sweep + proof | v3.0 | 0/? | Not started | - |
 | 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete | 2026-06-11 |
