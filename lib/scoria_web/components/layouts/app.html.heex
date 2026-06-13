@@ -1,4 +1,86 @@
 <div class="scoria-shell" data-scoria-base={assigns[:scoria_base] || ""}>
+  <%# Mobile sticky topbar — shown below 768px, hidden at >=768px (D-02, D-05) %>
+  <header class="scoria-mobile-topbar">
+    <a class="scoria-mobile-topbar__brand" href={(assigns[:scoria_base] || "") <> "/"}>
+      <.brand_mark /> Scoria
+    </a>
+    <span class="scoria-mobile-topbar__title">{assigns[:page_title] || "Dashboard"}</span>
+    <div class="scoria-mobile-topbar__controls">
+      <button
+        type="button"
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        aria-label="Open command palette"
+        aria-controls="scoria-command-palette"
+        data-command-open
+      >
+        <.icon name={:pulse} class="scoria-nav__icon" />
+      </button>
+      <button
+        type="button"
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        phx-hook="ThemeToggle"
+        id="scoria-theme-toggle-mobile"
+        aria-label="Toggle light or dark theme"
+      >
+        <span>Theme</span>
+      </button>
+      <button
+        type="button"
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        aria-label="Open navigation"
+        aria-controls="scoria-mobile-nav"
+        aria-expanded="false"
+        data-mobile-nav-open
+      >
+        Menu
+      </button>
+    </div>
+  </header>
+
+  <%# Off-canvas mobile nav drawer — mirrors the shortcuts overlay accessibility contract %>
+  <div
+    id="scoria-mobile-nav"
+    class="scoria-mobile-drawer-shell"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Dashboard navigation"
+    data-state="closed"
+    hidden
+    phx-hook="MobileNav"
+  >
+    <div class="scoria-mobile-drawer__scrim" data-mobile-nav-close aria-hidden="true"></div>
+    <div class="scoria-mobile-drawer" tabindex="-1">
+      <div class="scoria-mobile-drawer__header">
+        <a class="scoria-mobile-drawer__brand" href={(assigns[:scoria_base] || "") <> "/"}>
+          <.brand_mark /> Scoria
+        </a>
+        <button
+          type="button"
+          class="scoria-button scoria-button--ghost scoria-button--sm scoria-mobile-drawer__close"
+          aria-label="Close navigation"
+          data-mobile-nav-close
+        >
+          Close navigation
+        </button>
+      </div>
+      <nav class="scoria-mobile-drawer__nav" aria-label="Dashboard sections">
+        <div :for={group <- nav_groups()} class="scoria-navgroup">
+          <p class="scoria-navgroup__label">{group.label}</p>
+          <.link
+            :for={item <- group.items}
+            navigate={(assigns[:scoria_base] || "") <> item.path}
+            class="scoria-nav"
+            aria-current={if item.key == assigns[:scoria_nav], do: "page"}
+          >
+            <.icon name={item.icon} />
+            <span>{item.label}</span>
+            <span :if={item[:soon?]} class="scoria-nav__soon">Soon</span>
+          </.link>
+        </div>
+      </nav>
+    </div>
+  </div>
+
   <aside class="scoria-sidebar">
     <a class="scoria-brand" href={(assigns[:scoria_base] || "") <> "/"}>
       <.brand_mark /> Scoria
