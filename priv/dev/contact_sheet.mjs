@@ -94,27 +94,36 @@ async function listScreenPngs(dir, screenName) {
 // HTML generation helpers
 // ---------------------------------------------------------------------------
 
+// Escape a value for safe interpolation into HTML text or a double-quoted
+// attribute. Filenames come from readdir of a maintainer-supplied dir and may
+// legally contain &, <, >, ", ' — none of which are HTML-safe raw.
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
 function relPath(outFile, targetFile) {
   return relative(dirname(outFile), targetFile).replace(/\\/g, '/');
 }
 
-function renderPairRow(filename, beforeFile, afterFile, outPath, isBaseline, isAfterMissing) {
+function renderPairRow(filename, beforeFile, afterFile, outPath, isAfterMissing) {
   const beforeSrc = beforeFile ? relPath(outPath, beforeFile) : null;
   const afterSrc = afterFile ? relPath(outPath, afterFile) : null;
 
   const beforeCell = beforeSrc
-    ? `<img src="${beforeSrc}" alt="Before: ${filename}" loading="lazy" />`
+    ? `<img src="${beforeSrc}" alt="Before: ${escapeHtml(filename)}" loading="lazy" />`
     : `<div class="placeholder">not captured</div>`;
 
   const afterCell = afterSrc
-    ? `<img src="${afterSrc}" alt="After: ${filename}" loading="lazy" />`
+    ? `<img src="${afterSrc}" alt="After: ${escapeHtml(filename)}" loading="lazy" />`
     : isAfterMissing
     ? `<div class="placeholder missing">not re-captured<br><small>(screen missing from final dir)</small></div>`
     : `<div class="placeholder">not captured</div>`;
 
   return `
       <tr>
-        <td class="filename">${filename}</td>
+        <td class="filename">${escapeHtml(filename)}</td>
         <td class="img-cell">${beforeCell}</td>
         <td class="img-cell">${afterCell}</td>
       </tr>`;
@@ -130,7 +139,7 @@ function renderScreenSection(screenName, pairs, tenantScoped, afterDirMissing, o
     : '';
 
   const rows = pairs.map(({ filename, beforePath, afterPath, afterMissing }) =>
-    renderPairRow(filename, beforePath, afterPath, outPath, false, afterMissing)
+    renderPairRow(filename, beforePath, afterPath, outPath, afterMissing)
   ).join('');
 
   return `
@@ -315,9 +324,9 @@ async function main() {
 <body>
   <header>
     <h1>Scoria v3.0 Control Room — Before/After Contact Sheet</h1>
-    <p><strong>Baseline dir:</strong> ${beforeLabel}</p>
-    <p><strong>Final dir:</strong> ${afterLabel}</p>
-    <p><strong>Generated:</strong> ${generated}</p>
+    <p><strong>Baseline dir:</strong> ${escapeHtml(beforeLabel)}</p>
+    <p><strong>Final dir:</strong> ${escapeHtml(afterLabel)}</p>
+    <p><strong>Generated:</strong> ${escapeHtml(generated)}</p>
     <p><strong>Paired PNG files:</strong> ${totalPaired} | <strong>Baseline-only (not re-captured):</strong> ${totalBeforeOnly}</p>
   </header>
   <nav>
