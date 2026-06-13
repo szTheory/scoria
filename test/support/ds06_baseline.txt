@@ -1,5 +1,0 @@
-lib/scoria_web/components/citation_evidence_component.ex:18
-lib/scoria_web/components/delegated_evidence_component.ex:46
-lib/scoria_web/components/memory_notebook_component.ex:19
-lib/scoria_web/components/replay_evidence_notebook_component.ex:24
-lib/scoria_web/components/semantic_evidence_notebook_component.ex:27

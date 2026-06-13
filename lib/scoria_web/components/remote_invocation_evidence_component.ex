@@ -1,10 +1,10 @@
 defmodule ScoriaWeb.RemoteInvocationEvidenceComponent do
   use Phoenix.Component
-  import ScoriaWeb.UI, only: [notebook: 1]
+  import ScoriaWeb.UI
 
-  attr :evidence, :map, required: true
-  attr :selected_tab, :string, default: "remote_invocation"
-  attr :on_tab_change, :string, default: nil
+  attr(:evidence, :map, required: true)
+  attr(:selected_tab, :string, default: "remote_invocation")
+  attr(:on_tab_change, :string, default: nil)
 
   def render(assigns) do
     assigns =
@@ -17,22 +17,29 @@ defmodule ScoriaWeb.RemoteInvocationEvidenceComponent do
       eyebrow="Remote evidence notebook"
       selected_tab={@selected_tab}
       on_tab_change={@on_tab_change}
+      empty={@approvals == []}
     >
+      <:empty_slot>
+        <.evidence_empty title="No remote approvals recorded">
+          No remote approvals recorded.
+        </.evidence_empty>
+      </:empty_slot>
+
       <:tab key="remote_invocation" label="Remote">
         <div class="space-y-3">
-          <article
+          <.evidence_section
             :for={approval <- @approvals}
-            class="scoria-panel scoria-panel--raised"
-            style="padding: var(--scoria-space-3) var(--scoria-space-4); font-size: var(--scoria-fs-body);"
+            title={to_string(approval_value(approval, :tool_name))}
+            badge={to_string(approval_value(approval, :status))}
+            tone={tone(approval_value(approval, :status))}
           >
-            <div class="flex flex-wrap items-center gap-2">
-              <span style="font-weight: 600; color: var(--scoria-text);"><%= approval_value(approval, :tool_name) %></span>
-              <span style="font-family: var(--scoria-font-mono); font-size: var(--scoria-fs-badge); color: var(--scoria-text-muted);"><%= approval_value(approval, :status) %></span>
-            </div>
-            <p style="margin-top: var(--scoria-space-2); font-size: var(--scoria-fs-badge); color: var(--scoria-text-muted);">
-              Approval ID: <span style="font-family: var(--scoria-font-mono);"><%= approval_value(approval, :id) %></span>
-            </p>
-          </article>
+            <.evidence_rows
+              rows={[
+                {"Status", approval_value(approval, :status)},
+                {"Approval ID", approval_value(approval, :id)}
+              ]}
+            />
+          </.evidence_section>
         </div>
       </:tab>
     </.notebook>

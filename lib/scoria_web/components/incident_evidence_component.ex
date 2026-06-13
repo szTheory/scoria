@@ -1,6 +1,6 @@
 defmodule ScoriaWeb.IncidentEvidenceComponent do
   use Phoenix.Component
-  import ScoriaWeb.UI, only: [badge: 1, notebook: 1]
+  import ScoriaWeb.UI
 
   attr(:evidence, :map, required: true)
 
@@ -14,137 +14,99 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
     >
       <:tab key="incident" label="Incident">
         <div class="space-y-4">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <p style="color: var(--scoria-text-muted); font-size: var(--scoria-fs-body);">
-              Composite health rollup stays compact while the evidence below explains the selected run.
-            </p>
+          <.evidence_section
+            title="Composite health rollup"
+            description="Composite health rollup stays compact while the evidence below explains the selected run."
+          >
+            <.evidence_rows
+              rows={[
+                {"trace", @evidence.trace_id},
+                {"run", @evidence.run_id}
+              ]}
+            />
 
-            <div class="flex flex-wrap gap-2" style="font-size: var(--scoria-fs-label); color: var(--scoria-text-muted);">
-              <span class="scoria-panel" style="padding: var(--scoria-space-1) var(--scoria-space-3); border-radius: var(--scoria-radius-pill);">
-                trace <span style="font-family: var(--scoria-font-mono);"><%= @evidence.trace_id %></span>
-              </span>
-              <span
-                :if={@evidence.run_id}
-                class="scoria-panel"
-                style="padding: var(--scoria-space-1) var(--scoria-space-3); border-radius: var(--scoria-radius-pill);"
-              >
-                run <span style="font-family: var(--scoria-font-mono);"><%= @evidence.run_id %></span>
-              </span>
+            <div class="mt-3 grid gap-3 lg:grid-cols-5">
+              <.rollup_section
+                label="Budget"
+                value={@evidence.health_rollup.budget_signal}
+                detail={@evidence.health_rollup.budget_detail}
+              />
+              <.rollup_section
+                label="Breaker"
+                value={@evidence.health_rollup.breaker_signal}
+                detail={@evidence.health_rollup.breaker_detail}
+              />
+              <.rollup_section
+                label="Review incidents"
+                value={@evidence.health_rollup.review_count}
+                detail="Open review alerts stay visible without becoming pager noise."
+              />
+              <.rollup_section
+                label="Page incidents"
+                value={@evidence.health_rollup.page_count}
+                detail="Fast burn and breaker trips remain explicit."
+              />
+              <.rollup_section
+                label="Audit relay"
+                value={@evidence.health_rollup.relay_signal}
+                detail={@evidence.health_rollup.relay_detail}
+              />
             </div>
-          </div>
-
-          <div class="grid gap-3 lg:grid-cols-5">
-            <.rollup_card label="Budget" value={@evidence.health_rollup.budget_signal} detail={@evidence.health_rollup.budget_detail} />
-            <.rollup_card label="Breaker" value={@evidence.health_rollup.breaker_signal} detail={@evidence.health_rollup.breaker_detail} />
-            <.rollup_card label="Review incidents" value={@evidence.health_rollup.review_count} detail="Open review alerts stay visible without becoming pager noise." />
-            <.rollup_card label="Page incidents" value={@evidence.health_rollup.page_count} detail="Fast burn and breaker trips remain explicit." />
-            <.rollup_card label="Audit relay" value={@evidence.health_rollup.relay_signal} detail={@evidence.health_rollup.relay_detail} />
-          </div>
+          </.evidence_section>
 
           <div class="grid gap-4 xl:grid-cols-[1.25fr,0.9fr]">
             <div class="space-y-4">
-              <section class="scoria-panel scoria-panel--raised" style="padding: var(--scoria-space-4);">
-                <div class="flex items-center justify-between gap-3">
-                  <div>
-                    <h4 style="font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text);">Budget strip</h4>
-                    <p style="margin-top: var(--scoria-space-1); font-size: var(--scoria-fs-label); color: var(--scoria-text-muted);">
-                      Reservation actuals, reason codes, and provider/tool refs for the selected run.
-                    </p>
-                  </div>
-                  <.badge tone={badge_tone(@evidence.budget.status, :budget)} label={@evidence.budget.status_label} dot={false} />
+              <.evidence_section
+                title="Budget strip"
+                description="Reservation actuals, reason codes, and provider/tool refs for the selected run."
+                badge={@evidence.budget.status_label}
+                tone={badge_tone(@evidence.budget.status, :budget)}
+              >
+                <.evidence_rows
+                  rows={[
+                    {"Reservation actuals", @evidence.budget.actuals},
+                    {"policy", @evidence.budget.policy_key},
+                    {"Reason and integration", @evidence.budget.reason_code},
+                    {"provider/tool", "#{@evidence.budget.provider_ref} / #{@evidence.budget.tool_ref}"}
+                  ]}
+                />
+              </.evidence_section>
+
+              <.evidence_section title="Incident notebook">
+                <div class="space-y-3">
+                  <.incident_section :for={incident <- @evidence.incidents} incident={incident} />
                 </div>
-
-                <div class="mt-3 grid gap-3 md:grid-cols-2" style="font-size: var(--scoria-fs-body); color: var(--scoria-text-muted);">
-                  <.detail_card label="Reservation actuals" value={@evidence.budget.actuals} detail={"policy #{@evidence.budget.policy_key}"} />
-                  <.detail_card label="Reason and integration" value={@evidence.budget.reason_code} detail={"#{@evidence.budget.provider_ref} / #{@evidence.budget.tool_ref}"} />
-                </div>
-              </section>
-
-              <section class="scoria-panel scoria-panel--raised" style="padding: var(--scoria-space-4);">
-                <h4 style="font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text);">Incident notebook</h4>
-                <div class="mt-3 space-y-3">
-                  <article :for={incident <- @evidence.incidents} class="scoria-panel" style="padding: var(--scoria-space-3);">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p style="font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text);"><%= incident.summary %></p>
-                        <p style="margin-top: var(--scoria-space-1); font-size: var(--scoria-fs-label); color: var(--scoria-text-muted);"><%= incident.reason_code %></p>
-                      </div>
-                      <div class="flex flex-wrap gap-2">
-                        <.badge tone={badge_tone(incident.routing_class, :routing)} label={incident.routing_label} dot={false} />
-                        <.badge tone={badge_tone(incident.severity, :severity)} label={incident.severity_label} dot={false} />
-                      </div>
-                    </div>
-
-                    <div class="mt-3 grid gap-2 md:grid-cols-2" style="font-size: var(--scoria-fs-label); color: var(--scoria-text-muted);">
-                      <p>scorer version <span style="font-weight: 600; color: var(--scoria-text);"><%= incident.scorer_version %></span></p>
-                      <p>baseline version <span style="font-weight: 600; color: var(--scoria-text);"><%= incident.baseline_version %></span></p>
-                      <p>alert reason code <span style="font-weight: 600; color: var(--scoria-text);"><%= incident.reason_code %></span></p>
-                      <p>incident key <span style="font-family: var(--scoria-font-mono); color: var(--scoria-text);"><%= incident.incident_key %></span></p>
-                    </div>
-
-                    <div class="mt-3 flex flex-wrap gap-3" style="font-size: var(--scoria-fs-label);">
-                      <a style="color: var(--scoria-link); text-decoration: underline;" href={"#trace-#{incident.trace_id}"}>Trace <%= incident.trace_id %></a>
-                      <a :if={incident.run_id} style="color: var(--scoria-link); text-decoration: underline;" href={"#run-#{incident.run_id}"}>Run <%= incident.run_id %></a>
-                      <a :if={incident.approval_id} style="color: var(--scoria-link); text-decoration: underline;" href={"#approval-#{incident.approval_id}"}>Approval <%= incident.approval_id %></a>
-                    </div>
-                  </article>
-                </div>
-              </section>
+              </.evidence_section>
             </div>
 
             <div class="space-y-4">
-              <section class="scoria-panel scoria-panel--raised" style="padding: var(--scoria-space-4);">
-                <h4 style="font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text);">Breaker and relay evidence</h4>
-                <div class="mt-3 space-y-3">
-                  <div class="scoria-panel" style="padding: var(--scoria-space-3);">
-                    <div class="flex items-center justify-between gap-3">
-                      <p style="font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text);"><%= @evidence.breaker.breaker_key %></p>
-                      <.badge tone={badge_tone(@evidence.breaker.state, :breaker)} label={@evidence.breaker.state_label} dot={false} />
-                    </div>
-                    <p style="margin-top: var(--scoria-space-2); font-size: var(--scoria-fs-label); color: var(--scoria-text-muted);"><%= @evidence.breaker.reason_code %> via <%= @evidence.breaker.integration_kind %></p>
-                  </div>
+              <.evidence_section title="Breaker and relay evidence">
+                <.evidence_section
+                  title={@evidence.breaker.breaker_key}
+                  description={"#{@evidence.breaker.reason_code} via #{@evidence.breaker.integration_kind}"}
+                  badge={@evidence.breaker.state_label}
+                  tone={badge_tone(@evidence.breaker.state, :breaker)}
+                >
+                  <.evidence_rows
+                    rows={[
+                      {"breaker key", @evidence.breaker.breaker_key},
+                      {"state", @evidence.breaker.state_label},
+                      {"reason code", @evidence.breaker.reason_code},
+                      {"integration kind", @evidence.breaker.integration_kind}
+                    ]}
+                  />
+                </.evidence_section>
 
-                  <div
-                    :for={audit <- @evidence.audit_rows}
-                    class="scoria-panel"
-                    style="padding: var(--scoria-space-3); font-size: var(--scoria-fs-body); color: var(--scoria-text-muted);"
-                  >
-                    <div class="flex items-center justify-between gap-3">
-                      <p style="font-weight: 600; color: var(--scoria-text);"><%= audit.event_type %></p>
-                      <.badge tone={badge_tone(audit.sink_status, :audit)} label={audit.sink_status} dot={false} />
-                    </div>
-                    <p style="margin-top: var(--scoria-space-1); font-size: var(--scoria-fs-label);">
-                      approval <%= audit.approval_id %> · actor <%= audit.actor_ref %>
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              <section class="scoria-panel scoria-panel--raised" style="padding: var(--scoria-space-4);">
-                <h4 style="font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text);">Notification delivery outcomes</h4>
                 <div class="mt-3 space-y-3">
-                  <div
-                    :for={delivery <- @evidence.deliveries}
-                    class="scoria-panel"
-                    style="padding: var(--scoria-space-3); font-size: var(--scoria-fs-body); color: var(--scoria-text-muted);"
-                  >
-                    <div class="flex items-center justify-between gap-3">
-                      <p style="font-weight: 600; color: var(--scoria-text);"><%= delivery.sink_kind %></p>
-                      <.badge tone={badge_tone(delivery.delivery_status, :delivery)} label={delivery.delivery_status} dot={false} />
-                    </div>
-                    <p style="margin-top: var(--scoria-space-1); font-size: var(--scoria-fs-label);"><%= delivery.routing_key %></p>
-                    <p style="margin-top: var(--scoria-space-2); font-size: var(--scoria-fs-label);">
-                      outcome <span style="font-weight: 600; color: var(--scoria-text);"><%= delivery.delivery_outcome %></span>
-                      <span :if={delivery.transport_mode}>· <%= delivery.transport_mode %></span>
-                      <span :if={delivery.transport_sink}>· <%= delivery.transport_sink %></span>
-                    </p>
-                    <p style="margin-top: var(--scoria-space-2); font-size: var(--scoria-fs-label);">
-                      attempts <%= delivery.attempt_count %>
-                      <span :if={delivery.last_error}>· <%= delivery.last_error %></span>
-                    </p>
-                  </div>
+                  <.audit_section :for={audit <- @evidence.audit_rows} audit={audit} />
                 </div>
-              </section>
+              </.evidence_section>
+
+              <.evidence_section title="Notification delivery outcomes">
+                <div class="space-y-3">
+                  <.delivery_section :for={delivery <- @evidence.deliveries} delivery={delivery} />
+                </div>
+              </.evidence_section>
             </div>
           </div>
         </div>
@@ -157,33 +119,106 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
   attr(:value, :any, required: true)
   attr(:detail, :string, required: true)
 
-  defp rollup_card(assigns) do
+  defp rollup_section(assigns) do
     ~H"""
-    <article class="scoria-panel" style="padding: var(--scoria-space-3);">
-      <p class="scoria-eyebrow"><%= @label %></p>
-      <p style="margin-top: var(--scoria-space-2); font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text);"><%= @value %></p>
-      <p style="margin-top: var(--scoria-space-1); font-size: var(--scoria-fs-label); color: var(--scoria-text-muted);"><%= @detail %></p>
-    </article>
+    <.evidence_section title={@label} badge={to_string(@value)} tone={tone(@value)}>
+      <.evidence_rows rows={[{"value", @value}, {"detail", @detail}]} />
+    </.evidence_section>
     """
   end
 
-  attr(:label, :string, required: true)
-  attr(:value, :any, required: true)
-  attr(:detail, :string, required: true)
+  attr(:incident, :map, required: true)
 
-  defp detail_card(assigns) do
+  defp incident_section(assigns) do
     ~H"""
-    <div class="scoria-panel" style="padding: var(--scoria-space-3);">
-      <p class="scoria-eyebrow"><%= @label %></p>
-      <p style="margin-top: var(--scoria-space-2); font-weight: 600; color: var(--scoria-text);"><%= @value %></p>
-      <p style="margin-top: var(--scoria-space-1); font-size: var(--scoria-fs-label); color: var(--scoria-text-muted);"><%= @detail %></p>
-    </div>
+    <.evidence_section
+      title={@incident.summary}
+      description={@incident.reason_code}
+      badge={@incident.routing_label}
+      tone={badge_tone(@incident.routing_class, :routing)}
+    >
+      <.evidence_rows
+        rows={[
+          {"routing", @incident.routing_label},
+          {"severity", @incident.severity_label},
+          {"scorer version", @incident.scorer_version},
+          {"baseline version", @incident.baseline_version},
+          {"alert reason code", @incident.reason_code},
+          {"incident key", @incident.incident_key}
+        ]}
+      />
+
+      <.evidence_action_row>
+        <a class="scoria-button scoria-button--ghost scoria-button--sm" href={"#trace-#{@incident.trace_id}"}>
+          Trace <%= @incident.trace_id %>
+        </a>
+        <a
+          :if={@incident.run_id}
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+          href={"#run-#{@incident.run_id}"}
+        >
+          Run <%= @incident.run_id %>
+        </a>
+        <a
+          :if={@incident.approval_id}
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+          href={"#approval-#{@incident.approval_id}"}
+        >
+          Approval <%= @incident.approval_id %>
+        </a>
+      </.evidence_action_row>
+    </.evidence_section>
     """
   end
 
-  # Domain (value, kind) → semantic tone atom. Rendering lives in ScoriaWeb.UI.badge/1.
-  defp badge_tone("critical", :severity), do: :fail
-  defp badge_tone("warning", :severity), do: :warn
+  attr(:audit, :map, required: true)
+
+  defp audit_section(assigns) do
+    ~H"""
+    <.evidence_section
+      title={@audit.event_type}
+      description={"approval #{@audit.approval_id} - actor #{@audit.actor_ref}"}
+      badge={@audit.sink_status}
+      tone={badge_tone(@audit.sink_status, :audit)}
+    >
+      <.evidence_rows
+        rows={[
+          {"event type", @audit.event_type},
+          {"approval", @audit.approval_id},
+          {"actor", @audit.actor_ref},
+          {"sink status", @audit.sink_status}
+        ]}
+      />
+    </.evidence_section>
+    """
+  end
+
+  attr(:delivery, :map, required: true)
+
+  defp delivery_section(assigns) do
+    ~H"""
+    <.evidence_section
+      title={@delivery.sink_kind}
+      description={@delivery.routing_key}
+      badge={@delivery.delivery_status}
+      tone={badge_tone(@delivery.delivery_status, :delivery)}
+    >
+      <.evidence_rows
+        rows={[
+          {"routing key", @delivery.routing_key},
+          {"delivery status", @delivery.delivery_status},
+          {"outcome", @delivery.delivery_outcome},
+          {"transport mode", @delivery.transport_mode},
+          {"transport sink", @delivery.transport_sink},
+          {"attempts", @delivery.attempt_count},
+          {"last error", @delivery.last_error}
+        ]}
+      />
+    </.evidence_section>
+    """
+  end
+
+  # Domain (value, kind) -> semantic tone atom. Rendering lives in ScoriaWeb.UI.badge/1.
   defp badge_tone("page", :routing), do: :fail
   defp badge_tone("review", :routing), do: :info
   defp badge_tone("trip", :budget), do: :fail
