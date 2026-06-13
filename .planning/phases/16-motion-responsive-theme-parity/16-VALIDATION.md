@@ -1,8 +1,8 @@
 ---
 phase: 16
 slug: motion-responsive-theme-parity
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-13
 ---
@@ -38,9 +38,9 @@ Per-phase validation contract for feedback sampling during execution.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 16-W0-01 | TBD | 0 | MOTION-01, MOTION-03, MOTION-04 | T-16-03 / T-16-04 | Browser checks stay targeted and do not create broad CI denial-of-service risk | e2e | `mix scoria.ui.e2e` | Missing `priv/dev/e2e/phase16_parity.spec.mjs` | pending |
-| 16-W0-02 | TBD | 0 | MOTION-02, MOTION-03 | T-16-01 / T-16-03 | HEEx row summaries remain escaped; mobile nav preserves keyboard access | component/e2e | `mix test test/scoria_web/ui_component_test.exs && mix scoria.ui.e2e` | Partial existing coverage | pending |
-| 16-W0-03 | TBD | 0 | MOTION-04 | - | Theme tokens preserve WCAG AA contrast in light and dark modes | source/browser | `mix scoria.ui.e2e` plus optional contrast guard | Optional guard missing | pending |
+| 16-W0-01 | 16-06 | 0 | MOTION-01, MOTION-03, MOTION-04 | T-16-03 / T-16-04 | Browser checks stay targeted and do not create broad CI denial-of-service risk | e2e | `mix scoria.ui.e2e` | Missing `priv/dev/e2e/phase16_parity.spec.mjs` | pending |
+| 16-W0-02 | 16-02, 16-06 | 0 | MOTION-02, MOTION-03 | T-16-01 / T-16-03 | HEEx row summaries remain escaped; mobile nav preserves keyboard access | component/e2e | `mix test test/scoria_web/ui_component_test.exs && mix scoria.ui.e2e` | Partial existing coverage | pending |
+| 16-W0-03 | 16-06 | 0 | MOTION-04 | - | Theme tokens preserve WCAG AA contrast in light and dark modes | source/browser | `mix scoria.ui.e2e` plus optional contrast guard | Optional guard missing | pending |
 
 ---
 
@@ -63,11 +63,11 @@ Per-phase validation contract for feedback sampling during execution.
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verification or explicit Wave 0 dependencies.
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verification.
-- [ ] Wave 0 covers all missing references listed above.
-- [ ] No watch-mode flags are used in verification commands.
-- [ ] Feedback latency stays bounded by targeted ExUnit or targeted Playwright checks.
-- [ ] `nyquist_compliant: true` set in frontmatter after verification coverage is proven.
+- [x] All tasks have automated verification or explicit Wave 0 dependencies.
+- [x] Sampling continuity: no 3 consecutive tasks without automated verification.
+- [x] Wave 0 covers all missing references listed above.
+- [x] No watch-mode flags are used in verification commands.
+- [x] Feedback latency stays bounded by targeted ExUnit or targeted Playwright checks.
+- [x] `nyquist_compliant: true` set in frontmatter after verification coverage is proven.
 
-**Approval:** pending
+**Approval:** approved

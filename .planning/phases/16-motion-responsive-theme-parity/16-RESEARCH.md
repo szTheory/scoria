@@ -436,17 +436,19 @@ end
 | A1 | Focus outlines may be clipped by overflow containers on some surfaces. | Common Pitfalls | Planner may under-test focused controls inside table viewports/drawers. |
 | A2 | Reduced-motion computed-style checks should accept `0s` or `0.001ms` depending on browser serialization. | Code Examples | Tests could be flaky if the exact serialized value differs. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the token contrast guard be implemented in Phase 16?**  
    - What we know: D-31 permits it only if it reuses `02-tokens.css` and brandbook pairings. [VERIFIED: CONTEXT.md]  
    - What's unclear: The exact parser/helper does not exist yet. [VERIFIED: codebase grep]  
-   - Recommendation: Plan it as a small optional task after shell/table/browser checks; skip if it creates a parallel token source. [VERIFIED: CONTEXT.md]
+   - Recommendation: Plan it as a small optional task after shell/table/browser checks; skip if it creates a parallel token source. [VERIFIED: CONTEXT.md]  
+   - **RESOLVED:** Implemented as 16-06 Task 2 (token contrast guard), reusing `02-tokens.css` and brandbook pairings per D-31; scoped so it does not create a parallel token source.
 
 2. **Should mobile drawer use the existing command-palette focus helpers or a new small hook?**  
    - What we know: `assets/js/scoria.js` already has `focusableElements`, restore-focus, and close-delay patterns for command/shortcuts overlays. [VERIFIED: codebase grep]  
    - What's unclear: The cleanest internal hook shape is executor discretion. [VERIFIED: CONTEXT.md]  
-   - Recommendation: Reuse helper functions and add a scoped `MobileNav` hook only if markup cannot be expressed with existing helpers. [VERIFIED: codebase grep]
+   - Recommendation: Reuse helper functions and add a scoped `MobileNav` hook only if markup cannot be expressed with existing helpers. [VERIFIED: codebase grep]  
+   - **RESOLVED:** 16-01 Task 2 reuses the existing `trapFocus` / `focusableElements` helpers and adds a scoped `MobileNav` hook only for open/close/focus/hidden-delay wiring; no focus logic is reimplemented.
 
 ## Environment Availability
 
