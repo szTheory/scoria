@@ -22,7 +22,7 @@ UI/IA/DX milestone. No net-new backend capability families. Expose components �
 - [x] **Phase 12: Design-system component layer** — Expose `ui.ex` table/drawer/modal/form/notebook/skeleton/toast components, fix `flash_group`, add executable raw-color drift guard. The enforced token gateway. (completed 2026-06-04)
 - [x] **Phase 13: Orientation spine (IA)** — Fix nav active-state, third nav axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, cross-screen quality-loop threading, honest reserved-name stubs. (completed 2026-06-12)
 - [x] **Phase 14: Least-iterated screens polish** — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions (zero raw-palette leakage); real Dataset Builder index.
-- [ ] **Phase 15: High-traffic screens + evidence adapters** — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components as thin notebook-shell adapters.
+- [x] **Phase 15: High-traffic screens + evidence adapters** — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components as thin notebook-shell adapters. (completed 2026-06-13)
 - [ ] **Phase 16: Motion + responsive + theme parity** — Restrained brand-tied motion, focus-visible/a11y, mobile-first responsive across md/lg/xl, full light+dark parity.
 - [ ] **Phase 17: Consistency sweep + proof** — Re-run audit loop, rubric-delta + raw-color count → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage.
 
@@ -179,7 +179,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | 12. Design-system component layer | v3.0 | 5/5 | Complete    | 2026-06-04 |
 | 13. Orientation spine (IA) | v3.0 | 8/8 | Complete    | 2026-06-12 |
 | 14. Least-iterated screens polish | v3.0 | 5/6 | In Progress|  |
-| 15. High-traffic screens + evidence adapters | v3.0 | 5/5 | Complete   | 2026-06-13 |
+| 15. High-traffic screens + evidence adapters | v3.0 | 5/5 | Complete    | 2026-06-13 |
 | 16. Motion + responsive + theme parity | v3.0 | 0/? | Not started | - |
 | 17. Consistency sweep + proof | v3.0 | 0/? | Not started | - |
 | 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete | 2026-06-11 |

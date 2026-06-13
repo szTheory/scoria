@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Control Room
-status: verifying
-last_updated: "2026-06-13T01:45:26.439Z"
+status: ready_to_plan
+last_updated: 2026-06-13T01:52:32.014Z
 last_activity: 2026-06-13
 progress:
   total_phases: 20
@@ -11,23 +11,24 @@ progress:
   total_plans: 29
   completed_plans: 29
   percent: 25
+stopped_at: Phase 15 complete (5/5) — ready to discuss Phase 16
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-06-11 — v2.17 Vesicle shipped and archived; v3.0 Control Room active)
+See: `.planning/PROJECT.md` (updated 2026-06-13 — Phase 15 complete; v3.0 Control Room active)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 15 — high-traffic-screens-evidence-adapters
+**Current focus:** Phase 16 — motion + responsive + theme parity
 
 ## Current Position
 
-Phase: 15 (high-traffic-screens-evidence-adapters) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
+Phase: 16
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-06-13
 
 ## Roadmap (v3.0 Control Room, Phases 11–17)
@@ -36,7 +37,7 @@ Last activity: 2026-06-13
 2. **Phase 12 — Design-system component layer** (DS-01..06) — `ui.ex` table/drawer/modal/form/notebook/skeleton/toast, fix `flash_group`, raw-color drift guard. The enforced token gateway. **COMPLETE 2026-06-04**
 3. **Phase 13 — Orientation spine (IA)** (IA-01..06) — nav active-state fix, third axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, quality-loop threading, honest reserved-name stubs. **COMPLETE 2026-06-12**
 4. **Phase 14 — Least-iterated screens polish** (SCREEN-01, SCREEN-02) — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions; real Dataset Builder index. **COMPLETE 2026-06-12**
-5. **Phase 15 — High-traffic screens + evidence adapters** (SCREEN-03, SCREEN-04) — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components → thin notebook adapters. **NEXT**
+5. **Phase 15 — High-traffic screens + evidence adapters** (SCREEN-03, SCREEN-04) — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components → thin notebook adapters. **COMPLETE 2026-06-13**
 6. **Phase 16 — Motion + responsive + theme parity** (MOTION-01..04) — brand-tied motion, focus-visible/a11y, mobile-first md/lg/xl, light+dark parity.
 7. **Phase 17 — Consistency sweep + proof** (PROOF-01..03) — re-run audit, rubric-delta + raw-color → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage.
 
@@ -51,7 +52,7 @@ Last activity: 2026-06-13
 
 ### Roadmap Evolution
 
-- **v3.0 (resumed):** Control Room UI/IA/DX milestone. Phases 11–17. Phases 11–14 complete (Phase 14 completed 2026-06-12). Core finding: design system is under-*adopted* (~22/25 view files leak raw Tailwind). Paused at clean 12/13 boundary for v2.17 interjection; now resumed. Next: Phase 15 high-traffic screens + evidence adapters.
+- **v3.0 (resumed):** Control Room UI/IA/DX milestone. Phases 11–17. Phases 11–15 complete (Phase 15 completed 2026-06-13). Core finding: design system is under-*adopted* (~22/25 view files leak raw Tailwind). Paused at clean 12/13 boundary for v2.17 interjection; now resumed. Next: Phase 16 motion + responsive + theme parity.
 - **v2.17 (shipped):** Brand system milestone. Interjected before v3.0 phases 13–17 because brand book was AI-generated seed, never pressure-tested, and no logo/collateral existed. Phases 18–22 (globally monotonic past v3.0's reserved 11–17 block). All 8 mandatory requirements satisfied; BRAND-09 conditional did not fire. Archived in `.planning/milestones/v2.17-*`.
 - **v2.16 (shipped):** ReqLLM `~> 1.13` peer bump — minimal dependency hygiene scope.
 - **v2.15 (shipped):** Named connector adoption lane — PR WAE after knowledge, not in closeout.
@@ -125,4 +126,4 @@ Last activity: 2026-06-13
 
 ## Operator Next Steps
 
-- `/gsd:plan-phase 15` — plan Phase 15 (High-traffic screens + evidence adapters)
+- `/gsd:discuss-phase 16` — discuss Phase 16 (Motion + responsive + theme parity)
