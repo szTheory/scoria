@@ -14,7 +14,7 @@
  */
 
 import { readdir, writeFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { statSync } from 'fs';
 import { join, relative, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -73,12 +73,40 @@ const SCREENS = [
 ];
 
 // ---------------------------------------------------------------------------
-// PNG discovery — lists all .png files in a screen subdir (if it exists)
+// Filesystem helpers
+// ---------------------------------------------------------------------------
+
+// Returns true only if `p` exists AND is a directory. A path that exists as a
+// regular file returns false (distinct from "missing") — see warnNonDir().
+function isDir(p) {
+  try {
+    return statSync(p).isDirectory();
+  } catch {
+    return false; // ENOENT or any stat failure → treat as not-a-directory
+  }
+}
+
+// Warn (once, to stderr) when a path exists but is not a directory, so a
+// regular file at a screen path is surfaced rather than silently counted as
+// "0 / 0" after readdir fails.
+function warnNonDir(p) {
+  try {
+    if (!statSync(p).isDirectory()) {
+      console.error(`  warning: ${p} exists but is not a directory — treating as no captures`);
+    }
+  } catch {
+    // ENOENT → genuinely missing, nothing to warn about
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PNG discovery — lists all .png files in a screen subdir (if it is a dir)
 // ---------------------------------------------------------------------------
 
 async function listScreenPngs(dir, screenName) {
   const screenDir = join(dir, screenName);
-  if (!existsSync(screenDir)) {
+  if (!isDir(screenDir)) {
+    warnNonDir(screenDir);
     return [];
   }
   let entries;
@@ -177,12 +205,12 @@ async function main() {
   const args = parseArgs(process.argv);
   const { before, after, out } = args;
 
-  if (!existsSync(before)) {
-    console.error(`Error: --before dir does not exist: ${before}`);
+  if (!isDir(before)) {
+    console.error(`Error: --before is not an existing directory: ${before}`);
     process.exit(1);
   }
-  if (!existsSync(after)) {
-    console.error(`Error: --after dir does not exist: ${after}`);
+  if (!isDir(after)) {
+    console.error(`Error: --after is not an existing directory: ${after}`);
     process.exit(1);
   }
 
@@ -200,7 +228,7 @@ async function main() {
     const beforePngs = await listScreenPngs(before, screen.name);
     const afterPngs = await listScreenPngs(after, screen.name);
 
-    const afterDirMissing = !existsSync(join(after, screen.name));
+    const afterDirMissing = !isDir(join(after, screen.name));
 
     const afterSet = new Set(afterPngs);
     const beforeSet = new Set(beforePngs);
