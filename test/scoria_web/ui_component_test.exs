@@ -897,10 +897,24 @@ defmodule ScoriaWeb.UIComponentTest do
         render_component(&ScoriaWeb.UI.table/1,
           id: "test-table",
           rows: [],
+          on_sort: "sort",
           col: [%{label: "Status", key: :status, class: nil, inner_block: []}]
         )
 
+      assert html =~ ~s(phx-click="sort")
       assert html =~ ~s(phx-value-by="status")
+    end
+
+    test "sortable headers are opt-in to avoid unowned LiveView events" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          col: [%{label: "Status", key: :status, class: nil, inner_block: []}]
+        )
+
+      refute html =~ ~s(phx-click="sort")
+      refute html =~ ~s(phx-value-by="status")
     end
 
     test "density :compact yields scoria-table--compact" do

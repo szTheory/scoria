@@ -890,12 +890,14 @@ defmodule ScoriaWeb.UI do
   attr(:id, :string, required: true)
   attr(:page, :integer, default: 1)
   attr(:total_pages, :integer, default: 1)
+  attr(:on_sort, :string, default: nil)
   attr(:on_page_change, :string, default: nil)
   attr(:on_density_change, :string, default: nil)
   attr(:rest, :global)
 
   @doc "Sortable, density-aware, paginated data table (DS-01).
-  Renders column headers from typed <:col> slots; emits phx-click='sort' on keyed columns.
+  Renders column headers from typed <:col> slots; emits sort events for keyed columns only
+  when on_sort is supplied by the parent LiveView.
   Uses density modifier classes from density_class/1. Falls back to a default empty state
   when rows is empty (overridable via <:empty>). Pagination strip shown when total_pages > 1.
   Density controls render only when on_density_change is supplied by the parent LiveView."
@@ -935,12 +937,12 @@ defmodule ScoriaWeb.UI do
             <th
               :for={column <- @col}
               class={["scoria-table__th", Map.get(column, :class)]}
-              phx-click={Map.get(column, :key) && "sort"}
-              phx-value-by={Map.get(column, :key)}
+              phx-click={@on_sort && Map.get(column, :key) && @on_sort}
+              phx-value-by={@on_sort && Map.get(column, :key)}
             >
               {column.label}
               <svg
-                :if={Map.get(column, :key) != nil}
+                :if={@on_sort && Map.get(column, :key) != nil}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 16 16"
                 width="16"
