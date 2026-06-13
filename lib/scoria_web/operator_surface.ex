@@ -52,6 +52,7 @@ defmodule ScoriaWeb.OperatorSurface do
         transport_kind: inst.transport_kind,
         terminal_offline_reason: inst.terminal_offline_reason,
         current_run_id: inst.current_run_id,
+        last_seen_at: inst.last_seen_at,
         semantic: runtime_drawer_semantic(inst.current_run_id)
       }
     end)

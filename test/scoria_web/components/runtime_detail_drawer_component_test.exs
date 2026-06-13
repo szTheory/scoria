@@ -19,9 +19,10 @@ defmodule ScoriaWeb.RuntimeDetailDrawerComponentTest do
         }
       }
 
-      html = rendered_to_string(~H"""
-      <RuntimeDetailDrawerComponent.render drawer={@drawer} />
-      """)
+      html =
+        rendered_to_string(~H"""
+        <RuntimeDetailDrawerComponent.render drawer={@drawer} />
+        """)
 
       assert html =~ "rt-1234"
       assert html =~ "offline"
@@ -54,9 +55,10 @@ defmodule ScoriaWeb.RuntimeDetailDrawerComponentTest do
         }
       }
 
-      html = rendered_to_string(~H"""
-      <RuntimeDetailDrawerComponent.render drawer={@drawer} />
-      """)
+      html =
+        rendered_to_string(~H"""
+        <RuntimeDetailDrawerComponent.render drawer={@drawer} />
+        """)
 
       assert html =~ "rt-5678"
       assert html =~ "online"
@@ -93,9 +95,10 @@ defmodule ScoriaWeb.RuntimeDetailDrawerComponentTest do
         }
       }
 
-      html = rendered_to_string(~H"""
-      <RuntimeDetailDrawerComponent.render drawer={@drawer} />
-      """)
+      html =
+        rendered_to_string(~H"""
+        <RuntimeDetailDrawerComponent.render drawer={@drawer} />
+        """)
 
       assert html =~ "reject"
       assert html =~ "prompt_version_mismatch"
