@@ -156,9 +156,32 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
                 Inspect connector
               </button>
             </:action>
+            <:mobile_summary :let={connector}>
+              <div class="scoria-mobile-summary">
+                <div class="scoria-mobile-summary__label">
+                  <span class="font-semibold">{connector.connector_label}</span>
+                </div>
+                <div class="scoria-mobile-summary__status">
+                  <.badge tone={tone(connector.health_state)} label={connector.health_state} />
+                </div>
+                <div class="scoria-mobile-summary__meta">
+                  {connector.auth_provenance.status}
+                </div>
+                <div class="scoria-mobile-summary__action">
+                  <button
+                    type="button"
+                    phx-click="open_connector_drawer"
+                    phx-value-id={connector.connector_id}
+                    class="scoria-button scoria-button--ghost scoria-button--sm"
+                  >
+                    Inspect connector
+                  </button>
+                </div>
+              </div>
+            </:mobile_summary>
             <:empty>
-              <.empty_state title="No connectors registered">
-                Connector activity appears here after a tenant registers a connector.
+              <.empty_state title="No connectors match this view">
+                Adjust your filters or check back when data is available.
               </.empty_state>
             </:empty>
           </.table>

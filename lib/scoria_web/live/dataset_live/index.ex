@@ -95,8 +95,8 @@ defmodule ScoriaWeb.DatasetLive.Index do
         on_density_change="set_density"
       >
         <:empty>
-          <.empty_state title="No datasets yet">
-            Promote a flagged trace or workflow source to start a regression dataset.
+          <.empty_state title="No datasets match this view">
+            Adjust your filters or check back when data is available.
           </.empty_state>
         </:empty>
         <:col :let={dataset} label="Dataset" key={:name}>
@@ -122,6 +122,25 @@ defmodule ScoriaWeb.DatasetLive.Index do
             Inspect dataset
           </.link>
         </:col>
+        <:mobile_summary :let={dataset}>
+          <div class="scoria-mobile-summary">
+            <div class="scoria-mobile-summary__label">
+              <strong>{dataset.name}</strong>
+              <span class="font-mono"> v{dataset.version}</span>
+            </div>
+            <div class="scoria-mobile-summary__status">
+              <.badge tone={state_tone(dataset.state)} label={state_label(dataset.state)} />
+            </div>
+            <div class="scoria-mobile-summary__meta">
+              {dataset.item_count} items
+            </div>
+            <div class="scoria-mobile-summary__action">
+              <.link patch={dataset_path(assigns[:scoria_base] || "", dataset.id)} class="scoria-button scoria-button--ghost scoria-button--sm">
+                Open dataset
+              </.link>
+            </div>
+          </div>
+        </:mobile_summary>
       </.table>
     </.panel>
 
