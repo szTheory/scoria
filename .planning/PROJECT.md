@@ -102,6 +102,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **Phase 15 complete (2026-06-13, v3.0 Control Room):** High-traffic control-room screens now use shared table/drawer/modal/notebook primitives across Live Ops, Workflows, Approvals, and Connectors; remaining evidence adapters are thin notebook/evidence adapters; DS-06 raw-palette baseline is zero. SCREEN-03 and SCREEN-04 are complete. Next: Phase 16 motion + responsive + theme parity.
 - **v2.17 Vesicle shipped (2026-06-11):** Brand system complete — pressure-test.md (1,311 lines), TV-1 mark + LK-B lockup chosen by user (2 rounds), 8-variant logo set, brandbook/ (458 KB, zero binaries), README picture header, dashboard TV-1 mark + data-URI favicon, mix.exs/GitHub descriptions, quality-gate.mjs 8/8 PASS, mix test 632 green, DS-06 untouched. Archived in `.planning/milestones/v2.17-*`.
 - **Phase 12 complete (2026-06-04, v3.0 Control Room):** Design-system component layer — `ui.ex` now exposes table/drawer/modal/field/form_section/notebook/skeleton/toast contracts, `flash_group` routes through semantic tokens, and the DS-06 raw-color drift guard runs unconditionally in `mix test` (baseline `test/support/ds06_baseline.txt`, `ui.ex` at zero raw palette). Known polish debt deferred to Phases 14–16 (toast overlap CR-01, drawer positioning WR-03, dialog `aria-labelledby` WR-02) — see `12-REVIEW.md`.
 - **v2.16 shipped (2026-05-30):** ReqLLM peer bump to `~> 1.13` (1.13.0); archived in `.planning/milestones/v2.16-*`.
@@ -212,7 +213,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-_v3.0 Control Room — resumed 2026-06-11 after v2.17 Vesicle interjection (REQUIREMENTS.md current); next step: `/gsd:plan-phase 13`._
+_v3.0 Control Room — resumed 2026-06-11 after v2.17 Vesicle interjection (REQUIREMENTS.md current); Phases 11–15 complete; next step: `/gsd:discuss-phase 16`._
 
 - [ ] Operators get a committed dev-only screenshot + LLM-critique evaluation loop and seed data that exercises every dashboard screen.
 - [ ] The design system is fully adopted: shared `ui.ex` components replace hand-rolled markup, with zero raw-palette class leakage enforced by a drift guard.
@@ -411,4 +412,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-11 — v2.17 Vesicle shipped and archived; v3.0 Control Room restored as active (next: /gsd:plan-phase 13)*
+*Last updated: 2026-06-13 — Phase 15 complete; v3.0 Control Room continues with Phase 16 motion + responsive + theme parity (next: /gsd:discuss-phase 16)*
