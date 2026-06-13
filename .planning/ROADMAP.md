@@ -24,7 +24,7 @@ UI/IA/DX milestone. No net-new backend capability families. Expose components �
 - [x] **Phase 14: Least-iterated screens polish** — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions (zero raw-palette leakage); real Dataset Builder index.
 - [x] **Phase 15: High-traffic screens + evidence adapters** — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components as thin notebook-shell adapters. (completed 2026-06-13)
 - [x] **Phase 16: Motion + responsive + theme parity** — Restrained brand-tied motion, focus-visible/a11y, mobile-first responsive across md/lg/xl, full light+dark parity. (6 plans planned) (completed 2026-06-13)
-- [ ] **Phase 17: Consistency sweep + proof** — Re-run audit loop, rubric-delta + raw-color count → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage.
+- [x] **Phase 17: Consistency sweep + proof** — Re-run audit loop, rubric-delta + raw-color count → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage. (completed 2026-06-13)
 
 <details>
 <summary>✅ v2.17 Vesicle (Phases 18–22) — SHIPPED 2026-06-11</summary>
@@ -190,7 +190,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | 14. Least-iterated screens polish | v3.0 | 5/6 | In Progress|  |
 | 15. High-traffic screens + evidence adapters | v3.0 | 5/5 | Complete    | 2026-06-13 |
 | 16. Motion + responsive + theme parity | v3.0 | 6/6 | Complete    | 2026-06-13 |
-| 17. Consistency sweep + proof | v3.0 | 3/3 | Complete   | 2026-06-13 |
+| 17. Consistency sweep + proof | v3.0 | 3/3 | Complete    | 2026-06-13 |
 | 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete | 2026-06-11 |
 | 19. Logo divergence + user choice | v2.17 | 3/3 | Complete | 2026-06-11 |
 | 20. Logo convergence — full variant set | v2.17 | 2/2 | Complete | 2026-06-11 |

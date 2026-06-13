@@ -50,9 +50,9 @@
 
 ### Proof & Docs
 
-- [ ] **PROOF-01**: A final audit shows rubric-score improvement (baseline → final) per screen and a raw-color-class count of zero.
-- [ ] **PROOF-02**: Before/after contact sheets document the iteration as a basis for future passes.
-- [ ] **PROOF-03**: `docs/MAINTAINERS.md` documents the design-system component catalog and how to run the screenshot harness.
+- [x] **PROOF-01**: A final audit shows rubric-score improvement (baseline → final) per screen and a raw-color-class count of zero.
+- [x] **PROOF-02**: Before/after contact sheets document the iteration as a basis for future passes.
+- [x] **PROOF-03**: `docs/MAINTAINERS.md` documents the design-system component catalog and how to run the screenshot harness.
 
 ## Future Requirements
 
@@ -104,9 +104,9 @@ Each requirement maps to exactly one phase. Phase numbering continues from v2.16
 | MOTION-02 | Phase 16 — Motion + responsive + theme parity | Complete |
 | MOTION-03 | Phase 16 — Motion + responsive + theme parity | Complete |
 | MOTION-04 | Phase 16 — Motion + responsive + theme parity | Complete |
-| PROOF-01 | Phase 17 — Consistency sweep + proof | Pending |
-| PROOF-02 | Phase 17 — Consistency sweep + proof | Pending |
-| PROOF-03 | Phase 17 — Consistency sweep + proof | Pending |
+| PROOF-01 | Phase 17 — Consistency sweep + proof | Complete |
+| PROOF-02 | Phase 17 — Consistency sweep + proof | Complete |
+| PROOF-03 | Phase 17 — Consistency sweep + proof | Complete |
 
 **Coverage:**
 - v1 requirements: 28 total
