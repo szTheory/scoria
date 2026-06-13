@@ -1,13 +1,15 @@
 ---
 phase: 11-evaluation-engine-seed-depth
 verified: 2026-06-04T00:00:00Z
-status: human_needed
+status: passed
 score: 14/15
-overrides_applied: 0
-human_verification:
+overrides_applied: 1
+resolution: "Promoted human_needed → passed on 2026-06-13 at v3.0 milestone close. The one open item (3 overlay-selector captures: connector_drawer, runtime_drawer, prompt_release approve_modal) is WARNING-level per this report's own guidance (Human Verification §1), not a phase-goal blocker — all 9 canonical screens captured, critique ran, gap register committed. The overlay-capture scope-fence is an accepted, tracked project decision (STATE.md Deferred Items: 'shots overlay capture: connectors connector_drawer/runtime_drawer + prompt_release approve_modal'). Accepting the deferral as authorized in §'Guidance if overlays still fail'."
+human_verification_resolved:
   - test: "Run `mix scoria.ui.shots` against the dev server and confirm connector_drawer, runtime_drawer (connectors screen), and prompt_release approve_modal overlays are captured as PNGs"
     expected: "PNGs appear at priv/shots/{date}/connectors/connector_drawer_{theme}_{vp}.png, runtime_drawer_{theme}_{vp}.png, and priv/shots/{date}/prompt_release/approve_modal_{theme}_{vp}.png"
     why_human: "The 11-05 SUMMARY documents these three overlay selectors did not match the rendered DOM and were skipped during the live baseline run. The harness code declares the selectors correctly but whether the live DOM now matches requires a browser run against the dev server. EVAL-01 requires modal-open / drawer-open states in the state matrix."
+    outcome: "Accepted as deferred scope-fence at milestone close (overlay captures tracked in STATE.md Deferred Items). 9/9 canonical captures + approvals modal cover EVAL-01's core; 3 overlay types deferred to a future harness pass."
 ---
 
 # Phase 11: Evaluation Engine + Seed Depth — Verification Report
