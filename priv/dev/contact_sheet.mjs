@@ -13,7 +13,7 @@
  * No Playwright dependency — plain Node.js fs/path only.
  */
 
-import { readdir, writeFile } from 'fs/promises';
+import { readdir, writeFile, mkdir } from 'fs/promises';
 import { statSync } from 'fs';
 import { join, relative, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -374,6 +374,9 @@ async function main() {
 </html>
 `;
 
+  // Ensure the --out parent directory exists so a nested path like
+  // reports/2026/sheet.html does not fail with an opaque ENOENT.
+  await mkdir(dirname(out), { recursive: true });
   await writeFile(out, html, 'utf8');
   console.log(`\nWrote: ${out}`);
 }
