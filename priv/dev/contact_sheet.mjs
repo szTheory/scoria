@@ -107,9 +107,18 @@ function relPath(outFile, targetFile) {
   return relative(dirname(outFile), targetFile).replace(/\\/g, '/');
 }
 
+// Build a relative URL for an <img src>: percent-encode each path segment so
+// that legal filename/dir characters significant in URLs (space, #, ?, %, &)
+// resolve to the literal path rather than being interpreted as URL syntax.
+// The "/" separators are preserved. The result is still HTML-escaped at the
+// call site (WR-01) — URL-encoding and HTML-escaping are distinct concerns.
+function relUrl(outFile, targetFile) {
+  return relPath(outFile, targetFile).split('/').map(encodeURIComponent).join('/');
+}
+
 function renderPairRow(filename, beforeFile, afterFile, outPath, isAfterMissing) {
-  const beforeSrc = beforeFile ? relPath(outPath, beforeFile) : null;
-  const afterSrc = afterFile ? relPath(outPath, afterFile) : null;
+  const beforeSrc = beforeFile ? escapeHtml(relUrl(outPath, beforeFile)) : null;
+  const afterSrc = afterFile ? escapeHtml(relUrl(outPath, afterFile)) : null;
 
   const beforeCell = beforeSrc
     ? `<img src="${beforeSrc}" alt="Before: ${escapeHtml(filename)}" loading="lazy" />`
