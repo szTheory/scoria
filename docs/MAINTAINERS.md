@@ -158,6 +158,68 @@ Not a PR CI step or adoption closeout lane command.
 
 Producer-path integration tests prove runtime→PubSub→LiveView without test `send/2`. Merge-blocking orchestrator wiring: `mix test.semantic_fast_path --warnings-as-errors`. Gallery advisory lane: `mix scoria.test.support_copilot`.
 
+## Design-system component catalog
+
+`ScoriaWeb.UI` is the single enforced token gateway for all dashboard UI components.
+Every function component emits brand-book semantic classes (`assets/css/04-components.css`)
+driven by design tokens; raw Tailwind palette classes (`bg-rose-200`, etc.) are blocked
+in `lib/scoria_web/ui.ex` by `test/scoria_web/ds06_drift_guard_test.exs`.
+
+### Components at a glance
+
+| Component | Purpose |
+|-----------|---------|
+| `badge/1` | Status badge — tone + label, never color-alone |
+| `button/1` | Primary / ghost / danger button (brand book §8.5) |
+| `eyebrow/1` | Small uppercase category/status label |
+| `panel/1` | Panel/card surface with optional eyebrow + title + actions header |
+| `metric/1` | Metric card: label, big value, explicit delta (brand book §11.3) |
+| `id/1` | Copyable monospace identifier — CopyId JS hook |
+| `attention_card/1` | Status Home actionable-state card |
+| `object_header/1` | Object-detail page header |
+| `stub_page/1` | Placeholder page for unimplemented screens |
+| `kbd/1` | Keyboard shortcut chip |
+| `command_palette/1` | Client-side filtered command palette |
+| `empty_state/1` | Empty-state placeholder with optional action |
+| `modal/1` | Slot-based modal dialog (DS-02) |
+| `drawer/1` | Slot-based drawer panel (DS-02) |
+| `field/1` | Form field wrapper (DS-03) |
+| `form_section/1` | Form section group (DS-03) |
+| `skeleton/1` | Loading skeleton placeholder (DS-05) |
+| `toast/1` | Transient toast notification (DS-05) |
+| `notebook/1` | Tabbed evidence notebook (DS-04) |
+| `raw_evidence/1` | Raw evidence details/pre block (DS-04) |
+| `evidence_section/1` | Notebook-scoped evidence section |
+| `evidence_rows/1` | Key-value evidence rows |
+| `evidence_action_row/1` | Compact evidence action/link row |
+| `evidence_empty/1` | Notebook-scoped evidence empty state |
+| `table/1` | Sortable, density-aware, paginated data table (DS-01) |
+| `flash_group/1` | Flash notification group (DS-05) |
+| `tone/1` | Utility: maps status string/atom → semantic tone atom |
+| `status_label/1` | Utility: human-readable label for a status string |
+
+This table is a glance index — not the SSOT. The full attribute and slot reference is generated from code.
+
+### Full attribute/slot reference
+
+```bash
+MIX_ENV=dev mix docs
+```
+
+The rendered catalog lives in `doc/` (gitignored; standard Elixir ExDoc output).
+Open `doc/ScoriaWeb.UI.html` for the full component reference including all `attr`
+and `slot` declarations.
+
+### Raw-palette drift protection
+
+```bash
+mix test test/scoria_web/ds06_drift_guard_test.exs
+```
+
+Three assertions guard `ui.ex` zero-tolerance and enforce the ratchet across all
+`lib/scoria_web/` files. `test/support/ds06_baseline.txt` is empty — any raw palette
+class introduction fails `mix test` automatically.
+
 ## Screenshot + Critique Harness (dev-only)
 
 The screenshot and LLM-critique harness provides a mechanical proof loop for the v3.0 Control Room milestone. It captures every dashboard screen across its state matrix, runs an optional 9-dimension AI critique, and writes a ranked gap register. It is **dev-only**: excluded from the shipped Hex package and never run in merge-blocking CI (D-01).
