@@ -79,7 +79,7 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
     :ok
   end
 
-  test "incident evidence renders workflow-owned approval, incident, and delivery lineage from the real path" do
+  test "Home renders workflow-owned approval incident and delivery lineage as compact trace badges" do
     trace_id = "trace-sre-real"
     {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
 
@@ -158,24 +158,16 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
        }}
     )
 
-    render_click(view, "load_incident_evidence", %{"id" => trace_id, "run_id" => run.id})
-    render_async(view)
-
     html = render(view)
 
-    assert html =~ "Composite health rollup"
-    assert html =~ "scorer-v4"
-    assert html =~ "baseline-2026-05-11"
-    assert html =~ approval.id
     assert html =~ trace_id
     assert html =~ run.id
     assert html =~ "Review incident"
     assert html =~ "Page incident"
-    assert html =~ "chimeway"
-    assert html =~ "mailglass"
-    assert html =~ "approval.requested"
-    assert html =~ "outcome"
-    assert html =~ "unconfigured"
+    assert html =~ "Budget warn"
+    assert html =~ "Breaker open"
+    assert html =~ "Open incident"
+    refute html =~ "Load Incident Evidence"
 
     audit_event =
       Repo.get_by!(AuditOutboxEvent,
@@ -221,9 +213,9 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
     html = render(view)
 
     assert html =~ ~r/id="traces-trace-sre-2".*Budget warn/s
-    assert html =~ ~r/id="traces-trace-sre-2".*breaker open/s
-    assert html =~ ~r/id="traces-trace-sre-2".*review incident/s
-    assert html =~ ~r/id="traces-trace-sre-2".*page incident/s
+    assert html =~ ~r/id="traces-trace-sre-2".*Breaker open/s
+    assert html =~ ~r/id="traces-trace-sre-2".*Review incident/s
+    assert html =~ ~r/id="traces-trace-sre-2".*Page incident/s
     assert html =~ "budget_guard"
     refute html =~ "Load Budget State"
     refute html =~ "Load Incident Evidence"
@@ -460,5 +452,4 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
       })
       |> Repo.insert()
   end
-
 end

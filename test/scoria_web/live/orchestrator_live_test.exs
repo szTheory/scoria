@@ -219,7 +219,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
 
     html = render(view)
     assert html =~ "first_span"
-    assert html =~ ~s(id="trace-dup-1")
+    assert html =~ ~s(id="traces-trace-dup-1")
   end
 
   test "trace_span upsert replaces span with same id" do
