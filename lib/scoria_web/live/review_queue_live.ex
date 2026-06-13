@@ -71,7 +71,7 @@ defmodule ScoriaWeb.ReviewQueueLive do
           </section>
         <% end %>
 
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]">
+        <div class="scoria-page-split">
           <.panel>
             <:title>Flagged traces</:title>
             <.table id="review-queue" rows={@queue_rows} density={:compact}>

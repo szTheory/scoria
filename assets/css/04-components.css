@@ -1200,4 +1200,50 @@
     margin-top: var(--scoria-space-3);
   }
   .scoria-table__page-label { font-size: var(--scoria-fs-label); color: var(--scoria-text-muted); }
+
+  /* ---------- Responsive grid splits (16-03) ----------
+     Named, mobile-first, token-bound grid primitives for evidence and page-split
+     layouts. Single-column by default; breakpoint restores the intended two-column
+     split. All gaps use --scoria-space-* tokens. No raw hex or palette classes (DS-06).
+     D-33: shared design-system classes used across all callsites with the same split
+     so the fix pays dividends beyond the original 7 callsites. */
+
+  /* Evidence/comparison two-column split at xl (1280px).
+     Covers incident_evidence_component, semantic_evidence_notebook_component,
+     replay_evidence_notebook_component — all used xl: with ~1.25fr/0.9fr ratios. */
+  .scoria-evidence-split {
+    display: grid;
+    gap: var(--scoria-space-4);
+  }
+  @media (min-width: 1280px) {
+    .scoria-evidence-split {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.9fr);
+    }
+  }
+
+  /* Primary/detail page split at lg (1024px).
+     Covers workflow_live/show and review_queue_live — lg: with minmax detail rail.
+     Preserves the minmax(20rem, ...) minimum so the detail panel never collapses. */
+  .scoria-page-split {
+    display: grid;
+    gap: var(--scoria-space-6);
+  }
+  @media (min-width: 1024px) {
+    .scoria-page-split {
+      grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.8fr);
+    }
+  }
+
+  /* Content split at xl (1280px) — reversed ratio (narrower left, wider right).
+     Covers incidents_live/index content grid (0.85fr left, 1.15fr right). */
+  .scoria-page-split--xl-reverse {
+    display: grid;
+    gap: var(--scoria-space-6);
+  }
+  @media (min-width: 1280px) {
+    .scoria-page-split--xl-reverse {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    }
+  }
+  /* --------------------------------------------------------- */
 }

@@ -54,7 +54,7 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
             </div>
           </.evidence_section>
 
-          <div class="grid gap-4 xl:grid-cols-[1.25fr,0.9fr]">
+          <div class="scoria-evidence-split">
             <div class="space-y-4">
               <.evidence_section
                 title="Budget strip"

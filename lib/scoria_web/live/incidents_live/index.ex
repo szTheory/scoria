@@ -64,13 +64,13 @@ defmodule ScoriaWeb.IncidentsLive.Index do
       </div>
 
       <div :if={@incidents != []}>
-        <div class="grid gap-4 sm:grid-cols-3 mb-6">
+        <div class="grid gap-4 md:grid-cols-3 mb-6">
           <.metric label="Open incidents" value={to_string(@summary.open)} />
           <.metric label="Review queue" value={to_string(@summary.review)} />
           <.metric label="Paging" value={to_string(@summary.page)} />
         </div>
 
-        <div class="grid gap-6 xl:grid-cols-[0.85fr,1.15fr]">
+        <div class="scoria-page-split--xl-reverse">
           <.panel>
             <:eyebrow>incident history</:eyebrow>
             <:title>Tenant incidents</:title>
