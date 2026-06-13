@@ -1,29 +1,28 @@
 defmodule ScoriaWeb.WorkflowDetailPanelComponent do
   use Phoenix.Component
 
+  import ScoriaWeb.UI, only: [evidence_rows: 1, panel: 1]
+
   alias ScoriaWeb.ReplayEvidenceNotebookComponent
   alias ScoriaWeb.SemanticEvidenceNotebookComponent
 
-  attr :step, :map, default: nil
-  attr :checkpoint, :map, default: nil
-  attr :comparison, :map, default: nil
-  attr :semantic_evidence, :map, default: %{}
-  attr :selected_source_variant, :string, default: "original"
-  attr :selected_comparison_entry, :map, default: nil
-  attr :promotion_context, :map, default: nil
+  attr(:step, :map, default: nil)
+  attr(:checkpoint, :map, default: nil)
+  attr(:comparison, :map, default: nil)
+  attr(:semantic_evidence, :map, default: %{})
+  attr(:selected_source_variant, :string, default: "original")
+  attr(:selected_comparison_entry, :map, default: nil)
+  attr(:promotion_context, :map, default: nil)
 
   def workflow_detail_panel(assigns) do
     ~H"""
-    <aside id="workflow-detail-panel" class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+    <.panel id="workflow-detail-panel">
       <%= if @step do %>
         <div class="flex items-start justify-between gap-4">
           <div>
-            <p class="text-xs uppercase tracking-[0.22em] text-stone-500">Step detail</p>
-            <h2 class="mt-1 text-lg font-semibold">Replay evidence</h2>
-            <p class="mt-1 text-sm text-stone-600">
-              Role <span class="font-medium text-stone-900"><%= @step.role_id %></span>
-              · kind <span class="font-medium text-stone-900"><%= @step.kind %></span>
-            </p>
+            <p class="scoria-eyebrow">Step detail</p>
+            <h2>Replay evidence</h2>
+            <.evidence_rows rows={[{"Role", @step.role_id}, {"kind", @step.kind}]} />
           </div>
 
           <button
@@ -32,10 +31,10 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
             phx-value-step-id={@step.id}
             disabled={promotion_disabled?(@promotion_context)}
             class={[
-              "rounded-md px-3 py-1.5 text-sm font-medium",
+              "scoria-button scoria-button--sm",
               if(promotion_disabled?(@promotion_context),
-                do: "cursor-not-allowed border border-stone-200 bg-stone-100 text-stone-400",
-                else: "bg-blue-600 text-white hover:bg-blue-700"
+                do: "scoria-button--ghost",
+                else: "scoria-button--primary"
               )
             ]}
           >
@@ -43,7 +42,7 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
           </button>
         </div>
 
-        <p class="mt-3 text-sm text-stone-600">
+        <p class="mt-3">
           <%= promotion_helper_copy(@selected_source_variant, @promotion_context) %>
         </p>
 
@@ -57,10 +56,10 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
 
         <SemanticEvidenceNotebookComponent.render semantic_evidence={@semantic_evidence} />
       <% else %>
-        <p class="text-sm text-stone-500">Select a step to inspect checkpoint metadata and failure reasons.</p>
+        <p>Select a step to inspect checkpoint metadata and failure reasons.</p>
         <SemanticEvidenceNotebookComponent.render semantic_evidence={@semantic_evidence} />
       <% end %>
-    </aside>
+    </.panel>
     """
   end
 
@@ -88,6 +87,8 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
   defp variant_label("replay"), do: "Replay trace"
   defp variant_label(_variant), do: "Original trace"
 
-  defp read_value(context, key) when is_map(context), do: Map.get(context, key, Map.get(context, to_string(key)))
+  defp read_value(context, key) when is_map(context),
+    do: Map.get(context, key, Map.get(context, to_string(key)))
+
   defp read_value(_context, _key), do: nil
 end

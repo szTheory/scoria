@@ -2,7 +2,17 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
   import Ecto.Query, warn: false
-  import ScoriaWeb.UI, only: [object_header: 1, skeleton: 1]
+
+  import ScoriaWeb.UI,
+    only: [
+      badge: 1,
+      evidence_action_row: 1,
+      evidence_rows: 1,
+      modal: 1,
+      object_header: 1,
+      panel: 1,
+      skeleton: 1
+    ]
 
   alias Scoria.Eval
   alias Scoria.PromptRegistry.PromptTemplate
@@ -112,196 +122,162 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-stone-50 px-6 py-8 text-stone-900">
-      <div class="mx-auto max-w-7xl">
-        <.object_header
-          parent_label="Runs"
-          parent_path={(assigns[:scoria_base] || "") <> "/workflows"}
-          object_type="Run"
-          object_id={@run.id}
-          status={@run.status}
-          key_scalar={run_key_scalar(@run)}
-          provenance={replay_provenance(@run, @replay_provenance_strip)}
-          origin={@origin_context}
-        />
+    <div class="scoria-dashboard">
+      <.object_header
+        parent_label="Runs"
+        parent_path={(assigns[:scoria_base] || "") <> "/workflows"}
+        object_type="Run"
+        object_id={@run.id}
+        status={@run.status}
+        key_scalar={run_key_scalar(@run)}
+        provenance={replay_provenance(@run, @replay_provenance_strip)}
+        origin={@origin_context}
+      />
 
-        <div class="mb-6 flex flex-wrap gap-3" aria-label="Run next steps">
-          <a href={replay_run_path(@run, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">
-            Replay run
-          </a>
-          <a
-            :if={!promote_span_disabled?(@selected_step_id, %{})}
-            href={workflow_dataset_builder_path(@run, @selected_step_id, @selected_source_variant, assigns[:scoria_base] || "")}
-            class="scoria-button scoria-button--primary scoria-button--sm"
-          >
-            Promote in Dataset Builder
-          </a>
-          <a
-            :if={@linked_incident}
-            href={linked_incident_path(@run, assigns[:scoria_base] || "")}
-            class="scoria-button scoria-button--ghost scoria-button--sm"
-          >
-            Open incident
-          </a>
-          <a
-            :if={@prompt_target_id}
-            href={prompt_release_path(@prompt_target_id, @run, assigns[:scoria_base] || "")}
-            class="scoria-button scoria-button--ghost scoria-button--sm"
-          >
-            Open prompt
-          </a>
-        </div>
-
-        <a :if={@run.session_id} href={"/scoria?runtime=#{@run.session_id}"} class="mb-6 inline-flex items-center gap-2 text-sm font-medium text-blue-700 underline">
+      <.evidence_action_row class="mb-6" aria-label="Run next steps">
+        <a href={replay_run_path(@run, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">
+          Replay run
+        </a>
+        <a
+          :if={!promote_span_disabled?(@selected_step_id, %{})}
+          href={workflow_dataset_builder_path(@run, @selected_step_id, @selected_source_variant, assigns[:scoria_base] || "")}
+          class="scoria-button scoria-button--primary scoria-button--sm"
+        >
+          Promote in Dataset Builder
+        </a>
+        <a
+          :if={@linked_incident}
+          href={linked_incident_path(@run, assigns[:scoria_base] || "")}
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+        >
+          Open incident
+        </a>
+        <a
+          :if={@prompt_target_id}
+          href={prompt_release_path(@prompt_target_id, @run, assigns[:scoria_base] || "")}
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+        >
+          Open prompt
+        </a>
+        <a :if={@run.session_id} href={runtime_presence_path(@run, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">
           View associated runtime presence
         </a>
+      </.evidence_action_row>
 
-        <section
-          :if={@run.execution_mode == "replay" and map_size(@replay_provenance_strip) > 0}
-          class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm"
-        >
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p class="text-xs uppercase tracking-[0.24em] text-blue-700">Replay branch</p>
-              <h2 class="mt-1 text-lg font-semibold text-stone-900">Replay provenance strip</h2>
-              <p class="mt-1 text-sm text-stone-600">
-                Typed replay lineage stays visible on the workflow page instead of hiding in raw payloads.
-              </p>
-            </div>
+      <.panel :if={@run.execution_mode == "replay" and map_size(@replay_provenance_strip) > 0} class="mb-6">
+        <:eyebrow>Replay branch</:eyebrow>
+        <:title>Replay provenance strip</:title>
+        <:actions>
+          <.badge tone={:trace} label="Replay branch" dot={false} />
+        </:actions>
+        <p>
+          Typed replay lineage stays visible on the workflow page instead of hiding in raw payloads.
+        </p>
+        <.evidence_rows rows={[
+          {"source run", provenance_value(@replay_provenance_strip.source_run_id)},
+          {"source checkpoint", provenance_value(@replay_provenance_strip.source_checkpoint_id)},
+          {"execution mode", provenance_value(@replay_provenance_strip.execution_mode)},
+          {"Override summary", override_summary(@replay_provenance_strip)},
+          {"Latest replay disposition summary", disposition_summary(@replay_provenance_strip)},
+          {"Run identity", "replay run #{@run.id}"}
+        ]} />
+      </.panel>
 
-            <div class="flex flex-wrap gap-2 text-xs text-stone-700">
-              <span class="rounded-full border border-blue-200 bg-white px-3 py-1">
-                source run <span class="font-mono"><%= provenance_value(@replay_provenance_strip.source_run_id) %></span>
-              </span>
-              <span class="rounded-full border border-blue-200 bg-white px-3 py-1">
-                source checkpoint <span class="font-mono"><%= provenance_value(@replay_provenance_strip.source_checkpoint_id) %></span>
-              </span>
-              <span class="rounded-full border border-blue-200 bg-white px-3 py-1">
-                execution mode <span class="font-mono"><%= provenance_value(@replay_provenance_strip.execution_mode) %></span>
-              </span>
-            </div>
-          </div>
+      <div :if={@promotion_notice || @baseline_notice} class="mb-6 space-y-3">
+        <.panel :if={@promotion_notice}>
+          <:eyebrow>Promotion succeeded</:eyebrow>
+          <:actions>
+            <.badge tone={:pass} label="Dataset draft" dot={false} />
+          </:actions>
+          <p>
+            <span class="font-semibold"><%= variant_label(@promotion_notice[:source_variant] || @promotion_notice["source_variant"]) %></span>
+            promoted into
+            <span class="font-semibold"><%= @promotion_notice[:dataset_name] || @promotion_notice["dataset_name"] %></span>
+            <span class="font-mono">v<%= @promotion_notice[:dataset_version] || @promotion_notice["dataset_version"] %></span>.
+          </p>
+        </.panel>
 
-          <dl class="mt-4 grid gap-3 text-sm text-stone-700 lg:grid-cols-3">
-            <div class="rounded-xl border border-blue-100 bg-white p-3">
-              <dt class="text-xs uppercase tracking-[0.18em] text-stone-500">Override summary</dt>
-              <dd class="mt-2 font-medium text-stone-900"><%= override_summary(@replay_provenance_strip) %></dd>
-            </div>
-            <div class="rounded-xl border border-blue-100 bg-white p-3">
-              <dt class="text-xs uppercase tracking-[0.18em] text-stone-500">Latest replay disposition summary</dt>
-              <dd class="mt-2 font-medium text-stone-900"><%= disposition_summary(@replay_provenance_strip) %></dd>
-            </div>
-            <div class="rounded-xl border border-blue-100 bg-white p-3">
-              <dt class="text-xs uppercase tracking-[0.18em] text-stone-500">Run identity</dt>
-              <dd class="mt-2 text-xs text-stone-600">
-                replay run <span class="font-mono text-stone-900"><%= @run.id %></span>
-              </dd>
-            </div>
-          </dl>
-        </section>
-
-        <section :if={@promotion_notice || @baseline_notice} class="mb-6 space-y-3">
-          <article
-            :if={@promotion_notice}
-            class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 shadow-sm"
-          >
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Promotion succeeded</p>
-            <p class="mt-2">
-              <span class="font-semibold"><%= variant_label(@promotion_notice[:source_variant] || @promotion_notice["source_variant"]) %></span>
-              promoted into
-              <span class="font-semibold"><%= @promotion_notice[:dataset_name] || @promotion_notice["dataset_name"] %></span>
-              <span class="font-mono">v<%= @promotion_notice[:dataset_version] || @promotion_notice["dataset_version"] %></span>.
-            </p>
-          </article>
-
-          <article
-            :if={@baseline_notice}
-            class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm"
-          >
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Baseline approval requested</p>
-            <p class="mt-2">
-              Approval requested for
-              <span class="font-semibold"><%= @baseline_notice[:dataset_name] || @baseline_notice["dataset_name"] %></span>
-              <span class="font-mono">v<%= @baseline_notice[:dataset_version] || @baseline_notice["dataset_version"] %></span>.
-            </p>
-          </article>
-        </section>
-
-        <section
-          :if={@review_candidate}
-          class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm"
-        >
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Review candidate evidence</p>
-          <p class="mt-2 font-semibold text-stone-900"><%= @review_candidate.rationale %></p>
-          <div class="mt-3 flex flex-wrap gap-2 text-xs text-stone-700">
-            <span class="rounded-full border border-blue-200 bg-white px-3 py-1"><%= @review_candidate.severity %></span>
-            <span class="rounded-full border border-blue-200 bg-white px-3 py-1">trace <span class="font-mono"><%= @review_candidate.trace_id %></span></span>
-            <span class="rounded-full border border-blue-200 bg-white px-3 py-1">candidate <span class="font-mono"><%= @review_candidate.id %></span></span>
-          </div>
-        </section>
-
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
-          <section class="rounded-2xl border border-stone-200 bg-white shadow-sm">
-            <div class="border-b border-stone-200 px-4 py-3">
-              <h2 class="text-lg font-semibold">Trace-First Workflow Tree</h2>
-            </div>
-            <WorkflowTreeComponent.workflow_tree steps={@steps} selected_step_id={@selected_step_id} />
-          </section>
-
-          <WorkflowDetailPanelComponent.workflow_detail_panel
-            step={@selected_step}
-            checkpoint={@selected_checkpoint}
-            comparison={@selected_comparison}
-            semantic_evidence={@run_detail.semantic_evidence}
-            selected_source_variant={@selected_source_variant}
-            selected_comparison_entry={@selected_comparison_entry}
-            promotion_context={@promotion_context}
-          />
-        </div>
-
-        <DelegatedEvidenceComponent.render delegated_handoffs={@delegated_handoffs} />
-
-        <.async_result :let={memories} assign={@compacted_memories}>
-          <:loading><.skeleton rows={3} class="mt-6" /></:loading>
-          <:failed :let={_failure}>
-            <div class="mt-6 flex items-center justify-center rounded-2xl border border-red-200 bg-red-50 p-8 shadow-sm">
-              <p class="text-sm text-red-600">Failed to load memories.</p>
-            </div>
-          </:failed>
-          <MemoryNotebookComponent.render :if={memories != []} memories={memories} runtime_instance_id={@run.session_id || "unknown"} />
-        </.async_result>
-
-        <section class="mt-6 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-          <h2 class="text-lg font-semibold">Timeline</h2>
-          <ol id="workflow-timeline" class="mt-3 space-y-2">
-            <li :for={event <- @events} class="rounded-xl bg-stone-50 px-3 py-2 text-sm">
-              <span class="font-medium"><%= event.event_type %></span>
-              <span class="ml-2 font-mono text-xs text-stone-500"><%= event.sequence %></span>
-            </li>
-          </ol>
-        </section>
-
-        <RemoteInvocationEvidenceComponent.render
-          :if={@remote_invocation_evidence.approvals != []}
-          evidence={@remote_invocation_evidence}
-        />
-
-        <div :if={@promote_step_id != nil} id="promote-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" phx-window-keydown="close_modal" phx-key="escape">
-          <div class="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl relative">
-            <button type="button" phx-click="close_modal" class="absolute top-4 right-4 text-stone-500 hover:text-stone-700">
-              <span class="sr-only">Close</span>
-              &times;
-            </button>
-            <.live_component
-              module={ScoriaWeb.DatasetLive.PromoteComponent}
-              id="promote-component"
-              step={Enum.find(@steps, &(&1.id == @promote_step_id))}
-              promotion_context={@promotion_context}
-              scoria_base={assigns[:scoria_base] || ""}
-            />
-          </div>
-        </div>
+        <.panel :if={@baseline_notice}>
+          <:eyebrow>Baseline approval requested</:eyebrow>
+          <:actions>
+            <.badge tone={:warn} label="Approval requested" dot={false} />
+          </:actions>
+          <p>
+            Approval requested for
+            <span class="font-semibold"><%= @baseline_notice[:dataset_name] || @baseline_notice["dataset_name"] %></span>
+            <span class="font-mono">v<%= @baseline_notice[:dataset_version] || @baseline_notice["dataset_version"] %></span>.
+          </p>
+        </.panel>
       </div>
+
+      <.panel :if={@review_candidate} class="mb-6">
+        <:eyebrow>Review candidate evidence</:eyebrow>
+        <:title>{@review_candidate.rationale}</:title>
+        <.evidence_rows rows={[
+          {"Severity", @review_candidate.severity},
+          {"trace", @review_candidate.trace_id},
+          {"candidate", @review_candidate.id}
+        ]} />
+      </.panel>
+
+      <div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+        <.panel class="scoria-panel--flush">
+          <:title>Trace-First Workflow Tree</:title>
+          <WorkflowTreeComponent.workflow_tree steps={@steps} selected_step_id={@selected_step_id} />
+        </.panel>
+
+        <WorkflowDetailPanelComponent.workflow_detail_panel
+          step={@selected_step}
+          checkpoint={@selected_checkpoint}
+          comparison={@selected_comparison}
+          semantic_evidence={@run_detail.semantic_evidence}
+          selected_source_variant={@selected_source_variant}
+          selected_comparison_entry={@selected_comparison_entry}
+          promotion_context={@promotion_context}
+        />
+      </div>
+
+      <DelegatedEvidenceComponent.render delegated_handoffs={@delegated_handoffs} />
+
+      <.async_result :let={memories} assign={@compacted_memories}>
+        <:loading><.skeleton rows={3} class="mt-6" /></:loading>
+        <:failed :let={_failure}>
+          <.panel class="mt-6">
+            <:title>Memory evidence unavailable</:title>
+            <:actions>
+              <.badge tone={:fail} label="Load failed" dot={false} />
+            </:actions>
+            <p>Failed to load memories.</p>
+          </.panel>
+        </:failed>
+        <MemoryNotebookComponent.render :if={memories != []} memories={memories} runtime_instance_id={@run.session_id || "unknown"} />
+      </.async_result>
+
+      <.panel class="mt-6">
+        <:title>Timeline</:title>
+        <ol id="workflow-timeline" class="space-y-2">
+          <li :for={event <- @events} class="scoria-span">
+            <span class="font-medium"><%= event.event_type %></span>
+            <span class="ml-2 font-mono text-xs"><%= event.sequence %></span>
+          </li>
+        </ol>
+      </.panel>
+
+      <RemoteInvocationEvidenceComponent.render
+        :if={@remote_invocation_evidence.approvals != []}
+        evidence={@remote_invocation_evidence}
+      />
+
+      <.modal id="promote-modal" show={@promote_step_id != nil} on_dismiss="close_modal" max_width="768px">
+        <:title_slot>Promote workflow evidence</:title_slot>
+        <.live_component
+          module={ScoriaWeb.DatasetLive.PromoteComponent}
+          id="promote-component"
+          step={Enum.find(@steps, &(&1.id == @promote_step_id))}
+          promotion_context={@promotion_context}
+          scoria_base={assigns[:scoria_base] || ""}
+        />
+      </.modal>
     </div>
     """
   end
@@ -513,6 +489,10 @@ defmodule ScoriaWeb.WorkflowLive.Show do
 
   defp prompt_release_path(prompt_id, run, base_path) do
     "#{base_path}/prompts/#{prompt_id}/release?#{origin_query("run", run.id)}"
+  end
+
+  defp runtime_presence_path(%{session_id: session_id}, base_path) when is_binary(session_id) do
+    "#{base_path}?#{URI.encode_query([{"runtime", session_id}])}"
   end
 
   defp workflow_dataset_builder_path(run, step_id, source_variant, base_path) do

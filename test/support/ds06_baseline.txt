@@ -6,9 +6,5 @@ lib/scoria_web/components/memory_notebook_component.ex:19
 lib/scoria_web/components/replay_evidence_notebook_component.ex:24
 lib/scoria_web/components/runtime_detail_drawer_component.ex:38
 lib/scoria_web/components/semantic_evidence_notebook_component.ex:27
-lib/scoria_web/components/trace_tree_component.ex:7
-lib/scoria_web/components/workflow_detail_panel_component.ex:12
-lib/scoria_web/components/workflow_tree_component.ex:1
 lib/scoria_web/live/approvals_live/index.ex:9
 lib/scoria_web/live/connectors_live/index.ex:20
-lib/scoria_web/live/workflow_live/show.ex:50
