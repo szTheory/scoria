@@ -60,6 +60,46 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     :ok
   end
 
+  test "runs index renders the shared-table empty state and exact scan-surface copy" do
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, _view, html} = live(conn, "/scoria/workflows")
+
+    assert html =~ "Runs"
+    assert html =~ "Inspect recorded workflow runs and open the trace that explains them."
+    assert html =~ "No runs yet"
+
+    assert html =~
+             "The first durable workflow run will appear here with its trace, status, and runtime context."
+  end
+
+  test "runs index renders persisted runs in the shared table with one Open trace action" do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        status: "running",
+        execution_mode: "live",
+        session_id: "session-runs-index"
+      })
+
+    conn =
+      build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+
+    {:ok, _view, html} = live(conn, "/scoria/workflows")
+
+    assert html =~ ~s(<table class="scoria-table scoria-table--compact" id="runs")
+    assert html =~ "session-runs-index"
+    assert html =~ "Running"
+    assert html =~ "Open trace"
+    assert html =~ "/scoria/workflows/#{run.id}"
+    refute html =~ ~s(<table class="scoria-table">)
+  end
+
   test "async loading state renders scoria-skeleton in place of bespoke loading markup" do
     {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
 

@@ -108,7 +108,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert html =~ "Nothing needs attention. 0 approvals pending, 0 open incidents."
 
     assert html =~
-             "No traces yet. Run your first chat response or MCP request to see the run tree."
+             "No traces yet. The first chat response, agent run, eval sample, or MCP request will appear here as a trace."
 
     assert html =~ ~s(id="traces-list")
 
@@ -269,7 +269,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     refute html =~ "token-stream"
   end
 
-  test "retrieval evidence loads lazily and renders citation freshness details" do
+  test "trace stream is read-only and omits inline evidence replay and promotion controls" do
     conn =
       build_conn()
       |> Plug.Test.init_test_session(%{})
@@ -278,41 +278,21 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     {:ok, view, _html} = live(conn, "/scoria")
     render_async(view)
 
-    trace = %{id: "trace-evidence", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
+    trace = %{id: "trace-readonly", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
     send(view.pid, {:new_trace, trace})
-
-    render_click(view, "load_retrieval_evidence", %{"id" => "trace-evidence"})
-
-    assert render(view) =~ "citation"
-    assert render(view) =~ "freshness"
-    assert render(view) =~ "side-by-side"
-  end
-
-  test "retrieval evidence remains available alongside the SRE incident panel" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
-    {:ok, view, _html} = live(conn, "/scoria")
-    render_async(view)
-
-    trace = %{id: "trace-combined", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
-    send(view.pid, {:new_trace, trace})
-
-    refute render(view) =~ "Composite health rollup"
-
-    render_click(view, "load_retrieval_evidence", %{"id" => "trace-combined"})
-    render_click(view, "load_incident_evidence", %{"id" => "trace-combined"})
-    render_async(view)
 
     html = render(view)
-    assert html =~ "side-by-side"
-    assert html =~ "Composite health rollup"
-    assert html =~ "Load Retrieval Evidence"
+
+    assert html =~ "retrieve"
+    refute html =~ "Load Deep Metadata"
+    refute html =~ "Load Retrieval Evidence"
+    refute html =~ "Load Budget State"
+    refute html =~ "Load Incident Evidence"
+    refute html =~ "Replay Retrieval"
+    refute html =~ "Promote Retrieval"
   end
 
-  test "replay and promote retrieval actions surface trace-first notices" do
+  test "trace stream renders compact deep links when a workflow run backs the trace" do
     conn =
       build_conn()
       |> Plug.Test.init_test_session(%{})
@@ -321,15 +301,23 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     {:ok, view, _html} = live(conn, "/scoria")
     render_async(view)
 
-    trace = %{id: "trace-actions", spans: [%{id: "span-1", name: "retrieve", depth: 0}]}
+    run_id = Ecto.UUID.generate()
+
+    trace = %{
+      id: "trace-links",
+      workflow_run_id: run_id,
+      spans: [%{id: "span-1", name: "retrieve", depth: 0}]
+    }
+
     send(view.pid, {:new_trace, trace})
 
-    render_click(view, "replay_retrieval", %{"id" => "trace-actions"})
-    render_click(view, "promote_retrieval", %{"id" => "trace-actions"})
-
     html = render(view)
-    assert html =~ "replay_retrieval"
-    assert html =~ "promote_retrieval"
+
+    assert html =~ "Open run"
+    assert html =~ "Open trace"
+    assert html =~ "/scoria/workflows/#{run_id}"
+    refute html =~ "Replay Retrieval"
+    refute html =~ "Promote Retrieval"
   end
 
   test "review candidate deep links preserve queue evidence on the runtime landing surface" do

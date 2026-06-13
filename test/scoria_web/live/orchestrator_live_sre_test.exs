@@ -197,7 +197,7 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
     assert page_delivery.metadata["delivery_outcome"] == "unconfigured"
   end
 
-  test "lazy budget and incident loads promote compact trace badges without replacing the trace-first controls" do
+  test "incident and budget signals render as compact trace badges without lazy Home controls" do
     run_id = Ecto.UUID.generate()
     seed_incident_evidence!("trace-sre-2", run_id)
 
@@ -219,21 +219,15 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
     )
 
     html = render(view)
-    refute html =~ "Budget warn"
-    refute html =~ "breaker open"
 
-    render_click(view, "load_budget_state", %{"id" => "trace-sre-2", "run_id" => run_id})
-    render_click(view, "load_incident_evidence", %{"id" => "trace-sre-2", "run_id" => run_id})
-    render_async(view)
-
-    html = render(view)
-
-    assert html =~ ~r/id="traces-trace-sre-2".*Budget warn.*Load Incident Evidence/s
-    assert html =~ ~r/id="traces-trace-sre-2".*breaker open.*Load Incident Evidence/s
-    assert html =~ ~r/id="traces-trace-sre-2".*review incident.*Load Incident Evidence/s
-    assert html =~ ~r/id="traces-trace-sre-2".*page incident.*Load Incident Evidence/s
-    assert html =~ "Load Retrieval Evidence"
+    assert html =~ ~r/id="traces-trace-sre-2".*Budget warn/s
+    assert html =~ ~r/id="traces-trace-sre-2".*breaker open/s
+    assert html =~ ~r/id="traces-trace-sre-2".*review incident/s
+    assert html =~ ~r/id="traces-trace-sre-2".*page incident/s
     assert html =~ "budget_guard"
+    refute html =~ "Load Budget State"
+    refute html =~ "Load Incident Evidence"
+    refute html =~ "Load Retrieval Evidence"
   end
 
   defp seed_budget_and_breaker!(trace_id, run_id) do
