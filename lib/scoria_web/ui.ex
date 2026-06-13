@@ -883,6 +883,12 @@ defmodule ScoriaWeb.UI do
   slot(:action)
   slot(:filter)
 
+  slot :mobile_summary,
+    doc: "Opt-in per-row mobile summary rendered in a sibling container hidden at >=768px.
+  Exposes object label, status badge text, one key scalar/time, and a primary action.
+  When absent, the table keeps honest overflow at all widths." do
+  end
+
   attr(:rows, :list, required: true)
   attr(:sort_by, :any, default: nil)
   attr(:sort_dir, :atom, default: :asc, values: [:asc, :desc])
@@ -912,7 +918,7 @@ defmodule ScoriaWeb.UI do
     end
 
     ~H"""
-    <div class="scoria-table-shell">
+    <div class={["scoria-table-shell", @mobile_summary != [] && "scoria-table-shell--has-summary"]}>
       <div :if={@filter != []} class="scoria-table__filter">
         {render_slot(@filter)}
       </div>
@@ -931,65 +937,87 @@ defmodule ScoriaWeb.UI do
           {density_opt |> Atom.to_string() |> String.capitalize()}
         </button>
       </div>
-      <table class={["scoria-table", density_class(@density)]} id={@id} {@rest}>
-        <thead>
-          <tr>
-            <th
-              :for={column <- @col}
-              class={["scoria-table__th", Map.get(column, :class)]}
-              phx-click={@on_sort && Map.get(column, :key) && @on_sort}
-              phx-value-by={@on_sort && Map.get(column, :key)}
-            >
-              {column.label}
-              <svg
-                :if={@on_sort && Map.get(column, :key) != nil}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 16 16"
-                width="16"
-                height="16"
-                aria-hidden="true"
-                fill="currentColor"
-                style={
-                  if @sort_by == Map.get(column, :key),
-                    do: "color: var(--scoria-action)",
-                    else: "color: var(--scoria-text-subtle)"
+      <%!-- Overflow viewport: keyboard-reachable horizontal scroll container (D-13).
+           sticky thead still works inside overflow-x: auto (vertical sticky is unaffected). --%>
+      <div class="scoria-table__viewport" tabindex="0">
+        <table class={["scoria-table", density_class(@density)]} id={@id} {@rest}>
+          <thead>
+            <tr>
+              <th
+                :for={column <- @col}
+                class={["scoria-table__th", Map.get(column, :class)]}
+                phx-click={@on_sort && Map.get(column, :key) && @on_sort}
+                phx-value-by={@on_sort && Map.get(column, :key)}
+                aria-sort={
+                  if @on_sort && Map.get(column, :key) != nil do
+                    if @sort_by == Map.get(column, :key) do
+                      if @sort_dir == :desc, do: "descending", else: "ascending"
+                    else
+                      "none"
+                    end
+                  end
                 }
               >
-                <path
-                  :if={@sort_by == Map.get(column, :key) and @sort_dir == :desc}
-                  fill-rule="evenodd"
-                  d="M8 4.25a.75.75 0 0 1 .75.75v6.19l1.47-1.47a.75.75 0 1 1 1.06 1.06l-2.75 2.75a.75.75 0 0 1-1.06 0L4.72 11.28a.75.75 0 1 1 1.06-1.06L7.25 11.19V5a.75.75 0 0 1 .75-.75z"
-                  clip-rule="evenodd"
-                />
-                <path
-                  :if={not (@sort_by == Map.get(column, :key) and @sort_dir == :desc)}
-                  fill-rule="evenodd"
-                  d="M8 11.75a.75.75 0 0 1-.75-.75V4.81L5.78 6.28a.75.75 0 1 1-1.06-1.06l2.75-2.75a.75.75 0 0 1 1.06 0l2.75 2.75a.75.75 0 1 1-1.06 1.06L8.75 4.81V11a.75.75 0 0 1-.75.75z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </th>
-            <th :if={@action != []} class="scoria-table__th scoria-table__th--actions"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr :if={@rows == []}>
-            <td colspan={length(@col) + if(@action != [], do: 1, else: 0)}>
-              <%= if @empty != [] do %>
-                {render_slot(@empty)}
-              <% else %>
-                <.empty_state title="No records found">
-                  Adjust your filters or check back when data is available.
-                </.empty_state>
-              <% end %>
-            </td>
-          </tr>
-          <tr :for={row <- @rows}>
-            <td :for={column <- @col} class={Map.get(column, :class)}>{render_slot(column, row)}</td>
-            <td :if={@action != []} class="scoria-table__td--actions">{render_slot(@action, row)}</td>
-          </tr>
-        </tbody>
-      </table>
+                {column.label}
+                <svg
+                  :if={@on_sort && Map.get(column, :key) != nil}
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  height="16"
+                  aria-hidden="true"
+                  fill="currentColor"
+                  style={
+                    if @sort_by == Map.get(column, :key),
+                      do: "color: var(--scoria-action)",
+                      else: "color: var(--scoria-text-subtle)"
+                  }
+                >
+                  <path
+                    :if={@sort_by == Map.get(column, :key) and @sort_dir == :desc}
+                    fill-rule="evenodd"
+                    d="M8 4.25a.75.75 0 0 1 .75.75v6.19l1.47-1.47a.75.75 0 1 1 1.06 1.06l-2.75 2.75a.75.75 0 0 1-1.06 0L4.72 11.28a.75.75 0 1 1 1.06-1.06L7.25 11.19V5a.75.75 0 0 1 .75-.75z"
+                    clip-rule="evenodd"
+                  />
+                  <path
+                    :if={not (@sort_by == Map.get(column, :key) and @sort_dir == :desc)}
+                    fill-rule="evenodd"
+                    d="M8 11.75a.75.75 0 0 1-.75-.75V4.81L5.78 6.28a.75.75 0 1 1-1.06-1.06l2.75-2.75a.75.75 0 0 1 1.06 0l2.75 2.75a.75.75 0 1 1-1.06 1.06L8.75 4.81V11a.75.75 0 0 1-.75.75z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </th>
+              <th :if={@action != []} class="scoria-table__th scoria-table__th--actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :if={@rows == []}>
+              <td colspan={length(@col) + if(@action != [], do: 1, else: 0)}>
+                <%= if @empty != [] do %>
+                  {render_slot(@empty)}
+                <% else %>
+                  <.empty_state title="No records found">
+                    Adjust your filters or check back when data is available.
+                  </.empty_state>
+                <% end %>
+              </td>
+            </tr>
+            <tr :for={row <- @rows}>
+              <td :for={column <- @col} class={Map.get(column, :class)}>{render_slot(column, row)}</td>
+              <td :if={@action != []} class="scoria-table__td--actions">{render_slot(@action, row)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <%!-- Opt-in per-row mobile summaries (D-08/D-10). Rendered only when the
+           :mobile_summary slot is supplied. Hidden at >=768px via CSS; the viewport
+           above is hidden below md on tables with summaries (scoria-table-shell--has-summary).
+           Content comes from caller's slot — do not hardcode fields here. --%>
+      <div :if={@mobile_summary != []} class="scoria-table__mobile-summaries">
+        <div :for={row <- @rows}>
+          {render_slot(@mobile_summary, row)}
+        </div>
+      </div>
       <nav :if={@total_pages > 1} aria-label="Pagination" class="scoria-table__pagination">
         <button
           class="scoria-button scoria-button--ghost scoria-button--sm"
