@@ -55,7 +55,7 @@ defmodule ScoriaWeb.ReviewQueueLive do
             <h1 class="text-3xl font-semibold">Review Queue</h1>
             <p class="mt-2 text-sm">Review flagged traces before they become datasets, baselines, or dismissed noise.</p>
           </div>
-          <a href="/scoria" class="scoria-button scoria-button--ghost scoria-button--sm">Back to dashboard</a>
+          <a href={home_path(assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">Back to dashboard</a>
         </header>
 
         <section class="mb-6 grid gap-4 md:grid-cols-4">
