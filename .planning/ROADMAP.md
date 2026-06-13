@@ -23,7 +23,7 @@ UI/IA/DX milestone. No net-new backend capability families. Expose components �
 - [x] **Phase 13: Orientation spine (IA)** — Fix nav active-state, third nav axis (Operate/Improve/Configure), Status Home, breadcrumbs, ⌘K palette + shortcuts, cross-screen quality-loop threading, honest reserved-name stubs. (completed 2026-06-12)
 - [x] **Phase 14: Least-iterated screens polish** — Review Queue / Incidents / Eval Workbench / Prompt Registry+Release conversions (zero raw-palette leakage); real Dataset Builder index.
 - [x] **Phase 15: High-traffic screens + evidence adapters** — Live Ops / Workflows / Approvals / Connectors polish; 13 evidence components as thin notebook-shell adapters. (completed 2026-06-13)
-- [ ] **Phase 16: Motion + responsive + theme parity** — Restrained brand-tied motion, focus-visible/a11y, mobile-first responsive across md/lg/xl, full light+dark parity.
+- [ ] **Phase 16: Motion + responsive + theme parity** — Restrained brand-tied motion, focus-visible/a11y, mobile-first responsive across md/lg/xl, full light+dark parity. (6 plans planned)
 - [ ] **Phase 17: Consistency sweep + proof** — Re-run audit loop, rubric-delta + raw-color count → 0, before/after contact sheets, MAINTAINERS.md catalog + harness usage.
 
 <details>
@@ -157,7 +157,13 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   2. Every interactive element has a visible focus-visible state and status is never conveyed by color alone.
   3. The dashboard is usable mobile-first; the shell and tables adapt intentionally at the `md / lg / xl` breakpoints.
   4. Every screen meets the polish bar in both light and dark themes, with WCAG AA contrast in both.
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 16-01-PLAN.md — Mobile-first shell + accessible off-canvas nav drawer (MOTION-01, MOTION-03)
+  - [ ] 16-02-PLAN.md — table/1 overflow viewport + opt-in mobile summary slot (MOTION-02, MOTION-03)
+  - [ ] 16-03-PLAN.md — Replace unsupported responsive utilities + workflow mobile stack (MOTION-03)
+  - [ ] 16-04-PLAN.md — Mobile summary adoption on Runs/Review Queue/Connectors/Dataset Builder (MOTION-03, MOTION-02)
+  - [ ] 16-05-PLAN.md — Focus/status/motion hardening + both-theme parity (human checkpoint) (MOTION-01, MOTION-02, MOTION-04)
+  - [ ] 16-06-PLAN.md — Targeted Playwright parity smoke + optional contrast guard (MOTION-01..04)
 **UI hint**: yes
 
 ### Phase 17: Consistency sweep + proof
@@ -180,7 +186,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 | 13. Orientation spine (IA) | v3.0 | 8/8 | Complete    | 2026-06-12 |
 | 14. Least-iterated screens polish | v3.0 | 5/6 | In Progress|  |
 | 15. High-traffic screens + evidence adapters | v3.0 | 5/5 | Complete    | 2026-06-13 |
-| 16. Motion + responsive + theme parity | v3.0 | 0/? | Not started | - |
+| 16. Motion + responsive + theme parity | v3.0 | 0/6 | Planned | - |
 | 17. Consistency sweep + proof | v3.0 | 0/? | Not started | - |
 | 18. Pressure-test audit + decision lock | v2.17 | 2/2 | Complete | 2026-06-11 |
 | 19. Logo divergence + user choice | v2.17 | 3/3 | Complete | 2026-06-11 |
