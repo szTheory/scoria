@@ -1150,4 +1150,103 @@ defmodule ScoriaWeb.UIComponentTest do
       refute html =~ "scoria-table-shell--has-summary"
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Phase 16-05: Focus/status/motion hardening (D-23/D-24/MOTION-02)
+  # ---------------------------------------------------------------------------
+
+  describe "badge/1 non-color-only status (16-05 D-24)" do
+    test "renders visible label text alongside tone class (never color-alone)" do
+      html =
+        render_component(&ScoriaWeb.UI.badge/1,
+          tone: :pass,
+          label: "Completed"
+        )
+
+      # tone class carries color
+      assert html =~ "scoria-badge--pass"
+      # visible text label is present — not color alone
+      assert html =~ "Completed"
+    end
+
+    test "inner_block content renders as visible text when label is nil" do
+      html = render_component(&ScoriaWeb.UI.badge/1, inner_block: slot_block("Running"))
+
+      assert html =~ "scoria-badge"
+      assert html =~ "Running"
+    end
+
+    test "bare dot-less badge still carries visible label text" do
+      html =
+        render_component(&ScoriaWeb.UI.badge/1,
+          tone: :warn,
+          label: "Pending",
+          dot: false
+        )
+
+      assert html =~ "scoria-badge--bare"
+      assert html =~ "Pending"
+    end
+  end
+
+  describe "workflow_tree/1 selected-row ARIA (16-05 D-24)" do
+    test "selected step carries aria-current=true (non-color-only selection)" do
+      html =
+        render_component(&ScoriaWeb.WorkflowTreeComponent.workflow_tree/1,
+          steps: [
+            %{id: "step-1", kind: "llm", role_id: "generate", status: "completed", depth: 0}
+          ],
+          selected_step_id: "step-1"
+        )
+
+      assert html =~ ~s(aria-current="true")
+      assert html =~ "scoria-row-selected"
+    end
+
+    test "unselected step carries no aria-current and no scoria-row-selected" do
+      html =
+        render_component(&ScoriaWeb.WorkflowTreeComponent.workflow_tree/1,
+          steps: [
+            %{id: "step-1", kind: "llm", role_id: "generate", status: "completed", depth: 0}
+          ],
+          selected_step_id: nil
+        )
+
+      refute html =~ ~s(aria-current="true")
+      refute html =~ "scoria-row-selected"
+    end
+  end
+
+  describe "table/1 aria-sort non-color-only sort (16-05 D-24 / MOTION-02)" do
+    test "sorted column header carries aria-sort (non-color-only sort direction)" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          sort_by: :status,
+          sort_dir: :asc,
+          on_sort: "sort",
+          col: [%{label: "Status", key: :status, class: nil, inner_block: []}]
+        )
+
+      # aria-sort is the non-color ARIA complement to the SVG sort icon
+      assert html =~ ~s(aria-sort="ascending")
+    end
+
+    test "sort indicator SVG is present alongside aria-sort on sortable columns" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "test-table",
+          rows: [],
+          sort_by: :status,
+          sort_dir: :desc,
+          on_sort: "sort",
+          col: [%{label: "Status", key: :status, class: nil, inner_block: []}]
+        )
+
+      # Both visual (SVG icon) and semantic (aria-sort) cues are present
+      assert html =~ "<svg"
+      assert html =~ ~s(aria-sort="descending")
+    end
+  end
 end

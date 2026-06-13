@@ -14,6 +14,7 @@ defmodule ScoriaWeb.WorkflowTreeComponent do
         type="button"
         phx-click="select_step"
         phx-value-id={step.id}
+        aria-current={@selected_step_id == step.id && "true"}
         class={[
           "workflow-tree-row scoria-span flex w-full items-center gap-3 border-b px-3 py-2 text-left",
           "scoria-span--#{span_kind(step.kind)}",
