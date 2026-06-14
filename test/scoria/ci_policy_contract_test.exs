@@ -270,6 +270,16 @@ defmodule Scoria.CiPolicyContractTest do
     refute policy_section =~ @ratchet_wae
   end
 
+  test "cache keys include MIX_ENV segment to prevent dev/test collision" do
+    ci_verify = File.read!(@ci_verify)
+    ci_entry = File.read!(@ci_entry)
+
+    assert ci_verify =~ ~r/key:.*-test-mix-/
+    assert ci_entry =~ ~r/key:.*-dev-mix-/
+    refute ci_verify =~ ~r/key: \$\{\{ runner\.os \}\}-mix-/
+    refute ci_entry =~ ~r/key: \$\{\{ runner\.os \}\}-mix-/
+  end
+
   test "ci.yml has workflow header comment block before jobs" do
     ci_entry = File.read!(@ci_entry)
     [header, _rest] = String.split(ci_entry, "\njobs:", parts: 2)
