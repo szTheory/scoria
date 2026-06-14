@@ -93,7 +93,9 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   2. A dedicated `build` job runs `mix deps.get && mix compile --warnings-as-errors` (`MIX_ENV=test`) once and publishes `_build/test` + `deps` via `upload-artifact`.
   3. Every downstream job `needs: build` and restores that artifact instead of recompiling — confirmed by absence of a cold-compile step in downstream job logs.
   4. The lane contract tests (`ci_policy_contract_test`, `verification_lanes_test`) remain green — no command string moved out of pinned byte-order.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 23-01-PLAN.md — env+version-scoped cache keys, build-once job (tar artifact), test-job restore, contract-test extensions
 
 ### Phase 24: Knowledge lane scope fix
 **Goal**: The knowledge verification lane runs only its knowledge-tagged tests instead of re-running the entire suite, reclaiming ~22 min with zero coverage loss and an unchanged merge bar.
