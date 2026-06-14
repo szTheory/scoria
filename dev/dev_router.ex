@@ -27,11 +27,29 @@ defmodule ScoriaWeb.DevRouter do
     # omit this because LiveViewTest bypasses the real socket CSRF check.
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
+    plug(:put_demo_tenant)
   end
 
   scope "/" do
     pipe_through(:browser)
 
     scoria_dashboard("/scoria")
+  end
+
+  # Dev-only: default the session tenant to the demo tenant that
+  # `priv/repo/dev_seed.exs` populates (Scoria.SupportJourney.tenant_id/0,
+  # "acme-corp"). Every dashboard LiveView resolves
+  # `params["tenant"] || session["tenant_id"] || "default"`, so without this the
+  # bare /scoria URL lands on the empty "default" tenant and the click-around
+  # demo looks empty even though seed data exists. Only sets the default when
+  # absent, so an explicit `?tenant=` still wins (LiveViews check params first).
+  # This lives in the dev-only router (never shipped to Hex), so host apps and
+  # production tenant resolution are untouched.
+  defp put_demo_tenant(conn, _opts) do
+    if Plug.Conn.get_session(conn, "tenant_id") do
+      conn
+    else
+      Plug.Conn.put_session(conn, "tenant_id", Scoria.SupportJourney.tenant_id())
+    end
   end
 end
