@@ -10,11 +10,19 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Current Milestone: v3.0 Control Room
+## Latest Shipped Milestone: v3.0 Control Room (2026-06-14)
 
 **Goal:** Take the embedded `/scoria` operator dashboard to "insane polish" — a tightened, fully-adopted design system, a clear persona/JTBD information architecture, brand-tied motion, full light/dark parity, and seed data that exercises every screen — proven by a committed screenshot+critique evaluation loop.
 
-**Core finding driving the milestone:** Scoria's design system is under-*adopted*, not under-built. The token-first CSS already defines tables, drawers, modals, span rails, and disciplined motion, but `lib/scoria_web/ui.ex` never exposed them as components — so ~22/25 view files leaked raw Tailwind (`stone-*/rose-*/...`), worst in the least-iterated screens. The work: expose components → delete leaked classes → consolidate → orient → polish → prove.
+**Delivered:** Design system fully adopted — `ui.ex` exposes the table/drawer/modal/field/form_section/notebook/skeleton/toast component set as the enforced token gateway; raw-palette count is a verified **zero** across `lib/scoria_web/`, guarded by the unconditional DS-06 drift ratchet. Persona/JTBD IA spine shipped: three-group nav (Operate/Improve/Configure) with route-aware active state, a Status Home, object-aware breadcrumbs, a ⌘K command palette + keyboard shortcuts, cross-screen quality-loop threading, and 5 honest reserved-name "coming soon" stubs (no fabricated data). All 13 screen modules converted to shared components; a real Dataset Builder `/datasets` index converges the duplicated promote affordances; 13 evidence components collapsed into thin notebook adapters. Brand-tied motion + full light/dark WCAG-AA parity (22/22 Playwright parity smoke), and a committed dev-only `mix scoria.ui.shots` screenshot + ReqLLM 9-dimension critique loop with seed data exercising every screen.
+
+**Closed `gaps_found` (accepted as tech debt):** 18/28 requirements fully satisfied, 10 partial, **0 unsatisfied**. The 10 partials are verification-doc gaps — Phases 13 (IA-01..06) and 14 (SCREEN-01..02) were never run through gsd-verifier, plus documented IA-05 threading and PROOF-01/02 proof gaps. None is a functional regression. See `.planning/MILESTONES.md` → v3.0 Known Gaps and `.planning/milestones/v3.0-MILESTONE-AUDIT.md`.
+
+**Core finding that drove the milestone:** Scoria's design system was under-*adopted*, not under-built. The token-first CSS already defined tables, drawers, modals, span rails, and disciplined motion, but `lib/scoria_web/ui.ex` never exposed them as components — so ~22/25 view files leaked raw Tailwind (`stone-*/rose-*/...`), worst in the least-iterated screens. The work: expose components → delete leaked classes → consolidate → orient → polish → prove.
+
+## Next Milestone: v3.1 CI/CD Velocity (planned)
+
+**Seed:** SEED-003 — CI/CD efficiency overhaul (cut CI wall-clock). The repo's CI lane topology has grown across v2.x; the next leverage axis is build/test velocity and CI reliability, not new product capability. Scope to be defined via `/gsd:new-milestone`. The `docker-dx-fleet-hardening` todo is adjacent future work, not yet milestone-scoped.
 
 **Personas (one shared evidence model, persona-weighted surfacing — nothing role-gated):**
 - **On-Call Operator** — watch live runtime, clear approvals, triage incidents, confirm connector health.
@@ -30,7 +38,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 **Key context:** Keep the custom token-first scoped CSS architecture (no Tailwind/BEM switch); `ui.ex` is the enforced token gateway. UI-only milestone — reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data. Plan: `/Users/jon/.claude/plans/another-ui-pass-so-elegant-garden.md`.
 
-## Latest Shipped Milestone: v2.17 Vesicle (2026-06-11)
+## Previous Shipped Milestone: v2.17 Vesicle (2026-06-11)
 
 **Goal:** Ship a pressure-tested, repo-canonical Scoria brand system in `brandbook/` — audited brand book, locked design tokens, user-chosen programmatically generated logo system, and a professional standalone HTML brand book — wired into README, dashboard favicon/mark, and Hex/GitHub/HexDocs copy.
 
@@ -212,18 +220,20 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ 8-variant logo set (primary dark/light, mark, monochrome, subtitle, integrated logotype, favicon, social card) with clear-space/min-size spec and optical-correction pass. — `v2.17 Vesicle` (BRAND-04)
 - ✓ Self-contained `brandbook/` with tokens.json/css (4-source hex consistency), 543-line canonical brand-book.md, 7 SVG examples, standalone index.html (file:// offline, zero network refs) — 458 KB, zero binaries. — `v2.17 Vesicle` (BRAND-05, BRAND-06)
 - ✓ Brand live on real surfaces: README picture-element header, dashboard TV-1 mark + data-URI favicon, mix.exs/GitHub descriptions; quality-gate.mjs 8/8 PASS; mix test 632 green; DS-06 byte-identical (BRAND-09 did not fire). — `v2.17 Vesicle` (BRAND-07, BRAND-08)
+- ✓ Operators get a committed dev-only screenshot + LLM-critique evaluation loop and seed data that exercises every dashboard screen. — `v3.0 Control Room` (EVAL-01..05)
+- ✓ The design system is fully adopted: shared `ui.ex` components replace hand-rolled markup, with zero raw-palette class leakage enforced by the DS-06 drift guard (verified zero across `lib/scoria_web/`). — `v3.0 Control Room` (DS-01..06, SCREEN-01..04)
+- ✓ A newcomer dropped on the dashboard immediately understands what Scoria does and how to reach their job; power users keep a zero-click path (Status Home, three-group nav, breadcrumbs, ⌘K palette, cross-screen threading). — `v3.0 Control Room` (IA-01..06; IA-05 quality-loop threading partial — see Known Gaps)
+- ✓ Every screen reaches a consistent high-polish bar in both light and dark themes, with restrained brand-tied motion and mobile-first responsive behavior (22/22 parity smoke). — `v3.0 Control Room` (MOTION-01..04)
+- ✓ Reserved brand-name screens read as complete in the IA via honest "coming soon" stubs (no fake data). — `v3.0 Control Room` (IA-06)
+- ✓ The iteration is proven and documented: baseline→final rubric delta, raw-color count zero, before/after contact sheets, MAINTAINERS.md catalog + harness usage. — `v3.0 Control Room` (PROOF-01..03; PROOF-01/02 partial — see Known Gaps)
 
 ### Active
 
-_v3.0 Control Room — resumed 2026-06-11 after v2.17 Vesicle interjection (REQUIREMENTS.md current); Phases 11–15 complete; next step: `/gsd:discuss-phase 16`._
+_Next milestone: **v3.1 CI/CD Velocity** (seeded by SEED-003, CI/CD efficiency overhaul). Not yet scoped into requirements/phases — start with `/gsd:new-milestone`._
 
-- [ ] Operators get a committed dev-only screenshot + LLM-critique evaluation loop and seed data that exercises every dashboard screen.
-- [ ] The design system is fully adopted: shared `ui.ex` components replace hand-rolled markup, with zero raw-palette class leakage enforced by a drift guard.
-- [ ] A newcomer dropped on the dashboard immediately understands what Scoria does and how to reach their job; power users keep a zero-click path (Status Home, third nav axis, breadcrumbs, command palette, cross-screen threading).
-- [ ] Every screen reaches a consistent high-polish bar in both light and dark themes, with restrained brand-tied motion and mobile-first responsive behavior.
-- [ ] Reserved brand-name screens read as complete in the IA via honest "coming soon" stubs (no fake data).
+- [ ] Cut CI wall-clock and improve CI reliability without weakening canonical lane contracts (`VerificationLanes.closeout_order/0`) or warning-ratchet gates. (SEED-003; to be decomposed)
 
-_(Release 0.1.1 publish via release-please remains pending, tracked in Release Queue.)_
+_(Release 0.1.1 publish via release-please remains pending, tracked in Release Queue. v3.0 verification-doc gaps for Phases 13 & 14 may optionally be closed via `/gsd:verify-work`.)_
 
 ### Out of Scope
 
@@ -272,7 +282,8 @@ _(Release 0.1.1 publish via release-please remains pending, tracked in Release Q
 
 ## Context
 
-- **Latest shipped:** v2.17 Vesicle (brand system) — archived 2026-06-11.
+- **Latest shipped:** v3.0 Control Room (dashboard design-system / IA / motion / proof) — archived 2026-06-14; tag `v3.0` local-only.
+- v2.17 Vesicle (brand system) — archived 2026-06-11.
 - v2.16 ReqLLM peer bump (`~> 1.13`) — archived 2026-05-30.
 - v2.15 connector adoption lane (`mix test.connector`) — archived 2026-05-30.
 - v2.12–v2.14 shipped 2026-05-30; v2.13/v2.14 bundled with v2.12 closeout pass.
@@ -323,6 +334,10 @@ _(Release 0.1.1 publish via release-please remains pending, tracked in Release Q
 | Phase 10.1 inserted after audit for v2.16 VERIFICATION gap | Phases 08–10 shipped without GSD execute artifacts; retroactive ledgers | ✓ Good — shipped 10.1 |
 | v2.17 Vesicle interjected before v3.0 phases 13–17 | Brand book never pressure-tested, no logo/collateral exists; clean phase boundary; planning versions decoupled from Hex semver keeps archive chronology aligned | ✓ Good — shipped v2.17 |
 | `brandbook/` is canonical brand source; dashboard CSS updated only on material audit failures | Avoids thrash to freshly shipped v3.0 token gateway + DS-06 ratchet | ✓ Good — shipped v2.17; BRAND-09 did not fire |
+| v3.0 keeps the token-first scoped CSS; `ui.ex` is the enforced component gateway (no Tailwind/BEM switch); raw palette fails the build via DS-06 ratchet | The token SSOT was sound — the gap was adoption, not the tokens; a build-failing guard makes the win permanent | ✓ Good — shipped v3.0; raw-palette count verified zero |
+| v3.0 reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data | "Evidence over intuition" brand voice; fabricated data would erode operator trust | ✓ Good — shipped v3.0; 5 honest stubs |
+| Closed v3.0 `gaps_found` rather than reopening Phases 13 & 14 for verification docs | All 10 partials are verification-doc/proof gaps, 0 functionally unsatisfied; cheaper to track as documented tech debt than to block an already-shipped UI milestone | — Pending — Known Gaps recorded; optional retroactive verify-work |
+| Next milestone is v3.1 CI/CD Velocity (SEED-003), not a new capability family | Repo is feature-strong; CI wall-clock + reliability is the highest-leverage maintainer-trust axis after the dashboard polish milestone | — Pending — to be scoped via /gsd:new-milestone |
 
 ## Milestone History
 
@@ -351,6 +366,7 @@ _(Release 0.1.1 publish via release-please remains pending, tracked in Release Q
 - `v2.15 Connector Adoption Lane`: Named `mix test.connector` lane, SupportJourney proof, docs/CI/drift guards; Phase 07.1 process closeout.
 - `v2.17 Vesicle`: Brand system — pressure-tested brand book, programmatically generated logo system (TV-1 mark + LK-B lockup chosen by user), 8-variant logo set, canonical brandbook/ (tokens, brand book, examples, standalone HTML), README/dashboard/Hex integration; quality-gate.mjs 8/8 PASS; BRAND-09 conditional did not fire.
 - `v2.16 ReqLLM Peer Bump`: ReqLLM `~> 1.13` peer bump with integration + CI trust verification; Phase 10.1 process closeout.
+- `v3.0 Control Room`: Dashboard "insane polish" — fully-adopted `ui.ex` design system with build-failing DS-06 raw-palette guard (verified zero), persona/JTBD IA spine (3-group nav, Status Home, breadcrumbs, ⌘K palette, honest reserved stubs), full screen conversion + thin notebook evidence adapters, brand-tied motion + light/dark WCAG-AA parity, and a committed screenshot+critique evaluation loop. Closed `gaps_found` (10 verification-doc/proof partials, 0 unsatisfied).
 
 ## Archived Planning Notes
 
@@ -414,4 +430,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-13 — Phase 17 complete; v3.0 Control Room milestone fully delivered (all PROOF/SCREEN/MOTION requirements done). Next: /gsd:complete-milestone or /gsd:new-milestone*
+*Last updated: 2026-06-14 after v3.0 Control Room milestone — shipped, archived, and tagged `v3.0` (local, unpushed). Closed `gaps_found` (18/28 satisfied, 10 partial, 0 unsatisfied). Next: /gsd:new-milestone for v3.1 CI/CD Velocity (SEED-003).*

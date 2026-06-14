@@ -322,12 +322,54 @@
 
 ---
 
+## Milestone: v3.0 — Control Room
+
+**Shipped:** 2026-06-14
+**Phases:** 7 (11–17) | **Plans:** 38 | **Tasks:** 65
+
+### What Was Built
+- Committed dev-only `mix scoria.ui.shots` screenshot harness (Playwright state-matrix) + decoupled ReqLLM 9-dimension critique, and an idempotent `dev_seed.exs` exercising all 9 dashboard screens.
+- `ui.ex` design-system component layer (table/drawer/modal/field/form_section/notebook/skeleton/toast + semantic flash_group) as the enforced token gateway, with a build-failing DS-06 raw-palette drift guard (verified zero across `lib/scoria_web/`).
+- Orientation spine: three-group nav with route-aware active state, Status Home, object-aware breadcrumbs, ⌘K command palette + keyboard shortcuts, cross-screen quality-loop threading, and 5 honest "coming soon" reserved-name stubs.
+- Full screen conversion (Phases 14–15): all 13 screen modules on shared components at zero raw-palette leakage; real Dataset Builder `/datasets` index; 13 evidence components as thin notebook adapters.
+- Motion + responsive + light/dark WCAG-AA parity (22/22 Playwright parity smoke); final proof: baseline→final rubric delta, raw-color-zero assertion, before/after contact-sheet generator, `docs/MAINTAINERS.md` catalog.
+
+### What Worked
+- Sequencing for compounding reuse — primitives (12) before screens, least-iterated (14) before high-traffic (15), motion/parity (16) last before the proof sweep (17) — meant each phase deleted markup the previous one made obsolete.
+- The DS-06 ratchet turned "stop the raw-palette leak" from a one-time cleanup into a permanent, build-enforced invariant; the count reaching a verified zero is the milestone's hardest proof point.
+- The Phase 11 screenshot+critique loop established the falsifiable bar that every later phase re-ran against — "expose components → delete classes → prove" held end to end.
+- Closing `gaps_found` with documented Known Gaps (rather than reopening shipped phases) kept an already-merged UI milestone from stalling on verification ceremony.
+
+### What Was Inefficient
+- Phases 13 (IA-01..06) and 14 (SCREEN-01..02) shipped with `VALIDATION.md` but no `VERIFICATION.md` — 8 of the 10 partials are this single missing-artifact pattern, the recurring "implementation ships ahead of GSD verification ledgers" theme from v2.15/v2.16, now in a UI milestone.
+- One real one-line portability bug (`review_queue_live.ex:58` hardcoded `/scoria`) slipped past phase verification because there was no verification pass to catch it — only the milestone audit's integration check surfaced it.
+- The proof sweep (PROOF-01/02) was constrained by environment: no `ANTHROPIC_API_KEY` for the final LLM re-score (deterministic checklist substituted) and an approvals modal scrim halted the contact-sheet harness at 2/9 paired screens.
+- v3.0 was interleaved on the timeline with the v2.17 Vesicle brand interjection, making git-range stats noisy at close.
+
+### Patterns Established
+- Build-failing drift guard (DS-06) as the SSOT enforcement mechanism for a design-system invariant — ratchet baseline committed, runs unconditionally in `mix test`.
+- "Honest stub" pattern: reserved-name capabilities appear in the IA via a shared `ComingSoonLive` allowlist with future-tense copy and zero fabricated data.
+- Thin notebook-shell evidence adapters — one unified shell, many adapters, no duplicated layout logic.
+- Accepting documented Known Gaps at milestone close when 0 requirements are functionally unsatisfied and all partials are verification-doc/proof artifacts.
+
+### Key Lessons
+1. A build-enforced guard (DS-06) is worth more than a one-time cleanup: it converts a quality win into a property the codebase cannot regress.
+2. The recurring missing-`VERIFICATION.md` gap now also bites UI milestones — run `/gsd:verify-work` per phase before close, or the milestone audit's integration check becomes the only verification (and catches real bugs like the hardcoded mount path late).
+3. Proof steps that depend on external services (LLM critique) or fragile browser harnesses (modal scrims) need a deterministic fallback designed in — the 11-item resolution checklist was the right call when the API key was absent.
+
+### Cost Observations
+- Model mix: not tracked
+- Notable: 7 phases / 38 plans / 65 tasks delivered across ~10 calendar days (2026-06-04 → 2026-06-13), interleaved with the v2.17 brand interjection; worktree-based executor merges used in Phase 17.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v3.0 | not tracked | 7 | First large UI/IA/DX milestone; build-failing DS-06 design-system drift guard; closed `gaps_found` with documented Known Gaps (verification-doc partials, 0 unsatisfied) |
 | v2.15 | 1 | 4 | Named connector adoption lane with PR CI WAE; 07.1 retroactive VERIFICATION closeout |
 | v2.11 | 2 | 2 | Producer-path orchestrator live wiring + 01.1 hardening after audit |
 | v2.4 | 6 | 4 | Added canonical lane-contract source and enforced warning/lane-order reliability contracts across docs/tests/CI/installer |
@@ -337,6 +379,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v3.0 | DS-06 drift guard (raw-palette zero) + 22/22 Playwright light/dark parity smoke + `ui_component_test` | requirement audit 18/28 satisfied, 10 partial (verification-doc/proof), 0 unsatisfied | none |
 | v2.5 | adoption lane (77 tests) + installer contract suites + `verification_lanes_test` green at closeout | requirement audit 6/6 (`INST-03`–`INST-08`) | none |
 | v2.4 | canonical closeout chain green (`release_preview`, `test.adoption`, `test.runtime_to_handoff`) plus contract suites | requirement audit 10/10 | none |
 | v2.3 | `mix test.adoption` + `mix test.runtime_to_handoff` green at closeout | requirement audit 7/7 | none |
@@ -345,6 +388,8 @@
 
 1. Canonical lane naming plus drift tests is the fastest way to keep support truth honest.
 2. Closeout is safer when archive artifacts are normalized immediately rather than treated as immutable snapshots.
+3. Build-failing drift guards (DS-06 raw-palette) make a quality win permanent — preferred over one-time cleanups.
+4. The "implementation ships ahead of VERIFICATION.md" gap recurs across milestone types (v2.15, v2.16, v3.0) — run `/gsd:verify-work` per phase before close, or the milestone audit becomes the only verification pass.
 
 ---
 

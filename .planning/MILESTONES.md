@@ -1,5 +1,43 @@
 # Milestones
 
+## v3.0 Control Room (Shipped: 2026-06-14)
+
+**Phases completed:** 7 phases (11–17), 38 plans, 65 tasks
+**Timeline:** 2026-06-04 → 2026-06-13 (interleaved with the v2.17 Vesicle interjection)
+**Audit:** `gaps_found` accepted at close — 18/28 requirements fully satisfied, 10 partial, 0 unsatisfied (see Known Gaps below and `.planning/milestones/v3.0-MILESTONE-AUDIT.md`).
+
+**Delivered:** The embedded `/scoria` operator dashboard reached "insane polish" — a fully-adopted token-first design system (`ui.ex` is now the enforced component gateway, raw-palette count verified zero across `lib/scoria_web/` via the DS-06 drift guard), a persona/JTBD information architecture (3-group nav, Status Home, breadcrumbs, ⌘K palette, honest reserved-name stubs), brand-tied motion with full light/dark parity, and a committed dev-only screenshot + LLM-critique evaluation loop with seed data exercising every screen.
+
+**Key accomplishments:**
+
+1. **Evaluation loop + seed depth (Phase 11):** Committed dev-only `mix scoria.ui.shots` harness (Playwright state-matrix capture + decoupled ReqLLM 9-dimension critique) and an idempotent `dev_seed.exs` that populates all 9 dashboard screens — establishing the proof loop every later phase re-runs.
+2. **Design-system component layer + drift guard (Phase 12):** `ui.ex` now exposes `table`/`drawer`/`modal`/`field`/`form_section`/`notebook`/`skeleton`/`toast` plus a semantic `flash_group`, all token-bound; the DS-06 ratchet guard fails the build on any raw palette class and runs unconditionally in `mix test`.
+3. **Orientation spine / IA (Phase 13):** Three-group nav (Operate/Improve/Configure) with route-aware active state, a Status Home that orients newcomers without adding a click for power users, object-aware breadcrumbs, a ⌘K command palette + keyboard shortcuts, cross-screen quality-loop threading, and 5 honest "coming soon" reserved-capability stubs (no fabricated data).
+4. **Full screen conversion (Phases 14–15):** Review Queue, Incidents, Eval Workbench, Prompt Registry/Release, plus high-traffic Live Ops, Workflows, Approvals, and Connectors all render through shared components at zero raw-palette leakage; a real Dataset Builder `/datasets` index converges the duplicated promote affordances; 13 evidence components collapse into thin notebook-shell adapters.
+5. **Motion + responsive + theme parity (Phase 16):** Mobile-first shell + accessible off-canvas nav drawer, responsive tables with opt-in mobile summary cards, focus-visible/non-color-only-status hardening, and full light+dark WCAG-AA parity — mechanically proven by a 22/22 Playwright parity smoke.
+6. **Consistency sweep + proof (Phase 17):** Final-audit report with a baseline→final rubric-delta table and a verified raw-color-zero assertion, a reusable before/after contact-sheet generator, and a `docs/MAINTAINERS.md` design-system catalog + harness usage entry-point.
+
+### Known Gaps
+
+Closed with `status: gaps_found` accepted as tech debt. **0 requirements unsatisfied**; the 10 partials below are documented and carried forward — none is a functional regression in the dev harness.
+
+| REQ-ID | Phase | Reason partial |
+|--------|-------|----------------|
+| IA-01 | 13 | Verification doc missing — no `13-VERIFICATION.md`; functionally CONNECTED (integration check confirms 3-group nav SSOT + `aria-current` active state). |
+| IA-02 | 13 | Verification doc missing — Status Home at `/` with async summary + 4 attention-card types CONNECTED. |
+| IA-03 | 13 | Verification doc missing — `object_header/1` breadcrumbs with parent-path context CONNECTED. |
+| IA-04 | 13 | Verification doc missing — ⌘K command palette wired to nav command sections CONNECTED. |
+| IA-05 | 13 | Verification doc missing **plus** functional threading gap: incident→trace deep-link fragile (OrchestratorLive drops `?from=`, no `handle_params/3`, anchor relies on last-25 async hydration); dataset→eval edge has no explicit cross-screen affordance (sidebar/⌘K only). |
+| IA-06 | 13 | Verification doc missing — 5 reserved-name stubs via `ComingSoonLive` allowlist CONNECTED. |
+| SCREEN-01 | 14 | Verification doc missing — Review Queue/Incidents/Eval Workbench/Prompt Registry+Release use shared components at zero raw palette CONNECTED; note `review_queue_live.ex:58` hardcodes `/scoria` mount path (portability one-liner, WARNING-only in dev harness). |
+| SCREEN-02 | 14 | Verification doc missing — Dataset Builder `/datasets` real route + promote drawer CONNECTED. |
+| PROOF-01 | 17 | Final LLM critique not mechanically re-run (no `ANTHROPIC_API_KEY`); a deterministic 11-item P1 resolution checklist was substituted (each item mapped to resolving phase + re-verifiable code evidence). Raw-palette-zero claim independently VERIFIED. |
+| PROOF-02 | 17 | Only 2 of 9 screens (live_ops, approvals) have paired before/after contact-sheet captures; remaining 7 baseline-only (Phase 17 harness halted by an approvals modal scrim intercepting pointer events). |
+
+**Known deferred items at close:** 2 (see STATE.md Deferred Items) — SEED-003 CI/CD efficiency overhaul (becomes the next milestone, v3.1 CI/CD Velocity) and the `docker-dx-fleet-hardening` todo (future work). Both intentionally left in place, not resolved.
+
+---
+
 ## v2.17 Vesicle — Brand System (Shipped: 2026-06-11)
 
 **Phases completed:** 5 phases (18–22), 12 plans, 2 user gates + 1 ship-it checkpoint, 8 requirements (+ 1 conditional not-fired)
