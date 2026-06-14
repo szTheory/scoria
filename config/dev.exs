@@ -6,7 +6,17 @@ config :scoria, Scoria.Repo,
   hostname: System.get_env("SCORIA_DB_HOST", "localhost"),
   port: String.to_integer(System.get_env("SCORIA_DB_PORT", "5432")),
   database: System.get_env("SCORIA_DB_NAME", "scoria_dev"),
-  show_sensitive_data_on_connection_error: true
+  show_sensitive_data_on_connection_error: true,
+  # config/config.exs sets `pool: Ecto.Adapters.SQL.Sandbox` at the base level for
+  # the test sandbox; dev is a real running server and must NOT inherit it.
+  # On the ownership pool the dev dashboard + background pollers (SRE.Relay,
+  # Workflows.Reconciler, audit-outbox) contend for the default 10 connections and
+  # the boot burst starves the pool (DBConnection ownership_timeout → page 500s
+  # for ~20s after boot). Use the standard pool with headroom.
+  pool: DBConnection.ConnectionPool,
+  pool_size: String.to_integer(System.get_env("SCORIA_DB_POOL_SIZE", "20")),
+  queue_target: 200,
+  queue_interval: 2_000
 
 # --- Dev host harness ---------------------------------------------------------
 # Serves the Scoria dashboard at http://localhost:4000/scoria via `mix phx.server`
