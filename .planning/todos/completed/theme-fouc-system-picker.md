@@ -1,13 +1,24 @@
 ---
 id: theme-fouc-system-picker
 title: "Theme FOUC fix + dark/light/system picker (replace binary Theme toggle)"
-status: pending
+status: completed
 created: 2026-06-13
+completed: 2026-06-14
 priority: low
 resolves_phase: null
 tags: [ui, theme, fouc, dx]
 source: "Surfaced during Phase 13 UAT (Test 1, Status Home) — user in light mode saw the dashboard flash dark before settling to light; explicitly deferred, not a Test 1 failure."
 ---
+
+## Resolution (2026-06-14)
+
+Done. Pre-paint nonce'd script in `lib/scoria_web/components/layouts/root.html.heex` sets
+`data-theme` from `localStorage["scoria-theme"]` (system → `prefers-color-scheme`) before first
+paint — no FOUC. The `ThemeToggle` hook in `assets/js/scoria.js` now cycles **dark → light →
+system**, persists the mode, resolves `system` via `matchMedia` (re-applies on live OS changes),
+and syncs both topbar controls (`data-theme-toggle` / `data-theme-label` in `app.html.heex`).
+Covered by the MOTION-04 theme e2e (`priv/dev/e2e/phase16_parity.spec.mjs`).
+
 
 ## Why this exists
 
