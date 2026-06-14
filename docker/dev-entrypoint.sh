@@ -21,8 +21,12 @@ cat <<BANNER
                                         automatically in Chrome/Chromium)
          host fallback: run \`make url\` for the ephemeral 127.0.0.1 port
 
+  Demo data is seeded on boot (idempotent). Reseed any time with \`make seed\`;
+  for a clean slate use \`make reseed\`. Demo deep-links (run / replay / prompt
+  release ids) are printed in the seed output above.
+
   Screens:
-    /scoria              Live Ops (orchestrator)
+    /scoria              Home (Status Home)
     /scoria/approvals    Approvals
     /scoria/reviews      Review Queue
     /scoria/workflows    Workflows

@@ -1,5 +1,5 @@
 # Scoria dev DX shortcuts. See docs/docker_dev_dx.md for the full story.
-.PHONY: proxy up up-d down logs url open dev shots critique shots-native
+.PHONY: proxy up up-d down logs url open dev seed reseed shots critique shots-native
 
 # --- Per-instance identity ---------------------------------------------------
 # The project name + Traefik host are derived from the current git branch so two
@@ -34,6 +34,16 @@ down:
 ## logs: tail the web container
 logs:
 	docker compose logs -f web
+
+## seed: re-run the idempotent dev seed against the running instance (no downtime)
+seed:
+	docker compose exec web mix run priv/repo/dev_seed.exs
+
+## reseed: clean slate — drop this instance's DB volume, then rebuild + reseed
+reseed:
+	docker compose down
+	-docker volume rm $(COMPOSE_PROJECT_NAME)_pgdata
+	@$(MAKE) --no-print-directory up-d
 
 ## url: print this instance's Traefik URL + the ephemeral loopback fallback
 url:
