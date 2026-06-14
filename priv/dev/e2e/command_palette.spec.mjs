@@ -25,7 +25,10 @@ async function openPaletteWithKeyboard(page) {
 }
 
 async function openPaletteWithButton(page) {
-  const opener = page.locator('[data-command-open]');
+  // Two openers exist in the DOM (mobile topbar + desktop topbar); only one is
+  // visible per viewport. Scope to the visible one so strict mode resolves to a
+  // single element at the default desktop viewport.
+  const opener = page.locator('[data-command-open]').filter({ visible: true }).first();
   await opener.click();
   const palette = page.locator('#scoria-command-palette');
   await expect(palette).toBeVisible();

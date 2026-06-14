@@ -48,6 +48,8 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
 
   use Mix.Task
 
+  import Ecto.Query, only: [from: 2]
+
   @pending_approval_floor 5
   @switches [base_url: :string, url: :string, seed_approvals: :boolean]
 
@@ -79,6 +81,11 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
       ensure_pending_approval_fixtures!()
     end
 
+    # Resolve a few seeded demo ids (dev_seed.exs) so specs that must land on a
+    # specific object page stay deterministic without hardcoding UUIDs. Best-effort:
+    # if the DB is unavailable the spec skips those checks rather than failing.
+    demo_env = resolve_demo_env()
+
     Mix.shell().info("[scoria.ui.e2e] Running Playwright e2e against #{base_url} ...")
 
     # Discrete args list — never a shell command string (T-11-04 injection mitigation).
@@ -88,7 +95,7 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
 
     case System.cmd("npx", cmd_args,
            cd: priv_dev,
-           env: [{"PLAYWRIGHT_BASE_URL", base_url}],
+           env: [{"PLAYWRIGHT_BASE_URL", base_url} | demo_env],
            stderr_to_stdout: true,
            into: IO.stream()
          ) do
@@ -102,6 +109,35 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
       {_, code} ->
         Mix.raise("playwright e2e exited with code #{code}")
     end
+  end
+
+  # Best-effort resolution of seeded demo ids exported to Playwright as env vars.
+  # Specs read these (e.g. SCORIA_E2E_REPLAY_RUN_ID) to deep-link a specific object
+  # page and skip gracefully when absent. Never fails the run — returns [] on error.
+  defp resolve_demo_env do
+    start_fixture_services!()
+    tenant_id = Scoria.SupportJourney.tenant_id()
+
+    replay_run_id =
+      Scoria.Repo.one(
+        from(r in Scoria.Workflows.Run,
+          where: r.tenant_id == ^tenant_id and r.execution_mode == "replay",
+          order_by: [desc: r.inserted_at],
+          limit: 1,
+          select: r.id
+        )
+      )
+
+    case replay_run_id do
+      nil ->
+        []
+
+      id ->
+        Mix.shell().info("[scoria.ui.e2e] Seeded replay run id: #{id}")
+        [{"SCORIA_E2E_REPLAY_RUN_ID", to_string(id)}]
+    end
+  rescue
+    _ -> []
   end
 
   defp ensure_pending_approval_fixtures! do
