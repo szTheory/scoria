@@ -627,7 +627,7 @@ Note `dev` in the key — never shares with `test`.
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does `test` job still need `mix deps.get` after restoring the artifact?**
    - What we know: `deps/` is fully populated in the artifact. `mix deps.get` is a no-op when `mix.lock` has not changed and all deps are present.
