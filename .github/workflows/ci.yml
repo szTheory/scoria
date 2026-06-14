@@ -59,10 +59,11 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install Erlang and Elixir
+        id: beam
         uses: erlef/setup-beam@v1
         with:
-          otp-version: "27"
-          elixir-version: "1.19"
+          version-file: .tool-versions
+          version-type: strict
 
       - name: Install Node.js
         uses: actions/setup-node@v6
@@ -75,9 +76,9 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-dev-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-
+            ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-dev-mix-
 
       - name: Install dependencies
         run: mix deps.get
