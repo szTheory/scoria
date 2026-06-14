@@ -22,15 +22,24 @@ import { waitForReady } from './lib/ready.mjs';
 const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4000/scoria';
 const SEEDED_TENANT = 'acme-corp';
 
-// Opens the approval modal for a pending approval in the seeded inbox. The inbox
-// auto-seeds the first pending approval into the modal on mount, so the approve/
-// reject buttons may already be present; only click a select_approval row (the
-// selector the screenshot harness uses, priv/dev/shots.mjs) when they are not.
-async function openApprovalModal(page) {
+// Opens the decision-confirm modal for a pending approval in the seeded inbox,
+// leaving the modal's `phx-click="${decision}"` confirm button visible for the
+// caller to click. Drives the shipped approvals flow:
+//   inbox row (select_approval) → detail drawer (open_decision_modal) → modal.
+// The inbox auto-seeds the first pending approval into the detail drawer on mount
+// (maybe_seed_active_approval), and the drawer's `.scoria-scrim` overlays the
+// inbox table — so we reach the decision through the already-open drawer rather
+// than re-clicking the now-obscured inbox row. If the drawer is not auto-open
+// (no pending approval matched focus), we open it from the first inbox row.
+async function openDecisionModal(page, decision) {
   await page.goto(`${BASE}/approvals?tenant=${SEEDED_TENANT}`);
   await waitForReady(page);
-  const approve = page.locator('button[phx-click="approve"]');
-  if ((await approve.count()) === 0) {
+
+  const drawerDecision = page.locator(
+    `#approval-detail-drawer button[phx-click="open_decision_modal"][phx-value-decision="${decision}"]`
+  );
+
+  if ((await drawerDecision.count()) === 0) {
     const trigger = page.locator('button[phx-click="select_approval"]').first();
     await expect(
       trigger,
@@ -38,7 +47,14 @@ async function openApprovalModal(page) {
     ).toBeVisible();
     await trigger.click();
   }
-  await expect(approve).toBeVisible();
+
+  await expect(
+    drawerDecision,
+    'expected the approval detail drawer to offer the decision action'
+  ).toBeVisible();
+  await drawerDecision.click();
+
+  await expect(page.locator(`button[phx-click="${decision}"]`)).toBeVisible();
 }
 
 test.describe('Phase 12 — toast (DS-05)', () => {
@@ -52,7 +68,7 @@ test.describe('Phase 12 — toast (DS-05)', () => {
   // phx-mounted attribute + the dismiss control render; this proves the JS actually
   // fires and the toast goes away unattended in a real browser.
   test('approval toast renders and auto-dismisses', async ({ page }) => {
-    await openApprovalModal(page);
+    await openDecisionModal(page, 'approve');
     await page.locator('button[phx-click="approve"]').click();
 
     const toast = page.locator('#toast-region .scoria-toast');
@@ -64,7 +80,7 @@ test.describe('Phase 12 — toast (DS-05)', () => {
 
   // Manual dismiss: the × button (phx-click JS.hide) removes the toast immediately.
   test('manual dismiss (×) button hides the toast', async ({ page }) => {
-    await openApprovalModal(page);
+    await openDecisionModal(page, 'reject');
     await page.locator('button[phx-click="reject"]').click();
     const toast = page.locator('#toast-region .scoria-toast');
     await expect(toast).toBeVisible();
@@ -79,7 +95,7 @@ test.describe('Phase 12 — toast (DS-05)', () => {
   // other. Asserting the computed position is not "fixed" verifies the fix
   // race-free (no dependence on two toasts being visible within the 4s window).
   test('CR-01: a toast is not position:fixed (region owns stacking)', async ({ page }) => {
-    await openApprovalModal(page);
+    await openDecisionModal(page, 'approve');
     await page.locator('button[phx-click="approve"]').click();
 
     const toast = page.locator('#toast-region .scoria-toast').first();

@@ -711,11 +711,18 @@
   .scoria-table tbody tr:hover { background: var(--scoria-tone-neutral-bg); }
 
   /* ---------- Drawer + modal ---------- */
+  /* The scrim sits at the BASE of its overlay's stacking context. Its parent
+     (.scoria-drawer-shell / .scoria-modal) already carries --scoria-z-modal and
+     elevates the whole overlay above page content, so the scrim only needs to sit
+     below its sibling panel (.scoria-drawer / .scoria-modal__panel, z-index: 1).
+     Giving the scrim --scoria-z-modal here stacked it ABOVE the panel within that
+     context, so the scrim intercepted clicks on the panel's own controls (a real
+     click landed on the scrim and dismissed the overlay). */
   .scoria-scrim {
     position: fixed;
     inset: 0;
     background: var(--scoria-surface-overlay);
-    z-index: var(--scoria-z-modal);
+    z-index: 0;
     animation: scoria-fade var(--scoria-dur-fast) var(--scoria-ease-out);
   }
   .scoria-modal {
@@ -727,6 +734,10 @@
     padding: var(--scoria-space-5);
   }
   .scoria-modal__panel {
+    /* Above the sibling .scoria-scrim (z-index: 0) within the .scoria-modal
+       stacking context, mirroring .scoria-drawer's z-index: 1. */
+    position: relative;
+    z-index: 1;
     background: var(--scoria-surface-panel-raised);
     border: 1px solid var(--scoria-border-strong);
     border-radius: var(--scoria-radius-lg);
