@@ -24,6 +24,7 @@ defmodule ScoriaWeb.IncidentsLive.Index do
       |> assign(:tenant_id, tenant_id)
       |> assign(:incidents, incidents)
       |> assign(:summary, OperatorSurface.incidents_summary(tenant_id))
+      |> assign(:selected_incident, selected)
       |> assign(:selected_incident_id, selected && selected.id)
       |> assign(:incident_evidence, evidence_for(selected))
 
@@ -39,6 +40,7 @@ defmodule ScoriaWeb.IncidentsLive.Index do
       incident ->
         {:noreply,
          socket
+         |> assign(:selected_incident, incident)
          |> assign(:selected_incident_id, incident.id)
          |> assign(:incident_evidence, evidence_for(incident))}
     end
@@ -50,62 +52,81 @@ defmodule ScoriaWeb.IncidentsLive.Index do
     <div class="scoria-dashboard relative">
       <div class="scoria-pagehead">
         <h1>Incidents</h1>
-        <p class="text-stone-600 mt-1">
+        <p style="margin-top: var(--scoria-space-1); color: var(--scoria-text-muted);">
           SRE triage for this tenant. Select an incident to inspect its trace-first evidence — budget, breaker, alerts, and audit relay.
         </p>
       </div>
 
       <div :if={@incidents == []}>
-        <.empty_state title="No incidents">
-          Budget trips, breaker openings, and policy regressions surface here with full trace evidence once they fire.
+        <.empty_state title="No open incidents">
+          Runtime failures, breaker trips, and delivery issues will appear here with links back to the affected run.
         </.empty_state>
       </div>
 
       <div :if={@incidents != []}>
-        <div class="grid gap-4 sm:grid-cols-3 mb-6">
+        <div class="grid gap-4 md:grid-cols-3 mb-6">
           <.metric label="Open incidents" value={to_string(@summary.open)} />
           <.metric label="Review queue" value={to_string(@summary.review)} />
           <.metric label="Paging" value={to_string(@summary.page)} />
         </div>
 
-        <div class="grid gap-6 xl:grid-cols-[0.85fr,1.15fr]">
-          <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-            <p class="text-xs uppercase tracking-[0.24em] text-stone-500">incident history</p>
-            <h2 class="text-lg font-semibold text-stone-900">Tenant incidents</h2>
+        <div class="scoria-page-split--xl-reverse">
+          <.panel>
+            <:eyebrow>incident history</:eyebrow>
+            <:title>Tenant incidents</:title>
 
-            <div class="mt-4 space-y-2">
+            <div style="display: flex; flex-direction: column; gap: var(--scoria-space-2);">
               <button
                 :for={incident <- @incidents}
                 type="button"
                 phx-click="select_incident"
                 phx-value-id={incident.id}
                 class={[
-                  "w-full rounded-xl border p-3 text-left transition",
+                  "w-full text-left",
                   if(incident.id == @selected_incident_id,
-                    do: "border-stone-400 bg-stone-50",
-                    else: "border-stone-200 hover:border-stone-300"
+                    do: "scoria-panel scoria-panel--raised",
+                    else: "scoria-panel"
                   )
                 ]}
+                style="padding: var(--scoria-space-3);"
                 aria-current={incident.id == @selected_incident_id && "true"}
               >
                 <div class="flex items-start justify-between gap-3">
-                  <p class="text-sm font-semibold text-stone-900"><%= incident.summary || incident.incident_key %></p>
+                  <p style="font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text);"><%= incident.summary || incident.incident_key %></p>
                   <.badge tone={severity_tone(incident.severity)} label={incident.severity} />
                 </div>
-                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <div class="mt-2 flex flex-wrap items-center gap-2" style="font-size: var(--scoria-fs-label);">
                   <.badge tone={routing_tone(incident.routing_class)} label={incident.routing_class} dot={false} />
                   <.badge tone={status_tone(incident.status)} label={incident.status} dot={false} />
-                  <span :if={incident.trace_id} class="text-stone-500">
+                  <span :if={incident.trace_id} style="color: var(--scoria-text-muted);">
                     trace <.id value={short_id(incident.trace_id)} copy={incident.trace_id} />
                   </span>
                 </div>
               </button>
             </div>
-          </section>
+          </.panel>
 
-          <div>
+          <.panel>
+            <:eyebrow>selected incident</:eyebrow>
+            <:title>Evidence notebook</:title>
+            <:actions>
+              <a
+                :if={@selected_incident && @selected_incident.workflow_run_id}
+                href={incident_run_path(@selected_incident, assigns[:scoria_base] || "")}
+                class="scoria-button scoria-button--primary scoria-button--sm"
+              >
+                Open run
+              </a>
+              <a
+                :if={@selected_incident && @selected_incident.trace_id}
+                href={incident_trace_path(@selected_incident, assigns[:scoria_base] || "")}
+                class="scoria-button scoria-button--ghost scoria-button--sm"
+              >
+                Open trace at failing span
+              </a>
+            </:actions>
             <IncidentEvidenceComponent.render :if={@incident_evidence} evidence={@incident_evidence} />
-          </div>
+          </.panel>
         </div>
       </div>
     </div>
@@ -127,6 +148,20 @@ defmodule ScoriaWeb.IncidentsLive.Index do
   defp status_tone("open"), do: :warn
   defp status_tone(status) when status in ["resolved", "closed"], do: :pass
   defp status_tone(_), do: :neutral
+
+  defp incident_run_path(incident, base) do
+    query = URI.encode_query([{"from", incident_origin(incident)}])
+    "#{base}/workflows/#{incident.workflow_run_id}?#{query}"
+  end
+
+  defp incident_trace_path(incident, base) do
+    query = URI.encode_query([{"from", incident_origin(incident)}])
+    "#{home_path(base)}?#{query}#traces-#{URI.encode_www_form(to_string(incident.trace_id))}"
+  end
+
+  defp incident_origin(incident), do: "incident:#{incident.id}"
+  defp home_path(""), do: "/"
+  defp home_path(base), do: base
 
   defp short_id(nil), do: "—"
   defp short_id(id), do: id |> to_string() |> String.slice(0, 8)

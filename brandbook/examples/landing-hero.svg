@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Landing page hero mock</title>
+  <desc id="desc">Hero treatment: the three-line verb-triplet display headline, the tagline subhead, two CTAs, and a run-tree span schematic.</desc>
+  <defs>
+    <linearGradient id="hero-wash" x1="0" y1="0" x2="1200" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#11100f"/><stop offset="1" stop-color="#181513"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#hero-wash)"/>
+  <text x="80" y="96" fill="#e65a32" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="14" letter-spacing="4">SCORIA</text>
+  <text x="80" y="110" fill="#88786d" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="12" letter-spacing="2">AI OPS FOR PHOENIX APPS</text>
+  <!-- Verb-triplet display headline -->
+  <g font-family="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif" font-weight="700">
+    <text x="80" y="232" fill="#fff9f3" font-size="68">Trace the run.</text>
+    <text x="80" y="312" fill="#fff9f3" font-size="68">Prove the change.</text>
+    <text x="80" y="392" fill="#e65a32" font-size="68">Ship the agent.</text>
+  </g>
+  <!-- Tagline subhead -->
+  <text x="84" y="452" fill="#bdaea3" font-family="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif" font-size="22">Scoria gives Phoenix teams observable, evaluable, production-grade</text>
+  <text x="84" y="482" fill="#bdaea3" font-family="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif" font-size="22">AI ops — wired into Phoenix, Ecto, and OTP.</text>
+  <!-- CTAs -->
+  <rect x="82" y="524" width="170" height="52" rx="7" fill="#e65a32"/><text x="112" y="557" fill="#11100f" font-family="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif" font-size="17" font-weight="600">Get started</text>
+  <rect x="270" y="524" width="186" height="52" rx="7" fill="#181513" stroke="#3a332f"/><text x="300" y="557" fill="#faf5ef" font-family="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif" font-size="17" font-weight="600">View on GitHub</text>
+  <!-- Run-tree span schematic (genuine diagram, not a screenshot) -->
+  <g transform="translate(820 180)" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="13">
+    <line x1="20" y1="20" x2="20" y2="300" stroke="#3a332f" stroke-width="2"/>
+    <line x1="20" y1="60" x2="60" y2="60" stroke="#3a332f" stroke-width="2"/>
+    <line x1="20" y1="120" x2="60" y2="120" stroke="#3a332f" stroke-width="2"/>
+    <line x1="20" y1="180" x2="60" y2="180" stroke="#3a332f" stroke-width="2"/>
+    <line x1="20" y1="240" x2="60" y2="240" stroke="#3a332f" stroke-width="2"/>
+    <circle cx="20" cy="20" r="8" fill="#b798ff"/><text x="40" y="25" fill="#b798ff">support_agent</text>
+    <circle cx="60" cy="60" r="7" fill="#e65a32"/><text x="78" y="65" fill="#faf5ef">render_prompt</text>
+    <circle cx="60" cy="120" r="7" fill="#7dd8d1"/><text x="78" y="125" fill="#faf5ef">call_model · 842ms</text>
+    <circle cx="60" cy="180" r="7" fill="#ffd166"/><text x="78" y="185" fill="#faf5ef">lookup_order · tool</text>
+    <circle cx="60" cy="240" r="7" fill="#a7c76f"/><text x="78" y="245" fill="#faf5ef">eval · 47/50 pass</text>
+  </g>
+</svg>

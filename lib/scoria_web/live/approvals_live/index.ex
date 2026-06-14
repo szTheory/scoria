@@ -6,7 +6,16 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   """
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
-  import ScoriaWeb.UI, only: [flash_group: 1]
+  import ScoriaWeb.UI,
+    only: [
+      badge: 1,
+      drawer: 1,
+      evidence_action_row: 1,
+      evidence_rows: 1,
+      flash_group: 1,
+      modal: 1,
+      toast: 1
+    ]
 
   import Ecto.Query, warn: false
 
@@ -24,7 +33,9 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       socket
       |> assign(:page_title, "Approvals")
       |> assign(:active_approval, nil)
+      |> assign(:decision_modal, nil)
       |> assign(:highlighted_approval_id, nil)
+      |> assign(:approval_table_density, :compact)
       |> assign(:approval_inbox, [])
       |> assign(:runtime_query, Map.get(params, "runtime"))
       |> assign(
@@ -32,6 +43,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         session["actor_id"] || session["user_id"] || session["session_id"] || "operator"
       )
       |> assign(:tenant_id, tenant_id)
+      |> assign(:toasts, [])
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
@@ -80,7 +92,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   end
 
   def handle_event("dismiss_approval", _, socket) do
-    {:noreply, assign(socket, :active_approval, nil)}
+    {:noreply, socket |> assign(:active_approval, nil) |> assign(:decision_modal, nil)}
   end
 
   def handle_event("select_approval", %{"id" => approval_id}, socket) do
@@ -90,64 +102,116 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     end
   end
 
+  def handle_event("open_decision_modal", %{"decision" => decision}, socket)
+      when decision in ["approve", "reject"] do
+    {:noreply, assign(socket, :decision_modal, decision)}
+  end
+
+  def handle_event("close_decision_modal", _, socket) do
+    {:noreply, assign(socket, :decision_modal, nil)}
+  end
+
+  def handle_event("set_density", %{"density" => density}, socket) do
+    density =
+      case density do
+        "compact" -> :compact
+        "comfortable" -> :comfortable
+        _ -> :default
+      end
+
+    {:noreply, assign(socket, :approval_table_density, density)}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="scoria-dashboard relative">
       <div class="scoria-pagehead">
         <h1>Approvals</h1>
-        <p class="text-stone-600 mt-1">
+        <p>
           Operator-gated tool calls awaiting a workflow-owned decision. Select one to review its arguments and approve or reject.
         </p>
       </div>
 
       <.flash_group flash={@flash} />
 
+      <div id="toast-region" class="scoria-toast-region">
+        <.toast :for={t <- @toasts} id={t.id} tone={t.tone} message={t.message} duration_ms={t.duration_ms} />
+      </div>
+
       <ApprovalInboxComponent.render
         approvals={@approval_inbox}
         highlight_approval_id={@highlighted_approval_id}
+        density={@approval_table_density}
+        on_density_change="set_density"
         select_event="select_approval"
       />
 
-      <%= if @active_approval do %>
-        <div id="approval-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div class="bg-white p-6 rounded shadow-lg max-w-md w-full">
-            <h2 class="text-xl font-bold mb-4">Approval Required</h2>
-            <p class="mb-2"><strong>Tool:</strong> <%= @active_approval[:tool_name] %></p>
-            <p :if={@active_approval[:reason]} class="mb-2 text-sm text-stone-700">
-              <strong>Reason:</strong> <%= @active_approval[:reason] %>
-            </p>
-            <p :if={@active_approval[:arguments_preview] not in [nil, %{}]} class="mb-2 text-sm text-stone-700">
-              <strong>Arguments:</strong>
-              <span class="font-mono text-xs block mt-1 whitespace-pre-wrap break-all"><%= inspect(@active_approval[:arguments_preview]) %></span>
-            </p>
-            <span
-              :if={@active_approval[:connector_label] || @active_approval[:blocker_kind] == "connector"}
-              class="inline-block mb-3 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-700"
-            >
-              <%= @active_approval[:connector_label] || "connector approval" %>
-            </span>
-            <a
-              :if={@active_approval[:workflow_run_id]}
-              href={(assigns[:scoria_base] || "") <> "/workflows/#{@active_approval[:workflow_run_id]}"}
-              class="text-sm text-blue-700 underline block mb-4"
-            >
-              View workflow run
-            </a>
-            <p class="text-sm text-stone-600">
-              Record a workflow-owned decision. The approval state and audit evidence are written durably before any resume attempt.
-            </p>
-            <div class="flex justify-end gap-3 mt-6">
-              <button phx-click="dismiss_approval" class="scoria-button scoria-button--ghost">Decide later</button>
-              <button phx-click="reject" class="scoria-button scoria-button--danger">Reject decision</button>
-              <button phx-click="approve" class="scoria-button scoria-button--primary">Approve decision</button>
-            </div>
-            <p class="mt-4 text-xs text-stone-500">
-              Reject records a durable rejection and keeps the workflow paused. To continue, the run needs a new approval request or operator retry.
-            </p>
-          </div>
-        </div>
-      <% end %>
+      <.drawer id="approval-detail-drawer" show={@active_approval != nil} on_dismiss="dismiss_approval">
+        <:eyebrow>Approval detail</:eyebrow>
+        <:title_slot>Approval Required</:title_slot>
+
+        <.evidence_rows rows={approval_detail_rows(@active_approval)} />
+
+        <.evidence_action_row :if={@active_approval && @active_approval[:workflow_run_id]} class="mt-4">
+          <a
+            href={(assigns[:scoria_base] || "") <> "/workflows/#{@active_approval[:workflow_run_id]}"}
+            class="scoria-button scoria-button--ghost scoria-button--sm"
+          >
+            View workflow run
+          </a>
+        </.evidence_action_row>
+
+        <p class="mt-4">
+          Record a workflow-owned decision. The approval state and audit evidence are written durably before any resume attempt.
+        </p>
+
+        <.evidence_action_row class="mt-6">
+          <button
+            type="button"
+            phx-click="open_decision_modal"
+            phx-value-decision="reject"
+            class="scoria-button scoria-button--danger"
+          >
+            Reject approval
+          </button>
+          <button
+            type="button"
+            phx-click="open_decision_modal"
+            phx-value-decision="approve"
+            class="scoria-button scoria-button--primary"
+          >
+            Approve workflow
+          </button>
+        </.evidence_action_row>
+      </.drawer>
+
+      <.modal id="approval-decision-modal" show={@decision_modal != nil} on_dismiss="close_decision_modal">
+        <:title_slot>{decision_title(@decision_modal)}</:title_slot>
+        <.badge tone={decision_tone(@decision_modal)} label={decision_badge(@decision_modal)} dot={false} />
+        <p>{decision_copy(@decision_modal)}</p>
+        <:footer>
+          <button type="button" phx-click="close_decision_modal" class="scoria-button scoria-button--ghost">
+            Keep reviewing
+          </button>
+          <button
+            :if={@decision_modal == "reject"}
+            type="button"
+            phx-click="reject"
+            class="scoria-button scoria-button--danger"
+          >
+            Reject approval
+          </button>
+          <button
+            :if={@decision_modal == "approve"}
+            type="button"
+            phx-click="approve"
+            class="scoria-button scoria-button--primary"
+          >
+            Approve workflow
+          </button>
+        </:footer>
+      </.modal>
     </div>
     """
   end
@@ -184,12 +248,25 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
         with {:ok, updated_approval} <- Workflows.approve(approval.id, status, attrs),
              {:ok, updated_socket} <- maybe_resume_approval(socket, updated_approval, status) do
+          # WR-03: a rejection deliberately keeps the workflow paused, so it must not
+          # report the same green ":pass / decision recorded" toast as an approval —
+          # that blurs a safety-relevant distinction. Branch the toast on status.
+          toast_opts =
+            case status do
+              "approved" -> [tone: :pass, message: "Approval granted."]
+              _ -> [tone: :warn, message: "Approval rejected — workflow remains paused."]
+            end
+
           updated_socket
           |> assign(:active_approval, nil)
+          |> assign(:decision_modal, nil)
           |> reload_inbox()
+          |> put_toast(toast_opts)
         else
           {:error, reason} ->
-            put_flash(socket, :error, approval_error_message(status, reason))
+            socket
+            |> put_flash(:error, approval_error_message(status, reason))
+            |> put_toast(tone: :fail, message: approval_error_message(status, reason))
         end
     end
   end
@@ -262,7 +339,9 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   defp maybe_clear_active_approval(socket, approval_id) do
     if socket.assigns.active_approval && socket.assigns.active_approval.id == approval_id do
-      assign(socket, :active_approval, nil)
+      socket
+      |> assign(:active_approval, nil)
+      |> assign(:decision_modal, nil)
     else
       socket
     end
@@ -275,4 +354,53 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       socket
     end
   end
+
+  defp put_toast(socket, opts) do
+    toast = %{
+      id: "toast-#{System.unique_integer([:positive])}",
+      tone: Keyword.get(opts, :tone, :neutral),
+      message: Keyword.fetch!(opts, :message),
+      duration_ms: Keyword.get(opts, :duration_ms, 4000)
+    }
+
+    Phoenix.Component.update(socket, :toasts, fn toasts -> [toast | toasts] end)
+  end
+
+  defp approval_detail_rows(nil), do: []
+
+  defp approval_detail_rows(approval) do
+    [
+      {"Tool", approval[:tool_name]},
+      {"Reason", approval[:reason]},
+      {"Arguments", approval[:arguments_preview]},
+      {"Connector", approval[:connector_label] || connector_label(approval)},
+      {"Workflow", approval[:workflow_run_id]},
+      {"Status", approval[:status]}
+    ]
+  end
+
+  defp connector_label(%{blocker_kind: "connector"}), do: "connector approval"
+  defp connector_label(_approval), do: nil
+
+  defp decision_title("approve"), do: "Approve workflow"
+  defp decision_title("reject"), do: "Reject approval"
+  defp decision_title(_decision), do: "Review approval"
+
+  defp decision_badge("approve"), do: "Resume when possible"
+  defp decision_badge("reject"), do: "Keep workflow paused"
+  defp decision_badge(_decision), do: "Decision pending"
+
+  defp decision_tone("approve"), do: :pass
+  defp decision_tone("reject"), do: :warn
+  defp decision_tone(_decision), do: :neutral
+
+  defp decision_copy("approve") do
+    "Approval resumes the workflow when possible after the durable approval event is written."
+  end
+
+  defp decision_copy("reject") do
+    "Reject records a durable rejection and keeps the workflow paused. To continue, the run needs a new approval request or operator retry."
+  end
+
+  defp decision_copy(_decision), do: "Review the approval before recording a durable decision."
 end

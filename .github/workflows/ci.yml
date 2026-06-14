@@ -23,19 +23,136 @@ jobs:
   verify:
     uses: ./.github/workflows/ci-verify.yml
 
+  # e2e: real-browser assertion lane (Tier 2). Asserts JS/CSS/animation truths that
+  # the server-rendered LiveView suite (Floki, no JS engine) cannot reach. Lives here
+  # in the PR entrypoint (not ci-verify.yml) so it covers every PR without taxing the
+  # hex-publish/release recovery path that reuses ci-verify.yml directly.
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scoria_dev
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d scoria_dev"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MIX_ENV: dev
+      SCORIA_DB_HOST: localhost
+      SCORIA_DB_PORT: 55432
+      SCORIA_DB_USERNAME: postgres
+      SCORIA_DB_PASSWORD: postgres
+      SCORIA_DB_NAME: scoria_dev
+      PORT: 4000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          elixir-version: "1.19"
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('priv/dev/package.json') }}
+
+      - name: Install e2e tooling
+        run: |
+          npm --prefix priv/dev ci || npm --prefix priv/dev install
+          npx --prefix priv/dev playwright install --with-deps chromium
+
+      - name: Prepare dev database and seed
+        run: mix dev.setup
+
+      - name: Build dashboard assets
+        run: mix scoria.assets.build
+
+      - name: Boot dev dashboard
+        run: |
+          mix phx.server &
+          echo "$!" > .phx_server.pid
+          for i in $(seq 1 60); do
+            if curl -sSf http://localhost:4000/scoria/approvals >/dev/null 2>&1; then
+              echo "dashboard is up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "dashboard did not become ready in time"; exit 1
+
+      # TEMP DIAGNOSTIC (remove after skeleton e2e root-caused): separates
+      # "DB has no runs" from "server can't see the seeded runs". Prints the
+      # row count via a fresh mix process and what the running server renders.
+      - name: TEMP diagnose runs visibility
+        run: |
+          echo "== DB run count (fresh mix process) =="
+          mix run -e 'IO.puts("DBRUNS=" <> Integer.to_string(Scoria.Repo.aggregate(Scoria.Workflows.Run, :count, :id)))' 2>/dev/null | grep DBRUNS || echo "DBRUNS=ERR"
+          echo "== server render of /workflows =="
+          curl -s http://localhost:4000/scoria/workflows | grep -oE 'No runs yet|/workflows/[a-f0-9-]+' | sort | uniq -c | head
+          echo "== env the server points at =="
+          echo "SCORIA_DB_NAME=$SCORIA_DB_NAME SCORIA_DB_PORT=$SCORIA_DB_PORT"
+
+      - name: Run dashboard e2e lane
+        run: mix scoria.ui.e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: priv/dev/e2e/playwright-report
+          retention-days: 7
+          if-no-files-found: ignore
+
   ci-gate:
     name: ci-gate
     runs-on: ubuntu-latest
-    needs: [verify]
+    needs: [verify, e2e]
     if: always()
     steps:
       - name: Verify required CI lanes
         env:
           VERIFY: ${{ needs.verify.result }}
+          E2E: ${{ needs.e2e.result }}
         run: |
           set -euo pipefail
           if [[ "$VERIFY" != "success" ]]; then
             echo "ci-gate failed: verify workflow result was $VERIFY"
+            exit 1
+          fi
+          if [[ "$E2E" != "success" ]]; then
+            echo "ci-gate failed: e2e lane result was $E2E"
             exit 1
           fi
           echo "ci-gate passed: all required lanes succeeded."

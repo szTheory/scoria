@@ -1,0 +1,20 @@
+{
+  "name": "scoria-brandbook-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Logo generation toolchain for Scoria brand system (Phase 19+)",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "smoke": "node smoke.mjs",
+    "generate": "node generate.mjs",
+    "converge": "node converge.mjs",
+    "verify": "node verify-logos.mjs"
+  },
+  "dependencies": {
+    "opentype.js": "^1.3.5",
+    "wawoff2": "^2.0.1"
+  }
+}

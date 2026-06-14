@@ -3,26 +3,42 @@
  * All values come from semantic tokens — never raw hex, never a per-component color map.
  */
 @layer scoria.components {
-  /* ---------- App shell (nav + content) ---------- */
+  /* ---------- App shell (nav + content) — mobile-first ---------- */
+  /* Default (mobile, <768px): single column, no sidebar */
   .scoria-shell {
     display: grid;
-    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr;
-    grid-template-areas: "sidebar topbar" "sidebar main";
+    grid-template-areas: "topbar" "main";
     min-height: 100vh;
   }
+  /* Hide the desktop sidebar on mobile */
   .scoria-sidebar {
-    grid-area: sidebar;
-    border-right: 1px solid var(--scoria-border);
-    background: var(--scoria-surface-panel);
-    padding: var(--scoria-space-4) var(--scoria-space-3);
-    display: flex;
-    flex-direction: column;
-    gap: var(--scoria-space-5);
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
+    display: none;
+  }
+  /* Desktop layout restored at >=768px */
+  @media (min-width: 768px) {
+    .scoria-shell {
+      grid-template-columns: 248px minmax(0, 1fr);
+      grid-template-areas: "sidebar topbar" "sidebar main";
+    }
+    .scoria-sidebar {
+      display: flex;
+      grid-area: sidebar;
+      border-right: 1px solid var(--scoria-border);
+      background: var(--scoria-surface-panel);
+      padding: var(--scoria-space-4) var(--scoria-space-3);
+      flex-direction: column;
+      gap: var(--scoria-space-5);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    /* Hide mobile-only topbar at desktop breakpoint */
+    .scoria-mobile-topbar {
+      display: none;
+    }
   }
   .scoria-topbar {
     grid-area: topbar;
@@ -42,6 +58,137 @@
     padding: var(--scoria-space-6);
     max-width: 1280px;
     width: 100%;
+  }
+
+  /* ---------- Mobile topbar (hidden at >=768px) ---------- */
+  .scoria-mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    padding: var(--scoria-space-2) var(--scoria-space-4);
+    background: var(--scoria-surface-panel);
+    border-bottom: 1px solid var(--scoria-border);
+    position: sticky;
+    top: 0;
+    z-index: var(--scoria-z-sticky);
+    min-height: 44px;
+  }
+  .scoria-mobile-topbar__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    font-weight: 600;
+    font-size: var(--scoria-fs-label);
+    color: var(--scoria-text);
+    text-decoration: none;
+    flex: none;
+  }
+  .scoria-mobile-topbar__brand mark {
+    width: 20px;
+    height: 20px;
+    flex: none;
+  }
+  .scoria-mobile-topbar__title {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--scoria-fs-label);
+    color: var(--scoria-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 var(--scoria-space-2);
+  }
+  .scoria-mobile-topbar__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    margin-left: auto;
+    flex: none;
+  }
+  /* Ensure all topbar interactive controls have 44px hit target */
+  .scoria-mobile-topbar .scoria-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* ---------- Mobile off-canvas nav drawer ---------- */
+  .scoria-mobile-drawer-shell {
+    position: fixed;
+    inset: 0;
+    z-index: var(--scoria-z-modal);
+    pointer-events: none;
+  }
+  .scoria-mobile-drawer-shell[data-state="open"] {
+    pointer-events: auto;
+  }
+  .scoria-mobile-drawer__scrim {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--scoria-surface-app) 60%, transparent);
+    opacity: 0;
+    transition: opacity var(--scoria-dur-fast) var(--scoria-ease-out);
+  }
+  .scoria-mobile-drawer-shell[data-state="open"] .scoria-mobile-drawer__scrim {
+    opacity: 1;
+  }
+  .scoria-mobile-drawer {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: min(280px, 85vw);
+    height: 100%;
+    overflow-y: auto;
+    /* D-23: allow focus ring to paint at scroll boundaries inside the nav drawer */
+    overflow-clip-margin: 4px;
+    background: var(--scoria-surface-panel);
+    border-right: 1px solid var(--scoria-border-strong);
+    box-shadow: var(--scoria-shadow-raised);
+    display: flex;
+    flex-direction: column;
+    /* Edge-origin slide from the start (left) edge + opacity fade */
+    transform: translateX(-100%);
+    opacity: 0;
+    transition: transform var(--scoria-dur-mid) var(--scoria-ease-out),
+      opacity var(--scoria-dur-mid) var(--scoria-ease-out);
+    z-index: 1;
+  }
+  .scoria-mobile-drawer-shell[data-state="open"] .scoria-mobile-drawer {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  .scoria-mobile-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--scoria-space-3) var(--scoria-space-4);
+    border-bottom: 1px solid var(--scoria-border);
+    flex: none;
+    min-height: 44px;
+  }
+  .scoria-mobile-drawer__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    font-weight: 600;
+    font-size: var(--scoria-fs-label);
+    color: var(--scoria-text);
+    text-decoration: none;
+  }
+  .scoria-mobile-drawer__close {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .scoria-mobile-drawer__nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--scoria-space-4) var(--scoria-space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-5);
+  }
+  /* Ensure drawer nav rows have 44px hit target */
+  .scoria-mobile-drawer .scoria-nav {
+    min-height: 44px;
   }
 
   /* Brand lockup */
@@ -109,6 +256,280 @@
     border-radius: var(--scoria-radius-pill);
     padding: 0 var(--scoria-space-2);
     line-height: 1.6;
+  }
+  .scoria-nav__soon {
+    margin-left: auto;
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-pill);
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-badge);
+    padding: 0 var(--scoria-space-2);
+    line-height: 1.6;
+  }
+
+  /* ---------- Phase 13 IA primitives ---------- */
+  .scoria-attention-card {
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--scoria-space-3);
+    padding: var(--scoria-space-3) var(--scoria-space-4);
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-surface-panel);
+    color: var(--scoria-text);
+  }
+  .scoria-attention-card:hover {
+    border-color: var(--scoria-tone-brand-border);
+    background: var(--scoria-tone-neutral-bg);
+  }
+  .scoria-attention-card__count {
+    font-family: var(--scoria-font-mono);
+    font-size: var(--scoria-fs-panel);
+    font-weight: 600;
+    color: var(--scoria-text);
+  }
+  .scoria-attention-card__body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-1);
+  }
+  .scoria-attention-card__label { font-weight: 600; }
+  .scoria-attention-card__detail {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+  }
+  .scoria-attention-card__cta {
+    font-size: var(--scoria-fs-label);
+    font-weight: 600;
+    color: var(--scoria-link);
+    white-space: nowrap;
+  }
+
+  .scoria-home__identity {
+    margin-top: var(--scoria-space-1);
+    max-width: 760px;
+    color: var(--scoria-text-muted);
+  }
+  .scoria-home__attention {
+    margin-bottom: var(--scoria-space-5);
+  }
+  .scoria-home__attention-grid {
+    display: grid;
+    gap: var(--scoria-space-3);
+  }
+  .scoria-home__clear,
+  .scoria-traces__empty {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-body);
+  }
+  .scoria-traces__empty {
+    margin-bottom: var(--scoria-space-4);
+  }
+
+  .scoria-object-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-3);
+    margin-bottom: var(--scoria-space-5);
+  }
+  .scoria-object-header__crumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-label);
+  }
+  .scoria-object-header__crumbs a { color: var(--scoria-text-muted); }
+  .scoria-object-header__identity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-object-header__id { color: var(--scoria-text); }
+  .scoria-object-header__scalar {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+  }
+  .scoria-object-header__context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-object-header__provenance {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+  }
+  .scoria-object-header__origin {
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-pill);
+    padding: 0 var(--scoria-space-3);
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+  }
+
+  .scoria-stub {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-5);
+    max-width: 720px;
+    padding: var(--scoria-space-7) 0;
+  }
+  .scoria-stub__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--scoria-space-3);
+  }
+  .scoria-stub__header h1 {
+    font-size: var(--scoria-fs-title);
+    font-weight: 600;
+    color: var(--scoria-text);
+  }
+  .scoria-stub__description {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-body);
+  }
+  .scoria-stub__today {
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-surface-panel);
+    padding: var(--scoria-space-4);
+  }
+  .scoria-stub__today h2 {
+    font-size: var(--scoria-fs-panel);
+    font-weight: 600;
+    color: var(--scoria-text);
+    margin-bottom: var(--scoria-space-3);
+  }
+  .scoria-stub__today ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-stub__track {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    width: max-content;
+    color: var(--scoria-link);
+    font-weight: 600;
+  }
+
+  .scoria-kbd {
+    min-width: 24px;
+    min-height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-sm);
+    background: var(--scoria-surface-panel-raised);
+    color: var(--scoria-text-muted);
+    font-family: var(--scoria-font-mono);
+    font-size: var(--scoria-fs-label);
+    padding: 0 var(--scoria-space-2);
+  }
+
+  .scoria-command {
+    position: fixed;
+    inset: 0;
+    z-index: var(--scoria-z-modal);
+    display: grid;
+    place-items: start center;
+    padding: var(--scoria-space-8) var(--scoria-space-4);
+  }
+  .scoria-command[hidden] {
+    display: none;
+  }
+  .scoria-command__scrim {
+    position: fixed;
+    inset: 0;
+    background: var(--scoria-surface-overlay);
+  }
+  .scoria-command__panel {
+    position: relative;
+    width: min(640px, calc(100vw - var(--scoria-space-6)));
+    max-height: calc(100vh - var(--scoria-space-8));
+    overflow: auto;
+    border: 1px solid var(--scoria-border-strong);
+    border-radius: var(--scoria-radius-lg);
+    background: var(--scoria-surface-panel-raised);
+    box-shadow: var(--scoria-shadow-raised);
+    padding: var(--scoria-space-4);
+  }
+  .scoria-command__header,
+  .scoria-command__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--scoria-space-3);
+  }
+  .scoria-command__header h2 {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-panel);
+    font-weight: 600;
+  }
+  .scoria-command__input {
+    width: 100%;
+    min-height: 44px;
+    margin: var(--scoria-space-4) 0;
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-surface-panel);
+    color: var(--scoria-text);
+    padding: 0 var(--scoria-space-3);
+  }
+  .scoria-command__list,
+  .scoria-command__section,
+  .scoria-command__rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-command__section[hidden],
+  .scoria-command__row[hidden] {
+    display: none !important;
+  }
+  .scoria-command__section h3 {
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--scoria-tracking-eyebrow);
+  }
+  .scoria-command__row {
+    min-height: 44px;
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: var(--scoria-radius-md);
+    background: transparent;
+    color: var(--scoria-text);
+    padding: var(--scoria-space-2) var(--scoria-space-3);
+    text-align: left;
+  }
+  .scoria-command__row:hover,
+  .scoria-command__row[aria-selected="true"] {
+    border-color: var(--scoria-tone-brand-border);
+    background: var(--scoria-tone-brand-bg);
+  }
+  .scoria-command__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    font-weight: 600;
+  }
+  .scoria-command__empty {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-body);
+    padding: var(--scoria-space-4);
   }
 
   /* ---------- Panel / card ---------- */
@@ -290,11 +711,18 @@
   .scoria-table tbody tr:hover { background: var(--scoria-tone-neutral-bg); }
 
   /* ---------- Drawer + modal ---------- */
+  /* The scrim sits at the BASE of its overlay's stacking context. Its parent
+     (.scoria-drawer-shell / .scoria-modal) already carries --scoria-z-modal and
+     elevates the whole overlay above page content, so the scrim only needs to sit
+     below its sibling panel (.scoria-drawer / .scoria-modal__panel, z-index: 1).
+     Giving the scrim --scoria-z-modal here stacked it ABOVE the panel within that
+     context, so the scrim intercepted clicks on the panel's own controls (a real
+     click landed on the scrim and dismissed the overlay). */
   .scoria-scrim {
     position: fixed;
     inset: 0;
     background: var(--scoria-surface-overlay);
-    z-index: var(--scoria-z-modal);
+    z-index: 0;
     animation: scoria-fade var(--scoria-dur-fast) var(--scoria-ease-out);
   }
   .scoria-modal {
@@ -306,6 +734,10 @@
     padding: var(--scoria-space-5);
   }
   .scoria-modal__panel {
+    /* Above the sibling .scoria-scrim (z-index: 0) within the .scoria-modal
+       stacking context, mirroring .scoria-drawer's z-index: 1. */
+    position: relative;
+    z-index: 1;
     background: var(--scoria-surface-panel-raised);
     border: 1px solid var(--scoria-border-strong);
     border-radius: var(--scoria-radius-lg);
@@ -316,13 +748,37 @@
     padding: var(--scoria-space-5);
     animation: scoria-pop var(--scoria-dur-mid) var(--scoria-ease-out);
   }
+  /* WR-03: the drawer is a floating side panel. .scoria-drawer-shell is the fixed
+     full-viewport container (anchors the panel to the right, above the scrim);
+     .scoria-drawer is the panel itself — full height, fixed width, scrollable. */
+  .scoria-drawer-shell {
+    position: fixed;
+    inset: 0;
+    z-index: var(--scoria-z-modal);
+    display: flex;
+    justify-content: flex-end;
+  }
   .scoria-drawer {
-    border: 1px solid var(--scoria-border);
-    border-radius: var(--scoria-radius-lg);
+    position: relative;
+    z-index: 1;
+    width: min(420px, 100%);
+    height: 100%;
+    overflow-y: auto;
+    /* D-23: allow focus ring (2px outline + 2px offset) to paint at scroll boundaries */
+    overflow-clip-margin: 4px;
+    border-left: 1px solid var(--scoria-border-strong);
     background: var(--scoria-surface-panel-raised);
-    padding: var(--scoria-space-4);
+    box-shadow: var(--scoria-shadow-raised);
+    padding: var(--scoria-space-5);
     animation: scoria-slide var(--scoria-dur-slow) var(--scoria-ease-out);
   }
+  .scoria-drawer__header-text { display: flex; flex-direction: column; gap: var(--scoria-space-1); }
+  .scoria-drawer__header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-drawer__body { display: flex; flex-direction: column; gap: var(--scoria-space-4); }
 
   /* ---------- Empty state ---------- */
   .scoria-empty {
@@ -406,4 +862,454 @@
   }
   .scoria-breadcrumbs a { color: var(--scoria-text-muted); }
   .scoria-breadcrumbs__sep { color: var(--scoria-text-subtle); }
+
+  /* ---------- Table density modifiers ---------- */
+  .scoria-table--compact tbody td  { padding: var(--scoria-space-2); }
+  .scoria-table--comfortable tbody td { padding: var(--scoria-space-4); }
+
+  /* ---------- Modal header + footer ---------- */
+  .scoria-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--scoria-space-3);
+    margin-bottom: var(--scoria-space-4);
+  }
+  .scoria-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--scoria-space-2);
+    margin-top: var(--scoria-space-4);
+  }
+
+  /* ---------- Drawer header ---------- */
+  .scoria-drawer__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--scoria-space-3);
+    margin-bottom: var(--scoria-space-4);
+  }
+
+  /* ---------- Field + form section ---------- */
+  .scoria-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-1);
+  }
+  .scoria-field__label {
+    font-size: var(--scoria-fs-label);
+    font-weight: 600;
+    color: var(--scoria-text);
+  }
+  .scoria-field__error {
+    color: var(--scoria-danger-action);
+    font-size: var(--scoria-fs-label);
+    margin-top: var(--scoria-space-1);
+  }
+  .scoria-field__help {
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-label);
+  }
+  .scoria-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-4);
+  }
+  .scoria-form-section__title {
+    font-size: var(--scoria-fs-panel);
+    font-weight: 600;
+    color: var(--scoria-text);
+    margin-bottom: var(--scoria-space-1);
+  }
+  .scoria-form-section__description {
+    font-size: var(--scoria-fs-body);
+    color: var(--scoria-text-muted);
+    margin-bottom: var(--scoria-space-2);
+  }
+
+  /* ---------- Notebook (evidence panel shell) ---------- */
+  .scoria-notebook {
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-lg);
+    background: var(--scoria-surface-panel);
+  }
+  .scoria-notebook__tabbar {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--scoria-border);
+    background: var(--scoria-surface-panel);
+  }
+  .scoria-notebook__tab {
+    font-size: var(--scoria-fs-body);
+    font-weight: 600;
+    color: var(--scoria-text-muted);
+    padding: var(--scoria-space-2) var(--scoria-space-4);
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    cursor: pointer;
+  }
+  .scoria-notebook__tab:hover { color: var(--scoria-text); }
+  .scoria-notebook__tab[aria-selected="true"] {
+    color: var(--scoria-text);
+    border-bottom-color: var(--scoria-action);
+  }
+  .scoria-notebook__panel {
+    background: var(--scoria-surface-panel-raised);
+    padding: var(--scoria-space-4);
+  }
+
+  /* ---------- Raw evidence details block ---------- */
+  .scoria-raw-evidence {
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-sm);
+    margin-top: var(--scoria-space-2);
+  }
+  .scoria-raw-evidence__summary {
+    font-size: var(--scoria-fs-body);
+    color: var(--scoria-text-muted);
+    cursor: pointer;
+    padding: var(--scoria-space-2) var(--scoria-space-3);
+    user-select: none;
+  }
+  .scoria-raw-evidence__pre {
+    background: var(--scoria-surface-sunken);
+    font-family: var(--scoria-font-mono);
+    font-size: var(--scoria-fs-badge);
+    padding: var(--scoria-space-3);
+    margin: 0;
+    overflow-x: auto;
+    border-top: 1px solid var(--scoria-border);
+  }
+
+  /* ---------- Evidence primitives ---------- */
+  .scoria-evidence-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-3);
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-surface-panel);
+    padding: var(--scoria-space-4);
+  }
+  .scoria-evidence-section__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--scoria-space-3);
+  }
+  .scoria-evidence-section__heading {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-1);
+  }
+  .scoria-evidence-section__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-evidence-section__title {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-body);
+    font-weight: 600;
+    line-height: var(--scoria-lh-tight);
+  }
+  .scoria-evidence-section__description {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+    line-height: var(--scoria-lh-body);
+  }
+  .scoria-evidence-section__actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-evidence-section__body {
+    min-width: 0;
+  }
+  .scoria-evidence-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-2);
+    margin: 0;
+  }
+  .scoria-evidence-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.36fr) minmax(0, 1fr);
+    gap: var(--scoria-space-3);
+    align-items: baseline;
+    padding-bottom: var(--scoria-space-2);
+    border-bottom: 1px solid var(--scoria-border);
+  }
+  .scoria-evidence-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+  .scoria-evidence-row__label {
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-label);
+    font-weight: 600;
+  }
+  .scoria-evidence-row__value {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-body);
+    overflow-wrap: anywhere;
+  }
+  .scoria-evidence-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-evidence-empty {
+    border: 1px dashed var(--scoria-border-strong);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-surface-sunken);
+    color: var(--scoria-text-muted);
+    padding: var(--scoria-space-4);
+  }
+  .scoria-evidence-empty__title {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-body);
+    font-weight: 600;
+    margin-bottom: var(--scoria-space-1);
+  }
+  .scoria-evidence-empty__body {
+    font-size: var(--scoria-fs-body);
+    line-height: var(--scoria-lh-body);
+  }
+  /* ---------- End evidence primitives ---------- */
+
+  /* ---------- Flash banners ---------- */
+  .scoria-flash {
+    border: 1px solid var(--scoria-tone-neutral-border);
+    background: var(--scoria-tone-neutral-bg);
+    color: var(--scoria-tone-neutral-fg);
+    border-radius: var(--scoria-radius-md);
+    padding: var(--scoria-space-2) var(--scoria-space-4);
+    font-size: var(--scoria-fs-body);
+    margin-bottom: var(--scoria-space-4);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-flash--fail { border-color: var(--scoria-tone-fail-border); background: var(--scoria-tone-fail-bg); color: var(--scoria-tone-fail-fg); }
+  .scoria-flash--info { border-color: var(--scoria-tone-info-border); background: var(--scoria-tone-info-bg); color: var(--scoria-tone-info-fg); }
+  .scoria-flash--warn { border-color: var(--scoria-tone-warn-border); background: var(--scoria-tone-warn-bg); color: var(--scoria-tone-warn-fg); }
+  .scoria-flash--pass { border-color: var(--scoria-tone-pass-border); background: var(--scoria-tone-pass-bg); color: var(--scoria-tone-pass-fg); }
+
+  /* ---------- Skeleton (loading placeholder) ---------- */
+  .scoria-skeleton {
+    background: var(--scoria-tone-neutral-bg);
+    border-radius: var(--scoria-radius-sm);
+    animation: scoria-skeleton-pulse 1.5s ease-in-out infinite;
+  }
+  .scoria-skeleton--text { height: 1em; }
+
+  /* ---------- Toast (transient notification) ---------- */
+  /* CR-01: a toast must NOT be position:fixed — the fixed .scoria-toast-region is
+     the stacking container (flex column). Fixed children would all pin to the same
+     bottom-right corner and overlap. Toasts flow normally inside the region. */
+  .scoria-toast {
+    min-width: 280px;
+    max-width: 400px;
+    box-shadow: var(--scoria-shadow-raised);
+    border-radius: var(--scoria-radius-md);
+    border: 1px solid var(--scoria-tone-neutral-border);
+    background: var(--scoria-tone-neutral-bg);
+    color: var(--scoria-tone-neutral-fg);
+    padding: var(--scoria-space-2) var(--scoria-space-4);
+    font-size: var(--scoria-fs-body);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-toast--neutral { border-color: var(--scoria-tone-neutral-border); background: var(--scoria-tone-neutral-bg); color: var(--scoria-tone-neutral-fg); }
+  .scoria-toast--pass    { border-color: var(--scoria-tone-pass-border);    background: var(--scoria-tone-pass-bg);    color: var(--scoria-tone-pass-fg); }
+  .scoria-toast--fail    { border-color: var(--scoria-tone-fail-border);    background: var(--scoria-tone-fail-bg);    color: var(--scoria-tone-fail-fg); }
+  .scoria-toast--warn    { border-color: var(--scoria-tone-warn-border);    background: var(--scoria-tone-warn-bg);    color: var(--scoria-tone-warn-fg); }
+  .scoria-toast--info    { border-color: var(--scoria-tone-info-border);    background: var(--scoria-tone-info-bg);    color: var(--scoria-tone-info-fg); }
+  .scoria-toast-region {
+    position: fixed;
+    bottom: var(--scoria-space-5);
+    right: var(--scoria-space-5);
+    z-index: var(--scoria-z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-2);
+    pointer-events: none;
+  }
+  .scoria-toast-region > * { pointer-events: auto; }
+
+  /* ---------- IN-02: structural classes emitted by ui.ex components ----------
+     These were emitted by table/modal/notebook/skeleton without CSS rules (relying
+     on browser-default block layout). Give them token-bound layout defaults so the
+     shared components render sanely wherever they are consumed. Layout only — colors
+     resolve to --scoria-* tokens. */
+  .scoria-skeleton-group { display: flex; flex-direction: column; gap: var(--scoria-space-2); }
+  .scoria-modal__body { display: flex; flex-direction: column; gap: var(--scoria-space-4); }
+  .scoria-notebook__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--scoria-space-4);
+    margin-bottom: var(--scoria-space-3);
+  }
+  .scoria-notebook__title { font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text); }
+  .scoria-table-shell { display: flex; flex-direction: column; gap: var(--scoria-space-3); }
+  .scoria-table__filter { display: flex; align-items: center; gap: var(--scoria-space-2); }
+  .scoria-table__density-toggle { display: flex; align-items: center; gap: var(--scoria-space-1); }
+  .scoria-table__td--actions { text-align: right; white-space: nowrap; }
+
+  /* ---------- Table responsive viewport (16-02) ---------- */
+  /* D-13: keyboard-reachable horizontal scroll container.
+     sticky thead still works inside overflow-x: auto — vertical sticky is unaffected
+     by horizontal overflow direction.
+     D-23: overflow-clip-margin allows the :focus-visible outline (2px solid + 2px offset)
+     to paint 4px outside the clip boundary so interactive elements at the scroll edges
+     keep a visible ring without suppressing overflow entirely. */
+  .scoria-table__viewport {
+    overflow-x: auto;
+    overflow-clip-margin: 4px;
+  }
+
+  /* D-08/D-10: opt-in mobile summary cards — hidden by default (desktop-first display).
+     scoria-table-shell--has-summary tables show summaries below md and hide the viewport. */
+  .scoria-table__mobile-summaries {
+    display: none;
+    padding: var(--scoria-space-4);
+    background: var(--scoria-surface-panel);
+    gap: var(--scoria-space-4);
+    flex-direction: column;
+  }
+
+  /* Per-row summary card: object label + status on a row, then meta, then a
+     full-width primary action (44px touch target). Object-shaped scan card. */
+  .scoria-mobile-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label  status"
+      "meta   meta"
+      "action action";
+    align-items: start;
+    gap: var(--scoria-space-2) var(--scoria-space-3);
+    padding: var(--scoria-space-4);
+    background: var(--scoria-surface-panel-raised);
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-md);
+  }
+
+  .scoria-mobile-summary__label {
+    grid-area: label;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+    color: var(--scoria-text);
+  }
+
+  .scoria-mobile-summary__status {
+    grid-area: status;
+    justify-self: end;
+  }
+
+  .scoria-mobile-summary__meta {
+    grid-area: meta;
+    font-size: 0.8125rem;
+    color: var(--scoria-text-muted);
+  }
+
+  .scoria-mobile-summary__action {
+    grid-area: action;
+    margin-top: var(--scoria-space-1);
+  }
+
+  .scoria-mobile-summary__action .scoria-button,
+  .scoria-mobile-summary__action .scoria-link {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Below md (< 768px): summary-enabled tables swap viewport for summary cards */
+  @media (max-width: 767px) {
+    .scoria-table-shell--has-summary .scoria-table__viewport {
+      display: none;
+    }
+    .scoria-table-shell--has-summary .scoria-table__mobile-summaries {
+      display: flex;
+    }
+  }
+
+  /* At md and above: always hide summaries, always show the viewport */
+  @media (min-width: 768px) {
+    .scoria-table__mobile-summaries {
+      display: none !important;
+    }
+    .scoria-table-shell--has-summary .scoria-table__viewport {
+      display: block;
+    }
+  }
+  /* --------------------------------------------------------- */
+
+  .scoria-table__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--scoria-space-2);
+    margin-top: var(--scoria-space-3);
+  }
+  .scoria-table__page-label { font-size: var(--scoria-fs-label); color: var(--scoria-text-muted); }
+
+  /* ---------- Responsive grid splits (16-03) ----------
+     Named, mobile-first, token-bound grid primitives for evidence and page-split
+     layouts. Single-column by default; breakpoint restores the intended two-column
+     split. All gaps use --scoria-space-* tokens. No raw hex or palette classes (DS-06).
+     D-33: shared design-system classes used across all callsites with the same split
+     so the fix pays dividends beyond the original 7 callsites. */
+
+  /* Evidence/comparison two-column split at xl (1280px).
+     Covers incident_evidence_component, semantic_evidence_notebook_component,
+     replay_evidence_notebook_component — all used xl: with ~1.25fr/0.9fr ratios. */
+  .scoria-evidence-split {
+    display: grid;
+    gap: var(--scoria-space-4);
+  }
+  @media (min-width: 1280px) {
+    .scoria-evidence-split {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.9fr);
+    }
+  }
+
+  /* Primary/detail page split at lg (1024px).
+     Covers workflow_live/show and review_queue_live — lg: with minmax detail rail.
+     Preserves the minmax(20rem, ...) minimum so the detail panel never collapses. */
+  .scoria-page-split {
+    display: grid;
+    gap: var(--scoria-space-6);
+  }
+  @media (min-width: 1024px) {
+    .scoria-page-split {
+      grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.8fr);
+    }
+  }
+
+  /* Content split at xl (1280px) — reversed ratio (narrower left, wider right).
+     Covers incidents_live/index content grid (0.85fr left, 1.15fr right). */
+  .scoria-page-split--xl-reverse {
+    display: grid;
+    gap: var(--scoria-space-6);
+  }
+  @media (min-width: 1280px) {
+    .scoria-page-split--xl-reverse {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    }
+  }
+  /* --------------------------------------------------------- */
 }

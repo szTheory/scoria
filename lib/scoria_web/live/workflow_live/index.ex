@@ -13,7 +13,23 @@ defmodule ScoriaWeb.WorkflowLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket |> assign(:page_title, "Runs") |> assign(:runs, list_runs())}
+    {:ok,
+     socket
+     |> assign(:page_title, "Runs")
+     |> assign(:run_table_density, :compact)
+     |> assign(:runs, list_runs())}
+  end
+
+  @impl true
+  def handle_event("set_density", %{"density" => density}, socket) do
+    density =
+      case density do
+        "compact" -> :compact
+        "comfortable" -> :comfortable
+        _ -> :default
+      end
+
+    {:noreply, assign(socket, :run_table_density, density)}
   end
 
   defp list_runs do
@@ -29,50 +45,69 @@ defmodule ScoriaWeb.WorkflowLive.Index do
       <div class="scoria-pagehead__title">
         <h1>Runs</h1>
       </div>
-      <p class="text-stone-600 mt-1">Durable workflow runs. Open one to inspect its trace, steps, and evidence.</p>
+      <p>Inspect recorded workflow runs and open the trace that explains them.</p>
     </div>
 
     <.panel variant={:flat} class="scoria-panel--flush">
-      <div :if={@runs == []} class="p-6">
-        <.empty_state title="No runs yet">
-          Start a run through <span class="font-mono">Scoria.start_run/2</span> and it will appear here with full trace evidence.
-        </.empty_state>
-      </div>
-
-      <div :if={@runs != []} class="overflow-x-auto">
-        <table class="scoria-table">
-          <thead>
-            <tr>
-              <th>Run</th>
-              <th>Status</th>
-              <th>Mode</th>
-              <th>Session</th>
-              <th>Started</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr :for={run <- @runs}>
-              <td><.id value={short_id(run.id)} copy={run.id} /></td>
-              <td><.badge tone={tone(run.status)} label={status_label(run.status)} /></td>
-              <td class="text-stone-600">{run.execution_mode}</td>
-              <td class="font-mono text-stone-600">{run.session_id}</td>
-              <td class="text-stone-600">{format_ts(run.started_at || run.inserted_at)}</td>
-              <td class="text-right">
-                <.link navigate={(assigns[:scoria_base] || "") <> "/workflows/#{run.id}"} class="scoria-button scoria-button--ghost scoria-button--sm">
-                  Open trace
-                </.link>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <.table id="runs" rows={@runs} density={@run_table_density} on_density_change="set_density">
+        <:col :let={run} label="Run">
+          <.id value={short_id(run.id)} copy={run.id} />
+        </:col>
+        <:col :let={run} label="Status">
+          <.badge tone={tone(run.status)} label={status_label(run.status)} />
+        </:col>
+        <:col :let={run} label="Runtime">
+          <span class="font-mono">{runtime_label(run)}</span>
+        </:col>
+        <:col :let={run} label="Started">
+          {format_ts(run.started_at || run.inserted_at)}
+        </:col>
+        <:action :let={run}>
+          <.link navigate={(assigns[:scoria_base] || "") <> "/workflows/#{run.id}"} class="scoria-button scoria-button--ghost scoria-button--sm">
+            Open trace
+          </.link>
+        </:action>
+        <:mobile_summary :let={run}>
+          <div class="scoria-mobile-summary">
+            <div class="scoria-mobile-summary__label">
+              <span class="font-mono">{short_id(run.id)}</span>
+            </div>
+            <div class="scoria-mobile-summary__status">
+              <.badge tone={tone(run.status)} label={status_label(run.status)} />
+            </div>
+            <div class="scoria-mobile-summary__meta">
+              {format_ts(run.started_at || run.inserted_at)}
+            </div>
+            <div class="scoria-mobile-summary__action">
+              <.link navigate={(assigns[:scoria_base] || "") <> "/workflows/#{run.id}"} class="scoria-button scoria-button--ghost scoria-button--sm">
+                Open trace
+              </.link>
+            </div>
+          </div>
+        </:mobile_summary>
+        <:empty>
+          <.empty_state title="No runs match this view">
+            Adjust your filters or check back when data is available.
+          </.empty_state>
+        </:empty>
+      </.table>
     </.panel>
     """
   end
 
   defp short_id(nil), do: "—"
   defp short_id(id), do: id |> to_string() |> String.slice(0, 8)
+
+  defp runtime_label(run) do
+    [run.execution_mode, run.session_id]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.join(" / ")
+    |> case do
+      "" -> "—"
+      label -> label
+    end
+  end
 
   defp format_ts(nil), do: "—"
   defp format_ts(%DateTime{} = dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M")

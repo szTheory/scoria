@@ -12,6 +12,8 @@ defmodule ScoriaWeb.OperatorSurface do
 
   alias Decimal, as: D
   alias Scoria.Connectors
+  alias Scoria.Connectors.Connector
+  alias Scoria.Eval.OnlineScoreCandidate
   alias Scoria.Repo
   alias Scoria.Runtime
   alias Scoria.Workflows
@@ -50,6 +52,7 @@ defmodule ScoriaWeb.OperatorSurface do
         transport_kind: inst.transport_kind,
         terminal_offline_reason: inst.terminal_offline_reason,
         current_run_id: inst.current_run_id,
+        last_seen_at: inst.last_seen_at,
         semantic: runtime_drawer_semantic(inst.current_run_id)
       }
     end)
@@ -105,6 +108,48 @@ defmodule ScoriaWeb.OperatorSurface do
     _error -> 0
   end
 
+  def status_home_summary(tenant_id) do
+    connectors = connector_health_summary(tenant_id)
+    incidents = incidents_summary(tenant_id)
+
+    %{
+      approvals: %{pending: pending_approval_count(tenant_id)},
+      incidents: incidents,
+      connectors: connectors,
+      reviews: %{pending: pending_review_count(tenant_id)}
+    }
+  rescue
+    _error -> empty_status_home_summary()
+  end
+
+  def empty_status_home_summary do
+    %{
+      approvals: %{pending: 0},
+      incidents: %{open: 0, review: 0, page: 0},
+      connectors: %{total: 0, degraded: 0},
+      reviews: %{pending: 0}
+    }
+  end
+
+  defp connector_health_summary(tenant_id) do
+    base_query = where(Connector, [connector], connector.tenant_id == ^tenant_id)
+
+    degraded_query =
+      where(
+        base_query,
+        [connector],
+        connector.health_state not in ["healthy", "ok", "unknown"] or
+          connector.status in ["degraded", "error"]
+      )
+
+    %{
+      total: Repo.aggregate(base_query, :count),
+      degraded: Repo.aggregate(degraded_query, :count)
+    }
+  rescue
+    _error -> %{total: 0, degraded: 0}
+  end
+
   def fleet_summary(tenant_id) do
     runtimes = load_runtimes(tenant_id)
     connectors = connector_fleet(tenant_id)
@@ -131,6 +176,15 @@ defmodule ScoriaWeb.OperatorSurface do
     }
   rescue
     _error -> %{open: 0, review: 0, page: 0}
+  end
+
+  defp pending_review_count(tenant_id) do
+    OnlineScoreCandidate
+    |> where([candidate], candidate.tenant_id == ^tenant_id)
+    |> where([candidate], candidate.review_status == "pending")
+    |> Repo.aggregate(:count)
+  rescue
+    _error -> 0
   end
 
   # ── Incidents (tenant rollup) ──────────────────────────────────────────────

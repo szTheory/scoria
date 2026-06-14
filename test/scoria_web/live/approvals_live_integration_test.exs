@@ -294,7 +294,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
       html = render(view)
 
       html =~ "Approval Required" and html =~ "publish" and html =~ "other_tool" and
-        html =~ "ring-2 ring-amber-400"
+        html =~ ~s(data-highlight="true")
     end)
   end
 
@@ -324,12 +324,16 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     eventually(fn ->
       html = render(view)
-
-      html =~ "Approval Required" and html =~ "publish" and not (html =~ "super-secret-key") and
-        html =~ "Reject records a durable rejection"
+      html =~ "Approval Required" and html =~ "publish" and not (html =~ "super-secret-key")
     end)
 
     [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
+
+    view
+    |> element("button[phx-click='open_decision_modal'][phx-value-decision='reject']")
+    |> render_click()
+
+    assert render(view) =~ "Reject records a durable rejection"
 
     render_click(view, "reject", %{})
 

@@ -1,4 +1,87 @@
-<div class="scoria-shell">
+<div class="scoria-shell" data-scoria-base={assigns[:scoria_base] || ""}>
+  <%!-- Mobile sticky topbar — shown below 768px, hidden at >=768px (D-02, D-05) --%>
+  <header class="scoria-mobile-topbar">
+    <a class="scoria-mobile-topbar__brand" href={(assigns[:scoria_base] || "") <> "/"}>
+      <.brand_mark /> Scoria
+    </a>
+    <span class="scoria-mobile-topbar__title">{assigns[:page_title] || "Dashboard"}</span>
+    <div class="scoria-mobile-topbar__controls">
+      <button
+        type="button"
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        aria-label="Open command palette"
+        aria-controls="scoria-command-palette"
+        data-command-open
+      >
+        <.icon name={:pulse} class="scoria-nav__icon" />
+      </button>
+      <button
+        type="button"
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        phx-hook="ThemeToggle"
+        id="scoria-theme-toggle-mobile"
+        data-theme-toggle
+        aria-label="Theme — click to cycle dark, light, system"
+      >
+        <span data-theme-label>Theme</span>
+      </button>
+      <button
+        type="button"
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        aria-label="Open navigation"
+        aria-controls="scoria-mobile-nav"
+        aria-expanded="false"
+        data-mobile-nav-open
+      >
+        Menu
+      </button>
+    </div>
+  </header>
+
+  <%!-- Off-canvas mobile nav drawer — mirrors the shortcuts overlay accessibility contract --%>
+  <div
+    id="scoria-mobile-nav"
+    class="scoria-mobile-drawer-shell"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Dashboard navigation"
+    data-state="closed"
+    hidden
+    phx-hook="MobileNav"
+  >
+    <div class="scoria-mobile-drawer__scrim" data-mobile-nav-close aria-hidden="true"></div>
+    <div class="scoria-mobile-drawer" tabindex="-1">
+      <div class="scoria-mobile-drawer__header">
+        <a class="scoria-mobile-drawer__brand" href={(assigns[:scoria_base] || "") <> "/"}>
+          <.brand_mark /> Scoria
+        </a>
+        <button
+          type="button"
+          class="scoria-button scoria-button--ghost scoria-button--sm scoria-mobile-drawer__close"
+          aria-label="Close navigation"
+          data-mobile-nav-close
+        >
+          Close navigation
+        </button>
+      </div>
+      <nav class="scoria-mobile-drawer__nav" aria-label="Dashboard sections">
+        <div :for={group <- nav_groups()} class="scoria-navgroup">
+          <p class="scoria-navgroup__label">{group.label}</p>
+          <.link
+            :for={item <- group.items}
+            navigate={(assigns[:scoria_base] || "") <> item.path}
+            class="scoria-nav"
+            aria-current={if item.key == assigns[:scoria_nav], do: "page"}
+          >
+            <.icon name={item.icon} />
+            <span>{item.label}</span>
+            <span :if={item[:soon?]} class="scoria-nav__soon">Soon</span>
+          </.link>
+        </div>
+      </nav>
+    </div>
+  </div>
+
   <aside class="scoria-sidebar">
     <a class="scoria-brand" href={(assigns[:scoria_base] || "") <> "/"}>
       <.brand_mark /> Scoria
@@ -15,6 +98,7 @@
         >
           <.icon name={item.icon} />
           <span>{item.label}</span>
+          <span :if={item[:soon?]} class="scoria-nav__soon">Soon</span>
         </.link>
       </div>
     </nav>
@@ -28,17 +112,103 @@
     </div>
     <div class="ml-auto flex items-center gap-3">
       <button
+        id="scoria-command-open"
+        type="button"
+        class="scoria-button scoria-button--ghost scoria-button--sm"
+        title="Open command palette"
+        aria-label="Open command palette"
+        aria-controls="scoria-command-palette"
+        data-command-open
+      >
+        <span>Open command palette</span>
+        <.kbd><span data-command-primary-kbd>Cmd K</span></.kbd>
+      </button>
+      <button
         type="button"
         class="scoria-button scoria-button--ghost scoria-button--sm"
         phx-hook="ThemeToggle"
         id="scoria-theme-toggle"
-        title="Toggle light / dark"
-        aria-label="Toggle light or dark theme"
+        data-theme-toggle
+        title="Theme — click to cycle dark / light / system"
+        aria-label="Theme — click to cycle dark, light, system"
       >
-        <span>Theme</span>
+        <span data-theme-label>Theme</span>
       </button>
     </div>
   </header>
+
+  <.command_palette
+    id="scoria-command-palette"
+    sections={command_sections(assigns[:scoria_base] || "")}
+  />
+
+  <div
+    id="scoria-shortcuts"
+    class="scoria-command"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="scoria-shortcuts-title"
+    data-shortcuts-overlay
+    data-state="closed"
+    hidden
+  >
+    <div class="scoria-command__scrim" data-shortcuts-close aria-hidden="true"></div>
+    <section class="scoria-command__panel" tabindex="-1" data-shortcuts-panel>
+      <header class="scoria-command__header">
+        <h2 id="scoria-shortcuts-title">Keyboard shortcuts</h2>
+        <button
+          type="button"
+          class="scoria-button scoria-button--ghost scoria-button--sm"
+          aria-label="Close keyboard shortcuts"
+          data-shortcuts-close
+        >
+          <.kbd>Esc</.kbd>
+        </button>
+      </header>
+      <div class="scoria-command__list">
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Open command palette</span>
+          <.kbd><span data-command-primary-kbd>Cmd K</span></.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Keyboard shortcuts</span>
+          <.kbd>?</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Home</span>
+          <.kbd>g h</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Approvals</span>
+          <.kbd>g a</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Runs</span>
+          <.kbd>g r</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Incidents</span>
+          <.kbd>g i</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Connectors</span>
+          <.kbd>g c</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Review Queue</span>
+          <.kbd>g q</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Eval Workbench</span>
+          <.kbd>g e</.kbd>
+        </div>
+        <div class="scoria-command__row">
+          <span class="scoria-command__label">Prompt Registry</span>
+          <.kbd>g p</.kbd>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <main class="scoria-main">
     {@inner_content}

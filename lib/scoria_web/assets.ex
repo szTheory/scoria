@@ -19,11 +19,16 @@ defmodule ScoriaWeb.Assets do
   js_path =
     [__DIR__, "..", "..", "priv", "static", "scoria", "app.js"] |> Path.join() |> Path.expand()
 
+  favicon_path =
+    [__DIR__, "..", "..", "priv", "static", "favicon.svg"] |> Path.join() |> Path.expand()
+
   @external_resource css_path
   @external_resource js_path
+  @external_resource favicon_path
 
   @css (if File.exists?(css_path), do: File.read!(css_path), else: "")
   @js (if File.exists?(js_path), do: File.read!(js_path), else: "")
+  @favicon (if File.exists?(favicon_path), do: File.read!(favicon_path), else: "")
   @css_hash Base.encode16(:crypto.hash(:md5, @css), case: :lower)
   @js_hash Base.encode16(:crypto.hash(:md5, @js), case: :lower)
 
@@ -41,4 +46,7 @@ defmodule ScoriaWeb.Assets do
 
   @doc "True when the compiled bundle is present (i.e. `mix scoria.assets.build` has run)."
   def built?, do: @css != "" and @js != ""
+
+  @doc "Compile-time base64 data-URI for the Scoria favicon SVG (inlined into the dashboard <head>)."
+  def favicon_data_uri, do: "data:image/svg+xml;base64," <> Base.encode64(@favicon)
 end

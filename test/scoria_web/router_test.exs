@@ -7,20 +7,34 @@ defmodule ScoriaWeb.RouterTest do
     import ScoriaWeb.Router
 
     pipeline :browser do
-      plug :accepts, ["html"]
+      plug(:accepts, ["html"])
     end
 
     scope "/" do
-      pipe_through :browser
+      pipe_through(:browser)
       scoria_dashboard("/scoria")
     end
   end
 
   test "scoria_dashboard macro mounts orchestrator live view" do
-    assert Phoenix.Router.route_info(DummyRouter, "GET", "/scoria", nil).plug == Phoenix.LiveView.Plug
+    assert Phoenix.Router.route_info(DummyRouter, "GET", "/scoria", nil).plug ==
+             Phoenix.LiveView.Plug
   end
 
   test "scoria_dashboard macro mounts workflow run live view" do
-    assert Phoenix.Router.route_info(DummyRouter, "GET", "/scoria/workflows/123", nil).plug == Phoenix.LiveView.Plug
+    assert Phoenix.Router.route_info(DummyRouter, "GET", "/scoria/workflows/123", nil).plug ==
+             Phoenix.LiveView.Plug
+  end
+
+  test "scoria_dashboard macro mounts dataset builder live view" do
+    assert %{
+             plug: Phoenix.LiveView.Plug,
+             phoenix_live_view: {ScoriaWeb.DatasetLive.Index, :index, _, _}
+           } = Phoenix.Router.route_info(DummyRouter, "GET", "/scoria/datasets", nil)
+  end
+
+  test "scoria_dashboard macro mounts coming-soon live view" do
+    assert %{plug: Phoenix.LiveView.Plug} =
+             Phoenix.Router.route_info(DummyRouter, "GET", "/scoria/coming/cost-ledger", nil)
   end
 end

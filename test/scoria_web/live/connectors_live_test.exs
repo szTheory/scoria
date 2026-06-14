@@ -39,7 +39,8 @@ defmodule ScoriaWeb.ConnectorsLiveTest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.ConnectorsLiveTest.Endpoint,
-      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1M",
+      secret_key_base:
+        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/z/K6N2e7jW1MpAdExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "112345678"],
       debug_errors: true
@@ -66,7 +67,30 @@ defmodule ScoriaWeb.ConnectorsLiveTest do
     assert html =~ "Runtime posture"
     assert html =~ "Connector posture"
     assert html =~ "No runtimes connected"
-    assert html =~ "No connectors registered"
+    assert html =~ "No connectors match this view"
+  end
+
+  test "connectors source uses shared tables and parent-owned drawers" do
+    live_source = File.read!("lib/scoria_web/live/connectors_live/index.ex")
+    runtime_source = File.read!("lib/scoria_web/components/runtime_detail_drawer_component.ex")
+
+    connector_source =
+      File.read!("lib/scoria_web/components/connector_detail_drawer_component.ex")
+
+    assert live_source =~ "<.table"
+    assert live_source =~ "<.drawer"
+    assert live_source =~ "Inspect runtime"
+    assert live_source =~ "Inspect connector"
+    refute runtime_source =~ "scoria-drawer"
+    refute runtime_source =~ "<aside"
+    refute connector_source =~ "scoria-drawer"
+    refute connector_source =~ "<aside"
+
+    for forbidden <- ["stone-", "gray-", "emerald-", "amber-", "rose-", "red-", "blue-"] do
+      refute live_source =~ forbidden
+      refute runtime_source =~ forbidden
+      refute connector_source =~ forbidden
+    end
   end
 
   test "runtime posture lists instances and the drawer surfaces detail" do
@@ -115,6 +139,7 @@ defmodule ScoriaWeb.ConnectorsLiveTest do
     {:ok, view, html} = live(session_conn(), "/scoria/connectors")
 
     refute html =~ "No runtimes connected"
+    assert html =~ "Inspect runtime"
 
     html =
       view

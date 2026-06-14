@@ -53,6 +53,10 @@ defmodule Scoria.MixProject do
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
+  # `dev/` holds the dev-only host harness (DevEndpoint/DevRouter) that serves
+  # the dashboard via `mix phx.server`. It is excluded from the Hex package
+  # (see `package/0` files) so adopters never receive it.
+  defp elixirc_paths(:dev), do: ["lib", "dev"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Host-app overlay templates and hex unpack fixtures must not compile in the root suite.
@@ -91,6 +95,11 @@ defmodule Scoria.MixProject do
       {:req_llm, "~> 1.13"},
       {:tiktoken, "~> 0.4.2"},
       {:ex_doc, "~> 0.38", only: :dev, runtime: false},
+      # Dev-only web server + live reload for the dev harness endpoint (dev/).
+      # Scoria is a library — adopters bring their own server — so these are
+      # never shipped to Hex (only: :dev). Bandit backs the DevEndpoint.
+      {:bandit, "~> 1.5", only: :dev},
+      {:phoenix_live_reload, "~> 1.5", only: :dev},
       {:floki, ">= 0.30.0", only: :test},
       {:lazy_html, ">= 0.1.0", only: :test}
     ]
@@ -99,12 +108,15 @@ defmodule Scoria.MixProject do
   defp aliases do
     [
       "assets.build": ["scoria.assets.build"],
-      "assets.deploy": ["scoria.assets.build"]
+      "assets.deploy": ["scoria.assets.build"],
+      # Dev harness convenience: create+migrate (core+knowledge order)+seed the
+      # dev DB in one step. Used by the Docker entrypoint and fresh local setup.
+      "dev.setup": ["scoria.dev.db", "run priv/repo/dev_seed.exs"]
     ]
   end
 
   defp description do
-    "Phoenix-native AI runtime and operator surface for durable runs, approvals, replay, evaluation, and bounded semantic reuse."
+    "Phoenix-native AI ops: LLM traces, evals, prompt versions, replay, tool governance, and MCP workflows. Ecto-backed, LiveView-included."
   end
 
   defp docs do
@@ -132,7 +144,24 @@ defmodule Scoria.MixProject do
       name: "scoria",
       files: [
         "lib",
-        "priv",
+        # Explicit priv/ subdirectory inclusions — the bare priv glob was replaced
+        # to prevent dev-only harness tooling from shipping to adopters (supply-chain
+        # control, T-11-06 / D-01 / D-02).
+        "priv/fixtures",
+        "priv/host_app_proof",
+        # priv/repo: migrations ship to adopters; dev_seed.exs is excluded by
+        # listing only the migration subdirs (not the whole dir).
+        # Open question #2 resolution: dev_seed.exs is a maintainer dev tool, not
+        # a runtime artifact — adopters do not need it in the package.
+        "priv/repo/migrations",
+        "priv/repo/knowledge_migrations",
+        "priv/static",
+        # priv/dev intentionally excluded — shots.mjs (screenshots) and e2e/ (the
+        # Playwright assertion lane) are dev-only harness tooling, not for adopters
+        # (D-01: zero Hex footprint for browser automation tooling). Do NOT add a
+        # priv/dev entry here — it would ship Playwright specs + node tooling.
+        # priv/shots intentionally excluded — screenshot captures are transient
+        # dev-only artifacts; only gap_register.md is committed (per .gitignore rules).
         "mix.exs",
         ".formatter.exs",
         "CHANGELOG.md",

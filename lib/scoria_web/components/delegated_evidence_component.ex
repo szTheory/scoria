@@ -1,129 +1,109 @@
 defmodule ScoriaWeb.DelegatedEvidenceComponent do
   use Phoenix.Component
-  import ScoriaWeb.UI, only: [badge: 1, tone: 1]
+  import ScoriaWeb.UI
 
   attr(:delegated_handoffs, :list, required: true)
 
   def render(assigns) do
     ~H"""
-    <section id="delegated-evidence" class="mt-6 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-      <div class="flex flex-col gap-3 border-b border-stone-200 pb-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p class="text-xs uppercase tracking-[0.22em] text-stone-500">Delegated Evidence</p>
-          <h2 class="mt-1 text-lg font-semibold text-stone-900">Delegated handoff inspection</h2>
-          <p class="mt-1 max-w-3xl text-sm text-stone-600">
-            Review bounded delegated lineage from the curated runtime detail instead of reconstructing it from raw workflow rows.
-          </p>
-        </div>
-        <a href="#delegated-evidence" class="inline-flex items-center gap-2 text-sm font-medium text-blue-700 underline">
-          Inspect Delegated Evidence
-        </a>
-      </div>
-
-      <div :if={@delegated_handoffs == []} class="mt-4 rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-5">
-        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">No Delegated Handoffs Recorded</p>
-        <p class="mt-2 text-sm text-stone-600">
+    <.notebook
+      id="delegated-evidence"
+      title="Delegated handoff inspection"
+      eyebrow="Delegated Evidence"
+      selected_tab="delegated"
+      empty={@delegated_handoffs == []}
+    >
+      <:empty_slot>
+        <.evidence_empty title="No Delegated Handoffs Recorded">
           This run stayed on the default runtime lane. No bounded handoff is required for first adoption; use Scoria.start_handoff_run/3 only when a same-run delegation needs narrow projected context.
-        </p>
+        </.evidence_empty>
+      </:empty_slot>
+
+      <:tab key="delegated" label="Delegated">
+        <div class="space-y-4">
+          <.evidence_section
+            title="Delegated handoffs"
+            description="Review bounded delegated lineage from the curated runtime detail instead of reconstructing it from raw workflow rows."
+          >
+            <:actions>
+              <a href="#delegated-evidence" class="scoria-button scoria-button--ghost scoria-button--sm">
+                Inspect Delegated Evidence
+              </a>
+            </:actions>
+
+            <div class="space-y-4">
+              <.handoff_section :for={delegated <- @delegated_handoffs} delegated={delegated} />
+            </div>
+          </.evidence_section>
+        </div>
+      </:tab>
+    </.notebook>
+    """
+  end
+
+  attr(:delegated, :map, required: true)
+
+  defp handoff_section(assigns) do
+    ~H"""
+    <.evidence_section
+      title={"#{map_value(@delegated, :parent_role_id, "unknown")} to #{map_value(@delegated, :delegated_role_id, "unknown")}"}
+      description="Same durable run"
+      badge={delegated_status_label(map_value(@delegated, :status, nil))}
+      tone={tone(map_value(@delegated, :status, nil))}
+    >
+      <.evidence_rows
+        rows={[
+          {"parent role", map_value(@delegated, :parent_role_id, "unknown")},
+          {"delegated role", map_value(@delegated, :delegated_role_id, "unknown")},
+          {"delegated kind", map_value(@delegated, :delegated_kind, "unknown")},
+          {"parent step", map_value(@delegated, :parent_step_id, "unknown")},
+          {"child step", map_value(@delegated, :child_step_id, "pending")},
+          {"child status", delegated_status_label(map_value(@delegated, :child_status, nil))}
+        ]}
+      />
+
+      <p :if={map_value(@delegated, :child_status, nil) == "child_step_pending"} class="mt-3">
+        The handoff is recorded, but delegated execution has not produced a child-step readback yet.
+      </p>
+
+      <div class="mt-3 grid gap-3 lg:grid-cols-2">
+        <.evidence_section title="Projected Context Preview">
+          <%= if preview_context(@delegated) == [] do %>
+            <.evidence_empty title="No projected context recorded yet.">
+              No projected context recorded yet.
+            </.evidence_empty>
+          <% else %>
+            <.evidence_rows rows={preview_context(@delegated)} />
+          <% end %>
+        </.evidence_section>
+
+        <.evidence_section
+          :if={map_value(@delegated, :capability_tags, []) != []}
+          title="Capability metadata"
+          badge={"#{length(map_value(@delegated, :capability_tags, []))} tags"}
+          tone={:info}
+        >
+          <.evidence_rows rows={[{"Capability tags", Enum.join(map_value(@delegated, :capability_tags, []), ", ")}]} />
+        </.evidence_section>
       </div>
 
-      <div :if={@delegated_handoffs != []} class="mt-4 space-y-4">
-        <article :for={delegated <- @delegated_handoffs} class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p class="text-xs uppercase tracking-[0.18em] text-stone-500">Same durable run</p>
-              <h3 class="mt-1 text-base font-semibold text-stone-900">
-                <span class="font-mono"><%= delegated.parent_role_id || "unknown" %></span>
-                <span class="mx-2 text-stone-400">→</span>
-                <span class="font-mono"><%= delegated.delegated_role_id %></span>
-              </h3>
-              <p class="mt-1 text-sm text-stone-600">
-                delegated kind <span class="font-mono text-stone-900"><%= delegated.delegated_kind %></span>
-              </p>
-            </div>
+      <.raw_evidence label="View full context">
+    handoff input
+    <%= inspect(map_value(@delegated, :handoff_input, %{}), pretty: true) %>
 
-            <.badge tone={tone(delegated.status)} label={delegated_status_label(delegated.status)} dot={false} class="w-fit" />
-          </div>
-
-          <dl class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div class="rounded-xl border border-stone-200 bg-white p-3">
-              <dt class="text-xs uppercase tracking-[0.16em] text-stone-500">Lineage</dt>
-              <dd class="mt-2 text-sm text-stone-700">
-                parent step <span class="font-mono text-stone-900"><%= delegated.parent_step_id %></span>
-                <br />
-                child step <span class="font-mono text-stone-900"><%= delegated.child_step_id || "pending" %></span>
-              </dd>
-            </div>
-
-            <div class="rounded-xl border border-stone-200 bg-white p-3">
-              <dt class="text-xs uppercase tracking-[0.16em] text-stone-500">Execution</dt>
-              <dd class="mt-2 text-sm text-stone-700">
-                child status <span class="font-medium text-stone-900"><%= delegated_status_label(delegated.child_status) %></span>
-                <%= if delegated.child_status == "child_step_pending" do %>
-                  <p class="mt-2 text-xs text-stone-500">The handoff is recorded, but delegated execution has not produced a child-step readback yet.</p>
-                <% end %>
-              </dd>
-            </div>
-
-            <div class="rounded-xl border border-stone-200 bg-white p-3 md:col-span-2">
-              <dt class="text-xs uppercase tracking-[0.16em] text-stone-500">Projected Context Preview</dt>
-              <dd class="mt-2">
-                <div :if={preview_context(delegated) == []} class="text-sm text-stone-500">
-                  No projected context recorded yet.
-                </div>
-                <div :for={{key, value} <- preview_context(delegated)} class="flex items-start justify-between gap-4 border-t border-stone-100 py-2 first:border-t-0 first:pt-0 last:pb-0 text-sm">
-                  <span class="font-mono text-xs text-stone-500"><%= key %></span>
-                  <span class="max-w-xl text-right text-stone-700"><%= preview_value(value) %></span>
-                </div>
-              </dd>
-            </div>
-          </dl>
-
-          <div class="mt-4 space-y-3">
-            <details class="rounded-xl border border-stone-200 bg-white p-3">
-              <summary class="cursor-pointer text-sm font-medium text-stone-900">View full context</summary>
-              <div class="mt-3 grid gap-3 lg:grid-cols-2">
-                <div>
-                  <p class="text-xs uppercase tracking-[0.16em] text-stone-500">handoff input</p>
-                  <div class="mt-2 space-y-2">
-                    <div :for={{key, value} <- sorted_pairs(delegated.handoff_input)} class="flex items-start justify-between gap-4 text-sm">
-                      <span class="font-mono text-xs text-stone-500"><%= key %></span>
-                      <span class="max-w-md text-right text-stone-700"><%= inspect(value, pretty: true) %></span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <p class="text-xs uppercase tracking-[0.16em] text-stone-500">projected context</p>
-                  <div class="mt-2 space-y-2">
-                    <div :for={{key, value} <- sorted_pairs(delegated.projected_context)} class="flex items-start justify-between gap-4 text-sm">
-                      <span class="font-mono text-xs text-stone-500"><%= key %></span>
-                      <span class="max-w-md text-right text-stone-700"><%= inspect(value, pretty: true) %></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </details>
-
-            <details :if={delegated.capability_tags != []} class="rounded-xl border border-stone-200 bg-white p-3">
-              <summary class="cursor-pointer text-sm font-medium text-stone-900">Capability metadata</summary>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span :for={tag <- delegated.capability_tags} class="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-700">
-                  <%= tag %>
-                </span>
-              </div>
-            </details>
-          </div>
-        </article>
-      </div>
-    </section>
+    projected context
+    <%= inspect(map_value(@delegated, :projected_context, %{}), pretty: true) %>
+      </.raw_evidence>
+    </.evidence_section>
     """
   end
 
   defp preview_context(delegated) do
-    delegated.projected_context
+    delegated
+    |> map_value(:projected_context, %{})
     |> sorted_pairs()
     |> Enum.take(3)
+    |> Enum.map(fn {key, value} -> {key, preview_value(value)} end)
   end
 
   defp sorted_pairs(map) when is_map(map),
@@ -137,6 +117,16 @@ defmodule ScoriaWeb.DelegatedEvidenceComponent do
 
   defp preview_value(value) when is_binary(value), do: value
   defp preview_value(value), do: inspect(value, pretty: true, limit: 3)
+
+  defp map_value(map, key, default) when is_map(map) do
+    cond do
+      Map.has_key?(map, key) -> Map.get(map, key)
+      Map.has_key?(map, to_string(key)) -> Map.get(map, to_string(key))
+      true -> default
+    end
+  end
+
+  defp map_value(_map, _key, default), do: default
 
   defp delegated_status_label("child_step_pending"), do: "child step pending"
   defp delegated_status_label(value) when is_binary(value), do: value

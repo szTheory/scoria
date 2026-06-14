@@ -1,0 +1,16 @@
+{
+  "name": "scoria-ui-shots",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Dev-only Playwright harness for the Scoria dashboard screenshot+critique loop and the e2e assertion lane (e2e/). Never shipped to Hex (priv/dev is excluded from package.files).",
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test --config e2e/playwright.config.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.60.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.60.0"
+  }
+}

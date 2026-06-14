@@ -1,7 +1,17 @@
 defmodule ScoriaWeb.OrchestratorLive do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
   import Ecto.Query, warn: false
-  import ScoriaWeb.UI, only: [badge: 1, flash_group: 1]
+
+  import ScoriaWeb.UI,
+    only: [
+      attention_card: 1,
+      badge: 1,
+      evidence_action_row: 1,
+      evidence_rows: 1,
+      flash_group: 1,
+      id: 1,
+      panel: 1
+    ]
 
   alias Scoria.Eval
   alias Scoria.Repo
@@ -12,29 +22,20 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   alias ScoriaWeb.OperatorSurface
 
-  alias ScoriaWeb.{
-    CitationEvidenceComponent,
-    IncidentEvidenceComponent
-  }
-
   def mount(params, session, socket) do
     tenant_id = params["tenant"] || session["tenant_id"] || "default"
 
     socket =
       socket
-      |> assign(:page_title, "Live Ops")
+      |> assign(:page_title, "Home")
       |> assign(:token_buffers, %{})
       |> assign(:token_previews, %{})
       |> assign(:token_timers, %{})
-      |> assign(:budget_state, nil)
-      |> assign(:incident_evidence, nil)
       |> assign(:trace_records, %{})
-      |> assign(:replay_notice, nil)
-      |> assign(:promote_notice, nil)
       |> assign(:runtime_query, Map.get(params, "runtime"))
       |> assign(:review_candidate, load_review_candidate(Map.get(params, "review_candidate_id")))
       |> assign(:tenant_id, tenant_id)
-      |> load_summary()
+      |> load_status_home()
       |> stream(:traces, [])
 
     socket =
@@ -86,259 +87,103 @@ defmodule ScoriaWeb.OrchestratorLive do
   # broadcasts here so the live trace stream keeps working.
   def handle_info(_message, socket), do: {:noreply, socket}
 
-  def handle_event("load_metadata", %{"id" => trace_id}, socket) do
-    {:noreply,
-     assign_async(socket, :trace_metadata, fn ->
-       # Fetch deep trace metadata (simulated here)
-       {:ok, %{trace_metadata: %{id: trace_id, deep_data: "loaded lazily"}}}
-     end)}
-  end
-
-  def handle_event("load_retrieval_evidence", %{"id" => trace_id}, socket) do
-    {:noreply,
-     assign_async(socket, :retrieval_evidence, fn ->
-       {:ok, %{retrieval_evidence: sample_evidence(trace_id)}}
-     end)}
-  end
-
-  def handle_event("load_budget_state", params, socket) do
-    trace_id = Map.get(params, "id")
-    run_id = Map.get(params, "run_id")
-
-    {:noreply,
-     socket
-     |> refresh_trace_badges(trace_id, run_id)
-     |> assign_async(:budget_state, fn ->
-       {:ok, %{budget_state: OperatorSurface.load_budget_projection(trace_id, run_id)}}
-     end)}
-  end
-
-  def handle_event("load_incident_evidence", params, socket) do
-    trace_id = Map.get(params, "id")
-    run_id = Map.get(params, "run_id")
-
-    {:noreply,
-     socket
-     |> refresh_trace_badges(trace_id, run_id)
-     |> assign_async(:incident_evidence, fn ->
-       {:ok, %{incident_evidence: OperatorSurface.load_incident_projection(trace_id, run_id)}}
-     end)}
-  end
-
-  def handle_event("replay_retrieval", %{"id" => trace_id}, socket) do
-    {:noreply, assign(socket, :replay_notice, "replay_retrieval queued for #{trace_id}")}
-  end
-
-  def handle_event("promote_retrieval", %{"id" => trace_id}, socket) do
-    {:noreply, assign(socket, :promote_notice, "promote_retrieval queued for #{trace_id}")}
-  end
-
   def render(assigns) do
     ~H"""
     <div class="scoria-dashboard relative">
       <div>
         <div class="scoria-pagehead">
-          <h1>Live Ops</h1>
-          <p class="text-stone-600 mt-1">Live runtime activity, approvals, and connector health. Start from a task below.</p>
+          <h1>Home</h1>
+          <p class="scoria-home__identity">
+            Every AI run in this app, traced. Approve tools, triage incidents, and gate prompt releases from here.
+          </p>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2 mb-6">
-          <.link navigate={(assigns[:scoria_base] || "") <> "/approvals"} class="scoria-taskcard">
-            <div class="scoria-taskcard__title">
-              <span>Approve pending tool calls</span>
-              <span class={["scoria-badge", "scoria-badge--bare", (if @approval_count == 0, do: "scoria-badge--neutral", else: "scoria-badge--warn")]}><%= @approval_count %></span>
+        <section id="home-attention" class="scoria-home__attention" aria-label="Needs attention">
+          <.async_result :let={status_home} assign={@status_home}>
+            <:loading>
+              <p class="scoria-home__clear">Nothing needs attention. 0 approvals pending, 0 open incidents.</p>
+            </:loading>
+            <:failed :let={_failure}>
+              <p class="scoria-home__clear">Nothing needs attention. 0 approvals pending, 0 open incidents.</p>
+            </:failed>
+            <% cards = attention_cards(status_home, assigns[:scoria_base] || "") %>
+            <p :if={cards == []} class="scoria-home__clear">
+              Nothing needs attention. 0 approvals pending, 0 open incidents.
+            </p>
+            <div :if={cards != []} class="scoria-home__attention-grid">
+              <.attention_card
+                :for={card <- cards}
+                count={card.count}
+                label={card.label}
+                detail={card.detail}
+                cta={card.cta}
+                path={card.path}
+                tone={card.tone}
+              />
             </div>
-            <p class="scoria-taskcard__desc">Review and approve or deny operator-gated tool calls.</p>
-          </.link>
-          <.link navigate={(assigns[:scoria_base] || "") <> "/reviews"} class="scoria-taskcard">
-            <div class="scoria-taskcard__title"><span>Review flagged traces</span></div>
-            <p class="scoria-taskcard__desc">Triage low-quality or policy-flagged runs and promote them to datasets.</p>
-          </.link>
-          <.link navigate={(assigns[:scoria_base] || "") <> "/workflows"} class="scoria-taskcard">
-            <div class="scoria-taskcard__title"><span>Inspect a run</span></div>
-            <p class="scoria-taskcard__desc">Open the Trace Explorer for any durable run's steps and evidence.</p>
-          </.link>
-          <.link navigate={(assigns[:scoria_base] || "") <> "/eval_specs"} class="scoria-taskcard">
-            <div class="scoria-taskcard__title"><span>Tune evals &amp; prompts</span></div>
-            <p class="scoria-taskcard__desc">Manage rubrics and prompt versions in the workbench.</p>
-          </.link>
-        </div>
+          </.async_result>
+        </section>
 
         <.flash_group flash={@flash} />
 
-        <section
-          :if={@review_candidate}
-          class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm"
-        >
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Review candidate context</p>
-          <p class="mt-2 font-semibold text-stone-900"><%= @review_candidate.rationale %></p>
-          <p class="mt-2 text-stone-700">
-            Queue-selected evidence stays visible while inspecting runtime
-            <span :if={@runtime_query} class="font-mono"><%= @runtime_query %></span>.
-          </p>
-          <div class="mt-3 flex flex-wrap gap-2 text-xs text-stone-700">
-            <span class="rounded-full border border-blue-200 bg-white px-3 py-1"><%= @review_candidate.severity %></span>
-            <span class="rounded-full border border-blue-200 bg-white px-3 py-1">trace <span class="font-mono"><%= @review_candidate.trace_id %></span></span>
-            <span class="rounded-full border border-blue-200 bg-white px-3 py-1">workflow <span class="font-mono"><%= @review_candidate.workflow_run_id %></span></span>
-          </div>
-        </section>
-
-        <div id="ops-summary" class="mb-6 grid gap-4 sm:grid-cols-3">
-          <.link navigate={(assigns[:scoria_base] || "") <> "/approvals"} class="scoria-taskcard">
-            <p class="text-xs uppercase tracking-[0.24em] text-stone-500">Approvals</p>
-            <p class="mt-2 text-2xl font-semibold text-stone-900"><%= @approval_count %></p>
-            <p class="mt-1 text-xs text-stone-600">pending decisions →</p>
-          </.link>
-          <.link navigate={(assigns[:scoria_base] || "") <> "/connectors"} class="scoria-taskcard">
-            <p class="text-xs uppercase tracking-[0.24em] text-stone-500">Connectors</p>
-            <p class="mt-2 text-2xl font-semibold text-stone-900"><%= @fleet_summary.runtimes_online %>/<%= @fleet_summary.runtimes_total %></p>
-            <p class="mt-1 text-xs text-stone-600">
-              runtimes online · <%= @fleet_summary.connectors_degraded %> connector(s) degraded →
-            </p>
-          </.link>
-          <.link navigate={(assigns[:scoria_base] || "") <> "/incidents"} class="scoria-taskcard">
-            <p class="text-xs uppercase tracking-[0.24em] text-stone-500">Incidents</p>
-            <p class="mt-2 text-2xl font-semibold text-stone-900"><%= @incidents_summary.open %></p>
-            <p class="mt-1 text-xs text-stone-600">
-              open · <%= @incidents_summary.page %> paging →
-            </p>
-          </.link>
-        </div>
+        <p :if={map_size(@trace_records) == 0} id="traces-empty" class="scoria-traces__empty">
+          No traces yet. The first chat response, agent run, eval sample, or MCP request will appear here as a trace.
+        </p>
 
         <div id="traces-list" phx-update="stream" class="space-y-4">
-          <div :for={{id, trace} <- @streams.traces} id={id} class="bg-white p-4 rounded shadow">
+          <.panel :for={{id, trace} <- @streams.traces} id={id} variant={:flat}>
+            <:title>
+              <span>Trace</span>
+              <.id value={trace.id} copy={trace.id} />
+            </:title>
+            <:actions>
+              <.badge :for={badge <- trace_badges(trace)} tone={badge.tone} label={badge.label} dot={false} />
+            </:actions>
             <.live_component
               module={ScoriaWeb.TraceTreeComponent}
               id={"tree-#{id}"}
               spans={trace.spans}
               token_previews={@token_previews}
             />
-            <div class="mt-3 flex flex-wrap gap-2 text-[11px]">
-              <.badge :for={badge <- trace_badges(trace)} tone={badge.tone} label={badge.label} dot={false} />
-            </div>
-            <div class="mt-3 flex flex-wrap gap-3 text-xs">
-              <button phx-click="load_metadata" phx-value-id={trace.id} class="text-blue-500 underline">Load Deep Metadata</button>
-              <button phx-click="load_retrieval_evidence" phx-value-id={trace.id} class="text-emerald-700 underline">Load Retrieval Evidence</button>
-              <button phx-click="load_budget_state" phx-value-id={trace.id} phx-value-run_id={trace[:workflow_run_id]} class="text-amber-700 underline">Load Budget State</button>
-              <button phx-click="load_incident_evidence" phx-value-id={trace.id} phx-value-run_id={trace[:workflow_run_id]} class="text-rose-700 underline">Load Incident Evidence</button>
-              <button phx-click="replay_retrieval" phx-value-id={trace.id} class="text-stone-700 underline">Replay Retrieval</button>
-              <button phx-click="promote_retrieval" phx-value-id={trace.id} class="text-stone-700 underline">Promote Retrieval</button>
-            </div>
-          </div>
+            <.evidence_action_row :if={trace[:workflow_run_id]} class="mt-3">
+              <a class="scoria-button scoria-button--ghost scoria-button--sm" href={trace_run_path(trace, assigns[:scoria_base] || "")}>
+                Open run
+              </a>
+              <a class="scoria-button scoria-button--primary scoria-button--sm" href={trace_run_path(trace, assigns[:scoria_base] || "")}>
+                Open trace
+              </a>
+              <a :if={trace[:review_incident] || trace[:page_incident]} class="scoria-button scoria-button--ghost scoria-button--sm" href={(assigns[:scoria_base] || "") <> "/incidents?from=run:#{trace.workflow_run_id}"}>
+                Open incident
+              </a>
+            </.evidence_action_row>
+          </.panel>
         </div>
 
-        <%= if assigns[:trace_metadata] do %>
-          <div class="mt-4 p-4 bg-gray-100 rounded text-sm">
-            <.async_result :let={metadata} assign={@trace_metadata}>
-              <:loading>Loading metadata...</:loading>
-              <:failed :let={_failure}>Failed to load metadata</:failed>
-              <pre><%= inspect(metadata) %></pre>
-            </.async_result>
-          </div>
-        <% end %>
-
-        <%= if assigns[:retrieval_evidence] do %>
-          <div id="retrieval-evidence" class="mt-6">
-            <.async_result :let={evidence} assign={@retrieval_evidence}>
-              <:loading>Loading retrieval evidence...</:loading>
-              <:failed :let={_failure}>Failed to load retrieval evidence</:failed>
-              <CitationEvidenceComponent.render evidence={evidence} />
-            </.async_result>
-          </div>
-        <% end %>
-
-        <%= if assigns[:budget_state] do %>
-          <div id="budget-state" class="mt-6">
-            <.async_result :let={budget_state} assign={@budget_state}>
-              <:loading>Loading budget state...</:loading>
-              <:failed :let={_failure}>Failed to load budget state</:failed>
-              <div class="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-                <p class="text-xs uppercase tracking-[0.24em] text-stone-500">Budget state</p>
-                <div class="mt-3 flex flex-wrap gap-2 text-xs">
-                  <.badge tone={:warn} label={budget_state.status_label} dot={false} />
-                  <.badge :if={budget_state.breaker_open?} tone={:fail} label="breaker open" dot={false} />
-                  <.badge :if={budget_state.review_open?} tone={:info} label="review incident" dot={false} />
-                  <.badge :if={budget_state.page_open?} tone={:fail} label="page incident" dot={false} />
-                </div>
-                <p class="mt-3 text-sm text-stone-700"><%= budget_state.actuals %></p>
-              </div>
-            </.async_result>
-          </div>
-        <% end %>
-
-        <%= if assigns[:incident_evidence] do %>
-          <div id="incident-evidence" class="mt-6">
-            <.async_result :let={evidence} assign={@incident_evidence}>
-              <:loading>Loading incident evidence...</:loading>
-              <:failed :let={_failure}>Failed to load incident evidence</:failed>
-              <IncidentEvidenceComponent.render evidence={evidence} />
-            </.async_result>
-          </div>
-        <% end %>
-
-        <%= if @replay_notice do %>
-          <div class="mt-4 rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-            <%= @replay_notice %>
-          </div>
-        <% end %>
-
-        <%= if @promote_notice do %>
-          <div class="mt-4 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
-            <%= @promote_notice %>
-          </div>
-        <% end %>
+        <.panel :if={@review_candidate} class="mt-6">
+          <:eyebrow>Review candidate context</:eyebrow>
+          <:title>{@review_candidate.rationale}</:title>
+          <p>
+            Queue-selected evidence stays visible while inspecting runtime
+            <span :if={@runtime_query} class="font-mono"><%= @runtime_query %></span>.
+          </p>
+          <.evidence_rows rows={[
+            {"Severity", @review_candidate.severity},
+            {"Trace", @review_candidate.trace_id},
+            {"Workflow", @review_candidate.workflow_run_id}
+          ]} />
+        </.panel>
       </div>
     </div>
     """
   end
 
-  defp sample_evidence(trace_id) do
-    %{
-      id: trace_id,
-      query_text: "citation-backed retrieval for trace #{trace_id}",
-      freshness: "freshness: current corpus snapshot",
-      citations: [
-        %{label: "[1]", title: "Trace-first design", locator: "file:///docs/trace-first.md"},
-        %{label: "[2]", title: "Grounding rules", locator: "file:///docs/grounding.md"}
-      ],
-      ranked_chunks: [
-        %{
-          rank: 1,
-          score: "0.98",
-          body: "citation evidence is shown side-by-side for operator review."
-        },
-        %{rank: 2, score: "0.91", body: "unsupported claims are surfaced before promotion."}
-      ],
-      unsupported_claims: ["none"],
-      grounding_scores: [%{kind: "deterministic", score: "1.0"}]
-    }
-  end
-
   defp trace_badges(trace) do
     Enum.concat([
       if(trace[:budget_state], do: [%{label: trace[:budget_state], tone: :warn}], else: []),
-      if(trace[:breaker_state] == "open", do: [%{label: "breaker open", tone: :fail}], else: []),
-      if(trace[:review_incident], do: [%{label: "review incident", tone: :info}], else: []),
-      if(trace[:page_incident], do: [%{label: "page incident", tone: :fail}], else: [])
+      if(trace[:breaker_state] == "open", do: [%{label: "Breaker open", tone: :fail}], else: []),
+      if(trace[:review_incident], do: [%{label: "Review incident", tone: :info}], else: []),
+      if(trace[:page_incident], do: [%{label: "Page incident", tone: :fail}], else: [])
     ])
-  end
-
-  defp refresh_trace_badges(socket, trace_id, run_id) do
-    case Map.get(socket.assigns.trace_records, trace_id) do
-      nil ->
-        socket
-
-      trace ->
-        badge_assigns = OperatorSurface.compact_trace_badges(trace_id, run_id)
-        updated_trace = Map.merge(trace, badge_assigns)
-
-        socket
-        |> assign(:trace_records, Map.put(socket.assigns.trace_records, trace_id, updated_trace))
-        |> stream_insert(:traces, updated_trace)
-    end
-  rescue
-    _error ->
-      socket
   end
 
   defp load_review_candidate(nil), do: nil
@@ -407,7 +252,9 @@ defmodule ScoriaWeb.OrchestratorLive do
           |> Enum.map(&span_view_from_record/1)
           |> TraceProjection.with_depths()
 
-        Map.put(header, :spans, span_views)
+        header
+        |> Map.put(:spans, span_views)
+        |> enrich_trace_badges()
     end
   end
 
@@ -427,20 +274,94 @@ defmodule ScoriaWeb.OrchestratorLive do
     })
   end
 
-  defp load_summary(socket) do
+  defp load_status_home(socket) do
     tenant_id = socket.assigns.tenant_id
 
-    socket
-    |> assign(:approval_count, OperatorSurface.pending_approval_count(tenant_id))
-    |> assign(:fleet_summary, OperatorSurface.fleet_summary(tenant_id))
-    |> assign(:incidents_summary, OperatorSurface.incidents_summary(tenant_id))
+    assign_async(socket, :status_home, fn ->
+      {:ok, %{status_home: OperatorSurface.status_home_summary(tenant_id)}}
+    end)
   end
+
+  defp attention_cards(status_home, base_path) do
+    [
+      approval_attention_card(status_home, base_path),
+      incident_attention_card(status_home, base_path),
+      connector_attention_card(status_home, base_path),
+      review_attention_card(status_home, base_path)
+    ]
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp approval_attention_card(status_home, base_path) do
+    count = get_in(status_home, [:approvals, :pending]) || 0
+
+    if count > 0 do
+      %{
+        count: count,
+        label: "Approvals pending",
+        detail: "#{count} #{pluralize(count, "tool call")} #{approval_verb(count)} approval.",
+        cta: "Review approvals",
+        path: base_path <> "/approvals",
+        tone: :warn
+      }
+    end
+  end
+
+  defp incident_attention_card(status_home, base_path) do
+    count = get_in(status_home, [:incidents, :open]) || 0
+
+    if count > 0 do
+      %{
+        count: count,
+        label: "Open incidents",
+        detail: "#{count} #{pluralize(count, "incident")} need triage.",
+        cta: "Open incidents",
+        path: base_path <> "/incidents",
+        tone: :fail
+      }
+    end
+  end
+
+  defp connector_attention_card(status_home, base_path) do
+    count = get_in(status_home, [:connectors, :degraded]) || 0
+
+    if count > 0 do
+      %{
+        count: count,
+        label: "Connector health",
+        detail: "#{count} #{pluralize(count, "connector")} degraded.",
+        cta: "View connector health",
+        path: base_path <> "/connectors",
+        tone: :warn
+      }
+    end
+  end
+
+  defp review_attention_card(status_home, base_path) do
+    count = get_in(status_home, [:reviews, :pending]) || 0
+
+    if count > 0 do
+      %{
+        count: count,
+        label: "Flagged runs",
+        detail: "#{count} #{pluralize(count, "run")} need review.",
+        cta: "Review flagged runs",
+        path: base_path <> "/reviews",
+        tone: :info
+      }
+    end
+  end
+
+  defp approval_verb(1), do: "requires"
+  defp approval_verb(_count), do: "require"
+  defp pluralize(1, singular), do: singular
+  defp pluralize(_count, singular), do: singular <> "s"
 
   defp maybe_open_trace(socket, %{id: trace_id} = header) when is_binary(trace_id) do
     if Map.has_key?(socket.assigns.trace_records, trace_id) do
       socket
     else
-      trace = Map.merge(header, %{spans: []})
+      trace = header |> Map.merge(%{spans: []}) |> enrich_trace_badges()
 
       socket
       |> assign(:trace_records, Map.put(socket.assigns.trace_records, trace_id, trace))
@@ -463,7 +384,7 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> Kernel.++([Map.put_new(span_view, :parent_id, nil)])
       |> TraceProjection.with_depths()
 
-    updated_trace = Map.put(trace, :spans, spans)
+    updated_trace = trace |> Map.put(:spans, spans) |> enrich_trace_badges()
 
     socket
     |> assign(:trace_records, Map.put(socket.assigns.trace_records, trace_id, updated_trace))
@@ -551,4 +472,17 @@ defmodule ScoriaWeb.OrchestratorLive do
       socket
     end
   end
+
+  defp trace_run_path(trace, base_path) do
+    base_path <> "/workflows/#{trace.workflow_run_id}"
+  end
+
+  defp enrich_trace_badges(%{id: trace_id, workflow_run_id: run_id} = trace)
+       when is_binary(trace_id) and is_binary(run_id) and run_id != "" do
+    Map.merge(trace, OperatorSurface.compact_trace_badges(trace_id, run_id))
+  rescue
+    _error -> trace
+  end
+
+  defp enrich_trace_badges(trace), do: trace
 end

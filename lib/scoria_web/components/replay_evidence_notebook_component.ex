@@ -1,6 +1,6 @@
 defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
   use Phoenix.Component
-  import ScoriaWeb.UI, only: [badge: 1]
+  import ScoriaWeb.UI
 
   attr(:step, :map, default: nil)
   attr(:checkpoint, :map, default: nil)
@@ -10,94 +10,87 @@ defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
 
   def render(assigns) do
     ~H"""
-    <section class="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-4 shadow-sm">
-      <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p class="text-xs uppercase tracking-[0.24em] text-stone-500">replay evidence notebook</p>
-          <h3 class="text-lg font-semibold text-stone-900">Original-versus-replay comparison</h3>
-          <p class="mt-1 text-sm text-stone-600">
-            Grouped operator evidence stays structured by provenance, overrides, outcome, safety, and promotion readiness.
-          </p>
-        </div>
-
-        <div :if={toggle_visible?(@comparison)} class="inline-flex rounded-full border border-stone-200 bg-white p-1">
-          <button
-            type="button"
-            phx-click="select_comparison_source"
-            phx-value-source="original"
-            class={toggle_class(@selected_source_variant == "original")}
+    <.notebook
+      id="replay-evidence-notebook"
+      title="Original-versus-replay comparison"
+      eyebrow="replay evidence notebook"
+      selected_tab="comparison"
+    >
+      <:tab key="comparison" label="Comparison">
+        <div class="space-y-4">
+          <.evidence_section
+            title="Trace comparison"
+            description="Grouped operator evidence stays structured by provenance, overrides, outcome, safety, and promotion readiness."
           >
-            Original trace
-          </button>
-          <button
-            type="button"
-            phx-click="select_comparison_source"
-            phx-value-source="replay"
-            class={toggle_class(@selected_source_variant == "replay")}
-          >
-            Replay trace
-          </button>
-        </div>
-      </div>
+            <:actions>
+              <div :if={toggle_visible?(@comparison)} class="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  phx-click="select_comparison_source"
+                  phx-value-source="original"
+                  class={toggle_class(@selected_source_variant == "original")}
+                >
+                  Original trace
+                </button>
+                <button
+                  type="button"
+                  phx-click="select_comparison_source"
+                  phx-value-source="replay"
+                  class={toggle_class(@selected_source_variant == "replay")}
+                >
+                  Replay trace
+                </button>
+              </div>
+            </:actions>
 
-      <%= if comparison_ready?(@selected_comparison_entry) do %>
-        <div class="mt-4 grid gap-4 xl:grid-cols-[1.25fr,0.9fr]">
-          <div class="space-y-4">
-            <.group_card title="Provenance" group={read_group(@selected_comparison_entry, :provenance)} />
-            <.group_card title="Overrides" group={read_group(@selected_comparison_entry, :overrides)} />
-            <.group_card
-              title="Checkpoint / Output"
-              group={read_group(@selected_comparison_entry, :checkpoint_output)}
-            />
-          </div>
+            <%= if comparison_ready?(@selected_comparison_entry) do %>
+              <div class="scoria-evidence-split">
+                <div class="space-y-4">
+                  <.group_section title="Provenance" group={read_group(@selected_comparison_entry, :provenance)} />
+                  <.group_section title="Overrides" group={read_group(@selected_comparison_entry, :overrides)} />
+                  <.group_section
+                    title="Checkpoint / Output"
+                    group={read_group(@selected_comparison_entry, :checkpoint_output)}
+                  />
+                </div>
 
-          <div class="space-y-4">
-            <.group_card title="Safety Evidence" group={read_group(@selected_comparison_entry, :safety)} />
-            <.group_card
-              title="Promotion Snapshot Summary"
-              group={read_group(@selected_comparison_entry, :promotion_snapshot)}
-            />
-          </div>
-        </div>
+                <div class="space-y-4">
+                  <.group_section title="Safety Evidence" group={read_group(@selected_comparison_entry, :safety)} />
+                  <.group_section
+                    title="Promotion Snapshot Summary"
+                    group={read_group(@selected_comparison_entry, :promotion_snapshot)}
+                  />
+                </div>
+              </div>
 
-        <details class="mt-4 rounded-lg border border-stone-200 bg-white p-4">
-          <summary class="cursor-pointer text-sm font-semibold text-stone-900">Advanced raw evidence</summary>
-          <pre class="mt-3 overflow-x-auto whitespace-pre-wrap rounded-md bg-stone-50 p-3 text-xs text-stone-700"><%= Jason.encode_to_iodata!(normalize_for_json(@selected_comparison_entry), pretty: true) %></pre>
-        </details>
-      <% else %>
-        <div class="rounded-xl border border-stone-200 bg-white p-5">
-          <p class="text-xs uppercase tracking-[0.22em] text-stone-500">comparison unavailable</p>
-          <h4 class="mt-2 text-lg font-semibold text-stone-900">No Replay Comparison Available</h4>
-          <p class="mt-2 text-sm text-stone-600">
-            Select a workflow step with durable checkpoint evidence to compare the original run against its replay branch. Promotion stays disabled until Scoria can freeze an evidence snapshot for the selected trace.
-          </p>
+              <.raw_evidence label="Advanced raw evidence">
+                <%= Jason.encode_to_iodata!(normalize_for_json(@selected_comparison_entry), pretty: true) %>
+              </.raw_evidence>
+            <% else %>
+              <.evidence_empty title="No Replay Comparison Available">
+                Select a workflow step with durable checkpoint evidence to compare the original run against its replay branch. Promotion stays disabled until Scoria can freeze an evidence snapshot for the selected trace.
+              </.evidence_empty>
+            <% end %>
+          </.evidence_section>
         </div>
-      <% end %>
-    </section>
+      </:tab>
+    </.notebook>
     """
   end
 
   attr(:title, :string, required: true)
   attr(:group, :map, default: %{})
 
-  defp group_card(assigns) do
+  defp group_section(assigns) do
     ~H"""
-    <div class="rounded-lg border border-stone-200 bg-white p-4">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h4 class="text-sm font-semibold text-stone-900"><%= @title %></h4>
-          <p class="mt-1 text-xs text-stone-500">Structured evidence projected from durable runtime DTOs.</p>
-        </div>
-        <.badge tone={status_tone(card_status(@group))} label={card_status(@group)} dot={false} />
-      </div>
-
-      <dl class="mt-3 space-y-3 text-sm text-stone-700">
-        <div :for={{label, value} <- field_rows(@group)} class="rounded-md bg-stone-50 p-3">
-          <dt class="text-xs uppercase tracking-[0.18em] text-stone-500"><%= label %></dt>
-          <dd class="mt-2 font-medium text-stone-900"><%= render_value(value) %></dd>
-        </div>
-      </dl>
-    </div>
+    <.evidence_section
+      title={@title}
+      description="Structured evidence projected from durable runtime DTOs."
+      badge={card_status(@group)}
+      tone={status_tone(card_status(@group))}
+    >
+      <.evidence_rows rows={field_rows(@group)} />
+    </.evidence_section>
     """
   end
 
@@ -113,13 +106,8 @@ defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
 
   defp comparison_ready?(_selected_comparison_entry), do: false
 
-  defp toggle_class(true) do
-    "rounded-full bg-blue-600 px-3 py-1.5 text-sm font-medium text-white"
-  end
-
-  defp toggle_class(false) do
-    "rounded-full px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100"
-  end
+  defp toggle_class(true), do: "scoria-button scoria-button--primary scoria-button--sm"
+  defp toggle_class(false), do: "scoria-button scoria-button--ghost scoria-button--sm"
 
   defp read_group(entry, key) when is_map(entry), do: Map.get(entry, key, %{})
   defp read_group(_entry, _key), do: %{}
@@ -127,7 +115,7 @@ defmodule ScoriaWeb.ReplayEvidenceNotebookComponent do
   defp field_rows(group) do
     group
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-    |> Enum.map(fn {key, value} -> {field_label(key), value} end)
+    |> Enum.map(fn {key, value} -> {field_label(key), render_value(value)} end)
   end
 
   defp field_label(key) do

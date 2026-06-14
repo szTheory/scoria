@@ -26,6 +26,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
       |> assign(:tenant_id, tenant_id)
       |> assign(:runtime_drawer, nil)
       |> assign(:connector_drawer, nil)
+      |> assign(:connector_table_density, :compact)
       |> load_fleet()
 
     {:ok, socket}
@@ -56,76 +57,148 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
     {:noreply, assign(socket, :connector_drawer, nil)}
   end
 
+  def handle_event("set_density", %{"density" => density}, socket) do
+    density =
+      case density do
+        "compact" -> :compact
+        "comfortable" -> :comfortable
+        _ -> :default
+      end
+
+    {:noreply, assign(socket, :connector_table_density, density)}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="scoria-dashboard relative">
       <div class="scoria-pagehead">
         <h1>Connectors</h1>
-        <p class="text-stone-600 mt-1">
+        <p>
           External runtime presence and connector health for this tenant. Open a row for its detail drawer.
         </p>
       </div>
 
       <div class="grid gap-6 lg:grid-cols-2">
-        <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-          <p class="text-xs uppercase tracking-[0.24em] text-stone-500">external runtimes</p>
-          <h2 class="text-lg font-semibold text-stone-900">Runtime posture</h2>
-
-          <.empty_state :if={@runtimes == []} title="No runtimes connected" class="mt-4">
-            MCP runtimes register here once a host session connects for this tenant.
-          </.empty_state>
-
-          <div :if={@runtimes != []} class="mt-4 space-y-3">
-            <article :for={runtime <- @runtimes} class="rounded-xl border border-stone-200 bg-stone-50 p-3 flex justify-between items-start">
-              <div>
-                <p class="text-sm font-semibold text-stone-900 truncate max-w-[12rem]"><%= runtime.id %></p>
-                <p class="text-xs text-stone-500 mt-1">
-                  <span class={"inline-block w-2 h-2 rounded-full mr-1 #{if runtime.status == "online", do: "bg-emerald-500", else: "bg-stone-300"}"}></span>
-                  <%= runtime.status %>
-                </p>
-              </div>
-              <button phx-click="open_runtime_drawer" phx-value-id={runtime.id} class="text-xs font-medium text-blue-700 underline">
-                Details
+        <.panel class="scoria-panel--flush">
+          <:eyebrow>external runtimes</:eyebrow>
+          <:title>Runtime posture</:title>
+          <.table
+            id="runtime-presence"
+            rows={@runtimes}
+            density={@connector_table_density}
+            on_density_change="set_density"
+          >
+            <:col :let={runtime} label="Runtime">
+              <span class="font-mono"><%= short_id(runtime.id) %></span>
+            </:col>
+            <:col :let={runtime} label="Status">
+              <.badge tone={tone(runtime.status)} label={runtime.status} />
+            </:col>
+            <:col :let={runtime} label="Active runs">
+              <span class="font-mono"><%= runtime.current_run_id || "None" %></span>
+            </:col>
+            <:col :let={runtime} label="Presence or Queue">
+              <%= runtime.host_session_id || "No host session" %>
+            </:col>
+            <:col :let={runtime} label="Last seen">
+              <%= format_ts(runtime[:last_seen_at]) %>
+            </:col>
+            <:action :let={runtime}>
+              <button
+                type="button"
+                phx-click="open_runtime_drawer"
+                phx-value-id={runtime.id}
+                class="scoria-button scoria-button--ghost scoria-button--sm"
+              >
+                Inspect runtime
               </button>
-            </article>
-          </div>
-        </section>
+            </:action>
+            <:empty>
+              <.empty_state title="No runtimes connected">
+                Runtime activity appears here once a host session connects for this tenant.
+              </.empty_state>
+            </:empty>
+          </.table>
+        </.panel>
 
-        <section class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-          <p class="text-xs uppercase tracking-[0.24em] text-stone-500">connector fleet</p>
-          <h2 class="text-lg font-semibold text-stone-900">Connector posture</h2>
-
-          <.empty_state :if={@connector_fleet == []} title="No connectors registered" class="mt-4">
-            Register a connector for this tenant to track its auth provenance and refresh health.
-          </.empty_state>
-
-          <div :if={@connector_fleet != []} class="mt-4 space-y-3">
-            <article :for={connector <- @connector_fleet} class="rounded-xl border border-stone-200 bg-stone-50 p-3">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <p class="text-sm font-semibold text-stone-900"><%= connector.connector_label %></p>
-                  <p class="mt-1 text-xs text-stone-600">
-                    <%= connector.health_state %> · refresh <%= connector.last_refresh_status %>
-                  </p>
+        <.panel class="scoria-panel--flush">
+          <:eyebrow>connector fleet</:eyebrow>
+          <:title>Connector posture</:title>
+          <.table
+            id="connector-fleet"
+            rows={@connector_fleet}
+            density={@connector_table_density}
+            on_density_change="set_density"
+          >
+            <:col :let={connector} label="Connector">
+              <span class="font-semibold"><%= connector.connector_label %></span>
+            </:col>
+            <:col :let={connector} label="Health">
+              <.badge tone={tone(connector.health_state)} label={connector.health_state} />
+            </:col>
+            <:col :let={connector} label="Auth or Provenance">
+              <%= connector.auth_provenance.status %>
+            </:col>
+            <:col :let={connector} label="Refresh state">
+              <.badge tone={tone(connector.last_refresh_status)} label={connector.last_refresh_status} />
+            </:col>
+            <:col :let={connector} label="Last checked">
+              pending tools <%= connector.pending_local_tool_count %>, approvals <%= connector.pending_approval_count %>
+            </:col>
+            <:action :let={connector}>
+              <button
+                type="button"
+                phx-click="open_connector_drawer"
+                phx-value-id={connector.connector_id}
+                class="scoria-button scoria-button--ghost scoria-button--sm"
+              >
+                Inspect connector
+              </button>
+            </:action>
+            <:mobile_summary :let={connector}>
+              <div class="scoria-mobile-summary">
+                <div class="scoria-mobile-summary__label">
+                  <span class="font-semibold">{connector.connector_label}</span>
                 </div>
-                <button phx-click="open_connector_drawer" phx-value-id={connector.connector_id} class="text-xs font-medium text-blue-700 underline">
-                  Open drawer
-                </button>
+                <div class="scoria-mobile-summary__status">
+                  <.badge tone={tone(connector.health_state)} label={connector.health_state} />
+                </div>
+                <div class="scoria-mobile-summary__meta">
+                  {connector.auth_provenance.status}
+                </div>
+                <div class="scoria-mobile-summary__action">
+                  <button
+                    type="button"
+                    phx-click="open_connector_drawer"
+                    phx-value-id={connector.connector_id}
+                    class="scoria-button scoria-button--ghost scoria-button--sm"
+                  >
+                    Inspect connector
+                  </button>
+                </div>
               </div>
-
-              <div class="mt-3 flex flex-wrap gap-3 text-xs text-stone-600">
-                <span>approvals <%= connector.pending_approval_count %></span>
-                <span>pending tools <%= connector.pending_local_tool_count %></span>
-                <span>auth <%= connector.auth_provenance.status %></span>
-              </div>
-            </article>
-          </div>
-        </section>
+            </:mobile_summary>
+            <:empty>
+              <.empty_state title="No connectors match this view">
+                Adjust your filters or check back when data is available.
+              </.empty_state>
+            </:empty>
+          </.table>
+        </.panel>
       </div>
 
-      <RuntimeDetailDrawerComponent.render drawer={@runtime_drawer} />
-      <ConnectorDetailDrawerComponent.render drawer={@connector_drawer} />
+      <.drawer :if={@runtime_drawer} id="runtime-detail-drawer" show={true} on_dismiss="close_runtime_drawer">
+        <:eyebrow>Runtime detail</:eyebrow>
+        <:title_slot><%= @runtime_drawer.id %></:title_slot>
+        <RuntimeDetailDrawerComponent.render drawer={@runtime_drawer} />
+      </.drawer>
+
+      <.drawer :if={@connector_drawer} id="connector-detail-drawer" show={true} on_dismiss="close_connector_drawer">
+        <:eyebrow>Connector detail</:eyebrow>
+        <:title_slot><%= @connector_drawer.connector_label %></:title_slot>
+        <ConnectorDetailDrawerComponent.render drawer={@connector_drawer} />
+      </.drawer>
     </div>
     """
   end
@@ -137,4 +210,11 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
     |> assign(:runtimes, OperatorSurface.load_runtimes(tenant_id))
     |> assign(:connector_fleet, OperatorSurface.connector_fleet(tenant_id))
   end
+
+  defp short_id(nil), do: "Not recorded"
+  defp short_id(id), do: id |> to_string() |> String.slice(0, 8)
+
+  defp format_ts(nil), do: "Not recorded"
+  defp format_ts(%DateTime{} = dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M")
+  defp format_ts(other), do: to_string(other)
 end

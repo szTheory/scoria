@@ -1,6 +1,6 @@
 # Scoria Maintainer Guide
 
-This guide is for **maintainers** — CI topology, release operations, warning ratchet commands, and installer contract proofs. Adopters should start with [operator verification](operator_verification.md) and [adoption lanes](adoption_lanes.md).
+This guide is for **maintainers** — CI topology, release operations, warning ratchet commands, and installer contract proofs. Adopters should start with [operator verification](operator_verification.md) and [adoption lanes](adoption_lanes.md). For running the dashboard locally (and the multi-instance / no-port-conflict Docker setup), see [Docker dev DX](https://github.com/szTheory/scoria/blob/main/docs/docker_dev_dx.md) (dev-only; not shipped to Hex).
 
 ## CI gate map {#ci-gate-map-maintainers}
 
@@ -157,3 +157,163 @@ Not a PR CI step or adoption closeout lane command.
 ## UAT automation contract
 
 Producer-path integration tests prove runtime→PubSub→LiveView without test `send/2`. Merge-blocking orchestrator wiring: `mix test.semantic_fast_path --warnings-as-errors`. Gallery advisory lane: `mix scoria.test.support_copilot`.
+
+## Design-system component catalog
+
+`ScoriaWeb.UI` is the single enforced token gateway for all dashboard UI components.
+Every function component emits brand-book semantic classes (`assets/css/04-components.css`)
+driven by design tokens; raw Tailwind palette classes (`bg-rose-200`, etc.) are blocked
+in `lib/scoria_web/ui.ex` by `test/scoria_web/ds06_drift_guard_test.exs`.
+
+### Components at a glance
+
+| Component | Purpose |
+|-----------|---------|
+| `badge/1` | Status badge — tone + label, never color-alone |
+| `button/1` | Primary / ghost / danger button (brand book §8.5) |
+| `eyebrow/1` | Small uppercase category/status label |
+| `panel/1` | Panel/card surface with optional eyebrow + title + actions header |
+| `metric/1` | Metric card: label, big value, explicit delta (brand book §11.3) |
+| `id/1` | Copyable monospace identifier — CopyId JS hook |
+| `attention_card/1` | Status Home actionable-state card |
+| `object_header/1` | Object-detail page header |
+| `stub_page/1` | Placeholder page for unimplemented screens |
+| `kbd/1` | Keyboard shortcut chip |
+| `command_palette/1` | Client-side filtered command palette |
+| `empty_state/1` | Empty-state placeholder with optional action |
+| `modal/1` | Slot-based modal dialog (DS-02) |
+| `drawer/1` | Slot-based drawer panel (DS-02) |
+| `field/1` | Form field wrapper (DS-03) |
+| `form_section/1` | Form section group (DS-03) |
+| `skeleton/1` | Loading skeleton placeholder (DS-05) |
+| `toast/1` | Transient toast notification (DS-05) |
+| `notebook/1` | Tabbed evidence notebook (DS-04) |
+| `raw_evidence/1` | Raw evidence details/pre block (DS-04) |
+| `evidence_section/1` | Notebook-scoped evidence section |
+| `evidence_rows/1` | Key-value evidence rows |
+| `evidence_action_row/1` | Compact evidence action/link row |
+| `evidence_empty/1` | Notebook-scoped evidence empty state |
+| `table/1` | Sortable, density-aware, paginated data table (DS-01) |
+| `flash_group/1` | Flash notification group (DS-05) |
+| `tone/1` | Utility: maps status string/atom → semantic tone atom |
+| `status_label/1` | Utility: human-readable label for a status string |
+
+This table is a glance index — not the SSOT. The full attribute and slot reference is generated from code.
+
+### Full attribute/slot reference
+
+```bash
+MIX_ENV=dev mix docs
+```
+
+The rendered catalog lives in `doc/` (gitignored; standard Elixir ExDoc output).
+Open `doc/ScoriaWeb.UI.html` for the full component reference including all `attr`
+and `slot` declarations.
+
+### Raw-palette drift protection
+
+```bash
+mix test test/scoria_web/ds06_drift_guard_test.exs
+```
+
+Three assertions guard `ui.ex` zero-tolerance and enforce the ratchet across all
+`lib/scoria_web/` files. `test/support/ds06_baseline.txt` is empty — any raw palette
+class introduction fails `mix test` automatically.
+
+## Screenshot + Critique Harness (dev-only)
+
+The screenshot and LLM-critique harness provides a mechanical proof loop for the v3.0 Control Room milestone. It captures every dashboard screen across its state matrix, runs an optional 9-dimension AI critique, and writes a ranked gap register. It is **dev-only**: excluded from the shipped Hex package and never run in merge-blocking CI (D-01).
+
+### Prerequisites
+
+1. **Node.js >= 18** — must be on `PATH` (the harness shells out via `System.cmd("node", ...)`).
+   Verify: `node --version`
+
+2. **Playwright + Chromium** — install globally before running any screenshot pass:
+
+   ```bash
+   npm install -g playwright && npx playwright install chromium
+   ```
+
+   Playwright is a documented maintainer prerequisite (D-02). It is **not** a `mix.exs` dependency — installing it does not affect `mix.lock` or `hex.audit`.
+
+3. **ANTHROPIC_API_KEY** — required only for the `--critique` pass (the LLM vision call). The screenshot pass runs without it. Set in your shell or `.env`:
+
+   ```bash
+   export ANTHROPIC_API_KEY="sk-ant-..."
+   ```
+
+### Seed-first workflow
+
+Screens must render populated data before capture — run the idempotent dashboard seed first:
+
+```bash
+mix run priv/repo/dev_seed.exs
+```
+
+This is safe to re-run: it uses `Repo.get_by` + conditional insert guards so records are not duplicated. Seeded tenant is `acme-corp` (the `Scoria.SupportJourney` spine — D-07).
+
+### Screenshot pass
+
+Start the dev server, then run the screenshot pass:
+
+```bash
+mix phx.server          # in one terminal
+mix scoria.ui.shots     # in another terminal
+```
+
+Captured PNGs land in `priv/shots/{date}/{screen}/{state}.png` (gitignored — only `gap_register.md` is committed). The state matrix per tenant-scoped screen is:
+
+- `empty_dark_desktop`, `empty_dark_mobile`, `empty_light_desktop`, `empty_light_mobile`
+- `populated_dark_desktop`, `populated_dark_mobile`, `populated_light_desktop`, `populated_light_mobile`
+- Overlay states (screen-specific): `modal_dark_desktop`, `connector_drawer_dark_desktop`, etc.
+
+**Optional flags:**
+
+```bash
+mix scoria.ui.shots --url http://localhost:4000/scoria   # custom dev server URL (default shown)
+mix scoria.ui.shots --tenant-empty empty-tenant          # empty-state tenant slug (default shown)
+mix scoria.ui.shots --tenant-seeded acme-corp            # seeded-state tenant slug (default shown)
+mix scoria.ui.shots --release-id <uuid>                  # navigate directly to a specific prompt release
+```
+
+### Critique pass (--critique)
+
+Run the critique pass as a separate gated step at phase-milestone boundaries (D-04). It calls `Scoria.UICritique.critique_screen/3` via ReqLLM vision on the canonical populated · desktop · dark state for each screen (~9 vision calls), then writes per-screen findings JSON:
+
+```bash
+mix scoria.ui.shots --critique
+```
+
+Requires `ANTHROPIC_API_KEY`. Writes `priv/shots/{date}/{screen}/populated_dark_desktop.json` alongside the PNG. The gap register aggregation step (`priv/shots/gap_register.md`) runs in Plan 05's audit pass.
+
+This step starts the Elixir application (to access ReqLLM and application config). The plain screenshot pass does **not** start the Elixir app — it only shells out to Node/Playwright.
+
+### Empty-state limitation (4 non-tenant-scoped screens)
+
+**Review Queue**, **Eval Workbench**, **Prompt Registry**, and **Workflow Index** do not support `?tenant=` query-param switching — they list all records globally and do not read `params["tenant"]` in `mount/3`. As a result, the harness captures **populated-only** for these four screens; their `tenantScoped` manifest flag is `false`.
+
+Their empty state (all-empty DB) is a freshly-migrated-DB artifact, not a per-run harness capture. Document this when reviewing gap register findings — empty captures for these four screens require running the harness against a freshly-migrated database before applying the seed.
+
+The five remaining tenant-scoped screens (Live Ops, Approvals, Workflows, Incidents, Connectors) support both empty and populated state captures via `?tenant=` navigation.
+
+### Dev-only posture summary
+
+- `priv/dev/shots.mjs` is **checked into git** (committed dev tooling, D-01) but **excluded from the shipped Hex package** via explicit `priv/` subdirectory inclusions in `mix.exs package.files`.
+- `priv/shots/` screenshot captures are **gitignored** (PNG/JSON); only `gap_register.md` is committed.
+- The `scoria.ui.shots` Mix task is **not registered in CI** (`cli.preferred_envs` does not list it) — it runs only when maintainers explicitly invoke it.
+
+### Contact-sheet generation
+
+After capturing two dated shot sets, generate the before/after contact sheet:
+
+```bash
+node priv/dev/contact_sheet.mjs \
+  --before priv/shots/2026-06-04 \
+  --after priv/shots/<final-date> \
+  --out priv/shots/contact_sheet.html
+```
+
+The generated HTML is gitignored (`*.html` in `priv/shots/.gitignore`).
+`priv/shots/contact_sheet_index.md` (committed) records the dir pair and per-screen delta notes.
+For future milestone passes, substitute new baseline and final dirs — no code changes needed.

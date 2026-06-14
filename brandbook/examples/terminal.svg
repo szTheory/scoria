@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 320" role="img" aria-labelledby="title desc">
+  <title id="title">Scoria terminal specimen</title>
+  <desc id="desc">A dark terminal mock showing mix scoria.install and an evidence-voice run-failure output line.</desc>
+  <rect width="820" height="320" fill="#11100f"/>
+  <rect x="40" y="32" width="740" height="256" rx="10" fill="#0c0b0a" stroke="#3a332f"/>
+  <g>
+    <circle cx="64" cy="58" r="6" fill="#ff6b4a"/><circle cx="84" cy="58" r="6" fill="#ffd166"/><circle cx="104" cy="58" r="6" fill="#a7c76f"/>
+    <text x="128" y="62" fill="#88786d" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="12">scoria — zsh</text>
+  </g>
+  <line x1="40" y1="78" x2="780" y2="78" stroke="#211c19"/>
+  <g font-family="'JetBrains Mono', ui-monospace, monospace" font-size="14">
+    <text x="64" y="116"><tspan fill="#e65a32">$</tspan><tspan fill="#faf5ef"> mix scoria.install</tspan></text>
+    <text x="64" y="142" fill="#88786d">* creating priv/repo/migrations/..._create_scoria_tables.exs</text>
+    <text x="64" y="164" fill="#88786d">* patching lib/my_app_web/router.ex (mounted ScoriaWeb at /scoria)</text>
+    <text x="64" y="186"><tspan fill="#a7c76f">✓</tspan><tspan fill="#faf5ef"> Scoria installed. Run </tspan><tspan fill="#ff7a4d">mix ecto.migrate</tspan><tspan fill="#faf5ef"> to finish.</tspan></text>
+    <text x="64" y="220"><tspan fill="#e65a32">$</tspan><tspan fill="#faf5ef"> mix scoria.replay trc_8f2a</tspan></text>
+    <text x="64" y="244"><tspan fill="#ff6b4a">Run failed during lookup_order.</tspan></text>
+    <text x="64" y="264" fill="#bdaea3">The tool returned 403 for actor usr_184. Policy</text>
+    <text x="64" y="282" fill="#bdaea3">refunds_v7 requires actor to have :ops role.</text>
+  </g>
+</svg>

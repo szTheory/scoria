@@ -10,7 +10,35 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Latest Shipped Milestone: v2.16 ReqLLM Peer Bump (2026-05-30)
+## Current Milestone: v3.0 Control Room
+
+**Goal:** Take the embedded `/scoria` operator dashboard to "insane polish" — a tightened, fully-adopted design system, a clear persona/JTBD information architecture, brand-tied motion, full light/dark parity, and seed data that exercises every screen — proven by a committed screenshot+critique evaluation loop.
+
+**Core finding driving the milestone:** Scoria's design system is under-*adopted*, not under-built. The token-first CSS already defines tables, drawers, modals, span rails, and disciplined motion, but `lib/scoria_web/ui.ex` never exposed them as components — so ~22/25 view files leaked raw Tailwind (`stone-*/rose-*/...`), worst in the least-iterated screens. The work: expose components → delete leaked classes → consolidate → orient → polish → prove.
+
+**Personas (one shared evidence model, persona-weighted surfacing — nothing role-gated):**
+- **On-Call Operator** — watch live runtime, clear approvals, triage incidents, confirm connector health.
+- **AI Quality Engineer** — triage flagged traces → promote to dataset → run evals → gate a prompt release.
+- **Integrator / Admin** — wire connectors/MCP/tools, set governance policy, watch spend.
+
+**Target features:**
+- Committed dev-only screenshot + LLM-critique harness (`mix scoria.ui.shots`) + 9-dimension audit rubric.
+- Seed-data depth so Reviews / Incidents / Eval Workbench / Prompt Registry render at their most useful.
+- Design-system component layer in `ui.ex` (table+affordances, drawer/modal shells, form controls, unified evidence notebook shell, skeleton, toast) + executable raw-color drift guard.
+- Orientation spine: third nav axis (Operate / Improve / Configure), Status-Home landing, real breadcrumbs, `⌘K` command palette, keyboard shortcuts, cross-screen quality-loop threading, honest stub screens for reserved brand names (Dataset Builder, Cost Ledger, Replay Playground, MCP Gateway, Tool Registry, Feedback Inbox).
+- Per-screen polish (least-iterated first), restrained brand-tied motion, mobile-first responsive, full light/dark parity.
+
+**Key context:** Keep the custom token-first scoped CSS architecture (no Tailwind/BEM switch); `ui.ex` is the enforced token gateway. UI-only milestone — reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data. Plan: `/Users/jon/.claude/plans/another-ui-pass-so-elegant-garden.md`.
+
+## Latest Shipped Milestone: v2.17 Vesicle (2026-06-11)
+
+**Goal:** Ship a pressure-tested, repo-canonical Scoria brand system in `brandbook/` — audited brand book, locked design tokens, user-chosen programmatically generated logo system, and a professional standalone HTML brand book — wired into README, dashboard favicon/mark, and Hex/GitHub/HexDocs copy.
+
+**Delivered:** brandbook/ canonical brand system (pressure-test.md 1,311 lines, 14 sections; TV-1 "Span rail" mark + LK-B "Mark-as-o" fused lockup chosen across 2 gallery rounds; 8-variant logo set; tokens.json/tokens.css 4-source consistency; brand-book.md 543-line canonical rewrite; standalone index.html 55 KB; 7 examples; 458 KB total); integration (README picture header, dashboard TV-1 mark + data-URI favicon, mix.exs + GitHub descriptions); tagline locked "AI ops for Phoenix apps." (user override at gate #1); mix test 632 green, DS-06 untouched. BRAND-09 conditional did not fire (propagation: not-required). quality-gate.mjs 8/8 PASS.
+
+**Why it mattered:** The AI-generated brand book seed had never been pressure-tested and no logo or collateral existed. v2.17 closed this gap before v3.0 phases 13–17 so the new navigation spine, screen polish, and motion work all ship under a tested brand identity.
+
+## Previous Shipped: v2.16 ReqLLM Peer Bump (2026-05-30)
 
 **Goal:** Keep Scoria's LLM orchestration peer current on Hex without widening product scope.
 
@@ -74,6 +102,11 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **Phase 17 complete (2026-06-13, v3.0 Control Room — final phase):** Consistency sweep + proof (PROOF-01..03). Committed final-audit report `priv/shots/gap_register_final.md` with a 9-screen baseline→final rubric delta table, a deterministic 11-P1 resolution checklist (each P1 mapped to its resolving phase + re-verifiable code evidence, no API key required), and a raw-color-zero assertion citing the `ds06_drift_guard_test` guard (3/3 green). Committed reusable contact-sheet generator `priv/dev/contact_sheet.mjs` (`--before/--after/--out`, HTML-escaped + URL-encoded, crash-safe on partial dirs) plus `priv/shots/contact_sheet_index.md`; rendered HTML stays gitignored/regenerable. `mix docs` now renders a drift-free `ScoriaWeb.UI` component catalog (7 sparse `@doc`s backfilled) with a `docs/MAINTAINERS.md` catalog + harness entry-point. Fresh 2026-06-13 shot set partial (approvals + live_ops; rest blocked by pre-existing Phase-13 modal-overlay timeout) — deterministic checklist is the falsifiable proof. v3.0 Control Room milestone requirements fully delivered.
+- **Phase 16 complete (2026-06-13, v3.0 Control Room):** Motion + responsive + theme parity (MOTION-01..04). Mobile-first dashboard shell + accessible off-canvas nav drawer (Hooks.MobileNav), responsive `table/1` (overflow viewport + opt-in `mobile_summary` cards on the 4 scan tables), named responsive grid classes replacing unsupported `sm:/lg:/xl:grid-cols` utilities, and focus-visible/non-color-only-status/motion-contract hardening with full light+dark parity. Mechanically proven by `priv/dev/e2e/phase16_parity.spec.mjs` (22/22 Playwright, MOTION-01..04). Next: Phase 17 consistency sweep + proof.
+- **Phase 15 complete (2026-06-13, v3.0 Control Room):** High-traffic control-room screens now use shared table/drawer/modal/notebook primitives across Live Ops, Workflows, Approvals, and Connectors; remaining evidence adapters are thin notebook/evidence adapters; DS-06 raw-palette baseline is zero. SCREEN-03 and SCREEN-04 are complete.
+- **v2.17 Vesicle shipped (2026-06-11):** Brand system complete — pressure-test.md (1,311 lines), TV-1 mark + LK-B lockup chosen by user (2 rounds), 8-variant logo set, brandbook/ (458 KB, zero binaries), README picture header, dashboard TV-1 mark + data-URI favicon, mix.exs/GitHub descriptions, quality-gate.mjs 8/8 PASS, mix test 632 green, DS-06 untouched. Archived in `.planning/milestones/v2.17-*`.
+- **Phase 12 complete (2026-06-04, v3.0 Control Room):** Design-system component layer — `ui.ex` now exposes table/drawer/modal/field/form_section/notebook/skeleton/toast contracts, `flash_group` routes through semantic tokens, and the DS-06 raw-color drift guard runs unconditionally in `mix test` (baseline `test/support/ds06_baseline.txt`, `ui.ex` at zero raw palette). Known polish debt deferred to Phases 14–16 (toast overlap CR-01, drawer positioning WR-03, dialog `aria-labelledby` WR-02) — see `12-REVIEW.md`.
 - **v2.16 shipped (2026-05-30):** ReqLLM peer bump to `~> 1.13` (1.13.0); archived in `.planning/milestones/v2.16-*`.
 - **v2.15 shipped (2026-05-30):** Connector adoption lane — `mix test.connector`, PR CI WAE after knowledge, drift guards; archived in `.planning/milestones/v2.15-*`.
 - **v2.12 shipped (2026-05-30):** Adoption confidence reference demo — SupportJourney.Handlers SSOT, gallery optional lane journeys, orchestrator producer smoke, MAINTAINERS.md split; Hex `0.1.1` prepared.
@@ -174,9 +207,23 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Maintenance release `0.1.1` prepared with adopter-readable CHANGELOG and release-please manifest. — `v2.14` (HEX-03)
 - ✓ Named connector adoption lane `mix test.connector` with VerificationLanes entry, SupportJourney proof, docs truth, and PR CI WAE. — `v2.15` (CONN-LANE-01–03, CONN-DOCS-01–02, CONN-CI-01)
 - ✓ ReqLLM peer dependency bumped to `~> 1.13` (1.13.0); orchestrator, judge runner, compaction worker, and observe adapter verified — `v2.16` (DEPS-01–04)
+- ✓ Brand book pressure-tested (1,311 lines, 14 sections, 15-dim scorecard, 52-pairing WCAG table, 0 FAIL), decisions locked with user approval, `propagation: not-required` machine-readable verdict. — `v2.17 Vesicle` (BRAND-01, BRAND-02)
+- ✓ User chose logo direction from ≥6 programmatic SVG options (2 rounds: TV-1 "Span rail" mark + LK-B "Mark-as-o" fused lockup); all LOGO-01..07 constraints verified. — `v2.17 Vesicle` (BRAND-03)
+- ✓ 8-variant logo set (primary dark/light, mark, monochrome, subtitle, integrated logotype, favicon, social card) with clear-space/min-size spec and optical-correction pass. — `v2.17 Vesicle` (BRAND-04)
+- ✓ Self-contained `brandbook/` with tokens.json/css (4-source hex consistency), 543-line canonical brand-book.md, 7 SVG examples, standalone index.html (file:// offline, zero network refs) — 458 KB, zero binaries. — `v2.17 Vesicle` (BRAND-05, BRAND-06)
+- ✓ Brand live on real surfaces: README picture-element header, dashboard TV-1 mark + data-URI favicon, mix.exs/GitHub descriptions; quality-gate.mjs 8/8 PASS; mix test 632 green; DS-06 byte-identical (BRAND-09 did not fire). — `v2.17 Vesicle` (BRAND-07, BRAND-08)
 
 ### Active
-- _(none — v2.16 archived; define next milestone via `/gsd-new-milestone`; release 0.1.1 publish pending)_
+
+_v3.0 Control Room — resumed 2026-06-11 after v2.17 Vesicle interjection (REQUIREMENTS.md current); Phases 11–15 complete; next step: `/gsd:discuss-phase 16`._
+
+- [ ] Operators get a committed dev-only screenshot + LLM-critique evaluation loop and seed data that exercises every dashboard screen.
+- [ ] The design system is fully adopted: shared `ui.ex` components replace hand-rolled markup, with zero raw-palette class leakage enforced by a drift guard.
+- [ ] A newcomer dropped on the dashboard immediately understands what Scoria does and how to reach their job; power users keep a zero-click path (Status Home, third nav axis, breadcrumbs, command palette, cross-screen threading).
+- [ ] Every screen reaches a consistent high-polish bar in both light and dark themes, with restrained brand-tied motion and mobile-first responsive behavior.
+- [ ] Reserved brand-name screens read as complete in the IA via honest "coming soon" stubs (no fake data).
+
+_(Release 0.1.1 publish via release-please remains pending, tracked in Release Queue.)_
 
 ### Out of Scope
 
@@ -225,13 +272,14 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Context
 
-- **Latest shipped:** v2.16 ReqLLM peer bump (`~> 1.13`) — archived 2026-05-30.
+- **Latest shipped:** v2.17 Vesicle (brand system) — archived 2026-06-11.
+- v2.16 ReqLLM peer bump (`~> 1.13`) — archived 2026-05-30.
 - v2.15 connector adoption lane (`mix test.connector`) — archived 2026-05-30.
 - v2.12–v2.14 shipped 2026-05-30; v2.13/v2.14 bundled with v2.12 closeout pass.
 - Hex `0.1.1` prepared locally; `0.1.0` live at https://hex.pm/packages/scoria — publish via release-please.
 - CI: policy job (baseline → inventory baseline → compile WAE → lane-contract) → test job (closeout → semantic WAE → ratchet hygiene → full WAE → knowledge WAE → connector WAE → advisory gallery).
 - `Scoria.SupportJourney` + `examples/support_copilot/` gallery; advisory `mix scoria.test.support_copilot` outside closeout.
-- Archives: `.planning/milestones/v2.16-*`, `v2.15-*`, `v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
+- Archives: `.planning/milestones/v2.17-*`, `v2.16-*`, `v2.15-*`, `v2.11-*`, `v2.10-*`, `v2.9-*`, `v2.8-*`, `v2.7-*`, `v2.6-*`
 
 ## Constraints
 
@@ -273,6 +321,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 | v2.15 connector lane as PR WAE after knowledge, not in closeout | Parity with semantic/knowledge lanes; preserve v2.4 closeout contract | ✓ Good — shipped v2.15 |
 | v2.16 minimal ReqLLM-only peer bump; no optional szTheory deps | User chose narrow dependency hygiene scope; Tribunal already current | ✓ Good — shipped v2.16 |
 | Phase 10.1 inserted after audit for v2.16 VERIFICATION gap | Phases 08–10 shipped without GSD execute artifacts; retroactive ledgers | ✓ Good — shipped 10.1 |
+| v2.17 Vesicle interjected before v3.0 phases 13–17 | Brand book never pressure-tested, no logo/collateral exists; clean phase boundary; planning versions decoupled from Hex semver keeps archive chronology aligned | ✓ Good — shipped v2.17 |
+| `brandbook/` is canonical brand source; dashboard CSS updated only on material audit failures | Avoids thrash to freshly shipped v3.0 token gateway + DS-06 ratchet | ✓ Good — shipped v2.17; BRAND-09 did not fire |
 
 ## Milestone History
 
@@ -299,6 +349,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - `v2.10 Hex Consumer Proof & Upgrade Smoke`: Tarball consumer proof, upgrade smoke, registry attest, DOCS-HEX-01 drift guards.
 - `v2.11 Orchestrator Live Wiring`: ORCH-LIVE-01 live trace + HITL from runtime; Phase 01.1 hardening slice.
 - `v2.15 Connector Adoption Lane`: Named `mix test.connector` lane, SupportJourney proof, docs/CI/drift guards; Phase 07.1 process closeout.
+- `v2.17 Vesicle`: Brand system — pressure-tested brand book, programmatically generated logo system (TV-1 mark + LK-B lockup chosen by user), 8-variant logo set, canonical brandbook/ (tokens, brand book, examples, standalone HTML), README/dashboard/Hex integration; quality-gate.mjs 8/8 PASS; BRAND-09 conditional did not fire.
 - `v2.16 ReqLLM Peer Bump`: ReqLLM `~> 1.13` peer bump with integration + CI trust verification; Phase 10.1 process closeout.
 
 ## Archived Planning Notes
@@ -363,4 +414,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 after v2.16 milestone archive*
+*Last updated: 2026-06-13 — Phase 17 complete; v3.0 Control Room milestone fully delivered (all PROOF/SCREEN/MOTION requirements done). Next: /gsd:complete-milestone or /gsd:new-milestone*

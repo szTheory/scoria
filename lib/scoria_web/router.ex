@@ -37,6 +37,7 @@ defmodule ScoriaWeb.Router do
           live("/", ScoriaWeb.OrchestratorLive, :index)
           live("/approvals", ScoriaWeb.ApprovalsLive.Index, :index)
           live("/reviews", ScoriaWeb.ReviewQueueLive, :index)
+          live("/datasets", ScoriaWeb.DatasetLive.Index, :index)
           live("/workflows", ScoriaWeb.WorkflowLive.Index, :index)
           live("/workflows/:id", ScoriaWeb.WorkflowLive.Show, :show)
           live("/connectors", ScoriaWeb.ConnectorsLive.Index, :index)
@@ -44,6 +45,7 @@ defmodule ScoriaWeb.Router do
           live("/eval_specs", ScoriaWeb.EvalSpecLive.Index, :index)
           live("/prompts", ScoriaWeb.PromptLive.Index, :index)
           live("/prompts/:id/release", ScoriaWeb.PromptLive.ReleaseWorkbenchLive, :index)
+          live("/coming/:screen", ScoriaWeb.ComingSoonLive, :show)
         end
       end
     end

@@ -1,104 +1,99 @@
 defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
   use Phoenix.Component
-  import ScoriaWeb.UI, only: [badge: 1]
+  import ScoriaWeb.UI
 
   attr(:semantic_evidence, :map, default: %{})
 
   def render(assigns) do
     ~H"""
-    <section
+    <.notebook
       :if={present?(@semantic_evidence)}
-      class="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-4 shadow-sm"
+      id="semantic-evidence-notebook"
+      title="Semantic fast-path inspection"
+      eyebrow="semantic evidence notebook"
+      selected_tab="semantic"
     >
-      <div class="mb-4">
-        <p class="text-xs uppercase tracking-[0.24em] text-stone-500">semantic evidence notebook</p>
-        <h3 class="text-lg font-semibold text-stone-900">Semantic fast-path inspection</h3>
-        <p class="mt-1 text-sm text-stone-600">
-          Workflow evidence keeps semantic verdict, compatibility, provenance, lifecycle, and append-only events on one page.
-        </p>
-      </div>
-
-      <div class="grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
+      <:tab key="semantic" label="Semantic">
         <div class="space-y-4">
-          <.group_card title="Summary" group={read_group(@semantic_evidence, :summary)} />
-          <.group_card title="Compatibility" group={read_group(@semantic_evidence, :compatibility)} />
-          <.group_card title="Provenance" group={read_group(@semantic_evidence, :provenance)} />
-        </div>
+          <.evidence_section
+            title="Semantic evidence groups"
+            description="Workflow evidence keeps semantic verdict, compatibility, provenance, lifecycle, and append-only events on one page."
+          >
+            <div class="scoria-evidence-split">
+              <div class="space-y-4">
+                <.group_section title="Summary" group={read_group(@semantic_evidence, :summary)} />
+                <.group_section title="Compatibility" group={read_group(@semantic_evidence, :compatibility)} />
+                <.group_section title="Provenance" group={read_group(@semantic_evidence, :provenance)} />
+              </div>
 
-        <div class="space-y-4">
-          <.group_card title="Lifecycle" group={read_group(@semantic_evidence, :lifecycle)} />
-          <.group_card title="Candidate" group={read_group(@semantic_evidence, :candidate)} />
-          <.events_card events={read_events(@semantic_evidence)} />
-        </div>
-      </div>
+              <div class="space-y-4">
+                <.group_section title="Lifecycle" group={read_group(@semantic_evidence, :lifecycle)} />
+                <.group_section title="Candidate" group={read_group(@semantic_evidence, :candidate)} />
+                <.events_section events={read_events(@semantic_evidence)} />
+              </div>
+            </div>
 
-      <details class="mt-4 rounded-lg border border-stone-200 bg-white p-4">
-        <summary class="cursor-pointer text-sm font-semibold text-stone-900">Advanced raw evidence</summary>
-        <pre class="mt-3 overflow-x-auto whitespace-pre-wrap rounded-md bg-stone-50 p-3 text-xs text-stone-700"><%= Jason.encode_to_iodata!(normalize_for_json(@semantic_evidence), pretty: true) %></pre>
-      </details>
-    </section>
+            <.raw_evidence label="Advanced raw evidence">
+              <%= Jason.encode_to_iodata!(normalize_for_json(@semantic_evidence), pretty: true) %>
+            </.raw_evidence>
+          </.evidence_section>
+        </div>
+      </:tab>
+    </.notebook>
     """
   end
 
   attr(:title, :string, required: true)
   attr(:group, :map, default: %{})
 
-  defp group_card(assigns) do
+  defp group_section(assigns) do
     ~H"""
-    <div class="rounded-lg border border-stone-200 bg-white p-4">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h4 class="text-sm font-semibold text-stone-900"><%= @title %></h4>
-          <p class="mt-1 text-xs text-stone-500">Curated semantic evidence from runtime metadata and durable cache truth.</p>
-        </div>
-        <.badge tone={notebook_tone(card_status(@group))} label={card_status(@group)} dot={false} />
-      </div>
-
-      <dl class="mt-3 space-y-3 text-sm text-stone-700">
-        <div :for={{label, value} <- field_rows(@group)} class="rounded-md bg-stone-50 p-3">
-          <dt class="text-xs uppercase tracking-[0.18em] text-stone-500"><%= label %></dt>
-          <dd class="mt-2 font-medium text-stone-900"><%= render_value(value) %></dd>
-        </div>
-      </dl>
-    </div>
+    <.evidence_section
+      title={@title}
+      description="Curated semantic evidence from runtime metadata and durable cache truth."
+      badge={card_status(@group)}
+      tone={notebook_tone(card_status(@group))}
+    >
+      <.evidence_rows rows={field_rows(@group)} />
+    </.evidence_section>
     """
   end
 
   attr(:events, :list, default: [])
 
-  defp events_card(assigns) do
+  defp events_section(assigns) do
     ~H"""
-    <div class="rounded-lg border border-stone-200 bg-white p-4">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h4 class="text-sm font-semibold text-stone-900">Append-only events</h4>
-          <p class="mt-1 text-xs text-stone-500">Semantic entry events stay inspectable instead of collapsing into a generic miss.</p>
+    <.evidence_section
+      title="Append-only events"
+      description="Semantic entry events stay inspectable instead of collapsing into a generic miss."
+      badge={if(@events == [], do: "empty", else: "recorded")}
+      tone={notebook_tone(if(@events == [], do: "empty", else: "recorded"))}
+    >
+      <%= if @events == [] do %>
+        <.evidence_empty title="No semantic entry events recorded.">
+          No semantic entry events recorded.
+        </.evidence_empty>
+      <% else %>
+        <div class="space-y-3">
+          <.evidence_section :for={event <- @events} title={map_value(event, :event_kind, "event")}>
+            <:actions>
+              <.badge
+                tone={:neutral}
+                label={to_string(map_value(event, :entry_role, "unknown"))}
+                dot={false}
+              />
+            </:actions>
+
+            <.evidence_rows
+              rows={[
+                {"entry role", map_value(event, :entry_role, "unknown")},
+                {"reason_code", map_value(event, :reason_code, nil)}
+              ]}
+            />
+          </.evidence_section>
         </div>
-        <.badge
-          tone={notebook_tone(if(@events == [], do: "empty", else: "recorded"))}
-          label={if(@events == [], do: "empty", else: "recorded")}
-          dot={false}
-        />
-      </div>
-
-      <div :if={@events == []} class="mt-3 rounded-md bg-stone-50 p-3 text-sm text-stone-600">
-        No semantic entry events recorded.
-      </div>
-
-      <ol :if={@events != []} class="mt-3 space-y-3">
-        <li :for={event <- @events} class="rounded-md bg-stone-50 p-3 text-sm text-stone-700">
-          <p class="font-medium text-stone-900">
-            <%= map_value(event, :event_kind) %>
-            <span class="ml-2 rounded-full border border-stone-200 bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-700">
-              <%= map_value(event, :entry_role) %>
-            </span>
-          </p>
-          <p :if={map_value(event, :reason_code)} class="mt-1 text-xs text-stone-600">
-            reason_code: <span class="font-mono"><%= map_value(event, :reason_code) %></span>
-          </p>
-        </li>
-      </ol>
-    </div>
+      <% end %>
+    </.evidence_section>
     """
   end
 
@@ -116,7 +111,7 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
   defp field_rows(group) do
     group
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-    |> Enum.map(fn {key, value} -> {field_label(key), value} end)
+    |> Enum.map(fn {key, value} -> {field_label(key), render_value(value)} end)
   end
 
   defp field_label(key) do
@@ -169,6 +164,13 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponent do
   defp notebook_tone("empty"), do: :warn
   defp notebook_tone(_value), do: :pass
 
-  defp map_value(map, key) when is_map(map), do: Map.get(map, key)
-  defp map_value(_map, _key), do: nil
+  defp map_value(map, key, default) when is_map(map) do
+    cond do
+      Map.has_key?(map, key) -> Map.get(map, key)
+      Map.has_key?(map, to_string(key)) -> Map.get(map, to_string(key))
+      true -> default
+    end
+  end
+
+  defp map_value(_map, _key, default), do: default
 end

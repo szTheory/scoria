@@ -3,8 +3,8 @@ defmodule ScoriaWeb.WorkflowTreeComponent do
 
   import ScoriaWeb.UI
 
-  attr :steps, :list, required: true
-  attr :selected_step_id, :string, default: nil
+  attr(:steps, :list, required: true)
+  attr(:selected_step_id, :string, default: nil)
 
   def workflow_tree(assigns) do
     ~H"""
@@ -14,6 +14,7 @@ defmodule ScoriaWeb.WorkflowTreeComponent do
         type="button"
         phx-click="select_step"
         phx-value-id={step.id}
+        aria-current={@selected_step_id == step.id && "true"}
         class={[
           "workflow-tree-row scoria-span flex w-full items-center gap-3 border-b px-3 py-2 text-left",
           "scoria-span--#{span_kind(step.kind)}",
@@ -24,7 +25,7 @@ defmodule ScoriaWeb.WorkflowTreeComponent do
         <span class="scoria-span__rail"></span>
         <.badge tone={tone(step.status)} label={status_label(step.status)} dot={false} class="workflow-status-badge" />
         <span class="font-mono text-sm">{step.role_id}</span>
-        <span class="text-sm text-stone-600">{step.kind}</span>
+        <span class="text-sm">{step.kind}</span>
         <span :if={step.kind == "handoff"} class="workflow-handoff-marker scoria-badge scoria-badge--trace scoria-badge--bare">
           handoff
         </span>
@@ -34,7 +35,9 @@ defmodule ScoriaWeb.WorkflowTreeComponent do
   end
 
   # Map a step kind to a trace span-kind for the colored rail (brand book §8.8).
-  defp span_kind(kind) when kind in ~w(llm tool prompt mcp retriever guardrail eval agent), do: kind
+  defp span_kind(kind) when kind in ~w(llm tool prompt mcp retriever guardrail eval agent),
+    do: kind
+
   defp span_kind("approval"), do: "guardrail"
   defp span_kind("handoff"), do: "agent"
   defp span_kind("answer"), do: "llm"

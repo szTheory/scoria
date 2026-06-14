@@ -1,6 +1,6 @@
 defmodule ScoriaWeb.PromptLive.Index do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
-  import ScoriaWeb.UI, only: [empty_state: 1]
+  import ScoriaWeb.UI
   alias Scoria.PromptRegistry
   alias Scoria.PromptRegistry.PromptTemplate
   alias Scoria.PromptRegistry.Tokenizer
@@ -20,7 +20,7 @@ defmodule ScoriaWeb.PromptLive.Index do
   def handle_event("edit", %{"id" => id}, socket) do
     template = PromptRegistry.get_prompt_template!(id)
     changeset = PromptTemplate.changeset(template, %{})
-    
+
     {:noreply,
      socket
      |> assign(:edit_template, template)
@@ -36,18 +36,18 @@ defmodule ScoriaWeb.PromptLive.Index do
   @impl true
   def handle_event("validate", %{"prompt_template" => template_params}, socket) do
     template = socket.assigns.edit_template
-    
-    changeset = 
+
+    changeset =
       template
       |> PromptTemplate.changeset(template_params)
       |> Map.put(:action, :validate)
-      
+
     # Dynamic token calculation
     system_msg = Ecto.Changeset.get_field(changeset, :system_message) || ""
     user_msg = Ecto.Changeset.get_field(changeset, :user_template) || ""
-    
+
     combined = system_msg <> "\n" <> user_msg
-    
+
     estimated_tokens = Tokenizer.estimate_tokens(combined)
 
     {:noreply,
@@ -59,7 +59,7 @@ defmodule ScoriaWeb.PromptLive.Index do
   @impl true
   def handle_event("save", %{"prompt_template" => template_params}, socket) do
     template = socket.assigns.edit_template
-    
+
     # We update draft or active version based on status, but let's try update_draft_template
     # if it's draft, or just use update_draft_template since the test expects in-place draft update
     case update_template(template, template_params) do
@@ -75,11 +75,11 @@ defmodule ScoriaWeb.PromptLive.Index do
         {:noreply, assign(socket, :form, to_form(changeset))}
     end
   end
-  
+
   defp update_template(%{status: "draft"} = template, params) do
     PromptRegistry.update_draft_template(template, params)
   end
-  
+
   defp update_template(template, params) do
     PromptRegistry.update_prompt_template(template, params)
   end
@@ -87,79 +87,82 @@ defmodule ScoriaWeb.PromptLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="prompt-template-index">
-      <h1>Prompt Templates</h1>
+    <div class="scoria-page">
+      <div class="scoria-page__header">
+        <p class="scoria-eyebrow">Prompt Registry</p>
+        <h1>Prompt Registry</h1>
+      </div>
 
       <%= if @edit_template do %>
-        <div class="edit-form">
-          <h2>Edit Template: <%= @edit_template.entity_id %> (v<%= @edit_template.version %>)</h2>
+        <.panel>
+          <:eyebrow>Prompt version</:eyebrow>
+          <:title>Edit Template: <%= @edit_template.entity_id %> (v<%= @edit_template.version %>)</:title>
           
           <%= if @estimated_tokens do %>
-            <div class="token-estimation">
+            <p>
               Estimated Tokens: <strong><%= @estimated_tokens %></strong>
               <%= if @estimated_tokens > 4000 do %>
-                <span class="warning">High token count!</span>
+                <.badge tone={:warn} label="High token count" />
               <% end %>
-            </div>
+            </p>
           <% end %>
 
           <.form for={@form} phx-change="validate" phx-submit="save">
-            <div>
-              <label>System Message</label>
-              <textarea name={@form[:system_message].name} rows="5"><%= @form[:system_message].value %></textarea>
-              <%= for error <- Keyword.get_values(@form.errors || [], :system_message) do %>
-                <span class="error"><%= translate_error(error) %></span>
-              <% end %>
-            </div>
+            <.form_section
+              title="Prompt content"
+              description="Edit the backed prompt messages while preserving version history and token estimation."
+            >
+              <.field
+                id="prompt-template-system-message"
+                label="System Message"
+                error={field_error(@form, :system_message)}
+              >
+                <textarea id="prompt-template-system-message" name={@form[:system_message].name} rows="5"><%= @form[:system_message].value %></textarea>
+              </.field>
 
-            <div>
-              <label>User Template</label>
-              <textarea name={@form[:user_template].name} rows="5"><%= @form[:user_template].value %></textarea>
-              <%= for error <- Keyword.get_values(@form.errors || [], :user_template) do %>
-                <span class="error"><%= translate_error(error) %></span>
-              <% end %>
-            </div>
+              <.field
+                id="prompt-template-user-template"
+                label="User Template"
+                error={field_error(@form, :user_template)}
+              >
+                <textarea id="prompt-template-user-template" name={@form[:user_template].name} rows="5"><%= @form[:user_template].value %></textarea>
+              </.field>
+            </.form_section>
 
-            <button type="submit" phx-disable-with="Saving...">Save Template</button>
-            <button type="button" phx-click="cancel_edit">Cancel</button>
+            <div class="flex flex-wrap gap-2">
+              <.button type="submit" phx-disable-with="Saving...">Save Template</.button>
+              <.button variant={:ghost} type="button" phx-click="cancel_edit">Cancel</.button>
+            </div>
           </.form>
-        </div>
+        </.panel>
       <% else %>
-        <.empty_state :if={@prompt_templates == []} title="No prompt templates yet">
-          Draft one with <span class="font-mono">Scoria.PromptRegistry.create_draft_template/1</span>
-          and it will appear here with version history, status, and token estimates.
-        </.empty_state>
-
-        <table :if={@prompt_templates != []}>
-          <thead>
-            <tr>
-              <th>Entity ID</th>
-              <th>Version</th>
-              <th>Status</th>
-              <th>System Message</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= for template <- @prompt_templates do %>
-              <tr id={"template-#{template.id}"}>
-                <td><%= template.entity_id %></td>
-                <td><%= template.version %></td>
-                <td><%= template.status %></td>
-                <td><%= truncate(template.system_message, 50) %></td>
-                <td>
-                  <button phx-click="edit" phx-value-id={template.id}>Edit</button>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+        <.table id="prompt-versions" rows={@prompt_templates} density={:compact}>
+          <:col :let={template} label="Prompt"><%= template.entity_id %></:col>
+          <:col :let={template} label="Version">v<%= template.version %></:col>
+          <:col :let={template} label="State">
+            <.badge tone={tone(template.status)} label={status_label(template.status)} />
+          </:col>
+          <:col :let={template} label="System Message">
+            <%= truncate(template.system_message, 50) %>
+          </:col>
+          <:action :let={template}>
+            <.button size={:sm} variant={:ghost} phx-click="edit" phx-value-id={template.id}>
+              Edit
+            </.button>
+          </:action>
+          <:empty>
+            <.empty_state title="No prompt versions yet">
+              Prompt versions appear after backed prompt edits are recorded.
+            </.empty_state>
+          </:empty>
+        </.table>
       <% end %>
     </div>
     """
   end
 
   defp truncate(nil, _), do: ""
+
   defp truncate(text, length) do
     if String.length(text) > length do
       String.slice(text, 0, length) <> "..."
@@ -172,5 +175,15 @@ defmodule ScoriaWeb.PromptLive.Index do
     Enum.reduce(opts, msg, fn {key, value}, acc ->
       String.replace(acc, "%{#{key}}", to_string(value))
     end)
+  end
+
+  defp field_error(form, field) do
+    form.errors
+    |> Keyword.get_values(field)
+    |> List.first()
+    |> case do
+      nil -> nil
+      error -> translate_error(error)
+    end
   end
 end

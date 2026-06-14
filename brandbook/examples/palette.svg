@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc">
+  <title id="title">Scoria palette specimen</title>
+  <desc id="desc">Brand color swatches: dark neutrals, warm text scale, warm brand scale, and functional accent pairs, each with its hex value.</desc>
+  <rect width="1200" height="460" fill="#11100f"/>
+  <text x="48" y="56" fill="#fff9f3" font-family="'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="600">Scoria palette</text>
+  <text x="48" y="82" fill="#88786d" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" letter-spacing="2">PRIMITIVES + FUNCTIONAL ACCENT PAIRS — HEX SSOT 02-tokens.css</text>
+  <g font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11">
+    <!-- Row 1: dark neutrals -->
+    <text x="48" y="118" fill="#bdaea3" font-size="11" letter-spacing="1">DARK NEUTRALS</text>
+    <g transform="translate(48 130)"><rect width="128" height="64" rx="6" fill="#11100f" stroke="#3a332f"/><text x="0" y="84" fill="#faf5ef">Basalt-950</text><text x="0" y="100" fill="#88786d">#11100F</text></g>
+    <g transform="translate(196 130)"><rect width="128" height="64" rx="6" fill="#181513" stroke="#3a332f"/><text x="0" y="84" fill="#faf5ef">Basalt-900</text><text x="0" y="100" fill="#88786d">#181513</text></g>
+    <g transform="translate(344 130)"><rect width="128" height="64" rx="6" fill="#211c19" stroke="#3a332f"/><text x="0" y="84" fill="#faf5ef">Char-850</text><text x="0" y="100" fill="#88786d">#211C19</text></g>
+    <g transform="translate(492 130)"><rect width="128" height="64" rx="6" fill="#3a332f"/><text x="0" y="84" fill="#faf5ef">Graphite-700</text><text x="0" y="100" fill="#88786d">#3A332F</text></g>
+    <g transform="translate(640 130)"><rect width="128" height="64" rx="6" fill="#0c0b0a" stroke="#3a332f"/><text x="0" y="84" fill="#faf5ef">Sunken</text><text x="0" y="100" fill="#88786d">#0C0B0A</text></g>
+    <!-- Warm text scale -->
+    <g transform="translate(788 130)"><rect width="128" height="64" rx="6" fill="#faf5ef"/><text x="0" y="84" fill="#faf5ef">Ash-50</text><text x="0" y="100" fill="#88786d">#FAF5EF</text></g>
+    <g transform="translate(936 130)"><rect width="128" height="64" rx="6" fill="#fff9f3"/><text x="0" y="84" fill="#faf5ef">White-Hot</text><text x="0" y="100" fill="#88786d">#FFF9F3</text></g>
+    <!-- Row 2: warm brand scale -->
+    <text x="48" y="250" fill="#bdaea3" font-size="11" letter-spacing="1">WARM BRAND SCALE</text>
+    <g transform="translate(48 262)"><rect width="128" height="64" rx="6" fill="#8d3826"/><text x="0" y="84" fill="#faf5ef">Scoria-700</text><text x="0" y="100" fill="#88786d">#8D3826</text></g>
+    <g transform="translate(196 262)"><rect width="128" height="64" rx="6" fill="#b94f31"/><text x="0" y="84" fill="#faf5ef">Scoria-600</text><text x="0" y="100" fill="#88786d">#B94F31</text></g>
+    <g transform="translate(344 262)"><rect width="128" height="64" rx="6" fill="#e65a32"/><text x="0" y="84" fill="#faf5ef">Ember-500</text><text x="0" y="100" fill="#88786d">#E65A32</text></g>
+    <g transform="translate(492 262)"><rect width="128" height="64" rx="6" fill="#ff7a4d"/><text x="0" y="84" fill="#faf5ef">Molten-400</text><text x="0" y="100" fill="#88786d">#FF7A4D</text></g>
+    <g transform="translate(640 262)"><rect width="128" height="64" rx="6" fill="#f8d6c8"/><text x="0" y="84" fill="#faf5ef">Cinder-100</text><text x="0" y="100" fill="#88786d">#F8D6C8</text></g>
+    <g transform="translate(788 262)"><rect width="128" height="64" rx="6" fill="#88786d"/><text x="0" y="84" fill="#faf5ef">Pumice-500</text><text x="0" y="100" fill="#88786d">#88786D</text></g>
+    <g transform="translate(936 262)"><rect width="128" height="64" rx="6" fill="#cdbbac"/><text x="0" y="84" fill="#faf5ef">Tuff-300</text><text x="0" y="100" fill="#88786d">#CDBBAC</text></g>
+    <!-- Row 3: functional accent pairs (dark fg / light fg) -->
+    <text x="48" y="382" fill="#bdaea3" font-size="11" letter-spacing="1">FUNCTIONAL ACCENTS — DARK FG / LIGHT FG</text>
+    <g transform="translate(48 394)"><rect width="60" height="40" rx="6" fill="#a7c76f"/><rect x="68" width="60" height="40" rx="6" fill="#536a39"/><text x="0" y="58" fill="#faf5ef">Success</text></g>
+    <g transform="translate(196 394)"><rect width="60" height="40" rx="6" fill="#7dd8d1"/><rect x="68" width="60" height="40" rx="6" fill="#2a6c69"/><text x="0" y="58" fill="#faf5ef">Info</text></g>
+    <g transform="translate(344 394)"><rect width="60" height="40" rx="6" fill="#ffd166"/><rect x="68" width="60" height="40" rx="6" fill="#7a5a16"/><text x="0" y="58" fill="#faf5ef">Warning</text></g>
+    <g transform="translate(492 394)"><rect width="60" height="40" rx="6" fill="#ff6b4a"/><rect x="68" width="60" height="40" rx="6" fill="#9e2f20"/><text x="0" y="58" fill="#faf5ef">Danger</text></g>
+    <g transform="translate(640 394)"><rect width="60" height="40" rx="6" fill="#b798ff"/><rect x="68" width="60" height="40" rx="6" fill="#6a55a7"/><text x="0" y="58" fill="#faf5ef">Trace</text></g>
+  </g>
+</svg>
