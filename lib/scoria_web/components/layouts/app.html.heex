@@ -20,9 +20,10 @@
         class="scoria-button scoria-button--ghost scoria-button--sm"
         phx-hook="ThemeToggle"
         id="scoria-theme-toggle-mobile"
-        aria-label="Toggle light or dark theme"
+        data-theme-toggle
+        aria-label="Theme — click to cycle dark, light, system"
       >
-        <span>Theme</span>
+        <span data-theme-label>Theme</span>
       </button>
       <button
         type="button"
@@ -127,10 +128,11 @@
         class="scoria-button scoria-button--ghost scoria-button--sm"
         phx-hook="ThemeToggle"
         id="scoria-theme-toggle"
-        title="Toggle light / dark"
-        aria-label="Toggle light or dark theme"
+        data-theme-toggle
+        title="Theme — click to cycle dark / light / system"
+        aria-label="Theme — click to cycle dark, light, system"
       >
-        <span>Theme</span>
+        <span data-theme-label>Theme</span>
       </button>
     </div>
   </header>

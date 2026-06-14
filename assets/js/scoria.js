@@ -36,18 +36,55 @@
     },
   };
 
-  // Light/dark theme toggle. Persists choice; defaults to dark (brand-first).
+  // Theme: dark / light / system, persisted as "scoria-theme". "system" follows
+  // the OS via prefers-color-scheme and reacts to live OS changes. The pre-paint
+  // script in root.html.heex applies the stored mode before first paint (no FOUC);
+  // this module re-applies it, cycles modes, and keeps the control label in sync.
+  var THEME_KEY = "scoria-theme";
+  var THEME_MODES = ["dark", "light", "system"];
+
+  function themeStoredMode() {
+    var v = null;
+    try { v = localStorage.getItem(THEME_KEY); } catch (e) {}
+    return THEME_MODES.indexOf(v) >= 0 ? v : "dark"; // brand-first default
+  }
+  function themeResolve(mode) {
+    if (mode === "system") {
+      return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    return mode === "light" ? "light" : "dark";
+  }
+  function themeUpdateControls(mode) {
+    var label = mode.charAt(0).toUpperCase() + mode.slice(1);
+    var btns = document.querySelectorAll("[data-theme-toggle]");
+    for (var i = 0; i < btns.length; i++) {
+      var span = btns[i].querySelector("[data-theme-label]");
+      if (span) span.textContent = label;
+      btns[i].setAttribute("title", "Theme: " + label + " — click to cycle dark / light / system");
+      btns[i].setAttribute("aria-label", "Theme: " + label + ". Click to cycle dark, light, system.");
+    }
+  }
+  function themeApply(mode) {
+    document.documentElement.setAttribute("data-theme", themeResolve(mode));
+    themeUpdateControls(mode);
+  }
+  function themeCycle() {
+    var next = THEME_MODES[(THEME_MODES.indexOf(themeStoredMode()) + 1) % THEME_MODES.length];
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+    themeApply(next);
+    return next;
+  }
+  // Live OS theme changes only matter while the user is on "system".
+  try {
+    window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", function () {
+      if (themeStoredMode() === "system") themeApply("system");
+    });
+  } catch (e) {}
+
   Hooks.ThemeToggle = {
     mounted: function () {
-      var root = document.documentElement;
-      var stored = null;
-      try { stored = localStorage.getItem("scoria-theme"); } catch (e) {}
-      if (stored) root.setAttribute("data-theme", stored);
-      this.el.addEventListener("click", function () {
-        var next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
-        root.setAttribute("data-theme", next);
-        try { localStorage.setItem("scoria-theme", next); } catch (e) {}
-      });
+      themeApply(themeStoredMode());
+      this.el.addEventListener("click", function () { themeCycle(); });
     },
   };
 
