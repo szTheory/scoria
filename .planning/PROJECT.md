@@ -20,23 +20,21 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 **Core finding that drove the milestone:** Scoria's design system was under-*adopted*, not under-built. The token-first CSS already defined tables, drawers, modals, span rails, and disciplined motion, but `lib/scoria_web/ui.ex` never exposed them as components — so ~22/25 view files leaked raw Tailwind (`stone-*/rose-*/...`), worst in the least-iterated screens. The work: expose components → delete leaked classes → consolidate → orient → polish → prove.
 
-## Next Milestone: v3.1 CI/CD Velocity (planned)
+## Current Milestone: v3.1 CI/CD Velocity
 
-**Seed:** SEED-003 — CI/CD efficiency overhaul (cut CI wall-clock). The repo's CI lane topology has grown across v2.x; the next leverage axis is build/test velocity and CI reliability, not new product capability. Scope to be defined via `/gsd:new-milestone`. The `docker-dx-fleet-hardening` todo is adjacent future work, not yet milestone-scoped.
+**Goal:** Cut CI wall-clock from ~77 min to ~12 min and eliminate known flakes — without weakening the verification bar (every lane that gates merge today still gates merge; nothing demoted to nightly).
 
-**Personas (one shared evidence model, persona-weighted surfacing — nothing role-gated):**
-- **On-Call Operator** — watch live runtime, clear approvals, triage incidents, confirm connector health.
-- **AI Quality Engineer** — triage flagged traces → promote to dataset → run evals → gate a prompt release.
-- **Integrator / Admin** — wire connectors/MCP/tools, set governance policy, watch spend.
+**Seed:** SEED-003 — CI/CD efficiency overhaul. Profiling found the entire ~77 min lives in one serial `verify / test` job; ~45 min of that is two fixable root causes (the knowledge lane re-runs the whole suite; the "ratchet hygiene" step is a cold-compile subprocess). The lane-order contract (`Scoria.VerificationLanes` + `ci_policy_contract_test`) only asserts YAML byte-order, not serial execution — so heavy lanes can fan out to parallel jobs safely.
 
-**Target features:**
-- Committed dev-only screenshot + LLM-critique harness (`mix scoria.ui.shots`) + 9-dimension audit rubric.
-- Seed-data depth so Reviews / Incidents / Eval Workbench / Prompt Registry render at their most useful.
-- Design-system component layer in `ui.ex` (table+affordances, drawer/modal shells, form controls, unified evidence notebook shell, skeleton, toast) + executable raw-color drift guard.
-- Orientation spine: third nav axis (Operate / Improve / Configure), Status-Home landing, real breadcrumbs, `⌘K` command palette, keyboard shortcuts, cross-screen quality-loop threading, honest stub screens for reserved brand names (Dataset Builder, Cost Ledger, Replay Playground, MCP Gateway, Tool Registry, Feedback Inbox).
-- Per-screen polish (least-iterated first), restrained brand-tied motion, mobile-first responsive, full light/dark parity.
+**Target features (infra/docs only — deeper test-code async work stays in SEED-004):**
+- **Cache correctness + build-once job** — env-scoped cache keys (OS/OTP/Elixir/MIX_ENV/lock); a `build` job compiles once and shares `_build/test` + `deps` as an artifact to downstream shards.
+- **Knowledge lane `--only knowledge` fix** — stop re-running the full suite in the knowledge lane (~−22 min, zero coverage loss).
+- **Lane parallelization** — split `verify / test`'s heavy lanes (closeout `test:` job, ratchet job, knowledge job, connector+gallery) into parallel `needs:` jobs with a fan-in `verify-summary`; keep `ci-gate` name stable; preserve the `VerificationLanes` byte-order contract.
+- **Full-suite partition sharding** — `mix test --partitions 4` across a matrix (`config/test.exs` already partition-aware).
+- **CI determinism & flake elimination** — fix the fixed-host-port Postgres service flake (`-p 55432:5432`, reproduced on run 27508317719), remove the leftover TEMP e2e diagnostic step, and set a deliberate retry-vs-fix policy (no blanket auto-retries masking real flakes).
+- **DX `mix ci` alias + docs** — one local command mirroring the gate; update MAINTAINERS.md / operator_verification.md / README (fold doc edits with the lane-parallelization phase, since contract tests assert the docs describe topology).
 
-**Key context:** Keep the custom token-first scoped CSS architecture (no Tailwind/BEM switch); `ui.ex` is the enforced token gateway. UI-only milestone — reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data. Plan: `/Users/jon/.claude/plans/another-ui-pass-so-elegant-garden.md`.
+**Key context:** Hard constraint — preserve or strengthen the verification bar; preserve `VerificationLanes.closeout_order/0` and the warning-ratchet gates. Single fast PR+main gate (no nightly tier). Standard `ubuntu-latest` runners. Node-24 actions modernization already shipped (PR #10, merged). Plan: `/Users/jon/.claude/plans/everything-s-settled-and-green-eventual-hinton.md`.
 
 ## Previous Shipped Milestone: v2.17 Vesicle (2026-06-11)
 
@@ -430,4 +428,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-14 after v3.0 Control Room milestone — shipped, archived, and tagged `v3.0` (local, unpushed). Closed `gaps_found` (18/28 satisfied, 10 partial, 0 unsatisfied). Next: /gsd:new-milestone for v3.1 CI/CD Velocity (SEED-003).*
+*Last updated: 2026-06-14 — started milestone v3.1 CI/CD Velocity (SEED-003). v3.0 Control Room shipped, archived, and tagged `v3.0` (local, unpushed); closed `gaps_found` (18/28 satisfied, 10 partial, 0 unsatisfied). Node-24 actions bump already shipped (PR #10).*

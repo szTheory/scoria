@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Control Room
-status: Awaiting next milestone
-last_updated: "2026-06-14T21:16:47.161Z"
-last_activity: 2026-06-14 — Milestone v3.0 Control Room completed, archived, and tagged (local)
+milestone: v3.1
+milestone_name: CI/CD Velocity
+status: planning
+last_updated: "2026-06-14T21:24:36.974Z"
+last_activity: 2026-06-14
 progress:
-  total_phases: 20
-  completed_phases: 7
-  total_plans: 38
-  completed_plans: 38
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-14 after v3.0 Control Room mileston
 
 ## Current Position
 
-Phase: Milestone v3.0 complete (Phase 17 was final)
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-14 — v3.0 archived to `.planning/milestones/v3.0-*`, tag `v3.0` created locally (unpushed)
+Status: Defining requirements
+Last activity: 2026-06-14 — Milestone v3.1 started
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Items acknowledged and deferred at milestone close on 2026-06-14:
 | todo | docker-dx-fleet-hardening | pending |
 
 **Notes:**
+
 - `003-ci-efficiency-overhaul` (SEED-003: CI/CD efficiency overhaul — cut CI wall-clock) is intentionally about to become the **next milestone, v3.1 CI/CD Velocity**. Seed file retained in `.planning/seeds/`.
 - `docker-dx-fleet-hardening` is future work (Docker DX / fleet hardening). Todo file retained in `.planning/todos/`.
 
