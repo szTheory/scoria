@@ -280,6 +280,33 @@ defmodule Scoria.CiPolicyContractTest do
     refute ci_entry =~ ~r/key: \$\{\{ runner\.os \}\}-mix-/
   end
 
+  test "build job exists in policy-side slice, needs policy, and has no services block" do
+    ci_verify = File.read!(@ci_verify)
+    [policy_section, _test_section] = split_jobs(ci_verify)
+
+    assert policy_section =~ "\n  build:"
+    assert policy_section =~ "needs: policy"
+    assert policy_section =~ "mix compile --warnings-as-errors"
+    assert policy_section =~ "upload-artifact"
+    refute policy_section =~ "services:"
+  end
+
+  test "build job uploads artifact and test job downloads it" do
+    ci_verify = File.read!(@ci_verify)
+    [policy_section, test_section] = split_jobs(ci_verify)
+
+    assert policy_section =~ "upload-artifact"
+    assert test_section =~ "download-artifact"
+  end
+
+  test "test job needs build, not policy directly" do
+    ci_verify = File.read!(@ci_verify)
+    [_policy_section, test_section] = split_jobs(ci_verify)
+
+    assert test_section =~ "needs: build"
+    refute test_section =~ "needs: policy"
+  end
+
   test "ci.yml has workflow header comment block before jobs" do
     ci_entry = File.read!(@ci_entry)
     [header, _rest] = String.split(ci_entry, "\njobs:", parts: 2)
