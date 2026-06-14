@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-06-14T21:24:36.974Z"
 last_activity: 2026-06-14
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-14 after v3.0 Control Room mileston
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Planning next milestone — **v3.1 CI/CD Velocity** (SEED-003 CI/CD efficiency overhaul). Start with `/gsd:new-milestone`.
+**Current focus:** **v3.1 CI/CD Velocity** (SEED-003) — roadmap created, Phases 23–28 (6 phases, 13/13 requirements mapped). Next: `/gsd:plan-phase 23`.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 23 (Cache correctness + build-once job) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-14 — Milestone v3.1 started
+Status: Roadmap created (Phases 23–28); awaiting plan-phase
+Last activity: 2026-06-14 — v3.1 roadmap created, 13/13 requirements mapped
 
 ## Performance Metrics
 

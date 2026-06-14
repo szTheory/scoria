@@ -70,29 +70,31 @@ Deferred to future milestones. Tracked but not in this roadmap.
 
 ## Traceability
 
-_Populated by the roadmapper during roadmap creation._
+Phase numbering continues the live epoch (v2.12=02–04 … v3.0=11–17, v2.17=18–22). v3.1 starts at **Phase 23**; verified no collision with any archived phase directory under `.planning/milestones/*-phases/` (archived numbers are 01–22 and 52–82; 23–28 sit in the unused gap).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CACHE-01 | TBD | Pending |
-| CACHE-02 | TBD | Pending |
-| KNOW-01 | TBD | Pending |
-| PAR-01 | TBD | Pending |
-| PAR-02 | TBD | Pending |
-| PAR-03 | TBD | Pending |
-| SHARD-01 | TBD | Pending |
-| FLAKE-01 | TBD | Pending |
-| FLAKE-02 | TBD | Pending |
-| FLAKE-03 | TBD | Pending |
-| DX-01 | TBD | Pending |
-| DX-02 | TBD | Pending |
-| VELO-01 | TBD | Pending |
+| CACHE-01 | Phase 23 | Pending |
+| CACHE-02 | Phase 23 | Pending |
+| KNOW-01 | Phase 24 | Pending |
+| PAR-01 | Phase 25 | Pending |
+| PAR-02 | Phase 25 | Pending |
+| PAR-03 | Phase 25 | Pending |
+| DX-02 | Phase 25 | Pending |
+| SHARD-01 | Phase 26 | Pending |
+| FLAKE-01 | Phase 27 | Pending |
+| FLAKE-02 | Phase 27 | Pending |
+| FLAKE-03 | Phase 27 | Pending |
+| DX-01 | Phase 28 | Pending |
+| VELO-01 | Phase 28 | Pending |
 
 **Coverage:**
 - v1 requirements: 13 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 13 ⚠️
+- Mapped to phases: 13 ✓
+- Unmapped: 0 ✓
+
+Per-phase requirement counts: Phase 23 (2), Phase 24 (1), Phase 25 (4), Phase 26 (1), Phase 27 (3), Phase 28 (2) = 13.
 
 ---
 *Requirements defined: 2026-06-14*
-*Last updated: 2026-06-14 after v3.1 milestone definition*
+*Last updated: 2026-06-14 — roadmap created, traceability populated (Phases 23–28, 13/13 mapped)*
