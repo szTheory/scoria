@@ -140,7 +140,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 25-02-PLAN.md — update MAINTAINERS.md / operator_verification.md / README to the parallel topology and the docs-topology contract asserts (lockstep)
+- [x] 25-02-PLAN.md — update MAINTAINERS.md / operator_verification.md / README to the parallel topology and the docs-topology contract asserts (lockstep)
 
 **UI hint**: no
 
@@ -192,7 +192,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
-| 25. Lane parallelization + topology docs | v3.1 | 1/2 | In Progress|  |
+| 25. Lane parallelization + topology docs | v3.1 | 2/2 | Complete   | 2026-06-15 |
 | 26. Full-suite partition sharding | v3.1 | 0/0 | Not started | - |
 | 27. CI determinism & flake elimination | v3.1 | 0/0 | Not started | - |
 | 28. DX `mix ci` alias + velocity closeout | v3.1 | 0/0 | Not started | - |
