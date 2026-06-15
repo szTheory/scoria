@@ -136,7 +136,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 25-01-PLAN.md — split ci-verify.yml into parallel {test, ratchet, knowledge, connector} + verify-summary fan-in; refactor both contract tests to parallel-shape + derived fan-in completeness; fold WR-01/WR-02/WR-03
+- [x] 25-01-PLAN.md — split ci-verify.yml into parallel {test, ratchet, knowledge, connector} + verify-summary fan-in; refactor both contract tests to parallel-shape + derived fan-in completeness; fold WR-01/WR-02/WR-03
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -192,7 +192,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
-| 25. Lane parallelization + topology docs | v3.1 | 0/2 | Not started | - |
+| 25. Lane parallelization + topology docs | v3.1 | 1/2 | In Progress|  |
 | 26. Full-suite partition sharding | v3.1 | 0/0 | Not started | - |
 | 27. CI determinism & flake elimination | v3.1 | 0/0 | Not started | - |
 | 28. DX `mix ci` alias + velocity closeout | v3.1 | 0/0 | Not started | - |
