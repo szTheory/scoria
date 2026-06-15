@@ -11,8 +11,8 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Caching (CACHE)
 
-- [ ] **CACHE-01**: CI cache keys are scoped by OS + OTP + Elixir + `MIX_ENV` + `mix.lock` hash so dev (`MIX_ENV=dev`) and test (`MIX_ENV=test`) `_build` artifacts never collide or cause spurious recompiles.
-- [ ] **CACHE-02**: A dedicated `build` job compiles deps + app once (`MIX_ENV=test`, warnings-as-errors) and publishes `_build/test` + `deps` as an artifact that every downstream job restores instead of recompiling.
+- [x] **CACHE-01**: CI cache keys are scoped by OS + OTP + Elixir + `MIX_ENV` + `mix.lock` hash so dev (`MIX_ENV=dev`) and test (`MIX_ENV=test`) `_build` artifacts never collide or cause spurious recompiles.
+- [x] **CACHE-02**: A dedicated `build` job compiles deps + app once (`MIX_ENV=test`, warnings-as-errors) and publishes `_build/test` + `deps` as an artifact that every downstream job restores instead of recompiling.
 
 ### Knowledge Lane (KNOW)
 
@@ -74,8 +74,8 @@ Phase numbering continues the live epoch (v2.12=02–04 … v3.0=11–17, v2.17=
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CACHE-01 | Phase 23 | Pending |
-| CACHE-02 | Phase 23 | Pending |
+| CACHE-01 | Phase 23 | Complete |
+| CACHE-02 | Phase 23 | Complete |
 | KNOW-01 | Phase 24 | Pending |
 | PAR-01 | Phase 25 | Pending |
 | PAR-02 | Phase 25 | Pending |

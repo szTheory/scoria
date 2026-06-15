@@ -21,7 +21,7 @@ Infra/docs-only milestone realizing **SEED-003**. Cut PR CI wall-clock from ~77 
 
 Node-24 actions modernization is **already shipped** (PR #10, merged) and is intentionally NOT a phase here.
 
-- [ ] **Phase 23: Cache correctness + build-once job** — env-scoped cache keys; a `build` job compiles once and shares `_build/test` + `deps` as an artifact to all downstream jobs.
+- [x] **Phase 23: Cache correctness + build-once job** — env-scoped cache keys; a `build` job compiles once and shares `_build/test` + `deps` as an artifact to all downstream jobs. — completed 2026-06-14
 - [ ] **Phase 24: Knowledge lane scope fix** — `--only knowledge` so the knowledge lane stops re-running the full suite (~−22m), same WAE bar, contract string unchanged.
 - [ ] **Phase 25: Lane parallelization + topology docs** — split heavy `verify / test` lanes into parallel `needs:` jobs with a fan-in `verify-summary`; preserve byte-order contract + `ci-gate` name; topology docs move in lockstep.
 - [ ] **Phase 26: Full-suite partition sharding** — `mix test --partitions 4` across a runner matrix on the shared build artifact, isolated DB per shard, zero coverage loss.
@@ -95,7 +95,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
   4. The lane contract tests (`ci_policy_contract_test`, `verification_lanes_test`) remain green — no command string moved out of pinned byte-order.
 **Plans**: 1 plan
 Plans:
-- [ ] 23-01-PLAN.md — env+version-scoped cache keys, build-once job (tar artifact), test-job restore, contract-test extensions
+- [x] 23-01-PLAN.md — env+version-scoped cache keys, build-once job (tar artifact), test-job restore, contract-test extensions
 
 ### Phase 24: Knowledge lane scope fix
 **Goal**: The knowledge verification lane runs only its knowledge-tagged tests instead of re-running the entire suite, reclaiming ~22 min with zero coverage loss and an unchanged merge bar.
@@ -158,7 +158,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 23. Cache correctness + build-once job | v3.1 | 0/0 | Not started | - |
+| 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete   | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 0/0 | Not started | - |
 | 25. Lane parallelization + topology docs | v3.1 | 0/0 | Not started | - |
 | 26. Full-suite partition sharding | v3.1 | 0/0 | Not started | - |
