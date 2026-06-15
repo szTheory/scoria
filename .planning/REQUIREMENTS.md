@@ -16,7 +16,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Knowledge Lane (KNOW)
 
-- [ ] **KNOW-01**: The knowledge verification lane runs only knowledge-tagged tests (e.g. `--only knowledge`), not the full suite, while preserving the same warnings-as-errors bar and the `mix test.knowledge --warnings-as-errors` contract string.
+- [x] **KNOW-01**: The knowledge verification lane runs only knowledge-tagged tests (e.g. `--only knowledge`), not the full suite, while preserving the same warnings-as-errors bar and the `mix test.knowledge --warnings-as-errors` contract string.
 
 ### Lane Parallelization (PAR)
 
@@ -76,7 +76,7 @@ Phase numbering continues the live epoch (v2.12=02–04 … v3.0=11–17, v2.17=
 |-------------|-------|--------|
 | CACHE-01 | Phase 23 | Complete |
 | CACHE-02 | Phase 23 | Complete |
-| KNOW-01 | Phase 24 | Pending |
+| KNOW-01 | Phase 24 | Complete |
 | PAR-01 | Phase 25 | Pending |
 | PAR-02 | Phase 25 | Pending |
 | PAR-03 | Phase 25 | Pending |

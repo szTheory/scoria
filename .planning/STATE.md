@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: CI/CD Velocity
-status: executing
-last_updated: "2026-06-15T20:57:33.506Z"
-last_activity: 2026-06-15 -- Phase 24 execution started
+status: verifying
+last_updated: "2026-06-15T21:02:37.274Z"
+last_activity: 2026-06-15 -- Phase 24 plan 01 complete (knowledge lane scoped)
 progress:
   total_phases: 26
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 2
-  completed_plans: 1
-  percent: 4
+  completed_plans: 2
+  percent: 8
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: `.planning/PROJECT.md` (updated 2026-06-14 after v3.0 Control Room mileston
 
 Phase: 24 (knowledge-lane-scope-fix) — EXECUTING
 Plan: 1 of 1
-Status: Executing Phase 24
-Last activity: 2026-06-15 -- Phase 24 execution started
+Status: Phase complete — ready for verification
+Last activity: 2026-06-15
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Last activity: 2026-06-15 -- Phase 24 execution started
 
 ### Decisions (current-milestone summary; full log in PROJECT.md Key Decisions)
 
+- Phase 24 (KNOW-01): `--only knowledge` injected inside `scoria.test.knowledge.ex`; CI YAML and VerificationLanes records unchanged; Layer 2 `after_suite total > 0` guard env-gated; D-03 contract test ratchets file set and `use Scoria.KnowledgeCase` choke point — 2026-06-15
 - v3.0 keeps the custom token-first scoped CSS architecture; `ui.ex` is the enforced token gateway (no Tailwind/BEM switch) — 2026-06-03
 - v3.0 is UI-only: reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data — 2026-06-03
 - Screenshot+critique harness is committed dev-only tooling, not merge-blocking CI (consistent with LiveViewTest-only posture) — 2026-06-03
@@ -71,6 +72,7 @@ Items acknowledged and deferred at milestone close on 2026-06-14:
 - `docker-dx-fleet-hardening` is future work (Docker DX / fleet hardening). Todo file retained in `.planning/todos/`.
 
 | Phase 23-cache-correctness-build-once-job P23-01 | multi-session | 3 tasks | 3 files |
+| Phase 24-knowledge-lane-scope-fix P24-01 | 10 min | 2 tasks | 3 files |
 
 ### v3.0 tech debt carried forward (from milestone audit)
 

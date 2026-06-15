@@ -109,7 +109,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 24-01-PLAN.md — scope knowledge lane to --only knowledge inside the mix task, add the after_suite zero-test guard, and add the derived-file-set coverage contract test (D-01/D-02/D-03)
+- [x] 24-01-PLAN.md — scope knowledge lane to --only knowledge inside the mix task, add the after_suite zero-test guard, and add the derived-file-set coverage contract test (D-01/D-02/D-03)
 
 ### Phase 25: Lane parallelization + topology docs
 **Goal**: The heavy serial `verify / test` job fans out into parallel `needs:`-jobs gated by one stable fan-in check, the canonical lane order is preserved as YAML byte-order, and the docs that the contract tests assert describe the topology move in the same commit.
@@ -162,7 +162,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
-| 24. Knowledge lane scope fix | v3.1 | 0/0 | Not started | - |
+| 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete   | 2026-06-15 |
 | 25. Lane parallelization + topology docs | v3.1 | 0/0 | Not started | - |
 | 26. Full-suite partition sharding | v3.1 | 0/0 | Not started | - |
 | 27. CI determinism & flake elimination | v3.1 | 0/0 | Not started | - |
