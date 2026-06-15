@@ -22,7 +22,7 @@ Infra/docs-only milestone realizing **SEED-003**. Cut PR CI wall-clock from ~77 
 Node-24 actions modernization is **already shipped** (PR #10, merged) and is intentionally NOT a phase here.
 
 - [x] **Phase 23: Cache correctness + build-once job** — env-scoped cache keys; a `build` job compiles once and shares `_build/test` + `deps` as an artifact to all downstream jobs. — completed 2026-06-14
-- [ ] **Phase 24: Knowledge lane scope fix** — `--only knowledge` so the knowledge lane stops re-running the full suite (~−22m), same WAE bar, contract string unchanged.
+- [x] **Phase 24: Knowledge lane scope fix** — `--only knowledge` so the knowledge lane stops re-running the full suite (~−22m), same WAE bar, contract string unchanged. (completed 2026-06-15)
 - [ ] **Phase 25: Lane parallelization + topology docs** — split heavy `verify / test` lanes into parallel `needs:` jobs with a fan-in `verify-summary`; preserve byte-order contract + `ci-gate` name; topology docs move in lockstep.
 - [ ] **Phase 26: Full-suite partition sharding** — `mix test --partitions 4` across a runner matrix on the shared build artifact, isolated DB per shard, zero coverage loss.
 - [ ] **Phase 27: CI determinism & flake elimination** — fix the fixed-host-port Postgres flake, remove the leftover TEMP e2e diagnostic, document a retry-vs-fix policy.
@@ -162,7 +162,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
-| 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete   | 2026-06-15 |
+| 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 25. Lane parallelization + topology docs | v3.1 | 0/0 | Not started | - |
 | 26. Full-suite partition sharding | v3.1 | 0/0 | Not started | - |
 | 27. CI determinism & flake elimination | v3.1 | 0/0 | Not started | - |
