@@ -4,7 +4,7 @@ This guide is for **maintainers** — CI topology, release operations, warning r
 
 ## CI gate map {#ci-gate-map-maintainers}
 
-GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **`test`** (`needs: policy`, pgvector Postgres on port 55432) for canonical closeout. A **`ci-gate`** umbrella job fails if either lane fails — branch protection and release automerge require **CI / ci-gate**. Executable jobs live in `.github/workflows/ci-verify.yml` (reusable SSOT); `.github/workflows/ci.yml` is the PR entrypoint. Lane order is enforced by `Scoria.VerificationLanes` and `test/scoria/ci_policy_contract_test.exs`.
+GitHub Actions runs parallel verify jobs: **`policy`** (no Postgres) → **`build`** → `{ test, ratchet, knowledge, connector }` (each `needs: build`) → **`verify-summary`** fan-in. A **`ci-gate`** umbrella job in `ci.yml` fails if the verify workflow fails — branch protection and release automerge require **CI / ci-gate**. Executable jobs live in `.github/workflows/ci-verify.yml` (reusable SSOT); `.github/workflows/ci.yml` is the PR entrypoint. Lane order is enforced by `Scoria.VerificationLanes` and `test/scoria/ci_policy_contract_test.exs`.
 
 **Policy job (fail cheap, no database):**
 
@@ -13,17 +13,39 @@ GitHub Actions runs two jobs in order: **`policy`** (no Postgres) first, then **
 3. `mix compile --warnings-as-errors` — compile WAE
 4. Lane-contract WAE: `mix test --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
 
-**Test job closeout (Postgres on 55432):**
+**Parallel verify jobs (each needs: build):**
+
+Topology: `policy → build → { test, ratchet, knowledge, connector } → verify-summary`
+
+The `verify-summary` fan-in aggregates all parallel lane results; any non-success (including skipped) fails the workflow.
+
+| Job | Local command |
+|-----|---------------|
+| `test` | `SCORIA_DB_PORT=55432 mix test --warnings-as-errors` |
+| `ratchet` | `MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs` |
+| `knowledge` | `SCORIA_DB_PORT=55432 mix test.knowledge --warnings-as-errors` |
+| `connector` | `SCORIA_DB_PORT=55432 mix test.connector --warnings-as-errors` |
+
+**`test` job (Postgres on 55432):**
 
 1. `MIX_ENV=dev mix scoria.release_preview` — release/docs lane (dev only)
 2. `mix ecto.create` + `mix ecto.migrate`
 3. `mix test.adoption` → `mix test.runtime_to_handoff` — behavioral closeout lanes
 4. `mix test.semantic_fast_path --warnings-as-errors` — semantic lane WAE after closeout
-5. Ratchet hygiene: `mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
-6. `mix test --warnings-as-errors` — full-suite WAE
-7. `mix test.knowledge --warnings-as-errors` — optional knowledge lane WAE
-8. `mix test.connector --warnings-as-errors` — remote connector lane WAE after knowledge
-9. `mix scoria.test.support_copilot` — advisory support-copilot gallery lane (not closeout)
+5. `mix test --warnings-as-errors` — full-suite WAE
+
+**`ratchet` job (no Postgres):**
+
+- `MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
+
+**`knowledge` job (Postgres on 55432):**
+
+- `mix test.knowledge --warnings-as-errors` — optional knowledge lane WAE
+
+**`connector` job (Postgres on 55432):**
+
+- `mix test.connector --warnings-as-errors` — remote connector lane WAE
+- `mix scoria.test.support_copilot` — advisory support-copilot gallery lane (tail step; not closeout)
 
 **Verification lanes in PR CI**
 

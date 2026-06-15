@@ -70,26 +70,76 @@ defmodule Scoria.VerificationLanesTest do
     adoption = VerificationLanes.ci_command(:adoption)
     runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
 
-    assert ci_workflow =~ release_preview
-    assert ci_workflow =~ adoption
-    assert ci_workflow =~ runtime_to_handoff
+    # Extract the test: job body to scope intra-job step order assertions
+    test_body =
+      case :binary.match(ci_workflow, "\n  test:") do
+        {start, _} ->
+          slice = String.slice(ci_workflow, start, byte_size(ci_workflow))
 
-    assert index_of(ci_workflow, release_preview) < index_of(ci_workflow, adoption)
-    assert index_of(ci_workflow, adoption) < index_of(ci_workflow, runtime_to_handoff)
+          case :binary.match(slice, "\n  ratchet:") do
+            {stop, _} -> String.slice(slice, 0, stop)
+            :nomatch -> slice
+          end
+
+        :nomatch ->
+          flunk("expected test: job in ci-verify.yml")
+      end
+
+    # Intra-test: step order (real sequential ordering — these are pinned)
+    assert test_body =~ release_preview
+    assert test_body =~ adoption
+    assert test_body =~ runtime_to_handoff
+
+    assert index_of(test_body, release_preview) < index_of(test_body, adoption)
+    assert index_of(test_body, adoption) < index_of(test_body, runtime_to_handoff)
 
     semantic = "mix test.semantic_fast_path --warnings-as-errors"
 
-    assert ci_workflow =~ semantic
-    assert index_of(ci_workflow, runtime_to_handoff) < index_of(ci_workflow, semantic)
-    assert index_of(ci_workflow, semantic) < index_of(ci_workflow, "run: mix test --warnings-as-errors")
+    assert test_body =~ semantic
+    assert index_of(test_body, runtime_to_handoff) < index_of(test_body, semantic)
+    assert index_of(test_body, semantic) < index_of(test_body, "run: mix test --warnings-as-errors")
 
+    # Cross-job parallel-shape assertions (knowledge, connector, gallery are separate jobs)
+    # knowledge is a parallel job with needs: build
+    assert ci_workflow =~ "mix test.knowledge --warnings-as-errors"
+
+    knowledge_body =
+      case :binary.match(ci_workflow, "\n  knowledge:") do
+        {start, _} ->
+          slice = String.slice(ci_workflow, start, byte_size(ci_workflow))
+
+          case :binary.match(slice, "\n  connector:") do
+            {stop, _} -> String.slice(slice, 0, stop)
+            :nomatch -> slice
+          end
+
+        :nomatch ->
+          flunk("expected knowledge: job in ci-verify.yml")
+      end
+
+    assert knowledge_body =~ "needs: build"
+
+    # connector is a parallel job with needs: build; gallery is a tail step inside connector
     connector = VerificationLanes.ci_command(:connector)
     gallery = VerificationLanes.ci_command(:support_copilot_gallery)
 
+    connector_body =
+      case :binary.match(ci_workflow, "\n  connector:") do
+        {start, _} ->
+          slice = String.slice(ci_workflow, start, byte_size(ci_workflow))
+
+          case :binary.match(slice, "\n  verify-summary:") do
+            {stop, _} -> String.slice(slice, 0, stop)
+            :nomatch -> slice
+          end
+
+        :nomatch ->
+          flunk("expected connector: job in ci-verify.yml")
+      end
+
+    assert connector_body =~ "needs: build"
     assert ci_workflow =~ connector
-    assert index_of(ci_workflow, "mix test.knowledge --warnings-as-errors") <
-             index_of(ci_workflow, connector)
-    assert index_of(ci_workflow, connector) < index_of(ci_workflow, gallery)
+    assert index_of(connector_body, connector) < index_of(connector_body, gallery)
   end
 
   defp index_of(content, needle) do

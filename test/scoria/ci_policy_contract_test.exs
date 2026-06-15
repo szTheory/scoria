@@ -151,29 +151,45 @@ defmodule Scoria.CiPolicyContractTest do
              index_of(policy_section, "Verify lane-contract tests with warnings as errors")
   end
 
-  test "test job depends on policy and preserves closeout chain order" do
+  test "policy job compiles with MIX_ENV: test (WR-01 pin)" do
     ci_verify = File.read!(@ci_verify)
+    [policy_section, _test_section] = split_jobs(ci_verify)
+
+    assert policy_section =~ "MIX_ENV: test"
+  end
+
+  test "test job depends on build and preserves closeout chain order" do
+    ci_verify = File.read!(@ci_verify)
+    blocks = job_blocks(ci_verify)
+    test_body = Map.fetch!(blocks, "test")
 
     release_preview = VerificationLanes.ci_command(:release_preview)
     adoption = VerificationLanes.ci_command(:adoption)
     runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
 
-    assert ci_verify =~ "needs: policy"
-    assert ci_verify =~ release_preview
-    assert ci_verify =~ adoption
-    assert ci_verify =~ runtime_to_handoff
+    assert test_body =~ "needs: build"
+    assert test_body =~ release_preview
+    assert test_body =~ adoption
+    assert test_body =~ runtime_to_handoff
 
-    assert index_of(ci_verify, release_preview) < index_of(ci_verify, adoption)
-    assert index_of(ci_verify, adoption) < index_of(ci_verify, runtime_to_handoff)
+    assert index_of(test_body, release_preview) < index_of(test_body, adoption)
+    assert index_of(test_body, adoption) < index_of(test_body, runtime_to_handoff)
   end
 
-  test "postgres service is configured only for the test job" do
+  test "postgres service is configured only for test, knowledge, and connector jobs" do
     ci_verify = File.read!(@ci_verify)
-    [policy_section, test_section] = split_jobs(ci_verify)
+    blocks = job_blocks(ci_verify)
 
-    refute policy_section =~ "services:"
-    assert test_section =~ "services:"
-    assert test_section =~ "postgres"
+    # Jobs that must have Postgres services
+    assert Map.fetch!(blocks, "test") =~ "services:"
+    assert Map.fetch!(blocks, "knowledge") =~ "services:"
+    assert Map.fetch!(blocks, "connector") =~ "services:"
+
+    # Jobs that must NOT have Postgres services
+    refute Map.fetch!(blocks, "policy") =~ "services:"
+    refute Map.fetch!(blocks, "build") =~ "services:"
+    refute Map.fetch!(blocks, "ratchet") =~ "services:"
+    refute Map.fetch!(blocks, "verify-summary") =~ "services:"
   end
 
   test "WARN-06 documents WarningRatchet maintainer commands" do
@@ -184,57 +200,102 @@ defmodule Scoria.CiPolicyContractTest do
     assert length(Scoria.WarningRatchet.high_signal_wae_paths()) > 0
   end
 
-  test "test job runs semantic lane after runtime_to_handoff and before ratchet hygiene" do
+  test "test job runs semantic lane after runtime_to_handoff" do
     ci_verify = File.read!(@ci_verify)
-    [_policy_section, test_section] = split_jobs(ci_verify)
+    blocks = job_blocks(ci_verify)
+    test_body = Map.fetch!(blocks, "test")
     runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
 
-    assert test_section =~ @semantic_lane
-    assert index_of(test_section, runtime_to_handoff) < index_of(test_section, @semantic_lane)
+    assert test_body =~ @semantic_lane
+    assert index_of(test_body, runtime_to_handoff) < index_of(test_body, @semantic_lane)
 
-    assert index_of(test_section, @semantic_lane) <
-             index_of(
-               test_section,
-               "MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs"
-             )
+    # Semantic precedes full-suite WAE inside test: job
+    assert index_of(test_body, @semantic_lane) <
+             index_of(test_body, "run: mix test --warnings-as-errors")
+
+    # ratchet is a separate parallel job (not a step in test:)
+    ratchet_body = Map.fetch!(blocks, "ratchet")
+    assert ratchet_body =~ "needs: build"
+    assert ratchet_body =~ "tmp_preflight_test.exs"
+    refute test_body =~ "tmp_preflight_test.exs"
   end
 
-  test "test job runs full suite WAE after closeout lanes and before knowledge WAE lane" do
+  test "test job runs full suite WAE after closeout lanes; knowledge is a parallel job" do
     ci_verify = File.read!(@ci_verify)
-    [_policy_section, test_section] = split_jobs(ci_verify)
+    blocks = job_blocks(ci_verify)
+    test_body = Map.fetch!(blocks, "test")
     runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
 
-    assert test_section =~ "run: mix test --warnings-as-errors"
-    refute test_section =~ "mix scoria.warning_ratchet.test --warnings-as-errors"
-    assert index_of(test_section, runtime_to_handoff) <
-             index_of(test_section, "run: mix test --warnings-as-errors")
+    assert test_body =~ "run: mix test --warnings-as-errors"
+    refute test_body =~ "mix scoria.warning_ratchet.test --warnings-as-errors"
+    assert index_of(test_body, runtime_to_handoff) <
+             index_of(test_body, "run: mix test --warnings-as-errors")
 
-    assert index_of(test_section, "run: mix test --warnings-as-errors") <
-             index_of(test_section, "mix test.knowledge --warnings-as-errors")
+    # knowledge is a separate parallel job with needs: build
+    knowledge_body = Map.fetch!(blocks, "knowledge")
+    assert knowledge_body =~ "needs: build"
+    assert knowledge_body =~ "mix test.knowledge --warnings-as-errors"
+    # test: job does NOT contain the knowledge command
+    refute test_body =~ "mix test.knowledge --warnings-as-errors"
   end
 
-  test "test job runs connector lane after knowledge WAE and before gallery lane" do
+  test "connector lane is a parallel job with connector before gallery" do
     ci_verify = File.read!(@ci_verify)
-    [_policy_section, test_section] = split_jobs(ci_verify)
+    blocks = job_blocks(ci_verify)
+    connector_body = Map.fetch!(blocks, "connector")
     connector_cmd = VerificationLanes.ci_command(:connector)
-    knowledge_cmd = "mix test.knowledge --warnings-as-errors"
     gallery_cmd = VerificationLanes.ci_command(:support_copilot_gallery)
 
-    assert test_section =~ connector_cmd
-    assert index_of(test_section, knowledge_cmd) < index_of(test_section, connector_cmd)
-    assert index_of(test_section, connector_cmd) < index_of(test_section, gallery_cmd)
+    assert connector_body =~ "needs: build"
+    assert index_of(connector_body, connector_cmd) < index_of(connector_body, gallery_cmd)
     refute :connector in VerificationLanes.closeout_order()
   end
 
-  test "test job runs support copilot gallery lane after knowledge WAE and outside closeout order" do
+  test "gallery lane runs inside connector job after connector command" do
     ci_verify = File.read!(@ci_verify)
-    [_policy_section, test_section] = split_jobs(ci_verify)
+    blocks = job_blocks(ci_verify)
+    connector_body = Map.fetch!(blocks, "connector")
+    connector_cmd = VerificationLanes.ci_command(:connector)
     gallery_cmd = VerificationLanes.ci_command(:support_copilot_gallery)
-    knowledge_cmd = "mix test.knowledge --warnings-as-errors"
 
-    assert test_section =~ gallery_cmd
-    assert index_of(test_section, knowledge_cmd) < index_of(test_section, gallery_cmd)
+    assert connector_body =~ gallery_cmd
+    assert index_of(connector_body, connector_cmd) < index_of(connector_body, gallery_cmd)
     refute :support_copilot_gallery in VerificationLanes.closeout_order()
+  end
+
+  test "verify-summary fan-in wires every parallel verify lane (derived)" do
+    ci_verify = File.read!(@ci_verify)
+    blocks = job_blocks(ci_verify)
+
+    # Derive: all top-level jobs (excluding policy, build, verify-summary) that have needs: build
+    parallel_lanes =
+      blocks
+      |> Enum.filter(fn {name, body} ->
+        name not in ["policy", "build", "verify-summary"] and body =~ "needs: build"
+      end)
+      |> Enum.map(fn {name, _} -> name end)
+      |> MapSet.new()
+
+    # Non-empty guard: a broken regex cannot vacuously pass
+    assert MapSet.size(parallel_lanes) > 0,
+           "expected at least one parallel verify lane with needs: build; regex may be broken"
+
+    # Parse verify-summary.needs
+    verify_summary_body = Map.fetch!(blocks, "verify-summary")
+    needs_match = Regex.run(~r/needs:\s*\[([^\]]+)\]/, verify_summary_body)
+
+    verify_summary_needs =
+      case needs_match do
+        [_, needs_str] ->
+          needs_str |> String.split(",") |> Enum.map(&String.trim/1) |> MapSet.new()
+
+        nil ->
+          flunk("verify-summary job has no needs: [...] block")
+      end
+
+    # Subset assertion: every parallel lane is wired into verify-summary
+    assert MapSet.subset?(parallel_lanes, verify_summary_needs),
+           "unwired lanes: #{inspect(MapSet.difference(parallel_lanes, verify_summary_needs))}"
   end
 
   test "maintainer guide documents Hex release section and README links anchor" do
@@ -328,6 +389,10 @@ defmodule Scoria.CiPolicyContractTest do
 
     assert policy_section =~ "# policy:"
     assert ci_verify =~ "# test:"
+    assert ci_verify =~ "# ratchet:"
+    assert ci_verify =~ "# knowledge:"
+    assert ci_verify =~ "# connector:"
+    assert ci_verify =~ "# verify-summary:"
   end
 
   test "maintainer gate map pins v2.10 PR vs release proof depth" do
@@ -353,7 +418,11 @@ defmodule Scoria.CiPolicyContractTest do
     gate_map = section_after(maintainer_docs, "## CI gate map")
 
     assert gate_map =~ "Policy job"
-    assert gate_map =~ "Test job closeout"
+    assert gate_map =~ "Parallel verify jobs"
+    assert gate_map =~ "ratchet"
+    assert gate_map =~ "knowledge"
+    assert gate_map =~ "connector"
+    assert gate_map =~ "verify-summary"
     assert gate_map =~ "Local parity"
     assert gate_map =~ "Ratchet is maintainer-only"
     assert gate_map =~ "When CI fails, run the matching maintainer command next"
@@ -439,6 +508,38 @@ defmodule Scoria.CiPolicyContractTest do
       :nomatch ->
         flunk("expected policy and test jobs in ci-verify.yml")
     end
+  end
+
+  defp job_blocks(content) do
+    # Match all top-level job names (2-space indent, word chars + hyphens, followed by colon)
+    job_names =
+      Regex.scan(~r/^  ([\w-]+):/m, content)
+      |> Enum.map(&Enum.at(&1, 1))
+
+    Enum.reduce(Enum.zip(job_names, tl(job_names) ++ [nil]), %{}, fn {job, next_job}, acc ->
+      start_marker = "\n  #{job}:"
+      end_marker = if next_job, do: "\n  #{next_job}:", else: nil
+
+      body =
+        case :binary.match(content, start_marker) do
+          {start, _} ->
+            slice = String.slice(content, start, byte_size(content))
+
+            if end_marker do
+              case :binary.match(slice, end_marker) do
+                {stop, _} -> String.slice(slice, 0, stop)
+                :nomatch -> slice
+              end
+            else
+              slice
+            end
+
+          :nomatch ->
+            ""
+        end
+
+      Map.put(acc, job, body)
+    end)
   end
 
   defp section_after(content, heading) do
