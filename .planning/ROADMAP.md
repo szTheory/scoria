@@ -158,7 +158,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete   | 2026-06-15 |
+| 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 0/0 | Not started | - |
 | 25. Lane parallelization + topology docs | v3.1 | 0/0 | Not started | - |
 | 26. Full-suite partition sharding | v3.1 | 0/0 | Not started | - |
