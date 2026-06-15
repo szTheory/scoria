@@ -106,7 +106,10 @@ Plans:
   2. The same warnings-as-errors bar holds and the literal `mix test.knowledge --warnings-as-errors` contract string is unchanged in `ci-verify.yml`.
   3. Knowledge coverage is preserved: every knowledge-tagged test that ran before still runs (no `:knowledge` test silently excluded).
   4. `ci_policy_contract_test` + `verification_lanes_test` stay green (the command-string contract is unaffected by the internal arg change).
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 24-01-PLAN.md — scope knowledge lane to --only knowledge inside the mix task, add the after_suite zero-test guard, and add the derived-file-set coverage contract test (D-01/D-02/D-03)
 
 ### Phase 25: Lane parallelization + topology docs
 **Goal**: The heavy serial `verify / test` job fans out into parallel `needs:`-jobs gated by one stable fan-in check, the canonical lane order is preserved as YAML byte-order, and the docs that the contract tests assert describe the topology move in the same commit.
