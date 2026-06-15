@@ -121,7 +121,10 @@ Plans:
   3. The `CI / ci-gate` required-check name is unchanged (`ci.yml`'s `ci-gate` still `needs: [verify, e2e]`), so branch protection needs no edit.
   4. `Scoria.VerificationLanes` byte-order/closeout-order contract tests (`ci_policy_contract_test`, `verification_lanes_test`) stay green — every canonical lane command string remains in its pinned order with one `test:` job carrying Postgres and no `services:` before it.
   5. `docs/MAINTAINERS.md`, `docs/operator_verification.md`, and `README` describe the new parallel topology, and any "docs describe topology" contract test stays green (docs committed in lockstep with the YAML change).
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 25-01-PLAN.md — split ci-verify.yml into parallel {test, ratchet, knowledge, connector} + verify-summary fan-in; refactor both contract tests to parallel-shape + derived fan-in completeness; fold WR-01/WR-02/WR-03
+- [ ] 25-02-PLAN.md — update MAINTAINERS.md / operator_verification.md / README to the parallel topology and the docs-topology contract asserts (lockstep)
 **UI hint**: no
 
 ### Phase 26: Full-suite partition sharding
@@ -163,7 +166,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
-| 25. Lane parallelization + topology docs | v3.1 | 0/0 | Not started | - |
+| 25. Lane parallelization + topology docs | v3.1 | 0/2 | Not started | - |
 | 26. Full-suite partition sharding | v3.1 | 0/0 | Not started | - |
 | 27. CI determinism & flake elimination | v3.1 | 0/0 | Not started | - |
 | 28. DX `mix ci` alias + velocity closeout | v3.1 | 0/0 | Not started | - |
