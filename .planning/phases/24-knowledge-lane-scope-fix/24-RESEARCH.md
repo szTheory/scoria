@@ -502,7 +502,7 @@ This string is asserted in 4 places in contract tests. It is not touched by this
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Optional: pin `mix test.knowledge` in `scoria.test_knowledge_test.exs`**
    - What we know: The existing test does not assert `VerificationLanes.command(:knowledge)`. The adoption test does.
