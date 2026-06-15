@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 
-# Reusable CI SSOT: policy (fail cheap, no Postgres) → build (compile once) → test (canonical closeout + full WAE).
+# Reusable CI SSOT: policy → build → { test, ratchet, knowledge, connector } → verify-summary.
 # Consumed by ci.yml, release-please verify, and hex-publish recovery workflows.
 # Maintainer narrative: docs/operator_verification.md — CI gate map (maintainers).
 # Executable order SSOT: Scoria.VerificationLanes + test/scoria/ci_policy_contract_test.exs.
@@ -15,6 +15,8 @@ jobs:
   # policy: baseline expiry + compile WAE + lane-contract tests (no Postgres)
   policy:
     runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
 
     steps:
       - uses: actions/checkout@v6
@@ -97,7 +99,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  # test: release_preview → closeout lanes → full-suite WAE → knowledge lane
+  # test: release_preview → closeout lanes → semantic → full-suite WAE
   test:
     runs-on: ubuntu-latest
     needs: build
@@ -153,6 +155,7 @@ jobs:
       - name: Install phx_new archive for host consumer proof
         run: mix archive.install hex phx_new --force
 
+      # DB-prep: keep in sync with sibling parallel jobs
       - name: Prepare database
         run: |
           mix ecto.create
@@ -178,17 +181,176 @@ jobs:
       - name: Run semantic fast-path lane
         run: mix test.semantic_fast_path --warnings-as-errors
 
-      - name: Verify maintainer ratchet hygiene chain
-        run: MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs
-
       - name: Run tests
         run: mix test --warnings-as-errors
 
+  # ratchet: warning ratchet hygiene (no Postgres, no DB-prep)
+  ratchet:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Erlang and Elixir
+        id: beam
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Download compiled artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: build-test-env
+
+      - name: Unpack compiled artifact (restores exact mtimes)
+        run: tar -xzf build-test-env.tar.gz
+
+      - name: Install dependencies (no-op when deps/ complete)
+        run: mix deps.get
+
+      - name: Verify maintainer ratchet hygiene chain
+        run: MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs
+
+  # knowledge: knowledge lane WAE (Postgres, full DB-prep)
+  knowledge:
+    runs-on: ubuntu-latest
+    needs: build
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scoria_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d scoria_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MIX_ENV: test
+      SCORIA_DB_HOST: localhost
+      SCORIA_DB_PORT: 55432
+      SCORIA_DB_USERNAME: postgres
+      SCORIA_DB_PASSWORD: postgres
+      SCORIA_DB_NAME: scoria_test
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Erlang and Elixir
+        id: beam
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Download compiled artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: build-test-env
+
+      - name: Unpack compiled artifact (restores exact mtimes)
+        run: tar -xzf build-test-env.tar.gz
+
+      - name: Install dependencies (no-op when deps/ complete)
+        run: mix deps.get
+
+      # DB-prep: keep in sync with sibling parallel jobs
+      - name: Prepare database
+        run: |
+          mix ecto.create
+          mix ecto.migrate --to 20260511000300
+          mix eval 'Scoria.TestSupport.Migrations.migrate_knowledge!()'
+          mix ecto.migrate
+
       - name: Run knowledge lane
         run: mix test.knowledge --warnings-as-errors
+
+  # connector: connector lane WAE + advisory gallery tail step (Postgres, full DB-prep)
+  connector:
+    runs-on: ubuntu-latest
+    needs: build
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scoria_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d scoria_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MIX_ENV: test
+      SCORIA_DB_HOST: localhost
+      SCORIA_DB_PORT: 55432
+      SCORIA_DB_USERNAME: postgres
+      SCORIA_DB_PASSWORD: postgres
+      SCORIA_DB_NAME: scoria_test
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Erlang and Elixir
+        id: beam
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Download compiled artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: build-test-env
+
+      - name: Unpack compiled artifact (restores exact mtimes)
+        run: tar -xzf build-test-env.tar.gz
+
+      - name: Install dependencies (no-op when deps/ complete)
+        run: mix deps.get
+
+      # DB-prep: keep in sync with sibling parallel jobs
+      - name: Prepare database
+        run: |
+          mix ecto.create
+          mix ecto.migrate --to 20260511000300
+          mix eval 'Scoria.TestSupport.Migrations.migrate_knowledge!()'
+          mix ecto.migrate
 
       - name: Run connector lane
         run: mix test.connector --warnings-as-errors
 
       - name: Run support copilot gallery lane (advisory)
         run: mix scoria.test.support_copilot
+
+  # verify-summary: name-agnostic fan-in; skipped = fail
+  verify-summary:
+    runs-on: ubuntu-latest
+    needs: [policy, build, test, ratchet, knowledge, connector]
+    if: always()
+    steps:
+      - name: Assert all parallel verify lanes succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          set -euo pipefail
+          for result in $RESULTS; do
+            if [[ "$result" != "success" ]]; then
+              echo "verify-summary failed: a parallel lane result was $result"
+              exit 1
+            fi
+          done
+          echo "verify-summary passed: all parallel lanes succeeded."
