@@ -115,6 +115,13 @@ None. All success criteria for this phase are mechanically verifiable:
 
 The sole item that requires a live GitHub run (parallel fan-out wall-clock actually reducing from ~77m toward ~12m) is explicitly declared out of automated scope in the phase's own VALIDATION.md: "live GitHub-scheduler parallel fan-out is verified manually on a PR after merge." This is a performance observation, not a correctness gap — the topology that enables it is fully verified.
 
+**UAT is automated (`25-UAT.md` → `verification: automated`).** The four `/gsd-verify-work`
+checkpoints are now machine-verified by `mix scoria.test.ci_trust` — zero human steps. Two
+assertions added to `ci_policy_contract_test.exs` close the only residual coverage gaps:
+"verify-summary fan-in fails on any non-success lane (if: always + skipped-as-failure)"
+(pins the load-bearing skipped-as-failure semantics) and "topology docs stay in lockstep…"
+(refutes the stale "Test job closeout" heading + pins the `ci-gate` branch-protection name).
+
 ---
 
 ## Gaps Summary

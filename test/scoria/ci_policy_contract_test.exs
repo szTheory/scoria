@@ -298,6 +298,30 @@ defmodule Scoria.CiPolicyContractTest do
            "unwired lanes: #{inspect(MapSet.difference(parallel_lanes, verify_summary_needs))}"
   end
 
+  test "verify-summary fan-in fails on any non-success lane (if: always + skipped-as-failure)" do
+    ci_verify = File.read!(@ci_verify)
+    body = Map.fetch!(job_blocks(ci_verify), "verify-summary")
+
+    # Runs even when a lane is skipped — otherwise a skipped lane would let the gate pass.
+    assert body =~ "if: always()"
+    # Aggregates every lane's result, not a hardcoded subset.
+    assert body =~ "join(needs.*.result"
+    # Load-bearing skipped-as-failure guard: anything other than "success" fails the gate.
+    assert body =~ ~s|!= "success"|
+    assert body =~ "exit 1"
+  end
+
+  test "topology docs stay in lockstep: stale heading gone, branch-protection gate name unchanged" do
+    # Docs-drift guard: the pre-parallel "Test job closeout" heading must stay removed
+    # from every adopter/maintainer-facing doc.
+    refute File.read!(@maintainer_docs) =~ "Test job closeout"
+    refute File.read!(@operator_docs) =~ "Test job closeout"
+
+    # Branch-protection gate name is unchanged: ci.yml still exposes the `ci-gate` required
+    # check, so the parallel restructure did not silently rename the protected status.
+    assert File.read!(@ci_entry) =~ "ci-gate"
+  end
+
   test "maintainer guide documents Hex release section and README links anchor" do
     maintainer_docs = File.read!(@maintainer_docs)
     readme = File.read!("README.md")
