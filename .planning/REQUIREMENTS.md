@@ -26,7 +26,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Suite Sharding (SHARD)
 
-- [ ] **SHARD-01**: The full ExUnit suite runs sharded via `mix test --partitions 4` across a runner matrix, each shard using an isolated database (already keyed by `MIX_TEST_PARTITION` in `config/test.exs`), with no coverage loss versus the single-job run.
+- [x] **SHARD-01**: The full ExUnit suite runs sharded via `mix test --partitions 4` across a runner matrix, each shard using an isolated database (already keyed by `MIX_TEST_PARTITION` in `config/test.exs`), with no coverage loss versus the single-job run.
 
 ### Determinism & Flake Elimination (FLAKE)
 
@@ -81,7 +81,7 @@ Phase numbering continues the live epoch (v2.12=02–04 … v3.0=11–17, v2.17=
 | PAR-02 | Phase 25 | Pending |
 | PAR-03 | Phase 25 | Pending |
 | DX-02 | Phase 25 | Pending |
-| SHARD-01 | Phase 26 | Pending |
+| SHARD-01 | Phase 26 | Complete |
 | FLAKE-01 | Phase 27 | Pending |
 | FLAKE-02 | Phase 27 | Pending |
 | FLAKE-03 | Phase 27 | Pending |

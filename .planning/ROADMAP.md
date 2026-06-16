@@ -159,7 +159,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 26-01-PLAN.md — add full-suite: 4-way matrix job + move WAE out of test: + fan-in wiring + after_suite guard; fix B-1/B-2/B-3 contract tests + D-03/D-04 structural pins; docs-as-contract topology updates (single atomic commit)
+- [x] 26-01-PLAN.md — add full-suite: 4-way matrix job + move WAE out of test: + fan-in wiring + after_suite guard; fix B-1/B-2/B-3 contract tests + D-03/D-04 structural pins; docs-as-contract topology updates (single atomic commit)
 
 ### Phase 27: CI determinism & flake elimination
 
@@ -196,7 +196,7 @@ Plans:
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 25. Lane parallelization + topology docs | v3.1 | 2/2 | Complete   | 2026-06-15 |
-| 26. Full-suite partition sharding | v3.1 | 0/0 | Not started | - |
+| 26. Full-suite partition sharding | v3.1 | 1/1 | Complete   | 2026-06-16 |
 | 27. CI determinism & flake elimination | v3.1 | 0/0 | Not started | - |
 | 28. DX `mix ci` alias + velocity closeout | v3.1 | 0/0 | Not started | - |
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete | 2026-06-04 |
