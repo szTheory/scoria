@@ -702,7 +702,7 @@ The derived test has a non-empty guard (line 280). Both use `Map.fetch!/2`.
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 ### OQ-1: YAML insertion position for `full-suite:` relative to `connector:` and `ratchet:`
 
