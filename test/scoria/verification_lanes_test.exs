@@ -97,7 +97,6 @@ defmodule Scoria.VerificationLanesTest do
 
     assert test_body =~ semantic
     assert index_of(test_body, runtime_to_handoff) < index_of(test_body, semantic)
-    assert index_of(test_body, semantic) < index_of(test_body, "run: mix test --warnings-as-errors")
 
     # Cross-job parallel-shape assertions (knowledge, connector, gallery are separate jobs)
     # knowledge is a parallel job with needs: build
@@ -140,6 +139,9 @@ defmodule Scoria.VerificationLanesTest do
     assert connector_body =~ "needs: build"
     assert ci_workflow =~ connector
     assert index_of(connector_body, connector) < index_of(connector_body, gallery)
+
+    # full-suite: matrix job carries the WAE step (moved out of test: job)
+    assert ci_workflow =~ "mix test --warnings-as-errors --partitions 4"
   end
 
   defp index_of(content, needle) do

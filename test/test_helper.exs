@@ -32,3 +32,15 @@ if System.get_env("SCORIA_TEST_INCLUDE_KNOWLEDGE") == "true" do
     end
   end)
 end
+
+# Partition zero-test guard: fires only during sharded CI runs (MIX_TEST_PARTITION set).
+# ExUnit exits 0 on a 0-test partition ({:noop,_} path) — this guard closes that hole.
+# Never fires in local or lane runs (MIX_TEST_PARTITION is absent outside full-suite: job).
+if System.get_env("MIX_TEST_PARTITION") do
+  ExUnit.after_suite(fn %{total: total} ->
+    if total == 0 do
+      IO.puts(:stderr, "[full-suite partition #{System.get_env("MIX_TEST_PARTITION")}] after_suite: 0 tests executed — possible partition misconfiguration")
+      exit({:shutdown, 1})
+    end
+  end)
+end

@@ -289,7 +289,7 @@ Local full-suite closeout uses pgvector Postgres on port 55432 (`SCORIA_DB_PORT=
 
 CI topology, release operations, warning ratchet commands, and installer contract proofs live in [`docs/MAINTAINERS.md`](MAINTAINERS.md#ci-gate-map-maintainers).
 
-**CI topology:** GitHub Actions runs parallel verify jobs after a shared build step: `policy → build → { test, ratchet, knowledge, connector } → verify-summary`. The `verify-summary` fan-in aggregates all parallel lane results; any non-success fails the workflow. The branch-protection check target (`CI / ci-gate`) remains unchanged.
+**CI topology:** GitHub Actions runs parallel verify jobs after a shared build step: `policy → build → { test, ratchet, knowledge, connector, full-suite[×4] } → verify-summary`. The `verify-summary` fan-in aggregates all parallel lane results; any non-success fails the workflow. The branch-protection check target (`CI / ci-gate`) remains unchanged.
 
 Deep installer contract proofs (`mix scoria.test.install_contract`) and tarball consumer triage are documented in the maintainer guide — not part of the adopter closeout chain.
 

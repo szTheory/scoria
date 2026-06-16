@@ -278,7 +278,7 @@ Current release: `0.1.1` on [Hex](https://hex.pm/packages/scoria). See [CHANGELO
 
 ## For maintainers
 
-- [Maintainer guide](docs/MAINTAINERS.md) — parallel CI topology (`policy → build → { test, ratchet, knowledge, connector } → verify-summary`), release operations, warning ratchet
+- [Maintainer guide](docs/MAINTAINERS.md) — parallel CI topology (`policy → build → { test, ratchet, knowledge, connector, full-suite[×4] } → verify-summary`), release operations, warning ratchet
 - [Operator verification](docs/operator_verification.md) — adopter verification ladder (also used as docs extra)
 
 For broader repo-health context outside the canonical lane proofs, run `mix test` locally or see the maintainer guide.

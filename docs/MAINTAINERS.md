@@ -15,7 +15,7 @@ GitHub Actions runs parallel verify jobs: **`policy`** (no Postgres) → **`buil
 
 **Parallel verify jobs (each needs: build):**
 
-Topology: `policy → build → { test, ratchet, knowledge, connector } → verify-summary`
+Topology: `policy → build → { test, ratchet, knowledge, connector, full-suite[×4] } → verify-summary`
 
 The `verify-summary` fan-in aggregates all parallel lane results; any non-success (including skipped) fails the workflow.
 
@@ -25,6 +25,7 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 | `ratchet` | `MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs` |
 | `knowledge` | `SCORIA_DB_PORT=55432 mix test.knowledge --warnings-as-errors` |
 | `connector` | `SCORIA_DB_PORT=55432 mix test.connector --warnings-as-errors` |
+| `full-suite (k/4)` | `SCORIA_DB_PORT=55432 MIX_TEST_PARTITION=k mix test --warnings-as-errors --partitions 4` |
 
 **`test` job (Postgres on 55432):**
 
@@ -32,7 +33,6 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 2. `mix ecto.create` + `mix ecto.migrate`
 3. `mix test.adoption` → `mix test.runtime_to_handoff` — behavioral closeout lanes
 4. `mix test.semantic_fast_path --warnings-as-errors` — semantic lane WAE after closeout
-5. `mix test --warnings-as-errors` — full-suite WAE
 
 **`ratchet` job (no Postgres):**
 
@@ -47,6 +47,12 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 - `mix test.connector --warnings-as-errors` — remote connector lane WAE
 - `mix scoria.test.support_copilot` — advisory support-copilot gallery lane (tail step; not closeout)
 
+**`full-suite` job (4-way matrix, Postgres on 55432):**
+
+- `mix test --warnings-as-errors --partitions 4` — sharded full suite WAE
+- Set `MIX_TEST_PARTITION=k` (no `SCORIA_DB_NAME`) — activates `scoria_testk` DB isolation
+- Failed shard `full-suite (2/4)` → `SCORIA_DB_PORT=55432 MIX_TEST_PARTITION=2 mix test --warnings-as-errors --partitions 4`
+
 **Verification lanes in PR CI**
 
 | Lane | Command | In PR CI? | Notes |
@@ -54,7 +60,7 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 | Default runtime | mix test.adoption | Yes | Tarball full overlay + content-revision upgrade |
 | Runtime-to-handoff | mix test.runtime_to_handoff | Yes | Closeout lane |
 | Semantic fast-path | mix test.semantic_fast_path --warnings-as-errors | Yes | Not in closeout order |
-| Optional knowledge | mix test.knowledge --warnings-as-errors | Yes | After full-suite WAE |
+| Optional knowledge | mix test.knowledge --warnings-as-errors | Yes | Parallel with full-suite (both need: build) |
 | Remote connector | mix test.connector --warnings-as-errors | Yes | After knowledge WAE; not in closeout order |
 | Support copilot gallery | mix scoria.test.support_copilot | Yes | Advisory; not in closeout order |
 
@@ -79,7 +85,7 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 - Policy: compile WAE failed → `mix compile --warnings-as-errors`
 - Policy: lane-contract WAE failed → `mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
 - Test: adoption or runtime_to_handoff failed → `SCORIA_DB_PORT=55432 mix test.adoption` or `mix test.runtime_to_handoff`
-- Test: full-suite WAE failed → `SCORIA_DB_PORT=55432 mix test --warnings-as-errors`
+- Full-suite (k/4): WAE failed → `SCORIA_DB_PORT=55432 MIX_TEST_PARTITION=k mix test --warnings-as-errors --partitions 4`
 
 ## Hex release & recovery {#hex-release--recovery-maintainers}
 

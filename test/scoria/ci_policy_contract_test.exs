@@ -184,6 +184,7 @@ defmodule Scoria.CiPolicyContractTest do
     assert Map.fetch!(blocks, "test") =~ "services:"
     assert Map.fetch!(blocks, "knowledge") =~ "services:"
     assert Map.fetch!(blocks, "connector") =~ "services:"
+    assert Map.fetch!(blocks, "full-suite") =~ "services:"
 
     # Jobs that must NOT have Postgres services
     refute Map.fetch!(blocks, "policy") =~ "services:"
@@ -209,9 +210,10 @@ defmodule Scoria.CiPolicyContractTest do
     assert test_body =~ @semantic_lane
     assert index_of(test_body, runtime_to_handoff) < index_of(test_body, @semantic_lane)
 
-    # Semantic precedes full-suite WAE inside test: job
-    assert index_of(test_body, @semantic_lane) <
-             index_of(test_body, "run: mix test --warnings-as-errors")
+    # full-suite: matrix job carries WAE (moved out of test: job)
+    full_suite_body = Map.fetch!(job_blocks(ci_verify), "full-suite")
+    assert full_suite_body =~ "mix test --warnings-as-errors"
+    assert full_suite_body =~ "--partitions 4"
 
     # ratchet is a separate parallel job (not a step in test:)
     ratchet_body = Map.fetch!(blocks, "ratchet")
@@ -220,16 +222,17 @@ defmodule Scoria.CiPolicyContractTest do
     refute test_body =~ "tmp_preflight_test.exs"
   end
 
-  test "test job runs full suite WAE after closeout lanes; knowledge is a parallel job" do
+  test "test job ends with semantic lane; full-suite is a parallel matrix job" do
     ci_verify = File.read!(@ci_verify)
     blocks = job_blocks(ci_verify)
     test_body = Map.fetch!(blocks, "test")
-    runtime_to_handoff = VerificationLanes.ci_command(:runtime_to_handoff)
 
-    assert test_body =~ "run: mix test --warnings-as-errors"
+    refute test_body =~ "run: mix test --warnings-as-errors"
     refute test_body =~ "mix scoria.warning_ratchet.test --warnings-as-errors"
-    assert index_of(test_body, runtime_to_handoff) <
-             index_of(test_body, "run: mix test --warnings-as-errors")
+    full_suite_body = Map.fetch!(blocks, "full-suite")
+    assert full_suite_body =~ "mix test --warnings-as-errors"
+    assert full_suite_body =~ "--partitions 4"
+    assert full_suite_body =~ "needs: build"
 
     # knowledge is a separate parallel job with needs: build
     knowledge_body = Map.fetch!(blocks, "knowledge")
@@ -237,6 +240,50 @@ defmodule Scoria.CiPolicyContractTest do
     assert knowledge_body =~ "mix test.knowledge --warnings-as-errors"
     # test: job does NOT contain the knowledge command
     refute test_body =~ "mix test.knowledge --warnings-as-errors"
+  end
+
+  test "full-suite job is a 4-way matrix with correct partition wiring and no DB name collision" do
+    ci_verify = File.read!(@ci_verify)
+    blocks = job_blocks(ci_verify)
+
+    # Non-empty guard: broken job_blocks/1 regex can't vacuously pass
+    assert map_size(blocks) > 0, "job_blocks/1 returned empty — regex may be broken"
+
+    full_suite_body = Map.fetch!(blocks, "full-suite")
+
+    # SC#1 — sharded invocation
+    assert full_suite_body =~ "needs: build"
+    assert full_suite_body =~ "mix test --warnings-as-errors"
+    assert full_suite_body =~ "--partitions 4"
+    assert full_suite_body =~ "MIX_TEST_PARTITION"
+    assert full_suite_body =~ "${{ matrix.partition }}"
+    assert full_suite_body =~ "partition: [1, 2, 3, 4]"
+    assert full_suite_body =~ "fail-fast: false"
+    refute full_suite_body =~ "continue-on-error"
+
+    # SC#2 — DB isolation: absence of SCORIA_DB_NAME is load-bearing
+    # config/test.exs: database: System.get_env("SCORIA_DB_NAME") || "scoria_test#{MIX_TEST_PARTITION}"
+    # When SCORIA_DB_NAME is nil, the || resolves scoria_test1..4 per shard.
+    refute full_suite_body =~ "SCORIA_DB_NAME"
+    assert full_suite_body =~ "MIX_TEST_PARTITION: ${{ matrix.partition }}"
+    assert full_suite_body =~ "services:"
+
+    # SC#3 — Rem-completeness proof (filter_by_partition/3, Elixir 1.19.5):
+    #   sorted_files |> Enum.with_index() |> Enum.filter(fn {_, i} -> rem(i, total) == partition - 1 end)
+    #   For total=4, partitions {1,2,3,4} cover rem values {0,1,2,3} — a complete residue system.
+    #   Union of 4 shards = full suite BY CONSTRUCTION. These two assertions keep --partitions N
+    #   and matrix.partition list in sync; a mismatch (e.g., --partitions 3 + [1,2,3,4]) is caught.
+    assert full_suite_body =~ "--partitions 4"
+    assert full_suite_body =~ "partition: [1, 2, 3, 4]"
+  end
+
+  test "full-suite is explicitly wired into verify-summary fan-in (D-04 targeted pin)" do
+    ci_verify = File.read!(@ci_verify)
+    blocks = job_blocks(ci_verify)
+
+    verify_summary_body = Map.fetch!(blocks, "verify-summary")
+    assert verify_summary_body =~ "full-suite",
+           "full-suite must be in verify-summary.needs — wiring it prevents a false-green fan-in"
   end
 
   test "connector lane is a parallel job with connector before gallery" do
@@ -416,6 +463,7 @@ defmodule Scoria.CiPolicyContractTest do
     assert ci_verify =~ "# ratchet:"
     assert ci_verify =~ "# knowledge:"
     assert ci_verify =~ "# connector:"
+    assert ci_verify =~ "# full-suite:"
     assert ci_verify =~ "# verify-summary:"
   end
 
@@ -446,6 +494,7 @@ defmodule Scoria.CiPolicyContractTest do
     assert gate_map =~ "ratchet"
     assert gate_map =~ "knowledge"
     assert gate_map =~ "connector"
+    assert gate_map =~ "full-suite"
     assert gate_map =~ "verify-summary"
     assert gate_map =~ "Local parity"
     assert gate_map =~ "Ratchet is maintainer-only"
