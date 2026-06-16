@@ -156,7 +156,10 @@ Plans:
   3. There is zero coverage loss versus the single-job run — the union of the 4 shards' executed tests equals the prior full-suite test count.
   4. Only the `verify-summary` fan-in is required; individual matrix shard names are never added as required checks.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 26-01-PLAN.md — add full-suite: 4-way matrix job + move WAE out of test: + fan-in wiring + after_suite guard; fix B-1/B-2/B-3 contract tests + D-03/D-04 structural pins; docs-as-contract topology updates (single atomic commit)
 
 ### Phase 27: CI determinism & flake elimination
 
