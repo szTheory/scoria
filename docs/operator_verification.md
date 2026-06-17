@@ -294,3 +294,5 @@ CI topology, release operations, warning ratchet commands, and installer contrac
 Deep installer contract proofs (`mix scoria.test.install_contract`) and tarball consumer triage are documented in the maintainer guide — not part of the adopter closeout chain.
 
 Maintainer closeout starts with `mix scoria.release_preview` before the bounded test lanes — see the maintainer guide for the full parallel CI topology and job→command table.
+
+Run `mix ci` to reproduce the full merge gate locally (preamble: deps-lock, format, compile WAE; then all gating lanes from `Scoria.VerificationLanes`) before pushing.

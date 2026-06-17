@@ -282,3 +282,5 @@ Current release: `0.1.1` on [Hex](https://hex.pm/packages/scoria). See [CHANGELO
 - [Operator verification](docs/operator_verification.md) — adopter verification ladder (also used as docs extra)
 
 For broader repo-health context outside the canonical lane proofs, run `mix test` locally or see the maintainer guide.
+
+`mix ci` is the single-command local merge gate — it reproduces the full CI lane set (deps-lock, format, compile WAE, all gating lanes) and exits non-zero on any failure.
