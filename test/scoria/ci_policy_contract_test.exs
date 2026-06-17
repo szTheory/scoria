@@ -177,7 +177,7 @@ defmodule Scoria.CiPolicyContractTest do
     assert index_of(test_body, adoption) < index_of(test_body, runtime_to_handoff)
   end
 
-  test "postgres service is configured only for test, knowledge, and connector jobs" do
+  test "postgres service is configured for the app-booting verify lanes (incl. ratchet)" do
     ci_verify = File.read!(@ci_verify)
     blocks = job_blocks(ci_verify)
 
@@ -186,11 +186,14 @@ defmodule Scoria.CiPolicyContractTest do
     assert Map.fetch!(blocks, "knowledge") =~ "services:"
     assert Map.fetch!(blocks, "connector") =~ "services:"
     assert Map.fetch!(blocks, "full-suite") =~ "services:"
+    # ratchet runs `mix test`, which boots Scoria.Application (Oban.verify_migrated!/1 → DB);
+    # the WARN-06 compile-only parity guard only captures faithfully with the app started, so
+    # the lane needs Postgres like its siblings (a DB-free `--no-start` run breaks the guard).
+    assert Map.fetch!(blocks, "ratchet") =~ "services:"
 
-    # Jobs that must NOT have Postgres services
+    # Jobs that must NOT have Postgres services (no `mix test` → no app boot)
     refute Map.fetch!(blocks, "policy") =~ "services:"
     refute Map.fetch!(blocks, "build") =~ "services:"
-    refute Map.fetch!(blocks, "ratchet") =~ "services:"
     refute Map.fetch!(blocks, "verify-summary") =~ "services:"
   end
 

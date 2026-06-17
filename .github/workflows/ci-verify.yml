@@ -181,9 +181,9 @@ jobs:
       - name: Run semantic fast-path lane
         run: mix test.semantic_fast_path --warnings-as-errors
 
-  # ratchet: warning ratchet hygiene + WARN-06 compile-only parity guard.
-  # Needs Postgres: `mix test` boots Scoria.Application (Oban.verify_migrated!/1 → DB) for
-  # both tmp_preflight_test.exs and capture_parity_test.exs. DB-prep mirrors the sibling lanes.
+  # ratchet: warning ratchet hygiene + WARN-06 compile-only parity guard. Needs Postgres —
+  # `mix test` boots the app (Oban.verify_migrated!/1 → DB) so the compile-only capture runs
+  # faithfully (DB-free `--no-start` breaks the parity guard). DB-prep mirrors the sibling lanes.
   ratchet:
     runs-on: ubuntu-latest
     needs: build
