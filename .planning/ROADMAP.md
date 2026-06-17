@@ -173,7 +173,10 @@ Plans:
   3. A retry-vs-fix policy is documented and applied — no blanket auto-retries; any retry is scoped to a known-infra-transient step only and is visible in logs.
   4. Contract tests and the verification bar remain green/intact — no lane removed or demoted while fixing flakes.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 27-01-PLAN.md — fix Postgres ephemeral host-port bind in all 5 CI blocks (D-01), remove the TEMP e2e diagnostic (D-06), document the retry-vs-fix flake policy in MAINTAINERS.md (D-07..D-11), and add durable contract guards (D-12 ephemeral-port ban + no-TEMP + no-retry-on-test-workflows)
 
 ### Phase 28: DX `mix ci` alias + velocity closeout
 
@@ -197,7 +200,7 @@ Plans:
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 25. Lane parallelization + topology docs | v3.1 | 2/2 | Complete   | 2026-06-15 |
 | 26. Full-suite partition sharding | v3.1 | 1/1 | Complete   | 2026-06-16 |
-| 27. CI determinism & flake elimination | v3.1 | 0/0 | Not started | - |
+| 27. CI determinism & flake elimination | v3.1 | 0/1 | Planned | - |
 | 28. DX `mix ci` alias + velocity closeout | v3.1 | 0/0 | Not started | - |
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete | 2026-06-04 |
