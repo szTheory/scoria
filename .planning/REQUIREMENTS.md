@@ -36,12 +36,12 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Developer Experience (DX)
 
-- [ ] **DX-01**: A single `mix ci` alias reproduces the merge gate locally (deps lock check, format check, compile WAE, the canonical lane set) so a contributor can run the same checks CI runs.
+- [x] **DX-01**: A single `mix ci` alias reproduces the merge gate locally (deps lock check, format check, compile WAE, the canonical lane set) so a contributor can run the same checks CI runs.
 - [ ] **DX-02**: `docs/MAINTAINERS.md`, `docs/operator_verification.md`, and `README` describe the new parallel CI topology, and any contract test asserting "docs describe topology" stays green.
 
 ### Outcome (VELO)
 
-- [ ] **VELO-01**: On a warm-cache PR run, CI critical-path wall-clock is ≤ ~15 min (target ~12 min), down from the ~77 min baseline — verified via `gh run view --json jobs` timing before/after.
+- [x] **VELO-01**: On a warm-cache PR run, CI critical-path wall-clock is ≤ ~15 min (target ~12 min), down from the ~77 min baseline — verified via `gh run view --json jobs` timing before/after. MEASURED: 7m38s (458s) critical path in run 27709716751 (commit 06cdc34, 2026-06-17). MET.
 
 ## v2 Requirements
 
@@ -85,8 +85,8 @@ Phase numbering continues the live epoch (v2.12=02–04 … v3.0=11–17, v2.17=
 | FLAKE-01 | Phase 27 | Complete |
 | FLAKE-02 | Phase 27 | Complete |
 | FLAKE-03 | Phase 27 | Complete |
-| DX-01 | Phase 28 | Pending |
-| VELO-01 | Phase 28 | Pending |
+| DX-01 | Phase 28 | Complete |
+| VELO-01 | Phase 28 | Complete |
 
 **Coverage:**
 - v1 requirements: 13 total
@@ -97,4 +97,4 @@ Per-phase requirement counts: Phase 23 (2), Phase 24 (1), Phase 25 (4), Phase 26
 
 ---
 *Requirements defined: 2026-06-14*
-*Last updated: 2026-06-14 — roadmap created, traceability populated (Phases 23–28, 13/13 mapped)*
+*Last updated: 2026-06-17 — DX-01 and VELO-01 flipped to Complete; measured 7m38s critical path in run 27709716751 (Plan 28-03)*

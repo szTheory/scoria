@@ -4,7 +4,7 @@
 
 **Phases completed:** 6 phases (23–28)
 **Timeline:** 2026-06-14 → 2026-06-17
-**Velocity headline:** v3.1: PR CI serial-baseline critical-path 77m→~23min projected (Phases 23-26 local; before 27508317719 / after 27514007418 — see `28-VELOCITY-PROOF.md` for full computation and honesty caveats)
+**Velocity headline:** v3.1: PR CI serial-baseline critical-path 77m→**7m38s MEASURED** (Phases 23-28, warm-cache; baseline 27508317719 / measured 27709716751 commit 06cdc34 — VELO-01 MET; see `28-VELOCITY-PROOF.md` for full computation)
 
 **Delivered:** Build-once job (Phase 23) compiling once and sharing `_build/test` + `deps` artifact
 to downstream parallel jobs; knowledge lane scoped to `--only knowledge` (Phase 24, reclaims ~22min
@@ -13,9 +13,11 @@ connector, full-suite[×4 matrix] } → verify-summary` with a single stable fan
 `--partitions 4` full-suite sharding across isolated `scoria_test1..4` databases (Phase 26); flake
 elimination — fixed Postgres host-port bind (Phase 27), removed TEMP e2e diagnostic step, added
 zero-retry-default policy with 3 durable contract guards in `ci_policy_contract_test.exs` (42→45
-tests); and the `mix ci` DX alias (Phase 28). Phases 24-26 (knowledge fix, parallelization, sharding)
-are implemented and contract-tested locally; a live GitHub Actions run of the fully-parallelized
-topology is pending merge.
+tests); the `mix ci` DX alias (Phase 28); and the compile-only ratchet warning capture (Plan 28-03,
+cutting the ratchet lane from ~19m07s to 1m46s, WARN-06 parity-guarded). Phases 24-28 (knowledge fix,
+parallelization, sharding, flake elimination, DX alias, compile-only ratchet) were pushed to GitHub and
+ran GREEN in run 27709716751 (commit 06cdc34, 2026-06-17) — the fully-parallelized topology is
+MEASURED, not projected. VELO-01 MET: 7m38s critical path ≤ ~15m target.
 
 ---
 

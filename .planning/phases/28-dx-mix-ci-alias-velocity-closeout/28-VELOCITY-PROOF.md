@@ -4,9 +4,9 @@
 before/after run IDs, captures raw `gh run view --json` JSON inline (for retention-purge
 durability), computes the critical path per D-D2, and documents honesty caveats.
 
-**Headline:** PR CI serial-baseline critical-path ~76min → projected ~23min with Phases 23-26
-improvements (Phases 24-26 work is local-only; the fully-parallelized topology has not yet
-run on GitHub Actions — see Honesty Caveats below).
+**Headline:** PR CI serial-baseline critical-path ~76min → **7m38s measured** (458s) with
+Phases 23-28 improvements. Run 27709716751 (commit 06cdc34) is the live, GREEN, warm-cache
+parallelized topology run. VELO-01 (≤~15m) is MET.
 
 ---
 
@@ -108,64 +108,85 @@ Phase 24, the knowledge lane will run only 6 knowledge-tagged files.
 
 ---
 
-## Projected Critical Path: Fully Parallelized Topology (Phases 23-26)
+## MEASURED Critical Path: Fully Parallelized Topology (Phases 23-28)
 
-The complete v3.1 CI/CD Velocity improvement set (Phases 23-26) exists in the local main
-branch but has NOT yet been pushed to GitHub or triggered a GitHub Actions run as of this
-writing (2026-06-17). The parallel topology is implemented and covered by contract tests.
-This section computes the projected critical path from the real per-step timing in run
-27514007418 combined with the Phase 24-26 architectural changes.
+**Run ID:** 27709716751
+**URL:** https://github.com/szTheory/scoria/actions/runs/27709716751
+**Commit:** 06cdc343e7d4a6f97623d4238bb22426e43494f9
+**Date:** 2026-06-17T18:07:35Z
+**Workflow:** CI (ci.yml) calling reusable CI Verify (ci-verify.yml) via workflow_call
+**Warm-cache CONFIRMED:** `verify / build` step "Restore deps + build cache" was a Cache HIT
+**Result:** GREEN (all jobs succeeded)
 
-**Implemented topology** (Phases 25-26, local main branch):
+This is the **REAL, MEASURED run** of the fully-parallelized topology (Phases 23-28 applied:
+cache correctness, build-once, knowledge scope fix, lane parallelization, full-suite sharding,
+flake elimination, and the compile-only ratchet capture fix). The "~23min projected" estimate
+from 28-02 is superseded by this measured run.
 
+**Topology executed:**
 ```
 policy → build → { test, ratchet, knowledge, connector, full-suite[×4 matrix] } → verify-summary
 ```
 
-- `policy` — baseline expiry + compile WAE + lane-contract tests (no Postgres)
-- `build` — compile once (MIX_ENV=test, WAE), upload artifact
-- `test` — closeout chain on shared artifact: release_preview → adoption → runtime_to_handoff → semantic_fast_path (no full-suite step after Phase 26)
-- `ratchet` — maintainer hygiene chain (warning-inventory WAE subprocess)
-- `knowledge` — `mix test.knowledge --warnings-as-errors` with Phase 24 `--only knowledge` fix
-- `connector` — `mix test.connector --warnings-as-errors` + advisory gallery tail
-- `full-suite [×4]` — `mix test --warnings-as-errors --partitions 4` matrix (Phase 26)
-- `verify-summary` — fan-in (`if: always()`, `needs:` all above)
+### Per-job active durations (slowest-first)
 
-**Projected per-lane durations** (from run 27514007418 step timing, with Phase 24-26 adjustments):
+Computed via D-D2 method: `completedAt − startedAt` (active run time, EXCLUDES queue time).
 
-| Parallel lane | Projected duration | Source |
-|--------------|-------------------|--------|
-| `test` (closeout chain only, no full-suite) | ~6m30s | Steps 8-14 of run 27514007418 (389s) |
-| `ratchet` (hygiene chain) | ~19m07s | Step 15 of run 27514007418 (1147s) |
-| `knowledge` (--only knowledge, Phase 24) | ~3m (est.) | 6 knowledge files; actual timing pending push |
-| `connector` (+gallery) | ~20s | Steps 18-19 of run 27514007418 |
-| `full-suite` shard (slowest of 4, Phase 26) | ~5m24s | Step 16 ÷ 4 (1293s ÷ 4 = 323s) |
+| Job | startedAt | completedAt | Active duration |
+|-----|-----------|-------------|-----------------|
+| verify / test | 18:08:27Z | 18:15:24Z | **6m57s** (417s) |
+| verify / full-suite (1/4) | 18:08:26Z | 18:14:39Z | 6m13s (373s) |
+| verify / full-suite (2/4) | 18:08:26Z | 18:11:00Z | 2m34s (154s) |
+| verify / connector | 18:08:32Z | 18:11:05Z | 2m33s (153s) |
+| verify / full-suite (4/4) | 18:08:27Z | 18:10:42Z | 2m15s (135s) |
+| e2e | 18:07:37Z | 18:09:27Z | 1m50s (110s) |
+| verify / ratchet | 18:08:32Z | 18:10:18Z | **1m46s** (106s) ← was ~19m07s before compile-only fix |
+| verify / full-suite (3/4) | 18:08:32Z | 18:09:32Z | 1m00s (60s) |
+| verify / knowledge | 18:08:26Z | 18:09:16Z | 0m50s (50s) |
+| verify / build | 18:08:04Z | 18:08:24Z | **0m20s** (20s) — warm cache HIT |
+| verify / policy | 18:07:37Z | 18:07:56Z | 0m19s (19s) |
+| verify / verify-summary | 18:15:33Z | 18:15:35Z | 0m02s (2s) |
+| ci-gate | 18:15:37Z | 18:15:39Z | 0m02s (2s) |
 
-**Projected critical path** per D-D2 (sum of stage maxima along dependency chain):
+**Run-level wall-clock** = max(completedAt) − min(startedAt)
+= 18:15:39Z − 18:07:37Z = **482s = 8m02s ≈ 8 min**
+
+### Critical-Path Computation (D-D2 contract)
+
+Per D-D2: critical path = sum of **stage maxima** along the dependency chain
+`policy → build → max(parallel lanes) → verify-summary`, using each job's
+`(completedAt − startedAt)` active run time (EXCLUDES queue time). For matrix lanes
+(full-suite ×4) take the SLOWEST shard.
 
 ```
-policy (2m59s) + build (0m19s) + max(parallel lanes) + verify-summary (~30s)
-  = 179s + 19s + max(389, 1147, 180, 20, 323)s + 30s
-  = 179s + 19s + 1147s (ratchet) + 30s
-  = 1375s
-  = ~23min
+policy:    19s  (verify / policy: 18:07:37Z → 18:07:56Z)
+build:     20s  (verify / build: 18:08:04Z → 18:08:24Z)
+parallel lanes (all need build, run concurrently):
+  verify / test:            417s  ← DOMINANT (6m57s closeout chain)
+  verify / full-suite (1/4): 373s  ← slowest shard (of 4)
+  verify / full-suite (2/4): 154s
+  verify / connector:        153s
+  verify / full-suite (4/4): 135s
+  verify / ratchet:          106s  ← was 1147s before compile-only fix
+  verify / full-suite (3/4):  60s
+  verify / knowledge:         50s
+  max(parallel lanes) = 417s  (verify / test)
+verify-summary: 2s  (verify / verify-summary: 18:15:33Z → 18:15:35Z)
+
+Critical path = 19 + 20 + 417 + 2 = 458s = 7m38s ≈ 7.6 min
 ```
 
-The bottleneck lane is `ratchet` at ~19min (warning-inventory WAE subprocess). This is the
-dominant cost after parallelization eliminates the previously-dominant knowledge re-run (~22min
-saved by Phase 24) and full-suite serial execution (~16min saved by Phase 26 sharding +
-Phase 25 parallelization).
+**VELO-01 MET:** 7m38s critical path ≤ ~15 min target (target was ~12 min; actual is 7.6 min).
 
-**vs. original ~12min target:** The SEED-003 profiling (citing "~45 min of two fixable root
-causes") pointed to the knowledge re-run (~22min) and the ratchet cold-compile (~22min) as
-the main targets. Phase 24 addresses the knowledge re-run. However, measured data from run
-27514007418 shows the ratchet step takes ~19min even on a warm-cache run with the Phase 23
-artifact available to downstream jobs. After Phases 23-26, the projected critical path is
-~23min rather than ~12min — the ratchet lane remains the dominant cost.
+Note: `e2e` runs in parallel with `policy` and `build` from ci.yml (top-level, NOT part of
+the ci-verify.yml D-D2 chain). It does not gate `verify-summary` and does not affect the
+critical path of the verify graph.
 
-**Phase 23 measured savings:** 76min (serial baseline) → 73min (build-once) = ~3min reduction
-from eliminating test-job recompilation (confirmed by `Download compiled artifact` 1s vs prior
-`mix deps.compile` absent in baseline).
+### Measured run raw JSON (captured inline for retention-purge durability)
+
+```json
+{"createdAt":"2026-06-17T18:07:35Z","databaseId":27709716751,"headSha":"06cdc343e7d4a6f97623d4238bb22426e43494f9","jobs":[{"completedAt":"2026-06-17T18:07:56Z","conclusion":"success","databaseId":81967333299,"name":"verify / policy","startedAt":"2026-06-17T18:07:37Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:07:39Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:07:38Z","status":"completed"},{"completedAt":"2026-06-17T18:07:40Z","conclusion":"success","name":"Run actions/checkout@v6","number":2,"startedAt":"2026-06-17T18:07:39Z","status":"completed"},{"completedAt":"2026-06-17T18:07:46Z","conclusion":"success","name":"Install Erlang and Elixir","number":3,"startedAt":"2026-06-17T18:07:40Z","status":"completed"},{"completedAt":"2026-06-17T18:07:47Z","conclusion":"success","name":"Restore deps cache","number":4,"startedAt":"2026-06-17T18:07:46Z","status":"completed"},{"completedAt":"2026-06-17T18:07:49Z","conclusion":"success","name":"Install dependencies","number":5,"startedAt":"2026-06-17T18:07:47Z","status":"completed"},{"completedAt":"2026-06-17T18:07:50Z","conclusion":"success","name":"Check warning baseline expiry","number":6,"startedAt":"2026-06-17T18:07:49Z","status":"completed"},{"completedAt":"2026-06-17T18:07:50Z","conclusion":"success","name":"Check committed warning inventory baseline","number":7,"startedAt":"2026-06-17T18:07:50Z","status":"completed"},{"completedAt":"2026-06-17T18:07:51Z","conclusion":"success","name":"Compile with warnings as errors","number":8,"startedAt":"2026-06-17T18:07:50Z","status":"completed"},{"completedAt":"2026-06-17T18:07:53Z","conclusion":"success","name":"Verify lane-contract tests with warnings as errors","number":9,"startedAt":"2026-06-17T18:07:51Z","status":"completed"},{"completedAt":"2026-06-17T18:07:54Z","conclusion":"success","name":"Post Restore deps cache","number":17,"startedAt":"2026-06-17T18:07:53Z","status":"completed"},{"completedAt":"2026-06-17T18:07:54Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":18,"startedAt":"2026-06-17T18:07:54Z","status":"completed"},{"completedAt":"2026-06-17T18:07:54Z","conclusion":"success","name":"Complete job","number":19,"startedAt":"2026-06-17T18:07:54Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967333299"},{"completedAt":"2026-06-17T18:09:27Z","conclusion":"success","databaseId":81967333308,"name":"e2e","startedAt":"2026-06-17T18:07:37Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:07:39Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:07:38Z","status":"completed"},{"completedAt":"2026-06-17T18:08:02Z","conclusion":"success","name":"Initialize containers","number":2,"startedAt":"2026-06-17T18:07:39Z","status":"completed"},{"completedAt":"2026-06-17T18:08:03Z","conclusion":"success","name":"Run actions/checkout@v6","number":3,"startedAt":"2026-06-17T18:08:02Z","status":"completed"},{"completedAt":"2026-06-17T18:08:09Z","conclusion":"success","name":"Install Erlang and Elixir","number":4,"startedAt":"2026-06-17T18:08:03Z","status":"completed"},{"completedAt":"2026-06-17T18:08:13Z","conclusion":"success","name":"Install Node.js","number":5,"startedAt":"2026-06-17T18:08:09Z","status":"completed"},{"completedAt":"2026-06-17T18:08:14Z","conclusion":"success","name":"Restore deps cache","number":6,"startedAt":"2026-06-17T18:08:13Z","status":"completed"},{"completedAt":"2026-06-17T18:08:16Z","conclusion":"success","name":"Install dependencies","number":7,"startedAt":"2026-06-17T18:08:14Z","status":"completed"},{"completedAt":"2026-06-17T18:08:18Z","conclusion":"success","name":"Cache Playwright browsers","number":8,"startedAt":"2026-06-17T18:08:16Z","status":"completed"},{"completedAt":"2026-06-17T18:08:34Z","conclusion":"success","name":"Install e2e tooling","number":9,"startedAt":"2026-06-17T18:08:18Z","status":"completed"},{"completedAt":"2026-06-17T18:08:48Z","conclusion":"success","name":"Prepare dev database and seed","number":10,"startedAt":"2026-06-17T18:08:34Z","status":"completed"},{"completedAt":"2026-06-17T18:08:49Z","conclusion":"success","name":"Build dashboard assets","number":11,"startedAt":"2026-06-17T18:08:48Z","status":"completed"},{"completedAt":"2026-06-17T18:08:57Z","conclusion":"success","name":"Boot dev dashboard","number":12,"startedAt":"2026-06-17T18:08:49Z","status":"completed"},{"completedAt":"2026-06-17T18:09:23Z","conclusion":"success","name":"Run dashboard e2e lane","number":13,"startedAt":"2026-06-17T18:08:57Z","status":"completed"},{"completedAt":"2026-06-17T18:09:24Z","conclusion":"success","name":"Upload Playwright report","number":14,"startedAt":"2026-06-17T18:09:23Z","status":"completed"},{"completedAt":"2026-06-17T18:09:24Z","conclusion":"success","name":"Post Cache Playwright browsers","number":24,"startedAt":"2026-06-17T18:09:24Z","status":"completed"},{"completedAt":"2026-06-17T18:09:25Z","conclusion":"success","name":"Post Restore deps cache","number":25,"startedAt":"2026-06-17T18:09:24Z","status":"completed"},{"completedAt":"2026-06-17T18:09:25Z","conclusion":"success","name":"Post Install Node.js","number":26,"startedAt":"2026-06-17T18:09:25Z","status":"completed"},{"completedAt":"2026-06-17T18:09:25Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":27,"startedAt":"2026-06-17T18:09:25Z","status":"completed"},{"completedAt":"2026-06-17T18:09:25Z","conclusion":"success","name":"Stop containers","number":28,"startedAt":"2026-06-17T18:09:25Z","status":"completed"},{"completedAt":"2026-06-17T18:09:26Z","conclusion":"success","name":"Complete job","number":29,"startedAt":"2026-06-17T18:09:25Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967333308"},{"completedAt":"2026-06-17T18:08:24Z","conclusion":"success","databaseId":81967397229,"name":"verify / build","startedAt":"2026-06-17T18:08:04Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:08:06Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:08:05Z","status":"completed"},{"completedAt":"2026-06-17T18:08:07Z","conclusion":"success","name":"Run actions/checkout@v6","number":2,"startedAt":"2026-06-17T18:08:06Z","status":"completed"},{"completedAt":"2026-06-17T18:08:13Z","conclusion":"success","name":"Install Erlang and Elixir","number":3,"startedAt":"2026-06-17T18:08:07Z","status":"completed"},{"completedAt":"2026-06-17T18:08:14Z","conclusion":"success","name":"Restore deps + build cache","number":4,"startedAt":"2026-06-17T18:08:13Z","status":"completed"},{"completedAt":"2026-06-17T18:08:16Z","conclusion":"success","name":"Install dependencies","number":5,"startedAt":"2026-06-17T18:08:14Z","status":"completed"},{"completedAt":"2026-06-17T18:08:17Z","conclusion":"success","name":"Compile with warnings as errors","number":6,"startedAt":"2026-06-17T18:08:16Z","status":"completed"},{"completedAt":"2026-06-17T18:08:19Z","conclusion":"success","name":"Pack compiled artifact (preserves mtimes)","number":7,"startedAt":"2026-06-17T18:08:17Z","status":"completed"},{"completedAt":"2026-06-17T18:08:21Z","conclusion":"success","name":"Upload compiled artifact","number":8,"startedAt":"2026-06-17T18:08:19Z","status":"completed"},{"completedAt":"2026-06-17T18:08:22Z","conclusion":"success","name":"Post Restore deps + build cache","number":15,"startedAt":"2026-06-17T18:08:21Z","status":"completed"},{"completedAt":"2026-06-17T18:08:22Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":16,"startedAt":"2026-06-17T18:08:22Z","status":"completed"},{"completedAt":"2026-06-17T18:08:22Z","conclusion":"success","name":"Complete job","number":17,"startedAt":"2026-06-17T18:08:22Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967397229"},{"completedAt":"2026-06-17T18:10:18Z","conclusion":"success","databaseId":81967483593,"name":"verify / ratchet","startedAt":"2026-06-17T18:08:32Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:08:34Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:08:33Z","status":"completed"},{"completedAt":"2026-06-17T18:08:57Z","conclusion":"success","name":"Initialize containers","number":2,"startedAt":"2026-06-17T18:08:34Z","status":"completed"},{"completedAt":"2026-06-17T18:08:58Z","conclusion":"success","name":"Run actions/checkout@v6","number":3,"startedAt":"2026-06-17T18:08:57Z","status":"completed"},{"completedAt":"2026-06-17T18:09:05Z","conclusion":"success","name":"Install Erlang and Elixir","number":4,"startedAt":"2026-06-17T18:08:58Z","status":"completed"},{"completedAt":"2026-06-17T18:09:06Z","conclusion":"success","name":"Download compiled artifact","number":5,"startedAt":"2026-06-17T18:09:05Z","status":"completed"},{"completedAt":"2026-06-17T18:09:06Z","conclusion":"success","name":"Unpack compiled artifact (restores exact mtimes)","number":6,"startedAt":"2026-06-17T18:09:06Z","status":"completed"},{"completedAt":"2026-06-17T18:09:08Z","conclusion":"success","name":"Install dependencies (no-op when deps/ complete)","number":7,"startedAt":"2026-06-17T18:09:06Z","status":"completed"},{"completedAt":"2026-06-17T18:09:12Z","conclusion":"success","name":"Prepare database","number":8,"startedAt":"2026-06-17T18:09:08Z","status":"completed"},{"completedAt":"2026-06-17T18:09:35Z","conclusion":"success","name":"Verify maintainer ratchet hygiene chain","number":9,"startedAt":"2026-06-17T18:09:12Z","status":"completed"},{"completedAt":"2026-06-17T18:10:17Z","conclusion":"success","name":"Verify WARN-06 compile-only capture parity","number":10,"startedAt":"2026-06-17T18:09:35Z","status":"completed"},{"completedAt":"2026-06-17T18:10:17Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":19,"startedAt":"2026-06-17T18:10:17Z","status":"completed"},{"completedAt":"2026-06-17T18:10:17Z","conclusion":"success","name":"Stop containers","number":20,"startedAt":"2026-06-17T18:10:17Z","status":"completed"},{"completedAt":"2026-06-17T18:10:17Z","conclusion":"success","name":"Complete job","number":21,"startedAt":"2026-06-17T18:10:17Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967483593"},{"completedAt":"2026-06-17T18:15:24Z","conclusion":"success","databaseId":81967483631,"name":"verify / test","startedAt":"2026-06-17T18:08:27Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:08:30Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:08:28Z","status":"completed"},{"completedAt":"2026-06-17T18:08:50Z","conclusion":"success","name":"Initialize containers","number":2,"startedAt":"2026-06-17T18:08:30Z","status":"completed"},{"completedAt":"2026-06-17T18:08:51Z","conclusion":"success","name":"Run actions/checkout@v6","number":3,"startedAt":"2026-06-17T18:08:50Z","status":"completed"},{"completedAt":"2026-06-17T18:08:57Z","conclusion":"success","name":"Install Erlang and Elixir","number":4,"startedAt":"2026-06-17T18:08:51Z","status":"completed"},{"completedAt":"2026-06-17T18:08:59Z","conclusion":"success","name":"Download compiled artifact","number":5,"startedAt":"2026-06-17T18:08:57Z","status":"completed"},{"completedAt":"2026-06-17T18:08:59Z","conclusion":"success","name":"Unpack compiled artifact (restores exact mtimes)","number":6,"startedAt":"2026-06-17T18:08:59Z","status":"completed"},{"completedAt":"2026-06-17T18:09:00Z","conclusion":"success","name":"Install dependencies (no-op when deps/ complete)","number":7,"startedAt":"2026-06-17T18:08:59Z","status":"completed"},{"completedAt":"2026-06-17T18:10:34Z","conclusion":"success","name":"Run release preview lane","number":8,"startedAt":"2026-06-17T18:09:00Z","status":"completed"},{"completedAt":"2026-06-17T18:10:36Z","conclusion":"success","name":"Install phx_new archive for host consumer proof","number":9,"startedAt":"2026-06-17T18:10:34Z","status":"completed"},{"completedAt":"2026-06-17T18:10:41Z","conclusion":"success","name":"Prepare database","number":10,"startedAt":"2026-06-17T18:10:36Z","status":"completed"},{"completedAt":"2026-06-17T18:15:11Z","conclusion":"success","name":"Run adoption closure lane","number":11,"startedAt":"2026-06-17T18:10:41Z","status":"completed"},{"completedAt":"2026-06-17T18:15:11Z","conclusion":"skipped","name":"Upload host proof failure snapshot","number":12,"startedAt":"2026-06-17T18:15:11Z","status":"completed"},{"completedAt":"2026-06-17T18:15:16Z","conclusion":"success","name":"Run runtime-to-handoff proof lane","number":13,"startedAt":"2026-06-17T18:15:11Z","status":"completed"},{"completedAt":"2026-06-17T18:15:22Z","conclusion":"success","name":"Run semantic fast-path lane","number":14,"startedAt":"2026-06-17T18:15:16Z","status":"completed"},{"completedAt":"2026-06-17T18:15:22Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":27,"startedAt":"2026-06-17T18:15:22Z","status":"completed"},{"completedAt":"2026-06-17T18:15:22Z","conclusion":"success","name":"Stop containers","number":28,"startedAt":"2026-06-17T18:15:22Z","status":"completed"},{"completedAt":"2026-06-17T18:15:22Z","conclusion":"success","name":"Complete job","number":29,"startedAt":"2026-06-17T18:15:22Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967483631"},{"completedAt":"2026-06-17T18:11:00Z","conclusion":"success","databaseId":81967483655,"name":"verify / full-suite (2/4)","startedAt":"2026-06-17T18:08:26Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:08:28Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:08:27Z","status":"completed"},{"completedAt":"2026-06-17T18:08:49Z","conclusion":"success","name":"Initialize containers","number":2,"startedAt":"2026-06-17T18:08:28Z","status":"completed"},{"completedAt":"2026-06-17T18:08:50Z","conclusion":"success","name":"Run actions/checkout@v6","number":3,"startedAt":"2026-06-17T18:08:49Z","status":"completed"},{"completedAt":"2026-06-17T18:08:56Z","conclusion":"success","name":"Install Erlang and Elixir","number":4,"startedAt":"2026-06-17T18:08:50Z","status":"completed"},{"completedAt":"2026-06-17T18:08:58Z","conclusion":"success","name":"Download compiled artifact","number":5,"startedAt":"2026-06-17T18:08:56Z","status":"completed"},{"completedAt":"2026-06-17T18:08:58Z","conclusion":"success","name":"Unpack compiled artifact (restores exact mtimes)","number":6,"startedAt":"2026-06-17T18:08:58Z","status":"completed"},{"completedAt":"2026-06-17T18:08:59Z","conclusion":"success","name":"Install dependencies (no-op when deps/ complete)","number":7,"startedAt":"2026-06-17T18:08:58Z","status":"completed"},{"completedAt":"2026-06-17T18:09:02Z","conclusion":"success","name":"Install phx_new archive for host proof tests","number":8,"startedAt":"2026-06-17T18:08:59Z","status":"completed"},{"completedAt":"2026-06-17T18:09:15Z","conclusion":"success","name":"Prepare database","number":9,"startedAt":"2026-06-17T18:09:02Z","status":"completed"},{"completedAt":"2026-06-17T18:10:58Z","conclusion":"success","name":"Run full suite (shard 2/4)","number":10,"startedAt":"2026-06-17T18:09:15Z","status":"completed"},{"completedAt":"2026-06-17T18:10:58Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":19,"startedAt":"2026-06-17T18:10:58Z","status":"completed"},{"completedAt":"2026-06-17T18:10:58Z","conclusion":"success","name":"Stop containers","number":20,"startedAt":"2026-06-17T18:10:58Z","status":"completed"},{"completedAt":"2026-06-17T18:10:58Z","conclusion":"success","name":"Complete job","number":21,"startedAt":"2026-06-17T18:10:58Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967483655"},{"completedAt":"2026-06-17T18:09:32Z","conclusion":"success","databaseId":81967483662,"name":"verify / full-suite (3/4)","startedAt":"2026-06-17T18:08:32Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:08:34Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:08:33Z","status":"completed"},{"completedAt":"2026-06-17T18:08:56Z","conclusion":"success","name":"Initialize containers","number":2,"startedAt":"2026-06-17T18:08:34Z","status":"completed"},{"completedAt":"2026-06-17T18:08:57Z","conclusion":"success","name":"Run actions/checkout@v6","number":3,"startedAt":"2026-06-17T18:08:56Z","status":"completed"},{"completedAt":"2026-06-17T18:09:03Z","conclusion":"success","name":"Install Erlang and Elixir","number":4,"startedAt":"2026-06-17T18:08:57Z","status":"completed"},{"completedAt":"2026-06-17T18:09:04Z","conclusion":"success","name":"Download compiled artifact","number":5,"startedAt":"2026-06-17T18:09:03Z","status":"completed"},{"completedAt":"2026-06-17T18:09:05Z","conclusion":"success","name":"Unpack compiled artifact (restores exact mtimes)","number":6,"startedAt":"2026-06-17T18:09:04Z","status":"completed"},{"completedAt":"2026-06-17T18:09:06Z","conclusion":"success","name":"Install dependencies (no-op when deps/ complete)","number":7,"startedAt":"2026-06-17T18:09:05Z","status":"completed"},{"completedAt":"2026-06-17T18:09:09Z","conclusion":"success","name":"Install phx_new archive for host proof tests","number":8,"startedAt":"2026-06-17T18:09:06Z","status":"completed"},{"completedAt":"2026-06-17T18:09:22Z","conclusion":"success","name":"Prepare database","number":9,"startedAt":"2026-06-17T18:09:09Z","status":"completed"},{"completedAt":"2026-06-17T18:09:30Z","conclusion":"success","name":"Run full suite (shard 3/4)","number":10,"startedAt":"2026-06-17T18:09:22Z","status":"completed"},{"completedAt":"2026-06-17T18:09:30Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":19,"startedAt":"2026-06-17T18:09:30Z","status":"completed"},{"completedAt":"2026-06-17T18:09:30Z","conclusion":"success","name":"Stop containers","number":20,"startedAt":"2026-06-17T18:09:30Z","status":"completed"},{"completedAt":"2026-06-17T18:09:30Z","conclusion":"success","name":"Complete job","number":21,"startedAt":"2026-06-17T18:09:30Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967483662"},{"completedAt":"2026-06-17T18:10:42Z","conclusion":"success","databaseId":81967483665,"name":"verify / full-suite (4/4)","startedAt":"2026-06-17T18:08:27Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:08:30Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:08:28Z","status":"completed"},{"completedAt":"2026-06-17T18:08:52Z","conclusion":"success","name":"Initialize containers","number":2,"startedAt":"2026-06-17T18:08:30Z","status":"completed"},{"completedAt":"2026-06-17T18:08:54Z","conclusion":"success","name":"Run actions/checkout@v6","number":3,"startedAt":"2026-06-17T18:08:52Z","status":"completed"},{"completedAt":"2026-06-17T18:08:59Z","conclusion":"success","name":"Install Erlang and Elixir","number":4,"startedAt":"2026-06-17T18:08:54Z","status":"completed"},{"completedAt":"2026-06-17T18:09:03Z","conclusion":"success","name":"Download compiled artifact","number":5,"startedAt":"2026-06-17T18:08:59Z","status":"completed"},{"completedAt":"2026-06-17T18:09:03Z","conclusion":"success","name":"Unpack compiled artifact (restores exact mtimes)","number":6,"startedAt":"2026-06-17T18:09:03Z","status":"completed"},{"completedAt":"2026-06-17T18:09:05Z","conclusion":"success","name":"Install dependencies (no-op when deps/ complete)","number":7,"startedAt":"2026-06-17T18:09:03Z","status":"completed"},{"completedAt":"2026-06-17T18:09:07Z","conclusion":"success","name":"Install phx_new archive for host proof tests","number":8,"startedAt":"2026-06-17T18:09:05Z","status":"completed"},{"completedAt":"2026-06-17T18:09:20Z","conclusion":"success","name":"Prepare database","number":9,"startedAt":"2026-06-17T18:09:07Z","status":"completed"},{"completedAt":"2026-06-17T18:10:38Z","conclusion":"success","name":"Run full suite (shard 4/4)","number":10,"startedAt":"2026-06-17T18:09:20Z","status":"completed"},{"completedAt":"2026-06-17T18:10:38Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":19,"startedAt":"2026-06-17T18:10:38Z","status":"completed"},{"completedAt":"2026-06-17T18:10:38Z","conclusion":"success","name":"Stop containers","number":20,"startedAt":"2026-06-17T18:10:38Z","status":"completed"},{"completedAt":"2026-06-17T18:10:38Z","conclusion":"success","name":"Complete job","number":21,"startedAt":"2026-06-17T18:10:38Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967483665"},{"completedAt":"2026-06-17T18:14:39Z","conclusion":"success","databaseId":81967483705,"name":"verify / full-suite (1/4)","startedAt":"2026-06-17T18:08:26Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:08:29Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:08:27Z","status":"completed"},{"completedAt":"2026-06-17T18:08:50Z","conclusion":"success","name":"Initialize containers","number":2,"startedAt":"2026-06-17T18:08:29Z","status":"completed"},{"completedAt":"2026-06-17T18:08:52Z","conclusion":"success","name":"Run actions/checkout@v6","number":3,"startedAt":"2026-06-17T18:08:50Z","status":"completed"},{"completedAt":"2026-06-17T18:08:58Z","conclusion":"success","name":"Install Erlang and Elixir","number":4,"startedAt":"2026-06-17T18:08:52Z","status":"completed"},{"completedAt":"2026-06-17T18:09:02Z","conclusion":"success","name":"Download compiled artifact","number":5,"startedAt":"2026-06-17T18:08:58Z","status":"completed"},{"completedAt":"2026-06-17T18:09:02Z","conclusion":"success","name":"Unpack compiled artifact (restores exact mtimes)","number":6,"startedAt":"2026-06-17T18:09:02Z","status":"completed"},{"completedAt":"2026-06-17T18:09:04Z","conclusion":"success","name":"Install dependencies (no-op when deps/ complete)","number":7,"startedAt":"2026-06-17T18:09:02Z","status":"completed"},{"completedAt":"2026-06-17T18:09:06Z","conclusion":"success","name":"Install phx_new archive for host proof tests","number":8,"startedAt":"2026-06-17T18:09:04Z","status":"completed"},{"completedAt":"2026-06-17T18:09:19Z","conclusion":"success","name":"Prepare database","number":9,"startedAt":"2026-06-17T18:09:06Z","status":"completed"},{"completedAt":"2026-06-17T18:14:34Z","conclusion":"success","name":"Run full suite (shard 1/4)","number":10,"startedAt":"2026-06-17T18:09:19Z","status":"completed"},{"completedAt":"2026-06-17T18:14:35Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":19,"startedAt":"2026-06-17T18:14:34Z","status":"completed"},{"completedAt":"2026-06-17T18:14:35Z","conclusion":"success","name":"Stop containers","number":20,"startedAt":"2026-06-17T18:14:35Z","status":"completed"},{"completedAt":"2026-06-17T18:14:35Z","conclusion":"success","name":"Complete job","number":21,"startedAt":"2026-06-17T18:14:35Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967483705"},{"completedAt":"2026-06-17T18:11:05Z","conclusion":"success","databaseId":81967483727,"name":"verify / connector","startedAt":"2026-06-17T18:08:32Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:08:34Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:08:33Z","status":"completed"},{"completedAt":"2026-06-17T18:08:55Z","conclusion":"success","name":"Initialize containers","number":2,"startedAt":"2026-06-17T18:08:34Z","status":"completed"},{"completedAt":"2026-06-17T18:08:56Z","conclusion":"success","name":"Run actions/checkout@v6","number":3,"startedAt":"2026-06-17T18:08:55Z","status":"completed"},{"completedAt":"2026-06-17T18:09:02Z","conclusion":"success","name":"Install Erlang and Elixir","number":4,"startedAt":"2026-06-17T18:08:56Z","status":"completed"},{"completedAt":"2026-06-17T18:09:04Z","conclusion":"success","name":"Download compiled artifact","number":5,"startedAt":"2026-06-17T18:09:02Z","status":"completed"},{"completedAt":"2026-06-17T18:09:04Z","conclusion":"success","name":"Unpack compiled artifact (restores exact mtimes)","number":6,"startedAt":"2026-06-17T18:09:04Z","status":"completed"},{"completedAt":"2026-06-17T18:09:05Z","conclusion":"success","name":"Install dependencies (no-op when deps/ complete)","number":7,"startedAt":"2026-06-17T18:09:04Z","status":"completed"},{"completedAt":"2026-06-17T18:09:10Z","conclusion":"success","name":"Prepare database","number":8,"startedAt":"2026-06-17T18:09:05Z","status":"completed"},{"completedAt":"2026-06-17T18:09:14Z","conclusion":"success","name":"Run connector lane","number":9,"startedAt":"2026-06-17T18:09:10Z","status":"completed"},{"completedAt":"2026-06-17T18:11:03Z","conclusion":"success","name":"Run support copilot gallery lane (advisory)","number":10,"startedAt":"2026-06-17T18:09:14Z","status":"completed"},{"completedAt":"2026-06-17T18:11:03Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":19,"startedAt":"2026-06-17T18:11:03Z","status":"completed"},{"completedAt":"2026-06-17T18:11:04Z","conclusion":"success","name":"Stop containers","number":20,"startedAt":"2026-06-17T18:11:03Z","status":"completed"},{"completedAt":"2026-06-17T18:11:04Z","conclusion":"success","name":"Complete job","number":21,"startedAt":"2026-06-17T18:11:04Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967483727"},{"completedAt":"2026-06-17T18:09:16Z","conclusion":"success","databaseId":81967483762,"name":"verify / knowledge","startedAt":"2026-06-17T18:08:26Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:08:28Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:08:27Z","status":"completed"},{"completedAt":"2026-06-17T18:08:49Z","conclusion":"success","name":"Initialize containers","number":2,"startedAt":"2026-06-17T18:08:28Z","status":"completed"},{"completedAt":"2026-06-17T18:08:50Z","conclusion":"success","name":"Run actions/checkout@v6","number":3,"startedAt":"2026-06-17T18:08:49Z","status":"completed"},{"completedAt":"2026-06-17T18:08:55Z","conclusion":"success","name":"Install Erlang and Elixir","number":4,"startedAt":"2026-06-17T18:08:50Z","status":"completed"},{"completedAt":"2026-06-17T18:08:56Z","conclusion":"success","name":"Download compiled artifact","number":5,"startedAt":"2026-06-17T18:08:55Z","status":"completed"},{"completedAt":"2026-06-17T18:08:56Z","conclusion":"success","name":"Unpack compiled artifact (restores exact mtimes)","number":6,"startedAt":"2026-06-17T18:08:56Z","status":"completed"},{"completedAt":"2026-06-17T18:08:57Z","conclusion":"success","name":"Install dependencies (no-op when deps/ complete)","number":7,"startedAt":"2026-06-17T18:08:56Z","status":"completed"},{"completedAt":"2026-06-17T18:09:01Z","conclusion":"success","name":"Prepare database","number":8,"startedAt":"2026-06-17T18:08:57Z","status":"completed"},{"completedAt":"2026-06-17T18:09:10Z","conclusion":"success","name":"Run knowledge lane","number":9,"startedAt":"2026-06-17T18:09:01Z","status":"completed"},{"completedAt":"2026-06-17T18:09:10Z","conclusion":"success","name":"Post Run actions/checkout@v6","number":17,"startedAt":"2026-06-17T18:09:10Z","status":"completed"},{"completedAt":"2026-06-17T18:09:13Z","conclusion":"success","name":"Stop containers","number":18,"startedAt":"2026-06-17T18:09:10Z","status":"completed"},{"completedAt":"2026-06-17T18:09:14Z","conclusion":"success","name":"Complete job","number":19,"startedAt":"2026-06-17T18:09:13Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81967483762"},{"completedAt":"2026-06-17T18:15:35Z","conclusion":"success","databaseId":81968849027,"name":"verify / verify-summary","startedAt":"2026-06-17T18:15:33Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:15:33Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:15:33Z","status":"completed"},{"completedAt":"2026-06-17T18:15:33Z","conclusion":"success","name":"Assert all parallel verify lanes succeeded","number":2,"startedAt":"2026-06-17T18:15:33Z","status":"completed"},{"completedAt":"2026-06-17T18:15:34Z","conclusion":"success","name":"Complete job","number":3,"startedAt":"2026-06-17T18:15:33Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81968849027"},{"completedAt":"2026-06-17T18:15:39Z","conclusion":"success","databaseId":81968884452,"name":"ci-gate","startedAt":"2026-06-17T18:15:37Z","status":"completed","steps":[{"completedAt":"2026-06-17T18:15:38Z","conclusion":"success","name":"Set up job","number":1,"startedAt":"2026-06-17T18:15:38Z","status":"completed"},{"completedAt":"2026-06-17T18:15:38Z","conclusion":"success","name":"Verify required CI lanes","number":2,"startedAt":"2026-06-17T18:15:38Z","status":"completed"},{"completedAt":"2026-06-17T18:15:38Z","conclusion":"success","name":"Complete job","number":3,"startedAt":"2026-06-17T18:15:38Z","status":"completed"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751/job/81968884452"}],"url":"https://github.com/szTheory/scoria/actions/runs/27709716751","workflowName":"CI"}
+```
 
 ---
 
@@ -176,55 +197,74 @@ Per D-D2: critical path = sum of **stage maxima** along the dependency chain
 using each job's (completedAt − startedAt) active run time (EXCLUDES queue time). For matrix
 lanes (full-suite ×4) take the SLOWEST shard.
 
-| Stage | Duration (projected) | Notes |
-|-------|----------------------|-------|
-| policy | 2m59s (measured) | Warm cache hit, Phase 23 run |
-| build | 0m19s (measured) | Build-once artifact upload |
-| max(parallel lanes) | 19m07s (ratchet) | Bottleneck after Phase 24-26 |
-| verify-summary | ~30s (est.) | Fan-in result check |
-| **TOTAL** | **~23min** | Projected with Phases 23-26 applied |
+| Stage | Duration (MEASURED) | Source |
+|-------|---------------------|--------|
+| policy | 19s (0m19s) | verify / policy: 18:07:37Z → 18:07:56Z |
+| build | 20s (0m20s) | verify / build: 18:08:04Z → 18:08:24Z — warm cache HIT |
+| max(parallel lanes) | 417s (6m57s) | verify / test (closeout chain) — dominant |
+| verify-summary | 2s (0m02s) | verify / verify-summary: 18:15:33Z → 18:15:35Z |
+| **TOTAL** | **458s = 7m38s ≈ 7.6 min** | **MEASURED — VELO-01 MET** |
 
-Baseline comparison: 76m15s (serial) → ~23min projected (fully parallelized) = ~−53min
-Run-level wall-clock improvement: ~79min (baseline) → ~73min (Phase 23 only, measured)
+Parallel lane breakdown (all run concurrently after `build`; `verify / test` dominates):
+
+| Lane | Active duration | Notes |
+|------|-----------------|-------|
+| verify / test | **417s** (6m57s) | Dominant — closeout chain: release_preview + adoption + rtoh + semantic |
+| verify / full-suite (1/4) | 373s (6m13s) | Slowest shard — bottleneck was shard 1 (full adoption-path tests) |
+| verify / full-suite (2/4) | 154s (2m34s) | |
+| verify / connector | 153s (2m33s) | connector + advisory gallery |
+| verify / full-suite (4/4) | 135s (2m15s) | |
+| verify / ratchet | **106s** (1m46s) | compile-only fix: was ~1147s (19m07s) before Plan 28-03 Task A |
+| verify / full-suite (3/4) | 60s (1m00s) | |
+| verify / knowledge | 50s (0m50s) | --only knowledge (Phase 24); was ~21m16s full-suite re-run |
+
+Baseline comparison: 76m15s (serial baseline) → **7m38s MEASURED** = ~−68min
+Run-level wall-clock improvement: ~79min (baseline 27508317719) → ~8min (measured 27709716751)
 
 ---
 
 ## Honesty Caveats (D-D4)
 
-1. **Phases 24-26 are local-only:** The knowledge lane fix (Phase 24), lane parallelization
-   (Phase 25), and full-suite sharding (Phase 26) have been implemented and contract-tested
-   but have NOT yet been pushed to GitHub or triggered a GitHub Actions run. The projected
-   ~23min critical path is derived from architecture + internal step timing of run 27514007418,
-   not from a live GitHub Actions execution of the parallelized topology. This is stated
-   explicitly because D-D3 prohibits fabricating per-job numbers.
+1. **Phases 24-26 topology — RESOLVED:** The knowledge lane fix (Phase 24), lane
+   parallelization (Phase 25), and full-suite sharding (Phase 26) have been pushed to GitHub
+   and have run GREEN in the parallelized topology. Run 27709716751 (commit 06cdc34,
+   2026-06-17) is the measured proof. The "local-only" caveat from earlier runs is closed.
 
-2. **warm-cache run:** Run 27514007418 is a warm-cache run — `Restore deps + build cache`
-   completed in 1s, confirming a cache hit on the stable env-scoped key (OS/OTP/Elixir/
-   MIX_ENV/mix.lock hash) introduced in Phase 23. The baseline run 27508317719 also hit the
-   cache (5s restore vs 7s install) — the comparison is on a same-workload, warm-cache basis.
+2. **warm-cache run:** Run 27709716751 is a warm-cache run — `verify / build` step "Restore
+   deps + build cache" was a confirmed Cache HIT (1s). This is the valid comparison basis:
+   warm-cache PR merge CI is the claimed ≤~15m use case.
 
-3. **same-workload:** Both runs execute the same test suite (same commit count / no skipped
-   lanes). The after-run includes the same adoption, runtime-to-handoff, semantic, ratchet,
-   full-suite, knowledge, and connector lanes as the baseline — no lanes were omitted.
+3. **same-workload:** The run executes the same test suite (same commit scope, all gating
+   lanes: policy, build, test, ratchet, knowledge, connector, full-suite ×4). No lanes were
+   omitted from the gate.
 
-4. **runner variance:** Single runs per configuration. GitHub Actions `ubuntu-latest` runners
-   have non-trivial variance (±2-5min on compute-bound jobs is typical). The ratchet's ~19min
-   measurement should be treated as a one-sample estimate with ±2min uncertainty.
+4. **runner variance:** Single measured run. GitHub Actions `ubuntu-latest` runners have
+   variance (±1-3min typical on compute-bound jobs). The dominant parallel lane (verify/test
+   at 417s / 6m57s) is not compute-bound — it is wall-clock dominated by the serial closeout
+   chain steps. The ratchet at 106s has smaller absolute variance. The 7m38s critical-path
+   number is a strong, measured single-run estimate.
 
-5. **ratchet cold-compile note:** SEED-003 described the ratchet as "a cold-compile subprocess"
-   that was a root cause. With Phase 23's build-once artifact available to the parallel ratchet
-   job, the ratchet job CAN restore the artifact. Whether the ratchet's `mix test --WAE`
-   subprocess inside `scoria.warning_ratchet.test` also benefits from the artifact (or runs its
-   own subprocess compile) is not yet measured. A live parallelized run may show the ratchet
-   job significantly faster than the ~19min serial measurement.
+5. **ratchet RESOLVED:** The ratchet lane measured 106s (1m46s) after Plan 28-03 Task A's
+   compile-only fix (was 1147s = ~19m07s in the pre-Phase-28-03 serial run 27514007418).
+   The WARN-06 gate integrity is maintained: parity-tested by `capture_parity_test.exs`.
 
-6. **post-push verification pending:** The durable velocity outcome (≤~15min or ~12min target)
-   requires a live GitHub Actions run with the Phases 24-26 code merged. This document records
-   the intermediate state as of 2026-06-17 (Phase 28 closeout). The verify-summary fan-in job
-   name and parallel topology are fully implemented in `.github/workflows/ci-verify.yml` and
-   guarded by contract tests.
+6. **post-push verification — RESOLVED:** Run 27709716751 is the live GitHub Actions run
+   of the fully-parallelized topology. The verify-summary fan-in job ran GREEN. ci-gate
+   ran GREEN. The velocity outcome is measured, not projected.
+
+7. **Three first-real-run topology defects required repair (all CI plumbing, not gate changes):**
+   - (a) Ratchet lane needed Postgres — `mix test` (used for faithful WARN-06 capture) boots
+     the app and requires a DB; `ci_policy_contract_test` updated to match the `services:
+     postgres` addition.
+   - (b) Full-suite shards needed the `phx_new` archive for host-proof tests (install step
+     added to the matrix job).
+   - (c) `scoria.install_check` needed a 180s timeout under shard load (was 60s; the parallel
+     environment introduced contention causing timeouts). This is a known follow-up item:
+     the 60s→180s increase may indicate a `phx_new`/Igniter interaction under shard load
+     that is worth profiling in a future phase (non-blocking — all tests pass at 180s).
 
 ---
 
 *Generated: 2026-06-17 | Baseline run ID: 27508317719 | Phase 23 after-run ID: 27514007418*
-*Phases 24-26: local main branch (not yet pushed) | Critical path method: D-D2 (active run time)*
+*Measured parallelized run ID: 27709716751 (commit 06cdc34, 2026-06-17) | Critical path method: D-D2 (active run time)*
+*VELO-01: MET (7m38s ≤ ~15m target)*

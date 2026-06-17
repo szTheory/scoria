@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: CI/CD Velocity
 status: executing
-last_updated: "2026-06-17T15:04:55.871Z"
-last_activity: 2026-06-17 -- Phase 28 execution started
+last_updated: "2026-06-17T18:30:00.000Z"
+last_activity: 2026-06-17 -- Phase 28 Plan 03 complete; v3.1 SHIPPED; VELO-01 MET (7m38s)
 progress:
-  total_phases: 26
-  completed_phases: 5
-  total_plans: 8
-  completed_plans: 6
-  percent: 19
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 9
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-14 after v3.0 Control Room mileston
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 28 — dx-mix-ci-alias-velocity-closeout
+**Current focus:** v3.1 CI/CD Velocity SHIPPED — all 6 phases complete (23–28)
 
 ## Current Position
 
-Phase: 28 (dx-mix-ci-alias-velocity-closeout) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 28
-Last activity: 2026-06-17 -- Phase 28 execution started
+Phase: 28 (dx-mix-ci-alias-velocity-closeout) — COMPLETE
+Plan: 3 of 3 (ALL COMPLETE)
+Status: v3.1 CI/CD Velocity SHIPPED — VELO-01 MET (7m38s measured, run 27709716751)
+Last activity: 2026-06-17 -- Phase 28 Plan 03 complete; measured critical path 7m38s
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Last activity: 2026-06-17 -- Phase 28 execution started
 
 ### Decisions (current-milestone summary; full log in PROJECT.md Key Decisions)
 
+- Phase 28 Plan 03 (VELO-01 MEASURED): compile-only ratchet capture (mix test --only :__ratchet_compile_only__) cuts ratchet lane from ~19m to 1m46s; measured critical path 7m38s in run 27709716751 (GREEN, warm-cache); VELO-01 MET — 2026-06-17
 - Phase 24 (KNOW-01): `--only knowledge` injected inside `scoria.test.knowledge.ex`; CI YAML and VerificationLanes records unchanged; Layer 2 `after_suite total > 0` guard env-gated; D-03 contract test ratchets file set and `use Scoria.KnowledgeCase` choke point — 2026-06-15
 - v3.0 keeps the custom token-first scoped CSS architecture; `ui.ex` is the enforced token gateway (no Tailwind/BEM switch) — 2026-06-03
 - v3.0 is UI-only: reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data — 2026-06-03
@@ -103,4 +104,6 @@ Items acknowledged and deferred at milestone close on 2026-06-14:
 
 ## Operator Next Steps
 
-- `/clear` then `/gsd:new-milestone` to start **v3.1 CI/CD Velocity** (seeded by SEED-003).
+- v3.1 CI/CD Velocity SHIPPED. All phases 23–28 complete.
+- Consider `/gsd:new-milestone` for the next milestone (SEED-004 async/Process.sleep cleanup, or v3.2 if a new goal emerges).
+- Follow-up: `scoria.install_check` 60s→180s timeout under shard load (possible phx_new/Igniter interaction — non-blocking for v3.1, candidate for a future phase).
