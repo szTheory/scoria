@@ -38,6 +38,8 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 
 - `MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
 
+The ratchet capture is **compile-only**: `capture_output_standalone!/0` runs `mix do compile --force + test --only __ratchet_compile_only__`, which force-recompiles `lib/` and compiles all test files (emitting compiler warnings to stderr) but executes zero tests. The `--force` step is retained so any future gate extension that filters `lib/` paths is not silently weakened by a warm cache hit. WARN-06 gate parity is guarded by `test/scoria/warning_inventory/capture_parity_test.exs`.
+
 **`knowledge` job (Postgres on 55432):**
 
 - `mix test.knowledge --warnings-as-errors` — optional knowledge lane WAE
@@ -76,7 +78,7 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 
 **Local parity:** set `SCORIA_DB_PORT=55432` for the test job database; use `MIX_ENV=dev` only for `mix scoria.release_preview`. Run `mix scoria.test.ci_trust` for maintainer trust bundle parity.
 
-**Ratchet is maintainer-only:** `mix scoria.warning_ratchet.test` and `mix scoria.warning_ratchet.check` are debugger commands — not CI steps.
+**Ratchet is maintainer-only:** `mix scoria.warning_ratchet.test` and `mix scoria.warning_ratchet.check` are debugger commands — not CI steps. The ratchet capture is compile-only (compiles `lib/` + test files, runs zero tests); WARN-06 gate parity is guarded by `test/scoria/warning_inventory/capture_parity_test.exs`.
 
 **When CI fails, run the matching maintainer command next:**
 

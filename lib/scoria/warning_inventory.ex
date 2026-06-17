@@ -195,12 +195,21 @@ defmodule Scoria.WarningInventory do
   end
 
   defp capture_output_standalone! do
-    Mix.shell().info("==> Capturing compile + test warning output")
+    Mix.shell().info("==> Capturing compile-only warning output (compiles lib/ + test files; runs zero tests)")
 
+    # WHY --force is retained: `compile --force` ensures lib/ is unconditionally
+    # recompiled exactly as before this optimization, so any future gate extension
+    # that filters lib/ paths is not silently weakened by a warm cache hit.
+    #
+    # WHY --only __ratchet_compile_only__: `mix test --only <unused-tag>` loads and
+    # compiles every test file (emitting compiler warnings to stderr) but executes
+    # nothing — the tag has zero usages in the suite so no tests match and it exits 0.
+    # This cuts the ratchet CI lane from ~19 min to ~2-3 min without narrowing what
+    # the subprocess compiles; WARN-06 gate parity is guarded by capture_parity_test.exs.
     {output, _status} =
       System.cmd(
         "mix",
-        ["do", "compile", "--force", "+", "test"],
+        ["do", "compile", "--force", "+", "test", "--only", "__ratchet_compile_only__"],
         env: [{"MIX_ENV", "test"}],
         stderr_to_stdout: true
       )
