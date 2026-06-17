@@ -491,7 +491,7 @@ Step 2.6: SKIPPED — this phase is YAML surgery + ExUnit test extension + Markd
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Header comment retargeting (D-11 discretionary)**
    - What we know: Both `ci.yml` (line 18) and `ci-verify.yml` (line 11) say `Maintainer narrative: docs/operator_verification.md`. D-11 says optionally retarget to `MAINTAINERS.md`.
