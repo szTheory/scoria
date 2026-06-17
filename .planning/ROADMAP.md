@@ -190,11 +190,12 @@ Plans:
   3. The knowledge job no longer re-runs the full suite (confirmed by log file/line count) and the `build` artifact is restored by every downstream shard (no cold recompiles) — the two largest reclaimed costs are demonstrably gone.
   4. Every gating lane still executes in CI (diffed from job logs, not just YAML) and `ci_policy_contract_test` + `verification_lanes_test` are green — the bar is preserved at milestone close.
 
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
 - [x] 28-01-PLAN.md — `mix ci` Mix task (SSOT-driven, run-all-aggregate, pgvector preflight, --skip-optional) + alias + local-vs-CI asymmetry docs (DX-01)
 - [x] 28-02-PLAN.md — durable velocity proof (pinned before/after run IDs + inline gh JSON) + MILESTONES headline + verification back-ref (VELO-01)
+- [ ] 28-03-PLAN.md — [gap] compile-only ratchet capture (parity-guarded, ~19m→~2-3m) + push parallelized topology + capture REAL run + measured proof/MILESTONES/traceability (VELO-01)
 
 ## Progress
 
@@ -205,7 +206,7 @@ Plans:
 | 25. Lane parallelization + topology docs | v3.1 | 2/2 | Complete   | 2026-06-15 |
 | 26. Full-suite partition sharding | v3.1 | 1/1 | Complete   | 2026-06-16 |
 | 27. CI determinism & flake elimination | v3.1 | 1/1 | Complete    | 2026-06-17 |
-| 28. DX `mix ci` alias + velocity closeout | v3.1 | 2/2 | Complete   | 2026-06-17 |
+| 28. DX `mix ci` alias + velocity closeout | v3.1 | 2/3 | In progress | — |
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete | 2026-06-04 |
 | 13. Orientation spine (IA) | v3.0 | 8/8 | Complete | 2026-06-12 |
