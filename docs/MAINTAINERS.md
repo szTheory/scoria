@@ -87,6 +87,33 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 - Test: adoption or runtime_to_handoff failed → `SCORIA_DB_PORT=55432 mix test.adoption` or `mix test.runtime_to_handoff`
 - Full-suite (k/4): WAE failed → `SCORIA_DB_PORT=55432 MIX_TEST_PARTITION=k mix test --warnings-as-errors --partitions 4`
 
+### Local merge gate: mix ci {#local-merge-gate}
+
+`mix ci` reproduces the full merge gate locally and exits non-zero on any failure.
+
+**What it runs (in order):**
+
+1. `mix deps.unlock --check-unused` — flags orphan entries left in `mix.lock`
+2. `mix deps.get --check-locked` — asserts the lock is in sync with `mix.exs` (fails instead of silently rewriting)
+3. `mix format --check-formatted` — format drift check (scoped via `.formatter.exs`; does not touch `examples/` vendored deps)
+4. `mix compile --warnings-as-errors` — compile gate
+5. pgvector preflight: `mix scoria.pgvector.bootstrap --check` — hard-fails with actionable `Next step:` block if pgvector is unreachable (never silently skips a merge-gating lane)
+6. All merge-gating lanes from `Scoria.VerificationLanes.closeout_order()` + `:semantic_fast_path`, `:knowledge`, `:connector` (`:support_copilot_gallery` excluded — advisory, not merge-blocking)
+
+Run-all-then-aggregate: every step runs before the verdict is printed; `System.halt(1)` if any step failed.
+
+**No Docker / docs-only change?**
+
+`mix ci --skip-optional` skips the preflight and the optional/Docker-dependent lanes (`:knowledge`, `:semantic_fast_path`, `:connector`), prints exactly which lanes were skipped, then stamps:
+
+    RESULT: PARTIAL (knowledge, semantic_fast_path, connector skipped — NOT a merge-gate pass)
+
+and exits non-zero unconditionally. It can never be mistaken for a clean gate.
+
+**Deliberate local-vs-CI asymmetry (shift-left):**
+
+`mix ci` runs `mix format --check-formatted`, `mix deps.unlock --check-unused`, and `mix deps.get --check-locked` **locally only** — CI's `policy` job does NOT run these checks today (D-C2/D-C3 from the phase 28 planning context). This is intentional: local is a strict superset of CI (more safety locally, never less). Adding these checks to the `policy` job is a documented deferred follow-up; until then the asymmetry is here as the canonical reference.
+
 ### Flake policy: retry vs fix {#flake-policy}
 
 **Zero-retry default.** Gating test lanes MUST NOT use `continue-on-error: true`, job-level

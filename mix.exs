@@ -111,7 +111,8 @@ defmodule Scoria.MixProject do
       "assets.deploy": ["scoria.assets.build"],
       # Dev harness convenience: create+migrate (core+knowledge order)+seed the
       # dev DB in one step. Used by the Docker entrypoint and fresh local setup.
-      "dev.setup": ["scoria.dev.db", "run priv/repo/dev_seed.exs"]
+      "dev.setup": ["scoria.dev.db", "run priv/repo/dev_seed.exs"],
+      ci: ["scoria.ci"]
     ]
   end
 
