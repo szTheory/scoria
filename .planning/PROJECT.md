@@ -10,6 +10,17 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
+## Current Milestone: v3.2 Drydock
+
+**Goal:** Make local multi-lib Phoenix dev a hands-off, port-conflict-free joy for the maintainer, harden Scoria as the reference Docker dev-DX standard, then cut the queued maintenance release.
+
+**Target features:**
+- **Docker dev-DX hardening (Scoria-only):** bake a non-4000 PORT default into `make dev`; add a `make nuke`/clean target + stale-instance hygiene doc; print a copy-pasteable key-route list in the launch banner; audit Dockerfile layer ordering so a CSS/HEEx-only edit triggers no dep refetch or full recompile; correct GSD plan/agent verification copy from `mix phx.server`→`localhost:4000/scoria` to `make up`/`make dev` + the real `*.localhost` instance URL.
+- **Portable fleet standard + secrets pattern:** harden `docs/docker_dev_dx.md` as the reference standard (reader-empathy: persona/JTBD, gameplan-at-top, digestible chunks); adopt a fleet secrets pattern (1Password CLI / direnv) and flag the plaintext `.env` `ANTHROPIC_API_KEY` for rotation.
+- **Maintenance release:** merge the open release-please PR on green CI → post-publish registry semver upgrade smoke.
+
+**Key context:** Sibling-repo migration (rulestead/parapet/etc.) is explicitly **out of scope** — Scoria is the reference implementation + portable docs; cross-repo convergence stays in the `docker-dx-fleet-hardening` todo. Traefik + `*.localhost` stays locked (shipped, verified live across two instances) — research validates hygiene/footguns, not a proxy bake-off.
+
 ## Previous Shipped Milestone: v3.0 Control Room (2026-06-14)
 
 **Goal:** Take the embedded `/scoria` operator dashboard to "insane polish" — a tightened, fully-adopted design system, a clear persona/JTBD information architecture, brand-tied motion, full light/dark parity, and seed data that exercises every screen — proven by a committed screenshot+critique evaluation loop.
@@ -230,12 +241,13 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-_No milestone in flight. Start the next milestone with `/gsd:new-milestone`._
+**Milestone v3.2 Drydock in flight** — Docker dev-DX hardening (Scoria-only) + the queued maintenance release. Requirements defined in `.planning/REQUIREMENTS.md`.
 
-- [ ] **SEED-004 (test-code determinism, leading candidate):** convert forced-serial `IntegrationCase` files to `async: true`, de-globalize per-module Phoenix test endpoints, and replace ~14 `Process.sleep` sites with the `eventually/2` helper — then raise partition count past 4 once the serial floor drops. (Deferred from v3.1 as higher product risk; touches 9+ test files.)
-- [ ] **DOCKER-01:** `docker-dx-fleet-hardening` — adjacent dev-harness hardening (tracked todo).
+**Deferred (not this milestone):**
+- [ ] **SEED-004 (test-code determinism):** convert forced-serial `IntegrationCase` files to `async: true`, de-globalize per-module Phoenix test endpoints, and replace ~14 `Process.sleep` sites with the `eventually/2` helper — then raise partition count past 4 once the serial floor drops. (Higher product risk; touches 9+ test files. Leading candidate for the milestone after v3.2.)
+- [ ] **DOCKER-01 cross-repo convergence:** migrate sibling repos (rulestead/parapet/etc.) onto the shared Traefik + unpublished-DB standard. (Out of v3.2 scope by decision; stays in the `docker-dx-fleet-hardening` todo.)
 
-_(Release 0.1.1 publish via release-please remains pending, tracked in Release Queue. Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verification-doc gaps for Phases 13 & 14 remain optional.)_
+_(Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verification-doc gaps for Phases 13 & 14 remain optional.)_
 
 ### Out of Scope
 
@@ -437,4 +449,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-17 after v3.1 milestone — v3.1 CI/CD Velocity SHIPPED, archived, and tagged `v3.1` (local, unpushed). All 6 phases (23–28); audit `passed` (13/13). PR CI 77m→7m38s MEASURED, bar preserved. Next: `/gsd:new-milestone` (SEED-004 test-code determinism leading candidate).*
+*Last updated: 2026-06-17 after starting milestone v3.2 Drydock — Docker dev-DX hardening (Scoria-only) + maintenance release. Sibling-repo convergence and SEED-004 test-code determinism deferred. Defining requirements next.*
