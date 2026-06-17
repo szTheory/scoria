@@ -1,11 +1,15 @@
 ---
 phase: 28-dx-mix-ci-alias-velocity-closeout
-reviewed: 2026-06-17T00:00:00Z
+reviewed: 2026-06-17T14:00:00Z
 depth: standard
-files_reviewed: 2
+files_reviewed: 6
 files_reviewed_list:
-  - lib/mix/tasks/scoria.ci.ex
-  - mix.exs
+  - lib/scoria/warning_inventory.ex
+  - test/scoria/warning_inventory/capture_parity_test.exs
+  - test/mix/tasks/scoria.install_check_test.exs
+  - .github/workflows/ci-verify.yml
+  - test/scoria/ci_policy_contract_test.exs
+  - docs/MAINTAINERS.md
 findings:
   critical: 0
   warning: 2
@@ -14,105 +18,150 @@ findings:
 status: issues_found
 ---
 
-# Phase 28: Code Review Report
+# Phase 28 (plan 28-03): Code Review Report
 
 **Reviewed:** 2026-06-17
 **Depth:** standard
-**Files Reviewed:** 2 (plus `lib/scoria/verification_lanes.ex` as SSOT reference)
+**Files Reviewed:** 6
 **Status:** issues_found
 
 ## Summary
 
-The two changed files implement `Mix.Tasks.Scoria.Ci` (the merge-gate mirror task) and wire it into `mix.exs` via a single-entry `ci: ["scoria.ci"]` alias.
+This review covers the six files changed by gap-closure plan 28-03 (VELO-01). The core change
+optimises `capture_output_standalone!/0` from `mix do compile --force + test` (full suite, ~19 min)
+to `mix do compile --force + test --only __ratchet_compile_only__` (compile-only, ~2-3 min) and
+adds a parity guard to prove WARN-06 still catches high-signal unclassified compile warnings.
 
-The primary correctness concerns from the brief were all checked:
+**Core logic and security:** The argv change in `warning_inventory.ex` is structurally correct.
+The `--force` step is preserved. The tag `__ratchet_compile_only__` has zero usages in the suite
+(confirmed by grep). The parity test correctly mirrors the subprocess argv, uses `async: false`,
+and calls `on_exit` for cleanup. Cluster classification of the injected `@_parity_unused_attr`
+warning flows correctly to `:unclassified_compile` (none of the prior cluster rules match
+"module attribute ... was set but never used"). `Path.wildcard("test/scoria/**/*_test.exs")`
+matches zero-depth files, so `__ratchet_parity_tmp_test.exs` under `test/scoria/` is correctly
+included in `high_signal_wae_paths/0` when the file exists. No security issues found.
 
-- **False-green footgun (elixir-lang/elixir#4318):** Not present. The alias is a single-element delegate (`["scoria.ci"]`), not a chained list. The task itself runs all steps before calling `aggregate_and_halt`, never short-circuiting.
-- **`--skip-optional` exits non-zero:** Correct. `System.halt(1)` is unconditional in `run_skip_optional/0`, regardless of whether the remaining lanes pass.
-- **Preflight hard-fails non-zero:** Correct. `System.halt(1)` is called directly in the `{:error, :preflight_failed}` branch before any lane runs.
-- **Exit code propagation:** `System.cmd/3` returns `{output, status}` and the integer status is collected into the results list. `aggregate_and_halt/1` checks `status != 0` across all results. Correct.
-- **Shell injection via VerificationLanes.command/1:** Acceptable risk per the threat model (T-28-01). Command strings are compile-time literals from the SSOT module, not user-supplied input. No untrusted data reaches `sh -c`.
-- **SSOT derivation:** `gating_lane_ids/0` calls `VerificationLanes.closeout_order/0`, `VerificationLanes.exclusions/1`, and `VerificationLanes.command/1`. No command strings are duplicated or hardcoded. `:support_copilot_gallery` is excluded by checking the `"merge-blocking closeout"` string in its exclusions list, not by hardcoding the atom.
-
-Two warnings were found: one is a correctness gap (local check is weaker than CI for the connector lane), and one is a latent runtime failure for a specific invocation environment. Two info items cover documentation gaps.
+**Two warnings and two info items** were identified, all in `docs/MAINTAINERS.md` and
+`ci-verify.yml`. The two warnings are documentation inconsistencies that could mislead a
+maintainer diagnosing a local ratchet failure. No correctness bugs were found in the changed
+Elixir source files.
 
 ## Warnings
 
-### WR-01: Connector lane runs without `--warnings-as-errors` locally but CI uses it
+### WR-01: MAINTAINERS.md section heading still describes ratchet as "no Postgres" after Postgres was added
 
-**File:** `lib/mix/tasks/scoria.ci.ex:197`
-**Issue:** `run_lanes/1` calls `VerificationLanes.command(id)`, which for the `:connector` lane returns `"mix test.connector"`. The CI command (`VerificationLanes.ci_command(:connector)`) is `"mix test.connector --warnings-as-errors"`. The local merge gate therefore runs the connector lane with a weaker check than CI runs it. A local green on connector does not guarantee a CI green, which undermines the stated goal of "a green that never lies."
+**File:** `docs/MAINTAINERS.md:37`
+**Issue:** The section heading reads `**\`ratchet\` job (no Postgres):**` but the ratchet CI job
+now has a full `services: postgres` block (added in this same PR, visible at ci-verify.yml lines
+187-250). The `ci_policy_contract_test.exs` was correctly updated to assert
+`Map.fetch!(blocks, "ratchet") =~ "services:"`, so the contract test reflects reality — but
+MAINTAINERS.md still tells a maintainer the ratchet job has no database. A maintainer following
+the docs to diagnose a ratchet CI failure will be confused when the real job boots Postgres.
 
-The same divergence exists for `:release_preview`: `command/1` returns `"mix scoria.release_preview"` while `ci_command/1` is `"MIX_ENV=dev mix scoria.release_preview"`. However for `release_preview` the MIX_ENV difference is likely benign if `mix ci` is invoked in a dev shell (MIX_ENV defaults to dev), whereas the connector `--warnings-as-errors` gap is a categorical omission.
+**Fix:** Change line 37 from:
 
-**Fix:** Either use `VerificationLanes.ci_command(id)` instead of `command(id)` in `run_lanes/1` (making local parity exact), or document the connector `--warnings-as-errors` gap in the `@moduledoc` Local-vs-CI asymmetry section the same way the preamble asymmetry is documented. The cleaner fix is:
-```elixir
-defp run_lanes(lane_ids) do
-  Enum.map(lane_ids, fn id ->
-    cmd = VerificationLanes.ci_command(id)   # use CI command for exact parity
-    Mix.shell().info("==> [lane: #{id}] #{cmd}")
-    {_io, status} = System.cmd("sh", ["-c", cmd], into: IO.stream(), stderr_to_stdout: true)
-    {Atom.to_string(id), status}
-  end)
-end
 ```
-If `command/1` is intentional for local-environment-specific env vars (e.g. `SCORIA_DB_PORT=55432` in semantic_fast_path), then a mixed approach (prefer `command/1` but overlay `ci_command/1` flags) should be documented explicitly.
+**`ratchet` job (no Postgres):**
+```
+
+to:
+
+```
+**`ratchet` job (Postgres on 55432):**
+```
+
+(Matching the style used for test, knowledge, connector, and full-suite headings on lines 30, 43,
+47, and 52.)
 
 ---
 
-### WR-02: Test lanes inherit ambient MIX_ENV from the parent process; `mix ci` has no `preferred_env`
+### WR-02: MAINTAINERS.md gate map table omits SCORIA_DB_PORT from the ratchet local command
 
-**File:** `lib/mix/tasks/scoria.ci.ex:199` / `mix.exs:29-51`
-**Issue:** `run_lanes/1` invokes test lanes (`:adoption`, `:runtime_to_handoff`) via `System.cmd("sh", ["-c", "mix test.adoption"])`. These subprocesses inherit `MIX_ENV` from the parent shell. Neither `"scoria.ci"` nor `"ci"` appears in `preferred_envs` in `cli/0`. The `:adoption` and `:runtime_to_handoff` lane `command/1` strings have no `MIX_ENV=test` prefix.
+**File:** `docs/MAINTAINERS.md:25`
+**Issue:** The gate map table at lines 22-28 shows the local command for the ratchet lane as:
 
-If a contributor runs `mix ci` from a fresh shell where `MIX_ENV` is not set (defaults to `dev`), every test-lane subprocess will attempt `mix test` in `:dev` environment, which mix refuses with an error. The `:semantic_fast_path` lane is safe because its `command/1` inlines `MIX_ENV=test`, but `:adoption` and `:runtime_to_handoff` are not.
-
-**Fix:** Add `"scoria.ci"` to `preferred_envs` in `mix.exs` `cli/0` to pin the task to `:test`. This ensures the subprocesses inherit the correct `MIX_ENV`:
-```elixir
-def cli do
-  [
-    preferred_envs: [
-      "scoria.ci": :test,
-      # ... existing entries
-    ]
-  ]
-end
 ```
-Alternatively (and more robustly), prefix the test lane commands in `VerificationLanes` with `MIX_ENV=test` the same way `:semantic_fast_path` already does, so each lane is self-contained regardless of the caller's environment. Note that `"ci"` (the alias) also needs a preferred_env entry if the alias is used directly, since Mix resolves preferred_envs for alias keys too.
+MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs
+```
+
+This command lacks `SCORIA_DB_PORT=55432`. Because `tmp_preflight_test.exs` shells out to
+`mix scoria.warning_ratchet.check` (a separate BEAM process that boots `Scoria.Application` with
+Oban, which requires a live Postgres connection), the local command will fail with a DB connection
+error if run against the local dev Postgres on port 55432. Every other DB-using lane in the table
+correctly includes `SCORIA_DB_PORT=55432`.
+
+Furthermore, the new parity guard step (`mix test ... capture_parity_test.exs`) also boots the
+app via the subprocess's `mix test` invocation, so it too needs the correct DB port. The ratchet
+lane's local equivalent should include `SCORIA_DB_PORT=55432` to match the sibling lanes.
+
+**Fix:** Update line 25 to:
+
+```
+| `ratchet` | `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs` |
+```
+
+A separate maintainer note for the parity guard step (if desired) would be:
+
+```
+SCORIA_DB_PORT=55432 MIX_ENV=test mix test --include ratchet_parity test/scoria/warning_inventory/capture_parity_test.exs
+```
 
 ---
 
 ## Info
 
-### IN-01: `Mix.Tasks.Scoria.Ci` ships in the Hex package
+### IN-01: Parity guard CI step omits --warnings-as-errors (minor consistency gap with sibling step)
 
-**File:** `mix.exs:147`
-**Issue:** The `package/0` `files` list includes `"lib"`, which means `lib/mix/tasks/scoria.ci.ex` will be included in the published Hex package. This is a maintainer-only development tool with no value to adopters. Other maintainer tasks (`:install`, `:release_preview`) appear to ship in the same way, so this is consistent with existing practice — but it does expose the maintainer's local CI workflow to adopters and grows their compiled artifact surface.
-**Fix:** No immediate action required (consistent with project precedent). If the project wants a clean separation of maintainer tooling, consider moving dev-only tasks to a `dev/mix/tasks/` directory that is excluded from the package (analogous to how `dev/` hosts the dev harness), or add explicit `"lib/scoria"` and `"lib/scoria_web"` globs to `files` instead of the bare `"lib"` glob.
+**File:** `.github/workflows/ci-verify.yml:249`
+**Issue:** The WARN-06 parity guard step runs:
+
+```yaml
+run: MIX_ENV=test mix test --include ratchet_parity test/scoria/warning_inventory/capture_parity_test.exs
+```
+
+The sibling ratchet hygiene step (line 244) uses `--warnings-as-errors`. The parity step does
+not. `capture_parity_test.exs` itself is warning-clean (the injected warning lives in the
+subprocess output, not in the test module), so omitting `--warnings-as-errors` on the parent
+runner is not a correctness defect. However, the inconsistency means a future compile warning
+accidentally introduced into `capture_parity_test.exs` would not be caught by this step.
+
+**Fix:** Add `--warnings-as-errors` for consistency with the sibling step:
+
+```yaml
+run: MIX_ENV=test mix test --warnings-as-errors --include ratchet_parity test/scoria/warning_inventory/capture_parity_test.exs
+```
 
 ---
 
-### IN-02: Hardcoded PARTIAL message and dynamic `skipped` string are in sync today but can drift
+### IN-02: `_status` from the subprocess is silently discarded in both parity tests
 
-**File:** `lib/mix/tasks/scoria.ci.ex:122-139`
-**Issue:** The runtime-generated skip notice and the hardcoded `RESULT: PARTIAL` stamp are two separate strings that happen to agree:
-- Line 122: `@optional_lane_ids |> Enum.map(&Atom.to_string/1) |> Enum.join(", ")` — produces `"knowledge, semantic_fast_path, connector"` today.
-- Line 139: hardcoded `"RESULT: PARTIAL (knowledge, semantic_fast_path, connector skipped — NOT a merge-gate pass)"`.
+**File:** `test/scoria/warning_inventory/capture_parity_test.exs:60,93`
+**Issue:** Both tests bind the subprocess exit code to `_status`:
 
-If `@optional_lane_ids` is updated in the future (lanes added or reordered), the `RESULT: PARTIAL` string will silently lie about which lanes were skipped. There is no test asserting that the two strings are consistent.
-
-**Fix:** Derive the PARTIAL message from `skipped` rather than duplicating the lane names:
 ```elixir
-defp run_skip_optional do
-  skipped = @optional_lane_ids |> Enum.map(&Atom.to_string/1) |> Enum.join(", ")
-  # ...
-  Mix.shell().info(
-    "RESULT: PARTIAL (#{skipped} skipped — NOT a merge-gate pass)"
-  )
-  System.halt(1)
-end
+{output, _status} =
+  System.cmd("mix", ["do", "compile", "--force", "+", "test", "--only", "__ratchet_compile_only__"], ...)
 ```
-This eliminates the possibility of the two strings drifting apart.
+
+If the subprocess exits non-zero for an unexpected reason (e.g., a compile error introduced into
+a test file, or a missing dep), the test proceeds and the assertion may fail with a confusing
+"no offenders found" message rather than a clear "subprocess failed" message. This is not a
+correctness bug (compile warnings exit 0 by design), but a diagnostic gap.
+
+**Fix:** Assert or log the exit code after the subprocess call to produce a clearer failure
+message on unexpected subprocess failure:
+
+```elixir
+{output, status} =
+  System.cmd("mix", [...], env: [{"MIX_ENV", "test"}], stderr_to_stdout: true)
+
+assert status in [0, 1],
+       "Subprocess exited #{status} — unexpected; raw output:\n#{String.slice(output, 0, 1000)}"
+```
+
+(Exit code 1 is acceptable since the compile step may emit warnings in some environments; the
+gate test does not use `--warnings-as-errors`. Exit code 2+ would indicate a hard compiler
+failure worth surfacing explicitly.)
 
 ---
 
