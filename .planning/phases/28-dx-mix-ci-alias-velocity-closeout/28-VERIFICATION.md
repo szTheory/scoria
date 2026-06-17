@@ -166,6 +166,34 @@ Two resolution paths exist:
 1. Push Phases 24-26 to GitHub, trigger a real parallelized CI run, capture the actual critical path with `gh run view --json`, and update `28-VELOCITY-PROOF.md` and MILESTONES.md if the measured number is ≤~15min.
 2. Accept the ~23min projected outcome as the milestone's actual achievement (the ratchet lane is the remaining bottleneck), update VELO-01's target wording, and re-verify.
 
+**Root-cause remediation (selected path — added 2026-06-17 post-verification investigation):**
+
+The ~23min projected critical path is dominated by a single bottleneck: the `ratchet` lane
+(`mix scoria.warning_ratchet.check`, ~19min warm-cache). Investigation found this lane is doing
+**redundant work**: `Scoria.WarningInventory.capture_output/0` → `capture_output_standalone!/0`
+shells out to `mix do compile --force + test` (MIX_ENV=test), which **re-runs the entire test
+suite** purely to scrape compiler output. But the gate only filters `cluster_id ==
+:unclassified_compile` (compile-time warnings) over high-signal paths defined in
+`Scoria.WarningRatchet.high_signal_wae_paths/0` (test files: `test/scoria/**/*_test.exs`, live
+tests, adoption tests). It needs those files **compiled**, not **executed** — the ~19min test
+run produces no signal the gate consumes.
+
+Targeted fix: change `capture_output_standalone!/0` to force-recompile `lib/` + compile the
+high-signal test files while running **zero** tests (e.g. `mix test --only <nonexistent-tag>`,
+which compiles all test files and runs nothing), cutting the ratchet lane from ~19min to ~2–3min.
+In the parallelized topology this drops the critical path to ≈ `build + max(test ~6.5m,
+full-suite shards, ratchet ~3m) + verify-summary` ≈ ~12–14min — inside the ≤~15min target.
+
+Gap-closure plan requirements:
+- Implement the compile-only warning capture in `capture_output_standalone!/0` (or equivalent).
+- **Parity guard:** prove the optimized capture surfaces the *same* high-signal unclassified
+  compile warnings as the full `compile --force + test` capture (before/after diff on a known
+  warning), so the WARN-06 gate is not weakened.
+- Push the fully-parallelized topology (Phases 24-26) to GitHub, trigger a real CI run, capture
+  the actual critical path via `gh run view --json`, and update `28-VELOCITY-PROOF.md` +
+  MILESTONES.md with the **measured** number.
+- Then re-verify VELO-01 against the real run.
+
 **Gap 2 (WARNING): REQUIREMENTS.md traceability not updated**
 
 Both DX-01 and VELO-01 remain marked as `[ ] Pending` in REQUIREMENTS.md. DX-01 is
