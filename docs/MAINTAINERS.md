@@ -22,7 +22,7 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 | Job | Local command |
 |-----|---------------|
 | `test` | `SCORIA_DB_PORT=55432 mix test --warnings-as-errors` |
-| `ratchet` | `MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs` |
+| `ratchet` | `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs` |
 | `knowledge` | `SCORIA_DB_PORT=55432 mix test.knowledge --warnings-as-errors` |
 | `connector` | `SCORIA_DB_PORT=55432 mix test.connector --warnings-as-errors` |
 | `full-suite (k/4)` | `SCORIA_DB_PORT=55432 MIX_TEST_PARTITION=k mix test --warnings-as-errors --partitions 4` |
@@ -34,11 +34,12 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 3. `mix test.adoption` → `mix test.runtime_to_handoff` — behavioral closeout lanes
 4. `mix test.semantic_fast_path --warnings-as-errors` — semantic lane WAE after closeout
 
-**`ratchet` job (no Postgres):**
+**`ratchet` job (Postgres on 55432):**
 
-- `MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
+- `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
+- `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --include ratchet_parity test/scoria/warning_inventory/capture_parity_test.exs` — WARN-06 parity guard
 
-The ratchet capture is **compile-only**: `capture_output_standalone!/0` runs `mix do compile --force + test --only __ratchet_compile_only__`, which force-recompiles `lib/` and compiles all test files (emitting compiler warnings to stderr) but executes zero tests. The `--force` step is retained so any future gate extension that filters `lib/` paths is not silently weakened by a warm cache hit. WARN-06 gate parity is guarded by `test/scoria/warning_inventory/capture_parity_test.exs`.
+The ratchet capture is **compile-only**: `capture_output_standalone!/0` runs `mix do compile --force + test --only __ratchet_compile_only__`, which force-recompiles `lib/` and compiles all test files (emitting compiler warnings to stderr) but executes zero tests. The `--force` step is retained so any future gate extension that filters `lib/` paths is not silently weakened by a warm cache hit. The lane runs Postgres because `mix test` boots `Scoria.Application` (Oban → DB) so the capture runs faithfully (a DB-free `--no-start` run was verified to miss the injected warning). WARN-06 gate parity is guarded by `test/scoria/warning_inventory/capture_parity_test.exs`.
 
 **`knowledge` job (Postgres on 55432):**
 
