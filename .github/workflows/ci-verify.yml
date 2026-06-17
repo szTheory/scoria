@@ -8,7 +8,7 @@ permissions:
 
 # Reusable CI SSOT: policy → build → { test, ratchet, knowledge, connector, full-suite } → verify-summary.
 # Consumed by ci.yml, release-please verify, and hex-publish recovery workflows.
-# Maintainer narrative: docs/operator_verification.md — CI gate map (maintainers).
+# Maintainer narrative: docs/MAINTAINERS.md — CI gate map + flake policy.
 # Executable order SSOT: Scoria.VerificationLanes + test/scoria/ci_policy_contract_test.exs.
 
 jobs:
@@ -112,7 +112,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: scoria_test
         ports:
-          - 55432:5432
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d scoria_test"
           --health-interval 10s
@@ -122,7 +122,7 @@ jobs:
     env:
       MIX_ENV: test
       SCORIA_DB_HOST: localhost
-      SCORIA_DB_PORT: 55432
+      SCORIA_DB_PORT: 5432
       SCORIA_DB_USERNAME: postgres
       SCORIA_DB_PASSWORD: postgres
       SCORIA_DB_NAME: scoria_test
@@ -223,7 +223,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: scoria_test
         ports:
-          - 55432:5432
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d scoria_test"
           --health-interval 10s
@@ -233,7 +233,7 @@ jobs:
     env:
       MIX_ENV: test
       SCORIA_DB_HOST: localhost
-      SCORIA_DB_PORT: 55432
+      SCORIA_DB_PORT: 5432
       SCORIA_DB_USERNAME: postgres
       SCORIA_DB_PASSWORD: postgres
       SCORIA_DB_NAME: scoria_test
@@ -283,7 +283,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: scoria_test
         ports:
-          - 55432:5432
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d scoria_test"
           --health-interval 10s
@@ -293,7 +293,7 @@ jobs:
     env:
       MIX_ENV: test
       SCORIA_DB_HOST: localhost
-      SCORIA_DB_PORT: 55432
+      SCORIA_DB_PORT: 5432
       SCORIA_DB_USERNAME: postgres
       SCORIA_DB_PASSWORD: postgres
       SCORIA_DB_NAME: scoria_test
@@ -352,7 +352,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: scoria_test
         ports:
-          - 55432:5432
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
@@ -362,7 +362,7 @@ jobs:
     env:
       MIX_ENV: test
       SCORIA_DB_HOST: localhost
-      SCORIA_DB_PORT: 55432
+      SCORIA_DB_PORT: 5432
       SCORIA_DB_USERNAME: postgres
       SCORIA_DB_PASSWORD: postgres
       MIX_TEST_PARTITION: ${{ matrix.partition }}

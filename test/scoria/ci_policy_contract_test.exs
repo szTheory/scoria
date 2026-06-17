@@ -7,6 +7,7 @@ defmodule Scoria.CiPolicyContractTest do
   @ci_entry ".github/workflows/ci.yml"
   @maintainer_docs "docs/MAINTAINERS.md"
   @operator_docs "docs/operator_verification.md"
+  @ephemeral_range_min 32_768
   @baseline_check "mix scoria.warning_baseline.check"
   @inventory_baseline_check "mix scoria.warning_inventory.check_baseline"
   @semantic_lane "mix test.semantic_fast_path --warnings-as-errors"
@@ -191,6 +192,63 @@ defmodule Scoria.CiPolicyContractTest do
     refute Map.fetch!(blocks, "build") =~ "services:"
     refute Map.fetch!(blocks, "ratchet") =~ "services:"
     refute Map.fetch!(blocks, "verify-summary") =~ "services:"
+  end
+
+  test "no CI Postgres job binds a host port in the ephemeral range (>= 32768)" do
+    ci_verify = File.read!(@ci_verify)
+    ci_entry = File.read!(@ci_entry)
+
+    # Derive all job blocks that reference postgres: across both workflow files.
+    # job_blocks/1 is file-agnostic — call once per file, filter by body content.
+    verify_postgres =
+      job_blocks(ci_verify) |> Enum.filter(fn {_name, body} -> body =~ "postgres:" end)
+
+    entry_postgres =
+      job_blocks(ci_entry) |> Enum.filter(fn {_name, body} -> body =~ "postgres:" end)
+
+    postgres_blocks = Map.new(verify_postgres ++ entry_postgres)
+
+    # Non-empty guard: broken regex cannot vacuously pass.
+    # Current count: e2e (ci.yml) + test, knowledge, connector, full-suite (ci-verify.yml) = 5.
+    assert map_size(postgres_blocks) >= 5,
+           "expected >= 5 postgres jobs across ci.yml + ci-verify.yml; regex may be broken"
+
+    # Assert no ports: binding uses a host port in the ephemeral range (>= 32768).
+    # GitHub runner ephemeral port range: 32768–60999 (Linux kernel default).
+    # Port 55432 is in this range — the root cause of FLAKE-01 (run 27508317719).
+    for {job, body} <- postgres_blocks do
+      port_bindings = Regex.scan(~r/- (\d+)(?::\d+|\/tcp)/, body)
+
+      for [_full, host_port_str] <- port_bindings do
+        host_port = String.to_integer(host_port_str)
+
+        assert host_port < @ephemeral_range_min,
+               "Job #{job}: host port #{host_port} is in the ephemeral range (>= 32768) — " <>
+                 "use a port below 32768 to prevent kernel bind conflicts on GitHub runners"
+      end
+    end
+  end
+
+  test "e2e job in ci.yml has no TEMP diagnostic step" do
+    ci_entry = File.read!(@ci_entry)
+    refute ci_entry =~ "TEMP diagnose", "TEMP diagnostic step must be removed from ci.yml e2e job"
+  end
+
+  test "no test workflow step uses continue-on-error or a retry-action" do
+    ci_verify = File.read!(@ci_verify)
+    ci_entry = File.read!(@ci_entry)
+
+    refute ci_verify =~ "continue-on-error",
+           "ci-verify.yml must not use continue-on-error on any step (D-07 zero-retry policy)"
+
+    refute ci_entry =~ "continue-on-error",
+           "ci.yml must not use continue-on-error on any step (D-07 zero-retry policy)"
+
+    # Retry-action wrappers banned on test workflows (not carve-out release/automerge workflows)
+    refute ci_verify =~ "nick-fields/retry"
+    refute ci_verify =~ "Wandalen/wretry"
+    refute ci_entry =~ "nick-fields/retry"
+    refute ci_entry =~ "Wandalen/wretry"
   end
 
   test "WARN-06 documents WarningRatchet maintainer commands" do

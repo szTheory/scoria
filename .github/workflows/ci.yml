@@ -15,7 +15,7 @@ permissions:
 
 # PR and release-please branch CI entrypoint — executable jobs live in ci-verify.yml.
 # Parallel topology: policy → build → { test, ratchet, knowledge, connector } → verify-summary.
-# Maintainer narrative: docs/operator_verification.md — CI gate map (maintainers).
+# Maintainer narrative: docs/MAINTAINERS.md — CI gate map + flake policy.
 # Release-please branches and workflow_dispatch reuse the same verify bar as main.
 # Lane order SSOT: Scoria.VerificationLanes + test/scoria/ci_policy_contract_test.exs.
 
@@ -39,7 +39,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: scoria_dev
         ports:
-          - 55432:5432
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d scoria_dev"
           --health-interval 10s
@@ -49,7 +49,7 @@ jobs:
     env:
       MIX_ENV: dev
       SCORIA_DB_HOST: localhost
-      SCORIA_DB_PORT: 55432
+      SCORIA_DB_PORT: 5432
       SCORIA_DB_USERNAME: postgres
       SCORIA_DB_PASSWORD: postgres
       SCORIA_DB_NAME: scoria_dev
@@ -111,18 +111,6 @@ jobs:
             sleep 1
           done
           echo "dashboard did not become ready in time"; exit 1
-
-      # TEMP DIAGNOSTIC (remove after skeleton e2e root-caused): separates
-      # "DB has no runs" from "server can't see the seeded runs". Prints the
-      # row count via a fresh mix process and what the running server renders.
-      - name: TEMP diagnose runs visibility
-        run: |
-          echo "== DB run count (fresh mix process) =="
-          mix run -e 'IO.puts("DBRUNS=" <> Integer.to_string(Scoria.Repo.aggregate(Scoria.Workflows.Run, :count, :id)))' 2>/dev/null | grep DBRUNS || echo "DBRUNS=ERR"
-          echo "== server render of /workflows =="
-          curl -s http://localhost:4000/scoria/workflows | grep -oE 'No runs yet|/workflows/[a-f0-9-]+' | sort | uniq -c | head
-          echo "== env the server points at =="
-          echo "SCORIA_DB_NAME=$SCORIA_DB_NAME SCORIA_DB_PORT=$SCORIA_DB_PORT"
 
       - name: Run dashboard e2e lane
         run: mix scoria.ui.e2e
