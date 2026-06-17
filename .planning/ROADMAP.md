@@ -193,8 +193,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 28-01-PLAN.md — `mix ci` Mix task (SSOT-driven, run-all-aggregate, pgvector preflight, --skip-optional) + alias + local-vs-CI asymmetry docs (DX-01)
-- [ ] 28-02-PLAN.md — durable velocity proof (pinned before/after run IDs + inline gh JSON) + MILESTONES headline + verification back-ref (VELO-01)
+- [x] 28-01-PLAN.md — `mix ci` Mix task (SSOT-driven, run-all-aggregate, pgvector preflight, --skip-optional) + alias + local-vs-CI asymmetry docs (DX-01)
+- [x] 28-02-PLAN.md — durable velocity proof (pinned before/after run IDs + inline gh JSON) + MILESTONES headline + verification back-ref (VELO-01)
 
 ## Progress
 
@@ -205,7 +205,7 @@ Plans:
 | 25. Lane parallelization + topology docs | v3.1 | 2/2 | Complete   | 2026-06-15 |
 | 26. Full-suite partition sharding | v3.1 | 1/1 | Complete   | 2026-06-16 |
 | 27. CI determinism & flake elimination | v3.1 | 1/1 | Complete    | 2026-06-17 |
-| 28. DX `mix ci` alias + velocity closeout | v3.1 | 0/0 | Not started | - |
+| 28. DX `mix ci` alias + velocity closeout | v3.1 | 2/2 | Complete   | 2026-06-17 |
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete | 2026-06-04 |
 | 13. Orientation spine (IA) | v3.0 | 8/8 | Complete | 2026-06-12 |
