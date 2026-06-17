@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
 status: planning
-last_updated: "2026-06-17"
-last_activity: 2026-06-17
+last_updated: "2026-06-17T22:15:34.311Z"
+last_activity: 2026-06-17 — v3.2 Drydock roadmap created (Phases 29–35; 14 requirements mapped; traceability updated)
 progress:
-  total_phases: 7
+  total_phases: 13
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -75,6 +75,6 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-06-17
-Stopped at: Roadmap created — Phases 29–35 defined, REQUIREMENTS.md traceability filled, STATE.md initialized. Ready to plan Phase 29.
-Resume file: None
+Last session: 2026-06-17T22:15:34.308Z
+Stopped at: Phase 29 context gathered
+Resume file: .planning/phases/29-makefile-hardening/29-CONTEXT.md
