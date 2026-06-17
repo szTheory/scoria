@@ -190,7 +190,11 @@ Plans:
   3. The knowledge job no longer re-runs the full suite (confirmed by log file/line count) and the `build` artifact is restored by every downstream shard (no cold recompiles) — the two largest reclaimed costs are demonstrably gone.
   4. Every gating lane still executes in CI (diffed from job logs, not just YAML) and `ci_policy_contract_test` + `verification_lanes_test` are green — the bar is preserved at milestone close.
 
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 28-01-PLAN.md — `mix ci` Mix task (SSOT-driven, run-all-aggregate, pgvector preflight, --skip-optional) + alias + local-vs-CI asymmetry docs (DX-01)
+- [ ] 28-02-PLAN.md — durable velocity proof (pinned before/after run IDs + inline gh JSON) + MILESTONES headline + verification back-ref (VELO-01)
 
 ## Progress
 
