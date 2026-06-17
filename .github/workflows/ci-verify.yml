@@ -181,10 +181,35 @@ jobs:
       - name: Run semantic fast-path lane
         run: mix test.semantic_fast_path --warnings-as-errors
 
-  # ratchet: warning ratchet hygiene (no Postgres, no DB-prep)
+  # ratchet: warning ratchet hygiene + WARN-06 compile-only parity guard.
+  # Needs Postgres: `mix test` boots Scoria.Application (Oban.verify_migrated!/1 → DB) for
+  # both tmp_preflight_test.exs and capture_parity_test.exs. DB-prep mirrors the sibling lanes.
   ratchet:
     runs-on: ubuntu-latest
     needs: build
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scoria_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d scoria_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MIX_ENV: test
+      SCORIA_DB_HOST: localhost
+      SCORIA_DB_PORT: 5432
+      SCORIA_DB_USERNAME: postgres
+      SCORIA_DB_PASSWORD: postgres
+      SCORIA_DB_NAME: scoria_test
 
     steps:
       - uses: actions/checkout@v6
@@ -207,8 +232,21 @@ jobs:
       - name: Install dependencies (no-op when deps/ complete)
         run: mix deps.get
 
+      # DB-prep: keep in sync with sibling parallel jobs
+      - name: Prepare database
+        run: |
+          mix ecto.create
+          mix ecto.migrate --to 20260511000300
+          mix eval 'Scoria.TestSupport.Migrations.migrate_knowledge!()'
+          mix ecto.migrate
+
       - name: Verify maintainer ratchet hygiene chain
         run: MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs
+
+      # WARN-06 parity guard: own `mix test` invocation (NOT the sharded full-suite) so the
+      # nested `compile --force` subprocess runs in isolation, matching the passing local run.
+      - name: Verify WARN-06 compile-only capture parity
+        run: MIX_ENV=test mix test --include ratchet_parity test/scoria/warning_inventory/capture_parity_test.exs
 
   # knowledge: knowledge lane WAE (Postgres, full DB-prep)
   knowledge:
@@ -388,6 +426,11 @@ jobs:
       - name: Install dependencies (no-op when deps/ complete)
         run: mix deps.get
 
+      # host_app_consumer_proof_test.exs / host_app_upgrade_proof_test.exs (:host_proof /
+      # :host_upgrade) shell out to `mix phx.new`; the archive must be installed in this lane.
+      - name: Install phx_new archive for host proof tests
+        run: mix archive.install hex phx_new --force
+
       # DB-prep: keep in sync with sibling parallel jobs
       - name: Prepare database
         run: |
@@ -396,8 +439,10 @@ jobs:
           mix eval 'Scoria.TestSupport.Migrations.migrate_knowledge!()'
           mix ecto.migrate
 
+      # `ratchet_parity` runs in the dedicated ratchet lane (its nested `compile --force`
+      # subprocess is incompatible with the sharded full-suite) — exclude it here.
       - name: Run full suite (shard ${{ matrix.partition }}/4)
-        run: mix test --warnings-as-errors --partitions 4
+        run: mix test --warnings-as-errors --partitions 4 --exclude ratchet_parity
 
   # verify-summary: name-agnostic fan-in; skipped = fail
   verify-summary:

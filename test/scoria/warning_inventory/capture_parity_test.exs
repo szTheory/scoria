@@ -1,6 +1,13 @@
 defmodule Scoria.WarningInventory.CaptureParityTest do
   use ExUnit.Case, async: false
 
+  # Routed to the dedicated `ratchet` CI lane, NOT the sharded full-suite. This test
+  # shells out `mix do compile --force + test` as a subprocess; that nested force-recompile
+  # is incompatible with the parallel/sharded full-suite run (the parent suite holds _build
+  # state), so it is `--exclude ratchet_parity`'d there and run in its own `mix test`
+  # invocation in ci-verify.yml's ratchet lane (where it passes, matching local isolation).
+  @moduletag :ratchet_parity
+
   @moduledoc """
   Parity guard for the compile-only ratchet capture (WARN-06).
 
