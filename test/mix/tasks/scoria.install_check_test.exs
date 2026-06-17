@@ -1,6 +1,12 @@
 defmodule Mix.Tasks.Scoria.InstallCheckTest do
   use ExUnit.Case, async: false
 
+  # Each test shells out `mix scoria.install --check` against a freshly-built host fixture,
+  # which cold-compiles scoria (+ Igniter, esp. with the phx_new archive present in the
+  # full-suite lane). Fast locally (~6s/module) but exceeds the 60s default per-test timeout
+  # under parallel-shard CI load. Mirror the host-proof convention in this suite.
+  @moduletag timeout: 180_000
+
   alias Scoria.TestSupport.HostInstallFixtures
 
   @tmp_dir "test/tmp/install_check"
