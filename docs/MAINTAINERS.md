@@ -87,6 +87,42 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 - Test: adoption or runtime_to_handoff failed → `SCORIA_DB_PORT=55432 mix test.adoption` or `mix test.runtime_to_handoff`
 - Full-suite (k/4): WAE failed → `SCORIA_DB_PORT=55432 MIX_TEST_PARTITION=k mix test --warnings-as-errors --partitions 4`
 
+### Flake policy: retry vs fix {#flake-policy}
+
+**Zero-retry default.** Gating test lanes MUST NOT use `continue-on-error: true`, job-level
+`retry:`, or any retry-action wrapper (`nick-fields/retry`, `Wandalen/wretry.action`, etc.)
+on steps running `mix test`, the e2e lane, or any verify job.
+
+**Banned patterns on `ci.yml` and `ci-verify.yml` test steps:**
+- `continue-on-error: true`
+- Job-level `retry:` on test jobs
+- `uses: nick-fields/retry@*` or `uses: Wandalen/wretry.action@*` wrapping assertion steps
+
+**Carve-out (not test retries):** The existing `attempt` polling loops in
+`release-please.yml`, `hex-publish.yml`, and `release-pr-automerge.yml` poll for CI
+completion / Hex index availability / branch-protection status. These are control-flow
+waits, not test retries, and are out of scope.
+
+**One allowed exception class:** A retry is permitted only on a step doing a known
+infra-transient operation (network/package install, browser/toolchain download). Such a
+step must:
+1. Have a distinct step name identifying it as a retry (e.g., `Install Playwright (retry: network-transient)`)
+2. Include an inline comment justifying the retry
+3. Log `RETRY <step> attempt N/M: <reason>` at runtime
+4. Cap at max 3 attempts
+5. Be added under review
+
+**Fix, don't retry.** A non-deterministic test must be root-caused-and-fixed or
+quarantined (`@tag :flaky`, excluded from the gate) with a tracking issue — never made
+to pass by re-running. (`mix test --repeat-until-failure` is for *reproducing* flakes, not
+masking them.)
+
+**Durable enforcement:** `test/scoria/ci_policy_contract_test.exs` asserts that no Postgres
+job in `ci.yml` or `ci-verify.yml` binds a host port in the Linux ephemeral range (≥ 32768).
+The root cause of FLAKE-01 (run 27508317719) was `55432` falling in that range; CI now uses
+`5432` (below the range). Local dev/test retain `SCORIA_DB_PORT=55432` — see local parity
+commands above.
+
 ## Hex release & recovery {#hex-release--recovery-maintainers}
 
 Maintainer-only release operations. Adopter install guidance stays in README and [CHANGELOG.md](../CHANGELOG.md).
