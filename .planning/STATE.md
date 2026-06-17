@@ -4,7 +4,7 @@ milestone: v3.1
 milestone_name: CI/CD Velocity
 status: executing
 last_updated: "2026-06-17T18:30:00.000Z"
-last_activity: 2026-06-17 -- Phase 28 Plan 03 complete; v3.1 SHIPPED; VELO-01 MET (7m38s)
+last_activity: 2026-06-17 -- Phase 28 Plan 03 complete; v3.1 all phases done, ready to ship; VELO-01 MET (7m38s)
 progress:
   total_phases: 6
   completed_phases: 6
@@ -21,13 +21,13 @@ See: `.planning/PROJECT.md` (updated 2026-06-14 after v3.0 Control Room mileston
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v3.1 CI/CD Velocity SHIPPED — all 6 phases complete (23–28)
+**Current focus:** v3.1 CI/CD Velocity — all 6 phases (23–28) complete; ready to ship via `/gsd:complete-milestone` (not yet archived)
 
 ## Current Position
 
 Phase: 28 (dx-mix-ci-alias-velocity-closeout) — COMPLETE
 Plan: 3 of 3 (ALL COMPLETE)
-Status: v3.1 CI/CD Velocity SHIPPED — VELO-01 MET (7m38s measured, run 27709716751)
+Status: v3.1 all phases complete — VELO-01 MET (7m38s measured, run 27709716751); milestone ready to ship (run /gsd:complete-milestone to archive)
 Last activity: 2026-06-17 -- Phase 28 Plan 03 complete; measured critical path 7m38s
 
 ## Performance Metrics
