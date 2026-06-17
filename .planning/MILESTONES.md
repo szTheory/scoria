@@ -1,6 +1,6 @@
 # Milestones
 
-## v3.1 CI/CD Velocity (Shipped: 2026-06-17)
+## v3.1 CI/CD Velocity (All phases complete 2026-06-17 — ship via /gsd:complete-milestone)
 
 **Phases completed:** 6 phases (23–28)
 **Timeline:** 2026-06-14 → 2026-06-17
