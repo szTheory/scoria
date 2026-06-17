@@ -72,26 +72,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DXCLI-01 | TBD | Pending |
-| DXCLI-02 | TBD | Pending |
-| DXCLI-03 | TBD | Pending |
-| DXCLI-04 | TBD | Pending |
-| DXCLI-05 | TBD | Pending |
-| CACHE-01 | TBD | Pending |
-| SEC-01 | TBD | Pending |
-| SEC-02 | TBD | Pending |
-| DOCS-01 | TBD | Pending |
-| DOCS-02 | TBD | Pending |
-| DOCS-03 | TBD | Pending |
-| REL-01 | TBD | Pending |
-| REL-02 | TBD | Pending |
-| REL-03 | TBD | Pending |
+| DXCLI-01 | Phase 29 | Pending |
+| DXCLI-02 | Phase 29 | Pending |
+| DXCLI-03 | Phase 29 | Pending |
+| DXCLI-04 | Phase 29 | Pending |
+| DXCLI-05 | Phase 30 | Pending |
+| CACHE-01 | Phase 31 | Pending |
+| SEC-01 | Phase 32 | Pending |
+| SEC-02 | Phase 32 | Pending |
+| DOCS-01 | Phase 33 | Pending |
+| DOCS-02 | Phase 33 | Pending |
+| DOCS-03 | Phase 34 | Pending |
+| REL-01 | Phase 35 | Pending |
+| REL-02 | Phase 35 | Pending |
+| REL-03 | Phase 35 | Pending |
 
 **Coverage:**
 - v1 requirements: 14 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 14 ⚠️ (resolved by roadmapper)
+- Mapped to phases: 14 (100%)
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-17*
-*Last updated: 2026-06-17 after initial definition*
+*Last updated: 2026-06-17 — traceability filled after roadmap creation (Phases 29–35)*

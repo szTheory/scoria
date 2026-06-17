@@ -1,9 +1,10 @@
 # Roadmap: Scoria
 
-**Last updated:** 2026-06-17 (v3.1 CI/CD Velocity shipped + archived — Phases 23–28)
+**Last updated:** 2026-06-17 (v3.2 Drydock roadmap initialized — Phases 29–35)
 
 ## Milestones
 
+- 🚧 **v3.2 Drydock** — Phases 29–35 (Docker dev-DX hardening + maintenance release) — IN PROGRESS
 - ✅ **v3.1 CI/CD Velocity** — Phases 23–28 (PR CI 77m→7m38s measured, flakes eliminated, bar preserved) — SHIPPED 2026-06-17 — [archive](milestones/v3.1-ROADMAP.md)
 - ✅ **v3.0 Control Room** — Phases 11–17 (dashboard design-system / IA / motion / proof) — SHIPPED 2026-06-14 — [archive](milestones/v3.0-ROADMAP.md)
 - ✅ **v2.17 Vesicle** — Phases 18–22 (brand system, interjected) — SHIPPED 2026-06-11 — [archive](milestones/v2.17-ROADMAP.md)
@@ -84,6 +85,18 @@ Full details: `.planning/milestones/v2.16-ROADMAP.md`
 Full details: `.planning/milestones/v2.15-ROADMAP.md`
 
 </details>
+
+### 🚧 v3.2 Drydock (In Progress)
+
+**Milestone Goal:** Make local multi-lib Phoenix dev hands-off and port-conflict-free, harden Scoria as the reference Docker dev-DX standard, and cut the queued maintenance release. Stream A (Docker dev-DX hardening) runs sequenced Phases 29–34; Stream B (maintenance release) is Phase 35, fully independent.
+
+- [ ] **Phase 29: Makefile hardening** — PORT 4799 default, `make clean`/`nuke`/`fleet`/`help`
+- [ ] **Phase 30: Launch banner + native-dev notice** — populated fallback URL, Traefik admin link, key-route list, `make dev` echo
+- [ ] **Phase 31: Dockerfile caching audit + doc** — empirical CSS-edit verification + layer-invalidation table in docs
+- [ ] **Phase 32: Secrets pattern + key rotation** — direnv + 1Password `op run` pattern, `.envrc`/`.env.op` examples, `ANTHROPIC_API_KEY` rotated
+- [ ] **Phase 33: Doc restructure + verification-copy correction** — `docker_dev_dx.md` rewrite + all `localhost:4000` corrected in docs + `.planning/`
+- [ ] **Phase 34: Docker DX drift guard + CI guard extension** — `docker_dx_doc_contract_test.exs` (policy lane) + extend `ci_policy_contract_test.exs` to scan `post-publish-smoke.yml`
+- [ ] **Phase 35: Maintenance release — 0.1.2 publish + post-publish smoke** — port fix + merge PR #3 + publish + smoke GREEN
 
 ## Phase Details
 
@@ -200,10 +213,99 @@ Plans:
 - [x] 28-02-PLAN.md — durable velocity proof (pinned before/after run IDs + inline gh JSON) + MILESTONES headline + verification back-ref (VELO-01)
 - [x] 28-03-PLAN.md — [gap] compile-only ratchet capture (parity-guarded, ~19m→1m46s) + push parallelized topology + capture REAL run 27709716751 + measured proof/MILESTONES/traceability (VELO-01 MET: 7m38s)
 
+---
+
+### Phase 29: Makefile hardening
+
+**Goal**: The Makefile is the single trustworthy entry point for every dev operation — `make dev` binds a non-colliding port by default, stale-instance and cleanup targets exist and are scope-safe, and `make` with no args prints the full target list.
+**Depends on**: Nothing (Stream A foundation — all subsequent Stream A phases depend on this)
+**Requirements**: DXCLI-01, DXCLI-02, DXCLI-03, DXCLI-04
+**Success Criteria** (what must be TRUE):
+  1. `make dev` starts the native server at `http://localhost:4799/scoria` — confirmed by `grep "PORT" Makefile` showing `PORT ?= 4799` (or equivalent inline default) and the `shots-native` target URL agreeing with `4799`.
+  2. `make clean` stops this instance's containers and keeps named volumes; `make nuke` wipes this instance's named volumes — both scoped to `$(COMPOSE_PROJECT_NAME)` via `docker compose down`; `grep -n "volume prune\|system prune" Makefile` returns zero hits.
+  3. `make nuke` prints a warning naming `$(COMPOSE_PROJECT_NAME)` and the volumes it will delete before proceeding — no interactive TTY prompt required; the target name is the safety signal.
+  4. `make fleet` runs a `docker ps` filter that surfaces all `scoria-*` containers so a stale instance shadowing `scoria.localhost` is immediately visible.
+  5. `make` (no args) prints the help list derived from `##`-comment awk parsing — every new target this phase adds appears in that output.
+**Plans**: TBD
+
+### Phase 30: Launch banner + native-dev notice
+
+**Goal**: Starting the dev server (Docker or native) immediately shows the operator where to go — a populated fallback URL, the Traefik admin link, and a grouped key-route list — eliminating the "where do I poke around?" puzzle.
+**Depends on**: Phase 29 (PORT default established, `make dev` echo wired)
+**Requirements**: DXCLI-05
+**Success Criteria** (what must be TRUE):
+  1. `make dev` prints a startup line with `http://localhost:4799/scoria` (or the active `$PORT` value) before the server starts — visible in the terminal without scrolling back past server log noise.
+  2. The Docker `docker/dev-entrypoint.sh` banner includes the Traefik admin link (`http://localhost:8080`) and a grouped key-route list covering the `/scoria` screens — all on distinct lines so they are copy-pasteable.
+  3. The banner contains a "Native dev server: `make dev` → `http://localhost:4799/scoria`" notice so a reader who reaches the banner via Docker is not confused about the native path and port.
+**Plans**: TBD
+
+### Phase 31: Dockerfile caching audit + doc
+
+**Goal**: The Dockerfile layer order is empirically proven to prevent dep refetch on a CSS/HEEx-only edit, and that guarantee is documented as a layer-invalidation table plus an invariant comment so future contributors cannot regress it silently.
+**Depends on**: Phase 29 (parallelizable with Phase 30 — no code dependency between them; both depend only on the Phase 29 foundation)
+**Requirements**: CACHE-01
+**Success Criteria** (what must be TRUE):
+  1. Editing `assets/css/app.css` (or any `lib/**/*.heex`) and running `docker compose up --build` produces no `mix deps.get` step in the build output — empirically verified and noted in the phase record.
+  2. `Dockerfile.dev` contains an invariant comment at the relevant COPY/RUN boundary explaining that the order is deliberate and must not be violated.
+  3. `docs/docker_dev_dx.md` contains a layer-invalidation table with at minimum: CSS/HEEx-only edit → app compile only; `config/` edit → dep.compile + app compile; `mix.exs`/`mix.lock` edit → full dep rebuild.
+**Plans**: TBD
+
+### Phase 32: Secrets pattern + key rotation
+
+**Goal**: Provider API keys never exist in plaintext on disk — the direnv + 1Password `op run` pattern is documented and exemplified, the old plaintext stub is removed from `.env.example`, and the previously exposed `ANTHROPIC_API_KEY` is rotated.
+**Depends on**: Phase 29 (parallelizable with Phases 30/31 — no code dependency; all three can execute after Phase 29)
+**Requirements**: SEC-01, SEC-02
+**Success Criteria** (what must be TRUE):
+  1. `.envrc.example` and `.env.op.example` are committed; `.envrc` and `.env.op` are listed in `.gitignore`; the `ANTHROPIC_API_KEY=sk-ant-...` plaintext stub is removed from `.env.example` (replaced by an `op://` reference comment).
+  2. `docs/docker_dev_dx.md` contains a Secrets section describing the direnv + `op run` pattern with a first-time setup note (requires `direnv allow` once; `op signin` before sourcing).
+  3. The `ANTHROPIC_API_KEY` previously stored as plaintext in `.env` has been rotated on the Anthropic console — confirmed by the maintainer as a pre-ship action and tracked as a done item in the phase record.
+**Plans**: TBD
+
+### Phase 33: Doc restructure + verification-copy correction
+
+**Goal**: `docs/docker_dev_dx.md` is the reference fleet standard a new contributor can read top-to-bottom and understand the full dev model; every stale `localhost:4000` / `mix phx.server` dev-start reference across docs and `.planning/` is corrected to the real commands and URLs.
+**Depends on**: Phases 29, 30, 31, 32 (this phase assembles the complete doc from all Stream A work that precedes it — correct PORT, banner copy, caching section, secrets section must all exist first)
+**Requirements**: DOCS-01, DOCS-02
+**Success Criteria** (what must be TRUE):
+  1. `docs/docker_dev_dx.md` opens with a persona/JTBD paragraph and a TL;DR gameplan at the top; contains readable sections for Native dev server, Caching guarantees, Secrets, and Stale instance hygiene — each digestible in isolation.
+  2. `grep -rn "localhost:4000" docs/operator_verification.md docs/MAINTAINERS.md README.md` returns zero hits where the text instructs starting the dev server (legacy/note contexts with explicit qualification are acceptable if clearly marked).
+  3. `grep -rn "mix phx.server" .planning/` returns zero hits in verification-step or "how to start" contexts — GSD phase/plan prose uses `make up` / `make dev` + the real `*.localhost` or `:4799` URL.
+**Plans**: TBD
+
+### Phase 34: Docker DX drift guard + CI guard extension
+
+**Goal**: The canonical Docker dev-DX commands and URLs are pinned by a policy-lane contract test so verification-copy drift cannot recur silently, and the `ci_policy_contract_test.exs` ephemeral-port scan is extended to cover `post-publish-smoke.yml` — closing the v3.1 FLAKE-01 blind spot before the release.
+**Depends on**: Phase 33 (the doc must be in its final correct form before the contract test asserts it)
+**Requirements**: DOCS-03
+**Success Criteria** (what must be TRUE):
+  1. `test/scoria/docker_dx_doc_contract_test.exs` exists in the policy lane (no DB, no app start) and passes in `mix test`; it asserts `"make up"`, `"make dev"`, `"4799"`, `"make nuke"`, `"direnv"` (or `"1Password"`), and `"ANTHROPIC_API_KEY"` are present in `docs/docker_dev_dx.md`.
+  2. The same test asserts `"localhost:4000"` is absent from `docs/docker_dev_dx.md` as a dev-start instruction (the negative assertion that makes the guard mechanical).
+  3. `ci_policy_contract_test.exs` is extended to scan `.github/workflows/post-publish-smoke.yml` for the ephemeral-port ban (host port must be < 32768); `mix test` passes with this extension in the existing policy lane without any CI topology changes.
+**Plans**: TBD
+
+### Phase 35: Maintenance release — 0.1.2 publish + post-publish smoke
+
+**Goal**: The queued `0.1.2` maintenance release ships cleanly to Hex — with the `post-publish-smoke.yml` port flake fixed before the pipeline runs, `mix docs` confirmed clean, and the post-publish registry smoke GREEN.
+**Depends on**: Nothing (Stream B — fully independent of Phases 29–34; can execute at any time while Stream A runs)
+**Requirements**: REL-01, REL-02, REL-03
+**Success Criteria** (what must be TRUE):
+  1. `post-publish-smoke.yml` Postgres host-port bind reads `5432:5432` (not `55432:5432`); `grep "55432" .github/workflows/post-publish-smoke.yml` returns zero hits.
+  2. `mix docs` completes with zero errors or warnings locally before the release-please PR is merged — the package-landed-but-docs-wrong partial-publish state cannot occur.
+  3. The release-please PR #3 merges on green CI, the automated pipeline runs to completion, and `mix hex.info scoria 0.1.2` confirms the version is live on the Hex registry.
+  4. The post-publish registry smoke (`mix scoria.post_publish_smoke`) exits GREEN — confirming `0.1.2` installs from the live Hex registry from the GitHub Actions runner region.
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
+| 29. Makefile hardening | v3.2 | 0/TBD | Not started | - |
+| 30. Launch banner + native-dev notice | v3.2 | 0/TBD | Not started | - |
+| 31. Dockerfile caching audit + doc | v3.2 | 0/TBD | Not started | - |
+| 32. Secrets pattern + key rotation | v3.2 | 0/TBD | Not started | - |
+| 33. Doc restructure + verification-copy correction | v3.2 | 0/TBD | Not started | - |
+| 34. Docker DX drift guard + CI guard extension | v3.2 | 0/TBD | Not started | - |
+| 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 0/TBD | Not started | - |
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 25. Lane parallelization + topology docs | v3.1 | 2/2 | Complete   | 2026-06-15 |
