@@ -1,5 +1,24 @@
 # Milestones
 
+## v3.1 CI/CD Velocity (Shipped: 2026-06-17)
+
+**Phases completed:** 6 phases (23–28)
+**Timeline:** 2026-06-14 → 2026-06-17
+**Velocity headline:** v3.1: PR CI serial-baseline critical-path 77m→~23min projected (Phases 23-26 local; before 27508317719 / after 27514007418 — see `28-VELOCITY-PROOF.md` for full computation and honesty caveats)
+
+**Delivered:** Build-once job (Phase 23) compiling once and sharing `_build/test` + `deps` artifact
+to downstream parallel jobs; knowledge lane scoped to `--only knowledge` (Phase 24, reclaims ~22min
+when parallelized); full parallel fan-out topology `policy → build → { test, ratchet, knowledge,
+connector, full-suite[×4 matrix] } → verify-summary` with a single stable fan-in (Phase 25); 4-way
+`--partitions 4` full-suite sharding across isolated `scoria_test1..4` databases (Phase 26); flake
+elimination — fixed Postgres host-port bind (Phase 27), removed TEMP e2e diagnostic step, added
+zero-retry-default policy with 3 durable contract guards in `ci_policy_contract_test.exs` (42→45
+tests); and the `mix ci` DX alias (Phase 28). Phases 24-26 (knowledge fix, parallelization, sharding)
+are implemented and contract-tested locally; a live GitHub Actions run of the fully-parallelized
+topology is pending merge.
+
+---
+
 ## v3.0 Control Room (Shipped: 2026-06-14)
 
 **Phases completed:** 7 phases (11–17), 38 plans, 65 tasks
