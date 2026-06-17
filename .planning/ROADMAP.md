@@ -25,7 +25,7 @@ Node-24 actions modernization is **already shipped** (PR #10, merged) and is int
 - [x] **Phase 24: Knowledge lane scope fix** — `--only knowledge` so the knowledge lane stops re-running the full suite (~−22m), same WAE bar, contract string unchanged. (completed 2026-06-15)
 - [ ] **Phase 25: Lane parallelization + topology docs** — split heavy `verify / test` lanes into parallel `needs:` jobs with a fan-in `verify-summary`; preserve byte-order contract + `ci-gate` name; topology docs move in lockstep.
 - [ ] **Phase 26: Full-suite partition sharding** — `mix test --partitions 4` across a runner matrix on the shared build artifact, isolated DB per shard, zero coverage loss.
-- [ ] **Phase 27: CI determinism & flake elimination** — fix the fixed-host-port Postgres flake, remove the leftover TEMP e2e diagnostic, document a retry-vs-fix policy.
+- [x] **Phase 27: CI determinism & flake elimination** — fix the fixed-host-port Postgres flake, remove the leftover TEMP e2e diagnostic, document a retry-vs-fix policy. (completed 2026-06-17)
 - [ ] **Phase 28: DX `mix ci` alias + velocity closeout** — one local command mirroring the gate; prove ≤~15m warm-cache critical path via before/after `gh run` timing.
 
 <details>
@@ -200,7 +200,7 @@ Plans:
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 25. Lane parallelization + topology docs | v3.1 | 2/2 | Complete   | 2026-06-15 |
 | 26. Full-suite partition sharding | v3.1 | 1/1 | Complete   | 2026-06-16 |
-| 27. CI determinism & flake elimination | v3.1 | 1/1 | Complete   | 2026-06-17 |
+| 27. CI determinism & flake elimination | v3.1 | 1/1 | Complete    | 2026-06-17 |
 | 28. DX `mix ci` alias + velocity closeout | v3.1 | 0/0 | Not started | - |
 | 11. Evaluation engine + seed depth | v3.0 | 5/5 | Complete | 2026-06-04 |
 | 12. Design-system component layer | v3.0 | 5/5 | Complete | 2026-06-04 |

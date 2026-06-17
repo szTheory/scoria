@@ -30,9 +30,9 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Determinism & Flake Elimination (FLAKE)
 
-- [ ] **FLAKE-01**: The Postgres service container no longer fails on host-port bind conflicts — the fixed `-p 55432:5432` mapping (in `ci.yml` + `ci-verify.yml`) is replaced with a non-conflicting connection strategy (network alias / dynamic port / resilient bind). Reproduced on run `27508317719`.
-- [ ] **FLAKE-02**: The leftover TEMP diagnostic step (DB run-count + server-render dump) is removed from the `e2e` job in `ci.yml`.
-- [ ] **FLAKE-03**: A deliberate retry-vs-fix policy is documented and applied — no blanket auto-retries that mask real flakes; retries (if any) are scoped to known-infra-transient steps only and surfaced in logs.
+- [x] **FLAKE-01**: The Postgres service container no longer fails on host-port bind conflicts — the fixed `-p 55432:5432` mapping (in `ci.yml` + `ci-verify.yml`) is replaced with a non-conflicting connection strategy (network alias / dynamic port / resilient bind). Reproduced on run `27508317719`.
+- [x] **FLAKE-02**: The leftover TEMP diagnostic step (DB run-count + server-render dump) is removed from the `e2e` job in `ci.yml`.
+- [x] **FLAKE-03**: A deliberate retry-vs-fix policy is documented and applied — no blanket auto-retries that mask real flakes; retries (if any) are scoped to known-infra-transient steps only and surfaced in logs.
 
 ### Developer Experience (DX)
 
@@ -82,9 +82,9 @@ Phase numbering continues the live epoch (v2.12=02–04 … v3.0=11–17, v2.17=
 | PAR-03 | Phase 25 | Pending |
 | DX-02 | Phase 25 | Pending |
 | SHARD-01 | Phase 26 | Complete |
-| FLAKE-01 | Phase 27 | Pending |
-| FLAKE-02 | Phase 27 | Pending |
-| FLAKE-03 | Phase 27 | Pending |
+| FLAKE-01 | Phase 27 | Complete |
+| FLAKE-02 | Phase 27 | Complete |
+| FLAKE-03 | Phase 27 | Complete |
 | DX-01 | Phase 28 | Pending |
 | VELO-01 | Phase 28 | Pending |
 
