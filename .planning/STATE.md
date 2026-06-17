@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: CI/CD Velocity
-status: verifying
-last_updated: "2026-06-16T21:53:31.797Z"
-last_activity: 2026-06-16
+status: executing
+last_updated: "2026-06-17T02:47:12.424Z"
+last_activity: 2026-06-17 -- Phase 27 execution started
 progress:
   total_phases: 26
   completed_phases: 4
-  total_plans: 5
+  total_plans: 6
   completed_plans: 5
   percent: 15
 ---
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-14 after v3.0 Control Room mileston
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 26 — full-suite-partition-sharding
+**Current focus:** Phase 27 — ci-determinism-flake-elimination
 
 ## Current Position
 
-Phase: 26 (full-suite-partition-sharding) — EXECUTING
+Phase: 27 (ci-determinism-flake-elimination) — EXECUTING
 Plan: 1 of 1
-Status: Phase complete — ready for verification
-Last activity: 2026-06-16
+Status: Executing Phase 27
+Last activity: 2026-06-17 -- Phase 27 execution started
 
 ## Performance Metrics
 
