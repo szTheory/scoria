@@ -4,7 +4,7 @@ This guide is for **maintainers** — CI topology, release operations, warning r
 
 ## CI gate map {#ci-gate-map-maintainers}
 
-GitHub Actions runs parallel verify jobs: **`policy`** (no Postgres) → **`build`** → `{ test, ratchet, knowledge, connector }` (each `needs: build`) → **`verify-summary`** fan-in. A **`ci-gate`** umbrella job in `ci.yml` fails if the verify workflow fails — branch protection and release automerge require **CI / ci-gate**. Executable jobs live in `.github/workflows/ci-verify.yml` (reusable SSOT); `.github/workflows/ci.yml` is the PR entrypoint. Lane order is enforced by `Scoria.VerificationLanes` and `test/scoria/ci_policy_contract_test.exs`.
+GitHub Actions runs parallel verify jobs: **`policy`** (no Postgres) → **`build`** → `{ test, ratchet, knowledge, connector, full-suite }` (each `needs: build`) → **`verify-summary`** fan-in. A **`ci-gate`** umbrella job in `ci.yml` fails if the verify workflow fails — branch protection and release automerge require **CI / ci-gate**. Executable jobs live in `.github/workflows/ci-verify.yml` (reusable SSOT); `.github/workflows/ci.yml` is the PR entrypoint. Lane order is enforced by `Scoria.VerificationLanes` and `test/scoria/ci_policy_contract_test.exs`.
 
 **Policy job (fail cheap, no database):**
 

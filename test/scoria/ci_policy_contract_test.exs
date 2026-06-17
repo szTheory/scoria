@@ -217,7 +217,19 @@ defmodule Scoria.CiPolicyContractTest do
     # GitHub runner ephemeral port range: 32768–60999 (Linux kernel default).
     # Port 55432 is in this range — the root cause of FLAKE-01 (run 27508317719).
     for {job, body} <- postgres_blocks do
-      port_bindings = Regex.scan(~r/- (\d+)(?::\d+|\/tcp)/, body)
+      # Match `HOST:CONTAINER` fixed host-port binds, including quoted forms
+      # (`- "55432:5432"`) and optional `/tcp` protocol suffix. A bare `- NNNN`
+      # short form is intentionally NOT matched: it publishes the container port
+      # to a *random* host port, which cannot reintroduce the FLAKE-01 fixed-bind
+      # collision and would be a false positive if flagged.
+      port_bindings = Regex.scan(~r/-\s*["']?(\d+):\d+(?:\/tcp)?["']?/, body)
+
+      # Per-block non-empty guard: every postgres job here publishes an explicit
+      # `5432:5432` bind, so a block yielding zero extractions means the regex
+      # broke or an unrecognized mapping form slipped in — fail loud, not vacuously.
+      assert port_bindings != [],
+             "Job #{job}: no host:container port binding extracted — the FLAKE-01 " <>
+               "ephemeral-port guard must not pass vacuously (regex broken or unknown form)"
 
       for [_full, host_port_str] <- port_bindings do
         host_port = String.to_integer(host_port_str)
