@@ -2,6 +2,38 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v3.1 — CI/CD Velocity
+
+**Shipped:** 2026-06-17
+**Phases:** 6 (23–28) | **Plans:** 9 | **Tasks:** 13
+
+### What Was Built
+An infra/docs-only CI overhaul (SEED-003) that cut PR CI critical path from ~77 min (one serial `verify / test` job) to **7m38s MEASURED** (run 27709716751) without weakening the merge bar. Sequenced lowest-risk → highest-payoff: build-once artifact job + env-scoped cache keys (23) → knowledge lane `--only knowledge` (24) → serial→parallel lane fan-out behind one `verify-summary` with topology docs in lockstep (25) → 4-way `--partitions 4` sharding (26) → Postgres host-port flake fix + zero-retry policy (27) → `mix ci` DX alias + velocity closeout (28).
+
+### What Worked
+- **Contract-first invariants made parallelization safe.** Because `Scoria.VerificationLanes.closeout_order/0` and the byte-order lane tests only asserted YAML order (not serial execution), heavy lanes could fan out without touching the merge bar — the contract suite (51/0) was the safety net at every phase.
+- **Derived (not hardcoded) fan-in completeness.** `verify-summary.needs` is checked by a subset-assertion that derives the parallel lane set from the YAML, so a future unwired lane fails CI rather than silently skipping the gate. This is the single highest-leverage guard in the milestone.
+- **Sequencing by risk/payoff.** Cache/build-once foundation first, then the biggest single win (knowledge scope), kept each phase's blast radius small and its win measurable.
+- **Live measurement, not projection.** VELO-01 was closed against a real green run (27709716751), not an estimate — and the milestone audit could lean on that same run to retire Phase 26's `human_needed` live-shard item.
+
+### What Was Inefficient
+- **Documentation lag created a false-gap signal.** Phase 25's requirements (PAR-01/02/03, DX-02) were verified SATISFIED but their REQUIREMENTS.md checkboxes/traceability stayed "Pending," and the ROADMAP left Phases 25 & 26 unchecked — so the milestone *looked* incomplete until the audit reconciled VERIFICATION.md against the trackers. Flip requirement state at phase close, not at milestone close.
+- **SUMMARY frontmatter `requirements-completed` was missing on 5 of 9 plans**, which made the `milestone.complete` accomplishment extractor emit `One-liner:` placeholders — the generated MILESTONES entry had to be merged by hand against the pre-written rich entry.
+
+### Patterns Established
+- **Parallel CI topology with a single stable fan-in:** `policy → build → { parallel lanes } → verify-summary`, with `ci-gate` depending only on the fan-in so the required-check name (`CI / ci-gate`) stays byte-stable and branch protection never needs editing.
+- **Build-once artifact sharing:** one WAE compile under `MIX_ENV=test`, tarred `_build/test`+`deps` uploaded with `if-no-files-found: error`, restored by every downstream lane.
+- **Zero-retry-default flake policy:** fix the root cause (ephemeral host-port bind) rather than mask with blanket retries; pin the policy with contract guards.
+
+### Key Lessons
+- Reconcile requirement trackers (REQUIREMENTS.md + ROADMAP checkboxes) at *phase* close — a passed VERIFICATION.md is the source of truth, and letting trackers lag manufactures phantom milestone gaps.
+- Populate `requirements-completed` in SUMMARY frontmatter every plan, or the milestone-close tooling produces garbage accomplishments.
+- For infra milestones, Nyquist `nyquist_compliant: false` across the board is acceptable when the behavioral surface IS the contract test suite — record it as posture in the audit, don't treat it as a blocker.
+
+### Cost Observations
+- Model mix: predominantly opus (orchestration + verification-heavy milestone).
+- Notable: per-phase VERIFICATION.md discipline (every phase verified during execute) made the milestone audit cheap — it aggregated existing passes + one integration check rather than re-verifying from scratch.
+
 ## Milestone: v2.16 — ReqLLM Peer Bump
 
 **Shipped:** 2026-05-30

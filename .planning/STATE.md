@@ -2,46 +2,47 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: CI/CD Velocity
-status: executing
-last_updated: "2026-06-17T18:30:00.000Z"
-last_activity: 2026-06-17 -- Phase 28 Plan 03 complete; v3.1 all phases done, ready to ship; VELO-01 MET (7m38s)
+status: Awaiting next milestone
+last_updated: "2026-06-17T20:13:38.096Z"
+last_activity: 2026-06-17 — Milestone v3.1 completed and archived
 progress:
-  total_phases: 6
+  total_phases: 26
   completed_phases: 6
   total_plans: 9
   completed_plans: 9
-  percent: 100
+  percent: 23
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-06-14 after v3.0 Control Room milestone)
+See: `.planning/PROJECT.md` (updated 2026-06-17 after v3.1 CI/CD Velocity milestone)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v3.1 CI/CD Velocity — all 6 phases (23–28) complete; ready to ship via `/gsd:complete-milestone` (not yet archived)
+**Current focus:** v3.1 CI/CD Velocity SHIPPED + archived (audit `passed`, 13/13). Planning the next milestone — start with `/gsd:new-milestone` (SEED-004 async/`Process.sleep` cleanup is the leading candidate).
 
 ## Current Position
 
-Phase: 28 (dx-mix-ci-alias-velocity-closeout) — COMPLETE
-Plan: 3 of 3 (ALL COMPLETE)
-Status: v3.1 all phases complete — VELO-01 MET (7m38s measured, run 27709716751); milestone ready to ship (run /gsd:complete-milestone to archive)
-Last activity: 2026-06-17 -- Phase 28 Plan 03 complete; measured critical path 7m38s
+Phase: Milestone v3.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-17 — Milestone v3.1 completed and archived
 
 ## Performance Metrics
 
-- **Latest Shipped:** `v3.0 Control Room` (2026-06-14) — dashboard design-system / IA / motion / proof; phases 11–17, 38 plans, 65 tasks. Audit `gaps_found` accepted (18/28 satisfied, 10 partial, 0 unsatisfied).
+- **Latest Shipped:** `v3.1 CI/CD Velocity` (2026-06-17) — CI velocity/flake infra+docs; phases 23–28, 9 plans, 13 tasks. Audit `passed` (13/13 satisfied). PR CI critical path 77m→7m38s MEASURED (run 27709716751); bar preserved (closeout order unchanged, `CI / ci-gate` name stable, nothing demoted).
+- **Previous Shipped:** `v3.0 Control Room` (2026-06-14) — dashboard design-system / IA / motion / proof; phases 11–17, 38 plans, 65 tasks. Audit `gaps_found` accepted (18/28 satisfied, 10 partial, 0 unsatisfied).
 - **Previous Shipped:** `v2.17 Vesicle` (2026-06-11) — brand system, phases 18–22
-- **Previous Shipped:** `v2.16 ReqLLM Peer Bump` (2026-05-30)
 - **Hex release:** `0.1.1` prepared; publish via release-please pending CI green
-- **Tag:** `v3.0` annotated tag created locally on `main` — NOT pushed; pushing is the user's call.
+- **Tags:** `v3.1` and `v3.0` annotated tags created locally on `main` — NOT pushed; pushing is the user's call.
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
+- **v3.1 (shipped 2026-06-17):** CI/CD Velocity, phases 23–28 — infra/docs-only milestone realizing SEED-003. Cut PR CI critical path from ~77m (one serial `verify / test` job) to **7m38s MEASURED** (run 27709716751) without weakening the bar: build-once artifact job, knowledge lane `--only knowledge`, parallel fan-out topology `policy → build → { test, ratchet, knowledge, connector, full-suite[×4] } → verify-summary`, 4-way partition sharding, Postgres host-port flake fix + zero-retry policy, and the `mix ci` DX alias. `closeout_order/0` byte-stable, `CI / ci-gate` required-check name unchanged, nothing demoted to nightly. Audit `passed` (13/13). Archived in `.planning/milestones/v3.1-*`.
 - **v3.0 (shipped 2026-06-14):** Control Room UI/IA/DX milestone, phases 11–17. Core finding: the design system was under-*adopted*, not under-built (`ui.ex` never exposed the components the token-first CSS already supported). Closed with the design system fully adopted, raw-palette count a verified zero, an enforced DS-06 drift guard, a persona/JTBD IA spine, brand-tied motion + light/dark parity, and a committed screenshot+critique evaluation loop. Closed `gaps_found` (10 verification-doc partials recorded as Known Gaps in MILESTONES.md). Archived in `.planning/milestones/v3.0-*`.
 - **v2.17 (shipped):** Brand system milestone, interjected before v3.0 phases 13–17. All 8 mandatory requirements satisfied; BRAND-09 conditional did not fire. Archived in `.planning/milestones/v2.17-*`.
 - **v2.16 (shipped):** ReqLLM `~> 1.13` peer bump — minimal dependency hygiene scope.
@@ -60,20 +61,21 @@ Last activity: 2026-06-17 -- Phase 28 Plan 03 complete; measured critical path 7
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close on 2026-06-14:
+Items acknowledged and deferred at the v3.1 milestone close on 2026-06-17:
 
 | Category | Item | Status |
 |----------|------|--------|
-| seed | 003-ci-efficiency-overhaul | dormant |
+| seed | 003-ci-efficiency-overhaul | SHIPPED as v3.1 |
+| uat/verification | Phase 26 live 4-shard CI matrix (`26-HUMAN-UAT.md` / `26-VERIFICATION.md` human_needed) | satisfied GREEN by run 27709716751 |
+| todo | ci-policy-job-cache-key-mislabel | pending (post-ship cleanup) |
 | todo | docker-dx-fleet-hardening | pending |
 
 **Notes:**
 
-- `003-ci-efficiency-overhaul` (SEED-003: CI/CD efficiency overhaul — cut CI wall-clock) is intentionally about to become the **next milestone, v3.1 CI/CD Velocity**. Seed file retained in `.planning/seeds/`.
+- `003-ci-efficiency-overhaul` (SEED-003) became this milestone, **v3.1 CI/CD Velocity** — now shipped. Seed file retained in `.planning/seeds/` for provenance.
+- Phase 26's only open human item (a live 4-shard GHA matrix run) was confirmed GREEN in run 27709716751; its `human_needed` verification + partial UAT are informational only, not functional gaps (see `.planning/milestones/v3.1-MILESTONE-AUDIT.md`).
+- `ci-policy-job-cache-key-mislabel` is a medium-priority post-ship cleanup todo surfaced during the close. Todo file retained in `.planning/todos/`.
 - `docker-dx-fleet-hardening` is future work (Docker DX / fleet hardening). Todo file retained in `.planning/todos/`.
-
-| Phase 23-cache-correctness-build-once-job P23-01 | multi-session | 3 tasks | 3 files |
-| Phase 24-knowledge-lane-scope-fix P24-01 | 10 min | 2 tasks | 3 files |
 
 ### v3.0 tech debt carried forward (from milestone audit)
 
@@ -104,6 +106,4 @@ Items acknowledged and deferred at milestone close on 2026-06-14:
 
 ## Operator Next Steps
 
-- v3.1 CI/CD Velocity SHIPPED. All phases 23–28 complete.
-- Consider `/gsd:new-milestone` for the next milestone (SEED-004 async/Process.sleep cleanup, or v3.2 if a new goal emerges).
-- Follow-up: `scoria.install_check` 60s→180s timeout under shard load (possible phx_new/Igniter interaction — non-blocking for v3.1, candidate for a future phase).
+- Start the next milestone with /gsd-new-milestone

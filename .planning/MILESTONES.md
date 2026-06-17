@@ -1,9 +1,12 @@
 # Milestones
 
-## v3.1 CI/CD Velocity (All phases complete 2026-06-17 — ship via /gsd:complete-milestone)
+## v3.1 CI/CD Velocity (Shipped: 2026-06-17)
 
-**Phases completed:** 6 phases (23–28)
+**Phases completed:** 6 phases (23–28), 9 plans, 13 tasks
 **Timeline:** 2026-06-14 → 2026-06-17
+**Audit:** `passed` — 13/13 requirements satisfied, 6/6 phases verified, 9/9 integration edges wired, contract suite green (51/0). See `.planning/milestones/v3.1-MILESTONE-AUDIT.md`.
+**Tag:** `v3.1` annotated tag created locally on `main` — push is the user's call.
+**Known deferred items at close:** 5 (see STATE.md Deferred Items) — SEED-003 (the seed that became this milestone), Phase 26 live-shard UAT/verification (satisfied GREEN by run 27709716751), and 2 post-ship todos (`ci-policy-job-cache-key-mislabel`, `docker-dx-fleet-hardening`).
 **Velocity headline:** v3.1: PR CI serial-baseline critical-path 77m→**7m38s MEASURED** (Phases 23-28, warm-cache; baseline 27508317719 / measured 27709716751 commit 06cdc34 — VELO-01 MET; see `28-VELOCITY-PROOF.md` for full computation)
 
 **Delivered:** Build-once job (Phase 23) compiling once and sharing `_build/test` + `deps` artifact
@@ -18,6 +21,15 @@ cutting the ratchet lane from ~19m07s to 1m46s, WARN-06 parity-guarded). Phases 
 parallelization, sharding, flake elimination, DX alias, compile-only ratchet) were pushed to GitHub and
 ran GREEN in run 27709716751 (commit 06cdc34, 2026-06-17) — the fully-parallelized topology is
 MEASURED, not projected. VELO-01 MET: 7m38s critical path ≤ ~15m target.
+
+**Key accomplishments:**
+
+1. **Cache correctness + build-once (Phase 23, CACHE-01/02):** MIX_ENV-scoped cache keys (OS+OTP+Elixir+MIX_ENV+mix.lock) replace bare `runner.os-mix-` keys; a dedicated `build` job compiles once under `MIX_ENV=test` WAE and ships a tarred `_build/test`+`deps` artifact to every downstream job — zero recompile, proven in CI run 27514007418.
+2. **Knowledge lane scope fix (Phase 24, KNOW-01):** knowledge lane runs `--only knowledge` (13 tests, 732 excluded) instead of the full suite, with the CI YAML and `mix test.knowledge --warnings-as-errors` contract string byte-unchanged.
+3. **Lane parallelization + topology docs (Phase 25, PAR-01/02/03, DX-02):** the serial `verify / test` job fans out to parallel `needs:` jobs gated by one stable `if: always()` + skipped-as-failure `verify-summary`; the `CI / ci-gate` required-check name stays put and MAINTAINERS/operator_verification/README move in lockstep, contract-guarded.
+4. **Full-suite partition sharding (Phase 26, SHARD-01):** `mix test --partitions 4` across a 4-runner matrix on isolated `scoria_test1..4` DBs, zero coverage loss (rem-completeness math + structural contract + `after_suite` zero-test guard); live 4-shard run confirmed GREEN in run 27709716751.
+5. **Determinism + flake elimination (Phase 27, FLAKE-01/02/03):** replaced the ephemeral-range `55432:5432` Postgres host-port bind (root cause of run 27508317719) with `5432:5432` across all 5 gated job blocks, removed the leftover TEMP e2e diagnostic step, and documented a zero-retry-default retry-vs-fix policy — pinned by 3 durable contract guards (42→45 tests).
+6. **DX `mix ci` alias + velocity closeout (Phase 28, DX-01, VELO-01):** SSOT-driven `Mix.Tasks.Scoria.Ci` reproduces the merge gate locally (run-all-aggregate, pgvector preflight, actionable PARTIAL opt-out, command strings sourced from `Scoria.VerificationLanes`); plus VELO-01 MEASURED at 7m38s critical path in run 27709716751.
 
 ---
 

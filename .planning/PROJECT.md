@@ -10,7 +10,7 @@ The product boundary stays embedded and Ecto/Telemetry-native: Scoria should fee
 
 Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-## Latest Shipped Milestone: v3.0 Control Room (2026-06-14)
+## Previous Shipped Milestone: v3.0 Control Room (2026-06-14)
 
 **Goal:** Take the embedded `/scoria` operator dashboard to "insane polish" — a tightened, fully-adopted design system, a clear persona/JTBD information architecture, brand-tied motion, full light/dark parity, and seed data that exercises every screen — proven by a committed screenshot+critique evaluation loop.
 
@@ -20,21 +20,15 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 **Core finding that drove the milestone:** Scoria's design system was under-*adopted*, not under-built. The token-first CSS already defined tables, drawers, modals, span rails, and disciplined motion, but `lib/scoria_web/ui.ex` never exposed them as components — so ~22/25 view files leaked raw Tailwind (`stone-*/rose-*/...`), worst in the least-iterated screens. The work: expose components → delete leaked classes → consolidate → orient → polish → prove.
 
-## Current Milestone: v3.1 CI/CD Velocity
+## Latest Shipped Milestone: v3.1 CI/CD Velocity (2026-06-17)
 
 **Goal:** Cut CI wall-clock from ~77 min to ~12 min and eliminate known flakes — without weakening the verification bar (every lane that gates merge today still gates merge; nothing demoted to nightly).
 
-**Seed:** SEED-003 — CI/CD efficiency overhaul. Profiling found the entire ~77 min lives in one serial `verify / test` job; ~45 min of that is two fixable root causes (the knowledge lane re-runs the whole suite; the "ratchet hygiene" step is a cold-compile subprocess). The lane-order contract (`Scoria.VerificationLanes` + `ci_policy_contract_test`) only asserts YAML byte-order, not serial execution — so heavy lanes can fan out to parallel jobs safely.
+**Delivered:** Realized SEED-003 as an infra/docs-only milestone (Phases 23–28). PR CI critical path cut from ~77 min (one serial `verify / test` job) to **7m38s MEASURED** in real GitHub Actions run 27709716751 — VELO-01 MET. The serial job fanned out into the parallel topology `policy → build → { test, ratchet, knowledge, connector, full-suite[×4 matrix] } → verify-summary`: a build-once job compiles deps+app once under `MIX_ENV=test` WAE and ships a `_build/test`+`deps` artifact every downstream lane restores (CACHE-01/02); the knowledge lane runs `--only knowledge` instead of the whole suite (KNOW-01); heavy lanes run as parallel `needs:` jobs behind one stable `if: always()` + skipped-as-failure `verify-summary` fan-in (PAR-01/02/03); the full suite shards 4-way via `mix test --partitions 4` on isolated `scoria_test1..4` DBs with zero coverage loss (SHARD-01); the ephemeral-range Postgres host-port flake is fixed, the leftover TEMP e2e diagnostic removed, and a zero-retry-default policy documented (FLAKE-01/02/03); and a `mix ci` alias reproduces the merge gate locally (DX-01) with MAINTAINERS/operator_verification/README describing the topology in contract-guarded lockstep (DX-02).
 
-**Target features (infra/docs only — deeper test-code async work stays in SEED-004):**
-- **Cache correctness + build-once job** — env-scoped cache keys (OS/OTP/Elixir/MIX_ENV/lock); a `build` job compiles once and shares `_build/test` + `deps` as an artifact to downstream shards.
-- **Knowledge lane `--only knowledge` fix** — stop re-running the full suite in the knowledge lane (~−22 min, zero coverage loss).
-- **Lane parallelization** — split `verify / test`'s heavy lanes (closeout `test:` job, ratchet job, knowledge job, connector+gallery) into parallel `needs:` jobs with a fan-in `verify-summary`; keep `ci-gate` name stable; preserve the `VerificationLanes` byte-order contract.
-- **Full-suite partition sharding** — `mix test --partitions 4` across a matrix (`config/test.exs` already partition-aware).
-- **CI determinism & flake elimination** — fix the fixed-host-port Postgres service flake (`-p 55432:5432`, reproduced on run 27508317719), remove the leftover TEMP e2e diagnostic step, and set a deliberate retry-vs-fix policy (no blanket auto-retries masking real flakes).
-- **DX `mix ci` alias + docs** — one local command mirroring the gate; update MAINTAINERS.md / operator_verification.md / README (fold doc edits with the lane-parallelization phase, since contract tests assert the docs describe topology).
+**The bar was preserved (hard constraint held):** `Scoria.VerificationLanes.closeout_order/0` byte-stable, the byte-order lane contracts (`ci_policy_contract_test`, `verification_lanes_test`) green at every phase (51/0 at close), the `CI / ci-gate` required-check name unchanged (branch protection needs no edit), single fast PR+main gate, standard `ubuntu-latest` runners. Node-24 actions modernization shipped separately (PR #10, merged).
 
-**Key context:** Hard constraint — preserve or strengthen the verification bar; preserve `VerificationLanes.closeout_order/0` and the warning-ratchet gates. Single fast PR+main gate (no nightly tier). Standard `ubuntu-latest` runners. Node-24 actions modernization already shipped (PR #10, merged). Plan: `/Users/jon/.claude/plans/everything-s-settled-and-green-eventual-hinton.md`.
+**Close:** Audit `passed` — 13/13 requirements satisfied, 6/6 phases verified, 9/9 cross-phase integration edges wired. Deeper test-code async work (de-globalizing `IntegrationCase`, removing `Process.sleep` sites) was deliberately deferred to SEED-004. Archived in `.planning/milestones/v3.1-*`.
 
 ## Previous Shipped Milestone: v2.17 Vesicle (2026-06-11)
 
@@ -108,6 +102,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
+- **v3.1 CI/CD Velocity SHIPPED + archived (2026-06-17):** All 6 phases (23–28), 9 plans, 13 tasks. PR CI critical path 77m→**7m38s MEASURED** (run 27709716751); audit `passed` (13/13 requirements). Build-once artifact job, knowledge `--only knowledge`, parallel `verify-summary` fan-out, 4-way sharding, Postgres flake fix, `mix ci` alias. Bar preserved: `closeout_order/0` byte-stable, `CI / ci-gate` required-check name unchanged, contract suite 51/0, nothing demoted to nightly. Tag `v3.1` created locally (unpushed). Archived in `.planning/milestones/v3.1-*`.
 - **Phase 27 complete (2026-06-17, v3.1 CI/CD Velocity):** CI determinism & flake elimination (FLAKE-01..03). Replaced the fixed `55432:5432` Postgres host-port bind (in the GitHub-runner ephemeral range 32768–60999, root cause of run 27508317719) with `5432:5432` across all 5 job blocks in `ci.yml` + `ci-verify.yml`; deleted the leftover TEMP e2e diagnostic step; documented a zero-retry-default "retry vs fix" policy in `docs/MAINTAINERS.md`. Pinned by 3 durable contract guards in `ci_policy_contract_test.exs` (42→45 tests): an ephemeral-port ban (host_port < 32768, hardened post-review to also catch quoted `- "55432:5432"` binds + a per-block non-empty guard so a broken regex fails loud), a no-TEMP-step guard, and a no-retry-on-test-workflows guard (D-08 carve-outs excluded). Local `SCORIA_DB_PORT=55432` parity and the full-suite `SCORIA_DB_NAME` omission preserved. Verified passed (5/5 must-haves).
 - **Phase 17 complete (2026-06-13, v3.0 Control Room — final phase):** Consistency sweep + proof (PROOF-01..03). Committed final-audit report `priv/shots/gap_register_final.md` with a 9-screen baseline→final rubric delta table, a deterministic 11-P1 resolution checklist (each P1 mapped to its resolving phase + re-verifiable code evidence, no API key required), and a raw-color-zero assertion citing the `ds06_drift_guard_test` guard (3/3 green). Committed reusable contact-sheet generator `priv/dev/contact_sheet.mjs` (`--before/--after/--out`, HTML-escaped + URL-encoded, crash-safe on partial dirs) plus `priv/shots/contact_sheet_index.md`; rendered HTML stays gitignored/regenerable. `mix docs` now renders a drift-free `ScoriaWeb.UI` component catalog (7 sparse `@doc`s backfilled) with a `docs/MAINTAINERS.md` catalog + harness entry-point. Fresh 2026-06-13 shot set partial (approvals + live_ops; rest blocked by pre-existing Phase-13 modal-overlay timeout) — deterministic checklist is the falsifiable proof. v3.0 Control Room milestone requirements fully delivered.
 - **Phase 16 complete (2026-06-13, v3.0 Control Room):** Motion + responsive + theme parity (MOTION-01..04). Mobile-first dashboard shell + accessible off-canvas nav drawer (Hooks.MobileNav), responsive `table/1` (overflow viewport + opt-in `mobile_summary` cards on the 4 scan tables), named responsive grid classes replacing unsupported `sm:/lg:/xl:grid-cols` utilities, and focus-visible/non-color-only-status/motion-contract hardening with full light+dark parity. Mechanically proven by `priv/dev/e2e/phase16_parity.spec.mjs` (22/22 Playwright, MOTION-01..04). Next: Phase 17 consistency sweep + proof.
@@ -225,14 +220,22 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Every screen reaches a consistent high-polish bar in both light and dark themes, with restrained brand-tied motion and mobile-first responsive behavior (22/22 parity smoke). — `v3.0 Control Room` (MOTION-01..04)
 - ✓ Reserved brand-name screens read as complete in the IA via honest "coming soon" stubs (no fake data). — `v3.0 Control Room` (IA-06)
 - ✓ The iteration is proven and documented: baseline→final rubric delta, raw-color count zero, before/after contact sheets, MAINTAINERS.md catalog + harness usage. — `v3.0 Control Room` (PROOF-01..03; PROOF-01/02 partial — see Known Gaps)
+- ✓ CI cache keys are env-scoped (OS+OTP+Elixir+MIX_ENV+lock) and a `build` job compiles once and ships `_build/test`+`deps` as an artifact every downstream job restores. — `v3.1 CI/CD Velocity` (CACHE-01, CACHE-02)
+- ✓ The knowledge verification lane runs only knowledge-tagged tests (`--only knowledge`), not the full suite, with the WAE bar and `mix test.knowledge` contract string unchanged. — `v3.1 CI/CD Velocity` (KNOW-01)
+- ✓ Heavy `verify / test` lanes run as parallel `needs:` jobs behind one stable `verify-summary` fan-in; `CI / ci-gate` required-check name unchanged; byte-order/closeout contract tests stay green. — `v3.1 CI/CD Velocity` (PAR-01, PAR-02, PAR-03)
+- ✓ The full ExUnit suite shards 4-way via `mix test --partitions 4` across a runner matrix on isolated per-shard DBs with zero coverage loss. — `v3.1 CI/CD Velocity` (SHARD-01)
+- ✓ The Postgres host-port bind flake is fixed, the leftover TEMP e2e diagnostic removed, and a deliberate zero-retry-default retry-vs-fix policy documented + contract-guarded. — `v3.1 CI/CD Velocity` (FLAKE-01, FLAKE-02, FLAKE-03)
+- ✓ A `mix ci` alias reproduces the merge gate locally, and MAINTAINERS/operator_verification/README describe the parallel topology in contract-guarded lockstep. — `v3.1 CI/CD Velocity` (DX-01, DX-02)
+- ✓ Warm-cache PR CI critical-path wall-clock is ≤ ~15 min — MEASURED 7m38s in run 27709716751, down from the ~77 min baseline. — `v3.1 CI/CD Velocity` (VELO-01)
 
 ### Active
 
-_Next milestone: **v3.1 CI/CD Velocity** (seeded by SEED-003, CI/CD efficiency overhaul). Not yet scoped into requirements/phases — start with `/gsd:new-milestone`._
+_No milestone in flight. Start the next milestone with `/gsd:new-milestone`._
 
-- [ ] Cut CI wall-clock and improve CI reliability without weakening canonical lane contracts (`VerificationLanes.closeout_order/0`) or warning-ratchet gates. (SEED-003; to be decomposed)
+- [ ] **SEED-004 (test-code determinism, leading candidate):** convert forced-serial `IntegrationCase` files to `async: true`, de-globalize per-module Phoenix test endpoints, and replace ~14 `Process.sleep` sites with the `eventually/2` helper — then raise partition count past 4 once the serial floor drops. (Deferred from v3.1 as higher product risk; touches 9+ test files.)
+- [ ] **DOCKER-01:** `docker-dx-fleet-hardening` — adjacent dev-harness hardening (tracked todo).
 
-_(Release 0.1.1 publish via release-please remains pending, tracked in Release Queue. v3.0 verification-doc gaps for Phases 13 & 14 may optionally be closed via `/gsd:verify-work`.)_
+_(Release 0.1.1 publish via release-please remains pending, tracked in Release Queue. Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verification-doc gaps for Phases 13 & 14 remain optional.)_
 
 ### Out of Scope
 
@@ -281,7 +284,8 @@ _(Release 0.1.1 publish via release-please remains pending, tracked in Release Q
 
 ## Context
 
-- **Latest shipped:** v3.0 Control Room (dashboard design-system / IA / motion / proof) — archived 2026-06-14; tag `v3.0` local-only.
+- **Latest shipped:** v3.1 CI/CD Velocity (CI infra/docs — 77m→7m38s, flakes eliminated, bar preserved) — archived 2026-06-17; tag `v3.1` local-only.
+- v3.0 Control Room (dashboard design-system / IA / motion / proof) — archived 2026-06-14; tag `v3.0` local-only.
 - v2.17 Vesicle (brand system) — archived 2026-06-11.
 - v2.16 ReqLLM peer bump (`~> 1.13`) — archived 2026-05-30.
 - v2.15 connector adoption lane (`mix test.connector`) — archived 2026-05-30.
@@ -336,7 +340,10 @@ _(Release 0.1.1 publish via release-please remains pending, tracked in Release Q
 | v3.0 keeps the token-first scoped CSS; `ui.ex` is the enforced component gateway (no Tailwind/BEM switch); raw palette fails the build via DS-06 ratchet | The token SSOT was sound — the gap was adoption, not the tokens; a build-failing guard makes the win permanent | ✓ Good — shipped v3.0; raw-palette count verified zero |
 | v3.0 reserved-name screens with no backend ship as honest "coming soon" stubs, never fake data | "Evidence over intuition" brand voice; fabricated data would erode operator trust | ✓ Good — shipped v3.0; 5 honest stubs |
 | Closed v3.0 `gaps_found` rather than reopening Phases 13 & 14 for verification docs | All 10 partials are verification-doc/proof gaps, 0 functionally unsatisfied; cheaper to track as documented tech debt than to block an already-shipped UI milestone | — Pending — Known Gaps recorded; optional retroactive verify-work |
-| Next milestone is v3.1 CI/CD Velocity (SEED-003), not a new capability family | Repo is feature-strong; CI wall-clock + reliability is the highest-leverage maintainer-trust axis after the dashboard polish milestone | — Pending — to be scoped via /gsd:new-milestone |
+| Next milestone is v3.1 CI/CD Velocity (SEED-003), not a new capability family | Repo is feature-strong; CI wall-clock + reliability is the highest-leverage maintainer-trust axis after the dashboard polish milestone | ✓ Good — shipped v3.1; 77m→7m38s measured, bar preserved |
+| v3.1 parallelizes lanes into `needs:` jobs behind one `verify-summary` fan-in rather than reordering/widening `closeout_order/0` | The byte-order lane contract only asserts YAML order, not serial execution — so heavy lanes can fan out safely while keeping the merge bar and the `CI / ci-gate` required-check name byte-stable | ✓ Good — shipped v3.1; contract tests green 51/0, ci-gate name unchanged |
+| v3.1 keeps a single fast PR+main gate (no nightly tier) and standard `ubuntu-latest` runners | After parallelization everything fits in ~8 min; a second pipeline or larger runners adds ops/cost without preserving the "nothing demoted" guarantee | ✓ Good — shipped v3.1; nothing demoted |
+| Deferred deep test-code async/`Process.sleep` refactor to SEED-004; v3.1 stays infra/docs-only | Async refactor touches 9+ test files (higher product risk); keeping v3.1 to CI infra/docs got the velocity win without that blast radius | — Pending — SEED-004 is the leading next-milestone candidate |
 
 ## Milestone History
 
@@ -366,6 +373,7 @@ _(Release 0.1.1 publish via release-please remains pending, tracked in Release Q
 - `v2.17 Vesicle`: Brand system — pressure-tested brand book, programmatically generated logo system (TV-1 mark + LK-B lockup chosen by user), 8-variant logo set, canonical brandbook/ (tokens, brand book, examples, standalone HTML), README/dashboard/Hex integration; quality-gate.mjs 8/8 PASS; BRAND-09 conditional did not fire.
 - `v2.16 ReqLLM Peer Bump`: ReqLLM `~> 1.13` peer bump with integration + CI trust verification; Phase 10.1 process closeout.
 - `v3.0 Control Room`: Dashboard "insane polish" — fully-adopted `ui.ex` design system with build-failing DS-06 raw-palette guard (verified zero), persona/JTBD IA spine (3-group nav, Status Home, breadcrumbs, ⌘K palette, honest reserved stubs), full screen conversion + thin notebook evidence adapters, brand-tied motion + light/dark WCAG-AA parity, and a committed screenshot+critique evaluation loop. Closed `gaps_found` (10 verification-doc/proof partials, 0 unsatisfied).
+- `v3.1 CI/CD Velocity`: Infra/docs CI overhaul (SEED-003) — build-once artifact job, knowledge lane `--only knowledge`, serial→parallel lane fan-out behind one `verify-summary`, 4-way partition sharding, Postgres host-port flake fix + zero-retry policy, and a `mix ci` local-gate alias. PR CI critical path 77m→7m38s MEASURED, bar preserved (`closeout_order/0` byte-stable, `CI / ci-gate` name unchanged, nothing demoted). Audit `passed` (13/13).
 
 ## Archived Planning Notes
 
@@ -429,4 +437,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-17 — v3.1 CI/CD Velocity: Phase 27 (CI determinism & flake elimination) complete and verified. v3.0 Control Room shipped, archived, and tagged `v3.0` (local, unpushed); closed `gaps_found` (18/28 satisfied, 10 partial, 0 unsatisfied). Node-24 actions bump already shipped (PR #10).*
+*Last updated: 2026-06-17 after v3.1 milestone — v3.1 CI/CD Velocity SHIPPED, archived, and tagged `v3.1` (local, unpushed). All 6 phases (23–28); audit `passed` (13/13). PR CI 77m→7m38s MEASURED, bar preserved. Next: `/gsd:new-milestone` (SEED-004 test-code determinism leading candidate).*
