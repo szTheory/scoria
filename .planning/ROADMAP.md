@@ -92,7 +92,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 
 - [x] **Phase 29: Makefile hardening** — PORT 4799 default, `make clean`/`nuke`/`fleet`/`help` (completed 2026-06-18)
 - [x] **Phase 30: Launch banner + native-dev notice** — populated fallback URL, Traefik admin link, key-route list, `make dev` echo (completed 2026-06-18)
-- [ ] **Phase 31: Dockerfile caching audit + doc** — empirical CSS-edit verification + layer-invalidation table in docs
+- [x] **Phase 31: Dockerfile caching audit + doc** — empirical CSS-edit verification + layer-invalidation table in docs (completed 2026-06-18)
 - [ ] **Phase 32: Secrets pattern + key rotation** — direnv + 1Password `op run` pattern, `.envrc`/`.env.op` examples, `ANTHROPIC_API_KEY` rotated
 - [ ] **Phase 33: Doc restructure + verification-copy correction** — `docker_dev_dx.md` rewrite + all `localhost:4000` corrected in docs + `.planning/`
 - [ ] **Phase 34: Docker DX drift guard + CI guard extension** — `docker_dx_doc_contract_test.exs` (policy lane) + extend `ci_policy_contract_test.exs` to scan `post-publish-smoke.yml`
@@ -265,7 +265,7 @@ Plans:
   3. `docs/docker_dev_dx.md` contains a layer-invalidation table with at minimum: CSS/HEEx-only edit → app compile only; `config/` edit → dep.compile + app compile; `mix.exs`/`mix.lock` edit → full dep rebuild.
 
 **Plans**: 1 plan
-- [ ] 31-01-PLAN.md — Dockerfile boundary invariant comment + docs layer-invalidation table + static COPY-order policy-lane test + empirical cache proof in SUMMARY
+- [x] 31-01-PLAN.md — Dockerfile boundary invariant comment + docs layer-invalidation table + static COPY-order policy-lane test + empirical cache proof in SUMMARY
 
 ### Phase 32: Secrets pattern + key rotation
 
@@ -326,7 +326,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 29. Makefile hardening | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 30. Launch banner + native-dev notice | v3.2 | 1/1 | Complete    | 2026-06-18 |
-| 31. Dockerfile caching audit + doc | v3.2 | 0/TBD | Not started | - |
+| 31. Dockerfile caching audit + doc | v3.2 | 1/1 | Complete   | 2026-06-18 |
 | 32. Secrets pattern + key rotation | v3.2 | 0/TBD | Not started | - |
 | 33. Doc restructure + verification-copy correction | v3.2 | 0/TBD | Not started | - |
 | 34. Docker DX drift guard + CI guard extension | v3.2 | 0/TBD | Not started | - |
