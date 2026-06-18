@@ -282,7 +282,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 32-01-PLAN.md — SEC-01 safe secret examples, gitignore, `.env.example`, and Docker DX Secrets docs
+- [x] 32-01-PLAN.md — SEC-01 safe secret examples, gitignore, `.env.example`, and Docker DX Secrets docs
 
 **Wave 2** *(blocked on Wave 1 + maintainer attestation)*
 
@@ -335,7 +335,7 @@ Plans:
 | 29. Makefile hardening | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 30. Launch banner + native-dev notice | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 31. Dockerfile caching audit + doc | v3.2 | 1/1 | Complete    | 2026-06-18 |
-| 32. Secrets pattern + key rotation | v3.2 | 0/TBD | Not started | - |
+| 32. Secrets pattern + key rotation | v3.2 | 1/2 | In Progress|  |
 | 33. Doc restructure + verification-copy correction | v3.2 | 0/TBD | Not started | - |
 | 34. Docker DX drift guard + CI guard extension | v3.2 | 0/TBD | Not started | - |
 | 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 0/TBD | Not started | - |

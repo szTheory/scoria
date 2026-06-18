@@ -23,7 +23,7 @@ Requirements for milestone v3.2. Each maps to a roadmap phase.
 
 ### SEC — fleet secrets pattern
 
-- [ ] **SEC-01**: Maintainer can keep provider API keys out of plaintext on disk via a documented direnv + 1Password (`op run`) pattern, with committed `.envrc.example` and `.env.op.example`, the plaintext key removed from `.env.example`, and `.envrc`/`.env.op` gitignored.
+- [x] **SEC-01**: Maintainer can keep provider API keys out of plaintext on disk via a documented direnv + 1Password (`op run`) pattern, with committed `.envrc.example` and `.env.op.example`, the plaintext key removed from `.env.example`, and `.envrc`/`.env.op` gitignored.
 - [ ] **SEC-02**: The previously on-disk `ANTHROPIC_API_KEY` is rotated (out-of-band maintainer action on the Anthropic console), tracked as a pre-ship requirement.
 
 ### DOCS — verification-copy truth, portable standard & drift guard
@@ -78,7 +78,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DXCLI-04 | Phase 29 | Complete |
 | DXCLI-05 | Phase 30 | Complete |
 | CACHE-01 | Phase 31 | Complete |
-| SEC-01 | Phase 32 | Pending |
+| SEC-01 | Phase 32 | Complete |
 | SEC-02 | Phase 32 | Pending |
 | DOCS-01 | Phase 33 | Pending |
 | DOCS-02 | Phase 33 | Pending |
