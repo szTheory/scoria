@@ -102,6 +102,60 @@ package list changes.)
 | Anything under `config/` | `COPY config config` (step 2) | `mix deps.compile` + `mix compile` |
 | `mix.exs` or `mix.lock` | `COPY mix.exs mix.lock` (step 1) | `mix deps.get` → `mix deps.compile` → `mix compile` (full dep rebuild) |
 
+## Secrets (ANTHROPIC_API_KEY)
+
+The dashboard and normal dev server do not need this key. The screenshot critique pass does.
+
+### First-time setup
+
+Install `direnv` and the 1Password CLI, then enable the `direnv` shell hook for
+your shell.
+
+```bash
+op signin
+cp .envrc.example .envrc
+cp .env.op.example .env.op
+```
+
+Edit `.env.op` so the `op://` secret reference points at your real
+1Password vault, item, and field. Then allow the local direnv file once:
+
+```bash
+direnv allow .
+```
+
+### Run the critique pass
+
+Docker:
+
+```bash
+op run --env-file "${SCORIA_OP_ENV_FILE:-.env.op}" -- docker compose --profile shots run --rm critique
+```
+
+Native Mix:
+
+```bash
+op run --env-file "${SCORIA_OP_ENV_FILE:-.env.op}" -- mix scoria.ui.shots --critique
+```
+
+### How it works
+
+`.env.op` stores 1Password secret reference values only, not plaintext key
+material. `op run` resolves those references only for the wrapped child process.
+For Docker, Compose receives the resolved `ANTHROPIC_API_KEY` from that child
+environment and interpolates it into the profile-gated `critique` service. For
+native Mix, the same runtime variable name stays in use.
+
+### Footguns
+
+- Never commit `.envrc` or `.env.op`; both are local files and are gitignored.
+- A secret reference (`op://...`) is safe to commit in an example. A plaintext
+  key is not.
+- Do not put real provider keys in `.envrc` or `.env`.
+- Sign in to 1Password before running a critique command.
+- Re-run `direnv allow .` after changing `.envrc`.
+- Rotate any key that touched disk as plaintext.
+
 ## Adopting this in another repo
 
 1. `docker network create proxy` and run the shared proxy once:
