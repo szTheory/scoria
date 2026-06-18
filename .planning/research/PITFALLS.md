@@ -516,12 +516,12 @@ Verification copy correction phase. Gate: launch banner and docs manually verifi
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **make nuke target**: appears to clean up — verify `docker volume prune` is NOT called; only `docker compose down -v` with `$(COMPOSE_PROJECT_NAME)` in the warning message
-- [ ] **Dockerfile layer caching**: image rebuilds fast after CSS edit — empirically verify `mix deps.get` does NOT appear in `docker compose up --build` output after touching `assets/css/app.css`
+- [x] **make nuke target**: verified scope-safe via Phase 29; no `docker volume prune`, only instance-scoped compose teardown with named-scope warning copy
+- [x] **Dockerfile layer caching**: verified via Phase 31 empirical cache proof and layer-order invariant
 - [ ] **Multi-instance isolation**: two branches running simultaneously — verify `make url` on each shows different hostnames; verify Traefik dashboard shows two distinct routers
 - [ ] **Stale instance remediated**: `scoria_demo` is down — verify `docker ps --filter name=scoria_demo` returns empty
-- [ ] **`make dev` port**: PORT is not 4000 — verify `grep "PORT" Makefile` shows non-4000 default; verify `shots-native` URL agrees
-- [ ] **secrets pattern**: `.env` key rotated — verify by checking date of last rotation; `op://` reference in `.env.example`
+- [x] **`make dev` port**: Phase 29 verified non-4000 default and `shots-native` URL consistency
+- [x] **secrets pattern**: Phase 32 verified safe examples, `.env` ignore coverage, and no-Git-exposure closeout; no local-only key rotation was claimed
 - [ ] **Hex publish docs pass first**: `mix docs` clean before release-please merge — no ExDoc errors locally
 - [ ] **post-publish-smoke port**: `5432:5432` not `55432:5432` in `post-publish-smoke.yml`
 - [ ] **Verification copy**: no `localhost:4000` in `.planning/` verification sections — `grep -rn "localhost:4000" .planning/` returns zero

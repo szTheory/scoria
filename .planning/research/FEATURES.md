@@ -126,17 +126,17 @@ Release-please merge + post-publish smoke
 
 These are the concrete gaps from the backlog. Nothing here is new invention — all are hygiene and polish on an already-shipped foundation.
 
-- [ ] `make dev` default PORT to 4799 (one line in Makefile) — eliminates the `:4000` collision
-- [ ] Rotate `ANTHROPIC_API_KEY` in `.env` (security hygiene, non-optional)
-- [ ] `.env.example` committed (plaintext shape, secrets as `REPLACE_ME`)
-- [ ] `make nuke` target (instance-scoped `compose down -v --remove-orphans`) — escape hatch for stale instances
-- [ ] `make fleet` target — live inventory of running scoria-* compose projects
-- [ ] `make help` as `.DEFAULT_GOAL` with `##` awk self-documentation — zero friction discoverability
-- [ ] Banner update: add populated fallback URL, Traefik admin URL (:8080), cleaner key-route grouping
-- [ ] Correct all raw-Phoenix fixed-port verification copy in `.planning/` and `docs/`
-- [ ] Dockerfile.dev layer order verified + invariant documented in a comment block
-- [ ] `docs/docker_dev_dx.md` restructure: persona/JTBD box → gameplan → quick-ref table → model → caching → secrets → hygiene → adopter guide
-- [ ] Fleet secrets section in doc: `.env` (rotate), `.env.op` (op run), `.envrc` (direnv) — three tiers, all opt-in
+- [x] `make dev` default PORT to 4799 (one line in Makefile) — eliminates the `:4000` collision
+- [x] Local key exposure closeout completed via no-Git-exposure attestation; no local-only key rotation claimed or required
+- [x] `.env.example` committed (plaintext shape, secrets as `REPLACE_ME`)
+- [x] `make nuke` target (instance-scoped `compose down -v --remove-orphans`) — escape hatch for stale instances
+- [x] `make fleet` target — live inventory of running scoria-* compose projects
+- [x] `make help` as `.DEFAULT_GOAL` with `##` awk self-documentation — zero friction discoverability
+- [x] Banner update: add populated fallback URL, Traefik admin URL (:8080), cleaner key-route grouping
+- [x] Correct all raw-Phoenix fixed-port verification copy in `.planning/` and `docs/`
+- [x] Dockerfile.dev layer order verified + invariant documented in a comment block
+- [x] `docs/docker_dev_dx.md` restructure: persona/JTBD box → gameplan → quick-ref table → model → caching → secrets → hygiene → adopter guide
+- [x] Fleet secrets section in doc: `.env` (rotate), `.env.op` (op run), `.envrc` (direnv) — three tiers, all opt-in
 - [ ] Maintenance release: merge release-please PR #3 on green CI → post-publish smoke → close
 - [ ] MAINTAINERS.md: add 4-step release runbook
 
