@@ -48,6 +48,10 @@ RUN --mount=type=cache,target=/root/.hex,sharing=locked \
     --mount=type=cache,target=/root/.cache/rebar3,sharing=locked \
     mix deps.compile
 
+# INVARIANT: volatile source (lib/dev/priv) MUST stay below deps.get + deps.compile.
+# Reordering re-fetches/recompiles deps on every source edit. Layer order is deliberate
+# — see docs/docker_dev_dx.md (layer-invalidation table). Guarded by
+# test/scoria/ci_policy_contract_test.exs.
 # 3) Volatile source last — editing these does NOT invalidate the layers above.
 COPY lib lib
 COPY dev dev

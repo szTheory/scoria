@@ -86,6 +86,22 @@ set the two vars in `.env` to pin a different instance.
   see [Dockerfile.dev](../Dockerfile.dev). Use VirtioFS in Docker Desktop;
   `:cached`/`:delegated` mount flags are legacy no-ops now — don't add them.
 
+### Layer-cache invalidation (cold `docker compose up --build` only)
+
+Day-to-day you run `docker compose up`: source is bind-mounted and `deps`/`_build`
+are named volumes, so **editing anything rebuilds no image layer at all** — you just
+restart the app. The table below applies only to a cold `--build`, where the
+`Dockerfile.dev` COPY order decides what the BuildKit cache can reuse. (The base
+image + `apt` layer sit above all of these and rebuild only when the base image or
+package list changes.)
+
+| You edit | First invalidated layer | What re-runs |
+|----------|-------------------------|--------------|
+| CSS (`assets/css/*.css`) or any `assets/` file | **none** — `assets/` is not `COPY`'d (built in-container at runtime; `priv/static/scoria/` is `.dockerignore`'d) | nothing rebuilds; running container rebuilds assets on the fly |
+| A `.heex` template or any `lib/`, `dev/`, `priv/` source file | `COPY lib lib` (step 3) | `mix compile` — **app compile only**; deps untouched |
+| Anything under `config/` | `COPY config config` (step 2) | `mix deps.compile` + `mix compile` |
+| `mix.exs` or `mix.lock` | `COPY mix.exs mix.lock` (step 1) | `mix deps.get` → `mix deps.compile` → `mix compile` (full dep rebuild) |
+
 ## Adopting this in another repo
 
 1. `docker network create proxy` and run the shared proxy once:
