@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
                            Requires `ANTHROPIC_API_KEY` to be set. Writes
                            per-screen findings JSON alongside the PNGs.
     * `--url`             — Base URL for the local dev server
-                           (default: `http://localhost:4000/scoria`).
+                           (default: `http://localhost:4799/scoria`).
     * `--tenant-empty`    — Tenant slug for the empty-state captures
                            (default: `empty-tenant`).
     * `--tenant-seeded`   — Tenant slug for the populated-state captures
@@ -34,7 +34,7 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
     * The dev server must be running with seed data applied:
 
           mix run priv/repo/dev_seed.exs
-          mix phx.server
+          make dev
 
   ## Screenshot pass
 
@@ -129,7 +129,7 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
     end
 
     script_path = Path.join([File.cwd!(), "priv", "dev", "shots.mjs"])
-    base_url = opts[:url] || "http://localhost:4000/scoria"
+    base_url = opts[:url] || "http://localhost:4799/scoria"
     tenant_empty = opts[:tenant_empty] || "empty-tenant"
     tenant_seeded = opts[:tenant_seeded] || "acme-corp"
 
@@ -174,7 +174,7 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
     # Start the Elixir application — ReqLLM needs it for config/env
     Mix.Task.run("app.start")
 
-    base_url = opts[:url] || "http://localhost:4000/scoria"
+    base_url = opts[:url] || "http://localhost:4799/scoria"
     _ = base_url
 
     Mix.shell().info("[scoria.ui.shots] Running critique pass (9 screens × canonical state)...")

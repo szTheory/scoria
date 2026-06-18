@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
 
   ## Usage
 
-      mix scoria.ui.e2e [--base-url http://localhost:4000/scoria] [--no-seed-approvals]
+      mix scoria.ui.e2e [--base-url http://localhost:4799/scoria] [--no-seed-approvals]
 
   ## Prerequisites
 
@@ -30,12 +30,11 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
 
     * The dev database created and migrated, and the dev server running:
 
-          mix dev.setup
-          mix phx.server
+          make dev
 
   Then, in a second shell:
 
-      mix scoria.ui.e2e
+      mix scoria.ui.e2e --base-url http://localhost:4799/scoria
 
   ## Notes
 
@@ -74,7 +73,7 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
       Mix.raise("Cannot find `npx` (ships with Node.js >= 18). Install Node.js and re-run.")
     end
 
-    base_url = opts[:base_url] || opts[:url] || "http://localhost:4000/scoria"
+    base_url = opts[:base_url] || opts[:url] || "http://localhost:4799/scoria"
     priv_dev = Path.join([File.cwd!(), "priv", "dev"])
 
     if Keyword.get(opts, :seed_approvals, true) do
@@ -170,8 +169,7 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
 
       Ensure the dev database is created and migrated, then re-run:
 
-          mix dev.setup
-          mix phx.server
+          make dev
           mix scoria.ui.e2e
       """)
   end

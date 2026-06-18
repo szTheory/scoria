@@ -1034,4 +1034,4 @@ rescue
     IO.puts("  ! IA linkage scenario skipped: #{Exception.message(e)}")
 end
 
-IO.puts("Done. Open http://localhost:4000/scoria")
+IO.puts("Done. Open http://localhost:4799/scoria")
