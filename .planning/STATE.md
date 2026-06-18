@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
-status: executing
-stopped_at: Phase 31 context gathered
-last_updated: "2026-06-18T06:26:38.530Z"
+status: ready_to_plan
+stopped_at: Phase 31 complete (1/1) — ready to discuss Phase 32
+last_updated: 2026-06-18T06:40:40.056Z
 last_activity: 2026-06-18 -- Phase 31 execution started
 progress:
   total_phases: 13
   completed_phases: 2
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
   percent: 15
 ---
 
@@ -22,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-17 after v3.2 Drydock roadmap initi
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 31 — dockerfile-caching-audit-doc
+**Current focus:** Phase 32 — secrets pattern + key rotation
 
 ## Current Position
 
-Phase: 31 (dockerfile-caching-audit-doc) — EXECUTING
-Plan: 1 of 1
-Status: Executing Phase 31
-Last activity: 2026-06-18 -- Phase 31 execution started
+Phase: 32
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-06-18
 
 Progress: [░░░░░░░░░░] 0% (0/7 v3.2 phases complete)
 

@@ -19,7 +19,7 @@ Requirements for milestone v3.2. Each maps to a roadmap phase.
 
 ### CACHE — Docker layer-caching guarantee
 
-- [ ] **CACHE-01**: A CSS/HEEx-only source edit triggers no Mix dependency refetch and no full app recompile — empirically verified and documented as a layer-invalidation table plus a layer-order invariant comment in `Dockerfile.dev`.
+- [x] **CACHE-01**: A CSS/HEEx-only source edit triggers no Mix dependency refetch and no full app recompile — empirically verified and documented as a layer-invalidation table plus a layer-order invariant comment in `Dockerfile.dev`.
 
 ### SEC — fleet secrets pattern
 
@@ -77,7 +77,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DXCLI-03 | Phase 29 | Complete |
 | DXCLI-04 | Phase 29 | Complete |
 | DXCLI-05 | Phase 30 | Complete |
-| CACHE-01 | Phase 31 | Pending |
+| CACHE-01 | Phase 31 | Complete |
 | SEC-01 | Phase 32 | Pending |
 | SEC-02 | Phase 32 | Pending |
 | DOCS-01 | Phase 33 | Pending |
