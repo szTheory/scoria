@@ -2,13 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
-current_phase: 31
-current_phase_name: Dockerfile caching audit + doc
 status: verifying
-stopped_at: Phase 30 context gathered
-last_updated: "2026-06-18T05:42:12.013Z"
-last_activity: 2026-06-18
-last_activity_desc: Phase 30 complete, transitioned to Phase 31
+stopped_at: Phase 31 context gathered
+last_updated: "2026-06-18T06:05:59.296Z"
+last_activity: 2026-06-18 — Phase 30 complete, transitioned to Phase 31
 progress:
   total_phases: 13
   completed_phases: 2
@@ -81,6 +78,6 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-06-18T05:37:39.707Z
-Stopped at: Phase 30 context gathered
-Resume file: .planning/phases/30-launch-banner-native-dev-notice/30-CONTEXT.md
+Last session: 2026-06-18T06:05:59.290Z
+Stopped at: Phase 31 context gathered
+Resume file: .planning/phases/31-dockerfile-caching-audit-doc/31-CONTEXT.md
