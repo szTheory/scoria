@@ -305,7 +305,7 @@ Plans:
 
 - [x] 33-01-PLAN.md — restructure `docs/docker_dev_dx.md` as the reader-first fleet standard (DOCS-02)
 - [x] 33-02-PLAN.md — correct active docs and qualify support-copilot gallery copy (DOCS-01)
-- [ ] 33-03-PLAN.md — correct host screenshot/e2e harness docs and defaults (DOCS-01)
+- [x] 33-03-PLAN.md — correct host screenshot/e2e harness docs and defaults (DOCS-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -346,7 +346,7 @@ Plans:
 | 30. Launch banner + native-dev notice | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 31. Dockerfile caching audit + doc | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 32. Secrets pattern + local key exposure closeout | v3.2 | 2/2 | Complete    | 2026-06-18 |
-| 33. Doc restructure + verification-copy correction | v3.2 | 2/4 | In Progress|  |
+| 33. Doc restructure + verification-copy correction | v3.2 | 3/4 | In Progress|  |
 | 34. Docker DX drift guard + CI guard extension | v3.2 | 0/TBD | Not started | - |
 | 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 0/TBD | Not started | - |
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
