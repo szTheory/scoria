@@ -12,6 +12,14 @@ mix dev.setup
 HOST="${PHX_HOST:-scoria.localhost}"
 INSTANCE="${COMPOSE_PROJECT_NAME:-scoria}"
 
+ROUTES="$(mix phx.routes ScoriaWeb.DevRouter 2>/dev/null \
+  | awk '$2 == "GET" && $3 ~ /^\/scoria/ && $3 !~ /:/ { print $3 }' \
+  | sort -u \
+  | sed 's/^/    /')" || true
+if [ -z "$ROUTES" ]; then
+  ROUTES="    (route list unavailable — run \`mix phx.routes ScoriaWeb.DevRouter\` or open http://${HOST}/scoria)"
+fi
+
 cat <<BANNER
 
 ────────────────────────────────────────────────────────────────────
@@ -21,20 +29,16 @@ cat <<BANNER
                                         automatically in Chrome/Chromium)
          host fallback: run \`make url\` for the ephemeral 127.0.0.1 port
 
+  Traefik admin (which app is routed where):  http://localhost:8080
+
+  Native dev server: make dev → http://localhost:4799/scoria
+
   Demo data is seeded on boot (idempotent). Reseed any time with \`make seed\`;
   for a clean slate use \`make reseed\`. Demo deep-links (run / replay / prompt
   release ids) are printed in the seed output above.
 
-  Screens:
-    /scoria              Home (Status Home)
-    /scoria/approvals    Approvals
-    /scoria/reviews      Review Queue
-    /scoria/workflows    Workflows
-    /scoria/incidents    Incidents
-    /scoria/connectors   Connectors
-    /scoria/eval_specs   Eval Specs
-    /scoria/prompts      Prompt Registry
-    /scoria/prompts/:id/release   Prompt Release Workbench
+  Key routes (derived live from the router):
+${ROUTES}
 
   Screenshot + critique harness (from the host):
     docker compose --profile shots run --rm shots        # screenshots only
