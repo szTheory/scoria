@@ -13,7 +13,10 @@ mix setup
 mix phx.server
 ```
 
-Visit the host chat at `/` and the Scoria operator surface at `/scoria`.
+This starts the separate gallery app under `examples/support_copilot`, not the
+Scoria repo dashboard. Visit the gallery host chat at
+`http://localhost:4010/` and the gallery-local Scoria operator surface at
+`http://localhost:4010/scoria`.
 
 ## Path dependency vs tarball consumer proof
 

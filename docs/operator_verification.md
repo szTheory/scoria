@@ -191,13 +191,15 @@ Keep it distinct from the other named lanes:
 
 ## Support copilot gallery (advisory)
 
-After the default lane is boring, explore the committed gallery for a realistic support-copilot domain with shared `Scoria.SupportJourney` fixtures:
+After the default lane is boring, explore the committed gallery for a realistic support-copilot domain with shared `Scoria.SupportJourney` fixtures. This starts the separate gallery app under `examples/support_copilot`, not the Scoria repo dashboard:
 
 ```bash
 cd examples/support_copilot
 mix setup
 mix phx.server
 ```
+
+Open the gallery host chat at `http://localhost:4010/` and its gallery-local Scoria operator surface at `http://localhost:4010/scoria`.
 
 Maintainers run the advisory gallery lane:
 

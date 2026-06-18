@@ -242,7 +242,7 @@ Use that lane only when you are intentionally validating semantic fast-path beha
 
 ### Support copilot gallery (local demo)
 
-Clone the repository to explore Scoria in a realistic support-copilot domain with rich fixtures and a clickable host UI. Shared journey fixtures live in `Scoria.SupportJourney` and `priv/fixtures/support_journey/`. The gallery is **not** in the Hex tarball — it uses a `path: dependency` for local development.
+Clone the repository to explore Scoria in a realistic support-copilot domain with rich fixtures and a clickable host UI. Shared journey fixtures live in `Scoria.SupportJourney` and `priv/fixtures/support_journey/`. The gallery is **not** in the Hex tarball — it uses a `path: dependency` for local development. This command starts the separate gallery app under `examples/support_copilot`, not the Scoria repo dashboard.
 
 ```bash
 git clone https://github.com/szTheory/scoria.git
@@ -250,6 +250,8 @@ cd scoria/examples/support_copilot
 mix setup
 mix phx.server
 ```
+
+Open the gallery host chat at `http://localhost:4010/` and its gallery-local Scoria operator surface at `http://localhost:4010/scoria`.
 
 Run the advisory gallery verification lane from the repo root (not part of closeout order):
 
