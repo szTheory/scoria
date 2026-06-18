@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
-status: ready_to_plan
-stopped_at: Phase 34 complete (3/3) — ready to discuss Phase 35
-last_updated: 2026-06-18T20:50:20.309Z
+status: planning
+stopped_at: Phase 35 context gathered — ready to plan
+last_updated: "2026-06-18T23:38:46.449Z"
 last_activity: 2026-06-18
 progress:
   total_phases: 13
@@ -95,6 +95,6 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-06-18T20:25:58.738Z
-Stopped at: Completed 34-03-PLAN.md
-Resume file: None
+Last session: 2026-06-18T23:38:46.436Z
+Stopped at: Phase 35 context gathered — ready to plan
+Resume file: .planning/phases/35-maintenance-release-0-1-2-publish-post-publish-smoke/35-CONTEXT.md
