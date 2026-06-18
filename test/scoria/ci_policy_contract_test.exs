@@ -214,12 +214,17 @@ defmodule Scoria.CiPolicyContractTest do
     post_publish = File.read!(@post_publish_smoke)
 
     # Derive all job blocks that reference postgres: across policy and smoke workflows.
-    # job_blocks/1 is file-agnostic — call once per file, filter by body content.
     verify_postgres =
-      job_blocks(ci_verify) |> Enum.filter(fn {_name, body} -> body =~ "postgres:" end)
+      ci_verify
+      |> job_blocks()
+      |> Enum.filter(fn {_name, body} -> body =~ "postgres:" end)
+      |> Enum.map(fn {job, body} -> {"ci-verify.yml:#{job}", body} end)
 
     entry_postgres =
-      job_blocks(ci_entry) |> Enum.filter(fn {_name, body} -> body =~ "postgres:" end)
+      ci_entry
+      |> job_blocks()
+      |> Enum.filter(fn {_name, body} -> body =~ "postgres:" end)
+      |> Enum.map(fn {job, body} -> {"ci.yml:#{job}", body} end)
 
     post_publish_postgres =
       post_publish
@@ -234,6 +239,10 @@ defmodule Scoria.CiPolicyContractTest do
     assert map_size(postgres_blocks) >= 6,
            "expected >= 6 postgres jobs across ci.yml, ci-verify.yml, and " <>
              "post-publish-smoke.yml; regex may be broken"
+
+    assert Map.has_key?(postgres_blocks, "ci.yml:e2e"),
+           "FLAKE-01 scanner must include ci.yml:e2e so PR browser coverage " <>
+             "cannot bypass fixed host-port enforcement"
 
     assert Map.has_key?(postgres_blocks, "post-publish-smoke.yml:smoke"),
            "FLAKE-01 scanner must include post-publish-smoke.yml:smoke so the " <>
