@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
-status: ready_to_plan
-stopped_at: Phase 31 complete (1/1) — ready to discuss Phase 32
-last_updated: 2026-06-18T06:40:40.056Z
-last_activity: 2026-06-18 -- Phase 31 execution started
+status: planning
+stopped_at: Phase 32 context gathered
+last_updated: "2026-06-18T06:51:14.694Z"
+last_activity: 2026-06-18
 progress:
   total_phases: 13
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 3
   completed_plans: 3
-  percent: 15
+  percent: 23
 ---
 
 # Project State
@@ -78,6 +78,6 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-06-18T06:05:59.290Z
-Stopped at: Phase 31 context gathered
-Resume file: .planning/phases/31-dockerfile-caching-audit-doc/31-CONTEXT.md
+Last session: 2026-06-18T06:51:14.684Z
+Stopped at: Phase 32 context gathered
+Resume file: .planning/phases/32-secrets-pattern-key-rotation/32-CONTEXT.md
