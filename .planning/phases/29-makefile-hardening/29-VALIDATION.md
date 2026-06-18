@@ -1,9 +1,9 @@
 ---
 phase: 29
 slug: makefile-hardening
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-17
 ---
 
@@ -78,6 +78,6 @@ framework in play — every success criterion is verifiable by a deterministic
 - [ ] Wave 0 covers all MISSING references (N/A — none)
 - [ ] No watch-mode flags
 - [ ] Feedback latency < 5s
-- [ ] `nyquist_compliant: true` set in frontmatter (set by planner once per-task `<automated>` blocks are written)
+- [x] `nyquist_compliant: true` set in frontmatter (every task carries an `<automated>` grep/CLI check)
 
-**Approval:** pending
+**Approval:** approved 2026-06-17 (plan-checker: PLAN VERIFIED)
