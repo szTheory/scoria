@@ -88,6 +88,7 @@ open:
 
 ## dev: native host server with live reload (PORT=4799 by default)
 dev:
+	@echo "==> Scoria dev (native) → http://localhost:$(PORT)/scoria"
 	SCORIA_DEV_LIVE_RELOAD=1 PORT=$(PORT) mix phx.server
 
 ## shots: capture screenshots in Docker (no API key needed)
