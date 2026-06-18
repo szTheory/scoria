@@ -692,17 +692,15 @@ OWASP ASVS is a security verification standard with categories including V2 Auth
 |---|-------|---------|---------------|
 | A1 | All implementation recommendations assume the current dirty worktree content is the planning baseline. | Project Constraints / Current Relevant State | If uncommitted user changes are reverted or altered before execution, line numbers and exact assertions may need recalibration. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should the old Docker DX guide test be fully removed or narrowed?**  
+1. **RESOLVED: Should the old Docker DX guide test be fully removed or narrowed?**  
    What we know: D-11 says move or narrow broad Docker DX guide assertions from `ci_policy_contract_test.exs`; Claude's Discretion leaves exact split to the planner. [VERIFIED: `34-CONTEXT.md` D-11 and Claude's Discretion]  
-   What's unclear: Whether any `.env.example` or non-doc assertion should remain in the omnibus file. [VERIFIED: `test/scoria/ci_policy_contract_test.exs:790-820`]  
-   Recommendation: Move doc-only tokens to the new file and keep only non-duplicative non-doc checks in `ci_policy_contract_test.exs`. [VERIFIED: `34-CONTEXT.md` D-11]
+   Planner answer: Narrow the old omnibus test to the `.env.example` instance-example guard only. Move the Docker DX guide token, stale browser URL, and cache-table ownership to `Scoria.DockerDxDocContractTest`; keep `ci_policy_contract_test.exs` focused on CI policy, Compose, Makefile, Dockerfile structure, and non-doc secrets/instance surfaces. [VERIFIED: `34-CONTEXT.md` D-11]
 
-2. **Line vs paragraph qualification for `4000` scan?**  
+2. **RESOLVED: Line vs paragraph qualification for `4000` scan?**  
    What we know: D-19 permits paragraph or line scanning. [VERIFIED: `34-CONTEXT.md` D-19]  
-   What's unclear: Line scanning is simpler but may be too strict if future docs put a qualifier on the previous line. [ASSUMED]  
-   Recommendation: Start with line scanning against the current doc because current allowed hits are line-local; switch to paragraph scanning only if implementation evidence shows false positives. [VERIFIED: current `rg` results]
+   Planner answer: Use direct refutes for stale browser-start URL forms, then apply qualifier enforcement only to paragraphs or lines that pair `4000` with browser-start/fallback context. Explicitly allow the current anti-footgun/no-juggling copy, because it warns against fixed-port juggling rather than instructing a browser start. Qualified Docker-internal, container, Traefik, CI, and ephemeral fallback mechanics remain allowed. [VERIFIED: current `docs/docker_dev_dx.md`; VERIFIED: `34-CONTEXT.md` D-17-D-19]
 
 ## Sources
 
@@ -739,4 +737,3 @@ OWASP ASVS is a security verification standard with categories including V2 Auth
 
 **Research date:** 2026-06-18  
 **Valid until:** 2026-07-18 for repo-local decisions; re-check GitHub Actions docs before changing service-port strategy. [ASSUMED]
-

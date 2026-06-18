@@ -2,7 +2,7 @@
 phase: 34
 slug: docker-dx-drift-guard-ci-guard-extension
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-18
 ---
@@ -41,9 +41,9 @@ created: 2026-06-18
 | 34-01-01 | 01 | 1 | DOCS-03 | T-34-01 | File-read-only doc contract preserves Docker/native dev-DX tokens without app, DB, Docker, or network startup. | contract | `SCORIA_LANE_CONTRACT_ONLY=true mix test --no-start --warnings-as-errors test/scoria/docker_dx_doc_contract_test.exs` | No W0 | pending |
 | 34-01-02 | 01 | 1 | DOCS-03 | T-34-02 | Stale browser-start `localhost:4000`/fixed `127.0.0.1:4000` guidance is rejected while qualified Docker-internal `:4000` mechanics remain allowed. | contract | `SCORIA_LANE_CONTRACT_ONLY=true mix test --no-start --warnings-as-errors test/scoria/docker_dx_doc_contract_test.exs` | No W0 | pending |
 | 34-01-03 | 01 | 1 | DOCS-03 | T-34-03 | Phase 31 cache-table reader-facing strings remain pinned in the Docker DX guide. | contract | `SCORIA_LANE_CONTRACT_ONLY=true mix test --no-start --warnings-as-errors test/scoria/docker_dx_doc_contract_test.exs` | No W0 | pending |
-| 34-02-01 | 02 | 1 | DOCS-03 | T-34-04 | FLAKE-01 fixed-host-port policy scans `.github/workflows/post-publish-smoke.yml` and rejects host ports in the Linux ephemeral range. | contract | `SCORIA_LANE_CONTRACT_ONLY=true mix test --no-start --warnings-as-errors test/scoria/ci_policy_contract_test.exs` | Existing | pending |
+| 34-02-01 | 02 | 1 | DOCS-03 | T-34-04 | FLAKE-01 fixed-host-port policy explicitly includes `.github/workflows/post-publish-smoke.yml` and rejects host ports in the Linux ephemeral range. | contract | `SCORIA_LANE_CONTRACT_ONLY=true mix test --no-start --warnings-as-errors test/scoria/ci_policy_contract_test.exs` | Existing | pending |
 | 34-02-02 | 02 | 1 | DOCS-03 | T-34-05 | Post-publish smoke workflow uses `5432:5432` and `SCORIA_DB_PORT: 5432`, with zero `55432` hits. | static | `rg -n "55432" .github/workflows/post-publish-smoke.yml` | Existing | pending |
-| 34-03-01 | 03 | 1 | DOCS-03 | T-34-06 | Existing policy lane runs the new doc-contract file without adding CI jobs, services, matrices, dependencies, or protected check names. | contract | `SCORIA_LANE_CONTRACT_ONLY=true mix test --no-start --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs` | Existing | pending |
+| 34-03-01 | 03 | 2 | DOCS-03 | T-34-07 | Existing policy lane runs the new doc-contract file without adding CI jobs, services, matrices, dependencies, or protected check names. | contract | `SCORIA_LANE_CONTRACT_ONLY=true mix test --no-start --warnings-as-errors test/scoria/docker_dx_doc_contract_test.exs test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs` | Existing | pending |
 
 ---
 
