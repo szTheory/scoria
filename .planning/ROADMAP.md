@@ -226,7 +226,12 @@ Plans:
   3. `make nuke` prints a warning naming `$(COMPOSE_PROJECT_NAME)` and the volumes it will delete before proceeding — no interactive TTY prompt required; the target name is the safety signal.
   4. `make fleet` runs a `docker ps` filter that surfaces all `scoria-*` containers so a stale instance shadowing `scoria.localhost` is immediately visible.
   5. `make` (no args) prints the help list derived from `##`-comment awk parsing — every new target this phase adds appears in that output.
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+**Wave 1**
+
+- [ ] 29-01-PLAN.md — PORT 4799 threading (dev + shots-native + 2 doc comments) + clean/down-alias/nuke teardown ladder + fleet + .DEFAULT_GOAL/help awk parser + .PHONY (DXCLI-01..04, single Makefile pass)
 
 ### Phase 30: Launch banner + native-dev notice
 
@@ -299,7 +304,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 29. Makefile hardening | v3.2 | 0/TBD | Not started | - |
+| 29. Makefile hardening | v3.2 | 0/1 | Planned | - |
 | 30. Launch banner + native-dev notice | v3.2 | 0/TBD | Not started | - |
 | 31. Dockerfile caching audit + doc | v3.2 | 0/TBD | Not started | - |
 | 32. Secrets pattern + key rotation | v3.2 | 0/TBD | Not started | - |
