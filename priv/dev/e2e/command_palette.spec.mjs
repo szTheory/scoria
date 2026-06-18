@@ -7,7 +7,7 @@
 import { test, expect } from '@playwright/test';
 import { waitForReady } from './lib/ready.mjs';
 
-const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4000/scoria';
+const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4799/scoria';
 const RECENTS_KEY = 'scoria:recents:/scoria';
 
 async function openHome(page) {

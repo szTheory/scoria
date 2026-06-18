@@ -14,7 +14,7 @@
 import { test, expect } from '@playwright/test';
 import { waitForReady } from './lib/ready.mjs';
 
-const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4000/scoria';
+const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4799/scoria';
 
 // Reduced-motion kill switch (05-motion.css) sets transition/animation-duration
 // to 0.001ms. Chromium's getComputedStyle serializes 0.001ms as the scientific
