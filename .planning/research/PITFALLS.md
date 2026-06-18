@@ -87,7 +87,7 @@ The phase adding stale-instance hygiene doc. Gate: verify `docker ps -a --filter
 
 **What goes wrong:**
 
-`make dev` currently runs `SCORIA_DEV_LIVE_RELOAD=1 mix phx.server` with no PORT override. Phoenix defaults to 4000. Any other library in the fleet running natively (or in Docker with a published 4000 port) causes EADDRINUSE. The maintainer gets a cryptic Erlang crash on boot, not a helpful "port 4000 is taken" message, and has to remember to add `PORT=XXXX` manually every time.
+`make dev` previously launched the native Phoenix server with no PORT override. Phoenix defaults to 4000. Any other library in the fleet running natively (or in Docker with a published 4000 port) causes EADDRINUSE. The maintainer gets a cryptic Erlang crash on boot, not a helpful "port 4000 is taken" message, and has to remember to add `PORT=XXXX` manually every time.
 
 **Why it happens:**
 
@@ -101,7 +101,7 @@ Bake a non-conflicting default directly into the `dev` Make target:
 ## dev: native host server with live browser reload (CSS/JS iteration)
 ##      PORT defaults to 4799 to avoid fleet collisions on :4000
 dev:
-	PORT=$${PORT:-4799} SCORIA_DEV_LIVE_RELOAD=1 mix phx.server
+	PORT=$${PORT:-4799} SCORIA_DEV_LIVE_RELOAD=1 [native Phoenix server command]
 ```
 
 Pick a port in the range 4100–4999 that is unlikely to be used by any sibling library. Document the chosen port in the launch banner (or at least in `docs/docker_dev_dx.md`) so the maintainer knows where to point the browser when using `make dev`. Do NOT rely on `System.get_env("PORT") || 4000` in `config/dev.exs` without also setting it in the Makefile — the two must agree.
@@ -110,7 +110,7 @@ Pick a port in the range 4100–4999 that is unlikely to be used by any sibling 
 
 - `make dev` emits `[error] Failed to start Ranch listener` with `eaddrinuse`
 - The Makefile `dev` target has no `PORT=` prefix
-- The `shots-native` target hardcodes `--url http://localhost:4000/scoria` (it does today) — this breaks silently if PORT is changed; must be kept in sync
+- The `shots-native` target hardcodes a fixed localhost dashboard URL — this breaks silently if PORT is changed; must be kept in sync
 
 **Phase to address:**
 
@@ -296,29 +296,29 @@ Secrets-pattern phase. Gate: `.env` is in `.gitignore`; a verification step rota
 
 **What goes wrong:**
 
-GSD plan/agent verification copy currently instructs verifiers to run `mix phx.server` and check `http://localhost:4000/scoria`. Both are wrong for this project:
+GSD plan/agent verification copy previously instructed verifiers to use the raw Phoenix command and check the old fixed localhost dashboard URL. Both are wrong for this project:
 
 1. `:4000` is fleet-owned — other libraries run there; it may not even be Scoria answering.
-2. `mix phx.server` starts the wrong server (it tries to use the standard `MyApp.Endpoint`, not the dev harness `ScoriaWeb.DevEndpoint` that `make dev` boots).
+2. The raw Phoenix command starts the wrong server (it tries to use the standard `MyApp.Endpoint`, not the dev harness `ScoriaWeb.DevEndpoint` that `make dev` boots).
 3. The real URL after `make up` is `http://scoria-<branch>.localhost/scoria` — branch-derived.
 
 A verifier following the stale docs concludes "works" against the wrong instance, or concludes "broken" because nothing answers at `:4000`. Either outcome is wrong.
 
 **Why it happens:**
 
-Verification copy was written early in the project when the native `mix phx.server` path was the only option. The Docker DX overhaul changed the canonical verification path but the agent prompts and GSD plans were not updated. Documentation drift is structurally likely in a fast-moving project — the "correct" URL is dynamic (branch-name-derived), making it hard to pin in static docs.
+Verification copy was written early in the project when the raw native Phoenix path was the only option. The Docker DX overhaul changed the canonical verification path but the agent prompts and GSD plans were not updated. Documentation drift is structurally likely in a fast-moving project — the "correct" URL is dynamic (branch-name-derived), making it hard to pin in static docs.
 
 **How to avoid:**
 
-1. Update ALL verification copy that references `mix phx.server`/`localhost:4000/scoria` to: "`make up` → `make url` prints the instance URL → open `http://$(make url output)/scoria`".
+1. Update ALL verification copy that references the raw native Phoenix path or old fixed localhost dashboard URL to: "`make up` → `make url` prints the instance URL → open `http://$(make url output)/scoria`".
 2. For human-readable docs, use the template form: "`http://scoria-<branch>.localhost/scoria` (or run `make url` to get the exact URL for your branch)".
 3. Print the route list in the launch banner — the entrypoint already does this (`docker/dev-entrypoint.sh`). Ensure the banner includes `make url` as the next step instead of requiring the maintainer to remember the URL format.
 4. Add a requirement that any new phase requiring browser verification must state the full URL derivation, not just `:4000`.
 
 **Warning signs:**
 
-- GSD agent prompts contain `localhost:4000/scoria`
-- REQUIREMENTS.md verification steps reference `mix phx.server` as the start command
+- GSD agent prompts contain the old fixed localhost dashboard URL
+- REQUIREMENTS.md verification steps reference the raw Phoenix command as the start command
 - The launch banner does not print the Traefik URL prominently
 
 **Phase to address:**

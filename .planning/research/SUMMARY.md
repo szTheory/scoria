@@ -33,7 +33,7 @@ Everything else (Elixir 1.19.5-OTP-27, Traefik v3.7.1, hexpm/elixir bookworm-sli
 - Launch banner: populated fallback URL (`http://127.0.0.1:${PORT}/scoria`), Traefik admin link (`http://localhost:8080`), grouped key-route list, ops command palette
 - `docker_dx_doc_contract_test.exs` (new, policy lane) — asserts canonical strings present in `docs/docker_dev_dx.md`; asserts `localhost:4000` absent
 - `ci_policy_contract_test.exs` extended to scan `post-publish-smoke.yml` for the ephemeral-port ban
-- All `localhost:4000` / `mix phx.server` verification copy corrected in `.planning/` + `docs/`
+- All fixed-port/raw-Phoenix verification copy corrected in `.planning/` + `docs/`
 - `post-publish-smoke.yml` port `55432:5432` → `5432:5432`
 - PR #3 merged on green CI → automated pipeline → `0.1.2` on Hex → post-publish smoke passes; `mix docs` clean confirmed before merge
 - `ANTHROPIC_API_KEY` rotated (out-of-band maintainer action, pre-ship)

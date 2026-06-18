@@ -67,7 +67,7 @@ These planes share no runtime code. Changes in Plane A never touch Plane C and v
 | `compose.yml` | web + db (unpublished pgvector) + profile-gated shots/critique; no `container_name:`, no top-level `name:`, interpolated Traefik labels | **Exists — minor modify** |
 | `Dockerfile.dev` | Layer-ordered BuildKit dev image; pinned to `.tool-versions` (Elixir 1.19.5-OTP-27.3.2 on debian-bookworm-20260518-slim) | **Exists — minor modify** |
 | `docker/traefik/compose.yml` | Long-lived shared proxy; `name: dev_proxy`; Traefik v3.7.1 on `proxy` external network | **Exists — no change** |
-| `docker/dev-entrypoint.sh` | DB setup (idempotent), URL/route banner, `exec mix phx.server` | **Exists — modify** |
+| `docker/dev-entrypoint.sh` | DB setup (idempotent), URL/route banner, launches the native Phoenix server | **Exists — modify** |
 | `dev/dev_endpoint.ex` | `ScoriaWeb.DevEndpoint` — Bandit, PORT env, live_reload opt-in via `SCORIA_DEV_LIVE_RELOAD` | **Exists — no change** |
 | `dev/dev_router.ex` | Mounts `scoria_dashboard "/scoria"`, `put_demo_tenant` plug | **Exists — no change** |
 | `dev/asset_watcher.ex` | `ScoriaWeb.DevAssetWatcher` — css/js rebuild on assets/ change | **Exists — no change** |
@@ -79,21 +79,21 @@ These planes share no runtime code. Changes in Plane A never touch Plane C and v
 
 ### Integration point 1 — PORT default in `make dev`
 
-**Current state:** `make dev` runs `SCORIA_DEV_LIVE_RELOAD=1 mix phx.server`. The `DevEndpoint` reads `PORT` from env, defaulting to `4000` (in `config/dev.exs`). No PORT override in the Makefile target.
+**Current state:** `make dev` launches the native Phoenix server with live reload. The `DevEndpoint` reads `PORT` from env, defaulting to `4000` (in `config/dev.exs`). No PORT override existed in the old Makefile target.
 
 **Integration:** Add `PORT=4799` (or any non-4000 free port) to the `dev` target in `Makefile`. The change is one line:
 
 ```make
 dev:
-	SCORIA_DEV_LIVE_RELOAD=1 PORT=4799 mix phx.server
+	SCORIA_DEV_LIVE_RELOAD=1 PORT=4799 [native Phoenix server command]
 ```
 
 **Why 4799:** Scoria's library index in szTheory's ecosystem; memorable, distant from 4000 so the fleet has clear headroom, below 8080/3000/6379 collision zones. Any value 4001–4999 outside known fleet ports works. The exact value is a product decision, not an architectural constraint.
 
 **Tradeoffs:**
-- Pro: Zero-config collision avoidance; baked into the SSOT target; the shots-native target already hardcodes `localhost:4000`, so that target needs a matching update or a `PORT` variable.
+- Pro: Zero-config collision avoidance; baked into the SSOT target; the shots-native target needs a matching update or a `PORT` variable.
 - Con: If an adopter's host app happens to bind 4799 this still collides — but that is far rarer than 4000. The Docker path (`make up`) has no PORT issue at all (ephemeral loopback + Traefik).
-- The `shots-native` target in the Makefile currently hardcodes `--url http://localhost:4000/scoria`. It must be updated to match whatever PORT is chosen, or parameterized as `$(PORT)`.
+- The `shots-native` target in the Makefile must match whatever PORT is chosen, or be parameterized as `$(PORT)`.
 
 **What is new vs modified:** `Makefile` (modified — `dev` target and `shots-native` target).
 
@@ -130,7 +130,7 @@ nuke-all:
 
 **Current state:** `docker/dev-entrypoint.sh` already prints a route list (9 paths under "Screens:") alongside the instance URL, seed instructions, and screenshot harness commands. The banner is reasonably complete.
 
-**Gap:** The banner uses a static `http://${HOST}/scoria` URL. The `HOST` variable captures `PHX_HOST` or falls back to `scoria.localhost` — correct for the Docker path but wrong for `make dev` (native), where the URL is `localhost:<PORT>/scoria`. The `make dev` native path never runs the entrypoint script at all — it just invokes `mix phx.server` directly via the Makefile.
+**Gap:** The banner uses a static `http://${HOST}/scoria` URL. The `HOST` variable captures `PHX_HOST` or falls back to `scoria.localhost` — correct for the Docker path but wrong for `make dev` (native), where the URL is `localhost:<PORT>/scoria`. The `make dev` native path never runs the entrypoint script at all — it launches the native Phoenix server directly via the Makefile.
 
 **Integration:** Two sub-changes:
 
@@ -141,7 +141,7 @@ nuke-all:
 ```make
 dev:
 	@echo "Starting native dev server at http://localhost:4799/scoria (live-reload on)"
-	SCORIA_DEV_LIVE_RELOAD=1 PORT=4799 mix phx.server
+	SCORIA_DEV_LIVE_RELOAD=1 PORT=4799 [native Phoenix server command]
 ```
 
 **What is new vs modified:** `docker/dev-entrypoint.sh` (minor modify), `Makefile` (modified — dev target comment/echo).
@@ -240,7 +240,7 @@ And `direnv allow` is run once. After that, `cd`ing into the repo automatically 
 
 **Current state (verified from file reads):**
 
-The bug: GSD plan/agent prose, README sections, and `operator_verification.md` tell verifiers to run `mix phx.server` → `http://localhost:4000/scoria`. This is wrong in two ways:
+The bug: GSD plan/agent prose, README sections, and `operator_verification.md` told verifiers to use the raw Phoenix command and old fixed localhost dashboard URL. This is wrong in two ways:
 1. `localhost:4000` is fleet-owned; the real Docker path is `http://scoria-<branch>.localhost/scoria`.
 2. The correct dev command is `make up` (Docker) or `make dev` (native, port 4799 after the fix).
 
@@ -455,7 +455,7 @@ Steps 1–8 are independent of step 9. Steps 1–5 can proceed in parallel withi
 
 ### Anti-pattern 4: Hardcoding `localhost:4000` in verification copy
 
-**What people do:** Write `mix phx.server` and `http://localhost:4000/scoria` in docs/plans/README.
+**What people do:** Write raw Phoenix fixed-port dashboard instructions in docs/plans/README.
 **Why it's wrong:** The fleet owns 4000 (it's the default for every Phoenix app in the szTheory ecosystem). The actual URLs are instance-scoped `*.localhost` routes. Stale copy causes verifiers to check the wrong URL, see a 404 or another app's UI, and mark verification as failed or — worse — accidentally pass it against a stale instance.
 **Do this instead:** `make up` → `http://scoria-<branch>.localhost/scoria`, or `make dev` → `http://localhost:4799/scoria`. Document in the drift guard.
 
@@ -496,7 +496,7 @@ The test belongs in the `policy` lane (no DB, no app start, runs fast) alongside
 1. Read `docs/docker_dev_dx.md` as a string.
 2. Assert presence of: `"make up"`, `"make dev"`, `"*.localhost"`, `"4799"` (or chosen port), `"make nuke"`, `"direnv"` or `"1Password"`, `"ANTHROPIC_API_KEY"`.
 3. Assert absence of: `"localhost:4000"` (except in legacy/note context — may need a regex exclusion for the existing `shots-native` entry which legitimately references 4000 for its current Playwright target).
-4. Read `docs/operator_verification.md` and assert absence of `"mix phx.server"` as a dev-start instruction (it is valid as a concept reference but not as "the command to run").
+4. Read `docs/operator_verification.md` and assert absence of the raw Phoenix command as a dev-start instruction (it is valid as a concept reference but not as "the command to run").
 
 This follows the exact pattern of `adoption_surface_test.exs` (`AdopterDocContract`) — read a file, assert strings — with the same no-DB, `--no-start` execution model.
 

@@ -31,13 +31,10 @@ Five concrete mechanism decisions for the gaps in v3.2 Drydock:
 http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT", "4000"))]
 ```
 
-`Makefile` line 61:
-```make
-dev:
-  SCORIA_DEV_LIVE_RELOAD=1 mix phx.server
-```
+`Makefile` line 61 previously launched the native Phoenix server with live reload but no `PORT`
+assignment.
 
-The `dev` target passes no `PORT`, so the native harness binds `:4000`. Since every other Phoenix
+The old `dev` target passed no `PORT`, so the native harness bound `:4000`. Since every other Phoenix
 lib demo on the same Mac also wants `:4000`, the maintainer must remember to pass `PORT=4799 make
 dev` or the bind fails with "address already in use".
 
@@ -53,14 +50,14 @@ PORT ?= 4799
 ##      the asset watcher rebuilds the bundle, live reload refreshes the page)
 ##      Binds PORT (default 4799) to avoid clashing with other lib demos on :4000.
 dev:
-  PORT=$(PORT) SCORIA_DEV_LIVE_RELOAD=1 mix phx.server
+  PORT=$(PORT) SCORIA_DEV_LIVE_RELOAD=1 [native Phoenix server command]
 ```
 
 **Why not a free-port auto-picker?**
 
 An auto-picker (`python3 -c "import socket; ..."` or a `lsof` loop) has two footguns:
 1. The discovered port is not stable across invocations — you get a different URL every `make dev`,
-   breaking the Playwright harness (`make shots-native`) which hard-codes `localhost:4000`.
+   breaking the Playwright harness (`make shots-native`) if its URL is not parameterized.
 2. It introduces shell scripting brittleness into a Makefile that is otherwise plain and portable.
 
 The brand voice is "least surprise". A stable port you can bookmark is better DX than a random one
@@ -76,9 +73,9 @@ you have to discover with `make url` every session.
 
 **Integration notes:**
 
-- The `shots-native` Makefile target already hard-codes `localhost:4000/scoria`. Update it to
-  use the same `PORT` variable: `mix scoria.ui.shots --url http://localhost:$(PORT)/scoria`
-- `dev/dev_endpoint.ex` module doc references `localhost:4000/scoria` — update that comment too
+- The `shots-native` Makefile target should use the same `PORT` variable:
+  `mix scoria.ui.shots --url http://localhost:$(PORT)/scoria`
+- `dev/dev_endpoint.ex` module doc should reference `http://localhost:4799/scoria`
 - The `config/dev.exs` fallback (`System.get_env("PORT", "4000")`) can stay as-is; the Makefile
   injects the right value. No config change needed.
 
@@ -131,7 +128,7 @@ The net result: **no dep refetch, no full dep recompile — just incremental app
 This is already correct. No changes needed.
 
 **One real footgun to document:** `mix compile` inside the container compiles into the named
-`build` volume, but if a maintainer also has a macOS `_build` dir from `mix phx.server`, those
+`build` volume, but if a maintainer also has a macOS `_build` dir from native Phoenix runs, those
 are separate (different BEAM artefacts). The `.dockerignore` correctly excludes host `_build`
 and `deps` from the build context, preventing NIF crashes. This is already handled.
 
