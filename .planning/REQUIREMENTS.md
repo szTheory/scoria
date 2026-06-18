@@ -15,7 +15,7 @@ Requirements for milestone v3.2. Each maps to a roadmap phase.
 - [x] **DXCLI-02**: Maintainer can run `make clean` (stop this instance's containers, keep named volumes) and `make nuke` (also wipe this instance's named volumes) — both scoped to `$(COMPOSE_PROJECT_NAME)` via `docker compose down`, never `docker system/volume prune`; `make nuke` prints a named-scope warning of exactly what it will delete and proceeds without a TTY prompt.
 - [x] **DXCLI-03**: Maintainer can run `make fleet` to list the running `scoria-*` instances/containers so a stale instance shadowing `scoria.localhost` is immediately visible.
 - [x] **DXCLI-04**: `make` with no target prints `make help` (the `.DEFAULT_GOAL`), listing every target from its `##` description comment.
-- [ ] **DXCLI-05**: The launch banner prints a copy-pasteable key-route list, a populated `http://127.0.0.1:${PORT}/scoria` fallback URL, and the Traefik admin link — so the maintainer never guesses where to poke around.
+- [x] **DXCLI-05**: The launch banner prints a copy-pasteable key-route list, a populated `http://127.0.0.1:${PORT}/scoria` fallback URL, and the Traefik admin link — so the maintainer never guesses where to poke around.
 
 ### CACHE — Docker layer-caching guarantee
 
@@ -76,7 +76,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DXCLI-02 | Phase 29 | Complete |
 | DXCLI-03 | Phase 29 | Complete |
 | DXCLI-04 | Phase 29 | Complete |
-| DXCLI-05 | Phase 30 | Pending |
+| DXCLI-05 | Phase 30 | Complete |
 | CACHE-01 | Phase 31 | Pending |
 | SEC-01 | Phase 32 | Pending |
 | SEC-02 | Phase 32 | Pending |

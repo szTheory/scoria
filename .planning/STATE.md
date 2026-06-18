@@ -2,16 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
-status: executing
+current_phase: 30
+current_phase_name: launch-banner-native-dev-notice
+status: verifying
 stopped_at: Phase 30 context gathered
-last_updated: "2026-06-18T05:09:25.556Z"
-last_activity: 2026-06-18 — Phase 29 complete, transitioned to Phase 30
+last_updated: "2026-06-18T05:37:47.342Z"
+last_activity: 2026-06-18
+last_activity_desc: Phase 30 execution started
 progress:
   total_phases: 13
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 8
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
+  percent: 15
 ---
 
 # Project State
@@ -22,14 +25,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-17 after v3.2 Drydock roadmap initi
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 29 — makefile-hardening
+**Current focus:** Phase 30 — launch-banner-native-dev-notice
 
 ## Current Position
 
-Phase: 30 — Launch banner + native-dev notice
-Plan: Not started
-Status: Executing Phase 29
-Last activity: 2026-06-18 — Phase 29 complete, transitioned to Phase 30
+Phase: 30 (launch-banner-native-dev-notice) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-06-18 — Phase 30 execution started
 
 Progress: [░░░░░░░░░░] 0% (0/7 v3.2 phases complete)
 
@@ -52,6 +55,7 @@ Recent decisions affecting current work:
 - v3.2: Stream B (Phase 35) is fully independent of Stream A (Phases 29–34) — can execute in parallel.
 - v3.2: `VerificationLanes.closeout_order/0` and `CI / ci-gate` required-check name stay byte-stable; new tests run in existing policy lane only; no CI topology changes.
 - v3.2: Parallelism within Stream A: Phases 30, 31, 32 can all run after Phase 29 (no inter-dependencies); Phase 33 depends on 29–32; Phase 34 depends on 33.
+- [Phase ?]: Route list derived live from mix phx.routes ScoriaWeb.DevRouter
 
 ### Pending Todos
 
@@ -73,9 +77,10 @@ None at milestone start.
 | Fleet targets | FLEET-02: `make nuke-all` fleet-wide teardown (high blast radius) | Deferred | v3.2 out-of-scope |
 | v3.0 gaps | Phase 13/14 verification-doc gaps (functional: 0 unsatisfied; 10 partials are proof-only) | Deferred | v3.0 close |
 | Release | Publish 0.1.1 → superseded by 0.1.2 in Phase 35 | Absorbed into REL-01 | v3.2 REL |
+| Phase 30 P01 | 319 | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-06-18T05:09:25.552Z
+Last session: 2026-06-18T05:37:39.707Z
 Stopped at: Phase 30 context gathered
 Resume file: .planning/phases/30-launch-banner-native-dev-notice/30-CONTEXT.md

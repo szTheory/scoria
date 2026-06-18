@@ -91,7 +91,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 **Milestone Goal:** Make local multi-lib Phoenix dev hands-off and port-conflict-free, harden Scoria as the reference Docker dev-DX standard, and cut the queued maintenance release. Stream A (Docker dev-DX hardening) runs sequenced Phases 29–34; Stream B (maintenance release) is Phase 35, fully independent.
 
 - [x] **Phase 29: Makefile hardening** — PORT 4799 default, `make clean`/`nuke`/`fleet`/`help` (completed 2026-06-18)
-- [ ] **Phase 30: Launch banner + native-dev notice** — populated fallback URL, Traefik admin link, key-route list, `make dev` echo
+- [x] **Phase 30: Launch banner + native-dev notice** — populated fallback URL, Traefik admin link, key-route list, `make dev` echo (completed 2026-06-18)
 - [ ] **Phase 31: Dockerfile caching audit + doc** — empirical CSS-edit verification + layer-invalidation table in docs
 - [ ] **Phase 32: Secrets pattern + key rotation** — direnv + 1Password `op run` pattern, `.envrc`/`.env.op` examples, `ANTHROPIC_API_KEY` rotated
 - [ ] **Phase 33: Doc restructure + verification-copy correction** — `docker_dev_dx.md` rewrite + all `localhost:4000` corrected in docs + `.planning/`
@@ -249,8 +249,9 @@ Plans:
   2. The Docker `docker/dev-entrypoint.sh` banner includes the Traefik admin link (`http://localhost:8080`) and a grouped key-route list covering the `/scoria` screens — all on distinct lines so they are copy-pasteable.
   3. The banner contains a "Native dev server: `make dev` → `http://localhost:4799/scoria`" notice so a reader who reaches the banner via Docker is not confused about the native path and port.
 
-**Plans**: 1 plan
-- [ ] 30-01-PLAN.md — Makefile native startup URL line + Docker banner router-derived route list, Traefik link, and native-dev notice (boot-safe)
+**Plans**: 1/1 plans complete
+
+- [x] 30-01-PLAN.md — Makefile native startup URL line + Docker banner router-derived route list, Traefik link, and native-dev notice (boot-safe)
 
 ### Phase 31: Dockerfile caching audit + doc
 
@@ -323,7 +324,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 29. Makefile hardening | v3.2 | 1/1 | Complete    | 2026-06-18 |
-| 30. Launch banner + native-dev notice | v3.2 | 0/TBD | Not started | - |
+| 30. Launch banner + native-dev notice | v3.2 | 1/1 | Complete   | 2026-06-18 |
 | 31. Dockerfile caching audit + doc | v3.2 | 0/TBD | Not started | - |
 | 32. Secrets pattern + key rotation | v3.2 | 0/TBD | Not started | - |
 | 33. Doc restructure + verification-copy correction | v3.2 | 0/TBD | Not started | - |
