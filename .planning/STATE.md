@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
 status: executing
-stopped_at: Completed 34-01-PLAN.md
-last_updated: "2026-06-18T20:07:58.091Z"
-last_activity: 2026-06-18 -- Completed 34-01 plan; ready for 34-02
+stopped_at: Completed 34-02-PLAN.md
+last_updated: "2026-06-18T20:16:49.444Z"
+last_activity: 2026-06-18 -- Completed 34-02 plan; ready for 34-03
 progress:
   total_phases: 13
   completed_phases: 5
   total_plans: 12
-  completed_plans: 10
-  percent: 83
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -27,11 +27,11 @@ See: `.planning/PROJECT.md` (updated 2026-06-17 after v3.2 Drydock roadmap initi
 ## Current Position
 
 Phase: 34 (docker-dx-drift-guard-ci-guard-extension) — EXECUTING
-Plan: 2 of 3
-Status: Ready for Phase 34 Plan 2
-Last activity: 2026-06-18 -- Completed 34-01 plan; ready for 34-02
+Plan: 3 of 3
+Status: Ready for Phase 34 Plan 3
+Last activity: 2026-06-18 -- Completed 34-02 plan; ready for 34-03
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -52,10 +52,12 @@ Recent decisions affecting current work:
 - v3.2: Stream B (Phase 35) is fully independent of Stream A (Phases 29–34) — can execute in parallel.
 - v3.2: `VerificationLanes.closeout_order/0` and `CI / ci-gate` required-check name stay byte-stable; new tests run in existing policy lane only; no CI topology changes.
 - v3.2: Parallelism within Stream A: Phases 30, 31, 32 can all run after Phase 29 (no inter-dependencies); Phase 33 depends on 29–32; Phase 34 depends on 33.
-- [Phase ?]: Route list derived live from mix phx.routes ScoriaWeb.DevRouter
+- [Phase ?]: Route list derived live from mix phx.routes ScoriaWeb.DevRouter.
 - [Phase 32]: Maintainer szTheory accepted no Anthropic key rotation required because `.env` was local ignored plaintext with no Git history; SEC-02 closeout records no token material.
 - [Phase 34]: Created dedicated DOCS-03 ExUnit contract that reads only docs/docker_dev_dx.md via File.read!(@doc_path). — Keeps the docs drift guard file-read-only and safe under mix test --no-start.
 - [Phase 34]: Used two-layer stale URL guard for fixed localhost/loopback 4000 browser-start drift while allowing qualified Docker-internal mechanics. — Matches Phase 34 D-17 through D-19 without banning legitimate container, Traefik, service-target, or ephemeral fallback references.
+- [Phase 34]: Kept post-publish smoke to the narrow `5432:5432` / `SCORIA_DB_PORT: 5432` fix and extended the existing FLAKE-01 scanner with an exact `post-publish-smoke.yml:smoke` key guard.
+- [Phase 34]: Kept Docker DX doc-token ownership in `Scoria.DockerDxDocContractTest`; `ci_policy_contract_test.exs` now retains only the `.env.example` instance example guard for that surface.
 
 ### Pending Todos
 
@@ -86,9 +88,10 @@ None at milestone start.
 | Phase 33 P03 | 14min | 3 tasks | 9 files |
 | Phase 33 P04 | 28min | 3 tasks | 11 files |
 | Phase 34 P01 | 3 min | 2 tasks | 1 files |
+| Phase 34 P02 | 4 min | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-06-18T20:07:35.919Z
-Stopped at: Completed 34-01-PLAN.md
+Last session: 2026-06-18T20:16:49.444Z
+Stopped at: Completed 34-02-PLAN.md
 Resume file: None
