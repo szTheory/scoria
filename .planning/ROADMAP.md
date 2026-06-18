@@ -249,7 +249,8 @@ Plans:
   2. The Docker `docker/dev-entrypoint.sh` banner includes the Traefik admin link (`http://localhost:8080`) and a grouped key-route list covering the `/scoria` screens — all on distinct lines so they are copy-pasteable.
   3. The banner contains a "Native dev server: `make dev` → `http://localhost:4799/scoria`" notice so a reader who reaches the banner via Docker is not confused about the native path and port.
 
-**Plans**: TBD
+**Plans**: 1 plan
+- [ ] 30-01-PLAN.md — Makefile native startup URL line + Docker banner router-derived route list, Traefik link, and native-dev notice (boot-safe)
 
 ### Phase 31: Dockerfile caching audit + doc
 
