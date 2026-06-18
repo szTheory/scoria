@@ -525,22 +525,19 @@ This is the locked attestation wording for Phase 32 closeout. [VERIFIED: `.plann
 | A2 | The maintainer has or can create a 1Password vault/item/field path for `ANTHROPIC_API_KEY`. [ASSUMED] | Standard Stack, `.env.op.example` | `.env.op` setup remains blocked until a real secret reference is chosen. |
 | A3 | The affected key should be labelled "local critique key" unless the maintainer supplies a more precise environment label. [ASSUMED] | Rotation Attestation | Ambiguous evidence could make future audits unclear. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **What exact 1Password vault/item/field should the maintainer use?** [ASSUMED]
+1. **RESOLVED - What exact 1Password vault/item/field should the maintainer use?** [ASSUMED]
    - What we know: examples should use `op://Private/scoria-dev/ANTHROPIC_API_KEY`. [VERIFIED: `.planning/phases/32-secrets-pattern-key-rotation/32-CONTEXT.md`]
-   - What's unclear: the real vault, item, and field naming may differ. [ASSUMED]
-   - Recommendation: keep the committed example generic and require the operator to edit `.env.op` locally. [VERIFIED: `.planning/phases/32-secrets-pattern-key-rotation/32-CONTEXT.md`]
+   - Resolution for planning: keep the committed example generic and require the operator to edit `.env.op` locally. The real vault/item/field path is an operator-local setup value, not a planning blocker. [VERIFIED: `.planning/phases/32-secrets-pattern-key-rotation/32-CONTEXT.md`]
 
-2. **Who records the SEC-02 attestation and what evidence class is available?** [ASSUMED]
+2. **RESOLVED - Who records the SEC-02 attestation and what evidence class is available?** [ASSUMED]
    - What we know: SEC-02 requires maintainer confirmation before ship. [VERIFIED: `.planning/ROADMAP.md:277-279`]
-   - What's unclear: whether the executor will privately review redacted evidence or only receive maintainer attestation. [ASSUMED]
-   - Recommendation: default wording to "maintainer attested" unless redacted evidence is personally reviewed. [VERIFIED: `.planning/phases/32-secrets-pattern-key-rotation/32-CONTEXT.md`]
+   - Resolution for planning: Plan 02 must pause for maintainer-provided redacted attestation fields and default wording to "maintainer attested" unless redacted evidence is personally reviewed by the executor. The evidence class is recorded as a redacted label only. [VERIFIED: `.planning/phases/32-secrets-pattern-key-rotation/32-CONTEXT.md`]
 
-3. **Should `docs/MAINTAINERS.md` be updated in this phase?**
+3. **RESOLVED - Should `docs/MAINTAINERS.md` be updated in this phase?**
    - What we know: Phase 32 context names `docs/docker_dev_dx.md` as the docs edit surface and defers broader docs IA to Phase 33. [VERIFIED: `.planning/phases/32-secrets-pattern-key-rotation/32-CONTEXT.md`]
-   - What's unclear: `docs/MAINTAINERS.md` has older critique-key wording, but it is outside the Phase 32 file list. [VERIFIED: targeted grep excluding `.env`]
-   - Recommendation: do not expand Phase 32; leave broader docs harmonization to Phase 33 unless the planner receives an explicit scope change. [VERIFIED: `.planning/ROADMAP.md:283-294`]
+   - Resolution for planning: do not expand Phase 32. Leave broader docs harmonization to Phase 33 unless the maintainer explicitly changes scope. [VERIFIED: `.planning/ROADMAP.md:283-294`]
 
 ## Environment Availability
 
