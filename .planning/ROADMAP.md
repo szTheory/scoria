@@ -90,7 +90,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 
 **Milestone Goal:** Make local multi-lib Phoenix dev hands-off and port-conflict-free, harden Scoria as the reference Docker dev-DX standard, and cut the queued maintenance release. Stream A (Docker dev-DX hardening) runs sequenced Phases 29–34; Stream B (maintenance release) is Phase 35, fully independent.
 
-- [ ] **Phase 29: Makefile hardening** — PORT 4799 default, `make clean`/`nuke`/`fleet`/`help`
+- [x] **Phase 29: Makefile hardening** — PORT 4799 default, `make clean`/`nuke`/`fleet`/`help` (completed 2026-06-18)
 - [ ] **Phase 30: Launch banner + native-dev notice** — populated fallback URL, Traefik admin link, key-route list, `make dev` echo
 - [ ] **Phase 31: Dockerfile caching audit + doc** — empirical CSS-edit verification + layer-invalidation table in docs
 - [ ] **Phase 32: Secrets pattern + key rotation** — direnv + 1Password `op run` pattern, `.envrc`/`.env.op` examples, `ANTHROPIC_API_KEY` rotated
@@ -175,6 +175,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
+
 - [x] 26-01-PLAN.md — add full-suite: 4-way matrix job + move WAE out of test: + fan-in wiring + after_suite guard; fix B-1/B-2/B-3 contract tests + D-03/D-04 structural pins; docs-as-contract topology updates (single atomic commit)
 
 ### Phase 27: CI determinism & flake elimination
@@ -192,6 +193,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
+
 - [x] 27-01-PLAN.md — fix Postgres ephemeral host-port bind in all 5 CI blocks (D-01), remove the TEMP e2e diagnostic (D-06), document the retry-vs-fix flake policy in MAINTAINERS.md (D-07..D-11), and add durable contract guards (D-12 ephemeral-port ban + no-TEMP + no-retry-on-test-workflows)
 
 ### Phase 28: DX `mix ci` alias + velocity closeout
@@ -209,6 +211,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
+
 - [x] 28-01-PLAN.md — `mix ci` Mix task (SSOT-driven, run-all-aggregate, pgvector preflight, --skip-optional) + alias + local-vs-CI asymmetry docs (DX-01)
 - [x] 28-02-PLAN.md — durable velocity proof (pinned before/after run IDs + inline gh JSON) + MILESTONES headline + verification back-ref (VELO-01)
 - [x] 28-03-PLAN.md — [gap] compile-only ratchet capture (parity-guarded, ~19m→1m46s) + push parallelized topology + capture REAL run 27709716751 + measured proof/MILESTONES/traceability (VELO-01 MET: 7m38s)
@@ -221,17 +224,19 @@ Plans:
 **Depends on**: Nothing (Stream A foundation — all subsequent Stream A phases depend on this)
 **Requirements**: DXCLI-01, DXCLI-02, DXCLI-03, DXCLI-04
 **Success Criteria** (what must be TRUE):
+
   1. `make dev` starts the native server at `http://localhost:4799/scoria` — confirmed by `grep "PORT" Makefile` showing `PORT ?= 4799` (or equivalent inline default) and the `shots-native` target URL agreeing with `4799`.
   2. `make clean` stops this instance's containers and keeps named volumes; `make nuke` wipes this instance's named volumes — both scoped to `$(COMPOSE_PROJECT_NAME)` via `docker compose down`; `grep -n "volume prune\|system prune" Makefile` returns zero hits.
   3. `make nuke` prints a warning naming `$(COMPOSE_PROJECT_NAME)` and the volumes it will delete before proceeding — no interactive TTY prompt required; the target name is the safety signal.
   4. `make fleet` runs a `docker ps` filter that surfaces all `scoria-*` containers so a stale instance shadowing `scoria.localhost` is immediately visible.
   5. `make` (no args) prints the help list derived from `##`-comment awk parsing — every new target this phase adds appears in that output.
+
 **Plans**: 1 plan
 
 Plans:
 **Wave 1**
 
-- [ ] 29-01-PLAN.md — PORT 4799 threading (dev + shots-native + 2 doc comments) + clean/down-alias/nuke teardown ladder + fleet + .DEFAULT_GOAL/help awk parser + .PHONY (DXCLI-01..04, single Makefile pass)
+- [x] 29-01-PLAN.md — PORT 4799 threading (dev + shots-native + 2 doc comments) + clean/down-alias/nuke teardown ladder + fleet + .DEFAULT_GOAL/help awk parser + .PHONY (DXCLI-01..04, single Makefile pass)
 
 ### Phase 30: Launch banner + native-dev notice
 
@@ -239,9 +244,11 @@ Plans:
 **Depends on**: Phase 29 (PORT default established, `make dev` echo wired)
 **Requirements**: DXCLI-05
 **Success Criteria** (what must be TRUE):
+
   1. `make dev` prints a startup line with `http://localhost:4799/scoria` (or the active `$PORT` value) before the server starts — visible in the terminal without scrolling back past server log noise.
   2. The Docker `docker/dev-entrypoint.sh` banner includes the Traefik admin link (`http://localhost:8080`) and a grouped key-route list covering the `/scoria` screens — all on distinct lines so they are copy-pasteable.
   3. The banner contains a "Native dev server: `make dev` → `http://localhost:4799/scoria`" notice so a reader who reaches the banner via Docker is not confused about the native path and port.
+
 **Plans**: TBD
 
 ### Phase 31: Dockerfile caching audit + doc
@@ -250,9 +257,11 @@ Plans:
 **Depends on**: Phase 29 (parallelizable with Phase 30 — no code dependency between them; both depend only on the Phase 29 foundation)
 **Requirements**: CACHE-01
 **Success Criteria** (what must be TRUE):
+
   1. Editing `assets/css/app.css` (or any `lib/**/*.heex`) and running `docker compose up --build` produces no `mix deps.get` step in the build output — empirically verified and noted in the phase record.
   2. `Dockerfile.dev` contains an invariant comment at the relevant COPY/RUN boundary explaining that the order is deliberate and must not be violated.
   3. `docs/docker_dev_dx.md` contains a layer-invalidation table with at minimum: CSS/HEEx-only edit → app compile only; `config/` edit → dep.compile + app compile; `mix.exs`/`mix.lock` edit → full dep rebuild.
+
 **Plans**: TBD
 
 ### Phase 32: Secrets pattern + key rotation
@@ -261,9 +270,11 @@ Plans:
 **Depends on**: Phase 29 (parallelizable with Phases 30/31 — no code dependency; all three can execute after Phase 29)
 **Requirements**: SEC-01, SEC-02
 **Success Criteria** (what must be TRUE):
+
   1. `.envrc.example` and `.env.op.example` are committed; `.envrc` and `.env.op` are listed in `.gitignore`; the `ANTHROPIC_API_KEY=sk-ant-...` plaintext stub is removed from `.env.example` (replaced by an `op://` reference comment).
   2. `docs/docker_dev_dx.md` contains a Secrets section describing the direnv + `op run` pattern with a first-time setup note (requires `direnv allow` once; `op signin` before sourcing).
   3. The `ANTHROPIC_API_KEY` previously stored as plaintext in `.env` has been rotated on the Anthropic console — confirmed by the maintainer as a pre-ship action and tracked as a done item in the phase record.
+
 **Plans**: TBD
 
 ### Phase 33: Doc restructure + verification-copy correction
@@ -272,9 +283,11 @@ Plans:
 **Depends on**: Phases 29, 30, 31, 32 (this phase assembles the complete doc from all Stream A work that precedes it — correct PORT, banner copy, caching section, secrets section must all exist first)
 **Requirements**: DOCS-01, DOCS-02
 **Success Criteria** (what must be TRUE):
+
   1. `docs/docker_dev_dx.md` opens with a persona/JTBD paragraph and a TL;DR gameplan at the top; contains readable sections for Native dev server, Caching guarantees, Secrets, and Stale instance hygiene — each digestible in isolation.
   2. `grep -rn "localhost:4000" docs/operator_verification.md docs/MAINTAINERS.md README.md` returns zero hits where the text instructs starting the dev server (legacy/note contexts with explicit qualification are acceptable if clearly marked).
   3. `grep -rn "mix phx.server" .planning/` returns zero hits in verification-step or "how to start" contexts — GSD phase/plan prose uses `make up` / `make dev` + the real `*.localhost` or `:4799` URL.
+
 **Plans**: TBD
 
 ### Phase 34: Docker DX drift guard + CI guard extension
@@ -283,9 +296,11 @@ Plans:
 **Depends on**: Phase 33 (the doc must be in its final correct form before the contract test asserts it)
 **Requirements**: DOCS-03
 **Success Criteria** (what must be TRUE):
+
   1. `test/scoria/docker_dx_doc_contract_test.exs` exists in the policy lane (no DB, no app start) and passes in `mix test`; it asserts `"make up"`, `"make dev"`, `"4799"`, `"make nuke"`, `"direnv"` (or `"1Password"`), and `"ANTHROPIC_API_KEY"` are present in `docs/docker_dev_dx.md`.
   2. The same test asserts `"localhost:4000"` is absent from `docs/docker_dev_dx.md` as a dev-start instruction (the negative assertion that makes the guard mechanical).
   3. `ci_policy_contract_test.exs` is extended to scan `.github/workflows/post-publish-smoke.yml` for the ephemeral-port ban (host port must be < 32768); `mix test` passes with this extension in the existing policy lane without any CI topology changes.
+
 **Plans**: TBD
 
 ### Phase 35: Maintenance release — 0.1.2 publish + post-publish smoke
@@ -294,17 +309,19 @@ Plans:
 **Depends on**: Nothing (Stream B — fully independent of Phases 29–34; can execute at any time while Stream A runs)
 **Requirements**: REL-01, REL-02, REL-03
 **Success Criteria** (what must be TRUE):
+
   1. `post-publish-smoke.yml` Postgres host-port bind reads `5432:5432` (not `55432:5432`); `grep "55432" .github/workflows/post-publish-smoke.yml` returns zero hits.
   2. `mix docs` completes with zero errors or warnings locally before the release-please PR is merged — the package-landed-but-docs-wrong partial-publish state cannot occur.
   3. The release-please PR #3 merges on green CI, the automated pipeline runs to completion, and `mix hex.info scoria 0.1.2` confirms the version is live on the Hex registry.
   4. The post-publish registry smoke (`mix scoria.post_publish_smoke`) exits GREEN — confirming `0.1.2` installs from the live Hex registry from the GitHub Actions runner region.
+
 **Plans**: TBD
 
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 29. Makefile hardening | v3.2 | 0/1 | Planned | - |
+| 29. Makefile hardening | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 30. Launch banner + native-dev notice | v3.2 | 0/TBD | Not started | - |
 | 31. Dockerfile caching audit + doc | v3.2 | 0/TBD | Not started | - |
 | 32. Secrets pattern + key rotation | v3.2 | 0/TBD | Not started | - |
