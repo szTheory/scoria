@@ -1,166 +1,368 @@
-# Docker dev DX — multi-instance, no port conflicts
+# Docker dev DX - multi-instance, no port conflicts
 
-This is the local-development setup for the Scoria dashboard, and the **reference
-standard** for running many Elixir/Phoenix lib demos side by side on one machine
-without host-port conflicts. Scoria is dev-Dockerized only — it ships to Hex as a
-library; none of the files below are in the package.
+This guide is for the solo maintainer running many Phoenix/Elixir demo repos
+on one Mac. The job is a hands-off, port-conflict-free local loop: one
+predictable Scoria dashboard route, no `:4000` or `:5432` juggling, scoped
+cleanup when an old instance gets in the way, and enough diagnostics to tell
+which checkout owns which route.
+
+Scoria is dev-Dockerized only. It ships to Hex as a Phoenix library; the
+Compose, Makefile, Traefik, and native helper files below are repository
+tooling, not package contents.
 
 ## TL;DR
 
 ```bash
-make proxy     # once per machine: shared Traefik proxy + `proxy` network
-make up        # build + run THIS checkout -> http://scoria-<branch>.localhost/scoria
-make url       # print the URL + the ephemeral 127.0.0.1 fallback
-make open      # open it in the browser (macOS)
-make dev       # native host server with live CSS/JS reload (no Docker)
+make proxy       # once per machine: shared Traefik proxy + `proxy` network
+make up-build    # first run, or after mix.lock/Dockerfile/config dependency changes
+make up          # daily Docker source/style loop: start without rebuilding
+make url         # print Traefik URL + ephemeral 127.0.0.1 fallback
+make open        # open the Traefik URL in the browser (macOS)
+make fleet       # list all Traefik-routed demo containers across local repos
+make doctor      # route/proxy/native-DB diagnostics when something feels off
+make dev         # native host server + pgvector helper on SCORIA_DB_PORT=55432
 ```
 
-Two checkouts/branches can `make up` at the same time — each gets its own URL,
-DB, and volumes. No port juggling.
+Default path for the Scoria repo dashboard:
 
-## The model (and why)
+```bash
+make proxy
+make up-build
+make up
+make url
+```
 
-Three rules eliminate the entire port-conflict class:
+Open the printed `http://<instance>.localhost/scoria` route, or run
+`make open` on macOS. Use native mode only when host Mix iteration,
+screenshots, Playwright/e2e, or another task explicitly needs the BEAM running
+on the host:
 
-1. **One shared reverse proxy, host-routing by name.** A single long-lived
-   Traefik joins an external `proxy` network; every app joins it and carries
-   labels, and is reached at `http://<name>.localhost/...`. Unlimited web UIs
-   share ports 80/443 — no app publishes its own HTTP port. `*.localhost`
-   resolves to `127.0.0.1` automatically in Chrome/Chromium (so the screenshot
-   harness works) and modern curl. See [docker/traefik/compose.yml](../docker/traefik/compose.yml).
-2. **Never publish DB/Redis ports.** Backing services are reached by compose
-   service name on the project's own network (`SCORIA_DB_HOST=db`). This kills
-   the recurring `5432 already in use` across projects outright. (A *native*
-   host `mix` run is the one exception — see [dev/pgvector-compose.yml](../dev/pgvector-compose.yml),
-   which publishes a high, fleet-unlikely `55432`.)
-3. **Ephemeral loopback only as a fallback.** The web service also maps
-   `127.0.0.1::4000` — Docker picks a free host port, so it can never collide.
-   Use it when Traefik is down (`make url` prints it). Never use a **fixed**
-   published HTTP port — every Phoenix wants 4000, so fixed ports are the
-   anti-pattern that started all of this.
+```bash
+make dev
+# open http://localhost:4799/scoria
+```
 
-## Running multiple instances
+## Mental model
 
-Identity is driven by `COMPOSE_PROJECT_NAME` (Compose prefixes containers and
-named volumes with it → free per-instance data isolation) and `SCORIA_HOST`
-(the Traefik route). The [Makefile](../Makefile) derives both from the git
-branch:
+Three rules remove the recurring local-development collision class:
+
+1. **One shared reverse proxy, routes by instance.** A single Traefik process
+   joins the external `proxy` network. Every local demo web service joins that
+   network, carries labels, and is reached at `http://<instance>.localhost/...`.
+   Unlimited Phoenix dashboards share ports 80/443 because the apps do not
+   publish fixed HTTP ports.
+2. **No published database ports in the Docker stack.** The dashboard container
+   reaches Postgres by Compose service name (`SCORIA_DB_HOST=db`) on the
+   project network. This keeps every repo away from the shared host `5432`
+   lane.
+3. **Ephemeral loopback is only a fallback.** The Docker web service maps
+   Docker-internal container port `4000` to a random `127.0.0.1` host port.
+   `make url` prints that fallback for proxy outages. Container `:4000` is the
+   Traefik service target and ephemeral fallback source, not the browser start
+   URL.
+
+Instance identity comes from `COMPOSE_PROJECT_NAME` and `SCORIA_HOST`. The
+[Makefile](../Makefile) derives both from the branch plus a stable checkout
+hash:
 
 ```make
-BRANCH   := $(shell git rev-parse --abbrev-ref HEAD | tr '/A-Z' '-a-z' | sed 's/[^a-z0-9-]//g')
-INSTANCE ?= scoria-$(BRANCH)
+APP         := scoria
+BRANCH      := $(shell git rev-parse --abbrev-ref HEAD | tr '/A-Z' '-a-z' | sed 's/[^a-z0-9-]/-/g')
+WORKTREE    := $(shell git rev-parse --show-toplevel 2>/dev/null || pwd)
+WORKTREE_ID := $(shell printf '%s' '$(WORKTREE)' | shasum | awk '{print substr($$1,1,8)}')
+INSTANCE ?= $(APP)-$(BRANCH)-$(WORKTREE_ID)
 export COMPOSE_PROJECT_NAME = $(INSTANCE)
 export SCORIA_HOST          = $(INSTANCE).localhost
 ```
 
-So branch `main` → `http://scoria-main.localhost/scoria`; branch `feat/x` →
-`http://scoria-feat-x.localhost/scoria`. Override with `make up INSTANCE=scoria-foo`.
-Bare `docker compose up` (no Makefile) falls back to `scoria`/`scoria.localhost`;
-set the two vars in `.env` to pin a different instance.
+The generated shape is `scoria-<branch>-<hash>`, for example
+`http://scoria-main-a1b2c3d4.localhost/scoria`. Override deliberately with
+`make up INSTANCE=scoria-foo`. Bare `docker compose up` falls back to
+`scoria` / `scoria.localhost`; set the two vars in `.env` only when you
+intentionally run without the Makefile.
 
-**Footguns this avoids:**
+## Docker daily loop
+
+Use this when you want the Scoria repo dashboard in the same model the fleet
+uses: Traefik route, unpublished DB, per-instance volumes, and no host HTTP or
+Postgres port ownership.
+
+Commands:
+
+```bash
+make proxy
+make up-build
+make up
+make url
+make open
+```
+
+Expected output:
+
+```text
+Instance:  scoria-<branch>-<hash>
+Traefik:   http://scoria-<branch>-<hash>.localhost/scoria
+Fallback:  http://127.0.0.1:<ephemeral>/scoria
+Traefik admin: http://localhost:8080
+```
+
+Footguns:
+
+- `make proxy` is machine-wide. Run it once, then leave it running.
+- `make up-build` is for the first run or intentional image rebuilds. The
+  daily source/style loop is `make up`.
 - **No top-level `name:` and no `container_name:`.** Both defeat per-instance
-  prefixing — a fixed `container_name` makes a second instance fail with
-  "name already in use". Let `COMPOSE_PROJECT_NAME` win.
-- **Traefik router/service ids and the Host rule interpolate the instance**, or
-  two instances would collide on one route.
+  scope and make the second checkout collide.
+- Docker container port `4000` remains internal. If you need a browser route,
+  use the Traefik URL from `make url`.
 
-## No rebuild on source/style edits
+Recovery:
 
-- **Source is bind-mounted**; `deps`, `_build`, `~/.hex`, `~/.mix` are **named
-  volumes** that shadow the bind mount. Editing code never re-fetches or
-  re-compiles dependencies, and the Linux-native build artifacts never clash
-  with the host's macOS/arm64 ones.
-- **`.dockerignore` excludes host `_build/`/`deps/`** — leaking host-arch NIFs
-  into the Linux image causes "Failed to load NIF" crashes.
-- **CSS/JS hot-reload:** `ScoriaWeb.DevAssetWatcher` (dev-only) rebuilds
-  `priv/static/scoria/app.{css,js}` when `assets/` changes; the existing
-  `live_reload` pattern then refreshes the page. No manual
-  `mix scoria.assets.build`. (`make dev`, native, enables browser refresh via
-  `SCORIA_DEV_LIVE_RELOAD=1`; the dockerized `web` keeps reload off so the
-  screenshot harness stays deterministic.)
-- **macOS fs events don't cross the Docker VM**, so the container sets
-  `FILE_SYSTEM_BACKEND=fs_poll` (config/dev.exs gates phoenix_live_reload *and*
-  the asset watcher onto polling).
-- **Cold builds** reuse BuildKit cache mounts for apt + the Hex/rebar caches —
-  see [Dockerfile.dev](../Dockerfile.dev). Use VirtioFS in Docker Desktop;
-  `:cached`/`:delegated` mount flags are legacy no-ops now — don't add them.
+```bash
+make doctor
+make fleet
+make down INSTANCE=<project>
+make nuke INSTANCE=<project>
+```
 
-### Layer-cache invalidation (cold `docker compose up --build` only)
+`make nuke INSTANCE=<project>` wipes only that Compose project's named volumes:
+its DB data, deps/build volumes, and Hex/Mix caches. It is not a daemon-wide
+cleanup command.
 
-Day-to-day you run `docker compose up`: source is bind-mounted and `deps`/`_build`
-are named volumes, so **editing anything rebuilds no image layer at all** — you just
-restart the app. The table below applies only to a cold `--build`, where the
-`Dockerfile.dev` COPY order decides what the BuildKit cache can reuse. (The base
-image + `apt` layer sit above all of these and rebuild only when the base image or
-package list changes.)
+## Native dev server
+
+Use this only when the BEAM needs to run on the host: LiveReload iteration,
+native Mix debugging, screenshots, Playwright/e2e, or maintainer harnesses.
+
+Commands:
+
+```bash
+make dev
+# open http://localhost:4799/scoria
+```
+
+For screenshot and e2e work:
+
+```bash
+make dev
+mix scoria.ui.shots --url http://localhost:4799/scoria
+mix scoria.ui.e2e --base-url http://localhost:4799/scoria
+```
+
+Expected output:
+
+```text
+==> Scoria dev (native) -> http://localhost:4799/scoria
+==> Native DB -> 127.0.0.1:55432 (pool 5)
+```
+
+`make dev` starts the helper in
+[dev/pgvector-compose.yml](../dev/pgvector-compose.yml) under a separate
+`<instance>-native` Compose project, then runs the host server with:
+
+```bash
+SCORIA_DB_PORT=55432
+SCORIA_DB_POOL_SIZE=5
+PORT=4799
+```
+
+Override the native lane explicitly when you need to:
+
+```bash
+SCORIA_DB_PORT=56432 SCORIA_DB_POOL_SIZE=3 PORT=4899 make dev
+```
+
+Footguns:
+
+- Native mode publishes a Postgres port because host Mix needs one. The Docker
+  dashboard stack does not.
+- Direct `docker compose -f dev/pgvector-compose.yml` defaults the Compose
+  project name to `dev`, which is easy to collide across repos. Prefer the
+  Makefile targets.
+- Raw `mix test` also defaults to `SCORIA_DB_PORT=55432`; tune
+  `SCORIA_TEST_DB_POOL_SIZE` or `SCORIA_DB_POOL_SIZE` when several suites run.
+
+Recovery:
+
+```bash
+make native-db-status
+make native-db-down
+make doctor
+```
+
+## Caching guarantees
+
+Use this when you need to know whether a source, style, config, or dependency
+edit should rebuild the Docker image.
+
+Commands:
+
+```bash
+make up          # source, HEEx, CSS, and JS daily loop
+make up-build    # dependency, Dockerfile, or config rebuild path
+make up-d        # detached daily loop, then print URL
+make up-d-build  # detached rebuild path, then print URL
+```
+
+Expected output:
+
+- `make up` uses `docker compose up --no-build`. If the image does not exist
+  yet, Docker says so; run `make up-build` once.
+- Source is bind-mounted.
+- `deps`, `_build`, `~/.hex`, and `~/.mix` are named volumes, so Linux build
+  artifacts never collide with host macOS artifacts.
+- CSS/JS changes rebuild runtime assets through `ScoriaWeb.DevAssetWatcher`.
+
+Footguns:
+
+- `.dockerignore` must exclude host `_build/`, `deps/`, and
+  `priv/static/scoria/`; leaking host artifacts into the Linux image causes
+  architecture and stale-bundle failures.
+- macOS file events do not cross the Docker VM. The container uses
+  `FILE_SYSTEM_BACKEND=fs_poll` so Phoenix LiveReload and the asset watcher can
+  see changes.
+- Docker Desktop should use VirtioFS. `:cached` and `:delegated` bind flags are
+  legacy no-ops here.
+
+Recovery:
+
+```bash
+make up-build
+make doctor
+```
+
+Layer-cache invalidation applies only to an explicit build. Day-to-day
+`make up` does not rebuild image layers at all.
 
 | You edit | First invalidated layer | What re-runs |
 |----------|-------------------------|--------------|
-| CSS (`assets/css/*.css`) or any `assets/` file | **none** — `assets/` is not `COPY`'d (built in-container at runtime; `priv/static/scoria/` is `.dockerignore`'d) | nothing rebuilds; running container rebuilds assets on the fly |
-| A `.heex` template or any `lib/`, `dev/`, `priv/` source file | `COPY lib lib` (step 3) | `mix compile` — **app compile only**; deps untouched |
+| CSS (`assets/css/*.css`) or any `assets/` file | none - `assets/` is not `COPY`'d; assets build in-container at runtime and `priv/static/scoria/` is `.dockerignore`'d | nothing rebuilds; running container rebuilds assets on the fly |
+| A `.heex` template or any `lib/`, `dev/`, `priv/` source file | `COPY lib lib` (step 3) | `mix compile` - app compile only; deps untouched |
 | Anything under `config/` | `COPY config config` (step 2) | `mix deps.compile` + `mix compile` |
-| `mix.exs` or `mix.lock` | `COPY mix.exs mix.lock` (step 1) | `mix deps.get` → `mix deps.compile` → `mix compile` (full dep rebuild) |
+| `mix.exs` or `mix.lock` | `COPY mix.exs mix.lock` (step 1) | `mix deps.get` -> `mix deps.compile` -> `mix compile` (full dep rebuild) |
 
-## Secrets (ANTHROPIC_API_KEY)
+## Secrets
 
-The dashboard and normal dev server do not need this key. The screenshot critique pass does.
+Use this only for the screenshot critique pass. The dashboard, normal Docker
+loop, and native dev server do not need `ANTHROPIC_API_KEY`.
 
-### First-time setup
-
-Install `direnv` and the 1Password CLI, then enable the `direnv` shell hook for
-your shell.
+Commands:
 
 ```bash
 op signin
 cp .envrc.example .envrc
 cp .env.op.example .env.op
-```
-
-Edit `.env.op` so the `op://` secret reference points at your real
-1Password vault, item, and field. Then allow the local direnv file once:
-
-```bash
 direnv allow .
 ```
 
-### Run the critique pass
+Edit `.env.op` so the `op://` secret reference points at your real 1Password
+vault, item, and field.
 
-Docker:
+Docker critique:
 
 ```bash
 op run --env-file "${SCORIA_OP_ENV_FILE:-.env.op}" -- docker compose --profile shots run --rm critique
 ```
 
-Native Mix:
+Native Mix critique:
 
 ```bash
 op run --env-file "${SCORIA_OP_ENV_FILE:-.env.op}" -- mix scoria.ui.shots --critique
 ```
 
-### How it works
+Expected output:
 
-`.env.op` stores 1Password secret reference values only, not plaintext key
-material. `op run` resolves those references only for the wrapped child process.
-For Docker, Compose receives the resolved `ANTHROPIC_API_KEY` from that child
-environment and interpolates it into the profile-gated `critique` service. For
-native Mix, the same runtime variable name stays in use.
+- `.env.op` stores 1Password secret references only, not plaintext key
+  material.
+- `op run --env-file` resolves references only for the wrapped child process.
+- Compose creates a runtime secret from the resolved `ANTHROPIC_API_KEY` and
+  mounts it only into the profile-gated `critique` service.
+- `docker compose config` shows the secret source name, not the token value.
 
-### Footguns
+Footguns:
 
-- Never commit `.envrc` or `.env.op`; both are local files and are gitignored.
-- A secret reference (`op://...`) is safe to commit in an example. A plaintext
-  key is not.
-- Do not put real provider keys in `.envrc` or `.env`.
+- Do not commit `.envrc` or `.env.op`; both are local files and are gitignored.
+- Do not put real provider keys in `.envrc`, `.env`, docs, shell history, logs,
+  screenshots, or planning artifacts.
 - Sign in to 1Password before running a critique command.
 - Re-run `direnv allow .` after changing `.envrc`.
-- Rotate any key that touched disk as plaintext.
+
+Recovery:
+
+```bash
+op signin
+direnv allow .
+op run --env-file "${SCORIA_OP_ENV_FILE:-.env.op}" -- env | rg '^ANTHROPIC_API_KEY='
+```
+
+If a real provider key was exposed outside a process-scoped command, rotate it
+at the provider before using it again.
+
+## Stale instance hygiene
+
+Use this when a route opens the wrong checkout, the fallback points at a
+different container, or a previous branch's data is still in the way.
+
+Commands:
+
+```bash
+make fleet
+make doctor
+make down INSTANCE=<project>
+make nuke INSTANCE=<project>
+```
+
+Expected output:
+
+- `make fleet` lists Traefik-routed demo containers across the local fleet,
+  including Compose project, container name, status, and ports.
+- `make doctor` prints the current Scoria instance, proxy network status,
+  routed container table, native pgvector helper status, and host Postgres
+  connection pressure.
+
+Footguns:
+
+- Stop only the instance you identified. Do not assume every route named
+  `scoria-*` belongs to the checkout in your shell.
+- `make down INSTANCE=<project>` stops containers and keeps volumes.
+- `make nuke INSTANCE=<project>` stops containers and deletes only that
+  instance's named volumes. It should be a scoped reset, not a vague "things
+  are weird" reflex.
+
+Recovery:
+
+```bash
+make fleet
+make down INSTANCE=<project>
+make up
+make url
+```
+
+If data is the problem:
+
+```bash
+make fleet
+make nuke INSTANCE=<project>
+make up-build
+make url
+```
 
 ## Adopting this in another repo
 
-1. `docker network create proxy` and run the shared proxy once:
-   `docker compose -f docker/traefik/compose.yml up -d` (copy that file).
-2. In the project's `compose.yml`, for each web service:
+The portable standard is: one shared Traefik network, per-checkout Compose
+project names, no published backing-service ports, an ephemeral HTTP fallback,
+and Makefile commands that print the browser route.
+
+1. Create the proxy network and run the shared proxy once:
+
+   ```bash
+   docker network create proxy
+   docker compose -f docker/traefik/compose.yml up -d
+   ```
+
+2. In the project's `compose.yml`, give each web service a route and an
+   ephemeral fallback:
+
    ```yaml
    services:
      web:
@@ -173,31 +375,48 @@ native Mix, the same runtime variable name stays in use.
          - traefik.enable=true
          - traefik.docker.network=proxy
          - traefik.http.routers.${COMPOSE_PROJECT_NAME:-myapp}.rule=Host(`${MYAPP_HOST:-myapp.localhost}`)
+         - traefik.http.routers.${COMPOSE_PROJECT_NAME:-myapp}.entrypoints=web
+         - traefik.http.routers.${COMPOSE_PROJECT_NAME:-myapp}.service=${COMPOSE_PROJECT_NAME:-myapp}
          - traefik.http.services.${COMPOSE_PROJECT_NAME:-myapp}.loadbalancer.server.port=4000
    networks:
      proxy: { external: true }
      default:
    ```
-   Don't publish DB ports. No `container_name:`. No top-level `name:`.
-3. Copy the Makefile `INSTANCE`/`COMPOSE_PROJECT_NAME`/`SCORIA_HOST` block
-   (rename the host var).
+
+   Do not publish DB ports. Do not add `container_name:`. Do not add top-level
+   Compose `name:`.
+
+3. Copy the Makefile instance block and rename the app and host variable:
+
+   ```make
+   APP         := myapp
+   BRANCH      := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/A-Z' '-a-z' | sed 's/[^a-z0-9-]/-/g; s/--*/-/g; s/^-//; s/-$$//')
+   WORKTREE    := $(shell git rev-parse --show-toplevel 2>/dev/null || pwd)
+   WORKTREE_ID := $(shell root='$(WORKTREE)'; if command -v shasum >/dev/null 2>&1; then printf '%s' "$$root" | shasum | awk '{print substr($$1,1,8)}'; else printf '%s' "$$root" | cksum | awk '{print $$1}'; fi)
+   INSTANCE ?= $(APP)-$(if $(BRANCH),$(BRANCH),local)-$(WORKTREE_ID)
+   export COMPOSE_PROJECT_NAME = $(INSTANCE)
+   export MYAPP_HOST           = $(INSTANCE).localhost
+   ```
+
+4. Add `make url`, `make fleet`, and `make doctor` equivalents. The important
+   behavior is label-based discovery
+   (`docker ps --filter label=traefik.enable=true`) instead of name-prefix
+   discovery, because a local fleet will not all start with the same repo name.
 
 ### Converge the fleet onto one proxy network
 
-The biggest cross-repo footgun is **two competing shared proxy networks** (e.g.
-`proxy` and `local-dev-proxy`): if Traefik is on one and a repo joins the other,
-that repo's services are invisible to routing — labels look correct but you get
-502s. Pick **`proxy`**, point every repo at it (`networks: {proxy: {external:
-true}}`), and delete the stray network. The `traefik.docker.network` label must
-name the **real** network: an external `proxy` is unprefixed; an in-file network
-gets project-prefixed.
+The biggest cross-repo footgun is two competing shared proxy networks, for
+example `proxy` and `local-dev-proxy`. If Traefik is on one and a repo joins
+the other, labels look correct but the service is invisible to routing. Pick
+`proxy`, point every repo at it, and delete the stray network. The
+`traefik.docker.network` label must name the real network: an external `proxy`
+is unprefixed; an in-file network gets project-prefixed.
 
-### Safari / curl-by-hostname (optional)
+### Safari / curl-by-hostname
 
-`*.localhost` resolves natively in Chrome/Chromium and modern curl — enough for
-day-to-day dev and the harness. **Safari does not** resolve it. If you need
-Safari (or `curl http://scoria.localhost` without a Host header), add a one-time
-wildcard resolver:
+`*.localhost` resolves natively in Chrome/Chromium and modern curl, which covers
+day-to-day dev and the harness. Safari does not resolve it. If you need Safari
+or hostname-based curl, add a one-time wildcard resolver:
 
 ```bash
 brew install dnsmasq
@@ -213,9 +432,9 @@ Add `mkcert` only if you also want HTTPS locally.
 
 | File | Role |
 |------|------|
-| [compose.yml](../compose.yml) | The dashboard stack: `db` (unpublished pgvector), `web` (Traefik + ephemeral fallback), profile-gated `shots`/`critique`. |
-| [Dockerfile.dev](../Dockerfile.dev) | Dev-only image; layer-ordered + BuildKit cache mounts. |
-| [docker/traefik/compose.yml](../docker/traefik/compose.yml) | Shared proxy (run once, machine-wide). |
-| [docker/dev-entrypoint.sh](../docker/dev-entrypoint.sh) | DB setup + URL/route banner. |
-| [dev/pgvector-compose.yml](../dev/pgvector-compose.yml) | Native-host DB only (publishes 55432). |
-| [Makefile](../Makefile) | `proxy`/`up`/`down`/`url`/`open`/`dev`/`shots`/`critique`. |
+| [compose.yml](../compose.yml) | Dashboard stack: unpublished `db`, Traefik-routed `web`, ephemeral fallback, profile-gated `shots` / `critique`. |
+| [Dockerfile.dev](../Dockerfile.dev) | Dev-only image; layer-ordered with BuildKit cache mounts. |
+| [docker/traefik/compose.yml](../docker/traefik/compose.yml) | Shared proxy, run once per machine. |
+| [docker/dev-entrypoint.sh](../docker/dev-entrypoint.sh) | DB setup plus URL, route, and harness banner. |
+| [dev/pgvector-compose.yml](../dev/pgvector-compose.yml) | Native-host DB helper, publishing `${SCORIA_DB_PORT:-55432}`. |
+| [Makefile](../Makefile) | Command source of truth: `proxy`, `up-build`, `up`, `up-d`, `down`, `url`, `open`, `fleet`, `doctor`, `native-db`, `native-db-down`, `dev`, `shots`, `critique`. |
