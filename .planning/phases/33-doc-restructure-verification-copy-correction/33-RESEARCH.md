@@ -426,15 +426,13 @@ Source: existing CI policy-lane command and local green run: 56 tests, 0 failure
 
 ## Open Questions
 
-1. **Should code-adjacent harness copy be one plan or a second plan?**
+1. **RESOLVED: Code-adjacent harness copy is Plan 03.**
    - What we know: D-19 includes `lib/mix/tasks/scoria.ui.*.ex`, `priv/dev`, and `priv/repo/dev_seed.exs`, and D-20 protects generated/static and CI/container wiring. [VERIFIED: 33-CONTEXT.md]
-   - What's unclear: The planner can choose one plan or two within Phase 33. [VERIFIED: 33-CONTEXT.md]
-   - Recommendation: Include these surfaces in the same phase plan unless the diff becomes too broad; they are user-facing copy/defaults and currently stale. [VERIFIED: codebase grep]
+   - Planner decision: Plan 03 owns the complete host screenshot/e2e harness copy/default update as three tasks: Mix task and seed copy, Playwright entrypoint defaults, and remaining e2e spec base URL constants. This keeps D-19 surfaces together while preserving D-20 protected Docker/internal wiring. [RESOLVED: 33-03-PLAN.md]
 
-2. **How much active `.planning/research/**` prose should be rewritten?**
+2. **RESOLVED: Active research rewrite scope is Plan 04 Task 2 plus final classification.**
    - What we know: D-13 includes `.planning/research/**`, and current hits exist in `ARCHITECTURE.md`, `FEATURES.md`, `PITFALLS.md`, `STACK.md`, and `SUMMARY.md`. [VERIFIED: codebase grep]
-   - What's unclear: Some entries are historical analysis; others still read as current recommendations.
-   - Recommendation: Edit current instructions, checklists, and "current state" claims; leave quoted historical rationale only when clearly labeled. [VERIFIED: 33-CONTEXT.md]
+   - Planner decision: Plan 04 Task 2 rewrites active `.planning/research/*.md` guidance that still reads as current or recommended stale start copy. Plan 04 Task 3 then records final active-scope classification in `33-PLANNING-SWEEP.md`, distinguishing implementation evidence, current phase decision quotation, current phase verification pattern, quoted historical rationale, and defects fixed in the plan. [RESOLVED: 33-04-PLAN.md]
 
 ## Environment Availability
 
