@@ -94,7 +94,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 - [x] **Phase 30: Launch banner + native-dev notice** — populated fallback URL, Traefik admin link, key-route list, `make dev` echo (completed 2026-06-18)
 - [x] **Phase 31: Dockerfile caching audit + doc** — empirical CSS-edit verification + layer-invalidation table in docs (completed 2026-06-18)
 - [ ] **Phase 32: Secrets pattern + key rotation** — direnv + 1Password `op run` pattern, `.envrc`/`.env.op` examples, `ANTHROPIC_API_KEY` rotated
-- [ ] **Phase 33: Doc restructure + verification-copy correction** — `docker_dev_dx.md` rewrite + all `localhost:4000` corrected in docs + `.planning/`
+- [x] **Phase 33: Doc restructure + verification-copy correction** — `docker_dev_dx.md` rewrite + all `localhost:4000` corrected in docs + `.planning/` (completed 2026-06-18)
 - [ ] **Phase 34: Docker DX drift guard + CI guard extension** — `docker_dx_doc_contract_test.exs` (policy lane) + extend `ci_policy_contract_test.exs` to scan `post-publish-smoke.yml`
 - [ ] **Phase 35: Maintenance release — 0.1.2 publish + post-publish smoke** — port fix + merge PR #3 + publish + smoke GREEN
 
@@ -309,7 +309,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 33-04-PLAN.md — sweep active `.planning` guidance and classify remaining allowed hits (DOCS-01)
+- [x] 33-04-PLAN.md — sweep active `.planning` guidance and classify remaining allowed hits (DOCS-01)
 
 ### Phase 34: Docker DX drift guard + CI guard extension
 
@@ -346,7 +346,7 @@ Plans:
 | 30. Launch banner + native-dev notice | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 31. Dockerfile caching audit + doc | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 32. Secrets pattern + local key exposure closeout | v3.2 | 2/2 | Complete    | 2026-06-18 |
-| 33. Doc restructure + verification-copy correction | v3.2 | 3/4 | In Progress|  |
+| 33. Doc restructure + verification-copy correction | v3.2 | 4/4 | Complete   | 2026-06-18 |
 | 34. Docker DX drift guard + CI guard extension | v3.2 | 0/TBD | Not started | - |
 | 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 0/TBD | Not started | - |
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
