@@ -601,10 +601,10 @@ These checks intentionally target only files Phase 32 edits or creates. [VERIFIE
 
 ```bash
 # Run after phase closeout artifacts exist; target only phase artifacts.
-grep -q 'SEC-02:' .planning/phases/32-secrets-pattern-key-rotation/32-SUMMARY.md
-grep -q 'Maintainer attested' .planning/phases/32-secrets-pattern-key-rotation/32-SUMMARY.md
-grep -q 'No secret value, prefix, suffix, screenshot, or token material' .planning/phases/32-secrets-pattern-key-rotation/32-SUMMARY.md
-! grep -nE 'sk-ant-[A-Za-z0-9_-]+' .planning/phases/32-secrets-pattern-key-rotation/32-SUMMARY.md .planning/phases/32-secrets-pattern-key-rotation/32-VERIFICATION.md
+grep -q 'SEC-02:' .planning/phases/32-secrets-pattern-key-rotation/32-02-SUMMARY.md
+grep -q 'Maintainer attested' .planning/phases/32-secrets-pattern-key-rotation/32-02-SUMMARY.md
+grep -q 'No secret value, prefix, suffix, screenshot, or token material' .planning/phases/32-secrets-pattern-key-rotation/32-02-SUMMARY.md
+! grep -nE 'sk-ant-[A-Za-z0-9_-]+' .planning/phases/32-secrets-pattern-key-rotation/32-02-SUMMARY.md .planning/phases/32-secrets-pattern-key-rotation/32-VERIFICATION.md
 ```
 
 The attestation check cannot prove provider-side rotation; it only verifies the repo contains the required redacted record and no obvious Anthropic token material in phase closeout artifacts. [VERIFIED: `.planning/phases/32-secrets-pattern-key-rotation/32-CONTEXT.md`] [CITED: https://support.claude.com/en/articles/8384961-what-should-i-do-if-i-suspect-my-api-key-has-been-compromised]
@@ -625,7 +625,7 @@ The attestation check cannot prove provider-side rotation; it only verifies the 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|--------------|
 | SEC-01 | `.envrc.example` and `.env.op.example` exist, `.envrc`/`.env.op` are gitignored, `.env.example` has no live Anthropic assignment, docs contain the process-scoped command pattern, and touched safe files avoid footguns. [VERIFIED: `.planning/REQUIREMENTS.md:24-27`] | static shell acceptance | Run the `Static Acceptance Checks` block above. [VERIFIED: proposed validation command] | Not a test file; shell checks are sufficient for this docs/examples phase. [VERIFIED: `.planning/phases/32-secrets-pattern-key-rotation/32-CONTEXT.md`] |
-| SEC-02 | Redacted maintainer attestation exists and phase artifacts do not store obvious Anthropic token material. [VERIFIED: `.planning/REQUIREMENTS.md:24-27`] | human checkpoint + static artifact check | Run the `Rotation Attestation Checks` block after closeout artifacts exist. [VERIFIED: proposed validation command] | Requires `32-SUMMARY.md` / `32-VERIFICATION.md` after execution. [VERIFIED: GSD phase artifact convention] |
+| SEC-02 | Redacted maintainer attestation exists and phase artifacts do not store obvious Anthropic token material. [VERIFIED: `.planning/REQUIREMENTS.md:24-27`] | human checkpoint + static artifact check | Run the `Rotation Attestation Checks` block after closeout artifacts exist. [VERIFIED: proposed validation command] | Requires `32-02-SUMMARY.md` / `32-VERIFICATION.md` after execution. [VERIFIED: GSD phase artifact convention] |
 
 ### Sampling Rate
 
