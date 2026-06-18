@@ -19,7 +19,7 @@ config :scoria, Scoria.Repo,
   queue_interval: 2_000
 
 # --- Dev host harness ---------------------------------------------------------
-# Serves the Scoria dashboard at http://localhost:4000/scoria via `mix phx.server`
+# Serves the Scoria dashboard at http://localhost:4799/scoria via `make dev`
 # for the screenshot/critique harness and manual iteration. The endpoint module
 # (ScoriaWeb.DevEndpoint) lives under dev/ and is dev-only — never shipped to Hex.
 #

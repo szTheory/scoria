@@ -5,7 +5,7 @@ defmodule ScoriaWeb.DevEndpoint do
   Compiled ONLY in `:dev` (see `elixirc_paths/1` in mix.exs) and never shipped
   to Hex. Started via the `:dev_children` application hook (see
   `Scoria.Application` and `config/dev.exs`) so that `mix phx.server` serves the
-  dashboard at `http://localhost:4000/scoria` for the screenshot/critique
+  dashboard at `http://localhost:4799/scoria` for the screenshot/critique
   harness (`mix scoria.ui.shots`) and manual iteration.
 
   Assets are inlined into the root layout at compile time by `ScoriaWeb.Assets`
