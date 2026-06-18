@@ -19,8 +19,7 @@ defmodule Scoria.DockerDxDocContractTest do
     ~r/docker compose port web 4000/i,
     ~r/\bCI\b/,
     ~r/ephemeral fallback/i,
-    ~r/ephemeral loopback/i,
-    ~r/internal/i
+    ~r/ephemeral loopback/i
   ]
 
   test "pins Docker and native dev loop reader tokens" do
@@ -66,7 +65,9 @@ defmodule Scoria.DockerDxDocContractTest do
           "Open http://localhost:4000/scoria in the browser.",
           "visit localhost:4000",
           "curl http://127.0.0.1:4000/scoria",
-          "If you need a browser route, use port 4000."
+          "If you need a browser route, use port 4000.",
+          "If you need a browser route,\nuse port 4000.",
+          "Open the internal browser route on port 4000."
         ] do
       assert stale_fixed_port_hits(stale_doc) != [] or unqualified_4000_contexts(stale_doc) != [],
              "expected stale browser-start guidance to be rejected: #{inspect(stale_doc)}"
@@ -124,20 +125,32 @@ defmodule Scoria.DockerDxDocContractTest do
 
   defp unqualified_4000_contexts(docs) do
     docs
-    |> String.split("\n")
-    |> Enum.with_index(1)
-    |> Enum.filter(fn {line, _line_number} ->
-      String.contains?(line, "4000") and Regex.match?(@browser_or_fallback_context, line) and
-        not anti_footgun_line?(line) and not allowed_4000_context?(line)
+    |> paragraph_contexts()
+    |> Enum.filter(fn {paragraph, _line_number} ->
+      String.contains?(paragraph, "4000") and
+        Regex.match?(@browser_or_fallback_context, paragraph) and
+        not anti_footgun_context?(paragraph) and not allowed_4000_context?(paragraph)
     end)
   end
 
-  defp anti_footgun_line?(line) do
-    Regex.match?(~r/no\s+`:4000`.*juggling/i, line)
+  defp paragraph_contexts(docs) do
+    docs
+    |> String.split(~r/\n\s*\n/)
+    |> Enum.map_reduce(1, fn paragraph, line_number ->
+      next_line_number = line_number + length(String.split(paragraph, "\n")) + 1
+      normalized = String.replace(paragraph, ~r/\s+/, " ")
+
+      {{normalized, line_number}, next_line_number}
+    end)
+    |> elem(0)
   end
 
-  defp allowed_4000_context?(line) do
-    Enum.any?(@allowed_4000_qualifiers, &Regex.match?(&1, line))
+  defp anti_footgun_context?(context) do
+    Regex.match?(~r/no\s+`:4000`.*juggling/i, context)
+  end
+
+  defp allowed_4000_context?(context) do
+    Enum.any?(@allowed_4000_qualifiers, &Regex.match?(&1, context))
   end
 
   defp stale_fixed_port_failure(hits) do

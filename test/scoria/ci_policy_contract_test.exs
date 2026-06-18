@@ -17,6 +17,7 @@ defmodule Scoria.CiPolicyContractTest do
   @semantic_lane "mix test.semantic_fast_path --warnings-as-errors"
   @compile_wae "mix compile --warnings-as-errors"
   @ci_policy_contract "test/scoria/ci_policy_contract_test.exs"
+  @docker_dx_doc_contract "test/scoria/docker_dx_doc_contract_test.exs"
   @lane_contract "test/scoria/verification_lanes_test.exs"
   @ratchet_wae "mix scoria.warning_ratchet.test --warnings-as-errors"
   @layer_invariant_marker "INVARIANT: volatile source"
@@ -618,14 +619,16 @@ defmodule Scoria.CiPolicyContractTest do
     assert ci_entry =~ "- main"
   end
 
-  test "policy job runs ci_policy_contract_test in lane-contract step" do
+  test "policy job runs ci_policy_contract_test and Docker DX doc contract in lane-contract step" do
     ci_verify = File.read!(@ci_verify)
     [policy_section, _test_section] = split_jobs(ci_verify)
     lane_step = lane_contract_step(policy_section)
 
     assert lane_step =~ @ci_policy_contract
+    assert lane_step =~ @docker_dx_doc_contract
     assert lane_step =~ @lane_contract
-    assert index_of(lane_step, @ci_policy_contract) < index_of(lane_step, @lane_contract)
+    assert index_of(lane_step, @ci_policy_contract) < index_of(lane_step, @docker_dx_doc_contract)
+    assert index_of(lane_step, @docker_dx_doc_contract) < index_of(lane_step, @lane_contract)
   end
 
   test "test config uses inline workflow dispatch for deterministic integration specs" do
