@@ -299,7 +299,17 @@ Plans:
   2. `grep -rn "localhost:4000" docs/operator_verification.md docs/MAINTAINERS.md README.md` returns zero hits where the text instructs starting the dev server (legacy/note contexts with explicit qualification are acceptable if clearly marked).
   3. `grep -rn "mix phx.server" .planning/` returns zero hits in verification-step or "how to start" contexts — GSD phase/plan prose uses `make up` / `make dev` + the real `*.localhost` or `:4799` URL.
 
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+**Wave 1**
+
+- [ ] 33-01-PLAN.md — restructure `docs/docker_dev_dx.md` as the reader-first fleet standard (DOCS-02)
+- [ ] 33-02-PLAN.md — correct active docs and qualify support-copilot gallery copy (DOCS-01)
+- [ ] 33-03-PLAN.md — correct host screenshot/e2e harness docs and defaults (DOCS-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 33-04-PLAN.md — sweep active `.planning` guidance and classify remaining allowed hits (DOCS-01)
 
 ### Phase 34: Docker DX drift guard + CI guard extension
 
