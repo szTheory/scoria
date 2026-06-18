@@ -267,16 +267,16 @@ Plans:
 **Plans**: 1 plan
 - [x] 31-01-PLAN.md — Dockerfile boundary invariant comment + docs layer-invalidation table + static COPY-order policy-lane test + empirical cache proof in SUMMARY
 
-### Phase 32: Secrets pattern + key rotation
+### Phase 32: Secrets pattern + local key exposure closeout
 
-**Goal**: Provider API keys never exist in plaintext on disk — the direnv + 1Password `op run` pattern is documented and exemplified, the old plaintext stub is removed from `.env.example`, and the previously exposed `ANTHROPIC_API_KEY` is rotated.
+**Goal**: Provider API keys stop using plaintext committed-example patterns — the direnv + 1Password `op run` pattern is documented and exemplified, the old plaintext stub is removed from `.env.example`, and the local `.env` `ANTHROPIC_API_KEY` concern is closed by maintainer-accepted no-Git-exposure attestation.
 **Depends on**: Phase 29 (parallelizable with Phases 30/31 — no code dependency; all three can execute after Phase 29)
 **Requirements**: SEC-01, SEC-02
 **Success Criteria** (what must be TRUE):
 
   1. `.envrc.example` and `.env.op.example` are committed; `.envrc` and `.env.op` are listed in `.gitignore`; the `ANTHROPIC_API_KEY=sk-ant-...` plaintext stub is removed from `.env.example` (replaced by an `op://` reference comment).
   2. `docs/docker_dev_dx.md` contains a Secrets section describing the direnv + `op run` pattern with a first-time setup note (requires `direnv allow` once; `op signin` before sourcing).
-  3. The `ANTHROPIC_API_KEY` previously stored as plaintext in `.env` has been rotated on the Anthropic console — confirmed by the maintainer as a pre-ship action and tracked as a done item in the phase record.
+  3. The `ANTHROPIC_API_KEY` previously stored as plaintext in local `.env` is assessed before ship: Git metadata confirms `.env` was ignored, untracked, and absent from Git history; the maintainer accepts no rotation is required; the phase record stores only redacted attestation and no token material.
 
 **Plans**: 2 plans
 Plans:
@@ -286,7 +286,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 + maintainer attestation)*
 
-- [ ] 32-02-PLAN.md — SEC-02 redacted maintainer Anthropic key-rotation attestation checkpoint
+- [x] 32-02-PLAN.md — SEC-02 redacted maintainer no-Git-exposure attestation checkpoint
 
 ### Phase 33: Doc restructure + verification-copy correction
 
@@ -335,7 +335,7 @@ Plans:
 | 29. Makefile hardening | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 30. Launch banner + native-dev notice | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 31. Dockerfile caching audit + doc | v3.2 | 1/1 | Complete    | 2026-06-18 |
-| 32. Secrets pattern + key rotation | v3.2 | 1/2 | In Progress|  |
+| 32. Secrets pattern + local key exposure closeout | v3.2 | 2/2 | Complete    | 2026-06-18 |
 | 33. Doc restructure + verification-copy correction | v3.2 | 0/TBD | Not started | - |
 | 34. Docker DX drift guard + CI guard extension | v3.2 | 0/TBD | Not started | - |
 | 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 0/TBD | Not started | - |

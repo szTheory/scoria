@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
 status: executing
-stopped_at: Awaiting SEC-02 maintainer attestation for 32-02
-last_updated: "2026-06-18T13:50:38.901Z"
+stopped_at: Completed Phase 32 SEC-02 no-Git-exposure closeout
+last_updated: "2026-06-18T15:19:04Z"
 last_activity: 2026-06-18
 progress:
   total_phases: 13
   completed_phases: 3
   total_plans: 5
-  completed_plans: 4
-  percent: 23
+  completed_plans: 5
+  percent: 38
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: `.planning/PROJECT.md` (updated 2026-06-17 after v3.2 Drydock roadmap initi
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 32 — secrets-pattern-key-rotation
+**Current focus:** Phase 33 — doc-restructure-verification-copy-correction
 
 ## Current Position
 
-Phase: 32 (secrets-pattern-key-rotation) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
+Phase: 33 (doc-restructure-verification-copy-correction) — READY
+Plan: TBD
+Status: Phase 32 complete
 Last activity: 2026-06-18
 
-Progress: [████████░░] 80%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -53,10 +53,11 @@ Recent decisions affecting current work:
 - v3.2: `VerificationLanes.closeout_order/0` and `CI / ci-gate` required-check name stay byte-stable; new tests run in existing policy lane only; no CI topology changes.
 - v3.2: Parallelism within Stream A: Phases 30, 31, 32 can all run after Phase 29 (no inter-dependencies); Phase 33 depends on 29–32; Phase 34 depends on 33.
 - [Phase ?]: Route list derived live from mix phx.routes ScoriaWeb.DevRouter
+- [Phase 32]: Maintainer szTheory accepted no Anthropic key rotation required because `.env` was local ignored plaintext with no Git history; SEC-02 closeout records no token material.
 
 ### Pending Todos
 
-- Rotate `ANTHROPIC_API_KEY` on the Anthropic console before Phase 32 closes (SEC-02 — out-of-band maintainer action).
+- Phase 33: Restructure Docker DX docs and correct verification-copy drift now that Phase 32's no-Git-exposure SEC-02 closeout is recorded.
 - Post-v3.2: SEED-004 test-code determinism (async `IntegrationCase`, `Process.sleep` removal) — leading candidate for next milestone.
 - Post-v3.2: FLEET-01 sibling-repo convergence (rulestead/parapet) — `docker-dx-fleet-hardening` todo.
 - Post-ship cleanup: `ci-policy-job-cache-key-mislabel` (carried from v3.1 close).
@@ -76,9 +77,10 @@ None at milestone start.
 | Release | Publish 0.1.1 → superseded by 0.1.2 in Phase 35 | Absorbed into REL-01 | v3.2 REL |
 | Phase 30 P01 | 319 | 2 tasks | 2 files |
 | Phase 32 P01 | 18 min | 2 tasks | 5 files |
+| Phase 32 P02 | 10 min | 1 task | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-06-18T13:50:38.894Z
-Stopped at: Awaiting SEC-02 maintainer attestation for 32-02
-Resume file: .planning/phases/32-secrets-pattern-key-rotation/32-02-PLAN.md
+Last session: 2026-06-18T15:19:04Z
+Stopped at: Completed Phase 32 SEC-02 no-Git-exposure closeout
+Resume file: None
