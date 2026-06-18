@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
-status: executing
-stopped_at: Completed Phase 32 SEC-02 no-Git-exposure closeout
-last_updated: "2026-06-18T15:19:04Z"
+status: completed
+stopped_at: Phase 33 context gathered
+last_updated: "2026-06-18T15:47:27.850Z"
 last_activity: 2026-06-18
 progress:
   total_phases: 13
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 5
   completed_plans: 5
-  percent: 38
+  percent: 31
 ---
 
 # Project State
@@ -81,6 +81,6 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-06-18T15:19:04Z
-Stopped at: Completed Phase 32 SEC-02 no-Git-exposure closeout
-Resume file: None
+Last session: 2026-06-18T15:47:27.842Z
+Stopped at: Phase 33 context gathered
+Resume file: .planning/phases/33-doc-restructure-verification-copy-correction/33-CONTEXT.md
