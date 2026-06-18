@@ -424,7 +424,7 @@ Source: existing CI policy-lane command and local green run: 56 tests, 0 failure
 |---|-------|---------|---------------|
 | A1 | Exact prose/section titles can be refined by the planner/executor as long as locked decisions hold. | User Constraints / Architecture Patterns | Low; this is direct discretion from context, not a technical uncertainty. [VERIFIED: 33-CONTEXT.md] |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **RESOLVED: Code-adjacent harness copy is Plan 03.**
    - What we know: D-19 includes `lib/mix/tasks/scoria.ui.*.ex`, `priv/dev`, and `priv/repo/dev_seed.exs`, and D-20 protects generated/static and CI/container wiring. [VERIFIED: 33-CONTEXT.md]
