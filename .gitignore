@@ -46,3 +46,5 @@ priv/dev/e2e/test-results/
 priv/dev/e2e/playwright-report/
 
 .env
+.envrc
+.env.op

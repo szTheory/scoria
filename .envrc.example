@@ -1,0 +1,10 @@
+# Copy to .envrc (gitignored), then run: direnv allow .
+#
+# Secrets are resolved only for op-wrapped commands:
+#   op run --env-file "$SCORIA_OP_ENV_FILE" -- <command>
+export SCORIA_OP_ENV_FILE="${SCORIA_OP_ENV_FILE:-.env.op}"
+watch_file "$SCORIA_OP_ENV_FILE"
+
+if ! has op; then
+  log_error "1Password CLI not found. Install op before running critique commands."
+fi
