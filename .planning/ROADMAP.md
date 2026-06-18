@@ -347,7 +347,7 @@ Plans:
 | 31. Dockerfile caching audit + doc | v3.2 | 1/1 | Complete    | 2026-06-18 |
 | 32. Secrets pattern + local key exposure closeout | v3.2 | 2/2 | Complete    | 2026-06-18 |
 | 33. Doc restructure + verification-copy correction | v3.2 | 4/4 | Complete    | 2026-06-18 |
-| 34. Docker DX drift guard + CI guard extension | v3.2 | 3/3 | Complete   | 2026-06-18 |
+| 34. Docker DX drift guard + CI guard extension | v3.2 | 3/3 | Complete    | 2026-06-18 |
 | 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 0/TBD | Not started | - |
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
