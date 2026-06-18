@@ -5,8 +5,12 @@ defmodule Scoria.CiPolicyContractTest do
 
   @ci_verify ".github/workflows/ci-verify.yml"
   @ci_entry ".github/workflows/ci.yml"
+  @compose_file "compose.yml"
+  @docker_dx_docs "docs/docker_dev_dx.md"
+  @dockerignore ".dockerignore"
   @maintainer_docs "docs/MAINTAINERS.md"
   @operator_docs "docs/operator_verification.md"
+  @playwright_package "priv/dev/package.json"
   @ephemeral_range_min 32_768
   @baseline_check "mix scoria.warning_baseline.check"
   @inventory_baseline_check "mix scoria.warning_inventory.check_baseline"
@@ -145,10 +149,15 @@ defmodule Scoria.CiPolicyContractTest do
 
     assert policy_section =~ @baseline_check
     assert policy_section =~ @inventory_baseline_check
+
     assert index_of(policy_section, @baseline_check) <
              index_of(policy_section, @inventory_baseline_check)
-    assert index_of(policy_section, @inventory_baseline_check) < index_of(policy_section, @compile_wae)
+
+    assert index_of(policy_section, @inventory_baseline_check) <
+             index_of(policy_section, @compile_wae)
+
     assert index_of(policy_section, @baseline_check) < index_of(policy_section, @compile_wae)
+
     assert index_of(policy_section, @compile_wae) <
              index_of(policy_section, "Verify lane-contract tests with warnings as errors")
   end
@@ -216,6 +225,10 @@ defmodule Scoria.CiPolicyContractTest do
     # Current count: e2e (ci.yml) + test, knowledge, connector, full-suite (ci-verify.yml) = 5.
     assert map_size(postgres_blocks) >= 5,
            "expected >= 5 postgres jobs across ci.yml + ci-verify.yml; regex may be broken"
+
+    assert Map.has_key?(postgres_blocks, "post-publish-smoke.yml:smoke"),
+           "FLAKE-01 scanner must include post-publish-smoke.yml:smoke so the " <>
+             "post-publish registry attest cannot bypass fixed host-port enforcement"
 
     # Assert no ports: binding uses a host port in the ephemeral range (>= 32768).
     # GitHub runner ephemeral port range: 32768–60999 (Linux kernel default).
@@ -356,6 +369,7 @@ defmodule Scoria.CiPolicyContractTest do
     blocks = job_blocks(ci_verify)
 
     verify_summary_body = Map.fetch!(blocks, "verify-summary")
+
     assert verify_summary_body =~ "full-suite",
            "full-suite must be in verify-summary.needs — wiring it prevents a false-green fan-in"
   end
@@ -574,7 +588,9 @@ defmodule Scoria.CiPolicyContractTest do
     assert gate_map =~ "Ratchet is maintainer-only"
     assert gate_map =~ "When CI fails, run the matching maintainer command next"
     assert gate_map =~ "mix compile --warnings-as-errors"
-    refute gate_map =~ "Policy: compile WAE failed → `MIX_ENV=test mix compile --warnings-as-errors`"
+
+    refute gate_map =~
+             "Policy: compile WAE failed → `MIX_ENV=test mix compile --warnings-as-errors`"
   end
 
   test "README links maintainers to maintainer guide near status section" do
@@ -639,13 +655,172 @@ defmodule Scoria.CiPolicyContractTest do
 
   test "Dockerfile.dev keeps cache-optimal COPY layer order (deps -> config -> source)" do
     df = File.read!("Dockerfile.dev")
-    i_lock   = index_of(df, "COPY mix.exs mix.lock")
+    i_lock = index_of(df, "COPY mix.exs mix.lock")
     i_config = index_of(df, "COPY config")
-    i_lib    = index_of(df, "COPY lib")
-    assert i_lock < i_config,  "COPY mix.exs mix.lock must precede COPY config"
-    assert i_config < i_lib,   "COPY config must precede COPY lib"
+    i_lib = index_of(df, "COPY lib")
+    assert i_lock < i_config, "COPY mix.exs mix.lock must precede COPY config"
+    assert i_config < i_lib, "COPY config must precede COPY lib"
+
     assert df =~ @layer_invariant_marker,
            "Dockerfile.dev must contain the boundary invariant comment (#{inspect(@layer_invariant_marker)})"
+  end
+
+  test "Dockerfile.dev preserves BuildKit caches for cold rebuilds" do
+    df = File.read!("Dockerfile.dev")
+
+    assert df =~ "--mount=type=cache,target=/var/cache/apt"
+    assert df =~ "--mount=type=cache,target=/var/lib/apt/lists"
+    assert df =~ "--mount=type=cache,target=/root/.hex"
+    assert df =~ "--mount=type=cache,target=/root/.cache/rebar3"
+  end
+
+  test "compose.yml keeps Docker dev services namespaced and collision-resistant" do
+    compose = File.read!(@compose_file)
+    db = service_section(compose, "db")
+    web = service_section(compose, "web")
+
+    refute compose =~ ~r/^name:\s/m
+    refute compose =~ ~r/^\s+container_name:\s/m
+    refute db =~ ~r/^\s+ports:\s/m
+
+    assert web =~ ~s("127.0.0.1::4000")
+    assert compose =~ "proxy:\n    external: true"
+
+    assert web =~
+             "traefik.http.routers.${COMPOSE_PROJECT_NAME:-scoria}.rule=Host(`${SCORIA_HOST:-scoria.localhost}`)"
+
+    assert web =~ "traefik.http.routers.${COMPOSE_PROJECT_NAME:-scoria}.entrypoints=web"
+
+    assert web =~
+             "traefik.http.routers.${COMPOSE_PROJECT_NAME:-scoria}.service=${COMPOSE_PROJECT_NAME:-scoria}"
+
+    assert web =~
+             "traefik.http.services.${COMPOSE_PROJECT_NAME:-scoria}.loadbalancer.server.port=4000"
+
+    assert web =~ "scoria.local-dev.host=${SCORIA_HOST:-scoria.localhost}"
+  end
+
+  test "compose.yml preserves Docker dev cache volumes" do
+    compose = File.read!(@compose_file)
+    web = service_section(compose, "web")
+    shots = service_section(compose, "shots")
+
+    assert web =~ "deps:/app/deps"
+    assert web =~ "build:/app/_build"
+    assert web =~ "hex:/root/.hex"
+    assert web =~ "mix:/root/.mix"
+    assert shots =~ "shots_node_modules:/app/priv/dev/node_modules"
+    assert shots =~ "shots_npm_cache:/root/.npm"
+    assert compose =~ "\n  shots_npm_cache:"
+  end
+
+  test "compose.yml keeps critique API key out of Compose interpolation" do
+    compose = File.read!(@compose_file)
+    critique = service_section(compose, "critique")
+
+    assert critique =~ "secrets:"
+    assert compose =~ "anthropic_api_key:\n    environment: ANTHROPIC_API_KEY"
+    assert critique =~ "cat /run/secrets/anthropic_api_key"
+    refute compose =~ "ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY"
+  end
+
+  test "dev entrypoint banner points to diagnostics and safe critique command" do
+    entrypoint = File.read!("docker/dev-entrypoint.sh")
+
+    assert entrypoint =~ "make url | make fleet | make doctor"
+    assert entrypoint =~ "op run --env-file"
+    assert entrypoint =~ "Compose secret"
+    refute entrypoint =~ "docker compose --profile shots run --rm critique     # + LLM critique"
+  end
+
+  test "Playwright image tag tracks the dev package version" do
+    compose = File.read!(@compose_file)
+    package = File.read!(@playwright_package)
+    [_, declared] = Regex.run(~r/"@playwright\/test":\s*"([^"]+)"/, package)
+    version = declared |> then(&Regex.run(~r/\d+\.\d+\.\d+/, &1)) |> List.first()
+
+    assert compose =~ "mcr.microsoft.com/playwright:v#{version}-noble"
+  end
+
+  test "Makefile defaults to checkout-specific instances and no-build daily startup" do
+    makefile = File.read!("Makefile")
+
+    assert makefile =~ "WORKTREE_ID"
+    assert makefile =~ "INSTANCE ?= $(APP)-$(if $(BRANCH),$(BRANCH),local)-$(WORKTREE_ID)"
+    assert makefile =~ "docker compose up --no-build"
+    assert makefile =~ "docker compose up --build"
+    assert makefile =~ "docker ps --filter label=traefik.enable=true"
+    assert makefile =~ "doctor:"
+    assert makefile =~ "SCORIA_DB_PORT ?= 55432"
+    assert makefile =~ "SCORIA_DB_POOL_SIZE ?= 5"
+    assert makefile =~ "NATIVE_PROJECT_NAME ?= $(COMPOSE_PROJECT_NAME)-native"
+    assert makefile =~ "docker compose -p $(NATIVE_PROJECT_NAME) -f dev/pgvector-compose.yml"
+    assert makefile =~ "native-db-down:"
+    refute makefile =~ "--filter name=scoria-"
+  end
+
+  test "native DB helper and configs avoid default host Postgres" do
+    native_compose = File.read!("dev/pgvector-compose.yml")
+    dev_config = File.read!("config/dev.exs")
+    test_config = File.read!("config/test.exs")
+
+    assert native_compose =~ "127.0.0.1:${SCORIA_DB_PORT:-55432}:5432"
+    assert native_compose =~ "-p <instance>-native"
+    assert dev_config =~ ~s|System.get_env("SCORIA_DB_PORT", "55432")|
+    assert test_config =~ ~s|System.get_env("SCORIA_DB_PORT", "55432")|
+    assert test_config =~ "SCORIA_TEST_DB_POOL_SIZE"
+  end
+
+  test ".dockerignore keeps generated dev artifacts and local secrets out of image context" do
+    dockerignore = File.read!(@dockerignore)
+
+    for entry <- [
+          "_build/",
+          "deps/",
+          "priv/dev/node_modules/",
+          "priv/dev/package-lock.json",
+          "priv/dev/test-results/",
+          "priv/dev/e2e/test-results/",
+          "priv/dev/e2e/playwright-report/",
+          "priv/shots/",
+          ".env",
+          ".envrc",
+          ".env.op"
+        ] do
+      assert dockerignore =~ entry
+    end
+  end
+
+  test "Docker DX guide documents the collision-resistant workflow" do
+    docs = File.read!(@docker_dx_docs)
+    env_example = File.read!(".env.example")
+
+    for text <- [
+          "make proxy",
+          "make up-build",
+          "make up",
+          "make url",
+          "make open",
+          "make fleet",
+          "make doctor",
+          "make dev",
+          "make native-db-down",
+          "scoria-<branch>-<hash>",
+          "<instance>-native",
+          "COMPOSE_PROJECT_NAME",
+          "SCORIA_DB_PORT=55432",
+          "SCORIA_DB_POOL_SIZE",
+          "label=traefik.enable=true",
+          "creates a runtime secret",
+          "docker compose config",
+          "No top-level `name:` and no `container_name:`",
+          "ANTHROPIC_API_KEY"
+        ] do
+      assert docs =~ text
+    end
+
+    assert env_example =~ "scoria-myfeature-a1b2c3d4"
+    refute docs =~ "http://localhost:4000/scoria"
   end
 
   defp lane_contract_step(policy_section) do
@@ -717,6 +892,21 @@ defmodule Scoria.CiPolicyContractTest do
     case :binary.match(content, needle) do
       {index, _length} -> index
       :nomatch -> flunk("Expected to find #{inspect(needle)} in content")
+    end
+  end
+
+  defp service_section(content, service) do
+    marker = "\n  #{service}:"
+
+    case :binary.match(content, marker) do
+      {start, _length} ->
+        content
+        |> String.slice(start + 1, byte_size(content))
+        |> String.split(~r/\n  [a-zA-Z0-9_-]+:/, parts: 2)
+        |> List.first()
+
+      :nomatch ->
+        flunk("expected service #{inspect(service)} in compose file")
     end
   end
 end
