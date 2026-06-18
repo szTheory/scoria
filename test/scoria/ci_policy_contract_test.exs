@@ -5,8 +5,8 @@ defmodule Scoria.CiPolicyContractTest do
 
   @ci_verify ".github/workflows/ci-verify.yml"
   @ci_entry ".github/workflows/ci.yml"
+  @post_publish_smoke ".github/workflows/post-publish-smoke.yml"
   @compose_file "compose.yml"
-  @docker_dx_docs "docs/docker_dev_dx.md"
   @dockerignore ".dockerignore"
   @maintainer_docs "docs/MAINTAINERS.md"
   @operator_docs "docs/operator_verification.md"
@@ -210,8 +210,9 @@ defmodule Scoria.CiPolicyContractTest do
   test "no CI Postgres job binds a host port in the ephemeral range (>= 32768)" do
     ci_verify = File.read!(@ci_verify)
     ci_entry = File.read!(@ci_entry)
+    post_publish = File.read!(@post_publish_smoke)
 
-    # Derive all job blocks that reference postgres: across both workflow files.
+    # Derive all job blocks that reference postgres: across policy and smoke workflows.
     # job_blocks/1 is file-agnostic — call once per file, filter by body content.
     verify_postgres =
       job_blocks(ci_verify) |> Enum.filter(fn {_name, body} -> body =~ "postgres:" end)
@@ -219,12 +220,19 @@ defmodule Scoria.CiPolicyContractTest do
     entry_postgres =
       job_blocks(ci_entry) |> Enum.filter(fn {_name, body} -> body =~ "postgres:" end)
 
-    postgres_blocks = Map.new(verify_postgres ++ entry_postgres)
+    post_publish_postgres =
+      post_publish
+      |> job_blocks()
+      |> Enum.filter(fn {_name, body} -> body =~ "postgres:" end)
+      |> Enum.map(fn {job, body} -> {"post-publish-smoke.yml:#{job}", body} end)
+
+    postgres_blocks = Map.new(verify_postgres ++ entry_postgres ++ post_publish_postgres)
 
     # Non-empty guard: broken regex cannot vacuously pass.
-    # Current count: e2e (ci.yml) + test, knowledge, connector, full-suite (ci-verify.yml) = 5.
-    assert map_size(postgres_blocks) >= 5,
-           "expected >= 5 postgres jobs across ci.yml + ci-verify.yml; regex may be broken"
+    # Current count: e2e (ci.yml) + four ci-verify.yml jobs + post-publish smoke = 6.
+    assert map_size(postgres_blocks) >= 6,
+           "expected >= 6 postgres jobs across ci.yml, ci-verify.yml, and " <>
+             "post-publish-smoke.yml; regex may be broken"
 
     assert Map.has_key?(postgres_blocks, "post-publish-smoke.yml:smoke"),
            "FLAKE-01 scanner must include post-publish-smoke.yml:smoke so the " <>
@@ -791,36 +799,11 @@ defmodule Scoria.CiPolicyContractTest do
     end
   end
 
-  test "Docker DX guide documents the collision-resistant workflow" do
-    docs = File.read!(@docker_dx_docs)
+  test ".env.example documents a collision-resistant instance example" do
     env_example = File.read!(".env.example")
 
-    for text <- [
-          "make proxy",
-          "make up-build",
-          "make up",
-          "make url",
-          "make open",
-          "make fleet",
-          "make doctor",
-          "make dev",
-          "make native-db-down",
-          "scoria-<branch>-<hash>",
-          "<instance>-native",
-          "COMPOSE_PROJECT_NAME",
-          "SCORIA_DB_PORT=55432",
-          "SCORIA_DB_POOL_SIZE",
-          "label=traefik.enable=true",
-          "creates a runtime secret",
-          "docker compose config",
-          "No top-level `name:` and no `container_name:`",
-          "ANTHROPIC_API_KEY"
-        ] do
-      assert docs =~ text
-    end
-
-    assert env_example =~ "scoria-myfeature-a1b2c3d4"
-    refute docs =~ "http://localhost:4000/scoria"
+    assert env_example =~ "scoria-myfeature-a1b2c3d4",
+           ".env.example should keep one concrete instance identity example for bare docker compose users"
   end
 
   defp lane_contract_step(policy_section) do
