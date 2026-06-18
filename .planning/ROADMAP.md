@@ -278,7 +278,15 @@ Plans:
   2. `docs/docker_dev_dx.md` contains a Secrets section describing the direnv + `op run` pattern with a first-time setup note (requires `direnv allow` once; `op signin` before sourcing).
   3. The `ANTHROPIC_API_KEY` previously stored as plaintext in `.env` has been rotated on the Anthropic console — confirmed by the maintainer as a pre-ship action and tracked as a done item in the phase record.
 
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+**Wave 1**
+
+- [ ] 32-01-PLAN.md — SEC-01 safe secret examples, gitignore, `.env.example`, and Docker DX Secrets docs
+
+**Wave 2** *(blocked on Wave 1 + maintainer attestation)*
+
+- [ ] 32-02-PLAN.md — SEC-02 redacted maintainer Anthropic key-rotation attestation checkpoint
 
 ### Phase 33: Doc restructure + verification-copy correction
 
