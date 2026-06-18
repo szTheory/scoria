@@ -495,7 +495,7 @@ No security-sensitive changes in this phase (no auth, no secrets, no network end
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Invariant comment: replace or prepend above the `# 3)` comment?**
    - What we know: L51 is `# 3) Volatile source last — editing these does NOT invalidate the layers above.`
