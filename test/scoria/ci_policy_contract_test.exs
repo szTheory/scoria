@@ -15,6 +15,7 @@ defmodule Scoria.CiPolicyContractTest do
   @ci_policy_contract "test/scoria/ci_policy_contract_test.exs"
   @lane_contract "test/scoria/verification_lanes_test.exs"
   @ratchet_wae "mix scoria.warning_ratchet.test --warnings-as-errors"
+  @layer_invariant_marker "INVARIANT: volatile source"
 
   test "ci-verify.yml is reusable workflow_call SSOT" do
     ci_verify = File.read!(@ci_verify)
@@ -634,6 +635,17 @@ defmodule Scoria.CiPolicyContractTest do
     assert archived_roadmap =~ "post-publish"
     assert milestones =~ "v2.10 Hex Consumer"
     assert milestones =~ "v2.12 Adoption Confidence"
+  end
+
+  test "Dockerfile.dev keeps cache-optimal COPY layer order (deps -> config -> source)" do
+    df = File.read!("Dockerfile.dev")
+    i_lock   = index_of(df, "COPY mix.exs mix.lock")
+    i_config = index_of(df, "COPY config")
+    i_lib    = index_of(df, "COPY lib")
+    assert i_lock < i_config,  "COPY mix.exs mix.lock must precede COPY config"
+    assert i_config < i_lib,   "COPY config must precede COPY lib"
+    assert df =~ @layer_invariant_marker,
+           "Dockerfile.dev must contain the boundary invariant comment (#{inspect(@layer_invariant_marker)})"
   end
 
   defp lane_contract_step(policy_section) do
