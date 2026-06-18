@@ -21,7 +21,7 @@ lane on every PR. Most UAT truths land here.
 Truths a Floki-based LiveViewTest **cannot** reach — client-side JS execution
 (`JS.hide`, `phx-window-keydown`), CSS layout/positioning, animations, and
 multi-step re-render in a live browser — go in `priv/dev/e2e/*.spec.mjs`
-(`@playwright/test`), driving the dev dashboard (`mix dev.setup` + `mix phx.server`).
+(`@playwright/test`), driving the native Scoria dashboard started with `make dev`.
 
 - The lane is `testDir`-driven: **add a `.spec.mjs` file and it runs** — no new
   mix task, no CI change.
@@ -33,9 +33,8 @@ multi-step re-render in a live browser — go in `priv/dev/e2e/*.spec.mjs`
 Run locally:
 
 ```sh
-mix dev.setup
-PORT=4010 mix phx.server          # 4010 avoids the local :4000 Docker conflict
-mix scoria.ui.e2e --base-url http://localhost:4010/scoria
+make dev
+mix scoria.ui.e2e --base-url http://localhost:4799/scoria
 ```
 
 ## The `test.fixme` rule — register, never silently skip

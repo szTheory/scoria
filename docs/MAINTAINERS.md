@@ -331,10 +331,10 @@ The screenshot and LLM-critique harness provides a mechanical proof loop for the
 
    Playwright is a documented maintainer prerequisite (D-02). It is **not** a `mix.exs` dependency — installing it does not affect `mix.lock` or `hex.audit`.
 
-3. **ANTHROPIC_API_KEY** — required only for the `--critique` pass (the LLM vision call). The screenshot pass runs without it. Set in your shell or `.env`:
+3. **ANTHROPIC_API_KEY** — required only for the `--critique` pass (the LLM vision call). The screenshot pass runs without it. Use the process-scoped 1Password pattern in [Docker dev DX](docker_dev_dx.md#secrets); do not put plaintext provider keys in `.env`, `.envrc`, shell history, logs, screenshots, or planning artifacts.
 
    ```bash
-   export ANTHROPIC_API_KEY="sk-ant-..."
+   op run --env-file "${SCORIA_OP_ENV_FILE:-.env.op}" -- mix scoria.ui.shots --critique --url http://localhost:4799/scoria
    ```
 
 ### Seed-first workflow
@@ -349,11 +349,12 @@ This is safe to re-run: it uses `Repo.get_by` + conditional insert guards so rec
 
 ### Screenshot pass
 
-Start the dev server, then run the screenshot pass:
+Start the dashboard with `make dev`, seed populated data from another shell, then run the screenshot pass against the native host URL:
 
 ```bash
-mix phx.server          # in one terminal
-mix scoria.ui.shots     # in another terminal
+make dev
+mix run priv/repo/dev_seed.exs
+mix scoria.ui.shots --url http://localhost:4799/scoria
 ```
 
 Captured PNGs land in `priv/shots/{date}/{screen}/{state}.png` (gitignored — only `gap_register.md` is committed). The state matrix per tenant-scoped screen is:
@@ -365,7 +366,7 @@ Captured PNGs land in `priv/shots/{date}/{screen}/{state}.png` (gitignored — o
 **Optional flags:**
 
 ```bash
-mix scoria.ui.shots --url http://localhost:4000/scoria   # custom dev server URL (default shown)
+mix scoria.ui.shots --url http://localhost:4799/scoria   # custom dev server URL (default shown)
 mix scoria.ui.shots --tenant-empty empty-tenant          # empty-state tenant slug (default shown)
 mix scoria.ui.shots --tenant-seeded acme-corp            # seeded-state tenant slug (default shown)
 mix scoria.ui.shots --release-id <uuid>                  # navigate directly to a specific prompt release
@@ -376,7 +377,7 @@ mix scoria.ui.shots --release-id <uuid>                  # navigate directly to 
 Run the critique pass as a separate gated step at phase-milestone boundaries (D-04). It calls `Scoria.UICritique.critique_screen/3` via ReqLLM vision on the canonical populated · desktop · dark state for each screen (~9 vision calls), then writes per-screen findings JSON:
 
 ```bash
-mix scoria.ui.shots --critique
+op run --env-file "${SCORIA_OP_ENV_FILE:-.env.op}" -- mix scoria.ui.shots --critique --url http://localhost:4799/scoria
 ```
 
 Requires `ANTHROPIC_API_KEY`. Writes `priv/shots/{date}/{screen}/populated_dark_desktop.json` alongside the PNG. The gap register aggregation step (`priv/shots/gap_register.md`) runs in Plan 05's audit pass.
