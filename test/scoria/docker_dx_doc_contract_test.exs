@@ -2,6 +2,26 @@ defmodule Scoria.DockerDxDocContractTest do
   use ExUnit.Case, async: true
 
   @doc_path "docs/docker_dev_dx.md"
+  @stale_fixed_port_patterns [
+    fixed_localhost_4000: ~r/\b(?:localhost|127\.0\.0\.1):4000(?:\/[^\s)`'"]*)?/i,
+    command_context_4000:
+      ~r/\b(?:open|visit|browse|browser|go to|curl)\b[^\n]*(?:https?:\/\/)?(?:localhost|127\.0\.0\.1):4000(?:\/[^\s)`'"]*)?/i
+  ]
+  @browser_or_fallback_context ~r/\b(browser|open|visit|browse|go to|curl|dev-start|start URL|fallback|route)\b/i
+  @allowed_4000_qualifiers [
+    ~r/docker-internal/i,
+    ~r/container/i,
+    ~r/traefik/i,
+    ~r/service target/i,
+    ~r/loadbalancer\.server\.port=4000/i,
+    ~r/web:4000/i,
+    ~r/127\.0\.0\.1::4000/,
+    ~r/docker compose port web 4000/i,
+    ~r/\bCI\b/,
+    ~r/ephemeral fallback/i,
+    ~r/ephemeral loopback/i,
+    ~r/internal/i
+  ]
 
   test "pins Docker and native dev loop reader tokens" do
     docs = docker_dx_docs()
@@ -31,6 +51,49 @@ defmodule Scoria.DockerDxDocContractTest do
     end
   end
 
+  test "rejects stale fixed-port browser start guidance" do
+    docs = docker_dx_docs()
+
+    assert stale_fixed_port_hits(docs) == [],
+           stale_fixed_port_failure(stale_fixed_port_hits(docs))
+
+    assert unqualified_4000_contexts(docs) == [],
+           unqualified_4000_failure(unqualified_4000_contexts(docs))
+  end
+
+  test "stale URL classifier rejects fixed localhost browser guidance examples" do
+    for stale_doc <- [
+          "Open http://localhost:4000/scoria in the browser.",
+          "visit localhost:4000",
+          "curl http://127.0.0.1:4000/scoria",
+          "If you need a browser route, use port 4000."
+        ] do
+      assert stale_fixed_port_hits(stale_doc) != [] or unqualified_4000_contexts(stale_doc) != [],
+             "expected stale browser-start guidance to be rejected: #{inspect(stale_doc)}"
+    end
+  end
+
+  test "qualified Docker-internal 4000 mechanics remain allowed" do
+    for allowed_doc <- [
+          "Docker-internal container port `4000` is the Traefik service target.",
+          "`docker compose port web 4000` prints the ephemeral fallback.",
+          ~s(- "127.0.0.1::4000"        # ephemeral fallback; never a fixed port),
+          "traefik.http.services.app.loadbalancer.server.port=4000",
+          "SHOTS_BASE_URL=http://web:4000/scoria"
+        ] do
+      assert stale_fixed_port_hits(allowed_doc) == []
+      assert unqualified_4000_contexts(allowed_doc) == []
+    end
+  end
+
+  test "allows the fixed-port anti-footgun copy" do
+    anti_footgun =
+      "predictable Scoria dashboard route, no `:4000` or `:5432` juggling, scoped cleanup"
+
+    assert stale_fixed_port_hits(anti_footgun) == []
+    assert unqualified_4000_contexts(anti_footgun) == []
+  end
+
   defp docker_dx_docs do
     File.read!(@doc_path)
   end
@@ -49,5 +112,47 @@ defmodule Scoria.DockerDxDocContractTest do
            DOCS-03 lost the #{contract} fragment set #{inspect(fragments)} in #{@doc_path}.
            Restore the Docker/native dev-DX contract, or update this guard with Phase 34 rationale.
            """
+  end
+
+  defp stale_fixed_port_hits(docs) do
+    Enum.flat_map(@stale_fixed_port_patterns, fn {name, pattern} ->
+      pattern
+      |> Regex.scan(docs)
+      |> Enum.map(fn match -> {name, List.first(match)} end)
+    end)
+  end
+
+  defp unqualified_4000_contexts(docs) do
+    docs
+    |> String.split("\n")
+    |> Enum.with_index(1)
+    |> Enum.filter(fn {line, _line_number} ->
+      String.contains?(line, "4000") and Regex.match?(@browser_or_fallback_context, line) and
+        not anti_footgun_line?(line) and not allowed_4000_context?(line)
+    end)
+  end
+
+  defp anti_footgun_line?(line) do
+    Regex.match?(~r/no\s+`:4000`.*juggling/i, line)
+  end
+
+  defp allowed_4000_context?(line) do
+    Enum.any?(@allowed_4000_qualifiers, &Regex.match?(&1, line))
+  end
+
+  defp stale_fixed_port_failure(hits) do
+    """
+    DOCS-03 found stale fixed-port browser-start guidance in #{@doc_path}: #{inspect(hits)}.
+    Use Docker `make up` / `make url` / `http://<instance>.localhost/scoria`,
+    or native `make dev` / `http://localhost:4799/scoria`.
+    """
+  end
+
+  defp unqualified_4000_failure(contexts) do
+    """
+    DOCS-03 found unqualified `4000` browser/fallback context in #{@doc_path}: #{inspect(contexts)}.
+    Qualify Docker-internal mechanics, or point readers to Docker `make up` / `make url`
+    / `http://<instance>.localhost/scoria` or native `make dev` / `http://localhost:4799/scoria`.
+    """
   end
 end
