@@ -2,13 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
-current_phase: 30
-current_phase_name: Launch banner + native-dev notice
 status: executing
-stopped_at: Phase 29 context gathered
-last_updated: "2026-06-18T00:57:34.088Z"
-last_activity: 2026-06-18
-last_activity_desc: Phase 29 complete, transitioned to Phase 30
+stopped_at: Phase 30 context gathered
+last_updated: "2026-06-18T05:09:25.556Z"
+last_activity: 2026-06-18 — Phase 29 complete, transitioned to Phase 30
 progress:
   total_phases: 13
   completed_phases: 1
@@ -79,6 +76,6 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-06-17T22:15:34.308Z
-Stopped at: Phase 29 context gathered
-Resume file: .planning/phases/29-makefile-hardening/29-CONTEXT.md
+Last session: 2026-06-18T05:09:25.552Z
+Stopped at: Phase 30 context gathered
+Resume file: .planning/phases/30-launch-banner-native-dev-notice/30-CONTEXT.md
