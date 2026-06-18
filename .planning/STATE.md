@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
 status: executing
-stopped_at: Completed 32-01-PLAN.md
-last_updated: "2026-06-18T13:49:42.206Z"
+stopped_at: Awaiting SEC-02 maintainer attestation for 32-02
+last_updated: "2026-06-18T13:50:38.901Z"
 last_activity: 2026-06-18
 progress:
   total_phases: 13
@@ -79,6 +79,6 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-06-18T13:49:42.200Z
-Stopped at: Completed 32-01-PLAN.md
-Resume file: None
+Last session: 2026-06-18T13:50:38.894Z
+Stopped at: Awaiting SEC-02 maintainer attestation for 32-02
+Resume file: .planning/phases/32-secrets-pattern-key-rotation/32-02-PLAN.md
