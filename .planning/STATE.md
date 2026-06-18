@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
-status: executing
-stopped_at: Completed 34-02-PLAN.md
-last_updated: "2026-06-18T20:16:49.444Z"
-last_activity: 2026-06-18 -- Completed 34-02 plan; ready for 34-03
+status: verifying
+stopped_at: Completed 34-03-PLAN.md
+last_updated: "2026-06-18T20:25:58.742Z"
+last_activity: 2026-06-18
 progress:
   total_phases: 13
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 12
-  completed_plans: 11
-  percent: 92
+  completed_plans: 12
+  percent: 100
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-17 after v3.2 Drydock roadmap initi
 
 Phase: 34 (docker-dx-drift-guard-ci-guard-extension) — EXECUTING
 Plan: 3 of 3
-Status: Ready for Phase 34 Plan 3
-Last activity: 2026-06-18 -- Completed 34-02 plan; ready for 34-03
+Status: Phase complete — ready for verification
+Last activity: 2026-06-18
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -58,6 +58,8 @@ Recent decisions affecting current work:
 - [Phase 34]: Used two-layer stale URL guard for fixed localhost/loopback 4000 browser-start drift while allowing qualified Docker-internal mechanics. — Matches Phase 34 D-17 through D-19 without banning legitimate container, Traefik, service-target, or ephemeral fallback references.
 - [Phase 34]: Kept post-publish smoke to the narrow `5432:5432` / `SCORIA_DB_PORT: 5432` fix and extended the existing FLAKE-01 scanner with an exact `post-publish-smoke.yml:smoke` key guard.
 - [Phase 34]: Kept Docker DX doc-token ownership in `Scoria.DockerDxDocContractTest`; `ci_policy_contract_test.exs` now retains only the `.env.example` instance example guard for that surface.
+- [Phase 34]: Appended `test/scoria/docker_dx_doc_contract_test.exs` to the existing policy-lane `mix test --no-start --warnings-as-errors` file list only.
+- [Phase 34]: Left `CI / ci-gate`, `ci.yml`, workflow topology, job names, services, matrices, needs, and `Scoria.VerificationLanes.closeout_order/0` unchanged while completing DOCS-03 lane wiring.
 
 ### Pending Todos
 
@@ -89,9 +91,10 @@ None at milestone start.
 | Phase 33 P04 | 28min | 3 tasks | 11 files |
 | Phase 34 P01 | 3 min | 2 tasks | 1 files |
 | Phase 34 P02 | 4 min | 2 tasks | 2 files |
+| Phase 34 P03 | 2 min | 1 tasks | 1 files |
 
 ## Session Continuity
 
-Last session: 2026-06-18T20:16:49.444Z
-Stopped at: Completed 34-02-PLAN.md
+Last session: 2026-06-18T20:25:58.738Z
+Stopped at: Completed 34-03-PLAN.md
 Resume file: None
