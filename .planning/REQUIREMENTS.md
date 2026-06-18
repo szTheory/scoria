@@ -28,7 +28,7 @@ Requirements for milestone v3.2. Each maps to a roadmap phase.
 
 ### DOCS — verification-copy truth, portable standard & drift guard
 
-- [x] **DOCS-01**: Dev-server verification copy across `docs/operator_verification.md`, `docs/MAINTAINERS.md`, `README`, and GSD agent/plan prose uses `make up` / `make dev` + the real `*.localhost` (and `:4799`) URLs — no `mix phx.server` → `localhost:4000/scoria`.
+- [x] **DOCS-01**: Dev-server verification copy across `docs/operator_verification.md`, `docs/MAINTAINERS.md`, `README`, and GSD agent/plan prose uses `make up` / `make dev` + the real `*.localhost` (and `:4799`) URLs, with no raw Phoenix fixed-port startup guidance left in active instructions.
 - [x] **DOCS-02**: `docs/docker_dev_dx.md` is restructured as the reference fleet standard with reader-empathy IA (persona/JTBD, gameplan-at-top, digestible chunks) and new Native-dev-server, Caching-guarantees, Secrets, and Stale-instance-hygiene sections.
 - [ ] **DOCS-03**: A policy-lane `docker_dx_doc_contract_test.exs` asserts the canonical commands/URLs are present in `docs/docker_dev_dx.md` and that `localhost:4000` as a dev-start is absent, so the verification-copy drift cannot recur.
 

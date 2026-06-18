@@ -6,7 +6,7 @@ created: 2026-06-13
 priority: medium
 resolves_phase: null
 tags: [dx, docker, infra, cross-repo]
-source: "Surfaced during Phase 16 (16-05 checkpoint) — user could not reach the dashboard at the (wrong) localhost:4000/scoria URL because the fleet owns :4000."
+source: "Surfaced during Phase 16 (16-05 checkpoint) — user could not reach the dashboard through the wrong fixed localhost URL because the fleet owns :4000."
 ---
 
 ## Why this exists
@@ -56,9 +56,11 @@ Implemented 2026-06-04 (+ multi-instance pass, commit `cf9494d`):
 5. **SECURITY:** `.env` (gitignored, untracked — not in git history) holds a real-looking
    `ANTHROPIC_API_KEY` in plaintext. **Rotate it.** Consider a secrets pattern (1Password
    CLI / direnv) for the fleet.
-6. **Doc/plan drift:** GSD plans + agents tell verifiers to run `mix phx.server` →
-   `http://localhost:4000/scoria` (wrong: :4000 is fleet-owned, and the harness is
-   branch-scoped). Update verification copy to `make up` / `make dev` + the real
+6. **Doc/plan drift:** Phase 33 folded the Scoria-local verification-copy cleanup into
+   the active milestone: GSD plans + agents now tell verifiers to use `make up` /
+   `make dev` plus the real branch-scoped endpoint instead of the old fixed-port
+   native start path. Keep the fleet-wide version of this rule in the cross-repo
+   standard. Update verification copy to `make up` / `make dev` + the real
    `http://<instance>.localhost/scoria` URL, and print a **route list** in the launch
    banner (copy-paste-able key routes) so it's obvious where to poke around.
 7. **Dockerfile caching audit:** confirm a CSS/HEEx-only edit does NOT trigger dep refetch

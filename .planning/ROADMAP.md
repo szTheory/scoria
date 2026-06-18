@@ -290,14 +290,14 @@ Plans:
 
 ### Phase 33: Doc restructure + verification-copy correction
 
-**Goal**: `docs/docker_dev_dx.md` is the reference fleet standard a new contributor can read top-to-bottom and understand the full dev model; every stale `localhost:4000` / `mix phx.server` dev-start reference across docs and `.planning/` is corrected to the real commands and URLs.
+**Goal**: `docs/docker_dev_dx.md` is the reference fleet standard a new contributor can read top-to-bottom and understand the full dev model; every stale fixed-port/raw-Phoenix dev-start reference across docs and `.planning/` is corrected to the real commands and URLs.
 **Depends on**: Phases 29, 30, 31, 32 (this phase assembles the complete doc from all Stream A work that precedes it — correct PORT, banner copy, caching section, secrets section must all exist first)
 **Requirements**: DOCS-01, DOCS-02
 **Success Criteria** (what must be TRUE):
 
   1. `docs/docker_dev_dx.md` opens with a persona/JTBD paragraph and a TL;DR gameplan at the top; contains readable sections for Native dev server, Caching guarantees, Secrets, and Stale instance hygiene — each digestible in isolation.
   2. `grep -rn "localhost:4000" docs/operator_verification.md docs/MAINTAINERS.md README.md` returns zero hits where the text instructs starting the dev server (legacy/note contexts with explicit qualification are acceptable if clearly marked).
-  3. `grep -rn "mix phx.server" .planning/` returns zero hits in verification-step or "how to start" contexts — GSD phase/plan prose uses `make up` / `make dev` + the real `*.localhost` or `:4799` URL.
+  3. Active `.planning/` prose has no verification-step or "how to start" contexts using the old raw Phoenix command — GSD phase/plan prose uses `make up` / `make dev` + the real `*.localhost` or `:4799` URL.
 
 **Plans**: 4 plans
 Plans:
