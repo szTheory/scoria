@@ -264,7 +264,8 @@ Plans:
   2. `Dockerfile.dev` contains an invariant comment at the relevant COPY/RUN boundary explaining that the order is deliberate and must not be violated.
   3. `docs/docker_dev_dx.md` contains a layer-invalidation table with at minimum: CSS/HEEx-only edit → app compile only; `config/` edit → dep.compile + app compile; `mix.exs`/`mix.lock` edit → full dep rebuild.
 
-**Plans**: TBD
+**Plans**: 1 plan
+- [ ] 31-01-PLAN.md — Dockerfile boundary invariant comment + docs layer-invalidation table + static COPY-order policy-lane test + empirical cache proof in SUMMARY
 
 ### Phase 32: Secrets pattern + key rotation
 
