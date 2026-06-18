@@ -4,12 +4,12 @@
 // Dev-only — never shipped to Hex (priv/dev is excluded from mix.exs package files).
 //
 // Run via `mix scoria.ui.e2e` (which shells out to `npx playwright test` from
-// priv/dev). The dev dashboard must already be serving (mix phx.server) with seed
-// data applied (mix dev.setup). Base URL is taken from PLAYWRIGHT_BASE_URL.
+// priv/dev). The dev dashboard must already be serving via make dev with seed
+// data applied. Base URL is taken from PLAYWRIGHT_BASE_URL.
 
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4000/scoria';
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4799/scoria';
 
 export default defineConfig({
   // testDir is '.' so spec files live alongside this config (priv/dev/e2e/*.spec.mjs).

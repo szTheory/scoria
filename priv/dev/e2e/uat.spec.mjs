@@ -8,8 +8,7 @@
 // complement, not a duplicate.
 //
 // Prerequisites (owned by `mix scoria.ui.e2e` caller / CI):
-//   mix dev.setup      # creates + migrates the dev DB
-//   mix phx.server     # serves the dashboard at PLAYWRIGHT_BASE_URL
+//   make dev           # serves the dashboard at PLAYWRIGHT_BASE_URL
 //
 // Fixture note: mix scoria.ui.e2e tops up 5 pending approvals for tenant
 // "acme-corp" before Playwright starts (via mark_waiting_for_approval on a
@@ -19,7 +18,7 @@
 import { test, expect } from '@playwright/test';
 import { waitForReady } from './lib/ready.mjs';
 
-const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4000/scoria';
+const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4799/scoria';
 const SEEDED_TENANT = 'acme-corp';
 
 // Opens the decision-confirm modal for a pending approval in the seeded inbox,

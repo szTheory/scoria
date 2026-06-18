@@ -5,7 +5,7 @@
  * combination of data presence, theme, and viewport. Gated on data-scoria-ready.
  *
  * Usage (via mix scoria.ui.shots — do NOT invoke directly in most cases):
- *   node priv/dev/shots.mjs --base-url http://localhost:4000/scoria \
+ *   node priv/dev/shots.mjs --base-url http://localhost:4799/scoria \
  *     --tenant-empty empty-tenant --tenant-seeded acme-corp \
  *     --out-dir priv/shots/2026-06-04 [--release-id <uuid>]
  *
@@ -26,7 +26,7 @@ import { waitForReady } from './e2e/lib/ready.mjs';
 function parseArgs(argv) {
   const args = argv.slice(2);
   const result = {
-    baseUrl: 'http://localhost:4000/scoria',
+    baseUrl: 'http://localhost:4799/scoria',
     tenantEmpty: 'empty-tenant',
     tenantSeeded: 'acme-corp',
     outDir: null,
