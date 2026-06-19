@@ -1,5 +1,26 @@
 # Milestones
 
+## v3.2 Drydock (Shipped: 2026-06-19)
+
+**Phases completed:** 7 phases (29–35), 15 plans
+**Timeline:** 2026-06-18 → 2026-06-19
+**Audit:** `passed` — 14/14 requirements satisfied, 7/7 phases verified, 1/1 integration edge wired, 4/4 flows green. See `.planning/milestones/v3.2-MILESTONE-AUDIT.md`.
+**Tag:** `v3.2` annotated tag pending
+**Known deferred items at close:** 5 (see STATE.md Deferred Items) — `SEED-004`, `FLEET-01`, `FLEET-02`, `ci-policy-job-cache-key-mislabel`, and `make-approval-toasts-legible`
+
+**Delivered:** Makefile hardening (Phase 29) made `make dev` default to `4799`, added safe cleanup/fleet targets, and made `make` print help; launch banner + native-dev notice (Phase 30) derived the `/scoria` route list from the router and showed Traefik + native-dev guidance; Dockerfile caching audit/doc (Phase 31) proved CSS/HEEx-only edits do not force a refetch/recompile; secrets pattern + local key closeout (Phase 32) documented direnv + 1Password and closed the plaintext `.env` concern; docs restructure + verification-copy correction (Phase 33) rewrote `docs/docker_dev_dx.md` as the reference standard; Docker DX drift guard + CI guard extension (Phase 34) pinned the docs contract and extended CI policy coverage to `post-publish-smoke.yml`; and the maintenance release (Phase 35) shipped `0.1.2` to Hex with a green post-publish registry smoke and live upgrade proof.
+
+**Key accomplishments:**
+
+1. **Makefile hardening (Phase 29, DXCLI-01/02/03/04):** The Makefile became the single trustworthy entry point, with `PORT ?= 4799`, scope-safe `clean`/`nuke`, a fleet view, and generated help.
+2. **Launch banner + native-dev notice (Phase 30, DXCLI-05):** The launch banner now derives the `/scoria` route list from `mix phx.routes ScoriaWeb.DevRouter` and shows the Traefik admin link plus native-dev guidance on separate lines.
+3. **Dockerfile caching guarantee (Phase 31, CACHE-01):** CSS/HEEx-only edits were empirically proven not to refetch deps or trigger a full app recompile, and the cache invariant is documented in `Dockerfile.dev`.
+4. **Secrets pattern and key closeout (Phase 32, SEC-01/02):** The repo now documents direnv + 1Password (`op run`) usage and closes the local plaintext key concern without claiming unnecessary rotation.
+5. **Docs truth + drift guard (Phases 33–34, DOCS-01/02/03):** The canonical Docker dev-DX docs were rewritten for maintainer empathy and pinned by a dedicated policy-lane contract that rejects stale `localhost:4000` guidance.
+6. **Maintenance release closeout (Phase 35, REL-01/02/03):** `0.1.2` shipped on Hex, the post-publish smoke passed, and the live upgrade proof exercised `0.1.0 -> 0.1.2`.
+
+---
+
 ## v3.1 CI/CD Velocity (Shipped: 2026-06-17)
 
 **Phases completed:** 6 phases (23–28), 9 plans, 13 tasks

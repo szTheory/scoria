@@ -8,24 +8,24 @@ status: complete
 stopped_at: Completed 35-03-PLAN.md
 last_updated: "2026-06-19T15:45:16Z"
 last_activity: 2026-06-19
-last_activity_desc: Phase 35 complete - 0.1.2 published and post-publish smoke green
+last_activity_desc: v3.2 milestone archived - 0.1.2 published and post-publish smoke green
 progress:
-  total_phases: 13
+  total_phases: 7
   completed_phases: 7
-  total_plans: 16
+  total_plans: 15
   completed_plans: 15
-  percent: 94
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-06-17 after v3.2 Drydock roadmap initialized)
+See: `.planning/PROJECT.md` (updated 2026-06-19 after v3.2 Drydock closeout)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 35 — maintenance-release-0-1-2-publish-post-publish-smoke
+**Current focus:** Planning next milestone
 
 ## Current Position
 
