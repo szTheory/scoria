@@ -57,9 +57,6 @@ defmodule Scoria.PackageSurfaceTest do
 
     assert readme =~ HexConsumerContract.hex_dep_snippet()
 
-    assert readme =~
-             HexConsumerContract.github_fallback_snippet(HexConsumerContract.published_version())
-
     refute readme =~ "until the first Hex publish lands"
 
     active_dep_lines =
@@ -72,6 +69,19 @@ defmodule Scoria.PackageSurfaceTest do
 
     assert length(active_dep_lines) == 1
     assert String.trim(hd(active_dep_lines)) == HexConsumerContract.hex_dep_snippet()
+
+    fallback_lines =
+      readme
+      |> String.split("\n")
+      |> Enum.map(&String.trim/1)
+      |> Enum.filter(&String.starts_with?(&1, "# Fork or pinned patch only: {:scoria,"))
+
+    assert length(fallback_lines) == 1
+    fallback_line = hd(fallback_lines)
+
+    assert fallback_line =~ "Fork or pinned patch only:"
+    assert fallback_line =~ ~r/github:\s+"szTheory\/scoria"/
+    assert fallback_line =~ ~r/tag:\s+"v\d+\.\d+\.\d+"/
 
     for guide <- tl(@docs_extras) do
       assert readme =~ guide
