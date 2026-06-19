@@ -99,7 +99,7 @@ defmodule Scoria.SupportJourney do
       completed_status(),
       "support-copilot gallery",
       "Support Ops Lead",
-      "Scoria.SupportJourney.Handlers",
+      "SupportJourney handlers",
       "mix test.semantic_fast_path",
       "mix test.knowledge",
       "mix test.connector",

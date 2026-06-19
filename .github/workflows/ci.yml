@@ -113,7 +113,7 @@ jobs:
           echo "dashboard did not become ready in time"; exit 1
 
       - name: Run dashboard e2e lane
-        run: mix scoria.ui.e2e
+        run: mix scoria.ui.e2e --base-url http://localhost:4000/scoria
 
       - name: Upload Playwright report
         if: always()

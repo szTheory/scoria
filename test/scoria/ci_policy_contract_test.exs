@@ -33,6 +33,14 @@ defmodule Scoria.CiPolicyContractTest do
     assert ci_verify =~ "postgres"
   end
 
+  test "ci.yml runs e2e against the same port it boots" do
+    ci_entry = File.read!(@ci_entry)
+
+    assert ci_entry =~ "PORT: 4000"
+    assert ci_entry =~ "curl -sSf http://localhost:4000/scoria/approvals"
+    assert ci_entry =~ "mix scoria.ui.e2e --base-url http://localhost:4000/scoria"
+  end
+
   test "release-please.yml uses ci-verify and enables publish-hex for Phase 72" do
     release_please = File.read!(".github/workflows/release-please.yml")
 
