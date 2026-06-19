@@ -66,7 +66,14 @@ defmodule Scoria.HexConsumerContractTest do
     assert HexConsumerContract.semver_upgrade_eligible?("0.1.1")
   end
 
-  test "registry_upgrade_pair/1 resolves previous patch with 0.1.0 floor" do
+  test "registry_upgrade_pair/1 resolves previous live registry release for direct 0.1.2 publish" do
+    assert HexConsumerContract.registry_upgrade_pair("0.1.2") == %{
+             from: "0.1.0",
+             to: "0.1.2"
+           }
+  end
+
+  test "registry_upgrade_pair/1 keeps 0.1.1 on previous live registry release" do
     assert HexConsumerContract.registry_upgrade_pair("0.1.1") == %{
              from: "0.1.0",
              to: "0.1.1"
