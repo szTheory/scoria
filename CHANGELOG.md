@@ -54,7 +54,7 @@ install axis and do not map to Hex versions.
 
 ### Added
 
-- Shared `Scoria.SupportJourney.Handlers` for overlay and gallery journey smokes
+- Shared SupportJourney handlers for overlay and gallery journey smokes
 - Support copilot gallery optional lane journeys: semantic FAQ, knowledge, connector
 - Gallery producer-path orchestrator smoke on `/scoria`
 - `docs/MAINTAINERS.md` for CI topology and release operations
@@ -227,8 +227,8 @@ milestone names as product releases.
 
 | Planning tranche | Shipped | Reference |
 |------------------|---------|-----------|
-| v2.1 | 2026-05-25 | [`.planning/MILESTONES.md#v21-tenant-scoped-semantic-fast-path`](.planning/MILESTONES.md) |
-| v2.3 | 2026-05-27 | [`.planning/MILESTONES.md#v23-runtime-to-handoff-adoption-example`](.planning/MILESTONES.md) |
-| v2.4 | 2026-05-27 | [`.planning/MILESTONES.md#v24-adoption-reliability-contract`](.planning/MILESTONES.md) |
-| v2.5 | 2026-05-27 | [`.planning/MILESTONES.md#v25-installer-safety--upgrade-confidence`](.planning/MILESTONES.md) |
-| v2.6 | 2026-05-28 | [`.planning/MILESTONES.md#v26-warning-ratchet`](.planning/MILESTONES.md) |
+| v2.1 | 2026-05-25 | `.planning/MILESTONES.md#v21-tenant-scoped-semantic-fast-path` |
+| v2.3 | 2026-05-27 | `.planning/MILESTONES.md#v23-runtime-to-handoff-adoption-example` |
+| v2.4 | 2026-05-27 | `.planning/MILESTONES.md#v24-adoption-reliability-contract` |
+| v2.5 | 2026-05-27 | `.planning/MILESTONES.md#v25-installer-safety--upgrade-confidence` |
+| v2.6 | 2026-05-28 | `.planning/MILESTONES.md#v26-warning-ratchet` |

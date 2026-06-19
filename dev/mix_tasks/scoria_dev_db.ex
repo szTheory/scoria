@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Scoria.Dev.Db do
   Plain `mix ecto.migrate` cannot stand up a fresh Scoria database: the core and
   knowledge migration sets are interleaved by foreign-key dependencies and even
   share a version number (`20260511000300`), tracked in separate
-  `schema_migrations` tables via `Scoria.TestSupport.Migrations`.
+  `schema_migrations` tables via the test-support migration helper.
 
   Required order on a fresh DB:
 

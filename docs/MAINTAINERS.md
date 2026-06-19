@@ -39,7 +39,7 @@ The `verify-summary` fan-in aggregates all parallel lane results; any non-succes
 - `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors test/scoria/warning_inventory/tmp_preflight_test.exs`
 - `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --include ratchet_parity test/scoria/warning_inventory/capture_parity_test.exs` — WARN-06 parity guard
 
-The ratchet capture is **compile-only**: `capture_output_standalone!/0` runs `mix do compile --force + test --only __ratchet_compile_only__`, which force-recompiles `lib/` and compiles all test files (emitting compiler warnings to stderr) but executes zero tests. The `--force` step is retained so any future gate extension that filters `lib/` paths is not silently weakened by a warm cache hit. The lane runs Postgres because `mix test` boots `Scoria.Application` (Oban → DB) so the capture runs faithfully (a DB-free `--no-start` run was verified to miss the injected warning). WARN-06 gate parity is guarded by `test/scoria/warning_inventory/capture_parity_test.exs`.
+The ratchet capture is **compile-only**: `capture_output_standalone!/0` runs `mix do compile --force + test --only __ratchet_compile_only__`, which force-recompiles `lib/` and compiles all test files (emitting compiler warnings to stderr) but executes zero tests. The `--force` step is retained so any future gate extension that filters `lib/` paths is not silently weakened by a warm cache hit. The lane runs Postgres because `mix test` boots the Scoria application (Oban -> DB) so the capture runs faithfully (a DB-free `--no-start` run was verified to miss the injected warning). WARN-06 gate parity is guarded by `test/scoria/warning_inventory/capture_parity_test.exs`.
 
 **`knowledge` job (Postgres on 55432):**
 
@@ -331,7 +331,7 @@ The screenshot and LLM-critique harness provides a mechanical proof loop for the
 
    Playwright is a documented maintainer prerequisite (D-02). It is **not** a `mix.exs` dependency — installing it does not affect `mix.lock` or `hex.audit`.
 
-3. **ANTHROPIC_API_KEY** — required only for the `--critique` pass (the LLM vision call). The screenshot pass runs without it. Use the process-scoped 1Password pattern in [Docker dev DX](docker_dev_dx.md#secrets); do not put plaintext provider keys in `.env`, `.envrc`, shell history, logs, screenshots, or planning artifacts.
+3. **ANTHROPIC_API_KEY** — required only for the `--critique` pass (the LLM vision call). The screenshot pass runs without it. Use the process-scoped 1Password pattern in the Docker dev DX Secrets section; do not put plaintext provider keys in `.env`, `.envrc`, shell history, logs, screenshots, or planning artifacts.
 
    ```bash
    op run --env-file "${SCORIA_OP_ENV_FILE:-.env.op}" -- mix scoria.ui.shots --critique --url http://localhost:4799/scoria
@@ -374,7 +374,7 @@ mix scoria.ui.shots --release-id <uuid>                  # navigate directly to 
 
 ### Critique pass (--critique)
 
-Run the critique pass as a separate gated step at phase-milestone boundaries (D-04). It calls `Scoria.UICritique.critique_screen/3` via ReqLLM vision on the canonical populated · desktop · dark state for each screen (~9 vision calls), then writes per-screen findings JSON:
+Run the critique pass as a separate gated step at phase-milestone boundaries (D-04). It calls the UI critique screen function via ReqLLM vision on the canonical populated / desktop / dark state for each screen (~9 vision calls), then writes per-screen findings JSON:
 
 ```bash
 op run --env-file "${SCORIA_OP_ENV_FILE:-.env.op}" -- mix scoria.ui.shots --critique --url http://localhost:4799/scoria

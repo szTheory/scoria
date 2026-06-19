@@ -44,8 +44,8 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
 
   ## Critique pass (`--critique`)
 
-  Starts the Elixir app (to access ReqLLM), then calls
-  `Scoria.UICritique.critique_screen/3` on each screen's canonical state
+  Starts the Elixir app (to access ReqLLM), then calls the UI critique screen
+  function on each screen's canonical state
   (populated × desktop × dark) and writes a findings JSON file alongside
   the PNG. After the per-screen loop completes, aggregates the findings
   into `priv/shots/gap_register.md` (the stable top-level baseline path).
@@ -178,6 +178,7 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
     _ = base_url
 
     Mix.shell().info("[scoria.ui.shots] Running critique pass (9 screens × canonical state)...")
+
     Mix.shell().info(
       "  Dimensions: brand-fit / consistency / hierarchy / affordance / a11y / responsive / motion / microcopy / density"
     )
@@ -228,10 +229,14 @@ defmodule Mix.Tasks.Scoria.Ui.Shots do
 
         if File.exists?(json_path) do
           case Jason.decode(File.read!(json_path)) do
-            {:ok, findings} -> [{screen, findings}]
+            {:ok, findings} ->
+              [{screen, findings}]
 
             {:error, _} ->
-              Mix.shell().info("  ! #{screen}: could not parse populated_dark_desktop.json — skipping")
+              Mix.shell().info(
+                "  ! #{screen}: could not parse populated_dark_desktop.json — skipping"
+              )
+
               []
           end
         else

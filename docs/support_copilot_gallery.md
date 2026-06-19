@@ -49,7 +49,7 @@ Optional lane commands exercised by gallery journeys (run in the main repo, not 
 
 ## Journey fixtures
 
-Shared identities, ticket data, and handler logic live in `Scoria.SupportJourney`, `Scoria.SupportJourney.Handlers`, and `priv/fixtures/support_journey/`. The gallery, host-proof overlay, and this guide must stay aligned via source contract tests.
+Shared identities, ticket data, and handler logic live in `Scoria.SupportJourney`, SupportJourney handlers, and `priv/fixtures/support_journey/`. The gallery, host-proof overlay, and this guide must stay aligned via source contract tests.
 
 ### Default lane
 
@@ -85,4 +85,4 @@ Shared identities, ticket data, and handler logic live in `Scoria.SupportJourney
 
 ## Shared handlers
 
-Overlay smokes and the gallery delegate to `Scoria.SupportJourney.Handlers` so approval, lookup, and lane handlers cannot drift between merge-blocking proof and the reference demo.
+Overlay smokes and the gallery delegate to the shared SupportJourney handlers so approval, lookup, and lane handlers cannot drift between merge-blocking proof and the reference demo.

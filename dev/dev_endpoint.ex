@@ -4,7 +4,7 @@ defmodule ScoriaWeb.DevEndpoint do
 
   Compiled ONLY in `:dev` (see `elixirc_paths/1` in mix.exs) and never shipped
   to Hex. Started via the `:dev_children` application hook (see
-  `Scoria.Application` and `config/dev.exs`) so that `mix phx.server` serves the
+  the Scoria application module and `config/dev.exs`) so that `mix phx.server` serves the
   dashboard at `http://localhost:4799/scoria` for the screenshot/critique
   harness (`mix scoria.ui.shots`) and manual iteration.
 
@@ -28,9 +28,7 @@ defmodule ScoriaWeb.DevEndpoint do
 
   # LiveView socket — the dashboard JS (assets/js/scoria.js) connects here and
   # sets data-scoria-ready="true" once connected, which the harness waits on.
-  socket("/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]]
-  )
+  socket("/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]])
 
   # Live reload is opt-in via SCORIA_DEV_LIVE_RELOAD=1. It is OFF by default
   # because Phoenix.CodeReloader recompiling mid-request makes the connected
