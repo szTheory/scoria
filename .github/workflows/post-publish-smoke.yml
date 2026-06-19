@@ -110,6 +110,13 @@ jobs:
           mix deps.get
           mix compile --warnings-as-errors
 
+      - name: Prepare database
+        run: |
+          mix ecto.create
+          mix ecto.migrate --to 20260511000300
+          mix eval 'Scoria.TestSupport.Migrations.migrate_knowledge!()'
+          mix ecto.migrate
+
       - name: Install phx_new archive for host consumer proof
         run: mix archive.install hex phx_new --force
 

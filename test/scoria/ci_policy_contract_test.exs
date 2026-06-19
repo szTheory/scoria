@@ -216,6 +216,21 @@ defmodule Scoria.CiPolicyContractTest do
     refute Map.fetch!(blocks, "verify-summary") =~ "services:"
   end
 
+  test "post-publish smoke prepares Scoria test database before registry attest" do
+    post_publish = File.read!(@post_publish_smoke)
+    smoke = Map.fetch!(job_blocks(post_publish), "smoke")
+
+    assert smoke =~ "mix ecto.create"
+    assert smoke =~ "mix ecto.migrate --to 20260511000300"
+    assert smoke =~ "Scoria.TestSupport.Migrations.migrate_knowledge!()"
+    assert smoke =~ "mix scoria.post_publish_smoke"
+
+    assert index_of(smoke, "mix ecto.create") < index_of(smoke, "mix scoria.post_publish_smoke")
+
+    assert index_of(smoke, "mix ecto.migrate --to 20260511000300") <
+             index_of(smoke, "mix scoria.post_publish_smoke")
+  end
+
   test "no CI Postgres job binds a host port in the ephemeral range (>= 32768)" do
     ci_verify = File.read!(@ci_verify)
     ci_entry = File.read!(@ci_entry)
