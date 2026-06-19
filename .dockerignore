@@ -15,11 +15,17 @@ scoria-*.tar
 
 # Dev-only / not needed in the image
 priv/dev/node_modules/
+priv/dev/package-lock.json
+priv/dev/test-results/
+priv/dev/e2e/test-results/
+priv/dev/e2e/playwright-report/
 priv/shots/
 .planning/
 examples/
 prompts/
 .env
+.envrc
+.env.op
 
 # priv/static/scoria is rebuilt in-container by `mix scoria.assets.build`
 priv/static/scoria/

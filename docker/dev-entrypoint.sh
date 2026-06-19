@@ -32,6 +32,7 @@ cat <<BANNER
   Traefik admin (which app is routed where):  http://localhost:8080
 
   Native dev server: make dev → http://localhost:4799/scoria
+  Host diagnostics:  make url | make fleet | make doctor
 
   Demo data is seeded on boot (idempotent). Reseed any time with \`make seed\`;
   for a clean slate use \`make reseed\`. Demo deep-links (run / replay / prompt
@@ -42,7 +43,8 @@ ${ROUTES}
 
   Screenshot + critique harness (from the host):
     docker compose --profile shots run --rm shots        # screenshots only
-    docker compose --profile shots run --rm critique     # + LLM critique (needs ANTHROPIC_API_KEY)
+    op run --env-file "\${SCORIA_OP_ENV_FILE:-.env.op}" -- docker compose --profile shots run --rm critique
+      # + LLM critique (ANTHROPIC_API_KEY is mounted as a Compose secret)
     → outputs land in priv/shots/ (gap_register.md committed; captures gitignored)
 ────────────────────────────────────────────────────────────────────
 

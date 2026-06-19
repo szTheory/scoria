@@ -12,13 +12,14 @@
 #   docker network create proxy
 #   docker compose -f docker/traefik/compose.yml up -d
 #
-# Then:  make up                  # http://scoria-<branch>.localhost/scoria
+# Then:  make up-build            # http://scoria-<branch>-<hash>.localhost/scoria
 #
 # Multi-instance: the project name + Traefik host are driven by env vars so two
 # checkouts/branches can run at once without colliding. The Makefile sets them
-# from the git branch (COMPOSE_PROJECT_NAME=scoria-<branch>,
-# SCORIA_HOST=scoria-<branch>.localhost). Running bare `docker compose up`
-# without those set falls back to the plain `scoria` / `scoria.localhost`
+# from the git branch plus a stable checkout hash
+# (COMPOSE_PROJECT_NAME=scoria-<branch>-<hash>,
+# SCORIA_HOST=scoria-<branch>-<hash>.localhost). Running bare `docker compose
+# up` without those set falls back to the plain `scoria` / `scoria.localhost`
 # defaults below (see .env.example to pin them for the bare-compose path).
 #
 # NOTE: there is deliberately no top-level `name:` and no `container_name:` on
@@ -79,7 +80,12 @@ services:
       # by the Makefile (or .env); both fall back to the single-instance default.
       - traefik.enable=true
       - traefik.docker.network=proxy
+      - scoria.local-dev=true
+      - scoria.local-dev.host=${SCORIA_HOST:-scoria.localhost}
+      - scoria.local-dev.kind=dashboard
       - traefik.http.routers.${COMPOSE_PROJECT_NAME:-scoria}.rule=Host(`${SCORIA_HOST:-scoria.localhost}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-scoria}.entrypoints=web
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-scoria}.service=${COMPOSE_PROJECT_NAME:-scoria}
       - traefik.http.services.${COMPOSE_PROJECT_NAME:-scoria}.loadbalancer.server.port=4000
 
   # --- Screenshot/critique harness (profile-gated; excluded from `up`) --------
@@ -94,6 +100,7 @@ services:
     volumes:
       - .:/app
       - shots_node_modules:/app/priv/dev/node_modules
+      - shots_npm_cache:/root/.npm
     environment:
       SHOTS_BASE_URL: http://web:4000/scoria
     depends_on:
@@ -124,13 +131,17 @@ services:
     environment:
       MIX_ENV: dev
       SCORIA_DB_HOST: db
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    secrets:
+      - anthropic_api_key
     depends_on:
       db:
         condition: service_healthy
     networks:
       - default
-    command: ["mix", "scoria.ui.shots", "--critique", "--skip-shots", "--url", "http://web:4000/scoria"]
+    command:
+      - sh
+      - -c
+      - "export ANTHROPIC_API_KEY=\"$$(cat /run/secrets/anthropic_api_key)\" && exec mix scoria.ui.shots --critique --skip-shots --url http://web:4000/scoria"
 
 volumes:
   pgdata:
@@ -139,6 +150,7 @@ volumes:
   hex:
   mix:
   shots_node_modules:
+  shots_npm_cache:
 
 networks:
   # Shared, externally-created proxy network that Traefik also joins. Create once:
@@ -146,3 +158,7 @@ networks:
   proxy:
     external: true
   default:
+
+secrets:
+  anthropic_api_key:
+    environment: ANTHROPIC_API_KEY

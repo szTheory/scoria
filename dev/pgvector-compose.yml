@@ -2,15 +2,18 @@
 #
 # Use this when you run the dev harness directly on the host (`mix phx.server` /
 # `mix dev.setup` / `make dev`): host mix needs a PUBLISHED DB port, so this maps
-# 5432 -> 55432 (a high, fleet-unlikely port to avoid the cross-project 5432
-# clash). The fully-dockerized stack (compose.yml) uses its own UNPUBLISHED `db`
-# service reached by name — do not run both against the same data.
+# 5432 -> ${SCORIA_DB_PORT:-55432} (a high, fleet-unlikely port to avoid the
+# cross-project 5432 clash). The fully-dockerized stack (compose.yml) uses its
+# own UNPUBLISHED `db` service reached by name — do not run both against the
+# same data.
 #
-# Start:  docker compose -f dev/pgvector-compose.yml up -d
+# Start:  make native-db
 # Point the host at it:  SCORIA_DB_PORT=55432 mix dev.setup
 #
 # Pinned to pg16 to match compose.yml's db (one pgvector version everywhere).
 # No container_name: lets you run more than one checkout without a name clash.
+# The Makefile passes `-p <instance>-native`; direct `docker compose -f ...`
+# defaults to project name `dev`, which is easy to collide across repos.
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -19,7 +22,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: scoria_dev
     ports:
-      - "127.0.0.1:55432:5432"
+      - "127.0.0.1:${SCORIA_DB_PORT:-55432}:5432"
     volumes:
       - ./pgvector-init.sql:/docker-entrypoint-initdb.d/01-scoria-init.sql:ro
     healthcheck:
