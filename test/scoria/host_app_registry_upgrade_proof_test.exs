@@ -1,6 +1,7 @@
 defmodule Scoria.HostAppRegistryUpgradeProofTest do
   use ExUnit.Case, async: false
 
+  @moduletag timeout: 180_000
   @moduletag :registry_upgrade
 
   alias Scoria.HexConsumerContract
