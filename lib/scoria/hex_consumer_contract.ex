@@ -19,6 +19,9 @@ defmodule Scoria.HexConsumerContract do
   @baseline_fixture_rel "test/fixtures/hex_consumer/scoria-0.1.0-unpack"
   @baseline_stamp_rel "test/fixtures/hex_consumer/.scoria-hex-baseline.stamp"
   @baseline_git_sha "49f2d60018c4c79fbc09969116526c48454a8e84"
+  @previous_live_registry_releases %{
+    "0.1.2" => "0.1.0"
+  }
 
   @doc """
   Application atom for Scoria Hex package identity.
@@ -160,11 +163,18 @@ defmodule Scoria.HexConsumerContract do
   end
 
   @doc """
-  Previous patch semver for a registry upgrade baseline pin.
+  Previous live Hex registry release for a registry upgrade baseline pin.
 
-  Decrements the patch segment with a floor at `"0.1.0"`. For example,
-  `"0.1.1"` → `"0.1.0"`, `"0.1.2"` → `"0.1.1"`, and `"0.1.0"` stays at
-  `"0.1.0"`.
+  Unit tests stay offline, so release lineage that differs from patch arithmetic
+  is encoded here explicitly from the live-registry preflight. Unknown versions
+  fall back to previous-patch semantics with a floor at `"0.1.0"`.
+  """
+  def previous_live_registry_release(version) when is_binary(version) do
+    Map.get(@previous_live_registry_releases, version, registry_upgrade_from_version(version))
+  end
+
+  @doc """
+  Fallback previous-patch semver for versions without explicit live-registry lineage.
   """
   def registry_upgrade_from_version(version) when is_binary(version) do
     case Version.parse(version) do
@@ -185,7 +195,7 @@ defmodule Scoria.HexConsumerContract do
   """
   def registry_upgrade_pair(current_version) when is_binary(current_version) do
     %{
-      from: registry_upgrade_from_version(current_version),
+      from: previous_live_registry_release(current_version),
       to: current_version
     }
   end
