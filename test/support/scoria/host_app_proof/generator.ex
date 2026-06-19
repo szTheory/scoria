@@ -11,6 +11,8 @@ defmodule Scoria.TestSupport.HostAppProof.Generator do
     overlay_test_files_from(repo_root())
   end
 
+  def registry_overlay_test_files, do: @registry_overlay_files
+
   def overlay_test_files_from(source_root) do
     Path.wildcard(Path.join([source_root, @overlay_test_dir, "*.exs"]))
     |> Enum.map(&Path.basename/1)

@@ -84,8 +84,14 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
   end
 
   def expected_registry_steps(_host) do
-    [:deps_get, :scoria_install, :ecto_create, :ecto_migrate,
-     :host_route_smoke_test, :host_runtime_smoke_test]
+    [
+      :deps_get,
+      :scoria_install,
+      :ecto_create,
+      :ecto_migrate,
+      :host_route_smoke_test,
+      :host_runtime_smoke_test
+    ]
   end
 
   def run_upgrade_proof!(host, opts) do
@@ -119,11 +125,12 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
   end
 
   def expected_upgrade_steps(host) do
-    baseline_overlays = overlay_step_atoms(host.overlay_tests)
+    baseline_overlay_tests = expected_baseline_overlay_tests(host)
+    baseline_overlays = overlay_step_atoms(baseline_overlay_tests)
 
     upgrade_overlays =
       if host.dep_mode == :hex_registry do
-        overlay_step_atoms(host.overlay_tests)
+        overlay_step_atoms(baseline_overlay_tests)
       else
         overlay_step_atoms(Map.get(host, :upgrade_overlay_tests, host.overlay_tests))
       end
@@ -134,8 +141,15 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
         [:scoria_install_check]
 
     upgrade =
-      [:bump_dep, :deps_get, :scoria_install_dry_run, :scoria_install_check_pre_apply,
-       :scoria_install, :ecto_migrate, :scoria_install_check] ++ upgrade_overlays
+      [
+        :bump_dep,
+        :deps_get,
+        :scoria_install_dry_run,
+        :scoria_install_check_pre_apply,
+        :scoria_install,
+        :ecto_migrate,
+        :scoria_install_check
+      ] ++ upgrade_overlays
 
     baseline ++ upgrade
   end
@@ -144,6 +158,12 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
     install = [:deps_get, :scoria_install, :ecto_create, :ecto_migrate]
     install ++ overlay_step_atoms(host.overlay_tests)
   end
+
+  defp expected_baseline_overlay_tests(%{dep_mode: :hex_registry, overlay_tests: []} = host) do
+    Map.get(host, :registry_overlay_tests, Generator.registry_overlay_test_files())
+  end
+
+  defp expected_baseline_overlay_tests(host), do: host.overlay_tests
 
   defp overlay_step_atoms(overlay_tests) do
     overlay_tests
@@ -494,13 +514,16 @@ defmodule Scoria.TestSupport.HostAppProof.Runner do
           status == 1 and String.contains?(output, "SCORIA_CHECK_RESULT status=drift exit_code=1")
 
         :compliant ->
-          status == 0 and String.contains?(output, "SCORIA_CHECK_RESULT status=compliant exit_code=0")
+          status == 0 and
+            String.contains?(output, "SCORIA_CHECK_RESULT status=compliant exit_code=0")
 
         other ->
           raise ArgumentError, "unsupported accept_check_results entry: #{inspect(other)}"
       end)
 
-    if valid?, do: nil, else: "expected pre-apply check drift (exit 1) or compliant (exit 0), got exit #{status}"
+    if valid?,
+      do: nil,
+      else: "expected pre-apply check drift (exit 1) or compliant (exit 0), got exit #{status}"
   end
 
   defp host_env do
