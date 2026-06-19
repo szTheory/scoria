@@ -4,17 +4,17 @@ milestone: v3.2
 milestone_name: Drydock
 current_phase: 35
 current_phase_name: maintenance-release-0-1-2-publish-post-publish-smoke
-status: executing
-stopped_at: Completed 35-01-PLAN.md
-last_updated: "2026-06-19T14:24:07.847Z"
+status: complete
+stopped_at: Completed 35-03-PLAN.md
+last_updated: "2026-06-19T15:45:16Z"
 last_activity: 2026-06-19
-last_activity_desc: Phase 35 execution started
+last_activity_desc: Phase 35 complete - 0.1.2 published and post-publish smoke green
 progress:
   total_phases: 13
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 16
-  completed_plans: 13
-  percent: 81
+  completed_plans: 15
+  percent: 94
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-17 after v3.2 Drydock roadmap initi
 
 ## Current Position
 
-Phase: 35 (maintenance-release-0-1-2-publish-post-publish-smoke) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
-Last activity: 2026-06-19 — Phase 35 Plan 35-01 complete
+Phase: 35 (maintenance-release-0-1-2-publish-post-publish-smoke) — COMPLETE
+Plan: 3 of 3
+Status: Complete
+Last activity: 2026-06-19 — Phase 35 complete; Hex `0.1.2` live and post-publish smoke green
 
 Progress: [██████████] 100%
 
@@ -65,6 +65,9 @@ Recent decisions affecting current work:
 - [Phase 34]: Left `CI / ci-gate`, `ci.yml`, workflow topology, job names, services, matrices, needs, and `Scoria.VerificationLanes.closeout_order/0` unchanged while completing DOCS-03 lane wiring.
 - [Phase 35]: README remains Hex-primary; the commented GitHub fallback is fork/pinned-patch guidance, not a release-candidate tag contract.
 - [Phase 35]: `registry_upgrade_pair("0.1.2")` uses previous live Hex release `0.1.0` instead of patch-minus-one arithmetic.
+- [Phase 35]: Release PR #3 merge authority was latest head `d0eecbb66c19f85d25a77cbae9ce2fd91ca50f11` with `CI / ci-gate` success before release-pr-automerge merged commit `26eb9a5e686fe4957196dfa5c6654121bda65c03`.
+- [Phase 35]: Post-merge Release Please cancellation was classified as uncertain publish recovery because GitHub release `v0.1.2` existed but Hex did not list `0.1.2`; existing `hex-publish.yml` recovery published exact `tag=v0.1.2` / `release_version=0.1.2`.
+- [Phase 35]: After Hex listed `0.1.2`, recovery stayed smoke-only; final post-publish smoke run `27834739958` proved fresh install and live-lineage upgrade `0.1.0 -> 0.1.2`.
 
 ### Pending Todos
 
@@ -98,9 +101,11 @@ None at milestone start.
 | Phase 34 P02 | 4 min | 2 tasks | 2 files |
 | Phase 34 P03 | 2 min | 1 tasks | 1 files |
 | Phase 35 P01 | 14 min | 2 tasks | 3 files |
+| Phase 35 P02 | 30 min | 3 tasks | 18 files |
+| Phase 35 P03 | 48 min | 3 tasks | 6 files |
 
 ## Session Continuity
 
-Last session: 2026-06-19T14:23:58.757Z
-Stopped at: Completed 35-01-PLAN.md
+Last session: 2026-06-19T15:45:16Z
+Stopped at: Completed 35-03-PLAN.md
 Resume file: None

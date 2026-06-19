@@ -1,6 +1,6 @@
 # Roadmap: Scoria
 
-**Last updated:** 2026-06-17 (v3.2 Drydock roadmap initialized — Phases 29–35)
+**Last updated:** 2026-06-19 (Phase 35 complete — `0.1.2` published and post-publish smoke green)
 
 ## Milestones
 
@@ -96,7 +96,7 @@ Full details: `.planning/milestones/v2.15-ROADMAP.md`
 - [ ] **Phase 32: Secrets pattern + key rotation** — direnv + 1Password `op run` pattern, `.envrc`/`.env.op` examples, `ANTHROPIC_API_KEY` rotated
 - [x] **Phase 33: Doc restructure + verification-copy correction** — `docker_dev_dx.md` rewrite + all `localhost:4000` corrected in docs + `.planning/` (completed 2026-06-18)
 - [x] **Phase 34: Docker DX drift guard + CI guard extension** — `docker_dx_doc_contract_test.exs` (policy lane) + extend `ci_policy_contract_test.exs` to scan `post-publish-smoke.yml` (completed 2026-06-18)
-- [ ] **Phase 35: Maintenance release — 0.1.2 publish + post-publish smoke** — port fix + merge PR #3 + publish + smoke GREEN
+- [x] **Phase 35: Maintenance release — 0.1.2 publish + post-publish smoke** — port fix + merge PR #3 + publish + smoke GREEN (completed 2026-06-19)
 
 ## Phase Details
 
@@ -337,11 +337,11 @@ Plans:
   3. The release-please PR #3 merges on green CI, the automated pipeline runs to completion, and `mix hex.info scoria 0.1.2` confirms the version is live on the Hex registry.
   4. The post-publish registry smoke (`mix scoria.post_publish_smoke`) exits GREEN — confirming `0.1.2` installs from the live Hex registry from the GitHub Actions runner region.
 
-**Plans**: 1/3 plans executed
+**Plans**: 3/3 plans complete
 
 - [x] 35-01-PLAN.md
-- [ ] 35-02-PLAN.md
-- [ ] 35-03-PLAN.md
+- [x] 35-02-PLAN.md
+- [x] 35-03-PLAN.md
 
 ## Progress
 
@@ -353,7 +353,7 @@ Plans:
 | 32. Secrets pattern + local key exposure closeout | v3.2 | 2/2 | Complete    | 2026-06-18 |
 | 33. Doc restructure + verification-copy correction | v3.2 | 4/4 | Complete    | 2026-06-18 |
 | 34. Docker DX drift guard + CI guard extension | v3.2 | 3/3 | Complete    | 2026-06-18 |
-| 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 1/3 | In Progress|  |
+| 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 3/3 | Complete   | 2026-06-19 |
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 25. Lane parallelization + topology docs | v3.1 | 2/2 | Complete   | 2026-06-15 |
