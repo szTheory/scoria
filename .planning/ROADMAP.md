@@ -265,6 +265,7 @@ Plans:
   3. `docs/docker_dev_dx.md` contains a layer-invalidation table with at minimum: CSS/HEEx-only edit → app compile only; `config/` edit → dep.compile + app compile; `mix.exs`/`mix.lock` edit → full dep rebuild.
 
 **Plans**: 1 plan
+
 - [x] 31-01-PLAN.md — Dockerfile boundary invariant comment + docs layer-invalidation table + static COPY-order policy-lane test + empirical cache proof in SUMMARY
 
 ### Phase 32: Secrets pattern + local key exposure closeout
@@ -336,7 +337,11 @@ Plans:
   3. The release-please PR #3 merges on green CI, the automated pipeline runs to completion, and `mix hex.info scoria 0.1.2` confirms the version is live on the Hex registry.
   4. The post-publish registry smoke (`mix scoria.post_publish_smoke`) exits GREEN — confirming `0.1.2` installs from the live Hex registry from the GitHub Actions runner region.
 
-**Plans**: TBD
+**Plans**: 1/3 plans executed
+
+- [x] 35-01-PLAN.md
+- [ ] 35-02-PLAN.md
+- [ ] 35-03-PLAN.md
 
 ## Progress
 
@@ -348,7 +353,7 @@ Plans:
 | 32. Secrets pattern + local key exposure closeout | v3.2 | 2/2 | Complete    | 2026-06-18 |
 | 33. Doc restructure + verification-copy correction | v3.2 | 4/4 | Complete    | 2026-06-18 |
 | 34. Docker DX drift guard + CI guard extension | v3.2 | 3/3 | Complete    | 2026-06-18 |
-| 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 0/TBD | Not started | - |
+| 35. Maintenance release — 0.1.2 publish + post-publish smoke | v3.2 | 1/3 | In Progress|  |
 | 23. Cache correctness + build-once job | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 24. Knowledge lane scope fix | v3.1 | 1/1 | Complete    | 2026-06-15 |
 | 25. Lane parallelization + topology docs | v3.1 | 2/2 | Complete   | 2026-06-15 |

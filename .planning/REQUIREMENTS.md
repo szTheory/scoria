@@ -34,8 +34,8 @@ Requirements for milestone v3.2. Each maps to a roadmap phase.
 
 ### REL — maintenance release
 
-- [ ] **REL-01**: Maintainer can merge the open release-please PR on green CI to publish `0.1.2` to Hex, with `mix docs` confirmed clean before merge (no package-landed-but-docs-wrong partial publish).
-- [ ] **REL-02**: A post-publish registry semver upgrade smoke confirms the published `0.1.2` installs from the live Hex registry.
+- [x] **REL-01**: Maintainer can merge the open release-please PR on green CI to publish `0.1.2` to Hex, with `mix docs` confirmed clean before merge (no package-landed-but-docs-wrong partial publish).
+- [x] **REL-02**: A post-publish registry semver upgrade smoke confirms the published `0.1.2` installs from the live Hex registry.
 - [ ] **REL-03**: `post-publish-smoke.yml` Postgres host-port bind is fixed (`55432:5432` → `5432:5432`) and `ci_policy_contract_test.exs` is extended to scan that file for the ephemeral-port ban, closing the v3.1 FLAKE-01 blind spot.
 
 ## v2 Requirements
@@ -83,8 +83,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-01 | Phase 33 | Complete |
 | DOCS-02 | Phase 33 | Complete |
 | DOCS-03 | Phase 34 | Complete |
-| REL-01 | Phase 35 | Pending |
-| REL-02 | Phase 35 | Pending |
+| REL-01 | Phase 35 | Complete |
+| REL-02 | Phase 35 | Complete |
 | REL-03 | Phase 35 | Pending |
 
 **Coverage:**

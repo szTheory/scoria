@@ -2,16 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Drydock
+current_phase: 35
+current_phase_name: maintenance-release-0-1-2-publish-post-publish-smoke
 status: executing
-stopped_at: Phase 35 context gathered — ready to plan
-last_updated: "2026-06-19T01:11:17.603Z"
-last_activity: 2026-06-19 -- Phase 35 planning complete
+stopped_at: Completed 35-01-PLAN.md
+last_updated: "2026-06-19T14:24:07.847Z"
+last_activity: 2026-06-19
+last_activity_desc: Phase 35 execution started
 progress:
   total_phases: 13
   completed_phases: 6
-  total_plans: 15
-  completed_plans: 12
-  percent: 46
+  total_plans: 16
+  completed_plans: 13
+  percent: 81
 ---
 
 # Project State
@@ -22,14 +25,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-17 after v3.2 Drydock roadmap initi
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 35 — maintenance release — 0.1.2 publish + post publish smoke
+**Current focus:** Phase 35 — maintenance-release-0-1-2-publish-post-publish-smoke
 
 ## Current Position
 
-Phase: 35
-Plan: Not started
+Phase: 35 (maintenance-release-0-1-2-publish-post-publish-smoke) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-06-19 -- Phase 35 planning complete
+Last activity: 2026-06-19 — Phase 35 Plan 35-01 complete
 
 Progress: [██████████] 100%
 
@@ -60,6 +63,8 @@ Recent decisions affecting current work:
 - [Phase 34]: Kept Docker DX doc-token ownership in `Scoria.DockerDxDocContractTest`; `ci_policy_contract_test.exs` now retains only the `.env.example` instance example guard for that surface.
 - [Phase 34]: Appended `test/scoria/docker_dx_doc_contract_test.exs` to the existing policy-lane `mix test --no-start --warnings-as-errors` file list only.
 - [Phase 34]: Left `CI / ci-gate`, `ci.yml`, workflow topology, job names, services, matrices, needs, and `Scoria.VerificationLanes.closeout_order/0` unchanged while completing DOCS-03 lane wiring.
+- [Phase 35]: README remains Hex-primary; the commented GitHub fallback is fork/pinned-patch guidance, not a release-candidate tag contract.
+- [Phase 35]: `registry_upgrade_pair("0.1.2")` uses previous live Hex release `0.1.0` instead of patch-minus-one arithmetic.
 
 ### Pending Todos
 
@@ -92,9 +97,10 @@ None at milestone start.
 | Phase 34 P01 | 3 min | 2 tasks | 1 files |
 | Phase 34 P02 | 4 min | 2 tasks | 2 files |
 | Phase 34 P03 | 2 min | 1 tasks | 1 files |
+| Phase 35 P01 | 14 min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-06-18T23:38:46.436Z
-Stopped at: Phase 35 context gathered — ready to plan
-Resume file: .planning/phases/35-maintenance-release-0-1-2-publish-post-publish-smoke/35-CONTEXT.md
+Last session: 2026-06-19T14:23:58.757Z
+Stopped at: Completed 35-01-PLAN.md
+Resume file: None
