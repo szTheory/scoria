@@ -4,8 +4,8 @@ milestone: v3.3
 milestone_name: Design System Stress Test
 current_phase: 37
 current_phase_name: Dev Component Lab And Stress Fixtures
-status: verifying
-stopped_at: Phase 36 UI-SPEC approved
+status: Phase 36 complete
+stopped_at: Phase 36 complete; Phase 37 discussion not started
 last_updated: "2026-06-20T18:01:13.086Z"
 last_activity: 2026-06-20
 last_activity_desc: Phase 36 complete, transitioned to Phase 37
@@ -25,13 +25,13 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 36 — baseline-and-inventory
+**Current focus:** Phase 37 — Dev Component Lab And Stress Fixtures
 
 ## Current Position
 
 Phase: 37 — Dev Component Lab And Stress Fixtures
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Phase 36 complete — ready to discuss Phase 37
 Last activity: 2026-06-20 — Phase 36 complete, transitioned to Phase 37
 
 ## Performance Metrics
