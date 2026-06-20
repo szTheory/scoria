@@ -259,6 +259,24 @@ Every function component emits brand-book semantic classes (`assets/css/04-compo
 driven by design tokens; raw Tailwind palette classes (`bg-rose-200`, etc.) are blocked
 in `lib/scoria_web/ui.ex` by `test/scoria_web/ds06_drift_guard_test.exs`.
 
+CSS selectors should stay component-oriented: prefer block classes, BEM modifiers,
+and inherited token variables over long structural selectors. A modifier-to-element
+selector is acceptable when that relationship is the component contract
+(`.scoria-table-shell--has-summary .scoria-table__viewport`), but avoid reaching
+through unrelated components such as panel → table → filter controls. For shared
+surface variants, add a `ScoriaWeb.UI` option such as `flush={true}` and let the
+component emit the modifier class.
+
+Tables use one canonical compact scan density. Do not add user-facing
+compact/default/comfortable toggles; they add decision overhead without changing
+the operator job. If a table needs a different rhythm, solve it as a distinct
+component or documented surface variant instead of page-local row-density state.
+
+Page headers own screen-level orientation. When a page has one primary scan
+surface, keep the table/list panel headerless unless a visible section heading
+introduces a distinct peer region or decision boundary. This avoids repeating
+the page title as inner card chrome while preserving dense table containment.
+
 ### Components at a glance
 
 | Component | Purpose |
@@ -266,7 +284,7 @@ in `lib/scoria_web/ui.ex` by `test/scoria_web/ds06_drift_guard_test.exs`.
 | `badge/1` | Status badge — tone + label, never color-alone |
 | `button/1` | Primary / ghost / danger button (brand book §8.5) |
 | `eyebrow/1` | Small uppercase category/status label |
-| `panel/1` | Panel/card surface with optional eyebrow + title + actions header |
+| `panel/1` | Panel/card surface with optional eyebrow + title + actions header; `flush={true}` keeps table viewports edge-to-edge while preserving chrome gutters |
 | `metric/1` | Metric card: label, big value, explicit delta (brand book §11.3) |
 | `id/1` | Copyable monospace identifier — CopyId JS hook |
 | `attention_card/1` | Status Home actionable-state card |
@@ -287,7 +305,7 @@ in `lib/scoria_web/ui.ex` by `test/scoria_web/ds06_drift_guard_test.exs`.
 | `evidence_rows/1` | Key-value evidence rows |
 | `evidence_action_row/1` | Compact evidence action/link row |
 | `evidence_empty/1` | Notebook-scoped evidence empty state |
-| `table/1` | Sortable, density-aware, paginated data table (DS-01) |
+| `table/1` | Sortable, paginated operator scan table with canonical compact density (DS-01) |
 | `flash_group/1` | Flash notification group (DS-05) |
 | `tone/1` | Utility: maps status string/atom → semantic tone atom |
 | `status_label/1` | Utility: human-readable label for a status string |

@@ -303,6 +303,11 @@ at the provider before using it again.
 Use this when a route opens the wrong checkout, the fallback points at a
 different container, or a previous branch's data is still in the way.
 
+The source of truth for the latest local Scoria UI is always the route printed by `make url`
+from the checkout you are working in. Old milestone or branch hostnames such
+as `scoria-v217-brand-vesicle.localhost` are just running Compose projects;
+they are not aliases for "latest".
+
 Commands:
 
 ```bash
@@ -317,8 +322,9 @@ Expected output:
 - `make fleet` lists Traefik-routed demo containers across the local fleet,
   including Compose project, container name, status, and ports.
 - `make doctor` prints the current Scoria instance, proxy network status,
-  routed container table, native pgvector helper status, and host Postgres
-  connection pressure.
+  whether the current web container is running, stale Scoria routes that are
+  not this checkout, the routed container table, native pgvector helper status,
+  and host Postgres connection pressure.
 
 Footguns:
 
@@ -333,6 +339,7 @@ Recovery:
 
 ```bash
 make fleet
+make doctor
 make down INSTANCE=<project>
 make up
 make url

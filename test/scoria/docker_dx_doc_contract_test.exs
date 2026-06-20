@@ -28,6 +28,7 @@ defmodule Scoria.DockerDxDocContractTest do
     for fragment <- [
           "make up",
           "make dev",
+          "make url",
           "make nuke",
           "ANTHROPIC_API_KEY"
         ] do
@@ -36,6 +37,19 @@ defmodule Scoria.DockerDxDocContractTest do
 
     assert_any_doc_fragment!(docs, ["4799", "http://localhost:4799/scoria"], "native URL")
     assert_any_doc_fragment!(docs, ["direnv", "1Password"], "process-scoped secrets setup")
+  end
+
+  test "pins latest local UI source of truth and stale-route cleanup" do
+    docs = docker_dx_docs()
+
+    for fragment <- [
+          "source of truth for the latest local Scoria UI",
+          "route printed by `make url`",
+          "not aliases for \"latest\"",
+          "make down INSTANCE=<project>"
+        ] do
+      assert_doc_contains!(docs, fragment, "latest-local-UI stale-route contract")
+    end
   end
 
   test "pins cache-table reader strings" do

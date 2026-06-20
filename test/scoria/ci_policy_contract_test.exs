@@ -728,6 +728,8 @@ defmodule Scoria.CiPolicyContractTest do
 
     assert web =~ ~s("127.0.0.1::4000")
     assert compose =~ "proxy:\n    external: true"
+    assert web =~ "SCORIA_DB_HOST: db"
+    assert web =~ "SCORIA_DB_PORT: 5432"
 
     assert web =~
              "traefik.http.routers.${COMPOSE_PROJECT_NAME:-scoria}.rule=Host(`${SCORIA_HOST:-scoria.localhost}`)"
@@ -794,6 +796,11 @@ defmodule Scoria.CiPolicyContractTest do
     assert makefile =~ "docker compose up --build"
     assert makefile =~ "docker ps --filter label=traefik.enable=true"
     assert makefile =~ "doctor:"
+    assert makefile =~ "Current web: NOT running"
+    assert makefile =~ "Stale Scoria Traefik routes"
+    assert makefile =~ "These Scoria routes are NOT this checkout's latest instance"
+    assert makefile =~ "Safe cleanup: make down INSTANCE=<project>"
+    assert makefile =~ "If data is the problem: make nuke INSTANCE=<project>"
     assert makefile =~ "SCORIA_DB_PORT ?= 55432"
     assert makefile =~ "SCORIA_DB_POOL_SIZE ?= 5"
     assert makefile =~ "NATIVE_PROJECT_NAME ?= $(COMPOSE_PROJECT_NAME)-native"

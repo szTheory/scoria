@@ -52,6 +52,7 @@ services:
       PHX_HOST: ${SCORIA_HOST:-scoria.localhost}
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-scoria}
       SCORIA_DB_HOST: db
+      SCORIA_DB_PORT: 5432
       SCORIA_DB_USERNAME: postgres
       SCORIA_DB_PASSWORD: postgres
       SCORIA_DB_NAME: scoria_dev
@@ -131,6 +132,7 @@ services:
     environment:
       MIX_ENV: dev
       SCORIA_DB_HOST: db
+      SCORIA_DB_PORT: 5432
     secrets:
       - anthropic_api_key
     depends_on:

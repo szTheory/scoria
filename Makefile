@@ -126,6 +126,25 @@ native-db-down:
 doctor:
 	@echo "==> Current Scoria instance"
 	@$(MAKE) --no-print-directory url
+	@current_web=$$(docker compose ps --status running -q web 2>/dev/null || true); \
+	if [ -n "$$current_web" ]; then \
+		echo "Current web: running ($$current_web)"; \
+	else \
+		echo "Current web: NOT running — start latest with: make up-d-build"; \
+	fi
+	@echo ""
+	@echo "==> Stale Scoria Traefik routes"
+	@stale=$$(docker ps --filter label=traefik.enable=true \
+		--format '{{.Label "com.docker.compose.project"}}	{{.Names}}	{{.Status}}	{{.Label "scoria.local-dev.host"}}' \
+		| awk -F '\t' -v current='$(COMPOSE_PROJECT_NAME)' '$$1 ~ /^scoria/ && $$1 != current { print }'); \
+	if [ -z "$$stale" ]; then \
+		echo "No stale Scoria Traefik routes detected."; \
+	else \
+		echo "These Scoria routes are NOT this checkout's latest instance:"; \
+		printf '%s\n' "$$stale" | awk -F '\t' '{ printf "  %-32s %-42s %s\n", $$1, $$2, $$3 }'; \
+		echo "Safe cleanup: make down INSTANCE=<project>  (keeps volumes)"; \
+		echo "If data is the problem: make nuke INSTANCE=<project>"; \
+	fi
 	@echo ""
 	@echo "==> Shared proxy network"
 	@docker network inspect proxy --format 'proxy network exists ({{.Name}})' 2>/dev/null || echo "proxy network missing; run: make proxy"
