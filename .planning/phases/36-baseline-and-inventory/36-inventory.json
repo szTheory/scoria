@@ -1,0 +1,80 @@
+{
+  "generated_at": "2026-06-20T16:14:13Z",
+  "git_sha": "6054d80616a78bae8bcadd574cf955193bf2c07b",
+  "phase": "36-baseline-and-inventory",
+  "scope": "v3.3 design-system baseline inventory contract",
+  "schema_version": 1,
+  "layer_enum": [
+    "foundation",
+    "primitive",
+    "component-group",
+    "page",
+    "hook",
+    "fixture",
+    "test",
+    "doc",
+    "one-off"
+  ],
+  "status_enum": [
+    "canonical",
+    "duplicated",
+    "legacy",
+    "missing",
+    "intentionally-page-specific"
+  ],
+  "required_row_fields": [
+    "id",
+    "name",
+    "layer",
+    "status",
+    "owner_path",
+    "evidence",
+    "replacement_or_owner",
+    "next_action",
+    "risk_refs"
+  ],
+  "baseline": {
+    "cleanup_commits": [
+      "1773267",
+      "d35906f",
+      "4337c5e",
+      "452f035",
+      "2d324a0",
+      "f490cea"
+    ],
+    "v3_3_planning_start": "8540e04",
+    "current_planning_lineage_hint": "git log --oneline -12",
+    "proof": {
+      "exunit": [
+        "test/scoria_web/ui_component_test.exs",
+        "test/scoria_web/ds06_drift_guard_test.exs"
+      ],
+      "browser": [
+        "priv/dev/e2e/",
+        "mix scoria.ui.shots"
+      ],
+      "advisory_screenshots": [
+        "priv/shots/gap_register.md",
+        "priv/shots/gap_register_final.md"
+      ],
+      "screenshots_are_advisory": true,
+      "screenshot_diff_ci_out_of_scope": true,
+      "v3_0_proof_gaps_are_inventory_risks": true
+    }
+  },
+  "classification_rules": {
+    "canonical": "Clear owner, stable API/token/route contract, representative usage, and appropriate tests or docs for the layer.",
+    "duplicated": "Two or more items solve the same UI job; cite call sites and identify the preferred replacement or consolidation target.",
+    "legacy": "Still used but superseded; include the migration target.",
+    "missing": "Repeated code, repeated copy, repeated tests, or documented needs imply an absent abstraction, state, fixture, proof, or doc.",
+    "intentionally-page-specific": "Tied to a named LiveView/page workflow where extraction would leak domain context or reduce clarity."
+  },
+  "phoenix_ownership_boundaries": {
+    "function_components": "Preferred primitive shape when attr/slot contracts can define reusable UI.",
+    "live_components": "Use for stateful component behavior.",
+    "js_hooks": "Use for browser interop that Phoenix.LiveView.JS and server-rendered LiveView cannot cover cleanly.",
+    "css": "Token-scoped through the Scoria design system."
+  },
+  "rows": [],
+  "risks": []
+}
