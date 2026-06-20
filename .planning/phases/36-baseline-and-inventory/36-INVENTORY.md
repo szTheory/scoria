@@ -121,15 +121,17 @@ Phoenix ownership boundaries stay explicit. Function components with `attr`/`slo
 
 ## Known Risk Register
 
-The canonical risk rows live in `36-inventory.json`. This Markdown section summarizes the risk model only: later phases that touch a row with `risk_refs` must mitigate the risk, prove it unchanged, or explicitly defer it with evidence.
+The canonical risk rows live in `36-inventory.json`. This Markdown section summarizes the central register only: later phases that touch a row with `risk_refs` must mitigate the risk, prove it unchanged, or explicitly defer it with evidence.
 
-Required starting risks:
+| Risk | Owner Phase | Summary |
+|------|-------------|---------|
+| `RISK-V30-PROOF` | 41 | Stale v3.0 proof gaps and partial verification-doc coverage stay visible as proof work, not automatic UI regressions. |
+| `RISK-TOAST-LEGIBILITY` | 38 | Approval warning/error toast readability over dense UI, folded from `.planning/todos/pending/2026-06-18-make-approval-toasts-legible.md`. |
+| `RISK-APPROVAL-HISTORY` | 39 | Discoverability of approved, denied, and expired approvals without implying in-place reversal, folded from `.planning/todos/pending/2026-06-20-add-approval-decision-history.md`. |
+| `RISK-RESPONSIVE-SCAN` | 40 | Responsive tables/lists and mobile scan paths must remain usable at narrow widths. |
+| `RISK-OVERLAY-FOCUS` | 40 | Drawers, modals, command palette, mobile nav, focus restoration, escape behavior, reduced motion, and theme parity remain cross-cutting proof risks. |
 
-- `RISK-V30-PROOF`: stale v3.0 proof gaps and partial verification-doc coverage.
-- `RISK-TOAST-LEGIBILITY`: approval warning/error toast readability over dense UI.
-- `RISK-APPROVAL-HISTORY`: discoverability of approved, denied, and expired approvals without implying in-place reversal.
-- `RISK-RESPONSIVE-SCAN`: responsive tables/lists and mobile scan paths.
-- `RISK-OVERLAY-FOCUS`: drawers, modals, command palette, mobile nav, focus restoration, escape behavior, reduced motion, and theme parity.
+Phase 36 keeps Scoria's operator-first embedded-library posture: repo-local artifacts, Phoenix-native proof, Mix-task evidence, Ecto/Phoenix/LiveView boundaries, no hidden hosted-service assumptions, and no runtime dependency expansion. Brandbook ownership remains canonical for tone and visual direction. Inventory `next_action` text should stay design-pillar-aware: accessibility, responsive behavior, theme parity, motion/reduced motion, performance and render stability, information hierarchy, affordance clarity, density/scannability, microcopy, evidence discoverability, keyboard/focus behavior, and brand fit.
 
 ## Excluded From Phase 36
 

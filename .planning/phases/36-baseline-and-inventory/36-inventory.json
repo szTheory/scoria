@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-20T16:14:13Z",
+  "generated_at": "2026-06-20T16:20:00Z",
   "git_sha": "6054d80616a78bae8bcadd574cf955193bf2c07b",
   "phase": "36-baseline-and-inventory",
   "scope": "v3.3 design-system baseline inventory contract",
@@ -75,6 +75,222 @@
     "js_hooks": "Use for browser interop that Phoenix.LiveView.JS and server-rendered LiveView cannot cover cleanly.",
     "css": "Token-scoped through the Scoria design system."
   },
-  "rows": [],
-  "risks": []
+  "rows": [
+    {
+      "id": "FOUND-BRANDBOOK",
+      "name": "Canonical Scoria brandbook",
+      "layer": "foundation",
+      "status": "canonical",
+      "owner_path": "brandbook/brand-book.md",
+      "evidence": [
+        "brandbook/brand-book.md",
+        "brandbook/tokens.json",
+        "brandbook/tokens.css",
+        ".planning/phases/36-baseline-and-inventory/36-CONTEXT.md:D-26"
+      ],
+      "replacement_or_owner": "brandbook/",
+      "next_action": "Use brandbook voice and tokens as the operator-grade baseline for Phase 37 lab labels and Phase 38-41 UI polish; verify brand fit, theme parity, microcopy, and evidence-led tone before changing visual language.",
+      "risk_refs": []
+    },
+    {
+      "id": "FOUND-CSS-TOKENS",
+      "name": "Scoria semantic CSS tokens",
+      "layer": "foundation",
+      "status": "canonical",
+      "owner_path": "assets/css/02-tokens.css",
+      "evidence": [
+        "assets/css/02-tokens.css",
+        "assets/css/03-base.css",
+        "assets/css/05-motion.css",
+        "test/scoria_web/token_contrast_guard_test.exs"
+      ],
+      "replacement_or_owner": "assets/css/02-tokens.css",
+      "next_action": "Keep token changes semantic and prove contrast, focus visibility, theme parity, reduced-motion behavior, and render stability before primitive or page-level changes consume them.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "FOUND-CSS-COMPONENTS",
+      "name": "Scoria component CSS layer",
+      "layer": "foundation",
+      "status": "canonical",
+      "owner_path": "assets/css/04-components.css",
+      "evidence": [
+        "assets/css/04-components.css",
+        "test/scoria_web/ds06_drift_guard_test.exs",
+        "priv/shots/gap_register_final.md"
+      ],
+      "replacement_or_owner": "assets/css/04-components.css",
+      "next_action": "Use this as the shared styling owner for primitives and component groups; Phase 38 should prove toast legibility, density/scannability, focus states, and responsive table/list behavior without page-local CSS patches.",
+      "risk_refs": [
+        "RISK-TOAST-LEGIBILITY",
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-SCORIA-UI",
+      "name": "ScoriaWeb.UI primitive gateway",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "lib/scoria_web/ui.ex",
+        "test/scoria_web/ui_component_test.exs",
+        "test/scoria_web/ds06_drift_guard_test.exs",
+        "docs/MAINTAINERS.md"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI",
+      "next_action": "Feed Phase 37 with representative states for every primitive; Phase 38 should keep attr/slot contracts, accessible names, keyboard/focus behavior, density, copy affordances, and evidence discoverability consistent.",
+      "risk_refs": [
+        "RISK-TOAST-LEGIBILITY",
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "HOOK-SCORIA-JS",
+      "name": "Scoria browser interop hooks",
+      "layer": "hook",
+      "status": "canonical",
+      "owner_path": "assets/js/scoria.js",
+      "evidence": [
+        "assets/js/scoria.js",
+        "priv/dev/e2e/",
+        "lib/scoria_web/components/layouts/app.html.heex"
+      ],
+      "replacement_or_owner": "assets/js/scoria.js",
+      "next_action": "Inventory hook consumers before changing behavior; Phase 40 should prove command palette, mobile nav, dismissable overlays, copy feedback, theme switching, escape behavior, and focus restoration under keyboard and reduced-motion paths.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "TEST-DS06-DRIFT",
+      "name": "DS-06 raw palette drift guard",
+      "layer": "test",
+      "status": "canonical",
+      "owner_path": "test/scoria_web/ds06_drift_guard_test.exs",
+      "evidence": [
+        "test/scoria_web/ds06_drift_guard_test.exs",
+        "test/support/ds06_baseline.txt",
+        "priv/shots/gap_register_final.md"
+      ],
+      "replacement_or_owner": "test/scoria_web/ds06_drift_guard_test.exs",
+      "next_action": "Keep the guard strict and parseable; Phase 41 should preserve raw-palette-zero proof while adding targeted guardrails for duplicate density controls, inaccessible icon buttons, unreadable toasts, and untested component states.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "DOC-MAINTAINERS",
+      "name": "Maintainer design-system and proof docs",
+      "layer": "doc",
+      "status": "canonical",
+      "owner_path": "docs/MAINTAINERS.md",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "docs/uat_automation.md",
+        ".planning/PROJECT.md"
+      ],
+      "replacement_or_owner": "docs/MAINTAINERS.md",
+      "next_action": "Use Phase 41 to align maintainer docs with the final component lab, proof commands, accessibility/responsive/motion conventions, screenshot limitations, and operator-first page guidance.",
+      "risk_refs": [
+        "RISK-V30-PROOF",
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "DOC-SHOTS-GAP-REGISTER",
+      "name": "Screenshot gap register and final proof notes",
+      "layer": "doc",
+      "status": "canonical",
+      "owner_path": "priv/shots/gap_register_final.md",
+      "evidence": [
+        "priv/shots/gap_register.md",
+        "priv/shots/gap_register_final.md",
+        ".planning/milestones/v3.0-MILESTONE-AUDIT.md"
+      ],
+      "replacement_or_owner": "priv/shots/gap_register_final.md",
+      "next_action": "Treat screenshots as advisory evidence; Phase 41 should separate fixed issues from deferred proof gaps and only promote visual CI if the screenshot harness becomes deterministic enough.",
+      "risk_refs": [
+        "RISK-V30-PROOF",
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "risk_id": "RISK-V30-PROOF",
+      "title": "Stale v3.0 proof gaps and partial verification-doc coverage",
+      "affected_jtbd_persona_operator_flow": "Maintainer needs to distinguish functional UI regressions from missing or partial proof before planning v3.3 guardrails.",
+      "affected_inventory_refs": [
+        "TEST-DS06-DRIFT",
+        "DOC-MAINTAINERS",
+        "DOC-SHOTS-GAP-REGISTER"
+      ],
+      "owner_phase": "41",
+      "mitigation_evidence_target": "Phase 41 proof/docs closeout that reconciles v3.0 audit gaps, final gap register limitations, screenshot proof limits, and new regression guardrails.",
+      "status": "open",
+      "closeout_proof": "Phase 41 summary cites focused ExUnit/browser proof plus final docs explaining fixed issues, accepted limitations, and deferred visual-CI decisions."
+    },
+    {
+      "risk_id": "RISK-TOAST-LEGIBILITY",
+      "title": "Approval warning/error toast readability over dense UI",
+      "affected_jtbd_persona_operator_flow": "Operator rejects or handles an approval and must read immediate feedback over a dense approval inbox without row text competing with toast text.",
+      "affected_inventory_refs": [
+        "FOUND-CSS-COMPONENTS",
+        "PRIM-SCORIA-UI"
+      ],
+      "owner_phase": "38",
+      "mitigation_evidence_target": "Fold .planning/todos/pending/2026-06-18-make-approval-toasts-legible.md into Phase 38 primitive/control work and prove warning/error toasts remain readable over dense approvals UI in light and dark themes.",
+      "status": "open",
+      "closeout_proof": "Phase 38 test or browser proof places an approval warning/error toast over dense approval rows and verifies readable text, opaque-enough background, border contrast, and close-button usability."
+    },
+    {
+      "risk_id": "RISK-APPROVAL-HISTORY",
+      "title": "Approval decision history discoverability",
+      "affected_jtbd_persona_operator_flow": "Operator needs to find approved, denied, rejected, or expired approval decisions later without the UI implying a decided request can be approved in place.",
+      "affected_inventory_refs": [
+        "PRIM-SCORIA-UI"
+      ],
+      "owner_phase": "39",
+      "mitigation_evidence_target": "Fold .planning/todos/pending/2026-06-20-add-approval-decision-history.md into Phase 39 approvals flow work and prove decided approvals are discoverable with linked run and audit evidence.",
+      "status": "open",
+      "closeout_proof": "Phase 39 tests show a denied/rejected approval leaves the pending inbox, appears in decision history, exposes request/decision evidence, and cannot be approved in place."
+    },
+    {
+      "risk_id": "RISK-RESPONSIVE-SCAN",
+      "title": "Responsive tables/lists and mobile scan paths",
+      "affected_jtbd_persona_operator_flow": "Operator scans approvals, incidents, datasets, prompts, evals, and evidence on mobile/tablet/desktop without clipped content, trapped scroll, or hidden essential fields.",
+      "affected_inventory_refs": [
+        "FOUND-CSS-COMPONENTS",
+        "PRIM-SCORIA-UI",
+        "DOC-MAINTAINERS",
+        "DOC-SHOTS-GAP-REGISTER"
+      ],
+      "owner_phase": "40",
+      "mitigation_evidence_target": "Phase 40 responsive proof across 320, 375, 768, 1024, 1440, and wide desktop widths with table/list scan paths and mobile summaries.",
+      "status": "open",
+      "closeout_proof": "Phase 40 browser proof records no clipped content, squished essential columns, trapped scroll, or floating controls covering navigation across required widths."
+    },
+    {
+      "risk_id": "RISK-OVERLAY-FOCUS",
+      "title": "Overlay focus, dismissal, motion, and theme parity",
+      "affected_jtbd_persona_operator_flow": "Keyboard and reduced-motion users need drawers, modals, command palette, mobile nav, copy controls, and theme switching to remain predictable during operator decisions.",
+      "affected_inventory_refs": [
+        "FOUND-CSS-TOKENS",
+        "FOUND-CSS-COMPONENTS",
+        "PRIM-SCORIA-UI",
+        "HOOK-SCORIA-JS",
+        "DOC-MAINTAINERS"
+      ],
+      "owner_phase": "40",
+      "mitigation_evidence_target": "Phase 40 accessibility, motion, and theme proof for focus trap/restoration, escape and click-outside dismissal, reduced motion, and light/dark/system parity.",
+      "status": "open",
+      "closeout_proof": "Phase 40 browser and ExUnit proof covers keyboard-only navigation, visible focus, trapped/restored focus, reduced-motion behavior, and theme parity for overlays and shell controls."
+    }
+  ]
 }
