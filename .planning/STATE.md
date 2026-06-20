@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.2
-milestone_name: Drydock
-current_phase: 35
-current_phase_name: maintenance-release-0-1-2-publish-post-publish-smoke
-status: complete
-stopped_at: Completed 35-03-PLAN.md
-last_updated: "2026-06-19T15:45:16Z"
-last_activity: 2026-06-19
-last_activity_desc: v3.2 milestone archived - 0.1.2 published and post-publish smoke green
+milestone: v3.3
+milestone_name: Design System Stress Test
+status: planning
+last_updated: "2026-06-20T15:17:48.071Z"
+last_activity: 2026-06-20
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 6
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,16 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-19 after v3.2 Drydock closeout)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Planning next milestone
+**Current focus:** v3.3 Design System Stress Test
 
 ## Current Position
 
-Phase: 35 (maintenance-release-0-1-2-publish-post-publish-smoke) — COMPLETE
-Plan: 3 of 3
-Status: Complete
-Last activity: 2026-06-19 — Phase 35 complete; Hex `0.1.2` live and post-publish smoke green
-
-Progress: [██████████] 100%
+Phase: 36 (baseline-and-inventory) — Not started
+Plan: —
+Status: Roadmap ready
+Last activity: 2026-06-20 — Milestone v3.3 requirements and roadmap created
 
 ## Performance Metrics
 
@@ -71,9 +65,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Phase 33: Restructure Docker DX docs and correct verification-copy drift now that Phase 32's no-Git-exposure SEC-02 closeout is recorded.
-- UI follow-up: make approval rejection toasts legible over dense approvals UI — `make-approval-toasts-legible` todo.
-- UI follow-up: add approval decision history for approved/denied/expired requests — `add-approval-decision-history` todo.
+- UI follow-up: make approval rejection toasts legible over dense approvals UI — mapped to v3.3 Phase 38.
+- UI follow-up: add approval decision history for approved/denied/expired requests — mapped to v3.3 Phase 39.
 - Post-v3.2: SEED-004 test-code determinism (async `IntegrationCase`, `Process.sleep` removal) — leading candidate for next milestone.
 - Post-v3.2: FLEET-01 sibling-repo convergence (rulestead/parapet) — `docker-dx-fleet-hardening` todo.
 - Post-ship cleanup: `ci-policy-job-cache-key-mislabel` (carried from v3.1 close).

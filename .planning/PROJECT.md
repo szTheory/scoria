@@ -22,14 +22,18 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 **Current posture:**
 - Scoria remains the reference implementation for the embedded Traefik + `*.localhost` stack.
 - Sibling-repo migration and proxy bake-offs remain out of scope.
-- The next meaningful work is test determinism and fleet convergence, not more release plumbing.
+- The dashboard has recently had a focused UX cleanup pass. The next milestone intentionally turns that into a systematic design-system stress test instead of continuing one-off page tweaks.
 
-## Next Milestone Goals
+## Current Milestone: v3.3 Design System Stress Test
 
-- Close `SEED-004` test-code determinism: make the serial `IntegrationCase`/`Process.sleep` work measurable and parallel-friendly.
-- Decide whether any additional v3.2 cleanup is worth pulling forward, or keep it as post-ship hygiene.
-- Revisit cross-repo fleet convergence only if the current repo needs a broader reference standard.
-- Keep the release/verification bar stable while starting the next milestone from fresh requirements.
+**Goal:** Make the embedded `/scoria` admin/operator UI internally coherent at the foundation, component, component-group, page-flow, copy, accessibility, motion, fixture, and proof levels without regressing the recent cleanup work.
+
+**Target features:**
+- Inventory every dashboard primitive, component group, page flow, fixture path, and one-off style pattern so the system has a clear quality map.
+- Add a dev-only component lab that stress-tests Scoria UI primitives and recurring groups across theme, viewport, state, and ugly-data cases without changing the public dashboard macro or Hex footprint.
+- Tighten shared controls, stats, overlays, toasts, evidence/code blocks, drawers, tables/lists, forms, navigation, copy, focus, and motion through shared components and tokens rather than page-local patches.
+- Re-audit primary operator flows through JTBD, persona, accessibility, responsive, reduced-motion, and dense-data lenses.
+- Lock the improvements with tests, screenshots, docs, and drift guards so later UI work keeps moving forward.
 
 ## Previous Shipped Milestone: v3.0 Control Room (2026-06-14)
 

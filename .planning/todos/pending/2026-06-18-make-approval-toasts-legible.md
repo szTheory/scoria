@@ -2,6 +2,7 @@
 created: 2026-06-18T16:56:06.447Z
 title: Make approval toasts legible over dense UI
 area: ui
+resolves_phase: 38
 files:
   - assets/css/04-components.css:1120
   - /Users/jon/Desktop/Capture d’écran 2026-06-18 à 12.47.16 PM.png

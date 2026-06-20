@@ -2,6 +2,7 @@
 created: 2026-06-20T13:51:23Z
 title: Add approval decision history
 area: ui
+resolves_phase: 39
 files:
   - lib/scoria/workflows/remote_approval_projection.ex:16
   - lib/scoria_web/live/approvals_live/index.ex:253
