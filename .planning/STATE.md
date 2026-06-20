@@ -17,7 +17,7 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-06-19 after v3.2 Drydock closeout)
+See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Test)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
@@ -32,8 +32,8 @@ Last activity: 2026-06-20 — Milestone v3.3 requirements and roadmap created
 
 ## Performance Metrics
 
-- **Latest Shipped:** `v3.1 CI/CD Velocity` (2026-06-17) — 9 plans, 6 phases, 13 tasks. Audit `passed` (13/13). PR CI 77m→7m38s MEASURED.
-- **Previous Shipped:** `v3.0 Control Room` (2026-06-14) — 38 plans, 7 phases, 65 tasks. Audit `gaps_found` accepted.
+- **Latest Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
+- **Previous Shipped:** `v3.1 CI/CD Velocity` (2026-06-17) — 9 plans, 6 phases, 13 tasks. Audit `passed`; PR CI 77m→7m38s MEASURED.
 
 *Updated after each plan completion*
 
