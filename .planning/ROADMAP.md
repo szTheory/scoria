@@ -11,6 +11,7 @@
 **Requirements:** BASE-01, INV-01, INV-02
 
 **Success criteria:**
+
 1. Current UI cleanup is committed separately from v3.3 work.
 2. Inventory names foundations, primitives, component groups, pages, CSS/JS hooks, fixtures, tests, and docs.
 3. Inventory classifies each item as canonical, duplicated, legacy, missing, or page-specific.
@@ -24,6 +25,7 @@
 **Requirements:** LAB-01, LAB-02, FIXT-01
 
 **Success criteria:**
+
 1. Dev-only component lab is reachable in local dev and excluded from public dashboard mount behavior and Hex runtime footprint.
 2. Lab renders `ScoriaWeb.UI` primitives and recurring groups with normal, long, empty, dense, disabled, selected, loading, warning, danger, and error states.
 3. Lab exercises light, dark, system, reduced-motion, mobile, tablet, desktop, and wide layouts.
@@ -37,6 +39,7 @@
 **Requirements:** DS-01, DS-02, DS-03, DS-04
 
 **Success criteria:**
+
 1. Semantic-token and raw-palette drift guards still pass.
 2. Buttons, icon buttons, copy controls, links, badges, IDs, timestamps, metadata rows, raw evidence/code blocks, panels, drawers, modals, toasts, forms, tables, and lists have coherent sizes, spacing, variants, focus states, and accessible names.
 3. Overview stats and signal summaries converge on one reusable component pattern.
@@ -50,6 +53,7 @@
 **Requirements:** FLOW-01, FLOW-02, FLOW-03, FLOW-04, COPY-01
 
 **Success criteria:**
+
 1. Every primary page has clear page orientation, a single obvious primary scan/action path, and no redundant single-region headers.
 2. Approvals, incidents, reviews, datasets, workflow detail, connectors, prompts, and eval pages use consistent page-section, table/list, empty/error/loading, toolbar/filter, and detail conventions.
 3. Approval drawer is decision-first, with plain-language consequences, actions near the summary, progressive disclosure for raw payload and metadata, and no duplicated "approval required" / "decision required" copy.
@@ -63,6 +67,7 @@
 **Requirements:** A11Y-01, A11Y-02, MOTION-01, RESP-01
 
 **Success criteria:**
+
 1. Keyboard-only navigation works across app shell, command palette, tables/lists, drawers, modals, disclosures, copy controls, and forms.
 2. Focus is visible, trapped/restored where appropriate, and not hidden by sticky/floating regions.
 3. Dialogs, drawers, disclosures, icon buttons, status, forms, empty states, toasts, and tables/lists meet WCAG 2.2 AA intent.
@@ -76,6 +81,7 @@
 **Requirements:** PROOF-01, PROOF-02, PROOF-03
 
 **Success criteria:**
+
 1. Focused ExUnit tests cover shared UI components, approval flow, incident/review/dataset scan patterns, and drift guards.
 2. Browser proof covers component lab states, theme switching, overlays, mobile shell, copy affordances, toast legibility, and core operator flows.
 3. Maintainer docs define conventions for BEM, tokens, page headers, stats, overlays, evidence/code, copy controls, fixtures, motion, accessibility, and screenshot proof.

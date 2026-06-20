@@ -4,16 +4,16 @@ milestone: v3.3
 milestone_name: Design System Stress Test
 current_phase: 36
 current_phase_name: baseline-and-inventory
-status: Roadmap ready
+status: executing
 stopped_at: Phase 36 UI-SPEC approved
-last_updated: "2026-06-20T15:46:37.835Z"
+last_updated: "2026-06-20T16:18:56.931Z"
 last_activity: 2026-06-20
-last_activity_desc: Milestone v3.3 requirements and roadmap created
+last_activity_desc: Phase 36 execution started
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -25,14 +25,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v3.3 Design System Stress Test
+**Current focus:** Phase 36 — baseline-and-inventory
 
 ## Current Position
 
-Phase: 36 (baseline-and-inventory) — Not started
-Plan: —
-Status: Roadmap ready
-Last activity: 2026-06-20 — Milestone v3.3 requirements and roadmap created
+Phase: 36 (baseline-and-inventory) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-06-20 — Phase 36 execution started
 
 ## Performance Metrics
 
@@ -66,6 +66,9 @@ Recent decisions affecting current work:
 - [Phase 35]: Release PR #3 merge authority was latest head `d0eecbb66c19f85d25a77cbae9ce2fd91ca50f11` with `CI / ci-gate` success before release-pr-automerge merged commit `26eb9a5e686fe4957196dfa5c6654121bda65c03`.
 - [Phase 35]: Post-merge Release Please cancellation was classified as uncertain publish recovery because GitHub release `v0.1.2` existed but Hex did not list `0.1.2`; existing `hex-publish.yml` recovery published exact `tag=v0.1.2` / `release_version=0.1.2`.
 - [Phase 35]: After Hex listed `0.1.2`, recovery stayed smoke-only; final post-publish smoke run `27834739958` proved fresh install and live-lineage upgrade `0.1.0 -> 0.1.2`.
+- [Phase 36]: Phase 36 inventory remains repository-local Markdown plus JSON; no runtime lab, packages, PhoenixStorybook, or source edits.
+- [Phase 36]: 36-inventory.json is canonical for row IDs, statuses, owners, evidence, and risk references.
+- [Phase 36]: v3.0 proof gaps are tracked as RISK-V30-PROOF instead of treated as automatic regressions.
 
 ### Pending Todos
 
@@ -101,9 +104,10 @@ None at milestone start.
 | Phase 35 P01 | 14 min | 2 tasks | 3 files |
 | Phase 35 P02 | 30 min | 3 tasks | 18 files |
 | Phase 35 P03 | 48 min | 3 tasks | 6 files |
+| Phase 36 PP01 | 5 min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-06-20T15:46:37.830Z
+Last session: 2026-06-20T16:18:38.006Z
 Stopped at: Phase 36 UI-SPEC approved
 Resume file: .planning/phases/36-baseline-and-inventory/36-UI-SPEC.md
