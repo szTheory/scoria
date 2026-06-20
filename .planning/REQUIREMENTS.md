@@ -7,7 +7,7 @@
 ### Baseline And Inventory
 
 - [x] **BASE-01**: Maintainer can start v3.3 from a clean baseline that preserves the recent Scoria UI cleanup as committed prior art.
-- [ ] **INV-01**: Maintainer can inspect a current inventory of UI foundations, `ScoriaWeb.UI` primitives, component groups, LiveView pages, CSS/JS hooks, fixtures, tests, and known one-off patterns.
+- [x] **INV-01**: Maintainer can inspect a current inventory of UI foundations, `ScoriaWeb.UI` primitives, component groups, LiveView pages, CSS/JS hooks, fixtures, tests, and known one-off patterns.
 - [x] **INV-02**: Maintainer can see which components and page patterns are canonical, legacy, duplicated, missing, or intentionally page-specific.
 
 ### Component Lab And Fixtures

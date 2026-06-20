@@ -4,17 +4,17 @@ milestone: v3.3
 milestone_name: Design System Stress Test
 current_phase: 36
 current_phase_name: baseline-and-inventory
-status: executing
+status: verifying
 stopped_at: Phase 36 UI-SPEC approved
-last_updated: "2026-06-20T16:18:56.931Z"
+last_updated: "2026-06-20T16:31:41.531Z"
 last_activity: 2026-06-20
 last_activity_desc: Phase 36 execution started
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 0
+  completed_plans: 2
+  percent: 17
 ---
 
 # Project State
@@ -31,7 +31,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 Phase: 36 (baseline-and-inventory) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-20 — Phase 36 execution started
 
 ## Performance Metrics
@@ -69,6 +69,9 @@ Recent decisions affecting current work:
 - [Phase 36]: Phase 36 inventory remains repository-local Markdown plus JSON; no runtime lab, packages, PhoenixStorybook, or source edits.
 - [Phase 36]: 36-inventory.json is canonical for row IDs, statuses, owners, evidence, and risk references.
 - [Phase 36]: v3.0 proof gaps are tracked as RISK-V30-PROOF instead of treated as automatic regressions.
+- [Phase 36]: Source-scan reconciliation is encoded directly in 36-inventory.json rows and documented_exclusions.
+- [Phase 36]: Phase 37+ is gated on both inventory artifacts parsing and containing required risk IDs plus complete layer/status coverage.
+- [Phase 36]: Generated/vendor/report-heavy inputs are excluded only with explicit source, reason, and reviewed_by_phase fields.
 
 ### Pending Todos
 
@@ -105,9 +108,10 @@ None at milestone start.
 | Phase 35 P02 | 30 min | 3 tasks | 18 files |
 | Phase 35 P03 | 48 min | 3 tasks | 6 files |
 | Phase 36 PP01 | 5 min | 2 tasks | 3 files |
+| Phase 36 PP02 | 9min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-06-20T16:18:38.006Z
+Last session: 2026-06-20T16:31:16.238Z
 Stopped at: Phase 36 UI-SPEC approved
 Resume file: .planning/phases/36-baseline-and-inventory/36-UI-SPEC.md
