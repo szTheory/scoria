@@ -81,16 +81,16 @@ defmodule ScoriaWeb.IncidentsLive.Index do
             </a>
           </:actions>
 
-          <.signal_strip label="Incident queue summary">
-            <:signal
+          <.overview_stats label="Incident queue summary">
+            <:stat
               :for={signal <- @triage_summary.signals}
               label={signal.label}
               value={signal.value}
               tone={signal.tone}
             >
               {signal.detail}
-            </:signal>
-          </.signal_strip>
+            </:stat>
+          </.overview_stats>
         </.page_section>
 
         <.page_section class="scoria-incident-index__history">

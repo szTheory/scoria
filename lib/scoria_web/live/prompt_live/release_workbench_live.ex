@@ -215,24 +215,20 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
           </:actions>
           
           <%= if @draft_run do %>
-            <div class="space-y-4">
-              <div class="flex justify-between">
-                <span class="text-sm">Dataset</span>
-                <span class="text-sm font-medium"><%= @draft_run.dataset_version %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm">Eval Spec</span>
-                <span class="text-sm font-medium"><%= @draft_run.eval_spec_version %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm">Items Passed</span>
-                <span class="text-sm font-medium"><%= @draft_run.passed_items %> / <%= @draft_run.total_items %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm">Avg Latency</span>
-                <span class="text-sm font-medium"><%= @draft_run.avg_latency_ms %>ms</span>
-              </div>
-            </div>
+            <.overview_stats label="Draft candidate evaluation summary" class="scoria-overview-stats--compact">
+              <:stat label="Dataset" value={@draft_run.dataset_version} tone={:neutral}>
+                Dataset version used for this candidate evaluation.
+              </:stat>
+              <:stat label="Eval spec" value={@draft_run.eval_spec_version} tone={:neutral}>
+                Evaluation contract used to score the candidate.
+              </:stat>
+              <:stat label="Items passed" value={"#{@draft_run.passed_items} / #{@draft_run.total_items}"} tone={if(@draft_run.passed_items == @draft_run.total_items, do: :pass, else: :warn)}>
+                Passing examples out of the evaluated dataset items.
+              </:stat>
+              <:stat label="Avg latency" value={"#{@draft_run.avg_latency_ms}ms"} tone={:info}>
+                Mean response latency recorded for this run.
+              </:stat>
+            </.overview_stats>
           <% else %>
             <p class="text-sm">No eval run evidence ready.</p>
           <% end %>
@@ -246,24 +242,20 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
           </:actions>
           
           <%= if @active_run do %>
-            <div class="space-y-4">
-              <div class="flex justify-between">
-                <span class="text-sm">Dataset</span>
-                <span class="text-sm font-medium"><%= @active_run.dataset_version %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm">Eval Spec</span>
-                <span class="text-sm font-medium"><%= @active_run.eval_spec_version %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm">Items Passed</span>
-                <span class="text-sm font-medium"><%= @active_run.passed_items %> / <%= @active_run.total_items %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm">Avg Latency</span>
-                <span class="text-sm font-medium"><%= @active_run.avg_latency_ms %>ms</span>
-              </div>
-            </div>
+            <.overview_stats label="Active baseline evaluation summary" class="scoria-overview-stats--compact">
+              <:stat label="Dataset" value={@active_run.dataset_version} tone={:neutral}>
+                Dataset version used for the active baseline evaluation.
+              </:stat>
+              <:stat label="Eval spec" value={@active_run.eval_spec_version} tone={:neutral}>
+                Evaluation contract used to score the baseline.
+              </:stat>
+              <:stat label="Items passed" value={"#{@active_run.passed_items} / #{@active_run.total_items}"} tone={if(@active_run.passed_items == @active_run.total_items, do: :pass, else: :warn)}>
+                Passing examples out of the evaluated dataset items.
+              </:stat>
+              <:stat label="Avg latency" value={"#{@active_run.avg_latency_ms}ms"} tone={:info}>
+                Mean response latency recorded for this run.
+              </:stat>
+            </.overview_stats>
           <% else %>
             <p class="text-sm">No baseline eval run found.</p>
           <% end %>

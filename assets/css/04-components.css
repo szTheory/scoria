@@ -694,6 +694,19 @@
     min-height: 2.5rem;
     padding: 0;
   }
+  .scoria-button--icon-md {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+  .scoria-button--icon-sm {
+    min-width: 2rem;
+    min-height: 2rem;
+    border-radius: var(--scoria-radius-sm);
+  }
+  .scoria-button--icon-sm svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
 
   /* ---------- Theme label ----------
      data-theme-mode is set before first paint, so the control label never waits
@@ -1271,6 +1284,7 @@
 
   /* ---------- Raw evidence details block ---------- */
   .scoria-raw-evidence {
+    position: relative;
     border: 1px solid var(--scoria-border);
     border-radius: var(--scoria-radius-sm);
     margin-top: var(--scoria-space-2);
@@ -1285,6 +1299,9 @@
     padding: var(--scoria-space-2) var(--scoria-space-3);
     user-select: none;
   }
+  .scoria-raw-evidence--copyable > .scoria-raw-evidence__summary {
+    padding-inline-end: calc(var(--scoria-space-3) + 2.25rem);
+  }
   .scoria-raw-evidence__summary::marker { content: ""; }
   .scoria-raw-evidence__summary::-webkit-details-marker { display: none; }
   .scoria-raw-evidence__summary::before {
@@ -1298,6 +1315,60 @@
   }
   .scoria-raw-evidence[open] > .scoria-raw-evidence__summary::before {
     transform: rotate(45deg);
+  }
+  .scoria-raw-evidence__copy {
+    position: absolute;
+    inset-block-start: 0.375rem;
+    inset-inline-end: 0.375rem;
+    color: var(--scoria-text-muted);
+    z-index: 1;
+  }
+  .scoria-raw-evidence__copy:hover:not(:disabled) {
+    color: var(--scoria-text);
+  }
+  .scoria-raw-evidence__copy--copied {
+    color: var(--scoria-tone-pass-fg);
+    border-color: var(--scoria-tone-pass-border);
+    background: var(--scoria-tone-pass-bg);
+  }
+  .scoria-raw-evidence__copy--unavailable {
+    color: var(--scoria-tone-warn-fg);
+    border-color: var(--scoria-tone-warn-border);
+    background: var(--scoria-tone-warn-bg);
+  }
+  .scoria-raw-evidence__copy-icons {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+  }
+  .scoria-raw-evidence__copy-icon {
+    grid-area: 1 / 1;
+    transition:
+      opacity var(--scoria-dur-fast) var(--scoria-ease-out),
+      transform var(--scoria-dur-fast) var(--scoria-ease-out),
+      filter var(--scoria-dur-fast) var(--scoria-ease-out);
+  }
+  .scoria-raw-evidence__copy-icon--copy {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  .scoria-raw-evidence__copy-icon--check {
+    opacity: 0;
+    transform: scale(0.25);
+    filter: blur(4px);
+  }
+  .scoria-raw-evidence__copy--copied .scoria-raw-evidence__copy-icon--copy {
+    opacity: 0;
+    transform: scale(0.25);
+    filter: blur(4px);
+  }
+  .scoria-raw-evidence__copy--copied .scoria-raw-evidence__copy-icon--check {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
   }
   .scoria-raw-evidence__pre {
     background: var(--scoria-surface-sunken);
@@ -1447,34 +1518,53 @@
   .scoria-incident-evidence-stack--compact {
     gap: var(--scoria-space-3);
   }
+  .scoria-overview-stats,
   .scoria-signal-strip {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
     gap: var(--scoria-space-3);
     margin-top: var(--scoria-space-4);
   }
+  .scoria-overview-stats--compact {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: var(--scoria-space-2);
+    margin-top: 0;
+  }
+  .scoria-overview-stat,
   .scoria-signal {
     min-width: 0;
     border-inline-start: 3px solid var(--scoria-tone-neutral-border);
     padding-block: var(--scoria-space-1);
     padding-inline-start: var(--scoria-space-3);
   }
+  .scoria-overview-stats--compact .scoria-overview-stat {
+    padding-inline-start: var(--scoria-space-2);
+  }
+  .scoria-overview-stat--pass,
   .scoria-signal--pass { border-color: var(--scoria-tone-pass-border); }
+  .scoria-overview-stat--info,
   .scoria-signal--info { border-color: var(--scoria-tone-info-border); }
+  .scoria-overview-stat--warn,
   .scoria-signal--warn { border-color: var(--scoria-tone-warn-border); }
+  .scoria-overview-stat--fail,
   .scoria-signal--fail { border-color: var(--scoria-tone-fail-border); }
+  .scoria-overview-stat--brand,
   .scoria-signal--brand { border-color: var(--scoria-tone-brand-border); }
+  .scoria-overview-stat--trace,
   .scoria-signal--trace { border-color: var(--scoria-tone-trace-border); }
+  .scoria-overview-stat dd,
   .scoria-signal dd {
     margin: 0;
   }
+  .scoria-overview-stat__label,
   .scoria-signal__label {
-    color: var(--scoria-text-subtle);
+    color: var(--scoria-text-muted);
     font-size: var(--scoria-fs-badge);
     font-weight: 700;
     letter-spacing: var(--scoria-tracking-eyebrow);
     text-transform: uppercase;
   }
+  .scoria-overview-stat__value,
   .scoria-signal__value {
     color: var(--scoria-text);
     font-size: var(--scoria-fs-body);
@@ -1482,7 +1572,13 @@
     line-height: var(--scoria-lh-tight);
     margin-top: var(--scoria-space-1);
     overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+    text-wrap: balance;
   }
+  .scoria-overview-stats--compact .scoria-overview-stat__value {
+    font-size: var(--scoria-fs-body);
+  }
+  .scoria-overview-stat__detail,
   .scoria-signal__detail {
     color: var(--scoria-text-muted);
     font-size: var(--scoria-fs-label);

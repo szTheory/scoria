@@ -185,12 +185,27 @@ defmodule ScoriaWeb.UIComponentTest do
       assert css_source =~ "--scoria-panel-header-padding-inline"
       assert css_source =~ "--scoria-table-control-padding-inline"
       assert css_source =~ ".scoria-page-section"
+      assert css_source =~ ".scoria-overview-stats"
       assert css_source =~ ".scoria-signal-strip"
       assert css_source =~ ".scoria-theme-label::before"
+      assert css_source =~ ".scoria-raw-evidence__copy"
+      assert css_source =~ ".scoria-button--icon-md"
+      assert css_source =~ ".scoria-button--icon-sm"
+      assert css_source =~ "transition:\n      opacity var(--scoria-dur-fast)"
       refute css_source =~ ".scoria-panel--flush > .scoria-table-shell >"
       assert docs_source =~ "prefer block classes, BEM modifiers"
       assert docs_source =~ "avoid reaching"
       assert docs_source =~ "through unrelated components"
+    end
+
+    test "raw evidence copy control has a delegated clipboard behavior" do
+      js_source = File.read!("assets/js/scoria.js")
+
+      assert js_source =~ "[data-raw-evidence-copy]"
+      assert js_source =~ ".scoria-raw-evidence__pre"
+      assert js_source =~ "navigator.clipboard.writeText(text)"
+      assert js_source =~ "event.stopPropagation()"
+      assert js_source =~ "Copy unavailable"
     end
 
     test "responsive shell chrome keeps mobile navigation out of desktop layout" do
@@ -224,13 +239,13 @@ defmodule ScoriaWeb.UIComponentTest do
   # ---------------------------------------------------------------------------
 
   describe "attention_card/1" do
-    test "signal_strip renders contextual overview signals without bare metric cards" do
+    test "overview_stats renders contextual overview signals without bare metric cards" do
       html =
-        render_component(&ScoriaWeb.UI.signal_strip/1,
+        render_component(&ScoriaWeb.UI.overview_stats/1,
           label: "Queue summary",
-          signal: [
+          stat: [
             %{
-              __slot__: :signal,
+              __slot__: :stat,
               label: "Needs review",
               value: "3 flagged items",
               tone: :warn,
@@ -239,7 +254,7 @@ defmodule ScoriaWeb.UIComponentTest do
               end
             },
             %{
-              __slot__: :signal,
+              __slot__: :stat,
               label: "Ready to promote",
               value: "1 promotion candidate",
               tone: :trace,
@@ -250,13 +265,13 @@ defmodule ScoriaWeb.UIComponentTest do
           ]
         )
 
-      assert html =~ "scoria-signal-strip"
+      assert html =~ "scoria-overview-stats"
       assert html =~ ~s(aria-label="Queue summary")
       assert html =~ "Needs review"
       assert html =~ "3 flagged items"
       assert html =~ "Traces sampled from production"
-      assert html =~ "scoria-signal--warn"
-      assert html =~ "scoria-signal--trace"
+      assert html =~ "scoria-overview-stat--warn"
+      assert html =~ "scoria-overview-stat--trace"
       refute html =~ "scoria-metric"
     end
 
@@ -434,6 +449,7 @@ defmodule ScoriaWeb.UIComponentTest do
         )
 
       assert html =~ ~s(aria-label="Close dialog")
+      assert html =~ "scoria-button--icon-md"
     end
 
     test "show: false renders nothing (no panel, no scrim)" do
@@ -503,7 +519,7 @@ defmodule ScoriaWeb.UIComponentTest do
       assert html =~ ~s(title="Close drawer")
 
       assert html =~
-               ~s(class="scoria-button scoria-button--ghost scoria-button--sm scoria-button--icon")
+               ~s(class="scoria-button scoria-button--ghost scoria-button--sm scoria-button--icon scoria-button--icon-md")
 
       assert html =~ ~s(aria-hidden="true")
       refute html =~ ">Close drawer</button>"
@@ -775,6 +791,41 @@ defmodule ScoriaWeb.UIComponentTest do
       assert html =~ "<pre"
       assert html =~ "Advanced raw evidence"
       assert html =~ "{&quot;key&quot;: &quot;value&quot;}"
+    end
+
+    test "can render open by default for primary payload evidence" do
+      html =
+        render_component(&ScoriaWeb.UI.raw_evidence/1,
+          label: "Request payload",
+          value: "%{amount_cents: 12900}",
+          open: true
+        )
+
+      assert html =~ ~r/<details[^>]*class="[^"]*scoria-raw-evidence[^"]*"[^>]*open/
+      assert html =~ "Request payload"
+      assert html =~ "%{amount_cents: 12900}"
+    end
+
+    test "can render a copy control without nesting it inside the disclosure summary" do
+      html =
+        render_component(&ScoriaWeb.UI.raw_evidence/1,
+          label: "Request payload",
+          value: "%{amount_cents: 12900}",
+          copyable: true,
+          copy_label: "Copy request payload"
+        )
+
+      assert html =~ "scoria-raw-evidence--copyable"
+      assert html =~ "scoria-button--icon-sm"
+      refute html =~ "scoria-button--icon-md scoria-raw-evidence__copy"
+      assert html =~ ~s(data-raw-evidence-copy)
+      assert html =~ ~s(aria-label="Copy request payload")
+      assert html =~ ~s(title="Copy request payload")
+      assert html =~ "scoria-raw-evidence__copy-icon--copy"
+      assert html =~ "scoria-raw-evidence__copy-icon--check"
+
+      [summary_fragment, _after_summary] = String.split(html, "</summary>", parts: 2)
+      refute summary_fragment =~ "data-raw-evidence-copy"
     end
 
     test "renders default label when not provided" do

@@ -66,17 +66,17 @@ defmodule ScoriaWeb.DatasetLive.Index do
       <p>Curate production traces into eval datasets and baseline approval requests.</p>
     </div>
 
-    <.signal_strip label="Dataset library summary">
-      <:signal label="Drafts" value={dataset_count(@metrics.open, "open dataset")} tone={if(@metrics.open > 0, do: :info, else: :neutral)}>
+    <.overview_stats label="Dataset library summary">
+      <:stat label="Drafts" value={dataset_count(@metrics.open, "open dataset")} tone={if(@metrics.open > 0, do: :info, else: :neutral)}>
         Open datasets can still accept promoted examples from reviews and runs.
-      </:signal>
-      <:signal label="Baselines" value={dataset_count(@metrics.sealed, "sealed dataset")} tone={if(@metrics.sealed > 0, do: :pass, else: :neutral)}>
+      </:stat>
+      <:stat label="Baselines" value={dataset_count(@metrics.sealed, "sealed dataset")} tone={if(@metrics.sealed > 0, do: :pass, else: :neutral)}>
         Sealed datasets are ready to anchor evals or baseline approval requests.
-      </:signal>
-      <:signal label="Examples" value={dataset_count(@metrics.items, "dataset item")} tone={if(@metrics.items > 0, do: :trace, else: :neutral)}>
+      </:stat>
+      <:stat label="Examples" value={dataset_count(@metrics.items, "dataset item")} tone={if(@metrics.items > 0, do: :trace, else: :neutral)}>
         Total curated examples available across this dataset library.
-      </:signal>
-    </.signal_strip>
+      </:stat>
+    </.overview_stats>
 
     <.panel variant={:flat} flush={true} class="mt-6">
       <:title>Datasets</:title>

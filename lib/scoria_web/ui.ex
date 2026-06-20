@@ -99,6 +99,37 @@ defmodule ScoriaWeb.UI do
     """
   end
 
+  attr(:variant, :atom, default: :ghost, values: [:primary, :ghost, :danger])
+  attr(:size, :atom, default: :md, values: [:md, :sm])
+  attr(:type, :string, default: "button")
+  attr(:class, :string, default: nil)
+
+  attr(:rest, :global,
+    include: ~w(phx-click phx-target phx-value-id phx-disable-with disabled autofocus)
+  )
+
+  slot(:inner_block, required: true)
+
+  @doc "Icon-only button. Use `size: :md` for chrome controls and `size: :sm` for inline utilities."
+  def icon_button(assigns) do
+    ~H"""
+    <button
+      type={@type}
+      class={[
+        "scoria-button",
+        "scoria-button--#{@variant}",
+        "scoria-button--sm",
+        "scoria-button--icon",
+        "scoria-button--icon-#{@size}",
+        @class
+      ]}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </button>
+    """
+  end
+
   attr(:class, :string, default: nil)
   slot(:inner_block)
 
@@ -196,6 +227,37 @@ provide a typographic tier above the primary title."
       <p class="scoria-metric__value">{@value}</p>
       <p :if={@delta} class={["scoria-metric__delta", "scoria-metric__delta--#{@delta_tone}"]}>{@delta}</p>
     </div>
+    """
+  end
+
+  attr(:label, :string, required: true)
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+
+  slot(:stat, required: true) do
+    attr(:label, :string, required: true)
+    attr(:value, :string, required: true)
+    attr(:tone, :atom)
+  end
+
+  @doc """
+  Plain-language overview stats for page-level operational summaries.
+
+  Use this instead of `metric/1` when a count needs context or an operator
+  needs to understand what action the number implies.
+  """
+  def overview_stats(assigns) do
+    ~H"""
+    <dl class={["scoria-overview-stats", @class]} aria-label={@label} {@rest}>
+      <div
+        :for={stat <- @stat}
+        class={["scoria-overview-stat", "scoria-overview-stat--#{stat[:tone] || :neutral}"]}
+      >
+        <dt class="scoria-overview-stat__label">{stat.label}</dt>
+        <dd class="scoria-overview-stat__value">{stat.value}</dd>
+        <dd class="scoria-overview-stat__detail">{render_slot(stat)}</dd>
+      </div>
+    </dl>
     """
   end
 
@@ -632,18 +694,17 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
             <h2 :if={@title_slot != []} id={"#{@id}-title"}>{render_slot(@title_slot)}</h2>
             <h2 :if={@title_slot == [] and @title != nil} id={"#{@id}-title"}>{@title}</h2>
           </div>
-          <button
+          <.icon_button
             autofocus
             phx-click={@on_dismiss}
-            type="button"
-            class="scoria-button scoria-button--ghost scoria-button--sm scoria-button--icon"
+            size={:md}
             aria-label="Close dialog"
             title="Close dialog"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
               <path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
             </svg>
-          </button>
+          </.icon_button>
         </div>
         <div class="scoria-modal__body">
           {render_slot(@inner_block)}
@@ -694,17 +755,16 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
           </div>
           <div class="scoria-drawer__header-actions">
             <div :if={@actions != []}>{render_slot(@actions)}</div>
-            <button
-              type="button"
+            <.icon_button
               phx-click={@on_dismiss}
-              class="scoria-button scoria-button--ghost scoria-button--sm scoria-button--icon"
+              size={:md}
               aria-label="Close drawer"
               title="Close drawer"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
                 <path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
               </svg>
-            </button>
+            </.icon_button>
           </div>
         </div>
         <div class="scoria-drawer__body">
@@ -973,6 +1033,11 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
 
   attr(:label, :string, default: "Advanced raw evidence")
   attr(:value, :string, default: nil)
+  attr(:open, :boolean, default: false)
+  attr(:copyable, :boolean, default: false)
+  attr(:copy_label, :string, default: "Copy raw evidence")
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
   slot(:inner_block)
 
   @doc "Raw evidence details/pre block (DS-04).
@@ -980,8 +1045,45 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
   tokens are applied via CSS class — not overridden in HEEx."
   def raw_evidence(assigns) do
     ~H"""
-    <details class="scoria-raw-evidence">
+    <details
+      class={["scoria-raw-evidence", @copyable && "scoria-raw-evidence--copyable", @class]}
+      open={@open}
+      {@rest}
+    >
       <summary class="scoria-raw-evidence__summary">{@label}</summary>
+      <.icon_button
+        :if={@copyable}
+        size={:sm}
+        class="scoria-raw-evidence__copy"
+        data-raw-evidence-copy
+        aria-label={@copy_label}
+        title={@copy_label}
+      >
+        <span class="scoria-raw-evidence__copy-icons" aria-hidden="true">
+          <svg
+            class="scoria-raw-evidence__copy-icon scoria-raw-evidence__copy-icon--copy"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M4.75 2A1.75 1.75 0 0 0 3 3.75v7.5C3 12.216 3.784 13 4.75 13h6.5A1.75 1.75 0 0 0 13 11.25v-7.5A1.75 1.75 0 0 0 11.25 2h-6.5Zm-.25 1.75a.25.25 0 0 1 .25-.25h6.5a.25.25 0 0 1 .25.25v7.5a.25.25 0 0 1-.25.25h-6.5a.25.25 0 0 1-.25-.25v-7.5Z" />
+            <path d="M2 5.75A.75.75 0 0 0 .5 5.75v6.5A3.25 3.25 0 0 0 3.75 15h5.5a.75.75 0 0 0 0-1.5h-5.5A1.75 1.75 0 0 1 2 11.75v-6Z" />
+          </svg>
+          <svg
+            class="scoria-raw-evidence__copy-icon scoria-raw-evidence__copy-icon--check"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0L3.22 8.28a.75.75 0 1 1 1.06-1.06L7 9.94l5.72-5.72a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+          </svg>
+        </span>
+        <span class="sr-only" data-raw-evidence-copy-status>{@copy_label}</span>
+      </.icon_button>
       <pre class="scoria-raw-evidence__pre"><%= @value || render_slot(@inner_block) %></pre>
     </details>
     """

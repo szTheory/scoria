@@ -283,9 +283,11 @@ the page title as inner card chrome while preserving dense table containment.
 |-----------|---------|
 | `badge/1` | Status badge — tone + label, never color-alone |
 | `button/1` | Primary / ghost / danger button (brand book §8.5) |
+| `icon_button/1` | Icon-only button; `md` for chrome controls, `sm` for inline utilities |
 | `eyebrow/1` | Small uppercase category/status label |
 | `panel/1` | Panel/card surface with optional eyebrow + title + actions header; `flush={true}` keeps table viewports edge-to-edge while preserving chrome gutters |
-| `metric/1` | Metric card: label, big value, explicit delta (brand book §11.3) |
+| `overview_stats/1` | Page-level operational summary stats with label, value, detail, and tone |
+| `metric/1` | Low-level scalar analytic value with explicit delta; not for page overview summaries |
 | `id/1` | Copyable monospace identifier — CopyId JS hook |
 | `attention_card/1` | Status Home actionable-state card |
 | `object_header/1` | Object-detail page header |
@@ -300,7 +302,7 @@ the page title as inner card chrome while preserving dense table containment.
 | `skeleton/1` | Loading skeleton placeholder (DS-05) |
 | `toast/1` | Transient toast notification (DS-05) |
 | `notebook/1` | Tabbed evidence notebook (DS-04) |
-| `raw_evidence/1` | Raw evidence details/pre block (DS-04) |
+| `raw_evidence/1` | Raw evidence details/pre block with optional copy control (DS-04) |
 | `evidence_section/1` | Notebook-scoped evidence section |
 | `evidence_rows/1` | Key-value evidence rows |
 | `evidence_action_row/1` | Compact evidence action/link row |

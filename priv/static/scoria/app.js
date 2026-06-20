@@ -153,6 +153,50 @@ removing illegal node: "${(i.outerHTML||i.nodeValue).trim()}"
     },
   };
 
+  function setRawEvidenceCopyState(button, state) {
+    var status = button.querySelector("[data-raw-evidence-copy-status]");
+    var defaultLabel = button.getAttribute("data-copy-label") || button.getAttribute("aria-label") || "Copy raw evidence";
+    var copied = state === "copied";
+    var unavailable = state === "unavailable";
+    var stateLabel = copied ? "Copied" : unavailable ? "Copy unavailable" : defaultLabel;
+
+    button.classList.toggle("scoria-raw-evidence__copy--copied", copied);
+    button.classList.toggle("scoria-raw-evidence__copy--unavailable", unavailable);
+    button.setAttribute("title", stateLabel);
+    button.setAttribute("aria-label", stateLabel);
+    if (status) status.textContent = stateLabel;
+  }
+
+  document.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-raw-evidence-copy]");
+    if (!button) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!button.getAttribute("data-copy-label")) {
+      button.setAttribute("data-copy-label", button.getAttribute("aria-label") || "Copy raw evidence");
+    }
+
+    var block = button.closest(".scoria-raw-evidence");
+    var pre = block && block.querySelector(".scoria-raw-evidence__pre");
+    var text = pre ? pre.textContent : "";
+
+    if (!navigator.clipboard || !text) {
+      setRawEvidenceCopyState(button, "unavailable");
+      window.setTimeout(function () { setRawEvidenceCopyState(button, "idle"); }, 1400);
+      return;
+    }
+
+    navigator.clipboard.writeText(text).then(function () {
+      setRawEvidenceCopyState(button, "copied");
+      window.setTimeout(function () { setRawEvidenceCopyState(button, "idle"); }, 1400);
+    }, function () {
+      setRawEvidenceCopyState(button, "unavailable");
+      window.setTimeout(function () { setRawEvidenceCopyState(button, "idle"); }, 1400);
+    });
+  });
+
   // Theme: dark / light / system, persisted as "scoria-theme". "system" follows
   // the OS via prefers-color-scheme and reacts to live OS changes. The pre-paint
   // script in root.html.heex applies the stored mode before first paint (no FOUC);

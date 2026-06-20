@@ -211,6 +211,9 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
           :if={@active_approval}
           label="Request payload"
           value={ApprovalCopy.raw_arguments(@active_approval)}
+          open={true}
+          copyable={true}
+          copy_label="Copy request payload"
         >
         </.raw_evidence>
       </.drawer>

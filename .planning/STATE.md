@@ -73,6 +73,7 @@ Recent decisions affecting current work:
 
 - Phase 33: Restructure Docker DX docs and correct verification-copy drift now that Phase 32's no-Git-exposure SEC-02 closeout is recorded.
 - UI follow-up: make approval rejection toasts legible over dense approvals UI — `make-approval-toasts-legible` todo.
+- UI follow-up: add approval decision history for approved/denied/expired requests — `add-approval-decision-history` todo.
 - Post-v3.2: SEED-004 test-code determinism (async `IntegrationCase`, `Process.sleep` removal) — leading candidate for next milestone.
 - Post-v3.2: FLEET-01 sibling-repo convergence (rulestead/parapet) — `docker-dx-fleet-hardening` todo.
 - Post-ship cleanup: `ci-policy-job-cache-key-mislabel` (carried from v3.1 close).

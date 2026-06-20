@@ -188,6 +188,9 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     assert html =~ "audit evidence"
     assert html =~ "Technical details"
     assert html =~ "Request payload"
+    assert html =~ ~r/<details[^>]*class="[^"]*scoria-raw-evidence[^"]*"[^>]*open/
+    assert html =~ ~s(data-raw-evidence-copy)
+    assert html =~ ~s(aria-label="Copy request payload")
     assert html =~ "View run details"
     refute html =~ "Expected effect"
     refute html =~ "Decision required"

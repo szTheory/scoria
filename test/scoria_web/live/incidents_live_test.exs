@@ -139,7 +139,11 @@ defmodule ScoriaWeb.IncidentsLiveTest do
     assert [] = Floki.find(document, ".scoria-incident-index__triage.scoria-panel")
     assert [] = Floki.find(document, ".scoria-incident-index__history.scoria-panel")
     assert [] = Floki.find(document, ".scoria-incident-index__triage .scoria-incident-signal")
-    assert 3 = document |> Floki.find(".scoria-incident-index__triage .scoria-signal") |> length()
+
+    assert 3 =
+             document
+             |> Floki.find(".scoria-incident-index__triage .scoria-overview-stat")
+             |> length()
   end
 
   test "triage summary prioritizes open paging incidents over newer review incidents" do
