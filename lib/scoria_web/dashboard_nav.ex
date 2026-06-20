@@ -136,6 +136,7 @@ defmodule ScoriaWeb.DashboardNav do
     ScoriaWeb.ApprovalsLive.Index => :approvals,
     ScoriaWeb.ConnectorsLive.Index => :connectors,
     ScoriaWeb.IncidentsLive.Index => :incidents,
+    ScoriaWeb.IncidentsLive.Show => :incidents,
     ScoriaWeb.WorkflowLive.Index => :runs,
     ScoriaWeb.WorkflowLive.Show => :runs,
     ScoriaWeb.ReviewQueueLive => :reviews,
@@ -229,7 +230,7 @@ defmodule ScoriaWeb.DashboardNav do
   defp assign_base(params, uri, socket) do
     base =
       case socket.assigns[:scoria_base] do
-        nil -> derive_base(uri, socket.view)
+        nil -> derive_base(uri, socket.view, params)
         existing -> existing
       end
 
@@ -237,7 +238,7 @@ defmodule ScoriaWeb.DashboardNav do
      socket |> assign(:scoria_base, base) |> assign(:scoria_nav, active_key(socket.view, params))}
   end
 
-  defp derive_base(uri, view) do
+  defp derive_base(uri, view, params) do
     path = URI.parse(uri).path || "/"
 
     suffix =
@@ -246,6 +247,7 @@ defmodule ScoriaWeb.DashboardNav do
         ScoriaWeb.ApprovalsLive.Index -> "/approvals"
         ScoriaWeb.ConnectorsLive.Index -> "/connectors"
         ScoriaWeb.IncidentsLive.Index -> "/incidents"
+        ScoriaWeb.IncidentsLive.Show -> "/incidents/#{Map.get(params, "id", "")}"
         ScoriaWeb.ReviewQueueLive -> "/reviews"
         ScoriaWeb.DatasetLive.Index -> "/datasets"
         ScoriaWeb.EvalSpecLive.Index -> "/eval_specs"

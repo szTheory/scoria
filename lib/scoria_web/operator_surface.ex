@@ -200,6 +200,42 @@ defmodule ScoriaWeb.OperatorSurface do
     _error -> []
   end
 
+  @doc "Tenant-scoped incident lookup for routed incident detail pages."
+  def fetch_tenant_incident(tenant_id, incident_id) when is_binary(incident_id) do
+    case Ecto.UUID.cast(incident_id) do
+      {:ok, id} ->
+        Incident
+        |> where([incident], incident.tenant_id == ^tenant_id and incident.id == ^id)
+        |> Repo.one()
+
+      :error ->
+        nil
+    end
+  rescue
+    _error -> nil
+  end
+
+  def fetch_tenant_incident(_tenant_id, _incident_id), do: nil
+
+  @doc "Newest tenant incident linked to a workflow run, used for legacy ?from=run links."
+  def find_tenant_incident_for_run(tenant_id, run_id) when is_binary(run_id) do
+    case Ecto.UUID.cast(run_id) do
+      {:ok, id} ->
+        Incident
+        |> where([incident], incident.tenant_id == ^tenant_id and incident.workflow_run_id == ^id)
+        |> order_by([incident], desc: incident.last_seen_at)
+        |> limit(1)
+        |> Repo.one()
+
+      :error ->
+        nil
+    end
+  rescue
+    _error -> nil
+  end
+
+  def find_tenant_incident_for_run(_tenant_id, _run_id), do: nil
+
   # ── Per-trace incident/budget projections ──────────────────────────────────
 
   def load_budget_projection(trace_id, run_id) do

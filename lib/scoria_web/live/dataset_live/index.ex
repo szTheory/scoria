@@ -25,7 +25,6 @@ defmodule ScoriaWeb.DatasetLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Dataset Builder")
-     |> assign(:density, :compact)
      |> assign(:sort_by, :updated_at)
      |> assign(:sort_dir, :desc)
      |> assign(:dataset_rows, rows)
@@ -42,10 +41,6 @@ defmodule ScoriaWeb.DatasetLive.Index do
   end
 
   @impl true
-  def handle_event("set_density", %{"density" => density}, socket) do
-    {:noreply, assign(socket, :density, density_value(density))}
-  end
-
   def handle_event("sort", %{"by" => by}, socket) do
     sort_by = sort_key(by)
     sort_dir = next_sort_dir(socket.assigns.sort_by, socket.assigns.sort_dir, sort_by)
@@ -83,16 +78,14 @@ defmodule ScoriaWeb.DatasetLive.Index do
       </.panel>
     </div>
 
-    <.panel variant={:flat} class="scoria-panel--flush mt-6">
+    <.panel variant={:flat} flush={true} class="mt-6">
       <:title>Datasets</:title>
       <.table
         id="datasets"
         rows={@datasets}
-        density={@density}
         sort_by={@sort_by}
         sort_dir={@sort_dir}
         on_sort="sort"
-        on_density_change="set_density"
       >
         <:empty>
           <.empty_state title="No datasets match this view">
@@ -329,10 +322,6 @@ defmodule ScoriaWeb.DatasetLive.Index do
   defp sort_key("last_promoted_at"), do: :last_promoted_at
   defp sort_key("source"), do: :source
   defp sort_key(_), do: :updated_at
-
-  defp density_value("compact"), do: :compact
-  defp density_value("comfortable"), do: :comfortable
-  defp density_value(_), do: :default
 
   defp state_tone(:open), do: :info
   defp state_tone(:sealed), do: :pass

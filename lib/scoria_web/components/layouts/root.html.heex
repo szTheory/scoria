@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="scoria-root" data-theme="dark" data-scoria-socket={assigns[:scoria_socket_path] || "/live"}>
+<html lang="en" class="scoria-root" data-theme="dark" data-theme-mode="system" data-scoria-socket={assigns[:scoria_socket_path] || "/live"}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -14,12 +14,12 @@
       (function () {
         try {
           var pref = localStorage.getItem("scoria-theme");
+          var mode = pref === "light" || pref === "dark" || pref === "system" ? pref : "system";
           var resolved =
-            pref === "light" || pref === "dark"
-              ? pref
-              : pref === "system"
-                ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
-                : "dark";
+            mode === "light" || mode === "dark"
+              ? mode
+              : (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+          document.documentElement.setAttribute("data-theme-mode", mode);
           document.documentElement.setAttribute("data-theme", resolved);
         } catch (e) {}
       })();

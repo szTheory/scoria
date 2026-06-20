@@ -7,39 +7,72 @@ defmodule ScoriaWeb.Components.IncidentEvidenceComponentTest do
 
   @palette_regex ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
 
-  test "incident and remote invocation adapters use shared notebook evidence primitives" do
-    adapter_paths = [
-      "lib/scoria_web/components/incident_evidence_component.ex",
-      "lib/scoria_web/components/remote_invocation_evidence_component.ex"
-    ]
+  test "incident adapter uses shared evidence primitives without raw palette classes" do
+    source = File.read!("lib/scoria_web/components/incident_evidence_component.ex")
 
-    for path <- adapter_paths do
-      source = File.read!(path)
-
-      assert source =~ "<.notebook"
-      assert source =~ "evidence_section"
-      assert source =~ "evidence_rows"
-      refute source =~ @palette_regex
-    end
+    assert source =~ "evidence_section"
+    assert source =~ "evidence_rows"
+    assert source =~ "scoria-incident-detail"
+    refute source =~ @palette_regex
   end
 
-  test "renders incident evidence through the notebook adapter" do
+  test "remote invocation adapter still uses the shared notebook primitive" do
+    source = File.read!("lib/scoria_web/components/remote_invocation_evidence_component.ex")
+
+    assert source =~ "<.notebook"
+    assert source =~ "evidence_section"
+    assert source =~ "evidence_rows"
+    refute source =~ @palette_regex
+  end
+
+  test "renders incident evidence through the incident detail adapter" do
     html = render_component(&IncidentEvidenceComponent.render/1, evidence: evidence())
 
     assert html =~ ~s(id="incident-evidence-notebook")
-    assert html =~ "scoria-notebook"
-    assert html =~ "Trace-first incident notebook"
+    assert html =~ "scoria-incident-detail"
+    assert html =~ "Trace-first incident evidence"
+    refute html =~ "scoria-notebook__tab"
   end
 
-  test "preserves health rollup, budget, notebook, breaker relay, and delivery sections" do
+  test "preserves triage, budget, incident, breaker, and relay evidence sections" do
     html = render_component(&IncidentEvidenceComponent.render/1, evidence: evidence())
 
-    assert html =~ "Composite health rollup"
-    assert html =~ "Budget strip"
+    assert html =~ "Triage summary"
+    assert html =~ "Budget evidence"
     assert html =~ "Reservation actuals"
     assert html =~ "Incident notebook"
-    assert html =~ "Breaker and relay evidence"
-    assert html =~ "Notification delivery outcomes"
+    assert html =~ "Breaker evidence"
+    assert html =~ "Audit and delivery"
+  end
+
+  test "uses incident-scoped responsive classes instead of cramped nested grids" do
+    source = File.read!("lib/scoria_web/components/incident_evidence_component.ex")
+    css = File.read!("assets/css/04-components.css")
+    html = render_component(&IncidentEvidenceComponent.render/1, evidence: evidence())
+
+    assert html =~ "scoria-incident-rollup"
+    assert html =~ "scoria-incident-signal"
+    assert html =~ "scoria-incident-evidence-stack"
+    assert css =~ ".scoria-incident-detail"
+    assert css =~ ".scoria-incident-rollup"
+    assert css =~ ".scoria-incident-signal"
+    assert css =~ "repeat(auto-fit"
+    refute source =~ "lg:grid-cols-5"
+    refute source =~ "scoria-evidence-split"
+  end
+
+  test "keeps relay counts in audit delivery detail instead of signal cards" do
+    html = render_component(&IncidentEvidenceComponent.render/1, evidence: evidence())
+
+    rollup_text =
+      html
+      |> Floki.parse_document!()
+      |> Floki.find(".scoria-incident-rollup")
+      |> Floki.text()
+
+    assert html =~ "Audit and delivery"
+    assert html =~ "Audit outbox accepted the event"
+    refute rollup_text =~ "Audit outbox accepted the event"
   end
 
   test "escapes raw evidence values through HEEx" do

@@ -153,14 +153,14 @@ removing illegal node: "${(i.outerHTML||i.nodeValue).trim()}"
   // Theme: dark / light / system, persisted as "scoria-theme". "system" follows
   // the OS via prefers-color-scheme and reacts to live OS changes. The pre-paint
   // script in root.html.heex applies the stored mode before first paint (no FOUC);
-  // this module re-applies it, cycles modes, and keeps the control label in sync.
+  // this module re-applies it, cycles modes, and keeps control metadata in sync.
   var THEME_KEY = "scoria-theme";
   var THEME_MODES = ["dark", "light", "system"];
 
   function themeStoredMode() {
     var v = null;
     try { v = localStorage.getItem(THEME_KEY); } catch (e) {}
-    return THEME_MODES.indexOf(v) >= 0 ? v : "dark"; // brand-first default
+    return THEME_MODES.indexOf(v) >= 0 ? v : "system";
   }
   function themeResolve(mode) {
     if (mode === "system") {
@@ -172,13 +172,12 @@ removing illegal node: "${(i.outerHTML||i.nodeValue).trim()}"
     var label = mode.charAt(0).toUpperCase() + mode.slice(1);
     var btns = document.querySelectorAll("[data-theme-toggle]");
     for (var i = 0; i < btns.length; i++) {
-      var span = btns[i].querySelector("[data-theme-label]");
-      if (span) span.textContent = label;
       btns[i].setAttribute("title", "Theme: " + label + " — click to cycle dark / light / system");
       btns[i].setAttribute("aria-label", "Theme: " + label + ". Click to cycle dark, light, system.");
     }
   }
   function themeApply(mode) {
+    document.documentElement.setAttribute("data-theme-mode", mode);
     document.documentElement.setAttribute("data-theme", themeResolve(mode));
     themeUpdateControls(mode);
   }
@@ -668,8 +667,10 @@ removing illegal node: "${(i.outerHTML||i.nodeValue).trim()}"
       this.panel = this.el.querySelector(".scoria-mobile-drawer");
       this.closeTimer = null;
       this.restoreFocus = null;
+      this.desktopMedia = window.matchMedia ? window.matchMedia("(min-width: 768px)") : null;
 
       this.openNav = function (opener) {
+        if (self.desktopMedia && self.desktopMedia.matches) return;
         clearTimeout(self.closeTimer);
         self.restoreFocus = opener || document.activeElement;
         self.el.hidden = false;
@@ -694,6 +695,14 @@ removing illegal node: "${(i.outerHTML||i.nodeValue).trim()}"
         if (restore && self.restoreFocus && self.restoreFocus.focus) {
           self.restoreFocus.focus({ preventScroll: true });
         }
+      };
+
+      this.forceCloseForDesktop = function () {
+        clearTimeout(self.closeTimer);
+        self.el.setAttribute("data-state", "closed");
+        self.el.hidden = true;
+        var openerEl = document.querySelector("[data-mobile-nav-open]");
+        if (openerEl) openerEl.setAttribute("aria-expanded", "false");
       };
 
       this.isOpen = function () {
@@ -726,6 +735,10 @@ removing illegal node: "${(i.outerHTML||i.nodeValue).trim()}"
         }
       };
 
+      this.mediaHandler = function (event) {
+        if (event.matches) self.forceCloseForDesktop();
+      };
+
       this.trapFocusInPanel = function (e) {
         var focusables = focusableElements(self.panel);
         if (focusables.length === 0) return;
@@ -743,12 +756,27 @@ removing illegal node: "${(i.outerHTML||i.nodeValue).trim()}"
       document.addEventListener("click", this.openHandler);
       document.addEventListener("click", this.closeHandler);
       document.addEventListener("keydown", this.keydownHandler, true);
+      if (this.desktopMedia) {
+        if (this.desktopMedia.addEventListener) {
+          this.desktopMedia.addEventListener("change", this.mediaHandler);
+        } else if (this.desktopMedia.addListener) {
+          this.desktopMedia.addListener(this.mediaHandler);
+        }
+        if (this.desktopMedia.matches) this.forceCloseForDesktop();
+      }
     },
 
     destroyed: function () {
       document.removeEventListener("click", this.openHandler);
       document.removeEventListener("click", this.closeHandler);
       document.removeEventListener("keydown", this.keydownHandler, true);
+      if (this.desktopMedia) {
+        if (this.desktopMedia.removeEventListener) {
+          this.desktopMedia.removeEventListener("change", this.mediaHandler);
+        } else if (this.desktopMedia.removeListener) {
+          this.desktopMedia.removeListener(this.mediaHandler);
+        }
+      }
       clearTimeout(this.closeTimer);
     },
   };

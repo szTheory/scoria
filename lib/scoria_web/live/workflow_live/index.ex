@@ -16,20 +16,7 @@ defmodule ScoriaWeb.WorkflowLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Runs")
-     |> assign(:run_table_density, :compact)
      |> assign(:runs, list_runs())}
-  end
-
-  @impl true
-  def handle_event("set_density", %{"density" => density}, socket) do
-    density =
-      case density do
-        "compact" -> :compact
-        "comfortable" -> :comfortable
-        _ -> :default
-      end
-
-    {:noreply, assign(socket, :run_table_density, density)}
   end
 
   defp list_runs do
@@ -48,8 +35,8 @@ defmodule ScoriaWeb.WorkflowLive.Index do
       <p>Inspect recorded workflow runs and open the trace that explains them.</p>
     </div>
 
-    <.panel variant={:flat} class="scoria-panel--flush">
-      <.table id="runs" rows={@runs} density={@run_table_density} on_density_change="set_density">
+    <.panel variant={:flat} flush={true}>
+      <.table id="runs" rows={@runs}>
         <:col :let={run} label="Run">
           <.id value={short_id(run.id)} copy={run.id} />
         </:col>

@@ -93,8 +93,8 @@ defmodule ScoriaWeb.IncidentsLiveTest do
     refute html =~ "Tenant incidents"
   end
 
-  test "lists tenant incidents and renders evidence for the newest by default" do
-    _older =
+  test "lists tenant incidents with actionable triage summary and no inline evidence" do
+    older =
       seed_incident!(%{
         incident_key: "inc-review",
         summary: "CI baseline dip on helpfulness",
@@ -102,7 +102,7 @@ defmodule ScoriaWeb.IncidentsLiveTest do
         last_seen_at: ~U[2026-05-10 12:00:00.000000Z]
       })
 
-    _newer =
+    newer =
       seed_incident!(%{
         incident_key: "inc-page",
         summary: "Fast burn budget incident",
@@ -114,16 +114,105 @@ defmodule ScoriaWeb.IncidentsLiveTest do
 
     {:ok, _view, html} = live(session_conn(), "/scoria/incidents")
 
-    assert html =~ "Tenant incidents"
+    assert html =~ "Tenant triage"
+    assert html =~ "2 open incidents across 2 incident records"
+    assert html =~ "Open paging incident"
+    assert triage_hrefs(html) == ["/scoria/incidents/#{newer.id}"]
+
+    assert html =~ "Incident history"
+    assert html =~ "2 records, 2 open"
     assert html =~ "CI baseline dip on helpfulness"
     assert html =~ "Fast burn budget incident"
-    assert html =~ "Open incidents"
-    # The notebook renders for the newest incident's trace.
-    assert html =~ "Trace-first incident notebook"
-    assert html =~ "trace-page"
+    assert html =~ ~s(href="/scoria/incidents/#{newer.id}")
+    assert html =~ ~s(href="/scoria/incidents/#{older.id}")
+    refute html =~ "Trace-first incident evidence"
+
+    assert [] =
+             html
+             |> Floki.parse_document!()
+             |> Floki.find(".scoria-metric")
+
+    document = Floki.parse_document!(html)
+
+    assert [_] = Floki.find(document, ".scoria-incident-index__triage.scoria-page-section")
+    assert [_] = Floki.find(document, ".scoria-incident-index__history.scoria-page-section")
+    assert [] = Floki.find(document, ".scoria-incident-index__triage.scoria-panel")
+    assert [] = Floki.find(document, ".scoria-incident-index__history.scoria-panel")
+    assert [] = Floki.find(document, ".scoria-incident-index__triage .scoria-incident-signal")
+    assert 3 = document |> Floki.find(".scoria-incident-index__triage .scoria-signal") |> length()
   end
 
-  test "select_incident swaps the evidence to the chosen incident" do
+  test "triage summary prioritizes open paging incidents over newer review incidents" do
+    page =
+      seed_incident!(%{
+        incident_key: "inc-page-priority",
+        summary: "Older paging incident",
+        severity: "critical",
+        routing_class: "page",
+        last_seen_at: ~U[2026-05-10 12:00:00.000000Z]
+      })
+
+    review =
+      seed_incident!(%{
+        incident_key: "inc-review-newer",
+        summary: "Newer review incident",
+        routing_class: "review",
+        last_seen_at: ~U[2026-05-11 12:00:00.000000Z]
+      })
+
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents")
+
+    assert review.id != page.id
+    assert html =~ "Open paging incident"
+    assert triage_hrefs(html) == ["/scoria/incidents/#{page.id}"]
+  end
+
+  test "triage summary opens newest review incident when no paging incident is open" do
+    older =
+      seed_incident!(%{
+        incident_key: "inc-review-older",
+        summary: "Older review incident",
+        routing_class: "review",
+        last_seen_at: ~U[2026-05-10 12:00:00.000000Z]
+      })
+
+    newer =
+      seed_incident!(%{
+        incident_key: "inc-review-newest",
+        summary: "Newest review incident",
+        routing_class: "review",
+        last_seen_at: ~U[2026-05-11 12:00:00.000000Z]
+      })
+
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents")
+
+    assert older.id != newer.id
+    assert html =~ "Open review incident"
+    assert triage_hrefs(html) == ["/scoria/incidents/#{newer.id}"]
+  end
+
+  test "triage summary keeps resolved-only incidents as history without an action CTA" do
+    resolved =
+      seed_incident!(%{
+        incident_key: "inc-resolved-history",
+        summary: "Resolved billing incident",
+        severity: "critical",
+        routing_class: "page",
+        status: "resolved",
+        last_seen_at: ~U[2026-05-11 12:00:00.000000Z]
+      })
+
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents")
+
+    assert html =~ "No open incidents"
+    assert html =~ "1 record, 0 open, 1 no longer open"
+    assert html =~ ~s(href="/scoria/incidents/#{resolved.id}")
+    assert triage_hrefs(html) == []
+    refute html =~ "Open paging incident"
+    refute html =~ "Open review incident"
+  end
+
+  test "incident detail route renders evidence for the chosen incident" do
     review =
       seed_incident!(%{
         incident_key: "inc-review",
@@ -142,24 +231,24 @@ defmodule ScoriaWeb.IncidentsLiveTest do
         last_seen_at: ~U[2026-05-11 12:00:00.000000Z]
       })
 
-    {:ok, view, html} = live(session_conn(), "/scoria/incidents")
-    assert html =~ "trace-page"
-
-    html = render_click(view, "select_incident", %{"id" => review.id})
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents/#{review.id}")
     assert html =~ "trace-review"
+    assert html =~ "Trace-first incident evidence"
+    assert html =~ "CI baseline dip on helpfulness"
   end
 
   test "incident severity and status badges include visible text" do
-    seed_incident!(%{
-      incident_key: "inc-visible-state",
-      summary: "Pager state needs text",
-      severity: "critical",
-      routing_class: "page",
-      status: "open",
-      trace_id: "trace-visible-state"
-    })
+    incident =
+      seed_incident!(%{
+        incident_key: "inc-visible-state",
+        summary: "Pager state needs text",
+        severity: "critical",
+        routing_class: "page",
+        status: "open",
+        trace_id: "trace-visible-state"
+      })
 
-    {:ok, _view, html} = live(session_conn(), "/scoria/incidents")
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents/#{incident.id}")
 
     badge_text =
       html
@@ -168,8 +257,32 @@ defmodule ScoriaWeb.IncidentsLiveTest do
       |> Enum.map(&(&1 |> Floki.text() |> String.trim()))
 
     assert "critical" in badge_text
-    assert "page" in badge_text
-    assert "open" in badge_text
+    assert "Open" in badge_text
+  end
+
+  test "selected incident detail queue exposes explicit current state" do
+    selected =
+      seed_incident!(%{
+        incident_key: "inc-selected-state",
+        summary: "Selected state is explicit",
+        trace_id: "trace-selected-state",
+        last_seen_at: ~U[2026-05-11 12:00:00.000000Z]
+      })
+
+    _older =
+      seed_incident!(%{
+        incident_key: "inc-not-selected",
+        summary: "Older incident",
+        trace_id: "trace-not-selected",
+        last_seen_at: ~U[2026-05-10 12:00:00.000000Z]
+      })
+
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents/#{selected.id}")
+
+    assert html =~ ~s(href="/scoria/incidents/#{selected.id}")
+    assert html =~ ~s(aria-current="page")
+    assert html =~ "scoria-selectable-card--selected"
+    refute html =~ "Selected incident:"
   end
 
   test "selected incident renders context-preserving run and trace next-step links" do
@@ -180,7 +293,7 @@ defmodule ScoriaWeb.IncidentsLiveTest do
         trace_id: "trace-threading"
       })
 
-    {:ok, _view, html} = live(session_conn(), "/scoria/incidents")
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents/#{incident.id}")
     decoded_html = URI.decode_www_form(html)
 
     assert html =~ "Open run"
@@ -190,5 +303,71 @@ defmodule ScoriaWeb.IncidentsLiveTest do
              "/scoria/workflows/#{incident.workflow_run_id}?from=incident:#{incident.id}"
 
     assert decoded_html =~ "/scoria?from=incident:#{incident.id}#traces-trace-threading"
+  end
+
+  test "legacy incident query redirects to the routed detail page" do
+    incident =
+      seed_incident!(%{
+        incident_key: "inc-query",
+        summary: "Query selected incident",
+        trace_id: "trace-query"
+      })
+
+    expected_path = "/scoria/incidents/#{incident.id}"
+
+    assert {:error, {:live_redirect, %{to: ^expected_path}}} =
+             live(session_conn(), "/scoria/incidents?incident=#{incident.id}")
+  end
+
+  test "legacy run origin query opens the newest linked incident" do
+    run_id = Ecto.UUID.generate()
+
+    older =
+      seed_incident!(%{
+        incident_key: "inc-run-older",
+        summary: "Older linked incident",
+        workflow_run_id: run_id,
+        trace_id: "trace-run-older",
+        last_seen_at: ~U[2026-05-10 12:00:00.000000Z]
+      })
+
+    newer =
+      seed_incident!(%{
+        incident_key: "inc-run-newer",
+        summary: "Newer linked incident",
+        workflow_run_id: run_id,
+        trace_id: "trace-run-newer",
+        last_seen_at: ~U[2026-05-11 12:00:00.000000Z]
+      })
+
+    assert older.id != newer.id
+
+    expected_path =
+      "/scoria/incidents/#{newer.id}?#{URI.encode_query([{"from", "run:#{run_id}"}])}"
+
+    assert {:error, {:live_redirect, %{to: ^expected_path}}} =
+             live(session_conn(), "/scoria/incidents?from=run:#{run_id}")
+  end
+
+  test "incident detail refuses cross-tenant incidents" do
+    other =
+      seed_incident!(%{
+        tenant_id: "other-tenant",
+        incident_key: "inc-other-tenant",
+        summary: "Other tenant incident",
+        trace_id: "trace-other-tenant"
+      })
+
+    {:ok, _view, html} = live(session_conn(), "/scoria/incidents/#{other.id}")
+
+    assert html =~ "Incident not found"
+    refute html =~ "Other tenant incident"
+  end
+
+  defp triage_hrefs(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find(".scoria-incident-index__triage a")
+    |> Floki.attribute("href")
   end
 end

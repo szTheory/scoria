@@ -88,6 +88,11 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     {:ok, view, html} = live(test_conn(), "/scoria/reviews")
 
     assert html =~ "Review Queue"
+    assert html =~ "scoria-dashboard"
+    assert html =~ "scoria-pagehead"
+    assert html =~ "scoria-pagehead__title--with-actions"
+    refute html =~ "min-h-screen px-6 py-8"
+    refute html =~ "mx-auto max-w-7xl"
 
     assert html =~
              "Review flagged traces before they become datasets, baselines, or dismissed noise."

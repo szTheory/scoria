@@ -147,7 +147,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
         </a>
         <a
           :if={@linked_incident}
-          href={linked_incident_path(@run, assigns[:scoria_base] || "")}
+          href={linked_incident_path(@run, @linked_incident, assigns[:scoria_base] || "")}
           class="scoria-button scoria-button--ghost scoria-button--sm"
         >
           Open incident
@@ -221,7 +221,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
       </.panel>
 
       <div class="scoria-page-split">
-        <.panel class="scoria-panel--flush">
+        <.panel flush={true}>
           <:title>Trace-First Workflow Tree</:title>
           <WorkflowTreeComponent.workflow_tree steps={@steps} selected_step_id={@selected_step_id} />
         </.panel>
@@ -483,8 +483,8 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     "#{base_path}/coming/replay-playground?#{origin_query("run", run.id)}"
   end
 
-  defp linked_incident_path(run, base_path) do
-    "#{base_path}/incidents?#{origin_query("run", run.id)}"
+  defp linked_incident_path(run, %{id: incident_id}, base_path) do
+    "#{base_path}/incidents/#{incident_id}?#{origin_query("run", run.id)}"
   end
 
   defp prompt_release_path(prompt_id, run, base_path) do

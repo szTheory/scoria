@@ -92,12 +92,13 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     {:ok, _view, html} = live(conn, "/scoria/workflows")
 
-    assert html =~ ~s(<table class="scoria-table scoria-table--compact" id="runs")
+    assert html =~ ~s(<table class="scoria-table" id="runs")
     assert html =~ "session-runs-index"
     assert html =~ "Running"
     assert html =~ "Open trace"
     assert html =~ "/scoria/workflows/#{run.id}"
-    refute html =~ ~s(<table class="scoria-table">)
+    refute html =~ "scoria-table--compact"
+    refute html =~ "phx-value-density"
   end
 
   test "async loading state renders scoria-skeleton in place of bespoke loading markup" do
@@ -286,7 +287,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
-    {:ok, _incident} =
+    {:ok, incident} =
       %Incident{}
       |> Incident.changeset(%{
         tenant_id: "default",
@@ -322,7 +323,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert decoded_html =~ "step_id=#{step.id}"
     assert decoded_html =~ "source_variant=original"
     assert decoded_html =~ "from=run:#{run.id}"
-    assert decoded_html =~ "/scoria/incidents?from=run:#{run.id}"
+    assert decoded_html =~ "/scoria/incidents/#{incident.id}?from=run:#{run.id}"
     assert decoded_html =~ "/scoria/prompts/#{prompt.id}/release?from=run:#{run.id}"
 
     html_downcase = String.downcase(html)

@@ -16,37 +16,13 @@
   .scoria-sidebar {
     display: none;
   }
-  /* Desktop layout restored at >=768px */
-  @media (min-width: 768px) {
-    .scoria-shell {
-      grid-template-columns: 248px minmax(0, 1fr);
-      grid-template-areas: "sidebar topbar" "sidebar main";
-    }
-    .scoria-sidebar {
-      display: flex;
-      grid-area: sidebar;
-      border-right: 1px solid var(--scoria-border);
-      background: var(--scoria-surface-panel);
-      padding: var(--scoria-space-4) var(--scoria-space-3);
-      flex-direction: column;
-      gap: var(--scoria-space-5);
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow-y: auto;
-    }
-    /* Hide mobile-only topbar at desktop breakpoint */
-    .scoria-mobile-topbar {
-      display: none;
-    }
-  }
   .scoria-topbar {
     grid-area: topbar;
     border-bottom: 1px solid var(--scoria-border);
     background: color-mix(in srgb, var(--scoria-surface-app) 86%, transparent);
     backdrop-filter: blur(8px);
     padding: var(--scoria-space-3) var(--scoria-space-5);
-    display: flex;
+    display: none;
     align-items: center;
     gap: var(--scoria-space-4);
     position: sticky;
@@ -63,6 +39,7 @@
   /* ---------- Mobile topbar (hidden at >=768px) ---------- */
   .scoria-mobile-topbar {
     display: flex;
+    grid-area: topbar;
     align-items: center;
     gap: var(--scoria-space-2);
     padding: var(--scoria-space-2) var(--scoria-space-4);
@@ -189,6 +166,35 @@
   /* Ensure drawer nav rows have 44px hit target */
   .scoria-mobile-drawer .scoria-nav {
     min-height: 44px;
+  }
+
+  /* Desktop layout restored at >=768px. Keep this after mobile/base chrome
+     declarations so desktop overrides win the cascade. */
+  @media (min-width: 768px) {
+    .scoria-shell {
+      grid-template-columns: 248px minmax(0, 1fr);
+      grid-template-areas: "sidebar topbar" "sidebar main";
+    }
+    .scoria-sidebar {
+      display: flex;
+      grid-area: sidebar;
+      border-right: 1px solid var(--scoria-border);
+      background: var(--scoria-surface-panel);
+      padding: var(--scoria-space-4) var(--scoria-space-3);
+      flex-direction: column;
+      gap: var(--scoria-space-5);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .scoria-topbar {
+      display: flex;
+    }
+    .scoria-mobile-topbar,
+    .scoria-mobile-drawer-shell {
+      display: none;
+    }
   }
 
   /* Brand lockup */
@@ -539,6 +545,13 @@
     border-radius: var(--scoria-radius-lg);
     padding: var(--scoria-space-4);
     box-shadow: var(--scoria-shadow-panel);
+    --scoria-panel-header-padding-block-start: 0;
+    --scoria-panel-header-padding-inline: 0;
+    --scoria-table-control-padding-inline: 0;
+    --scoria-table-control-padding-block-start: 0;
+    --scoria-table-pagination-padding-inline: 0;
+    --scoria-table-pagination-padding-block-end: 0;
+    --scoria-table-summary-padding-inline: var(--scoria-space-4);
   }
   .scoria-panel--raised {
     background: linear-gradient(180deg, var(--scoria-surface-panel-raised), var(--scoria-surface-panel));
@@ -547,13 +560,70 @@
   .scoria-panel--flush {
     padding: 0;
     overflow: hidden;
+    --scoria-panel-header-padding-block-start: var(--scoria-space-4);
+    --scoria-panel-header-padding-inline: var(--scoria-space-4);
+    --scoria-table-control-padding-inline: var(--scoria-space-4);
+    --scoria-table-control-padding-block-start: var(--scoria-space-1);
+    --scoria-table-pagination-padding-inline: var(--scoria-space-4);
+    --scoria-table-pagination-padding-block-end: var(--scoria-space-4);
+    --scoria-table-summary-padding-inline: var(--scoria-space-4);
   }
   .scoria-panel__header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--scoria-space-3);
+    padding-block-start: var(--scoria-panel-header-padding-block-start);
+    padding-inline: var(--scoria-panel-header-padding-inline);
     margin-bottom: var(--scoria-space-3);
+  }
+
+  /* ---------- Page section (open-air top-level IA) ---------- */
+  .scoria-page-section {
+    min-width: 0;
+  }
+  .scoria-page-section + .scoria-page-section {
+    margin-top: var(--scoria-space-6);
+  }
+  .scoria-page-section__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--scoria-space-4);
+    margin-bottom: var(--scoria-space-3);
+  }
+  .scoria-page-section__heading {
+    min-width: 0;
+    max-width: 72ch;
+  }
+  .scoria-page-section__header h2 {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-panel);
+    font-weight: 650;
+    line-height: var(--scoria-lh-tight);
+    margin-top: var(--scoria-space-1);
+  }
+  .scoria-page-section__description {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-body);
+    line-height: var(--scoria-lh-body);
+    margin-top: var(--scoria-space-1);
+    text-wrap: pretty;
+  }
+  .scoria-page-section__actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--scoria-space-2);
+  }
+  @media (max-width: 640px) {
+    .scoria-page-section__header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .scoria-page-section__actions {
+      justify-content: flex-start;
+    }
   }
 
   /* ---------- Eyebrow (category/status label) ---------- */
@@ -619,6 +689,14 @@
     padding: var(--scoria-space-1) var(--scoria-space-3);
     font-size: var(--scoria-fs-label);
   }
+
+  /* ---------- Theme label ----------
+     data-theme-mode is set before first paint, so the control label never waits
+     for the LiveView hook to replace server text. */
+  .scoria-theme-label::before { content: "System"; }
+  .scoria-root[data-theme-mode="dark"] .scoria-theme-label::before { content: "Dark"; }
+  .scoria-root[data-theme-mode="light"] .scoria-theme-label::before { content: "Light"; }
+  .scoria-root[data-theme-mode="system"] .scoria-theme-label::before { content: "System"; }
 
   /* ---------- Badge (tone) ---------- */
   .scoria-badge {
@@ -688,6 +766,19 @@
   }
   .scoria-id:hover { color: var(--scoria-text); border-color: var(--scoria-border-strong); }
 
+  .scoria-link {
+    color: var(--scoria-link);
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .scoria-link:hover { color: var(--scoria-link-hover); }
+
+  .scoria-time {
+    font-family: var(--scoria-font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--scoria-text-muted);
+  }
+
   /* ---------- Table ---------- */
   .scoria-table { font-size: var(--scoria-fs-body); }
   .scoria-table thead th {
@@ -704,11 +795,52 @@
     border-bottom: 1px solid var(--scoria-border);
   }
   .scoria-table tbody td {
-    padding: var(--scoria-space-3);
+    padding: var(--scoria-space-2);
     border-bottom: 1px solid var(--scoria-border);
     vertical-align: top;
   }
   .scoria-table tbody tr:hover { background: var(--scoria-tone-neutral-bg); }
+  .scoria-table__cell-note {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+    line-height: var(--scoria-lh-body);
+    margin-top: var(--scoria-space-1);
+    text-wrap: pretty;
+  }
+
+  /* ---------- Approval decision summary ---------- */
+  .scoria-approval-summary {
+    border: 1px solid var(--scoria-tone-warn-border);
+    border-radius: var(--scoria-radius-md);
+    background:
+      linear-gradient(135deg, var(--scoria-tone-warn-bg), transparent 72%),
+      var(--scoria-surface-panel-raised);
+    padding: var(--scoria-space-4);
+  }
+
+  .scoria-approval-summary__label {
+    color: var(--scoria-tone-warn-fg);
+    font-size: var(--scoria-fs-label);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin-bottom: var(--scoria-space-2);
+    text-transform: uppercase;
+  }
+
+  .scoria-approval-summary__effect {
+    color: var(--scoria-text);
+    line-height: var(--scoria-lh-body);
+    text-wrap: pretty;
+  }
+
+  .scoria-approval-ids {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--scoria-space-2) var(--scoria-space-3);
+    align-items: center;
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+  }
 
   /* ---------- Drawer + modal ---------- */
   /* The scrim sits at the BASE of its overlay's stacking context. Its parent
@@ -822,6 +954,81 @@
   }
   .scoria-taskcard__desc { color: var(--scoria-text-muted); font-size: var(--scoria-fs-label); }
 
+  /* ---------- Selectable object cards ---------- */
+  .scoria-selectable-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .scoria-selectable-card {
+    --scoria-selectable-rail: var(--scoria-action);
+    position: relative;
+    width: 100%;
+    min-height: 56px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--scoria-space-3);
+    padding: var(--scoria-space-3);
+    border: 1px solid var(--scoria-border);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-surface-panel);
+    color: var(--scoria-text);
+    text-align: left;
+    text-decoration: none;
+    box-shadow: var(--scoria-shadow-panel);
+    transition:
+      background-color var(--scoria-dur-fast) var(--scoria-ease-out),
+      border-color var(--scoria-dur-fast) var(--scoria-ease-out),
+      box-shadow var(--scoria-dur-fast) var(--scoria-ease-out),
+      transform var(--scoria-dur-fast) var(--scoria-ease-out);
+  }
+  .scoria-selectable-card:hover {
+    border-color: var(--scoria-tone-brand-border);
+    background: var(--scoria-tone-neutral-bg);
+    transform: translateY(-1px);
+  }
+  .scoria-selectable-card--selected,
+  .scoria-selectable-card[aria-current="page"],
+  .scoria-selectable-card[aria-current="true"] {
+    border-color: var(--scoria-tone-brand-border);
+    background:
+      linear-gradient(90deg, var(--scoria-tone-brand-bg), transparent 72%),
+      var(--scoria-surface-panel-raised);
+    box-shadow: inset 3px 0 0 var(--scoria-selectable-rail), var(--scoria-shadow-panel);
+  }
+  .scoria-selectable-card--fail { --scoria-selectable-rail: var(--scoria-tone-fail-fg); }
+  .scoria-selectable-card--warn { --scoria-selectable-rail: var(--scoria-tone-warn-fg); }
+  .scoria-selectable-card--info { --scoria-selectable-rail: var(--scoria-tone-info-fg); }
+  .scoria-selectable-card--pass { --scoria-selectable-rail: var(--scoria-tone-pass-fg); }
+  .scoria-selectable-card--trace { --scoria-selectable-rail: var(--scoria-tone-trace-fg); }
+  .scoria-selectable-card--brand { --scoria-selectable-rail: var(--scoria-action); }
+  .scoria-selectable-card__body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-2);
+  }
+  .scoria-selectable-card__title {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-body);
+    font-weight: 600;
+    line-height: var(--scoria-lh-tight);
+    text-wrap: balance;
+  }
+  .scoria-selectable-card__meta {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+    line-height: var(--scoria-lh-body);
+  }
+  .scoria-selectable-card__status {
+    display: inline-flex;
+    justify-content: flex-end;
+  }
+
   /* ---------- Trace span row ---------- */
   .scoria-span {
     display: flex;
@@ -853,6 +1060,23 @@
   /* ---------- Page header ---------- */
   .scoria-pagehead { margin-bottom: var(--scoria-space-5); }
   .scoria-pagehead__title { display: flex; align-items: center; gap: var(--scoria-space-3); }
+  .scoria-pagehead__title--with-actions {
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  .scoria-pagehead__description {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-body);
+    line-height: var(--scoria-lh-body);
+    margin-top: var(--scoria-space-1);
+    text-wrap: pretty;
+  }
+  @media (max-width: 640px) {
+    .scoria-pagehead__title--with-actions {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
   .scoria-breadcrumbs {
     display: flex;
     align-items: center;
@@ -862,10 +1086,6 @@
   }
   .scoria-breadcrumbs a { color: var(--scoria-text-muted); }
   .scoria-breadcrumbs__sep { color: var(--scoria-text-subtle); }
-
-  /* ---------- Table density modifiers ---------- */
-  .scoria-table--compact tbody td  { padding: var(--scoria-space-2); }
-  .scoria-table--comfortable tbody td { padding: var(--scoria-space-4); }
 
   /* ---------- Modal header + footer ---------- */
   .scoria-modal__header {
@@ -1085,6 +1305,163 @@
     font-size: var(--scoria-fs-body);
     line-height: var(--scoria-lh-body);
   }
+
+  /* ---------- Incident detail evidence ----------
+     The Incidents screen is a master/detail triage surface. Keep the selected
+     incident evidence readable inside a detail rail; do not use viewport-based
+     five-column grids inside this component. */
+  .scoria-incident-detail {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-4);
+  }
+  .scoria-incident-detail__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scoria-space-1);
+  }
+  .scoria-incident-detail__title {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-panel);
+    font-weight: 600;
+    line-height: var(--scoria-lh-tight);
+    text-wrap: balance;
+  }
+  .scoria-incident-detail__description {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-body);
+    line-height: var(--scoria-lh-body);
+    text-wrap: pretty;
+  }
+  .scoria-incident-evidence-stack {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--scoria-space-4);
+  }
+  .scoria-incident-evidence-stack--compact {
+    gap: var(--scoria-space-3);
+  }
+  .scoria-signal-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: var(--scoria-space-3);
+    margin-top: var(--scoria-space-4);
+  }
+  .scoria-signal {
+    min-width: 0;
+    border-inline-start: 3px solid var(--scoria-tone-neutral-border);
+    padding-block: var(--scoria-space-1);
+    padding-inline-start: var(--scoria-space-3);
+  }
+  .scoria-signal--pass { border-color: var(--scoria-tone-pass-border); }
+  .scoria-signal--info { border-color: var(--scoria-tone-info-border); }
+  .scoria-signal--warn { border-color: var(--scoria-tone-warn-border); }
+  .scoria-signal--fail { border-color: var(--scoria-tone-fail-border); }
+  .scoria-signal--brand { border-color: var(--scoria-tone-brand-border); }
+  .scoria-signal--trace { border-color: var(--scoria-tone-trace-border); }
+  .scoria-signal dd {
+    margin: 0;
+  }
+  .scoria-signal__label {
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-badge);
+    font-weight: 700;
+    letter-spacing: var(--scoria-tracking-eyebrow);
+    text-transform: uppercase;
+  }
+  .scoria-signal__value {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-body);
+    font-weight: 650;
+    line-height: var(--scoria-lh-tight);
+    margin-top: var(--scoria-space-1);
+    overflow-wrap: anywhere;
+  }
+  .scoria-signal__detail {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+    line-height: var(--scoria-lh-body);
+    margin-top: var(--scoria-space-1);
+    text-wrap: pretty;
+  }
+  .scoria-incident-rollup {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--scoria-space-3);
+    margin-top: var(--scoria-space-3);
+  }
+  .scoria-incident-signal {
+    min-width: 0;
+    border: 1px solid var(--scoria-tone-neutral-border);
+    border-radius: var(--scoria-radius-md);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--scoria-tone-neutral-bg) 70%, transparent), transparent),
+      var(--scoria-surface-panel-raised);
+    padding: var(--scoria-space-3);
+    box-shadow: var(--scoria-shadow-panel);
+  }
+  .scoria-incident-signal--pass { border-color: var(--scoria-tone-pass-border); }
+  .scoria-incident-signal--info { border-color: var(--scoria-tone-info-border); }
+  .scoria-incident-signal--warn { border-color: var(--scoria-tone-warn-border); }
+  .scoria-incident-signal--fail { border-color: var(--scoria-tone-fail-border); }
+  .scoria-incident-signal--brand { border-color: var(--scoria-tone-brand-border); }
+  .scoria-incident-signal--trace { border-color: var(--scoria-tone-trace-border); }
+  .scoria-incident-signal dd {
+    margin: 0;
+  }
+  .scoria-incident-signal__label {
+    color: var(--scoria-text-subtle);
+    font-size: var(--scoria-fs-badge);
+    font-weight: 700;
+    letter-spacing: var(--scoria-tracking-eyebrow);
+    text-transform: uppercase;
+  }
+  .scoria-incident-signal__value {
+    color: var(--scoria-text);
+    font-size: var(--scoria-fs-body);
+    font-weight: 650;
+    line-height: var(--scoria-lh-tight);
+    margin-top: var(--scoria-space-2);
+    overflow-wrap: anywhere;
+  }
+  .scoria-incident-signal__detail {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-label);
+    line-height: var(--scoria-lh-body);
+    margin-top: var(--scoria-space-1);
+    text-wrap: pretty;
+  }
+  .scoria-incident-empty-evidence {
+    border: 1px dashed var(--scoria-border-strong);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-surface-sunken);
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-body);
+    line-height: var(--scoria-lh-body);
+    padding: var(--scoria-space-4);
+  }
+  .scoria-incident-index__triage {
+    margin-bottom: var(--scoria-space-5);
+  }
+  .scoria-incident-index__summary {
+    color: var(--scoria-text-muted);
+    font-size: var(--scoria-fs-body);
+    line-height: var(--scoria-lh-body);
+    margin-bottom: var(--scoria-space-3);
+    text-wrap: pretty;
+  }
+  .scoria-incident-index__notice {
+    border: 1px solid var(--scoria-tone-warn-border);
+    border-radius: var(--scoria-radius-md);
+    background: var(--scoria-tone-warn-bg);
+    color: var(--scoria-tone-warn-fg);
+    font-size: var(--scoria-fs-body);
+    line-height: var(--scoria-lh-body);
+    margin-bottom: var(--scoria-space-3);
+    padding: var(--scoria-space-3);
+  }
   /* ---------- End evidence primitives ---------- */
 
   /* ---------- Flash banners ---------- */
@@ -1164,8 +1541,13 @@
   }
   .scoria-notebook__title { font-size: var(--scoria-fs-body); font-weight: 600; color: var(--scoria-text); }
   .scoria-table-shell { display: flex; flex-direction: column; gap: var(--scoria-space-3); }
-  .scoria-table__filter { display: flex; align-items: center; gap: var(--scoria-space-2); }
-  .scoria-table__density-toggle { display: flex; align-items: center; gap: var(--scoria-space-1); }
+  .scoria-table__filter {
+    display: flex;
+    align-items: center;
+    gap: var(--scoria-space-2);
+    padding-block-start: var(--scoria-table-control-padding-block-start);
+    padding-inline: var(--scoria-table-control-padding-inline);
+  }
   .scoria-table__td--actions { text-align: right; white-space: nowrap; }
 
   /* ---------- Table responsive viewport (16-02) ---------- */
@@ -1184,7 +1566,7 @@
      scoria-table-shell--has-summary tables show summaries below md and hide the viewport. */
   .scoria-table__mobile-summaries {
     display: none;
-    padding: var(--scoria-space-4);
+    padding: var(--scoria-space-4) var(--scoria-table-summary-padding-inline);
     background: var(--scoria-surface-panel);
     gap: var(--scoria-space-4);
     flex-direction: column;
@@ -1264,6 +1646,8 @@
     justify-content: flex-end;
     gap: var(--scoria-space-2);
     margin-top: var(--scoria-space-3);
+    padding-inline: var(--scoria-table-pagination-padding-inline);
+    padding-block-end: var(--scoria-table-pagination-padding-block-end);
   }
   .scoria-table__page-label { font-size: var(--scoria-fs-label); color: var(--scoria-text-muted); }
 

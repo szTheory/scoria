@@ -6,124 +6,136 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
 
   def render(assigns) do
     ~H"""
-    <.notebook
+    <section
       id="incident-evidence-notebook"
-      title="Trace-first incident notebook"
-      eyebrow="Incident evidence"
-      selected_tab="incident"
+      class="scoria-incident-detail"
+      aria-labelledby="incident-evidence-title"
     >
-      <:tab key="incident" label="Incident">
-        <div class="space-y-4">
-          <.evidence_section
-            title="Composite health rollup"
-            description="Composite health rollup stays compact while the evidence below explains the selected run."
-          >
-            <.evidence_rows
-              rows={[
-                {"trace", @evidence.trace_id},
-                {"run", @evidence.run_id}
-              ]}
+      <header class="scoria-incident-detail__header">
+        <p class="scoria-eyebrow">Incident evidence</p>
+        <h2 id="incident-evidence-title" class="scoria-incident-detail__title">
+          Trace-first incident evidence
+        </h2>
+        <p class="scoria-incident-detail__description">
+          Start with the selected run state, then inspect the proof behind the route, budget, breaker, and relay signals.
+        </p>
+      </header>
+
+      <div class="scoria-incident-evidence-stack">
+        <.evidence_section
+          title="Triage summary"
+          description="What changed, why it routed, and which trace/run to open next."
+        >
+          <.evidence_rows
+            rows={[
+              {"trace", @evidence.trace_id},
+              {"run", @evidence.run_id},
+              {"review queue", @evidence.health_rollup.review_count},
+              {"paging", @evidence.health_rollup.page_count}
+            ]}
+          />
+
+          <div class="scoria-incident-rollup" aria-label="Selected incident health signals">
+            <.signal_card
+              label="Budget"
+              value={@evidence.health_rollup.budget_signal}
+              detail={@evidence.health_rollup.budget_detail}
+              tone={badge_tone(@evidence.budget.status, :budget)}
             />
-
-            <div class="mt-3 grid gap-3 lg:grid-cols-5">
-              <.rollup_section
-                label="Budget"
-                value={@evidence.health_rollup.budget_signal}
-                detail={@evidence.health_rollup.budget_detail}
-              />
-              <.rollup_section
-                label="Breaker"
-                value={@evidence.health_rollup.breaker_signal}
-                detail={@evidence.health_rollup.breaker_detail}
-              />
-              <.rollup_section
-                label="Review incidents"
-                value={@evidence.health_rollup.review_count}
-                detail="Open review alerts stay visible without becoming pager noise."
-              />
-              <.rollup_section
-                label="Page incidents"
-                value={@evidence.health_rollup.page_count}
-                detail="Fast burn and breaker trips remain explicit."
-              />
-              <.rollup_section
-                label="Audit relay"
-                value={@evidence.health_rollup.relay_signal}
-                detail={@evidence.health_rollup.relay_detail}
-              />
-            </div>
-          </.evidence_section>
-
-          <div class="scoria-evidence-split">
-            <div class="space-y-4">
-              <.evidence_section
-                title="Budget strip"
-                description="Reservation actuals, reason codes, and provider/tool refs for the selected run."
-                badge={@evidence.budget.status_label}
-                tone={badge_tone(@evidence.budget.status, :budget)}
-              >
-                <.evidence_rows
-                  rows={[
-                    {"Reservation actuals", @evidence.budget.actuals},
-                    {"policy", @evidence.budget.policy_key},
-                    {"Reason and integration", @evidence.budget.reason_code},
-                    {"provider/tool", "#{@evidence.budget.provider_ref} / #{@evidence.budget.tool_ref}"}
-                  ]}
-                />
-              </.evidence_section>
-
-              <.evidence_section title="Incident notebook">
-                <div class="space-y-3">
-                  <.incident_section :for={incident <- @evidence.incidents} incident={incident} />
-                </div>
-              </.evidence_section>
-            </div>
-
-            <div class="space-y-4">
-              <.evidence_section title="Breaker and relay evidence">
-                <.evidence_section
-                  title={@evidence.breaker.breaker_key}
-                  description={"#{@evidence.breaker.reason_code} via #{@evidence.breaker.integration_kind}"}
-                  badge={@evidence.breaker.state_label}
-                  tone={badge_tone(@evidence.breaker.state, :breaker)}
-                >
-                  <.evidence_rows
-                    rows={[
-                      {"breaker key", @evidence.breaker.breaker_key},
-                      {"state", @evidence.breaker.state_label},
-                      {"reason code", @evidence.breaker.reason_code},
-                      {"integration kind", @evidence.breaker.integration_kind}
-                    ]}
-                  />
-                </.evidence_section>
-
-                <div class="mt-3 space-y-3">
-                  <.audit_section :for={audit <- @evidence.audit_rows} audit={audit} />
-                </div>
-              </.evidence_section>
-
-              <.evidence_section title="Notification delivery outcomes">
-                <div class="space-y-3">
-                  <.delivery_section :for={delivery <- @evidence.deliveries} delivery={delivery} />
-                </div>
-              </.evidence_section>
-            </div>
+            <.signal_card
+              label="Breaker"
+              value={@evidence.health_rollup.breaker_signal}
+              detail={@evidence.health_rollup.breaker_detail}
+              tone={badge_tone(@evidence.breaker.state, :breaker)}
+            />
+            <.signal_card
+              label="Audit relay"
+              value={@evidence.health_rollup.relay_signal}
+              detail="Delivery and audit evidence is listed below."
+              tone={relay_tone(@evidence.health_rollup.relay_signal)}
+            />
           </div>
-        </div>
-      </:tab>
-    </.notebook>
+        </.evidence_section>
+
+        <.evidence_section
+          title="Incident notebook"
+          description="Operator-facing incident facts before raw transport and persistence details."
+        >
+          <div class="scoria-incident-evidence-stack scoria-incident-evidence-stack--compact">
+            <.incident_section :for={incident <- @evidence.incidents} incident={incident} />
+          </div>
+        </.evidence_section>
+
+        <.evidence_section
+          title="Budget evidence"
+          description="Reservation actuals, policy, reason, and provider/tool references."
+          badge={@evidence.budget.status_label}
+          tone={badge_tone(@evidence.budget.status, :budget)}
+        >
+          <.evidence_rows
+            rows={[
+              {"Reservation actuals", @evidence.budget.actuals},
+              {"policy", @evidence.budget.policy_key},
+              {"Reason and integration", @evidence.budget.reason_code},
+              {"provider/tool", "#{@evidence.budget.provider_ref} / #{@evidence.budget.tool_ref}"}
+            ]}
+          />
+        </.evidence_section>
+
+        <.evidence_section
+          title="Breaker evidence"
+          description={"#{@evidence.breaker.reason_code} via #{@evidence.breaker.integration_kind}"}
+          badge={@evidence.breaker.state_label}
+          tone={badge_tone(@evidence.breaker.state, :breaker)}
+        >
+          <.evidence_rows
+            rows={[
+              {"breaker key", @evidence.breaker.breaker_key},
+              {"state", @evidence.breaker.state_label},
+              {"reason code", @evidence.breaker.reason_code},
+              {"integration kind", @evidence.breaker.integration_kind}
+            ]}
+          />
+        </.evidence_section>
+
+        <.evidence_section
+          title="Audit and delivery"
+          description={@evidence.health_rollup.relay_detail}
+          badge={@evidence.health_rollup.relay_signal}
+          tone={relay_tone(@evidence.health_rollup.relay_signal)}
+        >
+          <div
+            :if={@evidence.audit_rows == [] and @evidence.deliveries == []}
+            class="scoria-incident-empty-evidence"
+          >
+            No audit rows or delivery outcomes have been recorded for this trace yet.
+          </div>
+
+          <div
+            :if={@evidence.audit_rows != [] or @evidence.deliveries != []}
+            class="scoria-incident-evidence-stack scoria-incident-evidence-stack--compact"
+          >
+            <.audit_section :for={audit <- @evidence.audit_rows} audit={audit} />
+            <.delivery_section :for={delivery <- @evidence.deliveries} delivery={delivery} />
+          </div>
+        </.evidence_section>
+      </div>
+    </section>
     """
   end
 
   attr(:label, :string, required: true)
   attr(:value, :any, required: true)
   attr(:detail, :string, required: true)
+  attr(:tone, :atom, default: :neutral)
 
-  defp rollup_section(assigns) do
+  defp signal_card(assigns) do
     ~H"""
-    <.evidence_section title={@label} badge={to_string(@value)} tone={tone(@value)}>
-      <.evidence_rows rows={[{"value", @value}, {"detail", @detail}]} />
-    </.evidence_section>
+    <article class={["scoria-incident-signal", "scoria-incident-signal--#{@tone}"]}>
+      <p class="scoria-incident-signal__label">{@label}</p>
+      <p class="scoria-incident-signal__value">{@value}</p>
+      <p class="scoria-incident-signal__detail">{@detail}</p>
+    </article>
     """
   end
 
@@ -227,4 +239,10 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
   defp badge_tone("failed", :delivery), do: :fail
   defp badge_tone("pending", :audit), do: :warn
   defp badge_tone(_value, _kind), do: :pass
+
+  defp relay_tone("Relay degraded"), do: :fail
+  defp relay_tone("Relay pending"), do: :warn
+  defp relay_tone("Relay healthy"), do: :pass
+  defp relay_tone("Relay quiet"), do: :neutral
+  defp relay_tone(_value), do: :neutral
 end

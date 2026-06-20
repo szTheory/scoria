@@ -136,7 +136,7 @@ defmodule ScoriaWeb.PromptLive.Index do
           </.form>
         </.panel>
       <% else %>
-        <.table id="prompt-versions" rows={@prompt_templates} density={:compact}>
+        <.table id="prompt-versions" rows={@prompt_templates}>
           <:col :let={template} label="Prompt"><%= template.entity_id %></:col>
           <:col :let={template} label="Version">v<%= template.version %></:col>
           <:col :let={template} label="State">

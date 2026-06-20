@@ -118,7 +118,7 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
             ready to gate releases on measurable eval deltas.
           </.empty_state>
 
-          <.table :if={@eval_specs != []} id="eval-specs" rows={@eval_specs} density={:compact}>
+          <.table :if={@eval_specs != []} id="eval-specs" rows={@eval_specs}>
             <:col :let={spec} label="Name" key={:name}>{spec.name}</:col>
             <:col :let={spec} label="Version" key={:version}>
               <.badge tone={:neutral} label={"v#{spec.version}"} />
@@ -140,7 +140,7 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
             Promote a production trace to a dataset, then run an eval to compare prompt behavior against a baseline.
           </.empty_state>
 
-          <.table :if={@eval_runs != []} id="eval-runs" rows={@eval_runs} density={:compact}>
+          <.table :if={@eval_runs != []} id="eval-runs" rows={@eval_runs}>
             <:col :let={run} label="Run">
               <.id id={"eval-run-id-#{run.id}"} value={run.id} />
             </:col>

@@ -42,6 +42,7 @@ defmodule ScoriaWeb.Router do
           live("/workflows/:id", ScoriaWeb.WorkflowLive.Show, :show)
           live("/connectors", ScoriaWeb.ConnectorsLive.Index, :index)
           live("/incidents", ScoriaWeb.IncidentsLive.Index, :index)
+          live("/incidents/:id", ScoriaWeb.IncidentsLive.Show, :show)
           live("/eval_specs", ScoriaWeb.EvalSpecLive.Index, :index)
           live("/prompts", ScoriaWeb.PromptLive.Index, :index)
           live("/prompts/:id/release", ScoriaWeb.PromptLive.ReleaseWorkbenchLive, :index)

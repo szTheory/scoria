@@ -10,11 +10,11 @@ defmodule ScoriaWeb.UIComponentTest do
 
   Test groups to be filled in by later plans:
 
-    DS-01: <.table> — sortable, filterable, paginated data table (plan 12-02)
+    DS-01: <.table> — sortable, filterable, paginated operator scan table (plan 12-02)
       - renders column headers
       - renders rows
       - renders empty state when rows == []
-      - applies density modifier classes (compact/default/comfortable)
+      - uses one canonical compact scan density with no user-facing density toggle
 
     DS-02: <.drawer> and <.modal> — slot-based overlay shells (plan 12-02)
       - drawer renders title and content
@@ -96,6 +96,129 @@ defmodule ScoriaWeb.UIComponentTest do
   defp safe_slot_block(content),
     do: [%{inner_block: fn _changed, _arg -> {:safe, content} end, __slot__: :inner_block}]
 
+  describe "panel/1 design-system surface contract" do
+    test "flush option emits the flush modifier without requiring callsite class strings" do
+      html =
+        render_component(&ScoriaWeb.UI.panel/1,
+          flush: true,
+          inner_block: slot_block("Panel body")
+        )
+
+      assert html =~ "scoria-panel"
+      assert html =~ "scoria-panel--flush"
+      assert html =~ "Panel body"
+    end
+  end
+
+  describe "page_section/1 design-system surface contract" do
+    test "renders open-air top-level section chrome without panel classes" do
+      html =
+        render_component(&ScoriaWeb.UI.page_section/1,
+          class: "custom-section",
+          eyebrow: slot_block("posture"),
+          title: slot_block("Tenant triage"),
+          description: slot_block("Current queue posture."),
+          actions: slot_block(~s(<a href="/incidents">Open</a>)),
+          inner_block: slot_block("Section body")
+        )
+
+      assert html =~ "scoria-page-section"
+      assert html =~ "custom-section"
+      assert html =~ "scoria-page-section__header"
+      assert html =~ "Tenant triage"
+      assert html =~ "Current queue posture."
+      assert html =~ "Section body"
+      refute html =~ "scoria-panel"
+    end
+  end
+
+  describe "time/1 design-system primitive" do
+    test "renders accessible exact time with operator-friendly elapsed text" do
+      html =
+        render_component(&ScoriaWeb.UI.time/1,
+          at: ~U[2026-06-19 20:01:00Z],
+          mode: :elapsed
+        )
+
+      assert html =~ ~s(<time)
+      assert html =~ ~s(datetime="2026-06-19T20:01:00Z")
+      assert html =~ ~s(title="2026-06-19 20:01 UTC")
+      assert html =~ "Waiting "
+      assert html =~ "scoria-time"
+    end
+
+    test "renders fallback text when a timestamp is not recorded" do
+      html =
+        render_component(&ScoriaWeb.UI.time/1,
+          at: nil,
+          fallback: "Not requested yet"
+        )
+
+      refute html =~ ~s(<time)
+      assert html =~ ~s(<span)
+      assert html =~ "Not requested yet"
+      assert html =~ "scoria-time"
+    end
+  end
+
+  describe "dashboard theme and CSS source contracts" do
+    test "theme defaults to system mode before the LiveView hook mounts" do
+      root_source = File.read!("lib/scoria_web/components/layouts/root.html.heex")
+      app_source = File.read!("lib/scoria_web/components/layouts/app.html.heex")
+      js_source = File.read!("assets/js/scoria.js")
+
+      assert root_source =~ ~s(data-theme-mode="system")
+      assert root_source =~ "var mode ="
+      assert root_source =~ ~s(pref : "system")
+      assert root_source =~ "document.documentElement.setAttribute(\"data-theme-mode\", mode);"
+      assert app_source =~ ~s(title="Theme: System)
+      refute app_source =~ ~s(<span data-theme-label>Theme</span>)
+      assert js_source =~ "return THEME_MODES.indexOf(v) >= 0 ? v : \"system\";"
+      assert js_source =~ "document.documentElement.setAttribute(\"data-theme-mode\", mode);"
+      refute js_source =~ "textContent = label"
+    end
+
+    test "flush panel gutters use component variables instead of deep structural selectors" do
+      css_source = File.read!("assets/css/04-components.css")
+      docs_source = File.read!("docs/MAINTAINERS.md")
+
+      assert css_source =~ "--scoria-panel-header-padding-inline"
+      assert css_source =~ "--scoria-table-control-padding-inline"
+      assert css_source =~ ".scoria-page-section"
+      assert css_source =~ ".scoria-signal-strip"
+      assert css_source =~ ".scoria-theme-label::before"
+      refute css_source =~ ".scoria-panel--flush > .scoria-table-shell >"
+      assert docs_source =~ "prefer block classes, BEM modifiers"
+      assert docs_source =~ "avoid reaching"
+      assert docs_source =~ "through unrelated components"
+    end
+
+    test "responsive shell chrome keeps mobile navigation out of desktop layout" do
+      css_source = File.read!("assets/css/04-components.css")
+      js_source = File.read!("assets/js/scoria.js")
+
+      assert css_source =~ ".scoria-mobile-topbar {\n    display: flex;\n    grid-area: topbar;"
+      assert css_source =~ ".scoria-topbar {\n    grid-area: topbar;"
+      assert css_source =~ "    display: none;\n    align-items: center;"
+      assert css_source =~ "@media (min-width: 768px)"
+      assert css_source =~ ".scoria-topbar {\n      display: flex;\n    }"
+
+      assert css_source =~
+               ".scoria-mobile-topbar,\n    .scoria-mobile-drawer-shell {\n      display: none;"
+
+      {mobile_topbar_pos, _} =
+        :binary.match(css_source, ".scoria-mobile-topbar {\n    display: flex;")
+
+      {desktop_override_pos, _} =
+        :binary.match(css_source, "/* Desktop layout restored at >=768px")
+
+      assert desktop_override_pos > mobile_topbar_pos
+      assert js_source =~ "window.matchMedia(\"(min-width: 768px)\")"
+      assert js_source =~ "forceCloseForDesktop"
+      assert js_source =~ "this.desktopMedia.addEventListener(\"change\", this.mediaHandler)"
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # IA-02/03/04/06: Orientation spine primitives (phase 13-01)
   # ---------------------------------------------------------------------------
@@ -122,6 +245,27 @@ defmodule ScoriaWeb.UIComponentTest do
   end
 
   describe "object_header/1" do
+    test "selectable_card renders routed current object with stable selected classes" do
+      html =
+        render_component(&ScoriaWeb.UI.selectable_card/1,
+          href: "/incidents/inc_42",
+          selected: true,
+          tone: :warn,
+          "aria-current": "page",
+          title: slot_block("Incident summary"),
+          status: slot_block("Warning"),
+          meta: slot_block("route review - open")
+        )
+
+      assert html =~ ~s(href="/incidents/inc_42")
+      assert html =~ ~s(aria-current="page")
+      assert html =~ "scoria-selectable-card"
+      assert html =~ "scoria-selectable-card--warn"
+      assert html =~ "scoria-selectable-card--selected"
+      assert html =~ "Incident summary"
+      assert html =~ "route review - open"
+    end
+
     test "renders breadcrumbs, copyable id, status, and origin return chip" do
       html =
         render_component(&ScoriaWeb.UI.object_header/1,
@@ -917,57 +1061,45 @@ defmodule ScoriaWeb.UIComponentTest do
       refute html =~ ~s(phx-value-by="status")
     end
 
-    test "density :compact yields scoria-table--compact" do
+    test "table uses one canonical class with no density modifiers" do
       html =
         render_component(&ScoriaWeb.UI.table/1,
           id: "test-table",
           rows: [],
-          density: :compact,
           col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
         )
 
-      assert html =~ "scoria-table--compact"
-    end
-
-    test "density :default yields no compact or comfortable modifier" do
-      html =
-        render_component(&ScoriaWeb.UI.table/1,
-          id: "test-table",
-          rows: [],
-          density: :default,
-          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
-        )
-
+      assert html =~ ~s(<table class="scoria-table" id="test-table">)
       refute html =~ "scoria-table--compact"
       refute html =~ "scoria-table--comfortable"
     end
 
-    test "density controls are opt-in to avoid unowned LiveView events" do
+    test "table does not expose row density controls" do
       html =
         render_component(&ScoriaWeb.UI.table/1,
           id: "test-table",
           rows: [],
-          density: :compact,
           col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
         )
 
       refute html =~ "Row density"
       refute html =~ ~s(phx-click="set_density")
+      refute html =~ "phx-value-density"
+      refute html =~ "aria-pressed"
     end
 
-    test "density controls use caller-owned event when supplied" do
-      html =
-        render_component(&ScoriaWeb.UI.table/1,
-          id: "test-table",
-          rows: [],
-          density: :compact,
-          on_density_change: "set_density",
-          col: [%{label: "Name", key: nil, class: nil, inner_block: []}]
-        )
+    test "table source and CSS keep density out of the public API" do
+      ui_source = File.read!("lib/scoria_web/ui.ex")
+      css_source = File.read!("assets/css/04-components.css")
+      docs_source = File.read!("docs/MAINTAINERS.md")
 
-      assert html =~ "Row density"
-      assert html =~ ~s(phx-click="set_density")
-      assert html =~ ~s(phx-value-density="compact")
+      refute ui_source =~ "on_density_change"
+      refute ui_source =~ "density_class"
+      refute ui_source =~ "phx-value-density"
+      refute css_source =~ ".scoria-table__density-toggle"
+      refute css_source =~ ".scoria-table--compact"
+      refute css_source =~ ".scoria-table--comfortable"
+      assert docs_source =~ "canonical compact scan density"
     end
 
     test "rows=[] renders default empty state 'No records found'" do
@@ -1005,7 +1137,9 @@ defmodule ScoriaWeb.UIComponentTest do
         render_component(&ScoriaWeb.UI.table/1,
           id: "test-table",
           rows: [%{name: "Alice"}],
-          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}]
+          col: [
+            %{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}
+          ]
         )
 
       refute html =~ "scoria-table__mobile-summaries"
@@ -1023,7 +1157,9 @@ defmodule ScoriaWeb.UIComponentTest do
         render_component(&ScoriaWeb.UI.table/1,
           id: "test-table",
           rows: [%{name: "Alice"}, %{name: "Bob"}],
-          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}],
+          col: [
+            %{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}
+          ],
           mobile_summary: summary_slot
         )
 
@@ -1044,7 +1180,9 @@ defmodule ScoriaWeb.UIComponentTest do
         render_component(&ScoriaWeb.UI.table/1,
           id: "test-table",
           rows: [%{name: "Alice"}, %{name: "Bob"}],
-          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}],
+          col: [
+            %{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}
+          ],
           mobile_summary: summary_slot
         )
 
@@ -1064,7 +1202,9 @@ defmodule ScoriaWeb.UIComponentTest do
         render_component(&ScoriaWeb.UI.table/1,
           id: "test-table",
           rows: [%{name: "Alice"}],
-          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}],
+          col: [
+            %{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}
+          ],
           mobile_summary: summary_slot
         )
 
@@ -1132,7 +1272,9 @@ defmodule ScoriaWeb.UIComponentTest do
         render_component(&ScoriaWeb.UI.table/1,
           id: "test-table",
           rows: [%{name: "Alice"}],
-          col: [%{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}],
+          col: [
+            %{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}
+          ],
           mobile_summary: summary_slot
         )
 

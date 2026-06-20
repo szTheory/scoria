@@ -112,6 +112,7 @@ provide a typographic tier above the primary title."
   end
 
   attr(:variant, :atom, default: :flat, values: [:flat, :raised])
+  attr(:flush, :boolean, default: false)
   attr(:class, :string, default: nil)
   attr(:rest, :global)
   slot(:eyebrow)
@@ -122,13 +123,59 @@ provide a typographic tier above the primary title."
   @doc "Panel/card surface with optional eyebrow + title + actions header."
   def panel(assigns) do
     ~H"""
-    <section class={["scoria-panel", @variant == :raised && "scoria-panel--raised", @class]} {@rest}>
+    <section
+      class={[
+        "scoria-panel",
+        @variant == :raised && "scoria-panel--raised",
+        @flush && "scoria-panel--flush",
+        @class
+      ]}
+      {@rest}
+    >
       <div :if={@eyebrow != [] or @title != [] or @actions != []} class="scoria-panel__header">
         <div>
           <p :if={@eyebrow != []} class="scoria-eyebrow">{render_slot(@eyebrow)}</p>
           <h2 :if={@title != []}>{render_slot(@title)}</h2>
         </div>
         <div :if={@actions != []} class="flex items-center gap-2">{render_slot(@actions)}</div>
+      </div>
+      {render_slot(@inner_block)}
+    </section>
+    """
+  end
+
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+  slot(:eyebrow)
+  slot(:title)
+  slot(:description)
+  slot(:actions)
+  slot(:inner_block, required: true)
+
+  @doc """
+  Open-air top-level page section.
+
+  Use this for primary page regions that should breathe on the canvas. Use
+  `panel/1` only when the UI needs a contained object, evidence, table, drawer,
+  or modal surface.
+  """
+  def page_section(assigns) do
+    ~H"""
+    <section class={["scoria-page-section", @class]} {@rest}>
+      <div
+        :if={@eyebrow != [] or @title != [] or @description != [] or @actions != []}
+        class="scoria-page-section__header"
+      >
+        <div class="scoria-page-section__heading">
+          <p :if={@eyebrow != []} class="scoria-eyebrow">{render_slot(@eyebrow)}</p>
+          <h2 :if={@title != []}>{render_slot(@title)}</h2>
+          <p :if={@description != []} class="scoria-page-section__description">
+            {render_slot(@description)}
+          </p>
+        </div>
+        <div :if={@actions != []} class="scoria-page-section__actions">
+          {render_slot(@actions)}
+        </div>
       </div>
       {render_slot(@inner_block)}
     </section>
@@ -177,6 +224,64 @@ provide a typographic tier above the primary title."
     """
   end
 
+  attr(:at, :any, required: true)
+  attr(:mode, :atom, default: :absolute, values: [:absolute, :elapsed])
+  attr(:fallback, :string, default: "Not recorded")
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+
+  @doc "Machine-readable time with operator-friendly visible text and exact timestamp tooltip."
+  def time(assigns) do
+    assigns =
+      assigns
+      |> assign(:datetime, datetime_attr(assigns.at))
+      |> assign(:exact, exact_time(assigns.at, assigns.fallback))
+      |> assign(:label, time_label(assigns.at, assigns.mode, assigns.fallback))
+
+    ~H"""
+    <time
+      :if={@datetime}
+      datetime={@datetime}
+      title={@exact}
+      class={["scoria-time", @class]}
+      {@rest}
+    >
+      {@label}
+    </time>
+    <span :if={!@datetime} class={["scoria-time", @class]} {@rest}>{@label}</span>
+    """
+  end
+
+  defp datetime_attr(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
+  defp datetime_attr(_), do: nil
+
+  defp time_label(%DateTime{} = dt, :elapsed, _fallback), do: "Waiting #{elapsed_label(dt)}"
+  defp time_label(%DateTime{} = dt, _mode, _fallback), do: exact_time(dt, nil)
+  defp time_label(nil, _mode, fallback), do: fallback
+  defp time_label(other, _mode, _fallback), do: to_string(other)
+
+  defp exact_time(%DateTime{} = dt, _fallback) do
+    dt
+    |> DateTime.shift_zone!("Etc/UTC")
+    |> Calendar.strftime("%Y-%m-%d %H:%M UTC")
+  end
+
+  defp exact_time(nil, fallback), do: fallback
+  defp exact_time(other, _fallback), do: to_string(other)
+
+  defp elapsed_label(%DateTime{} = dt) do
+    now = DateTime.utc_now()
+    seconds = max(DateTime.diff(now, dt, :second), 0)
+
+    cond do
+      seconds < 60 -> "just now"
+      seconds < 3_600 -> "#{div(seconds, 60)}m"
+      seconds < 86_400 -> "#{div(seconds, 3_600)}h"
+      seconds < 604_800 -> "#{div(seconds, 86_400)}d"
+      true -> Calendar.strftime(dt, "%Y-%m-%d")
+    end
+  end
+
   attr(:count, :any, required: true)
   attr(:label, :string, required: true)
   attr(:detail, :string, required: true)
@@ -200,6 +305,49 @@ Attrs: `count` (numeric highlight), `label` (category name), `detail`
       </span>
       <span class="scoria-attention-card__cta">{@cta}</span>
     </a>
+    """
+  end
+
+  attr(:href, :string, default: nil)
+  attr(:selected, :boolean, default: false)
+  attr(:tone, :atom, default: :neutral)
+  attr(:class, :string, default: nil)
+  attr(:type, :string, default: "button")
+  attr(:rest, :global)
+  slot(:title, required: true)
+  slot(:status)
+  slot(:meta)
+
+  @doc "Selectable object card for list/detail navigation. Use links for routed objects."
+  def selectable_card(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :card_class,
+        [
+          "scoria-selectable-card",
+          "scoria-selectable-card--#{assigns.tone}",
+          assigns.selected && "scoria-selectable-card--selected",
+          assigns.class
+        ]
+      )
+
+    ~H"""
+    <a :if={@href} href={@href} class={@card_class} {@rest}>
+      <span class="scoria-selectable-card__body">
+        <span class="scoria-selectable-card__title">{render_slot(@title)}</span>
+        <span :if={@meta != []} class="scoria-selectable-card__meta">{render_slot(@meta)}</span>
+      </span>
+      <span :if={@status != []} class="scoria-selectable-card__status">{render_slot(@status)}</span>
+    </a>
+
+    <button :if={!@href} type={@type} class={@card_class} {@rest}>
+      <span class="scoria-selectable-card__body">
+        <span class="scoria-selectable-card__title">{render_slot(@title)}</span>
+        <span :if={@meta != []} class="scoria-selectable-card__meta">{render_slot(@meta)}</span>
+      </span>
+      <span :if={@status != []} class="scoria-selectable-card__status">{render_slot(@status)}</span>
+    </button>
     """
   end
 
@@ -897,7 +1045,7 @@ supplementary copy or a link."
   end
 
   # ---------------------------------------------------------------------------
-  # DS-01: <.table> — sortable, density-aware data table (plan 12-02)
+  # DS-01: <.table> — sortable operator scan table (plan 12-02)
   # ---------------------------------------------------------------------------
 
   slot :col, doc: "Table column" do
@@ -919,21 +1067,18 @@ supplementary copy or a link."
   attr(:rows, :list, required: true)
   attr(:sort_by, :any, default: nil)
   attr(:sort_dir, :atom, default: :asc, values: [:asc, :desc])
-  attr(:density, :atom, default: :default, values: [:compact, :default, :comfortable])
   attr(:id, :string, required: true)
   attr(:page, :integer, default: 1)
   attr(:total_pages, :integer, default: 1)
   attr(:on_sort, :string, default: nil)
   attr(:on_page_change, :string, default: nil)
-  attr(:on_density_change, :string, default: nil)
   attr(:rest, :global)
 
-  @doc "Sortable, density-aware, paginated data table (DS-01).
+  @doc "Sortable, paginated operator scan table (DS-01).
   Renders column headers from typed <:col> slots; emits sort events for keyed columns only
   when on_sort is supplied by the parent LiveView.
-  Uses density modifier classes from density_class/1. Falls back to a default empty state
-  when rows is empty (overridable via <:empty>). Pagination strip shown when total_pages > 1.
-  Density controls render only when on_density_change is supplied by the parent LiveView."
+  Uses the canonical compact scan density from the design system. Falls back to a default empty
+  state when rows is empty (overridable via <:empty>). Pagination strip shown when total_pages > 1."
   def table(assigns) do
     # WR-05: a paginated table with no on_page_change handler would render inert
     # phx-click={nil} prev/next controls (a silent no-op). Fail loudly at render
@@ -949,25 +1094,10 @@ supplementary copy or a link."
       <div :if={@filter != []} class="scoria-table__filter">
         {render_slot(@filter)}
       </div>
-      <div :if={@on_density_change} class="scoria-table__density-toggle" role="group" aria-label="Row density">
-        <button
-          :for={density_opt <- [:compact, :default, :comfortable]}
-          phx-click={@on_density_change}
-          phx-value-density={density_opt}
-          class={[
-            if(@density == density_opt,
-              do: "scoria-button scoria-button--primary scoria-button--sm",
-              else: "scoria-button scoria-button--ghost scoria-button--sm"
-            )
-          ]}
-        >
-          {density_opt |> Atom.to_string() |> String.capitalize()}
-        </button>
-      </div>
       <%!-- Overflow viewport: keyboard-reachable horizontal scroll container (D-13).
            sticky thead still works inside overflow-x: auto (vertical sticky is unaffected). --%>
       <div class="scoria-table__viewport" tabindex="0">
-        <table class={["scoria-table", density_class(@density)]} id={@id} {@rest}>
+        <table class="scoria-table" id={@id} {@rest}>
           <thead>
             <tr>
               <th
@@ -1071,10 +1201,6 @@ supplementary copy or a link."
     </div>
     """
   end
-
-  defp density_class(:compact), do: "scoria-table--compact"
-  defp density_class(:comfortable), do: "scoria-table--comfortable"
-  defp density_class(:default), do: nil
 
   attr(:flash, :map, default: %{})
 

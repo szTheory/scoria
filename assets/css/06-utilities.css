@@ -20,6 +20,18 @@
   .scoria-root .block { display: block; }
   .scoria-root .inline-block { display: inline-block; }
   .scoria-root .hidden { display: none; }
+  .scoria-root .sr-only,
+  .scoria-root .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .scoria-root .relative { position: relative; }
   .scoria-root .fixed { position: fixed; }
   .scoria-root .sticky { position: sticky; }

@@ -26,7 +26,6 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
       |> assign(:tenant_id, tenant_id)
       |> assign(:runtime_drawer, nil)
       |> assign(:connector_drawer, nil)
-      |> assign(:connector_table_density, :compact)
       |> load_fleet()
 
     {:ok, socket}
@@ -57,17 +56,6 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
     {:noreply, assign(socket, :connector_drawer, nil)}
   end
 
-  def handle_event("set_density", %{"density" => density}, socket) do
-    density =
-      case density do
-        "compact" -> :compact
-        "comfortable" -> :comfortable
-        _ -> :default
-      end
-
-    {:noreply, assign(socket, :connector_table_density, density)}
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -80,15 +68,10 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
       </div>
 
       <div class="grid gap-6 lg:grid-cols-2">
-        <.panel class="scoria-panel--flush">
+        <.panel flush={true}>
           <:eyebrow>external runtimes</:eyebrow>
           <:title>Runtime posture</:title>
-          <.table
-            id="runtime-presence"
-            rows={@runtimes}
-            density={@connector_table_density}
-            on_density_change="set_density"
-          >
+          <.table id="runtime-presence" rows={@runtimes}>
             <:col :let={runtime} label="Runtime">
               <span class="font-mono"><%= short_id(runtime.id) %></span>
             </:col>
@@ -122,15 +105,10 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
           </.table>
         </.panel>
 
-        <.panel class="scoria-panel--flush">
+        <.panel flush={true}>
           <:eyebrow>connector fleet</:eyebrow>
           <:title>Connector posture</:title>
-          <.table
-            id="connector-fleet"
-            rows={@connector_fleet}
-            density={@connector_table_density}
-            on_density_change="set_density"
-          >
+          <.table id="connector-fleet" rows={@connector_fleet}>
             <:col :let={connector} label="Connector">
               <span class="font-semibold"><%= connector.connector_label %></span>
             </:col>
