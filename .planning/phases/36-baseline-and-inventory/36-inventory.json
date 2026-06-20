@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-20T16:20:00Z",
-  "git_sha": "6054d80616a78bae8bcadd574cf955193bf2c07b",
+  "generated_at": "2026-06-20T16:25:03Z",
+  "git_sha": "391779c2ae95bd579d2edbf3de1da0fd6bfd55c9",
   "phase": "36-baseline-and-inventory",
-  "scope": "v3.3 design-system baseline inventory contract",
+  "scope": "v3.3 design-system baseline inventory with source-scan reconciliation",
   "schema_version": 1,
   "layer_enum": [
     "foundation",
@@ -77,129 +77,1269 @@
   },
   "rows": [
     {
+      "id": "FOUND-CSS-LAYERS",
+      "name": "Scoria CSS foundation layers",
+      "layer": "foundation",
+      "status": "canonical",
+      "owner_path": "assets/css/02-tokens.css",
+      "evidence": [
+        "assets/css/00-fonts.css",
+        "assets/css/01-reset.css",
+        "assets/css/02-tokens.css",
+        "assets/css/03-base.css",
+        "assets/css/04-components.css",
+        "assets/css/05-motion.css",
+        "assets/css/06-utilities.css",
+        "test/scoria_web/ds06_drift_guard_test.exs",
+        "test/scoria_web/token_contrast_guard_test.exs"
+      ],
+      "replacement_or_owner": "assets/css/01-reset.css + 02-tokens.css + 03-base.css + 04-components.css + 05-motion.css + 06-utilities.css",
+      "next_action": "Use these token-scoped layers as the only styling foundation for Phase 37 lab states and Phase 38-41 UI polish; prove contrast, focus, theme, motion, responsive scanning, and toast readability before changing runtime classes.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-TOAST-LEGIBILITY"
+      ]
+    },
+    {
       "id": "FOUND-BRANDBOOK",
       "name": "Canonical Scoria brandbook",
       "layer": "foundation",
       "status": "canonical",
       "owner_path": "brandbook/brand-book.md",
       "evidence": [
+        ".planning/phases/36-baseline-and-inventory/36-CONTEXT.md:D-26",
+        "brandbook/README.md",
         "brandbook/brand-book.md",
-        "brandbook/tokens.json",
         "brandbook/tokens.css",
-        ".planning/phases/36-baseline-and-inventory/36-CONTEXT.md:D-26"
+        "brandbook/tokens.json"
       ],
       "replacement_or_owner": "brandbook/",
-      "next_action": "Use brandbook voice and tokens as the operator-grade baseline for Phase 37 lab labels and Phase 38-41 UI polish; verify brand fit, theme parity, microcopy, and evidence-led tone before changing visual language.",
+      "next_action": "Keep visual language field-engineer, grounded, operator-grade, evidence-led, and Phoenix-native; use brandbook tokens and voice as the baseline for all later UI changes.",
       "risk_refs": []
     },
     {
-      "id": "FOUND-CSS-TOKENS",
-      "name": "Scoria semantic CSS tokens",
+      "id": "FOUND-DS06-GUARD",
+      "name": "DS-06 drift guard baseline",
       "layer": "foundation",
-      "status": "canonical",
-      "owner_path": "assets/css/02-tokens.css",
-      "evidence": [
-        "assets/css/02-tokens.css",
-        "assets/css/03-base.css",
-        "assets/css/05-motion.css",
-        "test/scoria_web/token_contrast_guard_test.exs"
-      ],
-      "replacement_or_owner": "assets/css/02-tokens.css",
-      "next_action": "Keep token changes semantic and prove contrast, focus visibility, theme parity, reduced-motion behavior, and render stability before primitive or page-level changes consume them.",
-      "risk_refs": [
-        "RISK-OVERLAY-FOCUS"
-      ]
-    },
-    {
-      "id": "FOUND-CSS-COMPONENTS",
-      "name": "Scoria component CSS layer",
-      "layer": "foundation",
-      "status": "canonical",
-      "owner_path": "assets/css/04-components.css",
-      "evidence": [
-        "assets/css/04-components.css",
-        "test/scoria_web/ds06_drift_guard_test.exs",
-        "priv/shots/gap_register_final.md"
-      ],
-      "replacement_or_owner": "assets/css/04-components.css",
-      "next_action": "Use this as the shared styling owner for primitives and component groups; Phase 38 should prove toast legibility, density/scannability, focus states, and responsive table/list behavior without page-local CSS patches.",
-      "risk_refs": [
-        "RISK-TOAST-LEGIBILITY",
-        "RISK-RESPONSIVE-SCAN",
-        "RISK-OVERLAY-FOCUS"
-      ]
-    },
-    {
-      "id": "PRIM-SCORIA-UI",
-      "name": "ScoriaWeb.UI primitive gateway",
-      "layer": "primitive",
-      "status": "canonical",
-      "owner_path": "lib/scoria_web/ui.ex",
-      "evidence": [
-        "lib/scoria_web/ui.ex",
-        "test/scoria_web/ui_component_test.exs",
-        "test/scoria_web/ds06_drift_guard_test.exs",
-        "docs/MAINTAINERS.md"
-      ],
-      "replacement_or_owner": "ScoriaWeb.UI",
-      "next_action": "Feed Phase 37 with representative states for every primitive; Phase 38 should keep attr/slot contracts, accessible names, keyboard/focus behavior, density, copy affordances, and evidence discoverability consistent.",
-      "risk_refs": [
-        "RISK-TOAST-LEGIBILITY",
-        "RISK-RESPONSIVE-SCAN",
-        "RISK-OVERLAY-FOCUS"
-      ]
-    },
-    {
-      "id": "HOOK-SCORIA-JS",
-      "name": "Scoria browser interop hooks",
-      "layer": "hook",
-      "status": "canonical",
-      "owner_path": "assets/js/scoria.js",
-      "evidence": [
-        "assets/js/scoria.js",
-        "priv/dev/e2e/",
-        "lib/scoria_web/components/layouts/app.html.heex"
-      ],
-      "replacement_or_owner": "assets/js/scoria.js",
-      "next_action": "Inventory hook consumers before changing behavior; Phase 40 should prove command palette, mobile nav, dismissable overlays, copy feedback, theme switching, escape behavior, and focus restoration under keyboard and reduced-motion paths.",
-      "risk_refs": [
-        "RISK-OVERLAY-FOCUS"
-      ]
-    },
-    {
-      "id": "TEST-DS06-DRIFT",
-      "name": "DS-06 raw palette drift guard",
-      "layer": "test",
       "status": "canonical",
       "owner_path": "test/scoria_web/ds06_drift_guard_test.exs",
       "evidence": [
+        "priv/shots/gap_register_final.md",
         "test/scoria_web/ds06_drift_guard_test.exs",
-        "test/support/ds06_baseline.txt",
-        "priv/shots/gap_register_final.md"
+        "test/support/ds06_baseline.txt"
       ],
       "replacement_or_owner": "test/scoria_web/ds06_drift_guard_test.exs",
-      "next_action": "Keep the guard strict and parseable; Phase 41 should preserve raw-palette-zero proof while adding targeted guardrails for duplicate density controls, inaccessible icon buttons, unreadable toasts, and untested component states.",
+      "next_action": "Preserve raw-palette-zero enforcement while Phase 41 adds narrower UI regression guardrails for density, toast, icon-button, and component-state drift.",
       "risk_refs": [
         "RISK-V30-PROOF"
       ]
     },
     {
-      "id": "DOC-MAINTAINERS",
-      "name": "Maintainer design-system and proof docs",
+      "id": "PRIM-ATTENTION-CARD",
+      "name": "ScoriaWeb.UI.attention_card/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.attention_card/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.attention_card/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-BADGE",
+      "name": "ScoriaWeb.UI.badge/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.badge/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.badge/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-BUTTON",
+      "name": "ScoriaWeb.UI.button/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.button/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.button/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-COMMAND-PALETTE",
+      "name": "ScoriaWeb.UI.command_palette/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.command_palette/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.command_palette/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-DRAWER",
+      "name": "ScoriaWeb.UI.drawer/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.drawer/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.drawer/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-EMPTY-STATE",
+      "name": "ScoriaWeb.UI.empty_state/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.empty_state/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.empty_state/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PRIM-EVIDENCE-ACTION-ROW",
+      "name": "ScoriaWeb.UI.evidence_action_row/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.evidence_action_row/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.evidence_action_row/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-EVIDENCE-EMPTY",
+      "name": "ScoriaWeb.UI.evidence_empty/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.evidence_empty/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.evidence_empty/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-EVIDENCE-ROWS",
+      "name": "ScoriaWeb.UI.evidence_rows/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.evidence_rows/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.evidence_rows/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-EVIDENCE-SECTION",
+      "name": "ScoriaWeb.UI.evidence_section/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.evidence_section/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.evidence_section/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-EYEBROW",
+      "name": "ScoriaWeb.UI.eyebrow/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.eyebrow/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.eyebrow/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-FIELD",
+      "name": "ScoriaWeb.UI.field/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.field/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.field/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-FLASH-GROUP",
+      "name": "ScoriaWeb.UI.flash_group/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.flash_group/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.flash_group/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-TOAST-LEGIBILITY"
+      ]
+    },
+    {
+      "id": "PRIM-FORM-SECTION",
+      "name": "ScoriaWeb.UI.form_section/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.form_section/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.form_section/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-ICON-BUTTON",
+      "name": "ScoriaWeb.UI.icon_button/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.icon_button/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.icon_button/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-ID",
+      "name": "ScoriaWeb.UI.id/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.id/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.id/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-KBD",
+      "name": "ScoriaWeb.UI.kbd/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.kbd/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.kbd/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-METRIC",
+      "name": "ScoriaWeb.UI.metric/1",
+      "layer": "primitive",
+      "status": "duplicated",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.metric/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.metric/1 - evaluate against ScoriaWeb.UI.overview_stats/1 as the preferred page-level summary owner",
+      "next_action": "Phase 38 should decide whether this summary primitive remains a low-level building block or migrates into the canonical overview stats pattern with explicit density and scan proof.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PRIM-MODAL",
+      "name": "ScoriaWeb.UI.modal/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.modal/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.modal/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-NOTEBOOK",
+      "name": "ScoriaWeb.UI.notebook/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.notebook/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.notebook/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-OBJECT-HEADER",
+      "name": "ScoriaWeb.UI.object_header/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.object_header/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.object_header/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-OVERVIEW-STATS",
+      "name": "ScoriaWeb.UI.overview_stats/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.overview_stats/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.overview_stats/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PRIM-PAGE-SECTION",
+      "name": "ScoriaWeb.UI.page_section/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.page_section/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.page_section/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-PANEL",
+      "name": "ScoriaWeb.UI.panel/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.panel/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.panel/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-RAW-EVIDENCE",
+      "name": "ScoriaWeb.UI.raw_evidence/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.raw_evidence/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.raw_evidence/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "PRIM-SELECTABLE-CARD",
+      "name": "ScoriaWeb.UI.selectable_card/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.selectable_card/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.selectable_card/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-SIGNAL-STRIP",
+      "name": "ScoriaWeb.UI.signal_strip/1",
+      "layer": "primitive",
+      "status": "duplicated",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.signal_strip/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.signal_strip/1 - evaluate against ScoriaWeb.UI.overview_stats/1 as the preferred page-level summary owner",
+      "next_action": "Phase 38 should decide whether this summary primitive remains a low-level building block or migrates into the canonical overview stats pattern with explicit density and scan proof.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PRIM-SKELETON",
+      "name": "ScoriaWeb.UI.skeleton/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.skeleton/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.skeleton/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PRIM-STATUS-LABEL",
+      "name": "ScoriaWeb.UI.status_label/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.status_label/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.status_label/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-STUB-PAGE",
+      "name": "ScoriaWeb.UI.stub_page/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.stub_page/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.stub_page/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-TABLE",
+      "name": "ScoriaWeb.UI.table/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.table/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.table/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PRIM-TIME",
+      "name": "ScoriaWeb.UI.time/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.time/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.time/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "PRIM-TOAST",
+      "name": "ScoriaWeb.UI.toast/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.toast/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.toast/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-TOAST-LEGIBILITY"
+      ]
+    },
+    {
+      "id": "PRIM-TONE",
+      "name": "ScoriaWeb.UI.tone/1",
+      "layer": "primitive",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/ui.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/ui.ex:ScoriaWeb.UI.tone/1",
+        "test/scoria_web/ui_component_test.exs"
+      ],
+      "replacement_or_owner": "ScoriaWeb.UI.tone/1",
+      "next_action": "Render representative normal, dense, empty, long-text, disabled/loading/error, keyboard/focus, light/dark, mobile/desktop states in Phase 37, then keep changes behind the attr/slot contract.",
+      "risk_refs": []
+    },
+    {
+      "id": "GROUP-APPROVAL-INBOX-COMPONENT",
+      "name": "Component group: Approval Inbox Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/approval_inbox_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/approval_inbox_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/approval_inbox_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-CITATION-EVIDENCE-COMPONENT",
+      "name": "Component group: Citation Evidence Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/citation_evidence_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/citation_evidence_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/citation_evidence_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-CONNECTOR-DETAIL-DRAWER-COMPONENT",
+      "name": "Component group: Connector Detail Drawer Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/connector_detail_drawer_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/connector_detail_drawer_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/connector_detail_drawer_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-DELEGATED-EVIDENCE-COMPONENT",
+      "name": "Component group: Delegated Evidence Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/delegated_evidence_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/delegated_evidence_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/delegated_evidence_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-INCIDENT-EVIDENCE-COMPONENT",
+      "name": "Component group: Incident Evidence Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/incident_evidence_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/incident_evidence_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/incident_evidence_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-LAYOUTS",
+      "name": "Component group: Layouts",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/layouts.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/layouts.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/layouts.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "PAGE-LAYOUTS-APP-HTML",
+      "name": "Layout page shell: App.Html",
+      "layer": "page",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/layouts/app.html.heex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/layouts/app.html.heex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/layouts/",
+      "next_action": "Phase 40 should prove shell navigation, command palette, theme bootstrap, mobile drawer, focus restoration, and reduced-motion behavior before overlay or layout changes ship.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-LAYOUTS-ROOT-HTML",
+      "name": "Layout page shell: Root.Html",
+      "layer": "page",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/layouts/root.html.heex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/layouts/root.html.heex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/layouts/",
+      "next_action": "Phase 40 should prove shell navigation, command palette, theme bootstrap, mobile drawer, focus restoration, and reduced-motion behavior before overlay or layout changes ship.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "GROUP-MEMORY-NOTEBOOK-COMPONENT",
+      "name": "Component group: Memory Notebook Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/memory_notebook_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/memory_notebook_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/memory_notebook_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-REMOTE-INVOCATION-EVIDENCE-COMPONENT",
+      "name": "Component group: Remote Invocation Evidence Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/remote_invocation_evidence_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/remote_invocation_evidence_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/remote_invocation_evidence_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-REPLAY-EVIDENCE-NOTEBOOK-COMPONENT",
+      "name": "Component group: Replay Evidence Notebook Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/replay_evidence_notebook_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/replay_evidence_notebook_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/replay_evidence_notebook_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-RUNTIME-DETAIL-DRAWER-COMPONENT",
+      "name": "Component group: Runtime Detail Drawer Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/runtime_detail_drawer_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/runtime_detail_drawer_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/runtime_detail_drawer_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-SEMANTIC-EVIDENCE-NOTEBOOK-COMPONENT",
+      "name": "Component group: Semantic Evidence Notebook Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/semantic_evidence_notebook_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/semantic_evidence_notebook_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/semantic_evidence_notebook_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-TRACE-TREE-COMPONENT",
+      "name": "Component group: Trace Tree Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/trace_tree_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/trace_tree_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/trace_tree_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-WORKFLOW-DETAIL-PANEL-COMPONENT",
+      "name": "Component group: Workflow Detail Panel Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/workflow_detail_panel_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/workflow_detail_panel_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/workflow_detail_panel_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "GROUP-WORKFLOW-TREE-COMPONENT",
+      "name": "Component group: Workflow Tree Component",
+      "layer": "component-group",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/components/workflow_tree_component.ex",
+      "evidence": [
+        "docs/MAINTAINERS.md",
+        "lib/scoria_web/components/workflow_tree_component.ex",
+        "test/scoria_web/components/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/components/workflow_tree_component.ex",
+      "next_action": "Phase 37 should render this component group with realistic, empty, long-text, and dense evidence data; Phase 39 should keep workflow-specific copy and action hierarchy operator-first.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "PAGE-APPROVALS-LIVE-INDEX",
+      "name": "Operator page flow: Approvals Live Index",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/approvals_live/index.ex",
+      "evidence": [
+        "lib/scoria_web/live/approvals_live/index.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/approvals_live/index.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-APPROVAL-HISTORY",
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-TOAST-LEGIBILITY"
+      ]
+    },
+    {
+      "id": "PAGE-COMING-SOON-LIVE",
+      "name": "Operator page flow: Coming Soon Live",
+      "layer": "page",
+      "status": "canonical",
+      "owner_path": "lib/scoria_web/live/coming_soon_live.ex",
+      "evidence": [
+        "lib/scoria_web/live/coming_soon_live.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/coming_soon_live.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": []
+    },
+    {
+      "id": "PAGE-CONNECTORS-LIVE-INDEX",
+      "name": "Operator page flow: Connectors Live Index",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/connectors_live/index.ex",
+      "evidence": [
+        "lib/scoria_web/live/connectors_live/index.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/connectors_live/index.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-DATASET-LIVE-INDEX",
+      "name": "Operator page flow: Dataset Live Index",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/dataset_live/index.ex",
+      "evidence": [
+        "lib/scoria_web/live/dataset_live/index.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/dataset_live/index.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-DATASET-LIVE-PROMOTE-COMPONENT",
+      "name": "Operator page flow: Dataset Live Promote Component",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/dataset_live/promote_component.ex",
+      "evidence": [
+        "lib/scoria_web/live/dataset_live/promote_component.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/dataset_live/promote_component.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-EVAL-SPEC-LIVE-INDEX",
+      "name": "Operator page flow: Eval Spec Live Index",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/eval_spec_live/index.ex",
+      "evidence": [
+        "lib/scoria_web/live/eval_spec_live/index.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/eval_spec_live/index.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-INCIDENTS-LIVE-INDEX",
+      "name": "Operator page flow: Incidents Live Index",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/incidents_live/index.ex",
+      "evidence": [
+        "lib/scoria_web/live/incidents_live/index.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/incidents_live/index.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-INCIDENTS-LIVE-SHOW",
+      "name": "Operator page flow: Incidents Live Show",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/incidents_live/show.ex",
+      "evidence": [
+        "lib/scoria_web/live/incidents_live/show.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/incidents_live/show.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-ORCHESTRATOR-LIVE",
+      "name": "Operator page flow: Orchestrator Live",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/orchestrator_live.ex",
+      "evidence": [
+        "lib/scoria_web/live/orchestrator_live.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/orchestrator_live.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-PROMPT-LIVE-INDEX",
+      "name": "Operator page flow: Prompt Live Index",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/prompt_live/index.ex",
+      "evidence": [
+        "lib/scoria_web/live/prompt_live/index.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/prompt_live/index.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-PROMPT-LIVE-RELEASE-WORKBENCH-LIVE",
+      "name": "Operator page flow: Prompt Live Release Workbench Live",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/prompt_live/release_workbench_live.ex",
+      "evidence": [
+        "lib/scoria_web/live/prompt_live/release_workbench_live.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/prompt_live/release_workbench_live.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-REVIEW-QUEUE-LIVE",
+      "name": "Operator page flow: Review Queue Live",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/review_queue_live.ex",
+      "evidence": [
+        "lib/scoria_web/live/review_queue_live.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/review_queue_live.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-WORKFLOW-LIVE-INDEX",
+      "name": "Operator page flow: Workflow Live Index",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/workflow_live/index.ex",
+      "evidence": [
+        "lib/scoria_web/live/workflow_live/index.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/workflow_live/index.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "PAGE-WORKFLOW-LIVE-SHOW",
+      "name": "Operator page flow: Workflow Live Show",
+      "layer": "page",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live/workflow_live/show.ex",
+      "evidence": [
+        "lib/scoria_web/live/workflow_live/show.ex",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "test/scoria_web/live/"
+      ],
+      "replacement_or_owner": "lib/scoria_web/live/workflow_live/show.ex",
+      "next_action": "Phase 39 should preserve this page-specific operator job while converging shared orientation, section, table/list, empty/error/loading, toolbar/filter, evidence, and next-action conventions through ScoriaWeb.UI rather than page-local patches.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "HOOK-COMMANDPALETTE",
+      "name": "Browser interop hook: CommandPalette",
+      "layer": "hook",
+      "status": "canonical",
+      "owner_path": "assets/js/scoria.js",
+      "evidence": [
+        "assets/js/scoria.js",
+        "assets/js/scoria.js#Hooks.CommandPalette",
+        "priv/dev/e2e/command_palette.spec.mjs",
+        "priv/dev/e2e/phase16_parity.spec.mjs"
+      ],
+      "replacement_or_owner": "Hooks.CommandPalette in assets/js/scoria.js",
+      "next_action": "Phase 40 should prove keyboard, focus restoration, escape/click dismissal, reduced-motion, and light/dark/system behavior for this browser-owned interaction before changing hook semantics.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "HOOK-COPYID",
+      "name": "Browser interop hook: CopyId",
+      "layer": "hook",
+      "status": "canonical",
+      "owner_path": "assets/js/scoria.js",
+      "evidence": [
+        "assets/js/scoria.js",
+        "assets/js/scoria.js#Hooks.CopyId",
+        "priv/dev/e2e/command_palette.spec.mjs",
+        "priv/dev/e2e/phase16_parity.spec.mjs"
+      ],
+      "replacement_or_owner": "Hooks.CopyId in assets/js/scoria.js",
+      "next_action": "Phase 40 should prove keyboard, focus restoration, escape/click dismissal, reduced-motion, and light/dark/system behavior for this browser-owned interaction before changing hook semantics.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "HOOK-DISMISSABLE",
+      "name": "Browser interop hook: Dismissable",
+      "layer": "hook",
+      "status": "canonical",
+      "owner_path": "assets/js/scoria.js",
+      "evidence": [
+        "assets/js/scoria.js",
+        "assets/js/scoria.js#Hooks.Dismissable",
+        "priv/dev/e2e/command_palette.spec.mjs",
+        "priv/dev/e2e/phase16_parity.spec.mjs"
+      ],
+      "replacement_or_owner": "Hooks.Dismissable in assets/js/scoria.js",
+      "next_action": "Phase 40 should prove keyboard, focus restoration, escape/click dismissal, reduced-motion, and light/dark/system behavior for this browser-owned interaction before changing hook semantics.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "HOOK-MOBILENAV",
+      "name": "Browser interop hook: MobileNav",
+      "layer": "hook",
+      "status": "canonical",
+      "owner_path": "assets/js/scoria.js",
+      "evidence": [
+        "assets/js/scoria.js",
+        "assets/js/scoria.js#Hooks.MobileNav",
+        "priv/dev/e2e/command_palette.spec.mjs",
+        "priv/dev/e2e/phase16_parity.spec.mjs"
+      ],
+      "replacement_or_owner": "Hooks.MobileNav in assets/js/scoria.js",
+      "next_action": "Phase 40 should prove keyboard, focus restoration, escape/click dismissal, reduced-motion, and light/dark/system behavior for this browser-owned interaction before changing hook semantics.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "HOOK-RECORDRECENTOBJECT",
+      "name": "Browser interop hook: RecordRecentObject",
+      "layer": "hook",
+      "status": "canonical",
+      "owner_path": "assets/js/scoria.js",
+      "evidence": [
+        "assets/js/scoria.js",
+        "assets/js/scoria.js#Hooks.RecordRecentObject",
+        "priv/dev/e2e/command_palette.spec.mjs",
+        "priv/dev/e2e/phase16_parity.spec.mjs"
+      ],
+      "replacement_or_owner": "Hooks.RecordRecentObject in assets/js/scoria.js",
+      "next_action": "Phase 40 should prove keyboard, focus restoration, escape/click dismissal, reduced-motion, and light/dark/system behavior for this browser-owned interaction before changing hook semantics.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "HOOK-THEMETOGGLE",
+      "name": "Browser interop hook: ThemeToggle",
+      "layer": "hook",
+      "status": "canonical",
+      "owner_path": "assets/js/scoria.js",
+      "evidence": [
+        "assets/js/scoria.js",
+        "assets/js/scoria.js#Hooks.ThemeToggle",
+        "priv/dev/e2e/command_palette.spec.mjs",
+        "priv/dev/e2e/phase16_parity.spec.mjs"
+      ],
+      "replacement_or_owner": "Hooks.ThemeToggle in assets/js/scoria.js",
+      "next_action": "Phase 40 should prove keyboard, focus restoration, escape/click dismissal, reduced-motion, and light/dark/system behavior for this browser-owned interaction before changing hook semantics.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS"
+      ]
+    },
+    {
+      "id": "DOC-PRIMARY-SURFACES",
+      "name": "Maintainer, UAT, and brand documentation surfaces",
       "layer": "doc",
       "status": "canonical",
       "owner_path": "docs/MAINTAINERS.md",
       "evidence": [
+        ".planning/PROJECT.md",
+        ".planning/REQUIREMENTS.md",
+        ".planning/ROADMAP.md",
+        "brandbook/README.md",
+        "brandbook/brand-book.md",
+        "brandbook/pressure-test.md",
+        "brandbook/tokens.css",
+        "brandbook/tokens.json",
+        "brandbook/tools/package-lock.json",
+        "brandbook/tools/package.json",
+        "brandbook/tools/variant-spec.md",
         "docs/MAINTAINERS.md",
-        "docs/uat_automation.md",
-        ".planning/PROJECT.md"
+        "docs/adoption_lanes.md",
+        "docs/bounded_handoffs.md",
+        "docs/connector_adoption.md",
+        "docs/docker_dev_dx.md",
+        "docs/operator_verification.md",
+        "docs/phoenix_runtime_example.md",
+        "docs/semantic_fast_path.md",
+        "docs/support_copilot_gallery.md",
+        "docs/uat_automation.md"
       ],
-      "replacement_or_owner": "docs/MAINTAINERS.md",
-      "next_action": "Use Phase 41 to align maintainer docs with the final component lab, proof commands, accessibility/responsive/motion conventions, screenshot limitations, and operator-first page guidance.",
+      "replacement_or_owner": "docs/MAINTAINERS.md + docs/uat_automation.md + brandbook/",
+      "next_action": "Phase 41 should align maintainer docs with the final lab, proof commands, BEM/token conventions, accessibility/responsive/motion practices, screenshot limitations, and operator-first copy rules.",
       "risk_refs": [
-        "RISK-V30-PROOF",
+        "RISK-OVERLAY-FOCUS",
         "RISK-RESPONSIVE-SCAN",
-        "RISK-OVERLAY-FOCUS"
+        "RISK-V30-PROOF"
       ]
     },
     {
@@ -209,15 +1349,489 @@
       "status": "canonical",
       "owner_path": "priv/shots/gap_register_final.md",
       "evidence": [
+        ".planning/milestones/v3.0-MILESTONE-AUDIT.md",
         "priv/shots/gap_register.md",
-        "priv/shots/gap_register_final.md",
-        ".planning/milestones/v3.0-MILESTONE-AUDIT.md"
+        "priv/shots/gap_register_final.md"
       ],
       "replacement_or_owner": "priv/shots/gap_register_final.md",
       "next_action": "Treat screenshots as advisory evidence; Phase 41 should separate fixed issues from deferred proof gaps and only promote visual CI if the screenshot harness becomes deterministic enough.",
       "risk_refs": [
-        "RISK-V30-PROOF",
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "TEST-SCORIA-WEB-UI-PROOF",
+      "name": "ScoriaWeb UI and LiveView ExUnit proof suite",
+      "layer": "test",
+      "status": "canonical",
+      "owner_path": "test/scoria_web/ui_component_test.exs",
+      "evidence": [
+        "test/scoria_web/approval_copy_test.exs",
+        "test/scoria_web/components/incident_evidence_component_test.exs",
+        "test/scoria_web/components/memory_notebook_component_test.exs",
+        "test/scoria_web/components/runtime_detail_drawer_component_test.exs",
+        "test/scoria_web/components/semantic_evidence_notebook_component_test.exs",
+        "test/scoria_web/components/trace_tree_component_test.exs",
+        "test/scoria_web/components/workflow_tree_component_test.exs",
+        "test/scoria_web/controllers/mcp_controller_test.exs",
+        "test/scoria_web/dashboard_nav_test.exs",
+        "test/scoria_web/ds06_drift_guard_test.exs",
+        "test/scoria_web/live/approvals_live_integration_test.exs",
+        "test/scoria_web/live/approvals_live_test.exs",
+        "test/scoria_web/live/coming_soon_live_test.exs",
+        "test/scoria_web/live/connectors_live_test.exs",
+        "test/scoria_web/live/dataset_live/index_test.exs",
+        "test/scoria_web/live/dataset_live/promote_component_test.exs",
+        "test/scoria_web/live/eval_spec_live/index_test.exs",
+        "test/scoria_web/live/incidents_live_test.exs",
+        "test/scoria_web/live/orchestrator_live_integration_test.exs",
+        "test/scoria_web/live/orchestrator_live_sre_test.exs",
+        "test/scoria_web/live/orchestrator_live_test.exs",
+        "test/scoria_web/live/prompt_live/release_workbench_live_test.exs",
+        "test/scoria_web/live/prompt_live_test.exs",
+        "test/scoria_web/live/review_queue_live_test.exs",
+        "test/scoria_web/live/workflow_live_test.exs",
+        "test/scoria_web/presence_test.exs",
+        "test/scoria_web/router_test.exs",
+        "test/scoria_web/token_contrast_guard_test.exs",
+        "test/scoria_web/ui_component_test.exs",
+        "test/scoria_web/ui_drift_guard_test.exs"
+      ],
+      "replacement_or_owner": "test/scoria_web/**/*_test.exs",
+      "next_action": "Phase 41 should keep focused ExUnit proof for component contracts, page scan/action behavior, approval flow, drift guards, and docs coupling before closing the milestone.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "TEST-PLAYWRIGHT-PROOF",
+      "name": "Dev-only Playwright browser proof surfaces",
+      "layer": "test",
+      "status": "canonical",
+      "owner_path": "priv/dev/e2e/phase16_parity.spec.mjs",
+      "evidence": [
+        "priv/dev/e2e/command_palette.spec.mjs",
+        "priv/dev/e2e/ia_orientation.spec.mjs",
+        "priv/dev/e2e/lib/ready.mjs",
+        "priv/dev/e2e/phase16_parity.spec.mjs",
+        "priv/dev/e2e/playwright.config.mjs",
+        "priv/dev/e2e/uat.spec.mjs"
+      ],
+      "replacement_or_owner": "priv/dev/e2e/*.mjs",
+      "next_action": "Phase 40 and Phase 41 should extend these browser truths for lab states, overlays, mobile shell, copy affordances, toast legibility, focus, reduced motion, and core operator flows without making screenshots the first required gate.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "FIXTURE-TEST-FIXTURES",
+      "name": "Fixture inputs and packaged adoption proof fixtures",
+      "layer": "fixture",
+      "status": "canonical",
+      "owner_path": "test/fixtures",
+      "evidence": [
+        "test/fixtures/hex_consumer/.scoria-hex-baseline.stamp",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/.formatter.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/CHANGELOG.md",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/LICENSE",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/README.md",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/adoption_lanes.md",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/bounded_handoffs.md",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/operator_verification.md",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/phoenix_runtime_example.md",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/semantic_fast_path.md",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/hex_metadata.config",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.eval.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.install.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.milestone.archive_thread.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.pgvector.bootstrap.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.release_preview.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.ci_trust.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.install_contract.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.knowledge.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.runtime_to_handoff.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.semantic_fast_path.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.warning_baseline.check.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.warning_inventory.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.warning_ratchet.check.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.warning_ratchet.test.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/test.adoption.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/test.runtime_to_handoff.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/test.semantic_fast_path.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/adopter_doc_contract.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/application.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/compaction/summarize_worker.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/compaction/tokenizer.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/auth.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/auth_state.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/capability_snapshot.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/connector.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/grant.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/grant_refresh.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/invocation.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/campaign_enqueuer.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/campaign_worker.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/dataset.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/dataset_item.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/dataset_promotion.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/eval_campaign.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/eval_campaign_target.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/eval_run.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/eval_spec.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/judge_runner.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/online_score_candidate.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/online_score_sampler.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/online_scoring.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/review_queue.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/runner.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/score.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/identity.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/apply_executor.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/contract.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/manifest.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/planner.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/report.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/surface/migrations.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/surface/router.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/surface/runtime_config.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/surface/tailwind.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/backends/pgvector.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/chunk.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/chunker.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/citation.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/citation_formatter.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/embedder.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/grounding.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/grounding_score.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/retrieval_result.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/retrieval_run.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/retrievers/scrypath.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/source.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/executor.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/protocol.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/router.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/tool.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/validator.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/adapters/jido.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/adapters/req_llm.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/approval.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/buffer.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/circuit_breaker.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/circuit_breaker/manager.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/redactor.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/telemetry.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/orchestrator.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/postgrex_types.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/prompt_policy.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/prompt_registry.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/prompt_registry/prompt_template.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/prompt_registry/tokenizer.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/repo.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/repo/span.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/repo/span_event.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/repo/trace.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/req/steps.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/req/steps/circuit_breaker.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/req/steps/resiliency.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/compacted_memory.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/defaults.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/instance.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/params.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/release_gate.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/replay_comparison.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/run_detail.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/run_summary.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/compatibility.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/eligibility.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/entry.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/entry_event.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/invalidation.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/lookup.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_lane.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/adapters/chimeway.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/adapters/mailglass.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/adapters/parapet.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/adapters/threadline.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/alert_event.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/alert_policy.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/alert_sink.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/audit_outbox_event.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/audit_sink.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/breaker_registry.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/breaker_trip.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/budget_engine.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/budget_policy.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/budget_reservation.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/incident.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/incident_event.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/incident_manager.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/notification_delivery.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/relay.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/telemetry.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/telemetry_identity.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/test_support/migrations.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/vault.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/verification_lanes.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/warning_baseline.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/warning_inventory.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/warning_inventory/cluster.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/warning_ratchet.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/batch_enqueue.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/checkpoint.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/dataset_promotion.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/event.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/event_compactor.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/handoff.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/jido_adapter.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/prompt_release.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/reconciler.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/remote_approval_projection.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/replay_disposition.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/resume.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/run.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/runtime.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/step.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/approval_inbox_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/citation_evidence_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/connector_detail_drawer_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/delegated_evidence_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/incident_evidence_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/memory_notebook_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/remote_invocation_evidence_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/replay_evidence_notebook_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/runtime_detail_drawer_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/semantic_evidence_notebook_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/trace_tree_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/workflow_detail_panel_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/workflow_tree_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/connector_auth_controller.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/controllers/mcp_controller.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/dataset_live/promote_component.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/eval_spec_live/index.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/orchestrator_live.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/prompt_live/index.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/prompt_live/release_workbench_live.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/review_queue_live.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/workflow_live/show.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/presence.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/router.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/views/error_view.ex",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/mix.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/host_app_proof/overlay/test/host_route_smoke_test.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/host_app_proof/overlay/test/host_runtime_smoke_test.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260510015813_create_ai_observability_tables.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260510160812_create_ai_approvals.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260510174619_create_eval_tables.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511000100_create_workflow_tables.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511000200_link_approvals_to_workflows.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511000300_create_knowledge_tables.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511170000_create_sre_budget_and_breaker_tables.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511171000_create_sre_incident_and_audit_tables.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260513000100_add_canonical_identity_to_workflow_runs.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260513000200_add_canonical_identity_to_approvals.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260517000100_create_connector_boundary_tables.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260517000200_create_oban_connector_jobs.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260518211100_create_ai_prompt_templates.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260518220533_create_ai_eval_datasets.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260519000000_converge_eval_persistence.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260519010100_create_ai_compacted_memories.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260520170157_create_runtime_instances.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260521000000_create_eval_campaigns_and_targets.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260523000100_add_replay_safe_execution_truth.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260523000200_repair_replay_safe_execution_truth.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260523000300_expand_ai_scores_and_create_online_score_candidates.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260524130000_add_delegated_kind_to_workflow_handoffs.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260525070000_create_semantic_cache_tables.exs",
+        "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260525090000_add_semantic_cache_compatibility_fields.exs",
+        "test/fixtures/warning_baseline/expired.md",
+        "test/fixtures/warning_baseline/invalid_blank_owner.md",
+        "test/fixtures/warning_baseline/resolves_section_trap.md",
+        "test/fixtures/warning_baseline/valid.md",
+        "test/fixtures/warning_inventory/host_overlay_test_path.txt",
+        "test/fixtures/warning_inventory/host_proof_generated_compile.txt",
+        "test/fixtures/warning_inventory/knowledge_migration_redefine.txt",
+        "test/fixtures/warning_inventory/liveview_async_teardown.txt",
+        "test/fixtures/warning_inventory/test_dead_default_args.txt",
+        "test/fixtures/warning_inventory/test_unused_binding.txt"
+      ],
+      "replacement_or_owner": "test/fixtures/",
+      "next_action": "Keep fixture data deterministic and repository-relative; Phase 37 should add ugly dashboard fixture cases without mutating packaged adopter proof snapshots.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "FIXTURE-TEST-SUPPORT",
+      "name": "Test support fixture and integration helpers",
+      "layer": "fixture",
+      "status": "canonical",
+      "owner_path": "test/support",
+      "evidence": [
+        "test/support/ds06_baseline.txt",
+        "test/support/eval_case.ex",
+        "test/support/eval_case_test.exs",
+        "test/support/knowledge_case.exs",
+        "test/support/scoria/adoption_example.ex",
+        "test/support/scoria/eventually.ex",
+        "test/support/scoria/host_app_proof/generator.ex",
+        "test/support/scoria/host_app_proof/runner.ex",
+        "test/support/scoria/host_install_fixtures.ex",
+        "test/support/scoria/integration_case.ex",
+        "test/support/scoria/support_copilot_gallery/runner.ex"
+      ],
+      "replacement_or_owner": "test/support/",
+      "next_action": "Use these helpers as proof inputs only; later UI fixture additions should avoid hiding sleeps, async fragility, or opaque host-app assumptions.",
+      "risk_refs": [
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "FIXTURE-PRIV-DEV-HARNESS",
+      "name": "Dev proof harness inputs",
+      "layer": "fixture",
+      "status": "canonical",
+      "owner_path": "priv/dev",
+      "evidence": [
+        "priv/dev/contact_sheet.mjs",
+        "priv/dev/package-lock.json",
+        "priv/dev/package.json",
+        "priv/dev/shots.mjs"
+      ],
+      "replacement_or_owner": "priv/dev/",
+      "next_action": "Keep Playwright and screenshot harness inputs dev-only and out of public dashboard mount behavior or Hex runtime footprint.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "FIXTURE-SHOTS-PROOF-DATA",
+      "name": "Advisory screenshot proof metadata and gap data",
+      "layer": "fixture",
+      "status": "legacy",
+      "owner_path": "priv/shots",
+      "evidence": [
+        "priv/shots/.gitignore",
+        "priv/shots/2026-06-04/approvals/populated_dark_desktop.json",
+        "priv/shots/2026-06-04/connectors/populated_dark_desktop.json",
+        "priv/shots/2026-06-04/eval_specs/populated_dark_desktop.json",
+        "priv/shots/2026-06-04/incidents/populated_dark_desktop.json",
+        "priv/shots/2026-06-04/live_ops/populated_dark_desktop.json",
+        "priv/shots/2026-06-04/prompt_release/populated_dark_desktop.json",
+        "priv/shots/2026-06-04/prompts/populated_dark_desktop.json",
+        "priv/shots/2026-06-04/reviews/populated_dark_desktop.json",
+        "priv/shots/2026-06-04/workflows/populated_dark_desktop.json",
+        "priv/shots/contact_sheet.html",
+        "priv/shots/contact_sheet_index.md",
+        "priv/shots/gap_register.md",
+        "priv/shots/gap_register_final.md"
+      ],
+      "replacement_or_owner": "priv/shots/gap_register_final.md plus future Phase 41 proof closeout",
+      "next_action": "Preserve historical screenshot metadata as advisory baseline evidence; Phase 41 should replace stale v3.0 proof gaps with current focused browser/test evidence where possible.",
+      "risk_refs": [
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "ONEOFF-PAGE-LOCAL-SCORIA-CLASSES",
+      "name": "Page-local Scoria class compositions",
+      "layer": "one-off",
+      "status": "intentionally-page-specific",
+      "owner_path": "lib/scoria_web/live",
+      "evidence": [
+        "lib/scoria_web/live/approvals_live/index.ex:scoria-approval-*",
+        "lib/scoria_web/live/incidents_live/index.ex:scoria-incident-index__*",
+        "lib/scoria_web/live/orchestrator_live.ex:scoria-home__*",
+        "lib/scoria_web/live/review_queue_live.ex:scoria-page-split detail rail"
+      ],
+      "replacement_or_owner": "Keep page-specific where copy/action hierarchy is tied to the operator workflow; consolidate recurring shell/table/list/panel needs through ScoriaWeb.UI.",
+      "next_action": "Phase 39 should audit each page-local class family and only extract patterns that improve cross-page scan/action clarity without leaking domain context.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
         "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "ONEOFF-RAW-LINK-BUTTON-CLASSES",
+      "name": "Raw link/button class usage outside button primitive",
+      "layer": "one-off",
+      "status": "duplicated",
+      "owner_path": "lib/scoria_web/live",
+      "evidence": [
+        "lib/scoria_web/components/runtime_detail_drawer_component.ex:30",
+        "lib/scoria_web/live/review_queue_live.ex:201",
+        "lib/scoria_web/live/workflow_live/show.ex:138"
+      ],
+      "replacement_or_owner": "Prefer ScoriaWeb.UI.button/1 or explicit link-button convention once Phase 38 defines the control primitive rule.",
+      "next_action": "Phase 38 should decide whether link-styled buttons remain explicit HEEx links or get a shared link-button primitive with accessible-name and icon rules.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN"
+      ]
+    },
+    {
+      "id": "MISSING-COMPONENT-LAB-STATES",
+      "name": "Missing dev component lab state matrix",
+      "layer": "one-off",
+      "status": "missing",
+      "owner_path": ".planning/REQUIREMENTS.md",
+      "evidence": [
+        ".planning/REQUIREMENTS.md:LAB-01",
+        ".planning/phases/36-baseline-and-inventory/36-UI-SPEC.md:Phase 36 Visual And Interaction Contract"
+      ],
+      "replacement_or_owner": "Phase 37 dev-only component lab",
+      "next_action": "Phase 37 must render primitives and component groups across theme, viewport, reduced-motion, long, empty, dense, disabled, selected, loading, warning, danger, and error states before implementation phases depend on visual judgment.",
+      "risk_refs": [
+        "RISK-OVERLAY-FOCUS",
+        "RISK-RESPONSIVE-SCAN",
+        "RISK-V30-PROOF"
+      ]
+    },
+    {
+      "id": "MISSING-APPROVAL-DECISION-HISTORY",
+      "name": "Missing approval decision history surface",
+      "layer": "one-off",
+      "status": "missing",
+      "owner_path": ".planning/todos/pending/2026-06-20-add-approval-decision-history.md",
+      "evidence": [
+        ".planning/phases/36-baseline-and-inventory/36-CONTEXT.md:D-22",
+        ".planning/todos/pending/2026-06-20-add-approval-decision-history.md"
+      ],
+      "replacement_or_owner": "Phase 39 approval flow decision-history surface",
+      "next_action": "Phase 39 should make decided approvals discoverable with linked run/audit evidence while preserving the no in-place reversal semantic boundary.",
+      "risk_refs": [
+        "RISK-APPROVAL-HISTORY"
+      ]
+    },
+    {
+      "id": "MISSING-TOAST-LEGIBILITY-PROOF",
+      "name": "Missing approval toast legibility proof over dense UI",
+      "layer": "one-off",
+      "status": "missing",
+      "owner_path": ".planning/todos/pending/2026-06-18-make-approval-toasts-legible.md",
+      "evidence": [
+        ".planning/phases/36-baseline-and-inventory/36-CONTEXT.md:D-21",
+        ".planning/todos/pending/2026-06-18-make-approval-toasts-legible.md"
+      ],
+      "replacement_or_owner": "Phase 38 toast/control proof",
+      "next_action": "Phase 38 should prove warning/error approval toasts are readable over dense approval rows in light and dark themes without hiding decision controls.",
+      "risk_refs": [
+        "RISK-TOAST-LEGIBILITY"
       ]
     }
   ],
@@ -227,9 +1841,32 @@
       "title": "Stale v3.0 proof gaps and partial verification-doc coverage",
       "affected_jtbd_persona_operator_flow": "Maintainer needs to distinguish functional UI regressions from missing or partial proof before planning v3.3 guardrails.",
       "affected_inventory_refs": [
-        "TEST-DS06-DRIFT",
         "DOC-MAINTAINERS",
-        "DOC-SHOTS-GAP-REGISTER"
+        "DOC-PRIMARY-SURFACES",
+        "DOC-SHOTS-GAP-REGISTER",
+        "FIXTURE-PRIV-DEV-HARNESS",
+        "FIXTURE-SHOTS-PROOF-DATA",
+        "FIXTURE-TEST-FIXTURES",
+        "FIXTURE-TEST-SUPPORT",
+        "FOUND-DS06-GUARD",
+        "GROUP-APPROVAL-INBOX-COMPONENT",
+        "GROUP-CITATION-EVIDENCE-COMPONENT",
+        "GROUP-CONNECTOR-DETAIL-DRAWER-COMPONENT",
+        "GROUP-DELEGATED-EVIDENCE-COMPONENT",
+        "GROUP-INCIDENT-EVIDENCE-COMPONENT",
+        "GROUP-LAYOUTS",
+        "GROUP-MEMORY-NOTEBOOK-COMPONENT",
+        "GROUP-REMOTE-INVOCATION-EVIDENCE-COMPONENT",
+        "GROUP-REPLAY-EVIDENCE-NOTEBOOK-COMPONENT",
+        "GROUP-RUNTIME-DETAIL-DRAWER-COMPONENT",
+        "GROUP-SEMANTIC-EVIDENCE-NOTEBOOK-COMPONENT",
+        "GROUP-TRACE-TREE-COMPONENT",
+        "GROUP-WORKFLOW-DETAIL-PANEL-COMPONENT",
+        "GROUP-WORKFLOW-TREE-COMPONENT",
+        "MISSING-COMPONENT-LAB-STATES",
+        "TEST-DS06-DRIFT",
+        "TEST-PLAYWRIGHT-PROOF",
+        "TEST-SCORIA-WEB-UI-PROOF"
       ],
       "owner_phase": "41",
       "mitigation_evidence_target": "Phase 41 proof/docs closeout that reconciles v3.0 audit gaps, final gap register limitations, screenshot proof limits, and new regression guardrails.",
@@ -242,7 +1879,12 @@
       "affected_jtbd_persona_operator_flow": "Operator rejects or handles an approval and must read immediate feedback over a dense approval inbox without row text competing with toast text.",
       "affected_inventory_refs": [
         "FOUND-CSS-COMPONENTS",
-        "PRIM-SCORIA-UI"
+        "FOUND-CSS-LAYERS",
+        "MISSING-TOAST-LEGIBILITY-PROOF",
+        "PAGE-APPROVALS-LIVE-INDEX",
+        "PRIM-FLASH-GROUP",
+        "PRIM-SCORIA-UI",
+        "PRIM-TOAST"
       ],
       "owner_phase": "38",
       "mitigation_evidence_target": "Fold .planning/todos/pending/2026-06-18-make-approval-toasts-legible.md into Phase 38 primitive/control work and prove warning/error toasts remain readable over dense approvals UI in light and dark themes.",
@@ -254,6 +1896,8 @@
       "title": "Approval decision history discoverability",
       "affected_jtbd_persona_operator_flow": "Operator needs to find approved, denied, rejected, or expired approval decisions later without the UI implying a decided request can be approved in place.",
       "affected_inventory_refs": [
+        "MISSING-APPROVAL-DECISION-HISTORY",
+        "PAGE-APPROVALS-LIVE-INDEX",
         "PRIM-SCORIA-UI"
       ],
       "owner_phase": "39",
@@ -266,10 +1910,39 @@
       "title": "Responsive tables/lists and mobile scan paths",
       "affected_jtbd_persona_operator_flow": "Operator scans approvals, incidents, datasets, prompts, evals, and evidence on mobile/tablet/desktop without clipped content, trapped scroll, or hidden essential fields.",
       "affected_inventory_refs": [
-        "FOUND-CSS-COMPONENTS",
-        "PRIM-SCORIA-UI",
         "DOC-MAINTAINERS",
-        "DOC-SHOTS-GAP-REGISTER"
+        "DOC-PRIMARY-SURFACES",
+        "DOC-SHOTS-GAP-REGISTER",
+        "FIXTURE-SHOTS-PROOF-DATA",
+        "FOUND-CSS-COMPONENTS",
+        "FOUND-CSS-LAYERS",
+        "MISSING-COMPONENT-LAB-STATES",
+        "ONEOFF-PAGE-LOCAL-SCORIA-CLASSES",
+        "ONEOFF-RAW-LINK-BUTTON-CLASSES",
+        "PAGE-APPROVALS-LIVE-INDEX",
+        "PAGE-CONNECTORS-LIVE-INDEX",
+        "PAGE-DATASET-LIVE-INDEX",
+        "PAGE-DATASET-LIVE-PROMOTE-COMPONENT",
+        "PAGE-EVAL-SPEC-LIVE-INDEX",
+        "PAGE-INCIDENTS-LIVE-INDEX",
+        "PAGE-INCIDENTS-LIVE-SHOW",
+        "PAGE-LAYOUTS-APP-HTML",
+        "PAGE-LAYOUTS-ROOT-HTML",
+        "PAGE-ORCHESTRATOR-LIVE",
+        "PAGE-PROMPT-LIVE-INDEX",
+        "PAGE-PROMPT-LIVE-RELEASE-WORKBENCH-LIVE",
+        "PAGE-REVIEW-QUEUE-LIVE",
+        "PAGE-WORKFLOW-LIVE-INDEX",
+        "PAGE-WORKFLOW-LIVE-SHOW",
+        "PRIM-EMPTY-STATE",
+        "PRIM-METRIC",
+        "PRIM-OVERVIEW-STATS",
+        "PRIM-SCORIA-UI",
+        "PRIM-SIGNAL-STRIP",
+        "PRIM-SKELETON",
+        "PRIM-TABLE",
+        "TEST-PLAYWRIGHT-PROOF",
+        "TEST-SCORIA-WEB-UI-PROOF"
       ],
       "owner_phase": "40",
       "mitigation_evidence_target": "Phase 40 responsive proof across 320, 375, 768, 1024, 1440, and wide desktop widths with table/list scan paths and mobile summaries.",
@@ -281,16 +1954,1229 @@
       "title": "Overlay focus, dismissal, motion, and theme parity",
       "affected_jtbd_persona_operator_flow": "Keyboard and reduced-motion users need drawers, modals, command palette, mobile nav, copy controls, and theme switching to remain predictable during operator decisions.",
       "affected_inventory_refs": [
-        "FOUND-CSS-TOKENS",
+        "DOC-MAINTAINERS",
+        "DOC-PRIMARY-SURFACES",
+        "FIXTURE-PRIV-DEV-HARNESS",
         "FOUND-CSS-COMPONENTS",
-        "PRIM-SCORIA-UI",
+        "FOUND-CSS-LAYERS",
+        "FOUND-CSS-TOKENS",
+        "HOOK-COMMANDPALETTE",
+        "HOOK-COPYID",
+        "HOOK-DISMISSABLE",
+        "HOOK-MOBILENAV",
+        "HOOK-RECORDRECENTOBJECT",
         "HOOK-SCORIA-JS",
-        "DOC-MAINTAINERS"
+        "HOOK-THEMETOGGLE",
+        "MISSING-COMPONENT-LAB-STATES",
+        "ONEOFF-PAGE-LOCAL-SCORIA-CLASSES",
+        "ONEOFF-RAW-LINK-BUTTON-CLASSES",
+        "PAGE-APPROVALS-LIVE-INDEX",
+        "PAGE-LAYOUTS-APP-HTML",
+        "PAGE-LAYOUTS-ROOT-HTML",
+        "PRIM-BUTTON",
+        "PRIM-COMMAND-PALETTE",
+        "PRIM-DRAWER",
+        "PRIM-EMPTY-STATE",
+        "PRIM-FIELD",
+        "PRIM-FLASH-GROUP",
+        "PRIM-FORM-SECTION",
+        "PRIM-ICON-BUTTON",
+        "PRIM-MODAL",
+        "PRIM-NOTEBOOK",
+        "PRIM-RAW-EVIDENCE",
+        "PRIM-SCORIA-UI",
+        "PRIM-SKELETON",
+        "PRIM-TABLE",
+        "PRIM-TOAST",
+        "TEST-PLAYWRIGHT-PROOF",
+        "TEST-SCORIA-WEB-UI-PROOF"
       ],
       "owner_phase": "40",
       "mitigation_evidence_target": "Phase 40 accessibility, motion, and theme proof for focus trap/restoration, escape and click-outside dismissal, reduced motion, and light/dark/system parity.",
       "status": "open",
       "closeout_proof": "Phase 40 browser and ExUnit proof covers keyboard-only navigation, visible focus, trapped/restored focus, reduced-motion behavior, and theme parity for overlays and shell controls."
+    }
+  ],
+  "documented_exclusions": [
+    {
+      "source": "brandbook/.DS_Store",
+      "reason": "Local filesystem metadata; intentionally excluded from design-system inventory.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/node_modules/.package-lock.json",
+      "reason": "Vendor documentation under brandbook/tools/node_modules is not a Scoria design-system owner; package-manager output is excluded from inventory ownership.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/node_modules/argparse/CHANGELOG.md",
+      "reason": "Vendor documentation under brandbook/tools/node_modules is not a Scoria design-system owner; package-manager output is excluded from inventory ownership.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/node_modules/argparse/package.json",
+      "reason": "Vendor documentation under brandbook/tools/node_modules is not a Scoria design-system owner; package-manager output is excluded from inventory ownership.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/node_modules/argparse/README.md",
+      "reason": "Vendor documentation under brandbook/tools/node_modules is not a Scoria design-system owner; package-manager output is excluded from inventory ownership.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/node_modules/opentype.js/package.json",
+      "reason": "Vendor documentation under brandbook/tools/node_modules is not a Scoria design-system owner; package-manager output is excluded from inventory ownership.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/node_modules/opentype.js/README.md",
+      "reason": "Vendor documentation under brandbook/tools/node_modules is not a Scoria design-system owner; package-manager output is excluded from inventory ownership.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/node_modules/wawoff2/package.json",
+      "reason": "Vendor documentation under brandbook/tools/node_modules is not a Scoria design-system owner; package-manager output is excluded from inventory ownership.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/node_modules/wawoff2/README.md",
+      "reason": "Vendor documentation under brandbook/tools/node_modules is not a Scoria design-system owner; package-manager output is excluded from inventory ownership.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/package-lock.json",
+      "reason": "Generated brandbook tooling lockfile metadata; keyword hits inside dependency metadata are not Scoria dashboard one-off or missing UI patterns.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "brandbook/tools/package.json",
+      "reason": "Brandbook tooling package metadata; not a Scoria dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "docs/docker_dev_dx.md:225",
+      "reason": "Keyword scan hit \"legacy\" in Docker dev-DX no-op documentation; this is unrelated to v3.3 UI inventory ownership.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "docs/MAINTAINERS.md:368",
+      "reason": "Keyword scan hit \"duplicated\" in maintainer seed-data idempotency prose; this is not a duplicated UI pattern or missing design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "priv/dev/package-lock.json",
+      "reason": "Dev harness package metadata is covered by FIXTURE-PRIV-DEV-HARNESS and is not an operator UI surface.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "priv/dev/package.json",
+      "reason": "Dev harness package metadata is covered by FIXTURE-PRIV-DEV-HARNESS and is not an operator UI surface.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/.formatter.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/CHANGELOG.md",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/adoption_lanes.md",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/bounded_handoffs.md",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/operator_verification.md",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/phoenix_runtime_example.md",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/docs/semantic_fast_path.md",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/hex_metadata.config",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.eval.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.install.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.milestone.archive_thread.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.pgvector.bootstrap.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.release_preview.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.ci_trust.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.install_contract.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.knowledge.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.runtime_to_handoff.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.test.semantic_fast_path.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.warning_baseline.check.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.warning_inventory.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.warning_ratchet.check.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/scoria.warning_ratchet.test.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/test.adoption.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/test.runtime_to_handoff.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/mix/tasks/test.semantic_fast_path.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/approval_inbox_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/citation_evidence_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/connector_detail_drawer_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/delegated_evidence_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/incident_evidence_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/memory_notebook_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/remote_invocation_evidence_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/replay_evidence_notebook_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/runtime_detail_drawer_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/semantic_evidence_notebook_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/trace_tree_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/workflow_detail_panel_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/components/workflow_tree_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/connector_auth_controller.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/controllers/mcp_controller.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/dataset_live/promote_component.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/eval_spec_live/index.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/orchestrator_live.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/prompt_live/index.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/prompt_live/release_workbench_live.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/review_queue_live.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/live/workflow_live/show.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/presence.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/router.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria_web/views/error_view.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/adopter_doc_contract.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/application.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/compaction/summarize_worker.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/compaction/tokenizer.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/auth_state.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/auth.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/capability_snapshot.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/connector.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/grant_refresh.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/grant.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/connectors/invocation.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/campaign_enqueuer.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/campaign_worker.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/dataset_item.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/dataset_promotion.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/dataset.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/eval_campaign_target.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/eval_campaign.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/eval_run.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/eval_spec.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/judge_runner.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/online_score_candidate.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/online_score_sampler.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/online_scoring.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/review_queue.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/runner.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/eval/score.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/identity.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/apply_executor.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/contract.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/manifest.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/planner.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/report.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/surface/migrations.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/surface/router.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/surface/runtime_config.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/install/surface/tailwind.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/backends/pgvector.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/chunk.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/chunker.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/citation_formatter.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/citation.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/embedder.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/grounding_score.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/grounding.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/retrieval_result.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/retrieval_run.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/retrievers/scrypath.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/knowledge/source.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/executor.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/protocol.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/router.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/tool.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/mcp/validator.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/adapters/jido.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/adapters/req_llm.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/approval.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/buffer.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/circuit_breaker.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/circuit_breaker/manager.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/redactor.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/observe/telemetry.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/orchestrator.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/postgrex_types.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/prompt_policy.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/prompt_registry.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/prompt_registry/prompt_template.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/prompt_registry/tokenizer.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/repo.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/repo/span_event.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/repo/span.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/repo/trace.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/req/steps.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/req/steps/circuit_breaker.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/req/steps/resiliency.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/compacted_memory.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/defaults.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/instance.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/params.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/release_gate.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/replay_comparison.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/run_detail.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/runtime/run_summary.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/compatibility.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/eligibility.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/entry_event.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/entry.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/invalidation.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_cache/lookup.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/semantic_lane.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/adapters/chimeway.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/adapters/mailglass.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/adapters/parapet.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/adapters/threadline.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/alert_event.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/alert_policy.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/alert_sink.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/audit_outbox_event.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/audit_sink.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/breaker_registry.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/breaker_trip.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/budget_engine.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/budget_policy.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/budget_reservation.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/incident_event.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/incident_manager.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/incident.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/notification_delivery.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/relay.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/telemetry_identity.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/sre/telemetry.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/test_support/migrations.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/vault.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/verification_lanes.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/warning_baseline.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/warning_inventory.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/warning_inventory/cluster.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/warning_ratchet.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/batch_enqueue.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/checkpoint.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/dataset_promotion.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/event_compactor.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/event.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/handoff.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/jido_adapter.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/prompt_release.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/reconciler.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/remote_approval_projection.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/replay_disposition.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/resume.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/run.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/runtime.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/lib/scoria/workflows/step.ex",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/LICENSE",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/mix.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/host_app_proof/overlay/test/host_route_smoke_test.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/host_app_proof/overlay/test/host_runtime_smoke_test.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260510015813_create_ai_observability_tables.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260510160812_create_ai_approvals.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260510174619_create_eval_tables.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511000100_create_workflow_tables.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511000200_link_approvals_to_workflows.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511000300_create_knowledge_tables.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511170000_create_sre_budget_and_breaker_tables.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260511171000_create_sre_incident_and_audit_tables.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260513000100_add_canonical_identity_to_workflow_runs.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260513000200_add_canonical_identity_to_approvals.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260517000100_create_connector_boundary_tables.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260517000200_create_oban_connector_jobs.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260518211100_create_ai_prompt_templates.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260518220533_create_ai_eval_datasets.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260519000000_converge_eval_persistence.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260519010100_create_ai_compacted_memories.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260520170157_create_runtime_instances.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260521000000_create_eval_campaigns_and_targets.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260523000100_add_replay_safe_execution_truth.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260523000200_repair_replay_safe_execution_truth.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260523000300_expand_ai_scores_and_create_online_score_candidates.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260524130000_add_delegated_kind_to_workflow_handoffs.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260525070000_create_semantic_cache_tables.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/priv/repo/migrations/20260525090000_add_semantic_cache_compatibility_fields.exs",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
+    },
+    {
+      "source": "test/fixtures/hex_consumer/scoria-0.1.0-unpack/README.md",
+      "reason": "Generated unpacked Hex fixture snapshot used for package/adoption proof; not a current dashboard design-system owner.",
+      "reviewed_by_phase": "36-baseline-and-inventory/P02"
     }
   ]
 }
