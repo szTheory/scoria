@@ -46,6 +46,19 @@ defmodule ScoriaWeb.ApprovalCopyTest do
     assert ApprovalCopy.approve_label(approval) == "Approve baseline"
   end
 
+  test "uses the delivery channel in customer-message approval actions" do
+    approval = %{
+      tool_name: "send_customer_update",
+      arguments_preview: %{
+        "ticket_id" => "TKT-1051",
+        "channel" => "email"
+      }
+    }
+
+    assert ApprovalCopy.title(approval) == "Send email update for TKT-1051"
+    assert ApprovalCopy.approve_label(approval) == "Send email"
+  end
+
   test "keeps unknown tool names exact while using generic request copy" do
     approval = %{tool_name: "test_tool", arguments_preview: %{"env" => "prod"}}
 

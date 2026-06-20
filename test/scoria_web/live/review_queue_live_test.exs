@@ -97,6 +97,12 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     assert html =~
              "Review flagged traces before they become datasets, baselines, or dismissed noise."
 
+    assert html =~ "Review queue summary"
+    assert html =~ "Needs review"
+    assert html =~ "Quality risk"
+    assert html =~ "Policy risk"
+    assert html =~ "Ready to promote"
+    assert [] = html |> Floki.parse_document!() |> Floki.find(".scoria-metric")
     assert html =~ "policy triggered"
     assert html =~ first.score_explanation
     assert html =~ "Dismiss candidate"

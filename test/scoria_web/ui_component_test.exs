@@ -224,6 +224,42 @@ defmodule ScoriaWeb.UIComponentTest do
   # ---------------------------------------------------------------------------
 
   describe "attention_card/1" do
+    test "signal_strip renders contextual overview signals without bare metric cards" do
+      html =
+        render_component(&ScoriaWeb.UI.signal_strip/1,
+          label: "Queue summary",
+          signal: [
+            %{
+              __slot__: :signal,
+              label: "Needs review",
+              value: "3 flagged items",
+              tone: :warn,
+              inner_block: fn _changed, _arg ->
+                "Traces sampled from production that still need a decision."
+              end
+            },
+            %{
+              __slot__: :signal,
+              label: "Ready to promote",
+              value: "1 promotion candidate",
+              tone: :trace,
+              inner_block: fn _changed, _arg ->
+                "Strong examples that can become dataset evidence."
+              end
+            }
+          ]
+        )
+
+      assert html =~ "scoria-signal-strip"
+      assert html =~ ~s(aria-label="Queue summary")
+      assert html =~ "Needs review"
+      assert html =~ "3 flagged items"
+      assert html =~ "Traces sampled from production"
+      assert html =~ "scoria-signal--warn"
+      assert html =~ "scoria-signal--trace"
+      refute html =~ "scoria-metric"
+    end
+
     test "renders a count, detail copy, and one-click destination without chart language" do
       html =
         render_component(&ScoriaWeb.UI.attention_card/1,

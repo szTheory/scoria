@@ -168,7 +168,7 @@ defmodule ScoriaWeb.ApprovalCopy do
       "issue_refund" -> "Approve refund"
       "dataset_baseline_promotion" -> "Approve baseline"
       "grant_connector_scope" -> "Grant scope"
-      "send_customer_update" -> "Send update"
+      "send_customer_update" -> send_customer_update_label(approval)
       _ -> "Approve request"
     end
   end
@@ -280,6 +280,16 @@ defmodule ScoriaWeb.ApprovalCopy do
 
   defp version_label(nil), do: nil
   defp version_label(version), do: "v#{version}"
+
+  defp send_customer_update_label(approval) do
+    case argument(approval, "channel") do
+      "email" -> "Send email"
+      "sms" -> "Send SMS"
+      "chat" -> "Send chat reply"
+      channel when is_binary(channel) and channel != "" -> "Send #{channel} update"
+      _ -> "Send customer update"
+    end
+  end
 
   defp compact_join(values) do
     values

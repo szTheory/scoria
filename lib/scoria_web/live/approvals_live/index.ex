@@ -121,7 +121,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       <div class="scoria-pagehead">
         <h1>Approvals</h1>
         <p>
-          Side-effecting tool requests waiting for an operator decision. Review the policy reason, expected effect, and run evidence before approving or denying.
+          Requests that need a person to decide before Scoria continues. Review what will happen, then approve or deny.
         </p>
       </div>
 

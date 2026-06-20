@@ -66,12 +66,20 @@ defmodule ScoriaWeb.ReviewQueueLive do
         </div>
       </div>
 
-      <section class="mb-6 grid gap-4 md:grid-cols-4">
-        <.metric label="Flagged items" value={to_string(@summary.total_flagged)} />
-        <.metric label="Low quality" value={to_string(@summary.low_quality_count)} />
-        <.metric label="Policy triggered" value={to_string(@summary.policy_triggered_count)} />
-        <.metric label="Promotion candidate" value={to_string(@summary.promotion_candidate_count)} />
-      </section>
+      <.signal_strip label="Review queue summary" class="mb-6">
+        <:signal label="Needs review" value={review_count(@summary.total_flagged, "flagged item")} tone={if(@summary.total_flagged > 0, do: :info, else: :pass)}>
+          Traces sampled from production that still need a human decision.
+        </:signal>
+        <:signal label="Quality risk" value={review_count(@summary.low_quality_count, "low-quality item")} tone={if(@summary.low_quality_count > 0, do: :warn, else: :neutral)}>
+          Candidates where the scorer found a quality regression or weak answer.
+        </:signal>
+        <:signal label="Policy risk" value={review_count(@summary.policy_triggered_count, "policy-triggered item")} tone={if(@summary.policy_triggered_count > 0, do: :fail, else: :neutral)}>
+          Candidates that touched a policy rule and need closer inspection.
+        </:signal>
+        <:signal label="Ready to promote" value={review_count(@summary.promotion_candidate_count, "promotion candidate")} tone={if(@summary.promotion_candidate_count > 0, do: :trace, else: :neutral)}>
+          Strong examples that can become dataset evidence or a baseline request.
+        </:signal>
+      </.signal_strip>
 
       <%= if @notice do %>
         <section class="mb-6 scoria-panel text-sm">
@@ -248,6 +256,9 @@ defmodule ScoriaWeb.ReviewQueueLive do
       Eval.get_review_candidate(socket.assigns.selected_candidate_id)
     )
   end
+
+  defp review_count(1, noun), do: "1 #{noun}"
+  defp review_count(count, noun), do: "#{count} #{noun}s"
 
   defp review_run_path(candidate, base) do
     query =

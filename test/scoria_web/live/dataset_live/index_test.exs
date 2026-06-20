@@ -113,6 +113,14 @@ defmodule ScoriaWeb.DatasetLive.IndexTest do
     assert html =~ "Action"
     assert html =~ open_dataset.name
     assert html =~ sealed_dataset.name
+    assert html =~ "Dataset library summary"
+    assert html =~ "Drafts"
+    assert html =~ "Baselines"
+    assert html =~ "Examples"
+    assert html =~ "1 open dataset"
+    assert html =~ "1 sealed dataset"
+    assert html =~ "2 dataset items"
+    assert [] = html |> Floki.parse_document!() |> Floki.find(".scoria-metric")
     assert html =~ "Open"
     assert html =~ "Sealed"
     assert html =~ "1"

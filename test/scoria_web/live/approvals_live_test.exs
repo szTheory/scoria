@@ -107,6 +107,11 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     {:ok, _view, html} = live(session_conn(), "/scoria/approvals")
 
     assert html =~ "Approvals"
+    assert html =~ "Requests that need a person to decide before Scoria continues."
+    assert html =~ "Requests appear here when Scoria needs a person to approve or deny an action."
+    refute html =~ "Operator-gated"
+    refute html =~ "workflow-owned decision"
+    refute html =~ "side-effecting"
 
     assert html =~
              ~s(<table class="scoria-table" id="approvals" aria-label="Pending approval queue">)

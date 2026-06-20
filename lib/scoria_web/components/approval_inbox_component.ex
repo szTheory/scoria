@@ -82,7 +82,7 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
         </:mobile_summary>
         <:empty>
           <.empty_state title="No approvals waiting">
-            Side-effecting tool requests appear here when a run needs an operator decision.
+            Requests appear here when Scoria needs a person to approve or deny an action.
           </.empty_state>
         </:empty>
       </.table>
