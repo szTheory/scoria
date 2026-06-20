@@ -364,23 +364,23 @@ Use this to prove UI cleanup commits precede v3.3 planning commits. [VERIFIED: g
 |---|-------|---------|---------------|
 | A1 | Warning signs for inventory drift are inferred from standard documentation-maintenance failure modes. | Common Pitfalls | Planner may need a stricter schema validation task if drift risk is higher than assumed. |
 | A2 | Warning signs for page-specific markup are inferred from code-review practice, not directly verified from a Scoria failure. | Common Pitfalls | Planner may over-index on extraction checks without enough product context. |
-| A3 | `36-inventory.json` is the best exact filename for the structured index. | Open Questions | Planner may choose another filename, but downstream references must be updated consistently. |
+| A3 | RESOLVED: `36-inventory.json` is the exact filename for the structured index. | Resolved Questions | Downstream references must use this filename consistently. |
 | A4 | A Phase 36 artifact contract test should parse `36-inventory.json` and validate required fields. | Validation Architecture | Planner may choose a script instead of ExUnit, but some automated validation is still needed. |
 | A5 | A Wave 0 artifact contract should validate row fields, enum values, unique IDs, and required risk IDs. | Validation Architecture | Inventory drift could reach later phases if this validation is omitted. |
 | A6 | Structured inventory JSON shape and enum validation is the relevant ASVS V5 control for this phase. | Security Domain | Planner may classify this as a documentation integrity control instead of application input validation. |
 | A7 | Repository-local inventory content should be parsed and validated but never executed by tooling. | Security Domain | Future automation could create script-injection risk if inventory fields are executed or shell-interpolated. |
 
-## Open Questions
+## Resolved Questions
 
 1. **Exact structured index filename**
    - What we know: Context recommends a structured data file under the phase directory. [VERIFIED: .planning/phases/36-baseline-and-inventory/36-CONTEXT.md]
-   - What's unclear: The exact filename and schema format are left to planner discretion. [VERIFIED: .planning/phases/36-baseline-and-inventory/36-CONTEXT.md]
-   - Recommendation: Use `36-inventory.json` because it is diffable, machine-readable, and local to the phase. [ASSUMED]
+   - RESOLVED: The structured index filename is `.planning/phases/36-baseline-and-inventory/36-inventory.json`. [VERIFIED: revision_context]
+   - Resolution rationale: `36-inventory.json` is diffable, machine-readable, local to the phase, and matches the plan artifacts already referenced by P01/P02. [VERIFIED: .planning/phases/36-baseline-and-inventory/36-P01-PLAN.md] [VERIFIED: .planning/phases/36-baseline-and-inventory/36-P02-PLAN.md]
 
 2. **Whether to add schema validation**
    - What we know: The structured index owns canonical IDs and status fields. [VERIFIED: .planning/phases/36-baseline-and-inventory/36-CONTEXT.md]
-   - What's unclear: No existing JSON schema validator is present or requested for Phase 36. [VERIFIED: codebase grep]
-   - Recommendation: Use a simple ExUnit test that parses JSON with existing `Jason` rather than adding a new dependency. [VERIFIED: mix.lock]
+   - RESOLVED: Validation should be inline Node validation commands in the plans, not a new runtime dependency. [VERIFIED: revision_context]
+   - Resolution rationale: The plans already use `node -e` snippets to parse `36-inventory.json`, validate required row/risk keys, verify enum coverage, and reconcile discovered sources to inventory rows. A later executor may choose a repository-local planning-artifact script if the inline checks become too long, but Phase 36 should not add a package or runtime dependency for schema validation. [VERIFIED: .planning/phases/36-baseline-and-inventory/36-P01-PLAN.md] [VERIFIED: .planning/phases/36-baseline-and-inventory/36-P02-PLAN.md]
 
 ## Environment Availability
 
