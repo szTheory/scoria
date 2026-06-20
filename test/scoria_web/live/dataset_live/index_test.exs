@@ -184,7 +184,7 @@ defmodule ScoriaWeb.DatasetLive.IndexTest do
       live(test_conn(), "/scoria/datasets?promote=review&review_candidate_id=#{candidate.id}")
 
     view
-    |> element("#dataset-promote-drawer button", "Close drawer")
+    |> element(~s(#dataset-promote-drawer button[aria-label="Close drawer"]))
     |> render_click()
 
     assert_patch(view, "/scoria/datasets")

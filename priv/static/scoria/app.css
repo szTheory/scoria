@@ -1107,6 +1107,11 @@
     padding: var(--scoria-space-1) var(--scoria-space-3);
     font-size: var(--scoria-fs-label);
   }
+  .scoria-button--icon {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0;
+  }
 
   /* ---------- Theme label ----------
      data-theme-mode is set before first paint, so the control label never waits

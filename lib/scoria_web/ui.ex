@@ -628,7 +628,8 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
           <button
             autofocus
             phx-click={@on_dismiss}
-            class="scoria-button scoria-button--ghost scoria-button--sm"
+            type="button"
+            class="scoria-button scoria-button--ghost scoria-button--sm scoria-button--icon"
             aria-label="Close dialog"
             title="Close dialog"
           >
@@ -660,7 +661,7 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
 
   @doc "Slot-based drawer panel shell (DS-02).
   Renders nothing when show=false. When show=true, renders a scrim + aside panel with
-  a consistent triple dismiss contract: Close drawer button + scrim click + Escape key.
+  a consistent triple dismiss contract: close button + scrim click + Escape key.
   The caller owns all dismiss events via on_dismiss."
   def drawer(assigns) do
     ~H"""
@@ -687,10 +688,15 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
           <div class="scoria-drawer__header-actions">
             <div :if={@actions != []}>{render_slot(@actions)}</div>
             <button
+              type="button"
               phx-click={@on_dismiss}
-              class="scoria-button scoria-button--ghost scoria-button--sm"
+              class="scoria-button scoria-button--ghost scoria-button--sm scoria-button--icon"
+              aria-label="Close drawer"
+              title="Close drawer"
             >
-              Close drawer
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+                <path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
+              </svg>
             </button>
           </div>
         </div>

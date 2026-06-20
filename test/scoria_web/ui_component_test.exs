@@ -490,7 +490,7 @@ defmodule ScoriaWeb.UIComponentTest do
   end
 
   describe "drawer/1" do
-    test "show: true renders Close drawer button" do
+    test "show: true renders an accessible icon close button" do
       html =
         render_component(&ScoriaWeb.UI.drawer/1,
           id: "test-drawer",
@@ -499,7 +499,14 @@ defmodule ScoriaWeb.UIComponentTest do
           inner_block: slot_block("Drawer content")
         )
 
-      assert html =~ "Close drawer"
+      assert html =~ ~s(aria-label="Close drawer")
+      assert html =~ ~s(title="Close drawer")
+
+      assert html =~
+               ~s(class="scoria-button scoria-button--ghost scoria-button--sm scoria-button--icon")
+
+      assert html =~ ~s(aria-hidden="true")
+      refute html =~ ">Close drawer</button>"
     end
 
     test "show: true renders role=dialog and aria-modal=true" do
