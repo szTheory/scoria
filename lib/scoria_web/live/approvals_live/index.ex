@@ -139,68 +139,80 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       />
 
       <.drawer id="approval-detail-drawer" show={@active_approval != nil} on_dismiss="dismiss_approval">
-        <:eyebrow>Approval required</:eyebrow>
+        <:eyebrow>Approval request</:eyebrow>
         <:title_slot>{ApprovalCopy.title(@active_approval)}</:title_slot>
 
-        <div :if={@active_approval} class="scoria-approval-summary">
-          <p class="scoria-approval-summary__label">Decision required before this run can continue.</p>
-          <p class="scoria-approval-summary__effect">{ApprovalCopy.impact(@active_approval)}</p>
-        </div>
+        <section :if={@active_approval} class="scoria-approval-decision">
+          <div class="scoria-approval-summary">
+            <p class="scoria-approval-summary__label">Review before Scoria continues this run.</p>
+            <p class="scoria-approval-summary__effect">{ApprovalCopy.impact(@active_approval)}</p>
+          </div>
+
+          <div class="scoria-approval-actions" aria-label="Approval actions">
+            <button
+              type="button"
+              phx-click="open_decision_modal"
+              phx-value-decision="reject"
+              class="scoria-button scoria-button--danger"
+            >
+              {ApprovalCopy.reject_label(@active_approval)}
+            </button>
+            <button
+              type="button"
+              phx-click="open_decision_modal"
+              phx-value-decision="approve"
+              class="scoria-button scoria-button--primary"
+            >
+              {ApprovalCopy.approve_label(@active_approval)}
+            </button>
+          </div>
+
+          <p class="scoria-approval-decision__audit">
+            Scoria records your decision and audit evidence before it tries to continue the run.
+          </p>
+        </section>
 
         <.evidence_rows rows={ApprovalCopy.request_rows(@active_approval)} />
+
+        <.evidence_rows rows={ApprovalCopy.evidence_rows(@active_approval)} />
 
         <.evidence_action_row :if={@active_approval && @active_approval[:workflow_run_id]} class="mt-2">
           <a
             href={run_href(assigns[:scoria_base] || "", @active_approval[:workflow_run_id])}
             class="scoria-button scoria-button--ghost scoria-button--sm"
           >
-            Open run evidence
+            View run details
           </a>
         </.evidence_action_row>
 
-        <.evidence_rows rows={ApprovalCopy.evidence_rows(@active_approval)} />
+        <details :if={@active_approval} class="scoria-approval-details">
+          <summary class="scoria-approval-details__summary">Technical details</summary>
+          <dl class="scoria-approval-tech-grid" aria-label="Technical identifiers">
+            <div :if={@active_approval[:id]} class="scoria-approval-tech-grid__row">
+              <dt>Approval</dt>
+              <dd><.id value={@active_approval[:id]} id={"approval-id-#{@active_approval[:id]}"} /></dd>
+            </div>
+            <div :if={@active_approval[:workflow_run_id]} class="scoria-approval-tech-grid__row">
+              <dt>Run</dt>
+              <dd><.id value={@active_approval[:workflow_run_id]} id={"approval-run-id-#{@active_approval[:id]}"} /></dd>
+            </div>
+            <div :if={@active_approval[:session_id]} class="scoria-approval-tech-grid__row">
+              <dt>Session</dt>
+              <dd><.id value={@active_approval[:session_id]} id={"approval-session-id-#{@active_approval[:id]}"} /></dd>
+            </div>
+            <div :if={@active_approval[:inserted_at]} class="scoria-approval-tech-grid__row">
+              <dt>Requested</dt>
+              <dd><.time at={@active_approval[:inserted_at]} /></dd>
+            </div>
+          </dl>
+        </details>
 
-        <div :if={@active_approval} class="scoria-approval-ids" aria-label="Technical identifiers">
-          <span :if={@active_approval[:id]}>
-            Approval <.id value={@active_approval[:id]} id={"approval-id-#{@active_approval[:id]}"} />
-          </span>
-          <span :if={@active_approval[:workflow_run_id]}>
-            Run <.id value={@active_approval[:workflow_run_id]} id={"approval-run-id-#{@active_approval[:id]}"} />
-          </span>
-          <span :if={@active_approval[:session_id]}>
-            Session <.id value={@active_approval[:session_id]} id={"approval-session-id-#{@active_approval[:id]}"} />
-          </span>
-          <span :if={@active_approval[:inserted_at]}>
-            Requested <.time at={@active_approval[:inserted_at]} />
-          </span>
-        </div>
-
-        <.raw_evidence :if={@active_approval} label="Advanced: redacted request payload">
-          {ApprovalCopy.raw_arguments(@active_approval)}
+        <.raw_evidence
+          :if={@active_approval}
+          label="Request payload"
+          value={ApprovalCopy.raw_arguments(@active_approval)}
+        >
         </.raw_evidence>
-
-        <p class="mt-2">
-          Scoria records this decision and its audit evidence before attempting to continue the run.
-        </p>
-
-        <.evidence_action_row class="mt-6">
-          <button
-            type="button"
-            phx-click="open_decision_modal"
-            phx-value-decision="reject"
-            class="scoria-button scoria-button--danger"
-          >
-            {ApprovalCopy.reject_label(@active_approval)}
-          </button>
-          <button
-            type="button"
-            phx-click="open_decision_modal"
-            phx-value-decision="approve"
-            class="scoria-button scoria-button--primary"
-          >
-            {ApprovalCopy.approve_label(@active_approval)}
-          </button>
-        </.evidence_action_row>
       </.drawer>
 
       <.modal id="approval-decision-modal" show={@decision_modal != nil} on_dismiss="close_decision_modal">

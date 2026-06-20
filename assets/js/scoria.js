@@ -24,12 +24,15 @@
         var text = el.getAttribute("data-copy") || el.textContent.trim();
         if (!navigator.clipboard) return;
         navigator.clipboard.writeText(text).then(function () {
-          var prev = el.getAttribute("data-copied-label");
+          var prevText = el.textContent;
+          var prevTitle = el.getAttribute("title");
           el.classList.add("scoria-id--copied");
           el.setAttribute("title", "Copied");
+          el.textContent = "Copied";
           setTimeout(function () {
             el.classList.remove("scoria-id--copied");
-            if (prev) el.setAttribute("title", prev);
+            el.textContent = prevText;
+            if (prevTitle) el.setAttribute("title", prevTitle);
           }, 1200);
         });
       });

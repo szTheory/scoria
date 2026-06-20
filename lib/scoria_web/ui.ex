@@ -100,7 +100,7 @@ defmodule ScoriaWeb.UI do
   end
 
   attr(:class, :string, default: nil)
-  slot(:inner_block, required: true)
+  slot(:inner_block)
 
   @doc "Small uppercase category/status label (brand book card eyebrow).
 Used in panel headers, object headers, and card hierarchy labeling to
@@ -249,7 +249,14 @@ provide a typographic tier above the primary title."
       end)
 
     ~H"""
-    <span class={["scoria-id", @class]} phx-hook="CopyId" id={@id} data-copy={@copy || @value} title={@title}>
+    <span
+      class={["scoria-id", @class]}
+      phx-hook="CopyId"
+      id={@id}
+      data-copy={@copy || @value}
+      title={@title}
+      aria-live="polite"
+    >
       {@value}
     </span>
     """
@@ -965,7 +972,8 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
   end
 
   attr(:label, :string, default: "Advanced raw evidence")
-  slot(:inner_block, required: true)
+  attr(:value, :string, default: nil)
+  slot(:inner_block)
 
   @doc "Raw evidence details/pre block (DS-04).
   Renders a <details>/<summary> with a <pre> code block. Background and font
@@ -974,7 +982,7 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
     ~H"""
     <details class="scoria-raw-evidence">
       <summary class="scoria-raw-evidence__summary">{@label}</summary>
-      <pre class="scoria-raw-evidence__pre">{render_slot(@inner_block)}</pre>
+      <pre class="scoria-raw-evidence__pre"><%= @value || render_slot(@inner_block) %></pre>
     </details>
     """
   end

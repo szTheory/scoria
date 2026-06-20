@@ -63,8 +63,8 @@ defmodule ScoriaWeb.ApprovalCopy do
     end
   end
 
-  def detail(nil), do: "Approval required by tool policy."
-  def detail(approval), do: field(approval, :reason) || "Approval required by tool policy."
+  def detail(nil), do: "Tool policy requires review."
+  def detail(approval), do: field(approval, :reason) || "Tool policy requires review."
 
   def policy(approval) do
     field(approval, :policy_key) || "Tool policy"
@@ -198,10 +198,8 @@ defmodule ScoriaWeb.ApprovalCopy do
 
   def request_rows(approval) do
     [
-      {"Request", title(approval)},
       {"Target", target(approval)},
-      {"Policy reason", detail(approval)},
-      {"Expected effect", impact(approval)}
+      {"Policy reason", detail(approval)}
     ]
     |> reject_blank_rows()
   end
