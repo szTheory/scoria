@@ -21,7 +21,6 @@ alias Scoria.Workflows.PromptRelease
 
 # SupportJourney spine — do not inline these values
 tenant_id = SupportJourney.tenant_id()
-session_id = SupportJourney.session_id()
 connector_key = SupportJourney.connector_key()
 
 identity = SupportJourney.runtime_identity()
@@ -90,34 +89,287 @@ try do
   # mark_waiting_for_approval inserts the pending approval immediately. Each approval
   # has a real UUID so the Approvals overlay can open its detail modal.
   #
-  # Seed several so the (destructive) approvals UAT/e2e specs each have one to act
-  # on — auto-dismiss + manual-dismiss consume one each, the CR-01 multi-toast spec
-  # consumes two. Runs are additive on re-seed, consistent with the rest of this file.
-  for _ <- 1..5 do
-    {:ok, approval_run} =
-      Scoria.Workflows.create_run(%{
-        root_role_id: "support_agent",
-        tenant_id: SupportJourney.tenant_id(),
-        session_id: SupportJourney.session_id()
-      })
+  # Keep several so destructive approvals UAT/e2e specs each have one to act on,
+  # but seed them as distinct operator decisions. The previous seed created five
+  # identical issue_refund rows; expire those legacy no-metadata rows and top up
+  # realistic pending cases instead.
+  approval_seed_version = "2026-06-approval-run-v2"
 
-    {:ok, approval_step} =
-      Scoria.Workflows.create_step(approval_run.id, %{
-        sequence: 1,
-        kind: "approval",
-        role_id: "support_agent",
-        status: "running"
-      })
+  approval_specs = [
+    %{
+      seed_key: "approval-refund-duplicate-charge",
+      root_role_id: "support_agent",
+      step_role_id: "support_agent",
+      actor_id: SupportJourney.runtime_identity().actor_id,
+      session_id: SupportJourney.session_id(),
+      tool_name: SupportJourney.refund_approval_tool(),
+      arguments: %{
+        "seed_kind" => "approval_inbox_demo",
+        "seed_key" => "approval-refund-duplicate-charge",
+        "seed_version" => approval_seed_version,
+        "ticket_id" => SupportJourney.ticket_fixture()["id"],
+        "customer" => SupportJourney.ticket_fixture()["customer"],
+        "amount_cents" => SupportJourney.ticket_fixture()["amount_cents"]
+      },
+      pre_steps: [
+        %{
+          kind: "tool",
+          role_id: "support_agent",
+          result: %{
+            "tool" => SupportJourney.ticket_lookup_tool(),
+            "ticket_id" => SupportJourney.ticket_fixture()["id"],
+            "customer" => SupportJourney.ticket_fixture()["customer"]
+          }
+        },
+        %{
+          kind: "guardrail",
+          role_id: "refund_policy",
+          result: %{"policy" => "refunds.require_review", "decision" => "approval_required"}
+        }
+      ],
+      reason: "Refund policy requires ops review before issuing customer credit.",
+      connector_label: SupportJourney.connector_label(),
+      connector_key: SupportJourney.connector_key(),
+      policy_key: "refunds.require_review"
+    },
+    %{
+      seed_key: "approval-refund-enterprise-credit",
+      root_role_id: "billing_specialist",
+      step_role_id: "billing_specialist",
+      actor_id: "billing-agent-3",
+      session_id: "billing-dispute-1047",
+      tool_name: SupportJourney.refund_approval_tool(),
+      arguments: %{
+        "seed_kind" => "approval_inbox_demo",
+        "seed_key" => "approval-refund-enterprise-credit",
+        "seed_version" => approval_seed_version,
+        "ticket_id" => "TKT-1047",
+        "customer" => "Morgan Patel",
+        "amount_cents" => 12900
+      },
+      pre_steps: [
+        %{
+          kind: "tool",
+          role_id: "billing_specialist",
+          result: %{
+            "tool" => SupportJourney.ticket_lookup_tool(),
+            "ticket_id" => "TKT-1047",
+            "customer" => "Morgan Patel"
+          }
+        },
+        %{
+          kind: "guardrail",
+          role_id: "refund_policy",
+          result: %{"policy" => "refunds.enterprise_threshold", "amount_cents" => 12900}
+        }
+      ],
+      reason: "Enterprise refund exceeds the self-serve support threshold.",
+      connector_label: SupportJourney.connector_label(),
+      connector_key: SupportJourney.connector_key(),
+      policy_key: "refunds.enterprise_threshold"
+    },
+    %{
+      seed_key: "approval-baseline-promotion",
+      root_role_id: "eval_lead",
+      step_role_id: "eval_lead",
+      actor_id: "eval-lead-2",
+      session_id: "eval-baseline-2026-06",
+      tool_name: "dataset_baseline_promotion",
+      arguments: %{
+        "seed_kind" => "approval_inbox_demo",
+        "seed_key" => "approval-baseline-promotion",
+        "seed_version" => approval_seed_version,
+        "dataset_id" => "refund-quality",
+        "dataset_name" => "Refund Response Quality",
+        "dataset_version" => "4",
+        "source_variant" => "candidate"
+      },
+      pre_steps: [
+        %{
+          kind: "eval",
+          role_id: "eval_lead",
+          result: %{"dataset" => "Refund Response Quality", "candidate_score" => 0.94}
+        },
+        %{
+          kind: "guardrail",
+          role_id: "regression_gate",
+          result: %{"policy" => "datasets.baseline_promotion", "decision" => "approval_required"}
+        }
+      ],
+      reason: "Promoting this baseline changes the CI regression gate.",
+      policy_key: "datasets.baseline_promotion"
+    },
+    %{
+      seed_key: "approval-connector-scope",
+      root_role_id: "connector_admin",
+      step_role_id: "connector_admin",
+      actor_id: "connector-admin-1",
+      session_id: "billing-connector-renewal",
+      tool_name: "grant_connector_scope",
+      arguments: %{
+        "seed_kind" => "approval_inbox_demo",
+        "seed_key" => "approval-connector-scope",
+        "seed_version" => approval_seed_version,
+        "connector" => SupportJourney.connector_key(),
+        "scope" => "billing.refunds.write"
+      },
+      pre_steps: [
+        %{
+          kind: "mcp",
+          role_id: "connector_admin",
+          result: %{"connector" => SupportJourney.connector_key(), "health" => "available"}
+        },
+        %{
+          kind: "guardrail",
+          role_id: "scope_policy",
+          result: %{"missing_scope" => "billing.refunds.write", "decision" => "approval_required"}
+        }
+      ],
+      reason: "Billing MCP needs write scope before refund automation can resume.",
+      connector_label: SupportJourney.connector_label(),
+      connector_key: SupportJourney.connector_key(),
+      blocker_kind: "connector",
+      required_scopes: ["billing.refunds.write"],
+      policy_key: "connectors.scope_grant"
+    },
+    %{
+      seed_key: "approval-customer-message",
+      root_role_id: "support_agent",
+      step_role_id: "support_agent",
+      actor_id: "support-agent-2",
+      session_id: "support-session-58",
+      tool_name: "send_customer_update",
+      arguments: %{
+        "seed_kind" => "approval_inbox_demo",
+        "seed_key" => "approval-customer-message",
+        "seed_version" => approval_seed_version,
+        "ticket_id" => "TKT-1051",
+        "channel" => "email",
+        "template" => "refund_followup"
+      },
+      pre_steps: [
+        %{
+          kind: "prompt",
+          role_id: "support_agent",
+          result: %{"template" => "refund_followup", "channel" => "email"}
+        },
+        %{
+          kind: "guardrail",
+          role_id: "billing_redaction",
+          result: %{
+            "policy" => "support_messages.billing_review",
+            "decision" => "approval_required"
+          }
+        }
+      ],
+      reason: "Outbound message includes billing details and requires operator review.",
+      policy_key: "support_messages.billing_review"
+    }
+  ]
 
-    {:ok, _approval} =
-      Scoria.Workflows.mark_waiting_for_approval(approval_run.id, approval_step.id, %{
-        tool_name: SupportJourney.refund_approval_tool(),
-        arguments: %{"ticket_id" => SupportJourney.ticket_fixture()["id"]},
-        reason: "Refund requires operator approval"
-      })
+  {expired_legacy_count, _} =
+    Repo.update_all(
+      from(approval in Scoria.Observe.Approval,
+        where:
+          approval.tenant_id == ^tenant_id and approval.status == "pending" and
+            approval.tool_name == ^SupportJourney.refund_approval_tool() and
+            is_nil(approval.actor_id),
+        where:
+          fragment(
+            "?->>? = ?",
+            approval.arguments,
+            "ticket_id",
+            ^SupportJourney.ticket_fixture()["id"]
+          ),
+        where: is_nil(fragment("?->>?", approval.arguments, "seed_kind"))
+      ),
+      set: [status: "expired"]
+    )
+
+  {expired_previous_demo_count, _} =
+    Repo.update_all(
+      from(approval in Scoria.Observe.Approval,
+        where:
+          approval.tenant_id == ^tenant_id and approval.status == "pending" and
+            fragment("?->>? = ?", approval.arguments, "seed_kind", "approval_inbox_demo"),
+        where:
+          fragment(
+            "coalesce(?->>?, '') != ?",
+            approval.arguments,
+            "seed_version",
+            ^approval_seed_version
+          )
+      ),
+      set: [status: "expired"]
+    )
+
+  existing_seed_keys =
+    Repo.all(
+      from(approval in Scoria.Observe.Approval,
+        where:
+          approval.tenant_id == ^tenant_id and approval.status == "pending" and
+            fragment("?->>? = ?", approval.arguments, "seed_kind", "approval_inbox_demo"),
+        where: fragment("?->>? = ?", approval.arguments, "seed_version", ^approval_seed_version),
+        select: fragment("?->>?", approval.arguments, "seed_key")
+      )
+    )
+    |> MapSet.new()
+
+  missing_approval_specs =
+    Enum.reject(approval_specs, &MapSet.member?(existing_seed_keys, &1.seed_key))
+
+  if missing_approval_specs != [] do
+    for spec <- missing_approval_specs do
+      {:ok, approval_run} =
+        Scoria.Workflows.create_run(%{
+          root_role_id: spec.root_role_id,
+          actor_id: spec.actor_id,
+          tenant_id: SupportJourney.tenant_id(),
+          session_id: spec.session_id
+        })
+
+      for {pre_step, index} <- Enum.with_index(spec.pre_steps, 1) do
+        {:ok, step} =
+          Scoria.Workflows.create_step(approval_run.id, %{
+            sequence: index,
+            kind: pre_step.kind,
+            role_id: pre_step.role_id,
+            status: "running"
+          })
+
+        {:ok, _completed_step} =
+          Scoria.Workflows.complete_step(step.id, pre_step.result, run_status: "running")
+      end
+
+      {:ok, approval_step} =
+        Scoria.Workflows.create_step(approval_run.id, %{
+          sequence: length(spec.pre_steps) + 1,
+          kind: "approval",
+          role_id: spec.step_role_id,
+          status: "running"
+        })
+
+      {:ok, _approval} =
+        Scoria.Workflows.mark_waiting_for_approval(
+          approval_run.id,
+          approval_step.id,
+          Map.take(spec, [
+            :tool_name,
+            :arguments,
+            :reason,
+            :connector_label,
+            :connector_key,
+            :blocker_kind,
+            :required_scopes,
+            :policy_key
+          ])
+        )
+    end
   end
 
-  IO.puts("  ✓ refund-review runs (5 pending approvals)")
+  IO.puts(
+    "  ✓ approval inbox (#{length(approval_specs)} realistic pending approvals, #{expired_legacy_count + expired_previous_demo_count} legacy duplicates expired)"
+  )
 
   # Keep a reference to completed_run for downstream use (incidents, review candidates)
   {:ok, completed_run}
@@ -141,8 +393,6 @@ end
   # ---------------------------------------------------------------------------
 
   try do
-    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
-
     # Incident 1: warning / open — linked to completed run if available
     # Guard by incident_key (the field IncidentManager sets as dedupe_key internally)
     existing_1 = Repo.get_by(Incident, incident_key: "quality-regression-seed-001")
@@ -604,8 +854,6 @@ end
 # ---------------------------------------------------------------------------
 
 try do
-  tenant_id = SupportJourney.tenant_id()
-
   # Template 1: active (already approved and promoted)
   # limit: 1 (not get_by) — block (g) seeds another active v1 template (its own
   # entity), so a bare get_by would raise "expected at most one result" on re-seed.
@@ -995,7 +1243,10 @@ try do
           scorer_kind: "llm_judge",
           scorer_version: "v1",
           explanation: "Refund answer omitted the order-date check — regression vs baseline.",
-          evidence_refs: %{"workflow_run_id" => demo_run.id, "prompt_release_id" => draft_prompt.id}
+          evidence_refs: %{
+            "workflow_run_id" => demo_run.id,
+            "prompt_release_id" => draft_prompt.id
+          }
         })
       )
 

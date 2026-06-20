@@ -30,4 +30,19 @@ defmodule Scoria.SupportJourneySourceTest do
     assert input["ticket_id"] == SupportJourney.ticket_fixture()["id"]
     assert input["brief"] =~ "TKT-1042"
   end
+
+  test "dev seed tops up approval fixtures instead of appending on every run" do
+    seed_source = File.read!("priv/repo/dev_seed.exs")
+
+    assert seed_source =~ ~s(approval_seed_version = "2026-06-approval-run-v2")
+    assert seed_source =~ ~s("seed_kind" => "approval_inbox_demo")
+    assert seed_source =~ ~s("seed_version" => approval_seed_version)
+    assert seed_source =~ "existing_seed_keys"
+    assert seed_source =~ "missing_approval_specs"
+
+    assert seed_source =~
+             "Scoria.Workflows.complete_step(step.id, pre_step.result, run_status: \"running\")"
+
+    refute seed_source =~ "for _ <- 1..5 do"
+  end
 end

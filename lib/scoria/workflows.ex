@@ -280,7 +280,13 @@ defmodule Scoria.Workflows do
           repo,
           run.id,
           completed_step.id,
-          replay_transition_checkpoint_attrs(run, "step_completed", run_status, result_envelope, :result)
+          replay_transition_checkpoint_attrs(
+            run,
+            "step_completed",
+            run_status,
+            result_envelope,
+            :result
+          )
         )
 
       insert_event(
@@ -325,9 +331,11 @@ defmodule Scoria.Workflows do
       step = repo.get!(Step, step_id)
 
       if step.run_id != run.id do
-        repo.rollback(validation_changeset(%{workflow_run_id: run_id, workflow_step_id: step_id}, [
-          workflow_step_id: "does not belong to workflow_run_id"
-        ]))
+        repo.rollback(
+          validation_changeset(%{workflow_run_id: run_id, workflow_step_id: step_id},
+            workflow_step_id: "does not belong to workflow_run_id"
+          )
+        )
       end
 
       approval_identity = immutable_identity(run, attrs)
@@ -342,17 +350,27 @@ defmodule Scoria.Workflows do
       )
 
       checkpoint =
-        insert_checkpoint(repo, run.id, step.id, with_replay_evidence(run, attrs, %{
-          transition: "waiting_for_approval",
-          status: "waiting_for_approval",
-          snapshot: %{reason: Map.get(attrs, :reason) || Map.get(attrs, "reason")},
-          metadata: %{}
-        }))
+        insert_checkpoint(
+          repo,
+          run.id,
+          step.id,
+          with_replay_evidence(run, attrs, %{
+            transition: "waiting_for_approval",
+            status: "waiting_for_approval",
+            snapshot: %{reason: Map.get(attrs, :reason) || Map.get(attrs, "reason")},
+            metadata: %{}
+          })
+        )
 
-      insert_event(repo, run.id, step.id, with_replay_evidence(run, attrs, %{
-        event_type: "waiting_for_approval",
-        payload: %{reason: Map.get(attrs, :reason) || Map.get(attrs, "reason")}
-      }))
+      insert_event(
+        repo,
+        run.id,
+        step.id,
+        with_replay_evidence(run, attrs, %{
+          event_type: "waiting_for_approval",
+          payload: %{reason: Map.get(attrs, :reason) || Map.get(attrs, "reason")}
+        })
+      )
 
       approval_attrs =
         attrs
@@ -384,27 +402,30 @@ defmodule Scoria.Workflows do
         )
 
       audit_outbox_event =
-        SRE.insert_audit_outbox_event(repo, %{
-          tenant_id: approval_identity.tenant_id || "system",
-          event_type: "approval.requested",
-          policy_class: "approval",
-          dedupe_key: Map.get(attrs, :dedupe_key) || Map.get(attrs, "dedupe_key"),
-          actor_ref: approval_identity.actor_id,
-          workflow_run_id: run.id,
-          step_id: step.id,
-          trace_id: Map.get(attrs, :trace_id) || Map.get(attrs, "trace_id"),
-          approval_id: approval.id,
-          tool_name: approval.tool_name,
-          arguments: approval.arguments,
-          reason: Map.get(attrs, :reason) || Map.get(attrs, "reason"),
-          session_id: approval_identity.session_id,
-          metadata: %{
-            "checkpoint_id" => checkpoint.id,
-            "root_identity" => stringify_map(Identity.to_map(approval_identity)),
-            "run_status" => updated_run.status
+        SRE.insert_audit_outbox_event(
+          repo,
+          %{
+            tenant_id: approval_identity.tenant_id || "system",
+            event_type: "approval.requested",
+            policy_class: "approval",
+            dedupe_key: Map.get(attrs, :dedupe_key) || Map.get(attrs, "dedupe_key"),
+            actor_ref: approval_identity.actor_id,
+            workflow_run_id: run.id,
+            step_id: step.id,
+            trace_id: Map.get(attrs, :trace_id) || Map.get(attrs, "trace_id"),
+            approval_id: approval.id,
+            tool_name: approval.tool_name,
+            arguments: approval.arguments,
+            reason: Map.get(attrs, :reason) || Map.get(attrs, "reason"),
+            session_id: approval_identity.session_id,
+            metadata: %{
+              "checkpoint_id" => checkpoint.id,
+              "root_identity" => stringify_map(Identity.to_map(approval_identity)),
+              "run_status" => updated_run.status
+            }
           }
-        }
-        |> merge_replay_audit_attrs(run, approval))
+          |> merge_replay_audit_attrs(run, approval)
+        )
 
       approval =
         approval
@@ -470,7 +491,13 @@ defmodule Scoria.Workflows do
           repo,
           run.id,
           failed_step.id,
-          replay_transition_checkpoint_attrs(run, "step_failed", run_status, error_envelope, :error)
+          replay_transition_checkpoint_attrs(
+            run,
+            "step_failed",
+            run_status,
+            error_envelope,
+            :error
+          )
         )
 
       insert_event(
@@ -574,7 +601,7 @@ defmodule Scoria.Workflows do
   def resume_run(run_id) do
     run = get_run_tree!(run_id)
 
-    case {run.status, List.last(run.checkpoints), latest_pending_approval(run.approvals)} do
+    case {run.status, List.last(run.checkpoints), current_approved_approval(run)} do
       {"waiting_for_approval", _checkpoint, %Approval{status: "approved"} = approval} ->
         Repo.transaction(fn repo ->
           step = repo.get!(Step, approval.step_id)
@@ -655,41 +682,51 @@ defmodule Scoria.Workflows do
         |> repo.update!()
 
       audit_outbox_event =
-        SRE.insert_audit_outbox_event(repo, %{
-          tenant_id: audit_context.tenant_id,
-          event_type: "approval.#{status}",
-          policy_class: "approval",
-          dedupe_key: Map.get(attrs, :dedupe_key) || Map.get(attrs, "dedupe_key"),
-          actor_ref: audit_context.actor_id,
-          workflow_run_id: updated_approval.workflow_run_id,
-          step_id: updated_approval.step_id,
-          trace_id: audit_context.trace_id,
-          approval_id: updated_approval.id,
-          decision: status,
-          arguments: updated_approval.arguments,
-          tool_name: updated_approval.tool_name,
-          request_audit_event_id: audit_context.request_event && audit_context.request_event.id,
-          request_trace_id: audit_context.request_event && audit_context.request_event.trace_id,
-          request_actor_ref: audit_context.request_event && audit_context.request_event.actor_ref,
-          session_id: audit_context.session_id,
-          metadata: %{
-            "decision_actor_id" => attr_value(attrs, :actor_id),
-            "root_identity" =>
-              stringify_map(%{
-                actor_id: audit_context.actor_id,
-                tenant_id: audit_context.tenant_id,
-                session_id: audit_context.session_id
-              })
+        SRE.insert_audit_outbox_event(
+          repo,
+          %{
+            tenant_id: audit_context.tenant_id,
+            event_type: "approval.#{status}",
+            policy_class: "approval",
+            dedupe_key: Map.get(attrs, :dedupe_key) || Map.get(attrs, "dedupe_key"),
+            actor_ref: audit_context.actor_id,
+            workflow_run_id: updated_approval.workflow_run_id,
+            step_id: updated_approval.step_id,
+            trace_id: audit_context.trace_id,
+            approval_id: updated_approval.id,
+            decision: status,
+            arguments: updated_approval.arguments,
+            tool_name: updated_approval.tool_name,
+            request_audit_event_id: audit_context.request_event && audit_context.request_event.id,
+            request_trace_id: audit_context.request_event && audit_context.request_event.trace_id,
+            request_actor_ref:
+              audit_context.request_event && audit_context.request_event.actor_ref,
+            session_id: audit_context.session_id,
+            metadata: %{
+              "decision_actor_id" => attr_value(attrs, :actor_id),
+              "root_identity" =>
+                stringify_map(%{
+                  actor_id: audit_context.actor_id,
+                  tenant_id: audit_context.tenant_id,
+                  session_id: audit_context.session_id
+                })
+            }
           }
-        }
-        |> merge_replay_audit_attrs(audit_context.run, updated_approval))
+          |> merge_replay_audit_attrs(audit_context.run, updated_approval)
+        )
 
       {updated_approval, audit_outbox_event}
     end)
     |> case do
       {:ok, {updated_approval, audit_outbox_event}} ->
         SRE.emit_audit_outbox_telemetry(audit_outbox_event)
-        OperatorBroadcast.approval_decided(updated_approval.tenant_id, updated_approval.id, status)
+
+        OperatorBroadcast.approval_decided(
+          updated_approval.tenant_id,
+          updated_approval.id,
+          status
+        )
+
         {:ok, updated_approval}
 
       {:error, :not_pending} ->
@@ -767,10 +804,16 @@ defmodule Scoria.Workflows do
     Phoenix.PubSub.broadcast(Scoria.PubSub, @topic_prefix <> run_id, message)
   end
 
-  defp latest_pending_approval(approvals) do
-    approvals
+  defp current_approved_approval(%Run{} = run) do
+    latest_checkpoint = List.last(run.checkpoints)
+
+    run.approvals
     |> Enum.reverse()
-    |> Enum.find(&(&1.status in ["pending", "approved"]))
+    |> Enum.find(fn approval ->
+      (approval.status == "approved" and
+         approval.step_id == run.current_step_id and
+         latest_checkpoint) && approval.checkpoint_id == latest_checkpoint.id
+    end)
   end
 
   defp approval_decision_context(repo, approval, attrs) do
@@ -817,7 +860,9 @@ defmodule Scoria.Workflows do
     if run.execution_mode == "replay" do
       evidence = replay_approval_evidence(run, attrs)
       replay_scope = attr_value(attrs, :replay_scope) || "replay_live"
-      replay_fields = replay_metadata_fields(evidence, replay_scope, attr_value(attrs, :executed_live) || false)
+
+      replay_fields =
+        replay_metadata_fields(evidence, replay_scope, attr_value(attrs, :executed_live) || false)
 
       payload
       |> Map.put(:replay_disposition, Atom.to_string(evidence.replay_disposition))
@@ -852,7 +897,13 @@ defmodule Scoria.Workflows do
 
   defp merge_replay_audit_attrs(envelope, _run, _approval), do: envelope
 
-  defp replay_transition_checkpoint_attrs(%Run{} = run, transition, status, envelope, envelope_key) do
+  defp replay_transition_checkpoint_attrs(
+         %Run{} = run,
+         transition,
+         status,
+         envelope,
+         envelope_key
+       ) do
     replay_fields =
       if run.execution_mode == "replay" do
         replay_transition_fields(envelope)
@@ -884,7 +935,10 @@ defmodule Scoria.Workflows do
     |> maybe_put_replay_transition_columns(replay_fields)
   end
 
-  defp maybe_put_replay_transition_columns(attrs, %{"replay_disposition" => disposition, "replay_reason_code" => reason})
+  defp maybe_put_replay_transition_columns(attrs, %{
+         "replay_disposition" => disposition,
+         "replay_reason_code" => reason
+       })
        when not is_nil(disposition) and not is_nil(reason) do
     attrs
     |> Map.put(:replay_disposition, disposition)

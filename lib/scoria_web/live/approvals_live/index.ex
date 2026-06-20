@@ -1,8 +1,8 @@
 defmodule ScoriaWeb.ApprovalsLive.Index do
   @moduledoc """
   Approvals inbox — the operator's blocking queue of tool calls awaiting a
-  workflow-owned decision. Extracted from the Live Ops god-page so approving or
-  rejecting a gated call is a focused, linkable surface.
+  recorded operator decision. Extracted from the Live Ops god-page so approving
+  or rejecting a gated call is a focused, linkable surface.
   """
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
@@ -13,7 +13,10 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       evidence_action_row: 1,
       evidence_rows: 1,
       flash_group: 1,
+      id: 1,
       modal: 1,
+      raw_evidence: 1,
+      time: 1,
       toast: 1
     ]
 
@@ -23,6 +26,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
   alias Scoria.Workflows.Resume
+  alias ScoriaWeb.ApprovalCopy
   alias ScoriaWeb.ApprovalInboxComponent
 
   @impl true
@@ -35,7 +39,6 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       |> assign(:active_approval, nil)
       |> assign(:decision_modal, nil)
       |> assign(:highlighted_approval_id, nil)
-      |> assign(:approval_table_density, :compact)
       |> assign(:approval_inbox, [])
       |> assign(:runtime_query, Map.get(params, "runtime"))
       |> assign(
@@ -67,7 +70,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     socket = reload_inbox(socket)
 
     socket =
-      if is_nil(socket.assigns.active_approval) or
+      if focused_runtime_query?(socket.assigns.runtime_query) and
            approval_matches_focus?(projection, socket.assigns.runtime_query) do
         socket
         |> assign(:active_approval, projection)
@@ -111,17 +114,6 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     {:noreply, assign(socket, :decision_modal, nil)}
   end
 
-  def handle_event("set_density", %{"density" => density}, socket) do
-    density =
-      case density do
-        "compact" -> :compact
-        "comfortable" -> :comfortable
-        _ -> :default
-      end
-
-    {:noreply, assign(socket, :approval_table_density, density)}
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -129,7 +121,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       <div class="scoria-pagehead">
         <h1>Approvals</h1>
         <p>
-          Operator-gated tool calls awaiting a workflow-owned decision. Select one to review its arguments and approve or reject.
+          Side-effecting tool requests waiting for an operator decision. Review the policy reason, expected effect, and run evidence before approving or denying.
         </p>
       </div>
 
@@ -142,28 +134,53 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       <ApprovalInboxComponent.render
         approvals={@approval_inbox}
         highlight_approval_id={@highlighted_approval_id}
-        density={@approval_table_density}
-        on_density_change="set_density"
         select_event="select_approval"
+        scoria_base={assigns[:scoria_base] || ""}
       />
 
       <.drawer id="approval-detail-drawer" show={@active_approval != nil} on_dismiss="dismiss_approval">
-        <:eyebrow>Approval detail</:eyebrow>
-        <:title_slot>Approval Required</:title_slot>
+        <:eyebrow>Approval required</:eyebrow>
+        <:title_slot>{ApprovalCopy.title(@active_approval)}</:title_slot>
 
-        <.evidence_rows rows={approval_detail_rows(@active_approval)} />
+        <div :if={@active_approval} class="scoria-approval-summary">
+          <p class="scoria-approval-summary__label">Decision required before this run can continue.</p>
+          <p class="scoria-approval-summary__effect">{ApprovalCopy.impact(@active_approval)}</p>
+        </div>
 
-        <.evidence_action_row :if={@active_approval && @active_approval[:workflow_run_id]} class="mt-4">
+        <.evidence_rows rows={ApprovalCopy.request_rows(@active_approval)} />
+
+        <.evidence_action_row :if={@active_approval && @active_approval[:workflow_run_id]} class="mt-2">
           <a
-            href={(assigns[:scoria_base] || "") <> "/workflows/#{@active_approval[:workflow_run_id]}"}
+            href={run_href(assigns[:scoria_base] || "", @active_approval[:workflow_run_id])}
             class="scoria-button scoria-button--ghost scoria-button--sm"
           >
-            View workflow run
+            Open run evidence
           </a>
         </.evidence_action_row>
 
-        <p class="mt-4">
-          Record a workflow-owned decision. The approval state and audit evidence are written durably before any resume attempt.
+        <.evidence_rows rows={ApprovalCopy.evidence_rows(@active_approval)} />
+
+        <div :if={@active_approval} class="scoria-approval-ids" aria-label="Technical identifiers">
+          <span :if={@active_approval[:id]}>
+            Approval <.id value={@active_approval[:id]} id={"approval-id-#{@active_approval[:id]}"} />
+          </span>
+          <span :if={@active_approval[:workflow_run_id]}>
+            Run <.id value={@active_approval[:workflow_run_id]} id={"approval-run-id-#{@active_approval[:id]}"} />
+          </span>
+          <span :if={@active_approval[:session_id]}>
+            Session <.id value={@active_approval[:session_id]} id={"approval-session-id-#{@active_approval[:id]}"} />
+          </span>
+          <span :if={@active_approval[:inserted_at]}>
+            Requested <.time at={@active_approval[:inserted_at]} />
+          </span>
+        </div>
+
+        <.raw_evidence :if={@active_approval} label="Advanced: redacted request payload">
+          {ApprovalCopy.raw_arguments(@active_approval)}
+        </.raw_evidence>
+
+        <p class="mt-2">
+          Scoria records this decision and its audit evidence before attempting to continue the run.
         </p>
 
         <.evidence_action_row class="mt-6">
@@ -173,7 +190,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
             phx-value-decision="reject"
             class="scoria-button scoria-button--danger"
           >
-            Reject approval
+            {ApprovalCopy.reject_label(@active_approval)}
           </button>
           <button
             type="button"
@@ -181,15 +198,15 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
             phx-value-decision="approve"
             class="scoria-button scoria-button--primary"
           >
-            Approve workflow
+            {ApprovalCopy.approve_label(@active_approval)}
           </button>
         </.evidence_action_row>
       </.drawer>
 
       <.modal id="approval-decision-modal" show={@decision_modal != nil} on_dismiss="close_decision_modal">
-        <:title_slot>{decision_title(@decision_modal)}</:title_slot>
+        <:title_slot>{ApprovalCopy.decision_title(@decision_modal, @active_approval)}</:title_slot>
         <.badge tone={decision_tone(@decision_modal)} label={decision_badge(@decision_modal)} dot={false} />
-        <p>{decision_copy(@decision_modal)}</p>
+        <p>{ApprovalCopy.decision_copy(@decision_modal, @active_approval)}</p>
         <:footer>
           <button type="button" phx-click="close_decision_modal" class="scoria-button scoria-button--ghost">
             Keep reviewing
@@ -200,7 +217,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
             phx-click="reject"
             class="scoria-button scoria-button--danger"
           >
-            Reject approval
+            {ApprovalCopy.reject_label(@active_approval)}
           </button>
           <button
             :if={@decision_modal == "approve"}
@@ -208,7 +225,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
             phx-click="approve"
             class="scoria-button scoria-button--primary"
           >
-            Approve workflow
+            {ApprovalCopy.approve_label(@active_approval)}
           </button>
         </:footer>
       </.modal>
@@ -226,7 +243,19 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     )
   end
 
-  defp maybe_seed_active_approval(%{assigns: %{active_approval: nil}} = socket) do
+  defp maybe_seed_active_approval(
+         %{assigns: %{active_approval: nil, runtime_query: runtime_query}} = socket
+       ) do
+    if focused_runtime_query?(runtime_query) do
+      seed_focused_active_approval(socket)
+    else
+      socket
+    end
+  end
+
+  defp maybe_seed_active_approval(socket), do: socket
+
+  defp seed_focused_active_approval(socket) do
     case Enum.find(
            socket.assigns.approval_inbox,
            &approval_matches_focus?(&1, socket.assigns.runtime_query)
@@ -235,8 +264,6 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       projection -> assign(socket, :active_approval, projection)
     end
   end
-
-  defp maybe_seed_active_approval(socket), do: socket
 
   defp record_approval_decision(socket, status) do
     case socket.assigns.active_approval do
@@ -254,7 +281,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
           toast_opts =
             case status do
               "approved" -> [tone: :pass, message: "Approval granted."]
-              _ -> [tone: :warn, message: "Approval rejected — workflow remains paused."]
+              _ -> [tone: :warn, message: "Approval denied - run is still waiting for approval."]
             end
 
           updated_socket
@@ -318,13 +345,25 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   end
 
   defp approval_error_message(status, reason) do
-    "Could not #{status} approval through workflow-owned state: #{inspect(reason)}"
+    "Could not record #{status} approval decision: #{inspect(reason)}"
   end
 
-  defp approval_matches_focus?(_projection, query) when query in [nil, ""], do: true
+  defp focused_runtime_query?(query) when is_binary(query), do: query != ""
+
+  defp focused_runtime_query?(query) when is_map(query) do
+    workflow_run_id = query["workflow_run_id"] || query[:workflow_run_id]
+    session_id = query["session_id"] || query[:session_id]
+
+    (is_binary(workflow_run_id) and workflow_run_id != "") or
+      (is_binary(session_id) and session_id != "")
+  end
+
+  defp focused_runtime_query?(_query), do: false
+
+  defp approval_matches_focus?(_projection, query) when query in [nil, ""], do: false
 
   defp approval_matches_focus?(projection, query) when is_binary(query) do
-    projection.session_id == query or projection.workflow_run_id == query
+    Map.get(projection, :session_id) == query or Map.get(projection, :workflow_run_id) == query
   end
 
   defp approval_matches_focus?(projection, query) when is_map(query) do
@@ -366,41 +405,14 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     Phoenix.Component.update(socket, :toasts, fn toasts -> [toast | toasts] end)
   end
 
-  defp approval_detail_rows(nil), do: []
-
-  defp approval_detail_rows(approval) do
-    [
-      {"Tool", approval[:tool_name]},
-      {"Reason", approval[:reason]},
-      {"Arguments", approval[:arguments_preview]},
-      {"Connector", approval[:connector_label] || connector_label(approval)},
-      {"Workflow", approval[:workflow_run_id]},
-      {"Status", approval[:status]}
-    ]
-  end
-
-  defp connector_label(%{blocker_kind: "connector"}), do: "connector approval"
-  defp connector_label(_approval), do: nil
-
-  defp decision_title("approve"), do: "Approve workflow"
-  defp decision_title("reject"), do: "Reject approval"
-  defp decision_title(_decision), do: "Review approval"
-
-  defp decision_badge("approve"), do: "Resume when possible"
-  defp decision_badge("reject"), do: "Keep workflow paused"
+  defp decision_badge("approve"), do: ApprovalCopy.decision_badge("approve")
+  defp decision_badge("reject"), do: ApprovalCopy.decision_badge("reject")
   defp decision_badge(_decision), do: "Decision pending"
 
   defp decision_tone("approve"), do: :pass
   defp decision_tone("reject"), do: :warn
   defp decision_tone(_decision), do: :neutral
 
-  defp decision_copy("approve") do
-    "Approval resumes the workflow when possible after the durable approval event is written."
-  end
-
-  defp decision_copy("reject") do
-    "Reject records a durable rejection and keeps the workflow paused. To continue, the run needs a new approval request or operator retry."
-  end
-
-  defp decision_copy(_decision), do: "Review the approval before recording a durable decision."
+  defp run_href(_base_path, nil), do: nil
+  defp run_href(base_path, run_id), do: base_path <> "/workflows/#{run_id}"
 end

@@ -107,9 +107,18 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     {:ok, _view, html} = live(session_conn(), "/scoria/approvals")
 
     assert html =~ "Approvals"
-    assert html =~ "Approval inbox"
+
+    assert html =~
+             ~s(<table class="scoria-table" id="approvals" aria-label="Pending approval queue">)
+
+    refute html =~ ~s(role="group" aria-label="Row density")
+    refute html =~ "phx-value-density"
+    refute html =~ "scoria-table--compact"
+    refute html =~ "scoria-table--comfortable"
     assert html =~ "No approvals waiting"
-    refute html =~ "Approval Required"
+    refute html =~ "<h2>Approval inbox</h2>"
+    refute html =~ ~s(<p class="scoria-eyebrow">approvals</p>)
+    refute html =~ "Approval required"
   end
 
   test "approvals source uses shared table, drawer, and final modal contracts" do
@@ -118,11 +127,25 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     assert live_source =~ "<.drawer"
     assert live_source =~ "<.modal"
-    assert live_source =~ "Approve workflow"
-    assert live_source =~ "Reject approval"
+    assert live_source =~ "ApprovalCopy.approve_label"
+    assert live_source =~ "ApprovalCopy.reject_label"
     assert live_source =~ "Keep reviewing"
     assert inbox_source =~ "<.table"
     assert inbox_source =~ ~s(id="approvals")
+    assert inbox_source =~ ~s(aria-label="Pending approval queue")
+    assert inbox_source =~ ~s(label="Request")
+    assert inbox_source =~ ~s(label="Policy")
+    assert inbox_source =~ ~s(label="Requested by")
+    assert inbox_source =~ ~s(label="Waiting")
+    assert inbox_source =~ ~s(label="Run")
+    refute inbox_source =~ "<:eyebrow>approvals</:eyebrow>"
+    refute inbox_source =~ "<:title>Approval inbox</:title>"
+    refute inbox_source =~ ~s(label="Status")
+    refute inbox_source =~ ~s(label="Consequence")
+    refute inbox_source =~ ~s(label="Context")
+    refute live_source =~ "set_density"
+    refute live_source =~ "approval_table_density"
+    refute inbox_source =~ "on_density_change"
 
     for forbidden <- [
           "stone-",
@@ -140,29 +163,30 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
   end
 
   test "HITL approval request renders modal and handles approve" do
+    %{run: run, step: step, approval: approval} = pending_approval()
+
     {:ok, view, _html} =
       live(
         session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
-        "/scoria/approvals"
+        "/scoria/approvals?runtime=#{run.id}"
       )
-
-    %{run: run, step: step, approval: approval} = pending_approval()
 
     projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
     send(view.pid, {:hitl_request, projection})
 
     html = render(view)
-    assert html =~ "Approval Required"
+    assert html =~ "Approval required"
     assert html =~ "test_tool"
     assert html =~ "Requires approval"
-    assert html =~ "Approve workflow"
-    assert html =~ "Reject approval"
-    assert html =~ "durably"
-    assert html =~ "arguments_preview" or html =~ "prod"
+    assert html =~ "Approve request"
+    assert html =~ "Deny request"
+    assert html =~ "audit evidence"
+    assert html =~ "Advanced: redacted request payload"
+    refute html =~ "arguments_preview"
 
     render_click(view, "approve", %{})
 
-    eventually(fn -> not (render(view) =~ "Approval Required") end)
+    eventually(fn -> not (render(view) =~ "Approval required") end)
 
     updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
     assert updated_approval.status == "approved"
@@ -181,13 +205,13 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
   end
 
   test "HITL approval request handles reject" do
+    %{run: run, step: step, approval: approval} = pending_approval()
+
     {:ok, view, _html} =
       live(
         session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
-        "/scoria/approvals"
+        "/scoria/approvals?runtime=#{run.id}"
       )
-
-    %{run: run, step: step, approval: approval} = pending_approval()
 
     projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
     send(view.pid, {:hitl_request, projection})
@@ -210,19 +234,20 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
   end
 
   test "HITL modal dismiss closes without approving" do
-    {:ok, view, _html} = live(session_conn(), "/scoria/approvals")
+    workflow_run_id = Ecto.UUID.generate()
+    {:ok, view, _html} = live(session_conn(), "/scoria/approvals?runtime=#{workflow_run_id}")
 
     projection = %{
       id: Ecto.UUID.generate(),
       tool_name: "dismiss_tool",
       reason: "Review later",
       arguments_preview: %{"env" => "staging"},
-      workflow_run_id: Ecto.UUID.generate(),
+      workflow_run_id: workflow_run_id,
       status: "pending"
     }
 
     send(view.pid, {:hitl_request, projection})
-    assert render(view) =~ "Approval Required"
+    assert render(view) =~ "Approval required"
 
     html =
       view
@@ -233,19 +258,30 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     render_click(view, "dismiss_approval", %{})
 
-    refute render(view) =~ "Approval Required"
+    refute render(view) =~ "Approval required"
   end
 
   test "approval_decided clears active modal" do
-    {:ok, view, _html} = live(session_conn(), "/scoria/approvals")
+    workflow_run_id = Ecto.UUID.generate()
+    {:ok, view, _html} = live(session_conn(), "/scoria/approvals?runtime=#{workflow_run_id}")
     approval_id = Ecto.UUID.generate()
 
-    send(view.pid, {:hitl_request, %{id: approval_id, tool_name: "sync_tool", status: "pending"}})
-    assert render(view) =~ "Approval Required"
+    send(
+      view.pid,
+      {:hitl_request,
+       %{
+         id: approval_id,
+         tool_name: "sync_tool",
+         workflow_run_id: workflow_run_id,
+         status: "pending"
+       }}
+    )
+
+    assert render(view) =~ "Approval required"
 
     send(view.pid, {:approval_decided, approval_id, "approved"})
 
-    refute render(view) =~ "Approval Required"
+    refute render(view) =~ "Approval required"
   end
 
   test "select_approval opens the modal for a chosen inbox row" do
@@ -253,23 +289,46 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     {:ok, view, _html} = live(session_conn(), "/scoria/approvals")
 
-    # The inbox auto-seeds the first pending approval; dismiss then reselect it.
-    render_click(view, "dismiss_approval", %{})
-    refute render(view) =~ "Approval Required"
+    html = render(view)
+    assert html =~ "test_tool"
+    refute html =~ "Approval required"
 
     render_click(view, "select_approval", %{"id" => approval.id})
-    assert render(view) =~ "Approval Required"
+    assert render(view) =~ "Approval required"
     assert render(view) =~ "test_tool"
   end
 
+  test "plain inbox does not auto-open a pending approval" do
+    pending_approval()
+
+    {:ok, _view, html} = live(session_conn(), "/scoria/approvals")
+
+    assert html =~ "test_tool"
+    assert html =~ "Inspect approval"
+    refute html =~ "Approval required"
+  end
+
+  test "unfocused HITL approval request highlights inbox row without opening drawer" do
+    {:ok, view, _html} = live(session_conn(), "/scoria/approvals")
+    %{approval: approval} = pending_approval()
+
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+    send(view.pid, {:hitl_request, projection})
+
+    html = render(view)
+    assert html =~ "test_tool"
+    assert html =~ ~s(data-highlight="true")
+    refute html =~ "Approval required"
+  end
+
   test "stale approval decision surfaces friendly flash" do
+    %{run: run, approval: approval} = pending_approval()
+
     {:ok, view, _html} =
       live(
         session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
-        "/scoria/approvals"
+        "/scoria/approvals?runtime=#{run.id}"
       )
-
-    %{approval: approval} = pending_approval()
 
     projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
     send(view.pid, {:hitl_request, projection})
@@ -345,14 +404,14 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     drain_pubsub_messages()
 
     send(view.pid, {:hitl_request, projection_a})
-    assert render(view) =~ "Approval Required"
+    assert render(view) =~ "Approval required"
     assert render(view) =~ "run_a_tool"
 
     send(view.pid, {:hitl_request, projection_b})
 
     html = render(view)
     assert html =~ "run_a_tool"
-    assert html =~ "Approval Required"
+    assert html =~ "Approval required"
     assert html =~ "run_b_tool"
     assert html =~ ~s(data-highlight="true")
   end
@@ -374,7 +433,7 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     )
 
     assert render(view) =~ "focused_tool"
-    assert render(view) =~ "Approval Required"
+    assert render(view) =~ "Approval required"
   end
 
   test "approvals inbox boots and renders the toast region shell" do
@@ -383,17 +442,18 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     # UAT-1: the modified screen mounts cleanly and the toast-region wiring is present.
     assert html =~ "scoria-toast-region"
     assert html =~ "Approvals"
-    assert html =~ "Approval inbox"
+    assert html =~ ~s(id="approvals" aria-label="Pending approval queue")
+    refute html =~ "<h2>Approval inbox</h2>"
   end
 
   test "approve decision renders a pass-tone toast with granted copy" do
+    %{run: run, approval: approval} = pending_approval()
+
     {:ok, view, _html} =
       live(
         session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
-        "/scoria/approvals"
+        "/scoria/approvals?runtime=#{run.id}"
       )
-
-    %{approval: approval} = pending_approval()
 
     projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
     send(view.pid, {:hitl_request, projection})
@@ -414,13 +474,13 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
   end
 
   test "reject decision renders a warn-tone toast with paused copy" do
+    %{run: run, approval: approval} = pending_approval()
+
     {:ok, view, _html} =
       live(
         session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
-        "/scoria/approvals"
+        "/scoria/approvals?runtime=#{run.id}"
       )
-
-    %{approval: approval} = pending_approval()
 
     projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
     send(view.pid, {:hitl_request, projection})
@@ -432,7 +492,7 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     eventually(fn -> render(view) =~ "scoria-toast--warn" end)
     html = render(view)
     assert html =~ "scoria-toast--warn"
-    assert html =~ "Approval rejected — workflow remains paused."
+    assert html =~ "Approval denied - run is still waiting for approval."
     refute html =~ "scoria-toast--pass"
   end
 

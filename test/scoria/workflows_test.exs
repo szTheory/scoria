@@ -16,7 +16,8 @@ defmodule Scoria.WorkflowsTest do
 
   describe "schema changesets" do
     test "Run validates allowed lifecycle states and applies optimistic locking" do
-      changeset = Run.changeset(%Run{}, %{root_role_id: "executor", status: "waiting_for_approval"})
+      changeset =
+        Run.changeset(%Run{}, %{root_role_id: "executor", status: "waiting_for_approval"})
 
       assert changeset.valid?
 
@@ -27,14 +28,36 @@ defmodule Scoria.WorkflowsTest do
     test "Step, Checkpoint, Event, and Handoff changesets validate required links and payload fields" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "root"})
 
-      assert Step.changeset(%Step{}, %{run_id: run.id, sequence: 1, kind: "model_turn", role_id: "researcher"}).valid?
-      assert Checkpoint.changeset(%Checkpoint{}, %{run_id: run.id, sequence: 1, transition: "run_started", status: "running"}).valid?
+      assert Step.changeset(%Step{}, %{
+               run_id: run.id,
+               sequence: 1,
+               kind: "model_turn",
+               role_id: "researcher"
+             }).valid?
+
+      assert Checkpoint.changeset(%Checkpoint{}, %{
+               run_id: run.id,
+               sequence: 1,
+               transition: "run_started",
+               status: "running"
+             }).valid?
+
       assert Event.changeset(%Event{}, %{run_id: run.id, sequence: 1, event_type: "run_started"}).valid?
 
       {:ok, step} =
-        Workflows.create_step(run.id, %{sequence: 1, kind: "handoff", role_id: "researcher", handoff_input: %{"brief" => "find sources"}})
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "handoff",
+          role_id: "researcher",
+          handoff_input: %{"brief" => "find sources"}
+        })
 
-      assert Handoff.changeset(%Handoff{}, %{run_id: run.id, step_id: step.id, delegated_role_id: "critic", status: "pending"}).valid?
+      assert Handoff.changeset(%Handoff{}, %{
+               run_id: run.id,
+               step_id: step.id,
+               delegated_role_id: "critic",
+               status: "pending"
+             }).valid?
     end
   end
 
@@ -78,8 +101,11 @@ defmodule Scoria.WorkflowsTest do
       assert {:ok, completed_step} = Workflows.complete_step(step.id, %{"ok" => true})
 
       updated_run = Workflows.get_run!(run.id)
-      checkpoints = Repo.all(from c in Checkpoint, where: c.run_id == ^run.id, order_by: [asc: c.sequence])
-      events = Repo.all(from e in Event, where: e.run_id == ^run.id, order_by: [asc: e.sequence])
+
+      checkpoints =
+        Repo.all(from(c in Checkpoint, where: c.run_id == ^run.id, order_by: [asc: c.sequence]))
+
+      events = Repo.all(from(e in Event, where: e.run_id == ^run.id, order_by: [asc: e.sequence]))
 
       assert completed_step.status == "completed"
       assert updated_run.status == "completed"
@@ -125,7 +151,55 @@ defmodule Scoria.WorkflowsTest do
       assert approval.tenant_id == "root-tenant"
       assert approval.session_id == "root-session"
       checkpoint_id = approval.checkpoint_id
-      assert Enum.any?(updated_run.checkpoints, &(&1.id == checkpoint_id and &1.transition == "waiting_for_approval"))
+
+      assert Enum.any?(
+               updated_run.checkpoints,
+               &(&1.id == checkpoint_id and &1.transition == "waiting_for_approval")
+             )
+    end
+
+    test "resume_run/1 only resumes an approval tied to the current waiting checkpoint" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, first_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, first_approval} =
+        Workflows.mark_waiting_for_approval(run.id, first_step.id, %{
+          tool_name: "publish",
+          arguments: %{"env" => "prod"},
+          reason: "Need approval"
+        })
+
+      assert {:ok, _approved} = Workflows.approve(first_approval.id, "approved", %{})
+
+      {:ok, second_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, second_approval} =
+        Workflows.mark_waiting_for_approval(run.id, second_step.id, %{
+          tool_name: "publish",
+          arguments: %{"env" => "prod"},
+          reason: "Need fresh approval"
+        })
+
+      assert {:ok, _rejected} = Workflows.approve(second_approval.id, "rejected", %{})
+
+      assert {:error, :not_resumable} = Workflows.resume_run(run.id)
+
+      run = Workflows.get_run!(run.id)
+      assert run.status == "waiting_for_approval"
+      assert run.current_step_id == second_step.id
     end
 
     test "request_remote_approval/3 on a replay run creates a replay-scoped blocked approval and seam evidence" do
@@ -271,20 +345,24 @@ defmodule Scoria.WorkflowsTest do
       source_checkpoint_id = Ecto.UUID.generate()
 
       historical_run =
-        Repo.insert!(Run.changeset(%Run{}, %{
-          root_role_id: "source",
-          status: "running",
-          started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
-        }))
+        Repo.insert!(
+          Run.changeset(%Run{}, %{
+            root_role_id: "source",
+            status: "running",
+            started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
+          })
+        )
 
       historical =
-        Repo.insert!(Approval.changeset(%Approval{}, %{
-          tool_name: "publish",
-          status: "approved",
-          workflow_run_id: historical_run.id,
-          source_run_id: source_run_id,
-          source_checkpoint_id: source_checkpoint_id
-        }))
+        Repo.insert!(
+          Approval.changeset(%Approval{}, %{
+            tool_name: "publish",
+            status: "approved",
+            workflow_run_id: historical_run.id,
+            source_run_id: source_run_id,
+            source_checkpoint_id: source_checkpoint_id
+          })
+        )
 
       {:ok, run} =
         Workflows.create_run(%{
@@ -323,20 +401,24 @@ defmodule Scoria.WorkflowsTest do
       source_checkpoint_id = Ecto.UUID.generate()
 
       historical_run =
-        Repo.insert!(Run.changeset(%Run{}, %{
-          root_role_id: "source",
-          status: "running",
-          started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
-        }))
+        Repo.insert!(
+          Run.changeset(%Run{}, %{
+            root_role_id: "source",
+            status: "running",
+            started_at: DateTime.utc_now() |> DateTime.truncate(:microsecond)
+          })
+        )
 
       historical =
-        Repo.insert!(Approval.changeset(%Approval{}, %{
-          tool_name: "publish",
-          status: "approved",
-          workflow_run_id: historical_run.id,
-          source_run_id: source_run_id,
-          source_checkpoint_id: source_checkpoint_id
-        }))
+        Repo.insert!(
+          Approval.changeset(%Approval{}, %{
+            tool_name: "publish",
+            status: "approved",
+            workflow_run_id: historical_run.id,
+            source_run_id: source_run_id,
+            source_checkpoint_id: source_checkpoint_id
+          })
+        )
 
       {:ok, run} =
         Workflows.create_run(%{

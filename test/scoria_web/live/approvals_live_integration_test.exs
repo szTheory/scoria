@@ -100,12 +100,13 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
   end
 
-  test "real approval surfaces blocking modal without send/2" do
+  test "focused approval surfaces blocking modal without send/2" do
     unique = Integer.to_string(System.unique_integer([:positive]))
     tenant_id = "approvals-hitl-tenant-" <> unique
     session_id = "approvals-hitl-session-" <> unique
 
-    {:ok, view, _html} = live(approvals_conn(tenant_id), "/scoria/approvals")
+    {:ok, view, _html} =
+      live(approvals_conn(tenant_id), "/scoria/approvals?runtime=#{session_id}")
 
     assert {:ok, started} =
              Runtime.start_run(
@@ -124,7 +125,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
       match?({:ok, %{status: "waiting_for_approval"}}, Runtime.get_run(started.run_id))
     end)
 
-    eventually(fn -> render(view) =~ "Approval Required" end)
+    eventually(fn -> render(view) =~ "Approval required" end)
 
     html = render(view)
     assert html =~ "publish"
@@ -136,7 +137,8 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     tenant_id = "approvals-approve-tenant-" <> unique
     session_id = "approvals-approve-session-" <> unique
 
-    {:ok, view, _html} = live(approvals_conn(tenant_id), "/scoria/approvals")
+    {:ok, view, _html} =
+      live(approvals_conn(tenant_id), "/scoria/approvals?runtime=#{session_id}")
 
     assert {:ok, started} =
              Runtime.start_run(
@@ -157,7 +159,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     eventually(fn ->
       html = render(view)
-      html =~ "Approval Required" and html =~ "publish" and not (html =~ "super-secret-key")
+      html =~ "Approval required" and html =~ "publish" and not (html =~ "super-secret-key")
     end)
 
     [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
@@ -167,7 +169,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     eventually(fn ->
       html = render(view)
 
-      not (html =~ "Approval Required") and Repo.get!(Approval, approval_id).status == "approved" and
+      not (html =~ "Approval required") and Repo.get!(Approval, approval_id).status == "approved" and
         not (html =~ "super-secret-key")
     end)
 
@@ -181,7 +183,8 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     tenant_id = "approvals-dismiss-tenant-" <> unique
     session_id = "approvals-dismiss-session-" <> unique
 
-    {:ok, view, _html} = live(approvals_conn(tenant_id), "/scoria/approvals")
+    {:ok, view, _html} =
+      live(approvals_conn(tenant_id), "/scoria/approvals?runtime=#{session_id}")
 
     assert {:ok, _started} =
              Runtime.start_run(
@@ -198,7 +201,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     eventually(fn ->
       html = render(view)
-      html =~ "Approval Required" and html =~ "publish"
+      html =~ "Approval required" and html =~ "publish"
     end)
 
     [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
@@ -208,7 +211,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     eventually(fn ->
       html = render(view)
 
-      not (html =~ "Approval Required") and html =~ "publish" and
+      not (html =~ "Approval required") and html =~ "publish" and
         Repo.get!(Approval, approval_id).status == "pending"
     end)
   end
@@ -218,7 +221,8 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     tenant_id = "approvals-stale-tenant-" <> unique
     session_id = "approvals-stale-session-" <> unique
 
-    {:ok, view, _html} = live(approvals_conn(tenant_id), "/scoria/approvals")
+    {:ok, view, _html} =
+      live(approvals_conn(tenant_id), "/scoria/approvals?runtime=#{session_id}")
 
     assert {:ok, _started} =
              Runtime.start_run(
@@ -233,18 +237,18 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
                handlers: %{"approval" => {Handlers, :wait_for_approval}}
              )
 
-    eventually(fn -> render(view) =~ "Approval Required" end)
+    eventually(fn -> render(view) =~ "Approval required" end)
 
     [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
     projection = RemoteApprovalProjection.get_approval_lineage!(approval_id)
 
     assert {:ok, _} = Workflows.approve(approval_id, "approved", %{actor_id: "other-operator"})
 
-    eventually(fn -> not (render(view) =~ "Approval Required") end)
+    eventually(fn -> not (render(view) =~ "Approval required") end)
 
     OperatorBroadcast.hitl_request(tenant_id, projection)
 
-    eventually(fn -> render(view) =~ "Approval Required" end)
+    eventually(fn -> render(view) =~ "Approval required" end)
 
     render_click(view, "approve", %{})
 
@@ -274,7 +278,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     eventually(fn ->
       html = render(view)
-      html =~ "Approval Required" and html =~ "publish"
+      html =~ "Approval required" and html =~ "publish"
     end)
 
     assert {:ok, _started_b} =
@@ -293,7 +297,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     eventually(fn ->
       html = render(view)
 
-      html =~ "Approval Required" and html =~ "publish" and html =~ "other_tool" and
+      html =~ "Approval required" and html =~ "publish" and html =~ "other_tool" and
         html =~ ~s(data-highlight="true")
     end)
   end
@@ -302,6 +306,86 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     unique = Integer.to_string(System.unique_integer([:positive]))
     tenant_id = "approvals-reject-tenant-" <> unique
     session_id = "approvals-reject-session-" <> unique
+
+    {:ok, view, _html} =
+      live(approvals_conn(tenant_id), "/scoria/approvals?runtime=#{session_id}")
+
+    assert {:ok, started} =
+             Runtime.start_run(
+               %{tenant_id: tenant_id, actor_id: "operator-int", session_id: session_id},
+               root_role_id: "executor",
+               initial_step: %{
+                 sequence: 1,
+                 kind: "approval",
+                 role_id: "executor",
+                 status: "queued"
+               },
+               handlers: %{"approval" => {Handlers, :wait_for_approval}}
+             )
+
+    eventually(fn ->
+      match?({:ok, %{status: "waiting_for_approval"}}, Runtime.get_run(started.run_id))
+    end)
+
+    eventually(fn ->
+      html = render(view)
+      html =~ "Approval required" and html =~ "publish" and not (html =~ "super-secret-key")
+    end)
+
+    [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
+
+    view
+    |> element("button[phx-click='open_decision_modal'][phx-value-decision='reject']")
+    |> render_click()
+
+    assert render(view) =~ "Denying records your decision"
+
+    render_click(view, "reject", %{})
+
+    eventually(fn ->
+      html = render(view)
+
+      not (html =~ "Approval required") and Repo.get!(Approval, approval_id).status == "rejected" and
+        match?({:ok, %{status: "waiting_for_approval"}}, Runtime.get_run(started.run_id)) and
+        not (html =~ "super-secret-key")
+    end)
+  end
+
+  test "focused reconnect shows modal from DB pending approval" do
+    unique = Integer.to_string(System.unique_integer([:positive]))
+    tenant_id = "approvals-reconnect-tenant-" <> unique
+    session_id = "approvals-reconnect-session-" <> unique
+
+    conn = approvals_conn(tenant_id)
+    focused_path = "/scoria/approvals?runtime=#{session_id}"
+    {:ok, view, _html} = live(conn, focused_path)
+
+    render_disconnect(view)
+
+    assert {:ok, _started} =
+             Runtime.start_run(
+               %{tenant_id: tenant_id, actor_id: "operator-int", session_id: session_id},
+               root_role_id: "executor",
+               initial_step: %{
+                 sequence: 1,
+                 kind: "approval",
+                 role_id: "executor",
+                 status: "queued"
+               },
+               handlers: %{"approval" => {Handlers, :wait_for_approval}}
+             )
+
+    {:ok, _view, html} = render_reconnect(conn, view, focused_path)
+
+    assert html =~ "Approval required"
+    assert html =~ "publish"
+    refute html =~ "super-secret-key"
+  end
+
+  test "plain inbox highlights producer approval without auto-opening drawer" do
+    unique = Integer.to_string(System.unique_integer([:positive]))
+    tenant_id = "approvals-plain-tenant-" <> unique
+    session_id = "approvals-plain-session-" <> unique
 
     {:ok, view, _html} = live(approvals_conn(tenant_id), "/scoria/approvals")
 
@@ -324,56 +408,10 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     eventually(fn ->
       html = render(view)
-      html =~ "Approval Required" and html =~ "publish" and not (html =~ "super-secret-key")
+
+      html =~ "publish" and html =~ ~s(data-highlight="true") and
+        not (html =~ "Approval required") and not (html =~ "super-secret-key")
     end)
-
-    [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
-
-    view
-    |> element("button[phx-click='open_decision_modal'][phx-value-decision='reject']")
-    |> render_click()
-
-    assert render(view) =~ "Reject records a durable rejection"
-
-    render_click(view, "reject", %{})
-
-    eventually(fn ->
-      html = render(view)
-
-      not (html =~ "Approval Required") and Repo.get!(Approval, approval_id).status == "rejected" and
-        match?({:ok, %{status: "waiting_for_approval"}}, Runtime.get_run(started.run_id)) and
-        not (html =~ "super-secret-key")
-    end)
-  end
-
-  test "reconnect shows modal from DB pending approval" do
-    unique = Integer.to_string(System.unique_integer([:positive]))
-    tenant_id = "approvals-reconnect-tenant-" <> unique
-    session_id = "approvals-reconnect-session-" <> unique
-
-    conn = approvals_conn(tenant_id)
-    {:ok, view, _html} = live(conn, "/scoria/approvals")
-
-    render_disconnect(view)
-
-    assert {:ok, _started} =
-             Runtime.start_run(
-               %{tenant_id: tenant_id, actor_id: "operator-int", session_id: session_id},
-               root_role_id: "executor",
-               initial_step: %{
-                 sequence: 1,
-                 kind: "approval",
-                 role_id: "executor",
-                 status: "queued"
-               },
-               handlers: %{"approval" => {Handlers, :wait_for_approval}}
-             )
-
-    {:ok, _view, html} = render_reconnect(conn, view, "/scoria/approvals")
-
-    assert html =~ "Approval Required"
-    assert html =~ "publish"
-    refute html =~ "super-secret-key"
   end
 
   defp render_disconnect(%View{} = view) do
