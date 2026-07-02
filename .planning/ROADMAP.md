@@ -24,7 +24,7 @@
 
 **Requirements:** LAB-01, LAB-02, FIXT-01
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -43,7 +43,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 37-06-PLAN.md — Browser proof (lab.spec.mjs) + maintainer docs (Wave 4)
+- [x] 37-06-PLAN.md — Browser proof (lab.spec.mjs) + maintainer docs (Wave 4)
 
 **Cross-cutting constraints:**
 

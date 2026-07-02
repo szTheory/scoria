@@ -2,18 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: Design System Stress Test
-current_phase: 37
-current_phase_name: dev-component-lab-and-stress-fixtures
-status: executing
+status: verifying
 stopped_at: Completed 37-04-PLAN.md
-last_updated: "2026-07-02T21:22:12.128Z"
+last_updated: "2026-07-02T21:46:02.227Z"
 last_activity: 2026-07-02
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
-  percent: 17
+  completed_plans: 8
+  percent: 33
 ---
 
 # Project State
@@ -30,7 +28,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 Phase: 37 (dev-component-lab-and-stress-fixtures) — EXECUTING
 Plan: 6 of 6
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-02
 
 ## Performance Metrics
@@ -76,6 +74,7 @@ Recent decisions affecting current work:
 - [Phase 37]: 37-03: Groups feeds each band from ONE base domain-noun scenario per group via states_for/2 (matching Plan 02's Primitives convention); browsing BOTH the normal and empty/error scenario per domain is the Fixtures section's job instead. IncidentEvidenceComponent's deeply-nested evidence shape (no graceful nil-default path) required a full deterministic literal-filler adapter, unlike the other four groups. ApprovalInboxComponent's hardcoded internal table id repeats across all ten stacked state rows — documented as a known, out-of-scope (lib/) limitation rather than worked around.
 - [Phase 37]: 37-04: Viewports reuses Plan 02 dense table specimen verbatim; Overlays dense-approvals probe builds 8 deterministic literal rows from the two existing approval scenarios rather than touching fixtures.ex; long-unbroken-evidence probe reuses approval_requested policy_name; command palette rows forward-reference /scoria/_lab/<section> (Plan 05 route); mobile nav probe reuses real ScoriaWeb.Layouts.nav_groups/0 data; both open drawer/modal specimens share the on_dismiss=lab-noop-dismiss convention Plan 02 established.
 - [Phase 37]: 37-05: Run lab proof primary command patches to /scoria/_lab/states (canonical proof/vocabulary overview) since D-27 does not specify concrete behavior; Open fixture matrix patches to /scoria/_lab/fixtures per plan instruction. Both header commands render as <.link patch=...> styled with existing scoria-button classes rather than a new primitive. item is passed only to primitives/1, groups/1, fixtures_view/1 per each section's actual attr() contract. lab-noop-dismiss handle_event added, resolving the crash risk flagged by 37-02/37-04.
+- [Phase ?]: 37-06: theme coverage proven via the shared root.html.heex localStorage pre-paint mechanism (no theme-toggle control exists on the lab's bare root-layout route); Overlays dismiss probe targets the modal close button since its full-viewport scrim blocks clicks on the drawer beneath it; copy-control probe runs on Fixtures instead of Overlays for the same reason; fixed a Rule-1 invalid p-in-p nesting bug in dev/lab/sections/foundations.ex that collapsed the D-14 reduced-motion signal.
 
 ### Pending Todos
 
@@ -118,9 +117,10 @@ None at milestone start.
 | Phase 37 P03 | ~30min | 2 tasks | 2 files |
 | Phase 37 P04 | ~15min | 2 tasks | 2 files |
 | Phase 37 P05 | 25min | 2 tasks | 2 files |
+| Phase 37 P06 | 55min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-07-02T21:20:12.044Z
+Last session: 2026-07-02T21:44:19.660Z
 Stopped at: Completed 37-04-PLAN.md
 Resume file: None
