@@ -24,7 +24,7 @@
 
 **Requirements:** LAB-01, LAB-02, FIXT-01
 
-**Plans:** 2/6 plans executed
+**Plans:** 3/6 plans executed
 
 Plans:
 **Wave 1**
@@ -34,7 +34,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 37-02-PLAN.md — Foundations + Primitives specimen sections (Wave 2)
-- [ ] 37-03-PLAN.md — Groups + Fixtures catalog sections (Wave 2)
+- [x] 37-03-PLAN.md — Groups + Fixtures catalog sections (Wave 2)
 - [ ] 37-04-PLAN.md — Viewports + Overlays probe sections (Wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
