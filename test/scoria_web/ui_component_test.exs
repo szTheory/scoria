@@ -1587,4 +1587,106 @@ defmodule ScoriaWeb.UIComponentTest do
       refute Regex.match?(~r/(?<!text-)outline(?:-\w+)?:\s/, css_source)
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Phase 38-03: remaining Criterion 2 primitive coherence guards
+  # (links, badges, timestamps, metadata rows, panels, drawers, modals, forms,
+  #  tables, lists — 38-01/38-02 covered toasts, stats, copy controls, and the
+  #  button size/focus scale only)
+  # ---------------------------------------------------------------------------
+
+  describe "primitive accessible-name + structure coverage (DS-02/DS-03/Criterion 2)" do
+    test "modal exposes role=dialog, aria-labelledby, and an aria-labelled close control" do
+      html =
+        render_component(&ScoriaWeb.UI.modal/1,
+          id: "m",
+          title: "Confirm",
+          show: true,
+          on_dismiss: "close_modal",
+          inner_block: slot_block("body")
+        )
+
+      assert html =~ ~s(role="dialog")
+      assert html =~ ~s(aria-labelledby="m-title")
+      assert html =~ ~s(aria-label="Close dialog")
+    end
+
+    test "drawer exposes role=dialog, aria-labelledby, and an aria-labelled close control" do
+      html =
+        render_component(&ScoriaWeb.UI.drawer/1,
+          id: "d",
+          title: "Details",
+          show: true,
+          on_dismiss: "close_drawer",
+          inner_block: slot_block("body")
+        )
+
+      assert html =~ ~s(role="dialog")
+      assert html =~ ~s(aria-labelledby="d-title")
+      assert html =~ ~s(aria-label="Close drawer")
+    end
+
+    test "field renders a <label for> bound to the input's id" do
+      html =
+        render_component(&ScoriaWeb.UI.field/1,
+          id: "f",
+          label: "Name",
+          inner_block: slot_block("<input/>")
+        )
+
+      assert html =~ ~s(<label for="f")
+    end
+
+    test "table renders scoria-table__th column headers and an aria-labelled pagination nav" do
+      html =
+        render_component(&ScoriaWeb.UI.table/1,
+          id: "coverage-table",
+          rows: [%{name: "Alice"}],
+          col: [
+            %{label: "Name", key: nil, class: nil, inner_block: fn _changed, row -> row.name end}
+          ],
+          total_pages: 2,
+          page: 1,
+          on_page_change: "page"
+        )
+
+      assert html =~ ~s(<th class="scoria-table__th)
+      assert html =~ "Name"
+      assert html =~ ~s(<nav aria-label="Pagination")
+    end
+
+    test "badge always renders a visible text label alongside tone (never color-alone)" do
+      html =
+        render_component(&ScoriaWeb.UI.badge/1,
+          tone: :warn,
+          label: "Blocked"
+        )
+
+      assert html =~ "Blocked"
+    end
+
+    test "time renders a machine-readable <time datetime> with an exact-time title" do
+      html =
+        render_component(&ScoriaWeb.UI.time/1,
+          at: ~U[2026-01-01 00:00:00Z]
+        )
+
+      assert html =~ "<time"
+      assert html =~ ~s(datetime="2026-01-01T00:00:00Z")
+      assert html =~ ~s(title="2026-01-01 00:00 UTC")
+    end
+
+    test "evidence_rows (metadata rows) renders a <dl> of dt/dd pairs" do
+      html =
+        render_component(&ScoriaWeb.UI.evidence_rows/1,
+          rows: [%{label: "Actor", value: "svc-1"}]
+        )
+
+      assert html =~ ~s(<dl class="scoria-evidence-rows)
+      assert html =~ "<dt"
+      assert html =~ "Actor"
+      assert html =~ "<dd"
+      assert html =~ "svc-1"
+    end
+  end
 end
