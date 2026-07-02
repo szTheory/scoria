@@ -18,10 +18,10 @@
 
 ### Foundations And Primitives
 
-- [ ] **DS-01**: Operator-facing UI uses semantic tokens for color, surface, text, border, focus, status, code, overlay, and motion; raw palette or page-local style drift remains guarded.
+- [x] **DS-01**: Operator-facing UI uses semantic tokens for color, surface, text, border, focus, status, code, overlay, and motion; raw palette or page-local style drift remains guarded.
 - [ ] **DS-02**: Shared primitive controls have consistent variants, sizes, spacing, icons, focus states, disabled states, loading states, accessible names, and reduced-motion-safe feedback.
 - [ ] **DS-03**: Overview stats, signal summaries, metadata rows, raw evidence/code blocks, IDs, copy controls, timestamps, badges, buttons, icon buttons, links, panels, drawers, modals, toasts, forms, tables, and lists use one coherent design-system language.
-- [ ] **DS-04**: Approval toasts remain readable over dense UI in light and dark themes.
+- [x] **DS-04**: Approval toasts remain readable over dense UI in light and dark themes.
 
 ### Component Groups And Page Flows
 

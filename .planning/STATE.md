@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: Design System Stress Test
-status: planning
+status: executing
 stopped_at: Phase 38 context gathered
-last_updated: "2026-07-02T22:05:46.494Z"
+last_updated: "2026-07-02T22:56:27.975Z"
 last_activity: 2026-07-02
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 11
+  completed_plans: 9
   percent: 33
 ---
 
@@ -22,13 +22,13 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 38 — foundations and primitive controls
+**Current focus:** Phase 38 — foundations-and-primitive-controls
 
 ## Current Position
 
-Phase: 38
-Plan: Not started
-Status: Ready to plan
+Phase: 38 (foundations-and-primitive-controls) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-07-02
 
 ## Performance Metrics
@@ -75,6 +75,8 @@ Recent decisions affecting current work:
 - [Phase 37]: 37-04: Viewports reuses Plan 02 dense table specimen verbatim; Overlays dense-approvals probe builds 8 deterministic literal rows from the two existing approval scenarios rather than touching fixtures.ex; long-unbroken-evidence probe reuses approval_requested policy_name; command palette rows forward-reference /scoria/_lab/<section> (Plan 05 route); mobile nav probe reuses real ScoriaWeb.Layouts.nav_groups/0 data; both open drawer/modal specimens share the on_dismiss=lab-noop-dismiss convention Plan 02 established.
 - [Phase 37]: 37-05: Run lab proof primary command patches to /scoria/_lab/states (canonical proof/vocabulary overview) since D-27 does not specify concrete behavior; Open fixture matrix patches to /scoria/_lab/fixtures per plan instruction. Both header commands render as <.link patch=...> styled with existing scoria-button classes rather than a new primitive. item is passed only to primitives/1, groups/1, fixtures_view/1 per each section's actual attr() contract. lab-noop-dismiss handle_event added, resolving the crash risk flagged by 37-02/37-04.
 - [Phase ?]: 37-06: theme coverage proven via the shared root.html.heex localStorage pre-paint mechanism (no theme-toggle control exists on the lab's bare root-layout route); Overlays dismiss probe targets the modal close button since its full-viewport scrim blocks clicks on the drawer beneath it; copy-control probe runs on Fixtures instead of Overlays for the same reason; fixed a Rule-1 invalid p-in-p nesting bug in dev/lab/sections/foundations.ex that collapsed the D-14 reduced-motion signal.
+- [Phase 38]: Phase 38-01: priv/static/scoria/app.css (compile-time-inlined via ScoriaWeb.Assets @external_resource) must be regenerated via mix scoria.assets.build whenever assets/css/*.css changes -- not automatic on mix compile.
+- [Phase 38]: Phase 38-01: flash banners repointed to the same new opaque --scoria-toast-<tone>-bg tokens as toasts (D-03 fallback); confirmed no floating .scoria-flash exists in lib/scoria_web/components/layouts.
 
 ### Pending Todos
 
@@ -118,9 +120,10 @@ None at milestone start.
 | Phase 37 P04 | ~15min | 2 tasks | 2 files |
 | Phase 37 P05 | 25min | 2 tasks | 2 files |
 | Phase 37 P06 | 55min | 2 tasks | 3 files |
+| Phase 38 P01 | 32min | 3 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-07-02T22:05:46.491Z
+Last session: 2026-07-02T22:55:48.326Z
 Stopped at: Phase 38 context gathered
-Resume file: .planning/phases/38-foundations-and-primitive-controls/38-CONTEXT.md
+Resume file: None

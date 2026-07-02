@@ -63,12 +63,12 @@ Plans:
 
 **Requirements:** DS-01, DS-02, DS-03, DS-04
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 38-01-PLAN.md — Opaque toast/flash tokens + CSS-source opacity guard + dense-approvals e2e alpha assertion (Wave 1)
+- [x] 38-01-PLAN.md — Opaque toast/flash tokens + CSS-source opacity guard + dense-approvals e2e alpha assertion (Wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion — shares assets/css/04-components.css)*
 
