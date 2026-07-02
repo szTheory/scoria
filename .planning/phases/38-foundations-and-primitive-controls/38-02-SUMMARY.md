@@ -197,3 +197,10 @@ None - no external service configuration required.
 ---
 *Phase: 38-foundations-and-primitive-controls*
 *Completed: 2026-07-02*
+
+## Self-Check: PASSED
+
+All modified files verified present (`lib/scoria_web/ui.ex`, `assets/css/04-components.css`,
+`test/scoria_web/ui_component_test.exs`, `priv/static/scoria/app.css`, this SUMMARY.md);
+all task/summary commit hashes (`dc49af6`, `96b593e`, `1b69c09`, `b65e22d`) verified present
+in `git log`.

@@ -42,3 +42,44 @@ boundary — none of these specs, selectors, or fixtures were touched by Task
 Re-run before `/gsd-verify-work` to confirm these stay isolated to
 pre-existing/unrelated specs and are not newly introduced by later 38-0x
 plans.
+
+## From 38-02 full `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors` run
+
+Run on 2026-07-02 after Task 1/2/3's edits to `lib/scoria_web/ui.ex`,
+`assets/css/04-components.css`, and `test/scoria_web/ui_component_test.exs`.
+`ui_component_test.exs` (all 4 new describe blocks) and
+`ds06_drift_guard_test.exs` are fully green (105/105). Across the FULL suite
+(3 doctests, 810 tests), 3 pre-existing failures were observed, none
+referencing `signal_strip`, `.scoria-signal`, `.scoria-id`, `raw_evidence`,
+`overview_stats`, `button`/`icon_button` size scale, or `:focus-visible`
+(this plan's only surface):
+
+1. **`test/scoria/ci_policy_contract_test.exs:686` — "planning ledgers
+   reflect shipped hex consumer and connector milestones"** — asserts
+   `ROADMAP.md` contains the string `"v2.15"` but the current roadmap is the
+   v3.3 Design System Stress Test milestone. Pre-existing drift between a
+   stale hardcoded version-string assertion and the live roadmap; unrelated
+   to any file this plan touches.
+
+2. **`test/scoria/warning_inventory/capture_parity_test.exs:53` — "optimized
+   compile-only capture catches high-signal unclassified warning
+   (injected)"** — the injected `@_parity_unused_attr` warning fixture did
+   not surface in the compile-only ratchet's offender list on this run
+   (`Offenders found: []`). Looks like environment/timing-sensitive ratchet
+   scaffolding, unrelated to `ui.ex`/`04-components.css`.
+
+3. **`test/scoria/support_copilot_gallery_test.exs:8` →
+   `examples/support_copilot/test/support_copilot_web/orchestrator_producer_test.exs:58`
+   — "approvals page shows approval from producer path on
+   /scoria/approvals"** — asserts the rendered approvals page HTML contains
+   the string `"Approval inbox"`. That literal string does not appear
+   anywhere in `lib/scoria_web/` — this looks like a pre-existing content gap
+   in the approvals page copy (or a stale expectation in the consumer
+   example test), not something introduced by this plan's `signal_strip`
+   deletion, `raw_evidence`/`.scoria-id` a11y edits, or new guard tests.
+
+**Action:** Not fixed here (out of this plan's scope per the deviation-rule
+boundary — none of these three failures reference this plan's declared files
+`lib/scoria_web/ui.ex`, `assets/css/04-components.css`,
+`test/scoria_web/ui_component_test.exs`). Flagged for `/gsd-verify-work` /
+`/gsd-audit-uat` triage.

@@ -4,13 +4,13 @@ milestone: v3.3
 milestone_name: Design System Stress Test
 status: executing
 stopped_at: Phase 38 context gathered
-last_updated: "2026-07-02T22:56:27.975Z"
+last_updated: "2026-07-02T23:18:22.867Z"
 last_activity: 2026-07-02
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
   percent: 33
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 38 (foundations-and-primitive-controls) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-02
 
@@ -77,6 +77,7 @@ Recent decisions affecting current work:
 - [Phase ?]: 37-06: theme coverage proven via the shared root.html.heex localStorage pre-paint mechanism (no theme-toggle control exists on the lab's bare root-layout route); Overlays dismiss probe targets the modal close button since its full-viewport scrim blocks clicks on the drawer beneath it; copy-control probe runs on Fixtures instead of Overlays for the same reason; fixed a Rule-1 invalid p-in-p nesting bug in dev/lab/sections/foundations.ex that collapsed the D-14 reduced-motion signal.
 - [Phase 38]: Phase 38-01: priv/static/scoria/app.css (compile-time-inlined via ScoriaWeb.Assets @external_resource) must be regenerated via mix scoria.assets.build whenever assets/css/*.css changes -- not automatic on mix compile.
 - [Phase 38]: Phase 38-01: flash banners repointed to the same new opaque --scoria-toast-<tone>-bg tokens as toasts (D-03 fallback); confirmed no floating .scoria-flash exists in lib/scoria_web/components/layouts.
+- [Phase 38]: 38-02: split Task 1/2's overlapping ui.ex + ui_component_test.exs edits into separate atomic commits by temporarily reverting/reapplying later-task hunks; .scoria-id aria-label derived from @value (displayed/truncated) not @copy (full ID) per plan instruction
 
 ### Pending Todos
 
@@ -121,9 +122,10 @@ None at milestone start.
 | Phase 37 P05 | 25min | 2 tasks | 2 files |
 | Phase 37 P06 | 55min | 2 tasks | 3 files |
 | Phase 38 P01 | 32min | 3 tasks | 5 files |
+| Phase 38 P02 | 20min | 3 tasks | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-07-02T22:55:48.326Z
+Last session: 2026-07-02T23:15:44.618Z
 Stopped at: Phase 38 context gathered
 Resume file: None
