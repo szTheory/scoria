@@ -1689,4 +1689,106 @@ defmodule ScoriaWeb.UIComponentTest do
       assert html =~ "svc-1"
     end
   end
+
+  describe "primitive spacing / variant / link-token coherence (DS-02/DS-03/D-13/D-14)" do
+    test "no ad-hoc pixel-valued inline style attribute in ui.ex (D-14)" do
+      ui_source = File.read!("lib/scoria_web/ui.ex")
+
+      # Matches a `style="..."` or `style={"..."}` attribute whose literal source text
+      # contains digits immediately followed by the `px` unit. Dynamic style bindings
+      # that merely reference a variable (e.g. `style={"max-width: #{@max_width}"}`)
+      # do NOT match since the interpolated value isn't literal source text here.
+      refute Regex.match?(~r/style=(?:"|\{")[^"]*?\d+px/, ui_source)
+    end
+
+    test "button/1 variant vocabulary stays locked to [:primary, :ghost, :danger]" do
+      ui_source = File.read!("lib/scoria_web/ui.ex")
+
+      # default: :primary uniquely identifies button/1's attr (icon_button/1 shares the
+      # same values list but defaults to :ghost).
+      assert Regex.match?(
+               ~r/attr\(:variant, :atom, default: :primary, values: \[:primary, :ghost, :danger\]\)/,
+               ui_source
+             )
+    end
+
+    test "size scale stays locked to [:md, :sm] (reinforces 38-02's D-13/D-15 guard)" do
+      ui_source = File.read!("lib/scoria_web/ui.ex")
+
+      size_attr_lines =
+        ~r/attr\(:size, :atom, default: :\w+, values: \[[^\]]*\]\)/
+        |> Regex.scan(ui_source)
+        |> Enum.map(&hd/1)
+
+      assert length(size_attr_lines) == 2
+
+      for line <- size_attr_lines do
+        assert line =~ "values: [:md, :sm]"
+      end
+    end
+
+    test "tone vocabulary stays within the locked 7-atom set; no new tone atom introduced" do
+      ui_source = File.read!("lib/scoria_web/ui.ex")
+      locked_tones = MapSet.new([:neutral, :pass, :info, :warn, :fail, :trace, :brand])
+
+      tone_values_lists =
+        ~r/attr\(:tone,\s*:atom,?\s*(?:\n\s*default: :\w+,)?\s*values:\s*\[([^\]]*)\]/
+        |> Regex.scan(ui_source)
+        |> Enum.map(fn [_full, list] -> list end)
+
+      # At least the toast/1 and evidence_section/1 tone attrs must be found — a
+      # regex that stops matching entirely (e.g. after a refactor) would silently
+      # pass an empty for-loop, so pin a non-empty result.
+      assert tone_values_lists != []
+
+      for list_str <- tone_values_lists do
+        atoms =
+          list_str
+          |> String.split(",")
+          |> Enum.map(fn s -> s |> String.trim() |> String.trim_leading(":") |> String.to_atom() end)
+
+        assert Enum.all?(atoms, &(&1 in locked_tones)),
+               "found a tone atom outside the locked vocabulary in: #{list_str}"
+      end
+    end
+
+    test "--scoria-link / --scoria-link-hover are declared in both theme blocks and consumed by .scoria-link (DS-01/DS-03)" do
+      tokens_source = File.read!("assets/css/02-tokens.css")
+      components_source = File.read!("assets/css/04-components.css")
+
+      [dark_block, light_block] =
+        Regex.split(~r/\.scoria-root\[data-theme="light"\]\s*\{/, tokens_source, parts: 2)
+
+      assert dark_block =~ "--scoria-link:"
+      assert dark_block =~ "--scoria-link-hover:"
+      assert light_block =~ "--scoria-link:"
+      assert light_block =~ "--scoria-link-hover:"
+
+      assert Regex.match?(
+               ~r/\.scoria-link\s*\{[^}]*color:\s*var\(--scoria-link\)/,
+               components_source
+             )
+    end
+
+    test "panel/drawer/modal/form-section/table/evidence-rows/list rules reference spacing tokens (D-14)" do
+      components_source = File.read!("assets/css/04-components.css")
+
+      checks = [
+        ~r/\.scoria-panel\s*\{([^}]*)\}/,
+        ~r/\.scoria-drawer\s*\{([^}]*)\}/,
+        ~r/\.scoria-modal__panel\s*\{([^}]*)\}/,
+        ~r/\.scoria-form-section\s*\{([^}]*)\}/,
+        ~r/\.scoria-table-shell\s*\{([^}]*)\}/,
+        ~r/\.scoria-evidence-rows\s*\{([^}]*)\}/,
+        ~r/\.scoria-evidence-row\s*\{([^}]*)\}/,
+        ~r/\.scoria-selectable-list\s*\{([^}]*)\}/,
+        ~r/\.scoria-command__list,\s*\n\s*\.scoria-command__section,\s*\n\s*\.scoria-command__rows\s*\{([^}]*)\}/
+      ]
+
+      for regex <- checks do
+        assert [_full, body] = Regex.run(regex, components_source), "no rule matched #{inspect(regex)}"
+        assert body =~ "var(--scoria-space"
+      end
+    end
+  end
 end
