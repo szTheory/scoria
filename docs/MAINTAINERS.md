@@ -334,6 +334,110 @@ Three assertions guard `ui.ex` zero-tolerance and enforce the ratchet across all
 `lib/scoria_web/` files. `test/support/ds06_baseline.txt` is empty — any raw palette
 class introduction fails `mix test` automatically.
 
+## Component Lab (dev-only)
+
+The Component Lab is a maintainer-only inspection surface for `ScoriaWeb.UI`
+primitives, recurring component groups, fixture data, themes, viewports, and
+stress states — built so a maintainer can see every meaningful state and
+breakpoint before changing shared UI, instead of fixing one page while
+breaking five others (Phase 37, D-22).
+
+**It is not adopter-facing product UI.** It is never linked from the public
+dashboard nav, the operator command palette, or adopter docs, and it never
+ships to Hex — `dev/lab/**` compiles only in `:dev` (`elixirc_paths/1` in
+`mix.exs`) and `dev/`/`priv/dev/` are excluded from `package.files` (D-05).
+`test/scoria_web/dev_lab_boundary_test.exs` is the executable proof of that
+boundary — see "Run focused proof" below.
+
+### Start the dev server and open the lab
+
+```bash
+make dev
+```
+
+Then open the lab in a browser:
+
+```
+http://localhost:4799/scoria/_lab
+```
+
+`ScoriaWeb.DevRouter` mounts the lab at `/scoria/_lab`, entirely outside the
+public `scoria_dashboard/2` macro (`lib/scoria_web/router.ex` is untouched by
+the lab). The single param-driven `DevLab.LabLive` (`dev/lab/lab_live.ex`)
+dispatches to seven IA sections, in this exact order (D-07):
+
+| Section | What it shows |
+|---------|----------------|
+| Foundations | Read-only color/type/spacing/motion token specimens, plus a live `prefers-reduced-motion` signal |
+| Primitives | Canonical `ScoriaWeb.UI` primitives (buttons, badges, panels, tables, fields, notebooks, evidence, IDs, timestamps, etc.) rendered across every state |
+| Groups | Recurring component groups (approval inbox, workflow tree/detail, connector drawer, incident evidence, evidence notebook) across every state |
+| States | The canonical D-11 state vocabulary overview — the destination of the "Run lab proof" command |
+| Viewports | The six D-13 proof-target widths, each framing the same dense table specimen for responsive comparison |
+| Overlays | Seven curated cross-cutting flow probes: dense approvals + toast, mobile table/list summary, drawer/modal focus, command palette, mobile nav, raw-evidence copy, long unbroken evidence |
+| Fixtures | The full fixture matrix — every `DevLab.Fixtures.scenario/1` scenario, grouped by domain — reachable via "Open fixture matrix" |
+
+### Inspect component states and fixture domains
+
+Every specimen in Primitives and Groups is rendered across one canonical
+state vocabulary (D-11), so the same ten labels mean the same thing
+everywhere in the lab:
+
+```
+normal · long_text · empty · dense · disabled · selected · loading · warning · danger · error
+```
+
+Fixture domains cover approvals, incidents, reviews, datasets, workflow
+detail, connectors, prompts, and evals (D-19), each with realistic — and
+deliberately ugly — values (long unbroken IDs, dense rows, empty datasets).
+Browse the full catalog under the Fixtures section, or jump directly to one
+domain via `/scoria/_lab/fixtures/<scenario_name>`.
+
+### Update fixtures
+
+Fixture scenarios live in `dev/lab/fixtures.ex` (`DevLab.Fixtures`) — a
+static, deterministic, reset-free dev-only catalog. Add or edit a scenario
+there (never in `priv/repo/dev_seed.exs`, which is the DB-backed projection
+for real page screenshots, not the source of component states). Runtime
+contexts under `lib/` must never call `DevLab.Fixtures` — that boundary is
+enforced by `test/scoria_web/dev_lab_boundary_test.exs`.
+
+### Run focused proof
+
+```bash
+mix test test/scoria_web/dev_lab_boundary_test.exs
+```
+
+The boundary/coverage guard: proves the lab is excluded from
+`scoria_dashboard/2`, never shipped through `package.files`, never linked
+from public dashboard nav or the command palette, and that every canonical
+D-11 state name, every D-19/D-20 fixture scenario, and every canonical
+`PRIM-*`/`GROUP-*` inventory ID is actually referenced under `dev/lab/**`.
+
+```bash
+make dev
+mix scoria.ui.e2e --base-url http://localhost:4799/scoria
+```
+
+The browser proof (`priv/dev/e2e/lab.spec.mjs`, auto-discovered by the
+`e2e` CI gate): route load, the D-07 nav, theme persistence, reduced motion,
+a six-width viewport scan of the lab shell, the Overlays drawer/modal
+focus + dismiss contract, the dense-approvals + toast stress fixture, and
+the "Copy fixture payload" control.
+
+### Which lab probes support Phases 38-41
+
+| Lab probe | Feeds |
+|-----------|-------|
+| Overlays: dense approvals + stacked toast (`RISK-TOAST-LEGIBILITY`) | Phase 38 — approval rejection toasts legible over dense UI |
+| Fixtures/Groups: decided-approval scenarios (`approval_denied`, etc.) | Phase 39 — approval decision history for approved/denied/expired requests |
+| Viewports: the six D-13 proof-target frames | Phase 40 — responsive audit (RESP-01) |
+| States: the canonical ten-state vocabulary overview | Phase 41 — consistency sweep + proof (PROOF-01) |
+
+No screenshot-diff / visual-regression job was added to the required CI gate
+in Phase 37 (D-30) — `VISUAL-CI-01` stays deferred until the lab IA is
+stable, a Docker-pinned deterministic renderer exists, and a measured
+flake rate is established in an advisory trial.
+
 ## Screenshot + Critique Harness (dev-only)
 
 The screenshot and LLM-critique harness provides a mechanical proof loop for the v3.0 Control Room milestone. It captures every dashboard screen across its state matrix, runs an optional 9-dimension AI critique, and writes a ranked gap register. It is **dev-only**: excluded from the shipped Hex package and never run in merge-blocking CI (D-01).
