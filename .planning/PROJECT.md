@@ -35,6 +35,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Re-audit primary operator flows through JTBD, persona, accessibility, responsive, reduced-motion, and dense-data lenses.
 - Lock the improvements with tests, screenshots, docs, and drift guards so later UI work keeps moving forward.
 
+**Progress (updated 2026-07-02):** Phase 38 (Foundations And Primitive Controls) complete — DS-01..04 validated. Opaque `--scoria-toast-*-bg` status tokens fix unreadable toasts over dense UI (light + dark, e2e-proven); the `signal_strip/1` stat duplicate is deleted onto the single canonical `overview_stats/1`; copy-control accessible names/`aria-live` gaps are closed; and the full Criterion-2 primitive set is locked by regression guards. Next: Phase 39 (Component Groups And Operator Flows).
+
 ## Previous Shipped Milestone: v3.0 Control Room (2026-06-14)
 
 **Goal:** Take the embedded `/scoria` operator dashboard to "insane polish" — a tightened, fully-adopted design system, a clear persona/JTBD information architecture, brand-tied motion, full light/dark parity, and seed data that exercises every screen — proven by a committed screenshot+critique evaluation loop.
