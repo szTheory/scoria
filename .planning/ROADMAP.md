@@ -63,6 +63,17 @@ Plans:
 
 **Requirements:** DS-01, DS-02, DS-03, DS-04
 
+**Plans:** 2 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 38-01-PLAN.md — Opaque toast/flash tokens + CSS-source opacity guard + dense-approvals e2e alpha assertion (Wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion — shares assets/css/04-components.css)*
+
+- [ ] 38-02-PLAN.md — Delete signal_strip duplicate, close copy-control a11y gaps, guard stat/copy-icon/size-scale/focus invariants (Wave 2)
+
 **Success criteria:**
 
 1. Semantic-token and raw-palette drift guards still pass.
