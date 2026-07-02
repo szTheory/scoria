@@ -5,15 +5,14 @@ milestone_name: Design System Stress Test
 current_phase: 37
 current_phase_name: dev-component-lab-and-stress-fixtures
 status: executing
-stopped_at: Completed 37-01-PLAN.md
-last_updated: "2026-07-02T19:41:34.082Z"
+stopped_at: Completed 37-02-PLAN.md
+last_updated: "2026-07-02T20:40:02.852Z"
 last_activity: 2026-07-02
-last_activity_desc: Phase 37 execution started
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 8
-  completed_plans: 3
+  completed_plans: 4
   percent: 17
 ---
 
@@ -30,9 +29,9 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 37 (dev-component-lab-and-stress-fixtures) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
-Last activity: 2026-07-02 -- Phase 37 execution started
+Last activity: 2026-07-02
 
 ## Performance Metrics
 
@@ -73,6 +72,7 @@ Recent decisions affecting current work:
 - [Phase 36]: Phase 37+ is gated on both inventory artifacts parsing and containing required risk IDs plus complete layer/status coverage.
 - [Phase 36]: Generated/vendor/report-heavy inputs are excluded only with explicit source, reason, and reviewed_by_phase fields.
 - [Phase 37]: Used DevLab.* module namespace (not ScoriaWeb.DevLabFixtures) per Claude's Discretion; states_for/2 is a fully structural deep-transform so adding a scenario stays O(1); DevLab.Fixtures.inventory_id/1 is the single coverage-anchor map for all 46 canonical PRIM-*/GROUP-* IDs; DS-06 dev/lab/** extension is an additive standalone test, not folded into the lib/ ratchet-baseline file.
+- [Phase 37]: 37-02: Every Primitives specimen's tone routes through DevLab.Sections.States.state_tone/1 via a new with_lab_state/1 helper (embeds the D-11 state atom into the fixture map); toast_tone/1 clamps state_tone/1's :brand output to :info since <.toast> excludes :brand/:trace. Drawer/modal specimens open only for the :normal row (avoids ten stacked full-viewport overlays); the other nine rows defer to the Overlays IA section (D-10). signal_strip has no canonical inventory ID (status duplicated) so overview_stats covers 'signal summaries' instead.
 
 ### Pending Todos
 
@@ -111,9 +111,10 @@ None at milestone start.
 | Phase 36 PP01 | 5 min | 2 tasks | 3 files |
 | Phase 36 PP02 | 9min | 2 tasks | 3 files |
 | Phase 37 P01 | 21min | 3 tasks | 6 files |
+| Phase 37 P02 | 35min | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-07-02T19:41:34.076Z
-Stopped at: Completed 37-01-PLAN.md
+Last session: 2026-07-02T20:40:02.847Z
+Stopped at: Completed 37-02-PLAN.md
 Resume file: None
