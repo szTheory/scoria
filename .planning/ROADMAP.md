@@ -24,12 +24,12 @@
 
 **Requirements:** LAB-01, LAB-02, FIXT-01
 
-**Plans:** 6 plans
+**Plans:** 1/6 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 37-01-PLAN.md — Fixture catalog, state/tone vocabulary, boundary/coverage guard (Wave 1)
+- [x] 37-01-PLAN.md — Fixture catalog, state/tone vocabulary, boundary/coverage guard (Wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

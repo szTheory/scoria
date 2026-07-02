@@ -12,9 +12,9 @@
 
 ### Component Lab And Fixtures
 
-- [ ] **LAB-01**: Developer can open a dev-only component lab that renders Scoria UI primitives and recurring component groups without changing the public dashboard macro or Hex package footprint.
+- [x] **LAB-01**: Developer can open a dev-only component lab that renders Scoria UI primitives and recurring component groups without changing the public dashboard macro or Hex package footprint.
 - [ ] **LAB-02**: Developer can inspect component states for light, dark, system, reduced motion, mobile, tablet, desktop, long text, empty data, dense data, disabled, selected, loading, warning, danger, and error cases.
-- [ ] **FIXT-01**: Developer can use realistic and ugly dev fixture data to reveal design-system quality across approvals, incidents, reviews, datasets, workflow detail, connectors, prompts, and empty/error paths.
+- [x] **FIXT-01**: Developer can use realistic and ugly dev fixture data to reveal design-system quality across approvals, incidents, reviews, datasets, workflow detail, connectors, prompts, and empty/error paths.
 
 ### Foundations And Primitives
 
