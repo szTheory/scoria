@@ -176,7 +176,7 @@ defmodule DevLab.Sections.Foundations do
           </div>
         </div>
 
-        <p class="scoria-lab-motion-signal" data-lab-motion-signal="true">
+        <div class="scoria-lab-motion-signal" data-lab-motion-signal="true">
           <.eyebrow>Reduced motion</.eyebrow>
           <span class="scoria-lab-motion-off">
             Not requested — this browser/OS is not signaling prefers-reduced-motion: reduce.
@@ -185,7 +185,7 @@ defmodule DevLab.Sections.Foundations do
             Requested — the existing prefers-reduced-motion kill switch
             (assets/css/05-motion.css) is collapsing lab and dashboard motion to near-zero.
           </span>
-        </p>
+        </div>
         <style>
           .scoria-lab-motion-on { display: none; }
           @media (prefers-reduced-motion: reduce) {
