@@ -24,6 +24,16 @@
 
 **Requirements:** LAB-01, LAB-02, FIXT-01
 
+**Plans:** 6 plans
+
+Plans:
+- [ ] 37-01-PLAN.md — Fixture catalog, state/tone vocabulary, boundary/coverage guard (Wave 1)
+- [ ] 37-02-PLAN.md — Foundations + Primitives specimen sections (Wave 2)
+- [ ] 37-03-PLAN.md — Groups + Fixtures catalog sections (Wave 2)
+- [ ] 37-04-PLAN.md — Viewports + Overlays probe sections (Wave 2)
+- [ ] 37-05-PLAN.md — Dev-only lab route mount + DevLab.LabLive shell (Wave 3)
+- [ ] 37-06-PLAN.md — Browser proof (lab.spec.mjs) + maintainer docs (Wave 4)
+
 **Success criteria:**
 
 1. Dev-only component lab is reachable in local dev and excluded from public dashboard mount behavior and Hex runtime footprint.
