@@ -63,7 +63,7 @@ Plans:
 
 **Requirements:** DS-01, DS-02, DS-03, DS-04
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -76,7 +76,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion — shares test/scoria_web/ui_component_test.exs)*
 
-- [ ] 38-03-PLAN.md — Audit-and-lock coherence guards for the rest of Criterion 2 (links, badges, timestamps, metadata rows, panels, drawers, modals, forms, tables, lists) (Wave 3)
+- [x] 38-03-PLAN.md — Audit-and-lock coherence guards for the rest of Criterion 2 (links, badges, timestamps, metadata rows, panels, drawers, modals, forms, tables, lists) (Wave 3)
 
 **Success criteria:**
 

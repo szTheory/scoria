@@ -83,3 +83,21 @@ boundary — none of these three failures reference this plan's declared files
 `lib/scoria_web/ui.ex`, `assets/css/04-components.css`,
 `test/scoria_web/ui_component_test.exs`). Flagged for `/gsd-verify-work` /
 `/gsd-audit-uat` triage.
+
+## From 38-03 full `SCORIA_DB_PORT=55432 MIX_ENV=test mix test --warnings-as-errors` run
+
+Run on 2026-07-02 after Task 1/2's new describe blocks in
+`test/scoria_web/ui_component_test.exs` (guards-only — no `ui.ex` or CSS
+changes this plan). `ui_component_test.exs` (all 6 new describe blocks
+across 38-01/38-02/38-03) and `ds06_drift_guard_test.exs` are fully green
+(118/118 combined). Across the FULL suite (3 doctests, 823 tests), the
+same 3 pre-existing failures listed under the 38-02 entry above recur
+verbatim (same test names, same assertions): `ci_policy_contract_test.exs`
+stale `"v2.15"` roadmap-version assertion, `capture_parity_test.exs`
+compile-only ratchet timing, and `support_copilot_gallery_test.exs`
+"Approval inbox" consumer-example copy gap. None reference `modal`,
+`drawer`, `field`, `table`, `badge`, `time`, `evidence_rows`, `--scoria-link`,
+or any pixel/variant/tone/spacing guard added by this plan.
+
+**Action:** Not fixed here (unrelated to this plan's declared files). Same
+triage note applies — flagged for `/gsd-verify-work` / `/gsd-audit-uat`.
