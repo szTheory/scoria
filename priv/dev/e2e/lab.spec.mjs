@@ -265,6 +265,55 @@ test.describe('Component Lab — dense approvals table + toast-over-dense-UI str
     await expect(toastRegion).toBeVisible();
     await expect(toastRegion.locator('.scoria-toast')).toHaveCount(2);
   });
+
+  // Phase 38 D-04/D-19: the toast/flash opacity fix. Proves the actual browser
+  // truth `toast_opacity_guard_test.exs` cannot reach (that guard only checks
+  // the CSS *source* declares an opaque token; this asserts the *computed*
+  // background the browser resolves for a real toast is fully opaque) in both
+  // themes. Reuses the same localStorage + reload theme mechanism as the D-14
+  // theme-coverage block above — there is no ThemeToggle click affordance on
+  // this bare root-layout route.
+  test('warn and fail toasts render with a fully opaque computed background in both themes', async ({
+    page,
+  }) => {
+    await page.goto(`${LAB_BASE}/overlays`);
+
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate((t) => localStorage.setItem('scoria-theme', t), theme);
+      await page.reload();
+      await waitForReady(page);
+
+      const stage = page.locator('.scoria-lab-overlay-stage');
+      await expect(stage.locator('table.scoria-table tbody tr')).toHaveCount(8);
+
+      // Assert immediately after waitForReady, inside the 4000ms toast
+      // auto-dismiss window (matches the presence test above) — no fixed sleep.
+      for (const selector of ['.scoria-toast--warn', '.scoria-toast--fail']) {
+        const toast = stage.locator(selector);
+        await expect(toast).toBeVisible();
+
+        const alpha = await toast.evaluate((el) => {
+          const bg = getComputedStyle(el).backgroundColor;
+          // Chromium resolves a `color-mix()`-derived background either as
+          // legacy `rgb(r, g, b)` / `rgba(r, g, b, a)`, or (observed for these
+          // color-mix() tokens) as CSS Color 4 `color(srgb r g b[ / a])` —
+          // the latter OMITS the alpha component entirely when alpha is 1. A
+          // bare `rgb(...)` or an alpha-less `color(srgb ...)` both imply
+          // alpha 1; an explicit trailing alpha (after `,` or `/`) may be < 1.
+          const legacyMatch = bg.match(/rgba?\(([^)]+)\)/);
+          if (legacyMatch) {
+            const parts = legacyMatch[1].split(',').map((part) => part.trim());
+            return parts.length === 4 ? Number.parseFloat(parts[3]) : 1;
+          }
+
+          const colorFnMatch = bg.match(/color\([^)]*\/\s*([0-9.]+)\s*\)/);
+          return colorFnMatch ? Number.parseFloat(colorFnMatch[1]) : 1;
+        });
+
+        expect(alpha, `${selector} computed backgroundColor alpha in ${theme} theme`).toBe(1);
+      }
+    }
+  });
 });
 
 // ────────────────────────────────────────────────────────────────────────────
