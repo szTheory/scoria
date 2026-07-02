@@ -63,7 +63,7 @@ Plans:
 
 **Requirements:** DS-01, DS-02, DS-03, DS-04
 
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
 **Wave 1**
@@ -73,6 +73,10 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion — shares assets/css/04-components.css)*
 
 - [ ] 38-02-PLAN.md — Delete signal_strip duplicate, close copy-control a11y gaps, guard stat/copy-icon/size-scale/focus invariants (Wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion — shares test/scoria_web/ui_component_test.exs)*
+
+- [ ] 38-03-PLAN.md — Audit-and-lock coherence guards for the rest of Criterion 2 (links, badges, timestamps, metadata rows, panels, drawers, modals, forms, tables, lists) (Wave 3)
 
 **Success criteria:**
 
