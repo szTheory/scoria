@@ -1557,4 +1557,34 @@ defmodule ScoriaWeb.UIComponentTest do
       assert html =~ ~s(aria-live="polite")
     end
   end
+
+  describe "primitive size scale + focus uniformity (DS-02/D-13/D-15)" do
+    test "button/1 and icon_button/1 expose only the :md/:sm size scale" do
+      ui_source = File.read!("lib/scoria_web/ui.ex")
+
+      size_attr_lines =
+        ~r/attr\(:size, :atom, default: :\w+, values: \[[^\]]*\]\)/
+        |> Regex.scan(ui_source)
+        |> Enum.map(&hd/1)
+
+      assert length(size_attr_lines) == 2
+
+      for line <- size_attr_lines do
+        assert line =~ "values: [:md, :sm]"
+      end
+
+      refute ui_source =~ ~s(style="width:)
+      refute ui_source =~ ~s(style="height:)
+    end
+
+    test "component layer does not locally override :focus-visible or outline" do
+      css_source = File.read!("assets/css/04-components.css")
+
+      # Only forbid actual rule declarations (`:focus-visible {` / `:focus-visible,`),
+      # not prose comments that merely mention the pseudo-class (e.g. explaining why
+      # overflow-clip-margin exists so the global ring can paint at scroll edges).
+      refute Regex.match?(~r/:focus-visible\s*[,{]/, css_source)
+      refute Regex.match?(~r/(?<!text-)outline(?:-\w+)?:\s/, css_source)
+    end
+  end
 end
