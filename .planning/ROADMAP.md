@@ -27,12 +27,27 @@
 **Plans:** 6 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 37-01-PLAN.md — Fixture catalog, state/tone vocabulary, boundary/coverage guard (Wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 37-02-PLAN.md — Foundations + Primitives specimen sections (Wave 2)
 - [ ] 37-03-PLAN.md — Groups + Fixtures catalog sections (Wave 2)
 - [ ] 37-04-PLAN.md — Viewports + Overlays probe sections (Wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 37-05-PLAN.md — Dev-only lab route mount + DevLab.LabLive shell (Wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 37-06-PLAN.md — Browser proof (lab.spec.mjs) + maintainer docs (Wave 4)
+
+**Cross-cutting constraints:**
+
+- Lab-authored dev/ chrome in these sections emits zero raw hex and zero raw palette classes; all values resolve through --scoria-* tokens and ScoriaWeb.UI primitives (D-26) — verified by the extended DS-06 drift guard
 
 **Success criteria:**
 
