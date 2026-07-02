@@ -1667,7 +1667,7 @@
   /* ---------- Flash banners ---------- */
   .scoria-flash {
     border: 1px solid var(--scoria-tone-neutral-border);
-    background: var(--scoria-tone-neutral-bg);
+    background: var(--scoria-toast-neutral-bg);
     color: var(--scoria-tone-neutral-fg);
     border-radius: var(--scoria-radius-md);
     padding: var(--scoria-space-2) var(--scoria-space-4);
@@ -1677,10 +1677,14 @@
     align-items: flex-start;
     gap: var(--scoria-space-2);
   }
-  .scoria-flash--fail { border-color: var(--scoria-tone-fail-border); background: var(--scoria-tone-fail-bg); color: var(--scoria-tone-fail-fg); }
-  .scoria-flash--info { border-color: var(--scoria-tone-info-border); background: var(--scoria-tone-info-bg); color: var(--scoria-tone-info-fg); }
-  .scoria-flash--warn { border-color: var(--scoria-tone-warn-border); background: var(--scoria-tone-warn-bg); color: var(--scoria-tone-warn-fg); }
-  .scoria-flash--pass { border-color: var(--scoria-tone-pass-border); background: var(--scoria-tone-pass-bg); color: var(--scoria-tone-pass-fg); }
+  /* D-03: flashes get the same opaque toast-tone treatment as toasts —
+     legibility wins even though the default (non-floating) flash placement
+     doesn't stack over dense UI the same way. background only; border/fg
+     stay on the existing translucent-derived --scoria-tone-*-border/-fg. */
+  .scoria-flash--fail { border-color: var(--scoria-tone-fail-border); background: var(--scoria-toast-fail-bg); color: var(--scoria-tone-fail-fg); }
+  .scoria-flash--info { border-color: var(--scoria-tone-info-border); background: var(--scoria-toast-info-bg); color: var(--scoria-tone-info-fg); }
+  .scoria-flash--warn { border-color: var(--scoria-tone-warn-border); background: var(--scoria-toast-warn-bg); color: var(--scoria-tone-warn-fg); }
+  .scoria-flash--pass { border-color: var(--scoria-tone-pass-border); background: var(--scoria-toast-pass-bg); color: var(--scoria-tone-pass-fg); }
 
   /* ---------- Skeleton (loading placeholder) ---------- */
   .scoria-skeleton {
@@ -1700,7 +1704,7 @@
     box-shadow: var(--scoria-shadow-raised);
     border-radius: var(--scoria-radius-md);
     border: 1px solid var(--scoria-tone-neutral-border);
-    background: var(--scoria-tone-neutral-bg);
+    background: var(--scoria-toast-neutral-bg);
     color: var(--scoria-tone-neutral-fg);
     padding: var(--scoria-space-2) var(--scoria-space-4);
     font-size: var(--scoria-fs-body);
@@ -1708,11 +1712,14 @@
     align-items: flex-start;
     gap: var(--scoria-space-2);
   }
-  .scoria-toast--neutral { border-color: var(--scoria-tone-neutral-border); background: var(--scoria-tone-neutral-bg); color: var(--scoria-tone-neutral-fg); }
-  .scoria-toast--pass    { border-color: var(--scoria-tone-pass-border);    background: var(--scoria-tone-pass-bg);    color: var(--scoria-tone-pass-fg); }
-  .scoria-toast--fail    { border-color: var(--scoria-tone-fail-border);    background: var(--scoria-tone-fail-bg);    color: var(--scoria-tone-fail-fg); }
-  .scoria-toast--warn    { border-color: var(--scoria-tone-warn-border);    background: var(--scoria-tone-warn-bg);    color: var(--scoria-tone-warn-fg); }
-  .scoria-toast--info    { border-color: var(--scoria-tone-info-border);    background: var(--scoria-tone-info-bg);    color: var(--scoria-tone-info-fg); }
+  /* D-04: backgrounds resolve through the opaque --scoria-toast-<tone>-bg
+     tokens (Phase 38) so dense underlying UI never bleeds through; border/fg
+     stay on the existing --scoria-tone-<tone>-border/-fg tokens. */
+  .scoria-toast--neutral { border-color: var(--scoria-tone-neutral-border); background: var(--scoria-toast-neutral-bg); color: var(--scoria-tone-neutral-fg); }
+  .scoria-toast--pass    { border-color: var(--scoria-tone-pass-border);    background: var(--scoria-toast-pass-bg);    color: var(--scoria-tone-pass-fg); }
+  .scoria-toast--fail    { border-color: var(--scoria-tone-fail-border);    background: var(--scoria-toast-fail-bg);    color: var(--scoria-tone-fail-fg); }
+  .scoria-toast--warn    { border-color: var(--scoria-tone-warn-border);    background: var(--scoria-toast-warn-bg);    color: var(--scoria-tone-warn-fg); }
+  .scoria-toast--info    { border-color: var(--scoria-tone-info-border);    background: var(--scoria-toast-info-bg);    color: var(--scoria-tone-info-fg); }
   .scoria-toast-region {
     position: fixed;
     bottom: var(--scoria-space-5);

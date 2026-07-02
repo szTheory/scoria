@@ -149,6 +149,18 @@
     --scoria-tone-brand-bg: color-mix(in srgb, var(--scoria-ember-500) 16%, transparent);
     --scoria-tone-brand-border: color-mix(in srgb, var(--scoria-ember-500) 34%, transparent);
 
+    /* toast/flash surfaces (Phase 38 D-01/D-02/D-04): opaque composite of the
+       tone accent into the solid elevated surface — NEVER toward `transparent`.
+       Unlike the tone family above (translucent, for in-page badges/banners),
+       these back status toasts/flashes so dense page content never bleeds
+       through. neutral has no accent tint of its own, so it is the bare
+       elevated surface. */
+    --scoria-toast-neutral-bg: var(--scoria-surface-panel-raised);
+    --scoria-toast-pass-bg: color-mix(in srgb, var(--scoria-tone-pass-fg) 16%, var(--scoria-surface-panel-raised));
+    --scoria-toast-info-bg: color-mix(in srgb, var(--scoria-tone-info-fg) 16%, var(--scoria-surface-panel-raised));
+    --scoria-toast-warn-bg: color-mix(in srgb, var(--scoria-tone-warn-fg) 16%, var(--scoria-surface-panel-raised));
+    --scoria-toast-fail-bg: color-mix(in srgb, var(--scoria-tone-fail-fg) 16%, var(--scoria-surface-panel-raised));
+
     /* trace span-kind colors (§8.8) */
     --scoria-span-agent: var(--scoria-ember-500);
     --scoria-span-llm: var(--scoria-600);
@@ -217,6 +229,14 @@
     --scoria-tone-brand-fg: var(--scoria-700);
     --scoria-tone-brand-bg: color-mix(in srgb, var(--scoria-600) 12%, transparent);
     --scoria-tone-brand-border: color-mix(in srgb, var(--scoria-600) 32%, transparent);
+
+    /* toast/flash surfaces (Phase 38 D-01/D-02/D-04) — see dark block for rationale.
+       Mix percentage tuned slightly lower for light theme per RESEARCH.md A1. */
+    --scoria-toast-neutral-bg: var(--scoria-surface-panel-raised);
+    --scoria-toast-pass-bg: color-mix(in srgb, var(--scoria-tone-pass-fg) 12%, var(--scoria-surface-panel-raised));
+    --scoria-toast-info-bg: color-mix(in srgb, var(--scoria-tone-info-fg) 12%, var(--scoria-surface-panel-raised));
+    --scoria-toast-warn-bg: color-mix(in srgb, var(--scoria-tone-warn-fg) 12%, var(--scoria-surface-panel-raised));
+    --scoria-toast-fail-bg: color-mix(in srgb, var(--scoria-tone-fail-fg) 12%, var(--scoria-surface-panel-raised));
 
     --scoria-span-agent: var(--scoria-600);
     --scoria-span-llm: var(--scoria-700);
