@@ -14,6 +14,12 @@ defmodule ScoriaWeb.DevRouter do
   use Phoenix.Router
 
   import Phoenix.Controller
+  # `live`/`live_session` are otherwise only available inside the
+  # `scoria_dashboard/2` macro's own quote block (that macro imports
+  # Phoenix.LiveView.Router locally). This module-scope import is required
+  # so the NEW `/scoria/_lab` scope below can call `live/3`/`live_session/3`
+  # directly — without it, `mix compile` fails with `live/3 is undefined`.
+  import Phoenix.LiveView.Router, only: [live: 3, live_session: 3]
   import ScoriaWeb.Router
 
   pipeline :browser do
@@ -34,6 +40,22 @@ defmodule ScoriaWeb.DevRouter do
     pipe_through(:browser)
 
     scoria_dashboard("/scoria")
+  end
+
+  # Dev-only Component Lab (Phase 37, D-01/D-02/D-03): a maintainer-only
+  # inspection surface mounted ONLY here, entirely outside the public
+  # scoria_dashboard/2 macro above. It must never be reachable via
+  # lib/scoria_web/router.ex (proved by
+  # test/scoria_web/dev_lab_boundary_test.exs) and never gains a public
+  # macro option (no `scoria_dashboard lab: true`).
+  scope "/scoria/_lab" do
+    pipe_through(:browser)
+
+    live_session :scoria_lab, root_layout: {ScoriaWeb.Layouts, :root} do
+      live("/", DevLab.LabLive, :index)
+      live("/:section", DevLab.LabLive, :index)
+      live("/:section/:item", DevLab.LabLive, :index)
+    end
   end
 
   # Dev-only: default the session tenant to the demo tenant that
