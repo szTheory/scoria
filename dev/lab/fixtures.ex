@@ -34,11 +34,11 @@ defmodule DevLab.Fixtures do
   strings, never on a lab-state atom) for domain-status badges. This module
   never calls `ScoriaWeb.UI.tone/1`.
 
-  Any future bulky JSON fixture payload belongs under `priv/dev/lab_fixtures/`
-  (declared via `@external_resource`, NEVER under `priv/fixtures/`, which
-  `mix.exs` `package/0` ships to Hex) — see `priv/dev/lab_fixtures/README.md`.
-  This module currently needs no such file; every scenario below is a plain
-  literal map.
+  Any future bulky JSON fixture payload belongs under `priv/dev/lab_fixtures`
+  (declared via `@external_resource`) — never under the Hex-shipped
+  `priv/fixtures` directory (see `mix.exs` `package/0`). Full rationale in
+  `priv/dev/lab_fixtures/README.md`. This module currently needs no such
+  file; every scenario below is a plain literal map.
   """
 
   @states ~w(normal long_text empty dense disabled selected loading warning danger error)a

@@ -8,7 +8,7 @@ defmodule ScoriaWeb.DS06DriftGuardTest do
   The guard scans all .ex and .heex files under lib/scoria_web/ (including
   templates, so a developer cannot evade it by moving raw palette into HEEx).
 
-  Two assertions:
+  Three assertions:
 
   1. Ratchet comparison: for each non-excluded file, the palette-class count
      must not exceed the baseline count. New files with any palette usage also
@@ -17,9 +17,16 @@ defmodule ScoriaWeb.DS06DriftGuardTest do
   2. ui.ex-zero assertion: lib/scoria_web/ui.ex must have zero raw palette
      matches. This file is the enforced token gateway — it must never emit
      raw palette classes.
+
+  3. Phase 37 (D-26) dev/ extension: `dev/lab/**/*.{ex,heex}` (the dev-only
+     Component Lab) is held to the same "zero raw palette, zero raw hex,
+     `--scoria-*` semantic tokens only" rule as `lib/scoria_web/`. This is an
+     ADDITIVE, standalone assertion — it does not touch the ratchet baseline
+     or the `lib/` assertions above.
   """
 
   @palette_regex ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
+  @hex_color_regex ~r/#[0-9a-fA-F]{3,8}\b/
 
   # Files that Phase 12 zeroes out — excluded from the baseline ratchet entirely.
   # ui.ex raw palette is replaced in plan 12-02.
@@ -96,6 +103,30 @@ defmodule ScoriaWeb.DS06DriftGuardTest do
            DS-06 drift guard failed: raw palette class found in lib/scoria_web/ui.ex
            #{Enum.map(matches, fn [m] -> "  #{m}" end) |> Enum.join("\n")}
              Fix: replace with semantic scoria-flash--{tone} class (see 12-UI-SPEC.md DS-05)
+           """
+  end
+
+  test "dev/lab/** (Component Lab) has zero raw palette classes and zero raw hex colors (D-26)" do
+    violations =
+      for path <- Path.wildcard("dev/lab/**/*.{ex,heex}") do
+        source = File.read!(path)
+        palette_matches = @palette_regex |> Regex.scan(source) |> Enum.map(&hd/1)
+        hex_matches = @hex_color_regex |> Regex.scan(source) |> Enum.map(&hd/1)
+
+        cond do
+          palette_matches != [] -> {path, :raw_palette, palette_matches}
+          hex_matches != [] -> {path, :raw_hex, hex_matches}
+          true -> nil
+        end
+      end
+      |> Enum.reject(&is_nil/1)
+
+    assert violations == [],
+           """
+           DS-06 drift guard (dev/ extension, D-26): raw palette class or raw hex
+           color found under dev/lab/**:
+           #{Enum.map_join(violations, "\n", fn {path, kind, matches} -> "  #{path} (#{kind}): #{Enum.join(matches, ", ")}" end)}
+             Fix: use --scoria-* semantic tokens only in lab-authored chrome.
            """
   end
 
