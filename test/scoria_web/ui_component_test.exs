@@ -1512,4 +1512,49 @@ defmodule ScoriaWeb.UIComponentTest do
     end
   end
 
+  describe "copy controls (DS-02/DS-03/D-09/D-12)" do
+    test "raw_evidence copy control renders at :sm icon scale, never :md" do
+      html =
+        render_component(&ScoriaWeb.UI.raw_evidence/1,
+          copyable: true,
+          copy_label: "Copy raw evidence",
+          value: "x",
+          label: "Evidence"
+        )
+
+      assert html =~ "scoria-button--icon-sm"
+      refute html =~ "scoria-button--icon-md"
+    end
+
+    test "raw_evidence copy control carries a non-empty accessible-name verb" do
+      html =
+        render_component(&ScoriaWeb.UI.raw_evidence/1,
+          copyable: true,
+          copy_label: "Copy raw evidence",
+          value: "x",
+          label: "Evidence"
+        )
+
+      assert html =~ ~s(aria-label="Copy raw evidence")
+    end
+
+    test "raw_evidence copy-status span announces updates via aria-live" do
+      html =
+        render_component(&ScoriaWeb.UI.raw_evidence/1,
+          copyable: true,
+          copy_label: "Copy raw evidence",
+          value: "x",
+          label: "Evidence"
+        )
+
+      assert html =~ ~s(data-raw-evidence-copy-status aria-live="polite")
+    end
+
+    test ".scoria-id carries a \"Copy <value>\" aria-label and aria-live" do
+      html = render_component(&ScoriaWeb.UI.id/1, value: "appr-9b1d4e2a")
+
+      assert html =~ ~s(aria-label="Copy appr-9b1d4e2a")
+      assert html =~ ~s(aria-live="polite")
+    end
+  end
 end

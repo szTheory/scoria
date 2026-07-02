@@ -286,6 +286,7 @@ provide a typographic tier above the primary title."
       id={@id}
       data-copy={@copy || @value}
       title={@title}
+      aria-label={"Copy " <> @value}
       aria-live="polite"
     >
       {@value}
@@ -1051,7 +1052,7 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
             <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0L3.22 8.28a.75.75 0 1 1 1.06-1.06L7 9.94l5.72-5.72a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
           </svg>
         </span>
-        <span class="sr-only" data-raw-evidence-copy-status>{@copy_label}</span>
+        <span class="sr-only" data-raw-evidence-copy-status aria-live="polite">{@copy_label}</span>
       </.icon_button>
       <pre class="scoria-raw-evidence__pre"><%= @value || render_slot(@inner_block) %></pre>
     </details>
