@@ -1956,8 +1956,7 @@
   .scoria-incident-evidence-stack--compact {
     gap: var(--scoria-space-3);
   }
-  .scoria-overview-stats,
-  .scoria-signal-strip {
+  .scoria-overview-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
     gap: var(--scoria-space-3);
@@ -1968,8 +1967,7 @@
     gap: var(--scoria-space-2);
     margin-top: 0;
   }
-  .scoria-overview-stat,
-  .scoria-signal {
+  .scoria-overview-stat {
     min-width: 0;
     border-inline-start: 3px solid var(--scoria-tone-neutral-border);
     padding-block: var(--scoria-space-1);
@@ -1978,32 +1976,23 @@
   .scoria-overview-stats--compact .scoria-overview-stat {
     padding-inline-start: var(--scoria-space-2);
   }
-  .scoria-overview-stat--pass,
-  .scoria-signal--pass { border-color: var(--scoria-tone-pass-border); }
-  .scoria-overview-stat--info,
-  .scoria-signal--info { border-color: var(--scoria-tone-info-border); }
-  .scoria-overview-stat--warn,
-  .scoria-signal--warn { border-color: var(--scoria-tone-warn-border); }
-  .scoria-overview-stat--fail,
-  .scoria-signal--fail { border-color: var(--scoria-tone-fail-border); }
-  .scoria-overview-stat--brand,
-  .scoria-signal--brand { border-color: var(--scoria-tone-brand-border); }
-  .scoria-overview-stat--trace,
-  .scoria-signal--trace { border-color: var(--scoria-tone-trace-border); }
-  .scoria-overview-stat dd,
-  .scoria-signal dd {
+  .scoria-overview-stat--pass { border-color: var(--scoria-tone-pass-border); }
+  .scoria-overview-stat--info { border-color: var(--scoria-tone-info-border); }
+  .scoria-overview-stat--warn { border-color: var(--scoria-tone-warn-border); }
+  .scoria-overview-stat--fail { border-color: var(--scoria-tone-fail-border); }
+  .scoria-overview-stat--brand { border-color: var(--scoria-tone-brand-border); }
+  .scoria-overview-stat--trace { border-color: var(--scoria-tone-trace-border); }
+  .scoria-overview-stat dd {
     margin: 0;
   }
-  .scoria-overview-stat__label,
-  .scoria-signal__label {
+  .scoria-overview-stat__label {
     color: var(--scoria-text-muted);
     font-size: var(--scoria-fs-badge);
     font-weight: 700;
     letter-spacing: var(--scoria-tracking-eyebrow);
     text-transform: uppercase;
   }
-  .scoria-overview-stat__value,
-  .scoria-signal__value {
+  .scoria-overview-stat__value {
     color: var(--scoria-text);
     font-size: var(--scoria-fs-body);
     font-weight: 650;
@@ -2016,8 +2005,7 @@
   .scoria-overview-stats--compact .scoria-overview-stat__value {
     font-size: var(--scoria-fs-body);
   }
-  .scoria-overview-stat__detail,
-  .scoria-signal__detail {
+  .scoria-overview-stat__detail {
     color: var(--scoria-text-muted);
     font-size: var(--scoria-fs-label);
     line-height: var(--scoria-lh-body);

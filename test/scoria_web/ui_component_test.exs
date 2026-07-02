@@ -186,7 +186,6 @@ defmodule ScoriaWeb.UIComponentTest do
       assert css_source =~ "--scoria-table-control-padding-inline"
       assert css_source =~ ".scoria-page-section"
       assert css_source =~ ".scoria-overview-stats"
-      assert css_source =~ ".scoria-signal-strip"
       assert css_source =~ ".scoria-theme-label::before"
       assert css_source =~ ".scoria-raw-evidence__copy"
       assert css_source =~ ".scoria-button--icon-md"
@@ -1485,4 +1484,32 @@ defmodule ScoriaWeb.UIComponentTest do
       assert html =~ ~s(aria-sort="descending")
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Phase 38-02: stat singularity, copy-control a11y, size scale + focus (D-05/D-07/
+  # D-08/D-09/D-12/D-13/D-15)
+  # ---------------------------------------------------------------------------
+
+  describe "stat component singularity (DS-03/D-05/D-08)" do
+    test "signal_strip/1 is no longer exported; overview_stats/1 and metric/1 remain" do
+      refute function_exported?(ScoriaWeb.UI, :signal_strip, 1)
+      assert function_exported?(ScoriaWeb.UI, :overview_stats, 1)
+      assert function_exported?(ScoriaWeb.UI, :metric, 1)
+    end
+
+    test "no .scoria-signal class token remains in the component CSS" do
+      css_source = File.read!("assets/css/04-components.css")
+
+      # Class-boundary anchor: matches `.scoria-signal` / `.scoria-signal__x` /
+      # `.scoria-signal--x` but must NOT match `.scoria-incident-signal` (a
+      # different, in-use component whose token merely contains the substring).
+      refute Regex.match?(~r/\.scoria-signal(?:[_-]|\s|,|\{)/, css_source)
+
+      # Sanity anchor: confirm the regex isn't accidentally matching (or the
+      # file isn't accidentally empty) by asserting the unrelated component
+      # this guard must NOT key on is still present.
+      assert css_source =~ ".scoria-incident-signal"
+    end
+  end
+
 end

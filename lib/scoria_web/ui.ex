@@ -261,37 +261,6 @@ provide a typographic tier above the primary title."
     """
   end
 
-  attr(:label, :string, required: true)
-  attr(:class, :string, default: nil)
-  attr(:rest, :global)
-
-  slot(:signal, required: true) do
-    attr(:label, :string, required: true)
-    attr(:value, :string, required: true)
-    attr(:tone, :atom)
-  end
-
-  @doc """
-  Plain-language operational summary strip.
-
-  Prefer this over bare metric cards when a count needs context or an operator
-  needs to understand what action the number implies.
-  """
-  def signal_strip(assigns) do
-    ~H"""
-    <dl class={["scoria-signal-strip", @class]} aria-label={@label} {@rest}>
-      <div
-        :for={signal <- @signal}
-        class={["scoria-signal", "scoria-signal--#{signal[:tone] || :neutral}"]}
-      >
-        <dt class="scoria-signal__label">{signal.label}</dt>
-        <dd class="scoria-signal__value">{signal.value}</dd>
-        <dd class="scoria-signal__detail">{render_slot(signal)}</dd>
-      </div>
-    </dl>
-    """
-  end
-
   attr(:value, :string, required: true)
   attr(:copy, :string, default: nil)
   attr(:id, :string, default: nil)
