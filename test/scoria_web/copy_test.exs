@@ -110,3 +110,111 @@ defmodule ScoriaWeb.CopyTest do
     end
   end
 end
+
+defmodule ScoriaWeb.IncidentCopyTest do
+  use ExUnit.Case, async: true
+
+  alias ScoriaWeb.IncidentCopy
+
+  test "orientation/1 branches on incident severity for a representative record" do
+    incident = %{severity: "critical", status: "open", routing_class: "page"}
+
+    assert IncidentCopy.orientation(incident) =~ "Critical"
+    assert IncidentCopy.orientation(incident) =~ "Open"
+  end
+
+  test "orientation/1 falls back safely for an unrecognized severity" do
+    incident = %{severity: "unmapped_severity", status: "open"}
+
+    assert is_binary(IncidentCopy.orientation(incident))
+  end
+
+  test "severity_label/1 resolves the incident severity vocabulary" do
+    assert IncidentCopy.severity_label("critical") == "Critical"
+    assert IncidentCopy.severity_label("warning") == "Warning"
+    assert IncidentCopy.severity_label("info") == "Info"
+    assert IncidentCopy.severity_label(nil) == "Severity not recorded"
+  end
+
+  test "status_label/1 resolves the incident status vocabulary" do
+    assert IncidentCopy.status_label("open") == "Open"
+    assert IncidentCopy.status_label("acknowledged") == "Acknowledged"
+    assert IncidentCopy.status_label("resolved") == "Resolved"
+    assert IncidentCopy.status_label("closed") == "Closed"
+  end
+end
+
+defmodule ScoriaWeb.DatasetCopyTest do
+  use ExUnit.Case, async: true
+
+  alias ScoriaWeb.DatasetCopy
+
+  test "orientation/1 branches on dataset state for a representative record" do
+    open_dataset = %{state: :open, name: "Refund Response Quality", version: "4"}
+    sealed_dataset = %{state: :sealed, name: "Refund Response Quality", version: "4"}
+
+    assert DatasetCopy.orientation(open_dataset) =~ "Open"
+    assert DatasetCopy.orientation(sealed_dataset) =~ "Sealed"
+  end
+
+  test "orientation/1 falls back safely for an unrecognized state" do
+    assert is_binary(DatasetCopy.orientation(%{state: :unmapped_state}))
+  end
+
+  test "state_label/1 resolves the dataset state vocabulary from an atom or string" do
+    assert DatasetCopy.state_label(:open) == "Open"
+    assert DatasetCopy.state_label("sealed") == "Sealed"
+    assert DatasetCopy.state_label(nil) == "State not recorded"
+  end
+
+  test "version_label/1 formats a dataset version and falls back when absent" do
+    assert DatasetCopy.version_label(%{version: "4"}) == "v4"
+    assert DatasetCopy.version_label(%{version: nil}) == "No version recorded"
+  end
+end
+
+defmodule ScoriaWeb.ReviewCopyTest do
+  use ExUnit.Case, async: true
+
+  alias ScoriaWeb.ReviewCopy
+
+  test "status_label/1 returns an operator label for a review row status atom" do
+    assert ReviewCopy.status_label(:promotion_candidate) == "Promotion candidate"
+    assert ReviewCopy.status_label(:needs_review) == "Needs review"
+    assert ReviewCopy.status_label(:approval_requested) == "Approval requested"
+    assert ReviewCopy.status_label(:dismissed) == "Dismissed"
+  end
+
+  test "status_label/1 falls back safely for an unrecognized status" do
+    assert is_binary(ReviewCopy.status_label(:unmapped_status))
+    assert is_binary(ReviewCopy.status_label(nil))
+  end
+
+  test "severity_label/1 branches on review candidate severity for a representative record" do
+    assert ReviewCopy.severity_label(%{severity: "policy_triggered"}) == "Policy triggered"
+    assert ReviewCopy.severity_label(%{severity: "low_quality"}) == "Low quality"
+    assert is_binary(ReviewCopy.severity_label(%{severity: "unmapped"}))
+  end
+end
+
+defmodule ScoriaWeb.ConnectorCopyTest do
+  use ExUnit.Case, async: true
+
+  alias ScoriaWeb.ConnectorCopy
+
+  test "runtime_status_label/1 returns an operator label for a connector runtime status" do
+    assert ConnectorCopy.runtime_status_label("online") == "Connected"
+    assert ConnectorCopy.runtime_status_label("offline") == "Disconnected"
+  end
+
+  test "runtime_status_label/1 falls back safely for an unrecognized runtime status" do
+    assert is_binary(ConnectorCopy.runtime_status_label("unmapped_status"))
+    assert is_binary(ConnectorCopy.runtime_status_label(nil))
+  end
+
+  test "status_label/1 branches on connector fleet status for a representative record" do
+    assert ConnectorCopy.status_label(%{status: "ready"}) == "Ready"
+    assert ConnectorCopy.status_label(%{status: "degraded"}) == "Degraded"
+    assert is_binary(ConnectorCopy.status_label(%{status: "unmapped"}))
+  end
+end
