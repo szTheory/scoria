@@ -9,6 +9,7 @@ defmodule ScoriaWeb.IncidentsLive.Index do
 
   import ScoriaWeb.UI
 
+  alias ScoriaWeb.IncidentCopy
   alias ScoriaWeb.OperatorSurface
 
   @impl true
@@ -115,7 +116,7 @@ defmodule ScoriaWeb.IncidentsLive.Index do
                 tone={severity_tone(incident.severity)}
               >
                 <:title>{incident.summary || incident.incident_key}</:title>
-                <:status><.badge tone={severity_tone(incident.severity)} label={incident.severity} /></:status>
+                <:status><.badge tone={severity_tone(incident.severity)} label={IncidentCopy.severity_label(incident.severity)} /></:status>
                 <:meta>
                   route {incident.routing_class} · {incident.status}
                   <span :if={incident.trace_id}>
