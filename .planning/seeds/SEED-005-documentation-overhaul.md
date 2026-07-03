@@ -6,6 +6,7 @@ planted_during: v3.3 Design System Stress Test (phase 39 in-flight)
 trigger_when: next milestone scoped as docs / DX / adoption / Hex-release readiness
 scope: large
 enriched: 2026-07-03 (jargon catalog + szTheory blueprint + clean-spot diagnosis, from a 3-agent research session)
+enriched_2: 2026-07-03 (terminology benchmarked vs peer tools; maintainer chose FULL sense-aware rename — see Final Canonical Rename Map)
 ---
 
 # SEED-005: Documentation overhaul → clean Hex release
@@ -33,14 +34,16 @@ paragraph. Here it is, ready to drop in:**
 
 > **Scoria** is an Elixir/Phoenix library you add to an *existing* Phoenix app to run
 > AI/LLM work **durably and inspectably**. Every **run** — one execution: a prompt render,
-> model call, tool call, retrieval, approval, or eval score — is recorded as queryable
-> Postgres/Ecto traces. A mounted LiveView dashboard at **`/scoria`** lets a human
-> **operator** inspect, debug, approve, and resume that work — that read-only surface is the
-> **evidence**. Scoria runs entirely inside your app's BEAM; it is **not** a hosted SaaS
-> agent platform.
+> model call, tool call, retrieval, approval, or eval score — is recorded as a queryable
+> Postgres/Ecto **trace**. A mounted LiveView dashboard at **`/scoria`** lets a human
+> **reviewer** inspect, debug, approve, and resume that work. Scoria runs entirely inside your
+> app's BEAM; it is **not** a hosted SaaS agent platform.
+>
+> *(Terminology note: uses the post-rename vocabulary — see Final Canonical Rename Map. Old
+> terms map: reviewer←operator, trace←evidence[surface sense].)*
 
 *Who it's for:* Phoenix teams shipping production AI features who want runtime governance,
-durable workflow state, human-in-the-loop approvals, and operator-visible evidence — without
+durable workflow state, human-in-the-loop approvals, and reviewer-visible traces — without
 adopting a black-box third-party agent platform. *Problem it solves:* AI features are
 normally opaque and hard to debug/audit/resume; Scoria gives one boring, inspectable way to
 start, resume, debug, and verify identity-aware AI work.
@@ -69,12 +72,16 @@ verify what Phase 41 actually produced and build on it rather than redoing it.
 
 ## Proposed Milestone Phase Breakdown (draft for `/gsd-new-milestone`)
 
-- **Phase A — Terminology & first-screen clarity.** Drop the plain-English what/who/why
-  paragraph (above) atop the README, *before* any coined vocabulary. Define-on-first-use for
-  run / operator / evidence / lane / projected context / grounding. Add a **Glossary** guide
-  (doubles as LLM grounding — see Phase D). Scrub leaked internal code-names (**"Keystone"**
-  in `docs/phoenix_runtime_example.md:3`, **"v2.0 Relay"** in `docs/bounded_handoffs.md:142`).
-  Bump the stale README version (`0.1.1` → current) at `README.md` lines ~60 and ~279.
+- **Phase A — Terminology rename + first-screen clarity.** Execute the **Final Canonical
+  Rename Map** (see "Terminology Strategy — DECIDED" below) in the code-rename-before-docs order
+  specified there: `operator`→reviewer, sense-aware `evidence`→trace, `lane`→capabilities +
+  verification suites, scoped context / semantic cache / knowledge base. Drop the plain-English
+  what/who/why paragraph (above) atop the README, *before* any coined vocabulary; define KEEP
+  terms on first use. Add a **Glossary** guide mapping each final term → industry equivalent
+  (doubles as LLM grounding — see Phase D). Scrub leaked code-names (**"Keystone"**
+  `docs/phoenix_runtime_example.md:3`, **"v2.0 Relay"** `docs/bounded_handoffs.md:142`); fix the
+  "Four Lanes"-lists-five bug. Bump stale README version (`0.1.1` → current) at `README.md`
+  ~60, ~279. Ship a CHANGELOG breaking-change entry + short upgrade note.
 - **Phase B — ExDoc structure.** Add `mix.exs` module attrs (`@version/@source_url/
   @source_ref/@hexdocs_url/@release_docs_url`) with `source_ref` falling back to `"main"` for
   `-dev` versions (avoids "View source" 404s). Add **`groups_for_modules`** (by domain area —
@@ -168,11 +175,65 @@ Verdicts from the research session — for each term: is it defined? where? how 
 | **grounding / citations** | Undefined knowledge-lane jargon | knowledge guide | Define. |
 | **Keystone / v2.0 Relay** | **Internal code-names leaked** into adopter docs | `phoenix_runtime_example.md:3`, `bounded_handoffs.md:142` | **Scrub.** |
 
-**Decisions the maintainer had NOT confirmed at plant time** (research questions asked, user
-away — resolve at surface time): (a) session scope confirmed seed-only; (b) dedicated
-milestone vs fold into Phase 41 — planted as **dedicated**; (c) **terminology strategy**:
-define-in-place + glossary (chosen default) vs aggressive rename/simplify vs hybrid — this is
-the biggest open product-voice call, decide first; (d) AI surface first-class — chosen yes.
+## Terminology Strategy — DECIDED (2026-07-03): full, sense-aware rename
+
+Benchmarked against peer tools (LangSmith, Langfuse, OTel GenAI, Temporal, LangGraph, OpenAI
+Agents SDK, GPTCache, AWS/Azure/Google grounding, MCP spec). Scoria was ~55% aligned; the
+strongest terms (`run`, `grounding`, `handoff`, `runtime`, `"boring"`) already sit on the
+standard, the damage is concentrated in a few coined metaphors + one overloaded word (`lane`).
+Maintainer chose a **full rename in one pass** with `lane`(capability) → **capabilities**.
+
+**⚠ "evidence" is polysemous — the rename is SENSE-AWARE, not a global find-replace:**
+- *Inspection/audit surface* sense ("operator evidence page", the `/scoria` run view) → **trace**.
+- *Citation/grounding* sense (`evidence_refs` schema field, `citation_evidence_component`,
+  `grounding_score`) → **KEEP "evidence"** — it's correct standard RAG usage. **No DB migration**
+  (the only `evidence`-named persisted field, `evidence_refs`, stays under this sense).
+
+**Blast radius (read-only grep, 2026-07-03):** `operator` = 116 lib (`.ex`/`.heex`) + 79 docs,
+2 modules (`lib/scoria_web/operator_surface.ex`, `lib/scoria/observe/operator_broadcast.ex`),
+no schema fields. `evidence` = 762 lib + 60 docs, 6 `*_evidence_component.ex` modules, 2
+`evidence_refs` schema fields (RAG sense → kept).
+
+### FINAL CANONICAL RENAME MAP (drives Phase A)
+
+| Current | → Final | Sense / scope | Blast radius |
+|---|---|---|---|
+| `projected context` | **scoped context** | least-privilege slice to a delegate (Anthropic/LangChain term) | docs + keyword |
+| `semantic fast path` | **semantic cache** | tenant-scoped answer reuse (GPTCache category) | docs + `Scoria.SemanticLane` |
+| `optional knowledge` | **optional knowledge base** | RAG/retrieval capability | docs |
+| `adoption lanes` / `lane` (capability) | **capabilities** | the thing you adopt | docs |
+| `lane` (`mix test.X`) | **verification suite** | the proof command | docs |
+| `operator` (persona) | **reviewer** | human who inspects/approves/resumes (avoids OpenAI "Operator" collision) | 116 lib + 79 docs; 2 modules |
+| `evidence` (surface sense) | **trace** | the `/scoria` run inspection view (OTel/observability vocab) | subset of 762 lib + 60 docs |
+| `evidence` (RAG sense) | **KEEP `evidence`** | citation/grounding sources | `evidence_refs`, citation/grounding comps |
+| `evidence_refs` (schema field) | **KEEP** — RAG sense, no migration | — | — |
+| cache outcomes | **hit/miss** primary; `bypass`/`reject` demoted to documented sub-states | — | docs |
+| `"Keystone"`, `"v2.0 Relay"` | **remove** (leaked code-names) | — | 2 doc files |
+| `"The Four Lanes"` (lists 5) | **fix count** → "Capabilities" | outright doc bug | `docs/adoption_lanes.md` |
+
+**KEEP as-is, just define on first use:** `run` (≈LangSmith run), `grounding` (≈AWS/Azure),
+`bounded handoff` (opt: → `scoped handoff` for consistency), `default runtime`, `approvals`,
+actor/tenant/session `identity`, `"boring"` (sparingly). Brand: **"AI ops for Phoenix apps"
+tagline stays** — only the *persona* renames (operator→reviewer), not the category.
+
+### Revised Phase A execution order (code-rename BEFORE docs rewrite, so docs describe final names)
+1. `operator`→reviewer (rename the 2 modules + UI copy).
+2. Sense-aware `evidence`→trace for the **surface sense only** (run-inspection views); leave
+   `evidence_refs` + citation/grounding components untouched.
+3. Tier-1 renames (scoped context / semantic cache / knowledge base) + `lane`→capabilities +
+   `mix test` "verification suite" language.
+4. Scrub code-names; fix the four/five bug.
+5. CHANGELOG breaking-change entry + short upgrade note (pre-1.0, renames acceptable).
+6. THEN the docs/ExDoc/glossary/`llms.txt` phases describe the final vocabulary; glossary maps
+   each final term → industry equivalent.
+
+**Two defaults set with the maintainer away** (flip cheaply if wanted): sense-aware evidence
+(vs. literal-all + migration) and `operator`→**reviewer** (vs. keeping "operator" for the
+ops-console brand — only cost there is the OpenAI collision).
+
+**Other decisions confirmed:** (a) this session = seed-only; (b) **dedicated** milestone (not
+folded into Phase 41); (c) terminology strategy = **full sense-aware rename** (above);
+(d) AI-accessibility surface = first-class yes.
 
 ## Breadcrumbs
 
