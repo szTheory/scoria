@@ -92,7 +92,7 @@ Plans:
 
 **Requirements:** FLOW-01, FLOW-02, FLOW-03, FLOW-04, COPY-01
 
-**Plans:** 4/8 plans executed
+**Plans:** 5/8 plans executed
 
 Plans:
 **Wave 1** *(foundation — parallel, no file overlap)*
@@ -104,7 +104,7 @@ Plans:
 **Wave 2** *(page adoption — blocked on Wave 1)*
 
 - [x] 39-04-PLAN.md — Index-page header migration + microcopy (orchestrator, workflow, eval-spec, prompt, coming-soon) (Wave 2)
-- [ ] 39-05-PLAN.md — Scan conventions + microcopy (dataset, connectors, review_queue, incidents) (Wave 2)
+- [x] 39-05-PLAN.md — Scan conventions + microcopy (dataset, connectors, review_queue, incidents) (Wave 2)
 - [ ] 39-06-PLAN.md — Approval drawer decision-first redesign + alarm-chrome removal (Wave 2)
 
 **Wave 3** *(blocked on Wave 2 — shares approvals_live/index.ex with 39-06)*

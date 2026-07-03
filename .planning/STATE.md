@@ -4,13 +4,13 @@ milestone: v3.3
 milestone_name: Design System Stress Test
 status: executing
 stopped_at: Phase 39 context gathered
-last_updated: "2026-07-03T09:20:22.859Z"
+last_updated: "2026-07-03T09:38:22.207Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 19
-  completed_plans: 15
+  completed_plans: 16
   percent: 50
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 39 (component-groups-and-operator-flows) — EXECUTING
-Plan: 5 of 8
+Plan: 6 of 8
 Status: Ready to execute
 Last activity: 2026-07-03
 
@@ -87,6 +87,8 @@ Recent decisions affecting current work:
 - [Phase 39]: 39-03: the D-20 write-invariant guard allow-lists exactly two Approval.changeset(...) update! call sites by {file,line} (creation-time audit_outbox_event_id backfill; the decision write inside approve/3), verified via a full-repo grep.
 - [Phase ?]: 39-04: prompt_live has no name field on PromptTemplate (verified schema/migration/dev_seed) — led title/column with the domain noun 'Prompt' + <.id> evidence for entity_id instead of fabricating a name or adding a schema column.
 - [Phase ?]: 39-04: coming_soon_live not-found branch uses page_header/1 + empty_state/1 rather than stub_page/1, since stub_page's Soon badge/works_today fields misrepresent a missing (not future) capability.
+- [Phase 39-05]: Widened the connectors D-23 status-badge fix to health_state and last_refresh_status (same offender class as the named runtime.status), per T-39-05-I's plural 'connectors/review columns' disposition.
+- [Phase 39-05]: No D-08 error/retry split added to incidents_live: OperatorSurface.list_tenant_incidents/1 already rescues internally to [] outside this plan's files_modified scope, so a LiveView-level rescue would be dead code.
 
 ### Pending Todos
 
@@ -137,9 +139,10 @@ None at milestone start.
 | Phase 39 P02 | 15min | 2 tasks | 6 files |
 | Phase 39 P03 | 20min | 3 tasks | 5 files |
 | Phase 39 P04 | 15min | 3 tasks | 6 files |
+| Phase 39 P05 | 30min | 3 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-07-03T09:18:34.922Z
+Last session: 2026-07-03T09:36:22.970Z
 Stopped at: Phase 39 context gathered
 Resume file: None
