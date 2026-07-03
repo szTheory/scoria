@@ -137,13 +137,13 @@ Plans:
 4. Motion uses tokenized transform/opacity patterns, communicates state, and respects reduced motion.
 5. 320, 375, 768, 1024, 1440, and wide desktop widths show no clipped content, trapped scroll, squished essential columns, or floating controls covering navigation.
 
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 40-01-PLAN.md — Shared e2e infra: @axe-core/playwright pin + overrides, boxesIntersect + axe-run helpers, gap register scaffold
-- [ ] 40-02-PLAN.md — Browserless source-scan guards: motion tokenization/keyframe guard + a11y structural-presence guard
+- [x] 40-02-PLAN.md — Browserless source-scan guards: motion tokenization/keyframe guard + a11y structural-presence guard
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -233,6 +233,14 @@ interleaving its own feature docs + a release as it lands.
    Trace/memory retention/TTL/purge + right-to-erasure (Scoria owns the tables → owns deletion) +
    PII masking contract + regex pack + human-feedback capture → flywheel + memory forget/expire.
    Unblocks the currently-unserved privacy/legal/compliance persona. → see `SEED-011`.
+
+8. **999.8 → SEED-012 — Architecture-Archetype Awareness (Rule-8 lens)**  (small capstone; after 007 + 008)
+   Host-declared `archetype`/`route` on runs (Scoria records/segments, never infers) + a
+   segment-by-attribute dashboard facet (per-archetype/per-route cost/latency/scores) + per-archetype
+   Rule-8 eval presets + Router observability (routing accuracy via the SEED-008 confusion-matrix reuse).
+   A thin composition over the SEED-007 attribute convention + SEED-008 eval machinery — not new infra.
+   From the 2026-07-03 AI-architecture-patterns ingest (memo: `.planning/research/ai-architectural-patterns.md`,
+   which validated ~85% of Scoria as-built). → see `SEED-012`.
 
 ### Carried-forward deferred work (pre-audit)
 

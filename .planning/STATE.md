@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: window is idle — collision-avoidance)
 status: executing
-stopped_at: Phase 40 context gathered
-last_updated: "2026-07-03T16:34:22.210Z"
+stopped_at: Completed 40-02-PLAN.md
+last_updated: "2026-07-03T16:48:07.704Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 24
-  completed_plans: 20
+  completed_plans: 21
   percent: 67
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 40 (accessibility-motion-and-responsive-proof) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-07-03
 
@@ -98,6 +98,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 39-08: Fixed incidents_live/index.ex + show.ex to route incident.severity through IncidentCopy.severity_label/1 instead of a raw atom (Rule 1, required for the new D-26 copy guard to be green on arrival) -- caught the same offender class as the connectors runtime.status fix from Plan 05
 - [Phase ?]: priv/dev/package-lock.json stays uncommitted (gitignored per commit 7e1cde4b); package.json exact-pin + overrides.axe-core is the real D-05 reproducibility contract
 - [Phase ?]: axe.mjs calls .options({rules}) before .withTags(WCAG_TAGS) -- AxeBuilder#options() replaces the whole option object while #withTags() only merges runOnly, so the reverse order would silently drop the tag filter
+- [Phase 40]: 40-02: motion guard allow-lists scoria-skeleton-pulse and scoria-approval-pulse by animation NAME (not literal duration string) so a future duration edit on either D-20/D-21 exception can't silently defeat it; a dedicated test asserts both names are present to catch the false-RED-from-allow-listing-only-one risk.
+- [Phase 40]: 40-02: a11y guard's dialog check asserts role=dialog + aria-modal=true pairing only (not phx-key=Escape presence), since the mobile-nav drawer and shortcuts overlay are JS-hook-driven with no phx-key attribute at all; and its filter-controls check is scoped to the <:filter> slot only, not the table's th phx-click sort trigger (not literally a button today) — asserting the stricter claim would false-RED the already-green baseline.
 
 ### Pending Todos
 
@@ -133,9 +135,10 @@ None at milestone start.
 | Phase 39 P07 | ~50min | 2 tasks | 3 files |
 | Phase 39 P08 | 48min | 3 tasks | 8 files |
 | Phase 40 P01 | 3min | 3 tasks | 4 files |
+| Phase 40 P02 | 25min | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-07-03T16:32:22.999Z
-Stopped at: Phase 40 context gathered
+Last session: 2026-07-03T16:48:07.700Z
+Stopped at: Completed 40-02-PLAN.md
 Resume file: None
