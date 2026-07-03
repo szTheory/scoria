@@ -7,7 +7,7 @@ defmodule ScoriaWeb.ComingSoonLive do
   """
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
-  import ScoriaWeb.UI, only: [stub_page: 1]
+  import ScoriaWeb.UI, only: [empty_state: 1, page_header: 1, stub_page: 1]
 
   alias ScoriaWeb.DashboardNav
 
@@ -26,26 +26,23 @@ defmodule ScoriaWeb.ComingSoonLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="scoria-pagehead">
-      <%= if @stub do %>
-        <.stub_page
-          title={@stub.label}
-          description={stub_description(@stub.stub_slug)}
-          works_today={works_today(@stub.stub_slug, assigns[:scoria_base] || "")}
-          tracking_url={tracking_url(@stub.label)}
-        />
-      <% else %>
-        <section class="scoria-stub">
-          <div class="scoria-stub__header">
-            <h1>Capability not found</h1>
-          </div>
-          <p class="scoria-stub__description">
-            Capability not found. Choose a screen from the dashboard navigation.
-          </p>
-          <a class="scoria-stub__track" href={(assigns[:scoria_base] || "") <> "/"}>Home</a>
-        </section>
-      <% end %>
-    </div>
+    <%= if @stub do %>
+      <.stub_page
+        title={@stub.label}
+        description={stub_description(@stub.stub_slug)}
+        works_today={works_today(@stub.stub_slug, assigns[:scoria_base] || "")}
+        tracking_url={tracking_url(@stub.label)}
+      />
+    <% else %>
+      <.page_header title="Capability not found" />
+      <.empty_state title="Capability not found. Choose a screen from the dashboard navigation.">
+        <:action>
+          <a class="scoria-button scoria-button--ghost scoria-button--sm" href={(assigns[:scoria_base] || "") <> "/"}>
+            Home
+          </a>
+        </:action>
+      </.empty_state>
+    <% end %>
     """
   end
 
