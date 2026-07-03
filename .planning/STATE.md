@@ -2,18 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: Design System Stress Test
-current_phase: 39
-current_phase_name: component-groups-and-operator-flows
-status: executing
-stopped_at: Completed 39-07-PLAN.md
-last_updated: "2026-07-03T10:29:35.218Z"
+status: verifying
+stopped_at: Completed 39-08-PLAN.md
+last_updated: "2026-07-03T11:21:34.450Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 19
-  completed_plans: 18
-  percent: 50
+  completed_plans: 19
+  percent: 67
 ---
 
 # Project State
@@ -30,7 +28,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 Phase: 39 (component-groups-and-operator-flows) — EXECUTING
 Plan: 8 of 8
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-03
 
 ## Performance Metrics
@@ -95,6 +93,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 39-06: decided?/1 positive-whitelist predicate (approved/rejected/expired, fails safe) gates the action section + confirm modal so reversal affordances are structurally absent once decided; full decided-receipt (decider/time) wiring deferred to Plan 07 per this plan's stated scope.
 - [Phase 39]: 39-07: decider_ref/1 sources event.metadata["metadata"]["decision_actor_id"] first, falling back to actor_ref, since Workflows.approve/3 writes actor_ref from immutable root identity (the requester), not the deciding operator. — Reading bare actor_ref per the plan's literal D-20 instruction would have silently misattributed every decision to the requester -- fixed within approvals_live/index.ex alone, no workflows.ex change.
 - [Phase 39]: 39-07: runtime-focused PubSub auto-open stays a one-shot assign-based seed (runtime_seeded? flag), not migrated to the URL -- only the operator-initiated ?approval=<id> selection became a URL param per D-09's scope.
+- [Phase ?]: 39-08: single_header_guard_test.exs excludes dataset_live/promote_component.ex (dialog-scoped, rendered inside dataset_live/index.ex's <.drawer>) alongside ui.ex, since the plan's named drawer/modal/palette/notebook filename fragments don't literally match this file's name
+- [Phase ?]: 39-08: scan_convention_guard_test.exs scopes D-11 to the plan task's literal instruction (filter/scope-not-socket-only + sort exemption) rather than the broader CONTEXT.md D-11 section-order restatement
+- [Phase ?]: 39-08: Fixed incidents_live/index.ex + show.ex to route incident.severity through IncidentCopy.severity_label/1 instead of a raw atom (Rule 1, required for the new D-26 copy guard to be green on arrival) -- caught the same offender class as the connectors runtime.status fix from Plan 05
 
 ### Pending Todos
 
@@ -128,9 +129,10 @@ None at milestone start.
 > **Ordered roadmap + dependencies** for SEED-005…011 live in `ROADMAP.md` `## Backlog` (999.1–999.7); "why" index in `.planning/seeds/README.md`. Stray per-plan timing rows that previously polluted this table were removed 2026-07-03 (canonical per-plan metrics live in the phase manifests).
 | Phase 39 P06 | ~20min | 3 tasks | 5 files |
 | Phase 39 P07 | ~50min | 2 tasks | 3 files |
+| Phase 39 P08 | 48min | 3 tasks | 8 files |
 
 ## Session Continuity
 
-Last session: 2026-07-03T10:29:35.214Z
-Stopped at: Completed 39-07-PLAN.md
+Last session: 2026-07-03T11:21:34.447Z
+Stopped at: Completed 39-08-PLAN.md
 Resume file: None

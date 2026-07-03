@@ -92,7 +92,7 @@ Plans:
 
 **Requirements:** FLOW-01, FLOW-02, FLOW-03, FLOW-04, COPY-01
 
-**Plans:** 7/8 plans executed
+**Plans:** 8/8 plans complete
 
 Plans:
 **Wave 1** *(foundation — parallel, no file overlap)*
@@ -113,7 +113,7 @@ Plans:
 
 **Wave 4** *(guards + proof — blocked on Waves 2-3)*
 
-- [ ] 39-08-PLAN.md — Warning-grade guards (single-header, scan-convention, copy) + automated flow proof (Wave 4)
+- [x] 39-08-PLAN.md — Warning-grade guards (single-header, scan-convention, copy) + automated flow proof (Wave 4)
 
 **Success criteria:**
 
