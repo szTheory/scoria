@@ -177,22 +177,29 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
           <.evidence_rows rows={ApprovalCopy.evidence_rows(@active_approval)} />
         </.evidence_section>
 
-        <details :if={@active_approval} class="scoria-approval-details">
-          <summary class="scoria-approval-details__summary">Technical details</summary>
-          <dl class="scoria-approval-tech-grid" aria-label="Technical identifiers">
-            <div :if={@active_approval[:id]} class="scoria-approval-tech-grid__row">
+        <details
+          :if={@active_approval}
+          id={"approval-identifiers-#{@active_approval[:id]}"}
+        >
+          <summary>Identifiers</summary>
+          <dl>
+            <div :if={@active_approval[:id]}>
               <dt>Approval</dt>
               <dd><.id value={@active_approval[:id]} id={"approval-id-#{@active_approval[:id]}"} /></dd>
             </div>
-            <div :if={@active_approval[:workflow_run_id]} class="scoria-approval-tech-grid__row">
+            <div :if={@active_approval[:workflow_run_id]}>
               <dt>Run</dt>
               <dd><.id value={@active_approval[:workflow_run_id]} id={"approval-run-id-#{@active_approval[:id]}"} /></dd>
             </div>
-            <div :if={@active_approval[:session_id]} class="scoria-approval-tech-grid__row">
+            <div :if={@active_approval[:session_id]}>
               <dt>Session</dt>
               <dd><.id value={@active_approval[:session_id]} id={"approval-session-id-#{@active_approval[:id]}"} /></dd>
             </div>
-            <div :if={@active_approval[:inserted_at]} class="scoria-approval-tech-grid__row">
+            <div :if={@active_approval[:trace_id]}>
+              <dt>Trace</dt>
+              <dd><.id value={@active_approval[:trace_id]} id={"approval-trace-id-#{@active_approval[:id]}"} /></dd>
+            </div>
+            <div :if={@active_approval[:inserted_at]}>
               <dt>Requested</dt>
               <dd><.time at={@active_approval[:inserted_at]} /></dd>
             </div>
@@ -201,9 +208,10 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
         <.raw_evidence
           :if={@active_approval}
+          id={"approval-raw-#{@active_approval[:id]}"}
           label="Request payload"
           value={ApprovalCopy.raw_arguments(@active_approval)}
-          open={true}
+          open={false}
           copyable={true}
           copy_label="Copy request payload"
         >

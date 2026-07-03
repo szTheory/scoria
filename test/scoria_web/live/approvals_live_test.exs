@@ -186,9 +186,9 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     assert html =~ "Approve request"
     assert html =~ "Deny request"
     refute html =~ "audit evidence"
-    assert html =~ "Technical details"
+    assert html =~ "Identifiers"
     assert html =~ "Request payload"
-    assert html =~ ~r/<details[^>]*class="[^"]*scoria-raw-evidence[^"]*"[^>]*open/
+    refute html =~ ~r/<details[^>]*class="[^"]*scoria-raw-evidence[^"]*"[^>]*open/
     assert html =~ ~s(data-raw-evidence-copy)
     assert html =~ ~s(aria-label="Copy request payload")
     assert html =~ "View run details"
@@ -331,6 +331,47 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     assert html =~ "test_tool"
     assert html =~ ~s(data-highlight="true")
     refute html =~ "Approval request"
+  end
+
+  test "unrelated hitl_request broadcast preserves the payload details stable DOM id" do
+    %{run: run, approval: approval} = pending_approval()
+
+    {:ok, view, _html} =
+      live(
+        session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+        "/scoria/approvals?runtime=#{run.id}"
+      )
+
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+    send(view.pid, {:hitl_request, projection})
+
+    html_before = render(view)
+    payload_id = "approval-raw-#{approval.id}"
+    assert html_before =~ ~s(id="#{payload_id}")
+
+    # D-14: an unrelated approval's broadcast (a different run — does not match
+    # this LiveView's runtime focus) reloads the inbox but must NOT reassign
+    # @active_approval. The payload <details> keeps its stable per-approval DOM
+    # id so LiveView patches the existing node in place instead of tearing it
+    # down, which is what preserves a user-opened <details> in the real
+    # browser. The native open/closed state itself is invisible to
+    # LiveViewTest's server-rendered HTML (no phx event drives it) — this test
+    # asserts the server-renderable half (stable id + unchanged active
+    # approval); the JS-observable half is the Tier 2 Playwright lane
+    # (priv/dev/e2e).
+    unrelated_projection = %{
+      id: Ecto.UUID.generate(),
+      tool_name: "unrelated_tool",
+      workflow_run_id: Ecto.UUID.generate(),
+      status: "pending"
+    }
+
+    send(view.pid, {:hitl_request, unrelated_projection})
+
+    html_after = render(view)
+    assert html_after =~ ~s(id="#{payload_id}")
+    assert html_after =~ "test_tool approval"
+    refute html_after =~ "unrelated_tool approval"
   end
 
   test "stale approval decision surfaces friendly flash" do
