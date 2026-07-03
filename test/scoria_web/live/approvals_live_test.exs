@@ -137,7 +137,7 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     assert live_source =~ "Keep reviewing"
     assert inbox_source =~ "<.table"
     assert inbox_source =~ ~s(id="approvals")
-    assert inbox_source =~ ~s(aria-label="Pending approval queue")
+    assert inbox_source =~ ~s("Pending approval queue")
     assert inbox_source =~ ~s(label="Request")
     assert inbox_source =~ ~s(label="Policy")
     assert inbox_source =~ ~s(label="Requested by")
@@ -151,6 +151,13 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     refute live_source =~ "set_density"
     refute live_source =~ "approval_table_density"
     refute inbox_source =~ "on_density_change"
+
+    # D-10: the pending inbox stays PubSub-reload driven with assign-based lookups
+    # — it must never be migrated to stream/3 (decided history is capped +
+    # load-more instead, per D-10's own explicit scoping).
+    refute live_source =~ "Phoenix.LiveView.stream("
+    refute live_source =~ "stream(socket, :approval_inbox"
+    refute inbox_source =~ "phx-update=\"stream\""
 
     for forbidden <- [
           "stone-",
@@ -547,6 +554,131 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     assert html =~ "scoria-toast--warn"
     assert html =~ "Approval denied - run is still waiting for approval."
     refute html =~ "scoria-toast--pass"
+  end
+
+  # D-21: fixtures MUST route decided rows through approve/3 (not Repo.update_all)
+  # so the real path emits the decision audit event and the history surface is
+  # exercised honestly.
+  defp decide_approval(approval, status, actor_id \\ "ops-lead") do
+    {:ok, updated} = Workflows.approve(approval.id, status, %{actor_id: actor_id})
+    updated
+  end
+
+  describe "Pending|Decided URL scope (D-17)" do
+    test "decided scope renders the Decision column, hides Waiting, and reads View decision" do
+      %{approval: approval} = pending_approval()
+      decide_approval(approval, "approved")
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?scope=decided")
+
+      assert html =~ ~s(aria-label="Decided approval history")
+      assert html =~ "Decision"
+      assert html =~ "View decision"
+      refute html =~ "Waiting"
+      refute html =~ "Inspect approval"
+    end
+
+    test "pending scope stays the default and keeps the original table contract" do
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals")
+
+      assert html =~ ~s(aria-label="Pending approval queue")
+      assert html =~ "Waiting"
+      refute html =~ "View decision"
+    end
+
+    test "decided outcome filter maps the Denied display word to the rejected schema status" do
+      %{approval: approved} = pending_approval()
+      decide_approval(approved, "approved")
+
+      %{approval: rejected} = pending_approval()
+      decide_approval(rejected, "rejected")
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?scope=decided&outcome=denied")
+
+      # D-24d: the query facet excludes the approved row (badge tone :pass) and
+      # keeps only the denied row (badge tone :fail) — asserted on the RENDERED
+      # badge class attribute (not a bare substring), since the compiled
+      # stylesheet always defines .scoria-badge--pass/--fail rules in <style>
+      # regardless of which rows are present.
+      assert html =~ "scoria-badge scoria-badge--fail"
+      refute html =~ "scoria-badge scoria-badge--pass"
+    end
+
+    test "decided outcome filter for approved excludes denied rows" do
+      %{approval: approved} = pending_approval()
+      decide_approval(approved, "approved")
+
+      %{approval: rejected} = pending_approval()
+      decide_approval(rejected, "rejected")
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?scope=decided&outcome=approved")
+
+      assert html =~ "scoria-badge scoria-badge--pass"
+      refute html =~ "scoria-badge scoria-badge--fail"
+    end
+
+    test "an unrecognized scope/outcome falls back to the safe pending default" do
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?scope=bogus&outcome=bogus")
+
+      assert html =~ ~s(aria-label="Pending approval queue")
+    end
+  end
+
+  describe "?approval=<id> deep-link (D-09, T-39-07-I)" do
+    test "opens the drawer directly on mount from the URL" do
+      %{approval: approval} = pending_approval()
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?approval=#{approval.id}")
+
+      assert html =~ "test_tool approval"
+    end
+
+    test "resolves a decided approval even from a pending-scope URL" do
+      %{approval: approval} = pending_approval()
+      decide_approval(approval, "approved")
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?approval=#{approval.id}")
+
+      assert html =~ "test_tool approval"
+    end
+
+    test "never opens an approval belonging to another tenant" do
+      %{approval: approval} = pending_approval(tenant_id: "tenant-other")
+
+      {:ok, _view, html} =
+        live(
+          session_conn(%{"tenant_id" => "tenant-live"}),
+          "/scoria/approvals?approval=#{approval.id}"
+        )
+
+      refute html =~ "test_tool approval"
+    end
+
+    test "an unresolvable id renders the plain inbox without crashing" do
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?approval=not-a-uuid")
+
+      assert html =~ "Approvals"
+    end
+
+    test "selecting an approval patches the URL to a deep-linkable ?approval=<id>" do
+      %{approval: approval} = pending_approval()
+
+      {:ok, view, _html} = live(session_conn(), "/scoria/approvals")
+
+      render_click(view, "select_approval", %{"id" => approval.id})
+
+      assert_patch(view, "/scoria/approvals?approval=#{approval.id}")
+    end
+
+    test "dismissing the drawer patches the approval param away" do
+      %{approval: approval} = pending_approval()
+
+      {:ok, view, _html} = live(session_conn(), "/scoria/approvals?approval=#{approval.id}")
+
+      render_click(view, "dismiss_approval", %{})
+
+      assert_patch(view, "/scoria/approvals")
+    end
   end
 
   defp drain_pubsub_messages do

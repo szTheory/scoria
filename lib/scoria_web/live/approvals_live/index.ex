@@ -32,6 +32,13 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   alias ScoriaWeb.ApprovalCopy
   alias ScoriaWeb.ApprovalInboxComponent
 
+  # D-17: single /approvals page, Pending|Decided URL-param scope segment (default
+  # Pending) + an outcome sub-filter inside Decided (D-24d maps the display word to
+  # the schema status value at the query boundary — see outcome_status/1).
+  @scopes ~w(pending decided)
+  @outcomes ~w(all approved denied expired)
+  @decided_page_size 25
+
   @impl true
   def mount(params, session, socket) do
     tenant_id = params["tenant"] || session["tenant_id"] || "default"
@@ -50,12 +57,59 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       )
       |> assign(:tenant_id, tenant_id)
       |> assign(:toasts, [])
+      |> assign(:scope, "pending")
+      |> assign(:outcome, "all")
+      |> assign(:decided_limit, @decided_page_size)
+      |> assign(:runtime_seeded?, false)
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Scoria.PubSub, "scoria:runs:#{tenant_id}")
     end
 
-    {:ok, socket |> reload_inbox() |> maybe_seed_active_approval()}
+    {:ok, socket}
+  end
+
+  # D-09: shareable scan state (scope, outcome sub-filter, and the drawer selection)
+  # lives in the URL via push_patch + handle_params, so it survives reconnect and is
+  # deep-linkable. Ephemeral UI state (decision_modal toggle, toasts, highlighted id)
+  # stays in assigns and is untouched here.
+  @impl true
+  def handle_params(params, _uri, socket) do
+    new_scope = normalize_scope(params["scope"])
+    new_outcome = normalize_outcome(params["outcome"])
+
+    scope_or_outcome_changed? =
+      new_scope != socket.assigns.scope or new_outcome != socket.assigns.outcome
+
+    socket =
+      socket
+      |> assign(:scope, new_scope)
+      |> assign(:outcome, new_outcome)
+
+    socket =
+      if scope_or_outcome_changed? do
+        assign(socket, :decided_limit, @decided_page_size)
+      else
+        socket
+      end
+
+    socket =
+      socket
+      |> reload_inbox()
+      |> assign_active_approval(params["approval"])
+
+    # The runtime-focused auto-open is a one-shot seed for the LiveView's initial
+    # mount, mirroring the original mount-time-only behavior — it must NOT
+    # re-trigger on every subsequent patch (e.g. a user's explicit dismiss),
+    # which would otherwise immediately reopen the drawer it was told to close.
+    socket =
+      if new_scope == "pending" and not socket.assigns.runtime_seeded? do
+        socket |> maybe_seed_active_approval() |> assign(:runtime_seeded?, true)
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -98,14 +152,23 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   end
 
   def handle_event("dismiss_approval", _, socket) do
-    {:noreply, socket |> assign(:active_approval, nil) |> assign(:decision_modal, nil)}
+    {:noreply,
+     socket
+     |> assign(:decision_modal, nil)
+     |> push_patch(to: approvals_path(socket.assigns[:scoria_base] || "", patch_params(socket, %{})))}
   end
 
+  # D-09: selection is a deep-linkable URL param, not a socket-only assign — the
+  # actual assignment happens in handle_params/3 once the patch lands.
   def handle_event("select_approval", %{"id" => approval_id}, socket) do
-    case Enum.find(socket.assigns.approval_inbox, &(to_string(&1.id) == approval_id)) do
-      nil -> {:noreply, socket}
-      approval -> {:noreply, assign(socket, :active_approval, approval)}
-    end
+    {:noreply,
+     push_patch(socket,
+       to:
+         approvals_path(
+           socket.assigns[:scoria_base] || "",
+           patch_params(socket, %{"approval" => approval_id})
+         )
+     )}
   end
 
   def handle_event("open_decision_modal", %{"decision" => decision}, socket)
@@ -115,6 +178,30 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   def handle_event("close_decision_modal", _, socket) do
     {:noreply, assign(socket, :decision_modal, nil)}
+  end
+
+  # D-17/D-24d: outcome sub-filter inside Decided scope, applied via table/1's
+  # :filter slot. The display word ("Denied") is mapped to the schema status value
+  # ("rejected") at the query boundary in outcome_status/1, never inline here.
+  def handle_event("change_outcome", %{"outcome" => outcome}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         approvals_path(socket.assigns[:scoria_base] || "", %{
+           "scope" => "decided",
+           "outcome" => normalize_outcome(outcome)
+         })
+     )}
+  end
+
+  # D-10: decided history is capped + load-more (no table/1 stream upgrade) rather
+  # than a URL param, since it is pure pagination convenience, not shareable filter
+  # state.
+  def handle_event("load_more_decided", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:decided_limit, socket.assigns.decided_limit + @decided_page_size)
+     |> reload_inbox()}
   end
 
   @impl true
@@ -138,6 +225,11 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         highlight_approval_id={@highlighted_approval_id}
         select_event="select_approval"
         scoria_base={assigns[:scoria_base] || ""}
+        scope={@scope}
+        outcome={@outcome}
+        pending_href={approvals_path(assigns[:scoria_base] || "", %{})}
+        decided_href={approvals_path(assigns[:scoria_base] || "", %{"scope" => "decided"})}
+        has_more={@scope == "decided" and length(@approval_inbox) >= @decided_limit}
       />
 
       <.drawer id="approval-detail-drawer" show={@active_approval != nil} on_dismiss="dismiss_approval">
@@ -274,6 +366,17 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   # ── Internals (ported from OrchestratorLive) ───────────────────────────────
 
+  # D-10: decided history loads via list_decided_approvals/1 (capped + load-more);
+  # the pending inbox stays PubSub-reload driven with assign-based lookups — do NOT
+  # stream it (see seed_focused_active_approval/1, select handling below).
+  defp reload_inbox(%{assigns: %{scope: "decided"}} = socket) do
+    filters =
+      %{tenant_id: socket.assigns.tenant_id, limit: socket.assigns.decided_limit}
+      |> maybe_put_outcome_status(socket.assigns.outcome)
+
+    assign(socket, :approval_inbox, Workflows.list_decided_approvals(filters))
+  end
+
   defp reload_inbox(socket) do
     assign(
       socket,
@@ -281,6 +384,90 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       Workflows.list_pending_remote_approvals(%{tenant_id: socket.assigns.tenant_id})
     )
   end
+
+  defp maybe_put_outcome_status(filters, outcome) do
+    case outcome_status(outcome) do
+      nil -> filters
+      status -> Map.put(filters, :status, status)
+    end
+  end
+
+  # D-24d: the outcome facet maps to the schema status value for the query, NOT the
+  # display word — "Denied" -> "rejected" (ApprovalCopy.decision_outcome/1 owns the
+  # "Denied" display label; the schema value is "rejected"). "All" applies no
+  # status constraint.
+  defp outcome_status("approved"), do: "approved"
+  defp outcome_status("denied"), do: "rejected"
+  defp outcome_status("expired"), do: "expired"
+  defp outcome_status(_outcome), do: nil
+
+  defp normalize_scope(scope) when scope in @scopes, do: scope
+  defp normalize_scope(_scope), do: "pending"
+
+  defp normalize_outcome(outcome) when outcome in @outcomes, do: outcome
+  defp normalize_outcome(_outcome), do: "all"
+
+  # D-09/T-39-07-I: the deep-link selection is resolved against the currently
+  # loaded (already tenant-scoped) inbox first; if the id isn't in the current
+  # scope's page, fall back to a tenant-scoped lineage lookup so a decided-scope
+  # link still opens correctly from a pending-scope URL and vice versa, but never
+  # across tenants.
+  defp assign_active_approval(socket, approval_id)
+       when is_binary(approval_id) and approval_id != "" do
+    assign(socket, :active_approval, resolve_scoped_approval(socket, approval_id))
+  end
+
+  defp assign_active_approval(socket, _approval_id), do: assign(socket, :active_approval, nil)
+
+  defp resolve_scoped_approval(socket, approval_id) do
+    case Enum.find(socket.assigns.approval_inbox, &(to_string(&1.id) == approval_id)) do
+      nil -> fetch_tenant_scoped_approval(socket, approval_id)
+      approval -> approval
+    end
+  end
+
+  defp fetch_tenant_scoped_approval(socket, approval_id) do
+    with {:ok, _uuid} <- Ecto.UUID.cast(approval_id),
+         %{tenant_id: tenant_id} = approval when tenant_id == socket.assigns.tenant_id <-
+           safe_get_lineage(approval_id) do
+      approval
+    else
+      _ -> nil
+    end
+  end
+
+  defp safe_get_lineage(approval_id) do
+    Workflows.get_approval_lineage!(approval_id)
+  rescue
+    Ecto.NoResultsError -> nil
+  end
+
+  defp patch_params(socket, extra) do
+    socket
+    |> scope_query_params()
+    |> Map.merge(Map.new(extra, fn {k, v} -> {to_string(k), v} end))
+  end
+
+  defp scope_query_params(%{assigns: %{scope: "decided", outcome: outcome}}) do
+    base = %{"scope" => "decided"}
+    if outcome == "all", do: base, else: Map.put(base, "outcome", outcome)
+  end
+
+  defp scope_query_params(_socket), do: %{}
+
+  defp approvals_path(scoria_base, params) do
+    query =
+      params
+      |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
+      |> Enum.map(fn {k, v} -> {to_string(k), to_string(v)} end)
+      |> URI.encode_query()
+
+    base = approvals_base_path(scoria_base)
+    if query == "", do: base, else: base <> "?" <> query
+  end
+
+  defp approvals_base_path(""), do: "/approvals"
+  defp approvals_base_path(base), do: base <> "/approvals"
 
   defp maybe_seed_active_approval(
          %{assigns: %{active_approval: nil, runtime_query: runtime_query}} = socket
@@ -323,11 +510,16 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
               _ -> [tone: :warn, message: "Approval denied - run is still waiting for approval."]
             end
 
+          # Clearing the drawer selection via push_patch (instead of a bare assign)
+          # keeps the deep-linkable ?approval=<id> URL param in sync with the
+          # decision (D-09) — handle_params/3 re-resolves :active_approval to nil
+          # and reloads the inbox for the current scope.
           updated_socket
-          |> assign(:active_approval, nil)
           |> assign(:decision_modal, nil)
-          |> reload_inbox()
           |> put_toast(toast_opts)
+          |> push_patch(
+            to: approvals_path(socket.assigns[:scoria_base] || "", patch_params(socket, %{}))
+          )
         else
           {:error, reason} ->
             socket
