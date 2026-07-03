@@ -88,7 +88,8 @@ defmodule ScoriaWeb.PromptLive.IndexTest do
 
     # Click edit
     html = render_click(view, "edit", %{"id" => template.id})
-    assert html =~ "Edit Template: #{template.entity_id}"
+    assert html =~ "Edit Prompt"
+    assert html =~ template.entity_id
 
     # Form inputs should calculate tokens dynamically
     # Test phx-change
@@ -114,7 +115,7 @@ defmodule ScoriaWeb.PromptLive.IndexTest do
       })
 
     # Form disappears and we see updated list
-    refute html =~ "Edit Template:"
+    refute html =~ "Edit Prompt"
     assert html =~ "You are a very helpful assistant indeed."
 
     # Verify DB has new version or updated draft

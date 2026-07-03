@@ -88,15 +88,14 @@ defmodule ScoriaWeb.PromptLive.Index do
   def render(assigns) do
     ~H"""
     <div class="scoria-page">
-      <div class="scoria-page__header">
-        <p class="scoria-eyebrow">Prompt Registry</p>
-        <h1>Prompt Registry</h1>
-      </div>
+      <.page_header title="Prompt Registry" />
 
       <%= if @edit_template do %>
         <.panel>
           <:eyebrow>Prompt version</:eyebrow>
-          <:title>Edit Template: <%= @edit_template.entity_id %> (v<%= @edit_template.version %>)</:title>
+          <:title>
+            Edit Prompt <.id value={@edit_template.entity_id} copy={@edit_template.entity_id} /> (v<%= @edit_template.version %>)
+          </:title>
           
           <%= if @estimated_tokens do %>
             <p>
@@ -137,7 +136,9 @@ defmodule ScoriaWeb.PromptLive.Index do
         </.panel>
       <% else %>
         <.table id="prompt-versions" rows={@prompt_templates}>
-          <:col :let={template} label="Prompt"><%= template.entity_id %></:col>
+          <:col :let={template} label="Prompt">
+            <.id id={"prompt-entity-#{template.id}"} value={template.entity_id} copy={template.entity_id} />
+          </:col>
           <:col :let={template} label="Version">v<%= template.version %></:col>
           <:col :let={template} label="State">
             <.badge tone={tone(template.status)} label={status_label(template.status)} />

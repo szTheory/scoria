@@ -68,7 +68,7 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
   def render(assigns) do
     ~H"""
     <div class="eval-spec-index">
-      <h1>Evaluation Rubrics (EvalSpecs)</h1>
+      <.page_header title="Evaluation Rubrics" />
 
       <%= if @edit_spec do %>
         <div class="edit-form">
