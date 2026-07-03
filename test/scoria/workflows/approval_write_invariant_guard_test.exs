@@ -21,6 +21,26 @@ defmodule Scoria.Workflows.ApprovalWriteInvariantGuardTest do
   alias Scoria.Repo
   alias Scoria.Workflows
 
+  # Source-scan scope for the D-20 write-invariant guard below.
+  @scan_paths Path.wildcard("lib/scoria/**/*.ex") ++ Path.wildcard("priv/repo/**/*.exs")
+
+  # The write-invariant: an approval row must never be written after it leaves the
+  # `pending` state. Verified against HEAD, exactly two `Approval.changeset(...)`
+  # call sites terminate in an update (a third terminates in `insert!`, which is
+  # the row's creation and is not a concern here):
+  #   1. workflows.ex:435 — the creation-time second `Approval.changeset |> update!`
+  #      that backfills `audit_outbox_event_id` right after insert; the row is
+  #      still "pending" at that point (not yet decided) — allow-listed.
+  #   2. workflows.ex:684 — the single decision write inside `approve/3` that
+  #      performs the pending -> decided transition itself — allow-listed (this
+  #      IS the sanctioned decision writer the rest of the system relies on).
+  # Any OTHER `Approval.changeset(...) |> update!/update(` call site is a
+  # violation of the decided-at write invariant this guard protects.
+  @allowed_approval_updates MapSet.new([
+                              {"lib/scoria/workflows.ex", 435},
+                              {"lib/scoria/workflows.ex", 684}
+                            ])
+
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
@@ -77,6 +97,80 @@ defmodule Scoria.Workflows.ApprovalWriteInvariantGuardTest do
 
       assert length(Workflows.list_decided_approvals(%{tenant_id: tenant_id, limit: 2})) == 2
     end
+  end
+
+  describe "approval write-invariant guard (D-20, warning-grade source scan)" do
+    test "every Approval.changeset(...) call site that terminates in an update is allow-listed" do
+      offenders =
+        for path <- @scan_paths,
+            lines = code_lines(path),
+            {line, line_number} <- Enum.with_index(lines, 1),
+            Regex.match?(~r/Approval\.changeset\(/, line),
+            classify_approval_write(lines, line_number) == :update,
+            not MapSet.member?(@allowed_approval_updates, {path, line_number}) do
+          "#{path}:#{line_number}"
+        end
+
+      assert offenders == [],
+             """
+             D-20 write-invariant guard: found an Approval row write not on the allow-list.
+             Decided-at/decider integrity depends on nothing writing an approval row after
+             it leaves `pending`. If this is a legitimate new writer, review it carefully and
+             add it to @allowed_approval_updates (with a comment explaining why the row is
+             still "pending" at that point); otherwise route the write through
+             `Workflows.approve/3` instead of writing the row directly.
+             Offenders:
+             #{Enum.join(offenders, "\n")}
+             """
+    end
+
+    test "no update_all call site references the Approval schema (the removed seed shape)" do
+      offenders =
+        for path <- @scan_paths,
+            source = code_lines(path) |> Enum.join("\n"),
+            Regex.match?(~r/\bupdate_all\(/, source),
+            Regex.match?(~r/Scoria\.Observe\.Approval\b|\bin\s+Approval[,\)\s]/, source) do
+          path
+        end
+
+      assert offenders == [],
+             """
+             D-20 write-invariant guard: found update_all(...) in a file that also references
+             the Approval schema — this is the fragile shape dev_seed.exs used to have
+             (Repo.update_all(set: [status: "expired"])), which bypasses the decision audit
+             event and the updated_at bump. Route decided/expired writes through
+             `Workflows.approve(id, status)` instead (D-21).
+             Offenders: #{Enum.join(offenders, ", ")}
+             """
+    end
+  end
+
+  # Strips whole-line comments before scanning so the guard's own doc comments
+  # (which quote the very patterns it looks for) never self-trigger a false
+  # positive.
+  defp code_lines(path) do
+    path
+    |> File.read!()
+    |> String.split("\n")
+    |> Enum.map(fn line ->
+      if String.trim(line) |> String.starts_with?("#"), do: "", else: line
+    end)
+  end
+
+  # Looks ahead from an `Approval.changeset(` line for the pipe call that
+  # terminates the changeset pipeline, classifying it as the row's creation
+  # (:insert) or a write to an existing row (:update). Warning-grade: a bounded
+  # lookahead over literal `repo.`/`Repo.` call text, not full AST analysis.
+  defp classify_approval_write(lines, start_line_number) do
+    lines
+    |> Enum.slice(start_line_number, 8)
+    |> Enum.find_value(:unknown, fn line ->
+      cond do
+        Regex.match?(~r/\b(repo|Repo)\.insert!?\(/, line) -> :insert
+        Regex.match?(~r/\b(repo|Repo)\.update!?\(/, line) -> :update
+        true -> nil
+      end
+    end)
   end
 
   defp unique_tenant_id, do: "tenant-decided-#{System.unique_integer([:positive])}"

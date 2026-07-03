@@ -267,8 +267,20 @@ try do
     }
   ]
 
-  {expired_legacy_count, _} =
-    Repo.update_all(
+  # D-21: decided/expired fixtures route through the real `Workflows.approve/3`
+  # decision path (NOT `Repo.update_all(set: [status: ...])`) — only the real path
+  # emits the decision audit event and bumps `updated_at`, so only it exercises the
+  # real decision-history surface (decider + time, see approval_write_invariant_guard_test.exs).
+  expire_via_approve = fn query ->
+    query
+    |> Repo.all()
+    |> Enum.count(fn approval_id ->
+      match?({:ok, _approval}, Workflows.approve(approval_id, "expired"))
+    end)
+  end
+
+  expired_legacy_count =
+    expire_via_approve.(
       from(approval in Scoria.Observe.Approval,
         where:
           approval.tenant_id == ^tenant_id and approval.status == "pending" and
@@ -281,13 +293,13 @@ try do
             "ticket_id",
             ^SupportJourney.ticket_fixture()["id"]
           ),
-        where: is_nil(fragment("?->>?", approval.arguments, "seed_kind"))
-      ),
-      set: [status: "expired"]
+        where: is_nil(fragment("?->>?", approval.arguments, "seed_kind")),
+        select: approval.id
+      )
     )
 
-  {expired_previous_demo_count, _} =
-    Repo.update_all(
+  expired_previous_demo_count =
+    expire_via_approve.(
       from(approval in Scoria.Observe.Approval,
         where:
           approval.tenant_id == ^tenant_id and approval.status == "pending" and
@@ -298,9 +310,9 @@ try do
             approval.arguments,
             "seed_version",
             ^approval_seed_version
-          )
-      ),
-      set: [status: "expired"]
+          ),
+        select: approval.id
+      )
     )
 
   existing_seed_keys =
