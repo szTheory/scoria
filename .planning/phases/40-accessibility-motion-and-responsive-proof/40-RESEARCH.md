@@ -308,17 +308,19 @@ The `overrides` block is what actually satisfies D-05's "pin transitive `axe-cor
 
 **If this table is empty:** N/A — see rows above; all are HIGH-confidence findings from direct tool verification with only narrow, explicitly-scoped residual risk.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the D-19 motion guard allow-list by animation-name or by an explicit two-entry literal list?**
    - What we know: two exceptions exist today (`scoria-skeleton-pulse`, `scoria-approval-pulse`'s duration).
    - What's unclear: whether a future Phase-41-era third exception should extend an allow-list array or require a fresh red-team pass. Not a phase-40 blocker either way.
    - Recommendation: allow-list by `@keyframes`/animation **name**, not by matching the literal duration string — more resilient to a future duration edit on either exception.
+   - RESOLVED: Plan 40-02 (Task 1) implements the recommendation — the `motion_drift_guard_test.exs` allow-list is keyed on animation NAME (`scoria-skeleton-pulse`, `scoria-approval-pulse`), not on literal duration strings, so a future duration edit cannot silently defeat it.
 
 2. **Does the axe `rules: { 'target-size': { enabled: true } }` override need to also flow into the *curated real-page allow-list* scan (the eventual assert-zero surface), or only the report-only full-lab scan?**
    - What we know: D-06 says target-size stays report-only throughout Phase 40 regardless.
    - What's unclear: exact spec-file structure (one file with two `test.describe` blocks vs. two files) is Claude's Discretion; this only affects where the `rules` override needs to be threaded.
    - Recommendation: set the `rules` override once in a shared axe-run helper (e.g. `priv/dev/e2e/lib/axe.mjs`) that both the full-lab and curated-page scans import, so the override can't drift between the two.
+   - RESOLVED: Plan 40-01 (Task 2) creates the shared `priv/dev/e2e/lib/axe.mjs` helper that threads the tag list + target-size `rules` override ONCE; Plan 40-04 (Tasks 1 & 2) imports it for both the report-only full-lab scan and the curated assert-zero scan, so the override cannot drift between them.
 
 ## Sources
 
