@@ -137,7 +137,7 @@ Plans:
 4. Motion uses tokenized transform/opacity patterns, communicates state, and respects reduced motion.
 5. 320, 375, 768, 1024, 1440, and wide desktop widths show no clipped content, trapped scroll, squished essential columns, or floating controls covering navigation.
 
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 **Wave 1**
@@ -149,7 +149,7 @@ Plans:
 
 - [x] 40-03-PLAN.md — D-10 drawer/modal focus trap+restore fix + atomic drawer/modal keyboard specs (SC 2.4.11, live-patch collector)
 - [ ] 40-04-PLAN.md — axe WCAG 2.2 AA scan: report-only baseline (both themes) → curated assert-zero on real pages
-- [ ] 40-05-PLAN.md — Responsive proof (D-16 catalog, 6 widths) + reduced-motion e2e + 6-width screenshot evidence
+- [x] 40-05-PLAN.md — Responsive proof (D-16 catalog, 6 widths) + reduced-motion e2e + 6-width screenshot evidence
 
 ## Phase 41: Proof, Docs, And Regression Guardrails
 
