@@ -7,6 +7,7 @@ trigger_when: next milestone scoped as docs / DX / adoption / Hex-release readin
 scope: large
 enriched: 2026-07-03 (jargon catalog + szTheory blueprint + clean-spot diagnosis, from a 3-agent research session)
 enriched_2: 2026-07-03 (terminology benchmarked vs peer tools; maintainer chose FULL sense-aware rename — see Final Canonical Rename Map)
+enriched_3: 2026-07-03 (AI-eval posture audit added scope doctrine, persona strategy, differentiators + 5 docs deltas — see "Positioning & Scope Doctrine")
 ---
 
 # SEED-005: Documentation overhaul → clean Hex release
@@ -47,6 +48,43 @@ durable workflow state, human-in-the-loop approvals, and reviewer-visible traces
 adopting a black-box third-party agent platform. *Problem it solves:* AI features are
 normally opaque and hard to debug/audit/resume; Scoria gives one boring, inspectable way to
 start, resume, debug, and verify identity-aware AI work.
+
+## Positioning & Scope Doctrine (from 2026-07-03 eval-posture audit)
+
+A 6-agent adjudicated audit ([[SEED-006]]…[[SEED-011]]) validated Scoria's direction and produced
+the positioning spine the docs rewrite must carry. **Category story:** LangSmith/Langfuse/Phoenix/
+Braintrust all *observe* and are *a separate service you ship data to*; Scoria *governs inside the
+request path* as *an embedded dependency* — the record never leaves your Postgres and the guardrails
+actually stop things.
+
+**Scope doctrine (6 principles) — "Scoria owns the verb (record, gate, surface, reconstruct); the host
+owns the noun (identity, business truth, policy value, end-user)":**
+- P1 — Scoria owns the durable *record*; host owns business truth (reference by host ID).
+- P2 — Scoria owns the governance *mechanism* (budgets/breakers/gates/approvals); host supplies *policy values* via hooks. **Hooks, not opinions.**
+- P3 — Scoria owns the *reviewer/operator* surface (`/scoria`); host owns the *end-user* surface.
+- P4 — Identity/authz are *delegated by reference, never modeled*.
+- P5 — Everything persisted is reconstructable in the host's own Postgres/BEAM, **zero required egress** (anti-SaaS invariant).
+- P6 — Prefer BEAM-native primitives (Ecto/Oban/PubSub/OTP/Telemetry); don't re-implement platform infra.
+*(These belong in `.planning/PROJECT.md` as the decisions SSOT — add post-v3.3 to avoid the live-window collision; also flagged in [[SEED-006]].)*
+
+**Persona strategy:**
+- **CORE (first-class surface):** AI/product engineer, software architect, backend/platform, SRE/devops, reviewer/approver/operator, prompt-writers, eval-checkers, MCP-/workflow-configurers, model-pickers (mechanism only).
+- **ADJACENT (hooks/docs, no dedicated surface):** Trust & Safety, security engineer, privacy/legal/compliance (the 3 highest-leverage underserved), data scientist, domain expert, feature PM, support/CS.
+- **NOT-OURS (explicitly out of scope):** end user of the LLM flows, product designer of the host feature, finance/exec dashboards.
+
+**Differentiators to headline:** embedded-not-SaaS (data ownership by default); governance that *blocks*, not observability that watches; **lethal-trifecta-as-policy** (the flagship bet — [[SEED-010]]); BEAM-native durable runs + branch-and-replay.
+
+### 5 concrete docs deltas from the audit
+- **(a)** Add an adopter-facing **"What Scoria owns vs what your app owns"** table (the scope doctrine made concrete — this IS the "without guessing where Scoria begins" promise).
+- **(b)** Persona-scope "Who it's for" with an explicit **NOT-OURS** line (not for end users; not a FinOps/exec cost dashboard).
+- **(c)** Reframe Phase C's comparison page as **"Scoria vs hosted LLM-ops (LangSmith/Langfuse/Braintrust)"** — lead with embedded / governs-in-path / no-egress; honestly cede warehousing + cross-language + eval-leaderboards via OTel export.
+- **(d)** Governance value prop gets **teeth in paragraph one** (verb-forward: budgets/loops/breakers/tool-safety that *enforce*), and **headline the lethal-trifecta differentiator**: "the first embedded framework to enforce Meta's Rule-of-Two — when a run touches private data, untrusted content, and an exfil channel at once, it escalates to a human approver."
+- **(e)** `operator→reviewer` rename aligns with the persona doctrine; keep "operator/on-call" for the SRE *job*, use "reviewer" for the *persona*.
+
+**Direction note (sequencing):** the audit flagged that more dashboard polish is lower adoption-leverage
+than this docs work — the *front door* is the bottleneck. Recommend **this docs milestone be the next
+milestone after v3.3**, and note that the release cut (Phase E) is now **gated behind [[SEED-006]]** (P0
+trust/security fixes) — new order: SEED-006 → this docs milestone's clean-spot/release → publish.
 
 ## When to Surface
 
