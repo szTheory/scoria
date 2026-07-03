@@ -168,3 +168,63 @@ Plans:
 - Shipped **v2.17 Vesicle** - Phases 18-22, canonical brand system - 2026-06-11.
 
 See `.planning/MILESTONES.md` for full closeout history.
+
+## Backlog
+
+> Forward roadmap of planned milestones. Each item's full rationale, adjudicated verdicts, peer
+> precedent, and file breadcrumbs live in its backing seed under `.planning/seeds/` (see
+> `.planning/seeds/README.md` for the index + dependency graph). This section is the durable
+> recall surface: `/gsd-complete-milestone` preserves `## Backlog` verbatim across milestone
+> rewrites, so it survives context clears. Promote items one at a time via `/gsd-review-backlog`
+> or scope them directly in `/gsd-new-milestone`.
+
+### Planned milestone order
+
+Sequenced (dependency + priority). Order was set by a 2026-07-03 AI-eval posture audit
+(6-agent adjudication vs LangSmith/Langfuse/Phoenix/Ragas/Braintrust/Inspect/OTel). Cadence
+decision: **P0 fixes → docs/positioning → feature milestones**, each feature milestone
+interleaving its own feature docs + a release as it lands.
+
+1. **999.1 → SEED-006 — Pre-1.0 Trust & Security Hardening**  🔴 **[P0 · GATES THE NEXT HEX RELEASE]**
+   Fix 3 live bugs in shipped 0.1.2: eval fail-open (fake-green scorers + judge grades
+   expected-vs-expected + decorative release gate), knowledge cross-tenant retrieval leak,
+   dashboard auth bypass; + correctness bugs (fake-cosine score_chunk, citation_presence
+   abstention penalty, chunker overlap no-op, latency-vs-0). The pending 0.1.3 release PR (#12)
+   is held until this lands. → see `SEED-006`.
+2. **999.2 → SEED-005 — Documentation & Positioning overhaul**  (adoption bottleneck; the *front door*)
+   STABLE docs only (terminology sense-aware rename, scope-doctrine + owns-vs-delegates table,
+   ExDoc grouping, glossary, README first-screen) + the honest release cut (gated on 999.1).
+   Feature-specific guides are interleaved into the build milestones below, NOT pre-written here.
+   → see `SEED-005`.
+3. **999.3 → SEED-007 — Trace Foundation (OTel-GenAI / OpenInference interop)**  (foundational for eval attribution)
+   Semconv as a naming convention over the existing attrs map (not a schema rewrite) + span_kind +
+   model config + structured spans/events + RETRIEVER span + README claim fix. → see `SEED-007`.
+4. **999.4 → SEED-010 — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR]**
+   Content trust tiers + spotlighting + tool-declared trifecta classification + confluence
+   escalation policy (Meta Rule-of-Two) + moderation/output hooks + SECURITY-BOUNDARY.md. No peer
+   ships this as a runtime seam; Scoria is 2/3 built. Sequence early (after 006 + 007). → see `SEED-010`.
+5. **999.5 → SEED-008 — Trustworthy Eval Depth**  (after 006 + 007)
+   Real scorer library + regression-comparison engine + judge calibration (the unique join Scoria
+   already captures but discards) + versioned rubric + typed risk/intent taxonomy slots. → see `SEED-008`.
+6. **999.6 → SEED-009 — Retrieval Eval Depth & Seams**  (after 006)
+   precision@k/NDCG/abstention/staleness (model-free, Scoria-owned) + faithfulness/rerank as
+   host-supplied hooks (no model in-lib) + tiny gold set. → see `SEED-009`.
+7. **999.7 → SEED-011 — Privacy & Feedback Governance**
+   Trace/memory retention/TTL/purge + right-to-erasure (Scoria owns the tables → owns deletion) +
+   PII masking contract + regex pack + human-feedback capture → flywheel + memory forget/expire.
+   Unblocks the currently-unserved privacy/legal/compliance persona. → see `SEED-011`.
+
+### Carried-forward deferred work (pre-audit)
+
+- **SEED-004 — Test-code determinism** (async `IntegrationCase`, remove `Process.sleep`→`eventually/2`,
+  raise shard count). Deferred at v3.1 close; leading pre-audit next-milestone candidate. *(No seed
+  file on disk — tracked only here + STATE.md Deferred Items.)*
+- **FLEET-01** — migrate sibling repos onto the shared Traefik + unpublished-DB standard. Deferred v3.2.
+- **FLEET-02** — `make nuke-all` fleet-wide teardown (high blast radius). Deferred v3.2.
+
+### Post-v3.3 housekeeping follow-ups (do when the v3.3 window is idle — collision-avoidance)
+
+- Record the 6-principle **scope doctrine** (Scoria owns the verb; host owns the noun — P1–P6,
+  detailed in `SEED-005` / `SEED-006`) into `PROJECT.md` `## Key Decisions` + `## Constraints`.
+- Clean up `STATE.md` `## Deferred Items` (currently corrupted with stray per-plan metric rows) and
+  add rows for SEED-005…011 so STATE.md's deferred view matches this Backlog.

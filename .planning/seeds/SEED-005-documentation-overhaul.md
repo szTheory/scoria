@@ -108,6 +108,25 @@ maintainer/design-system docs** (BEM/tokens/headers/overlays/fixtures/motion/a11
 proof). **Do not duplicate or collide.** If v3.3 has shipped by the time this surfaces,
 verify what Phase 41 actually produced and build on it rather than redoing it.
 
+## Docs sequencing & interleaving (reconciled with the eval-posture roadmap, 2026-07-03)
+
+This milestone ships ONLY the **stable adopter docs** that don't go stale as [[SEED-006]]…[[SEED-011]]
+build features. **Feature-specific docs are interleaved** — written as each feature lands, and they
+already live as doc-deltas INSIDE their build seeds. Do NOT pre-write feature guides here (that was the
+obsolescence risk).
+
+- **STABLE — in scope for this milestone (Phases A–D below):** terminology sense-aware rename, README
+  first-screen + plain-English what/who/why, the **owns-vs-delegates / scope-doctrine** table + persona
+  NOT-OURS line + the "vs hosted LLM-ops" comparison reframe (the 5 audit deltas above), ExDoc
+  grouping/structure, glossary, curated `llms.txt`. These are the adoption bottleneck; independent of
+  feature build order.
+- **BUILD-DEPENDENT — write in the owning build milestone, NOT here:** RAG eval guide → [[SEED-009]];
+  tool/trifecta governance + `SECURITY-BOUNDARY.md` → [[SEED-010]] (+ [[SEED-006]]); the
+  "OpenInference-compatible" trace claim (only flip it once true) → [[SEED-007]]; retention/feedback/
+  privacy guides → [[SEED-011]]; the "trustworthy eval" story → [[SEED-006]]/[[SEED-008]].
+- **Release cut (Phase E) is GATED behind [[SEED-006]]** (P0 trust/security fixes). Cadence:
+  SEED-006 → this docs milestone + release cut → feature milestones.
+
 ## Proposed Milestone Phase Breakdown (draft for `/gsd-new-milestone`)
 
 - **Phase A — Terminology rename + first-screen clarity.** Execute the **Final Canonical
@@ -129,21 +148,25 @@ verify what Phase 41 actually produced and build on it rather than redoing it.
   `formatters: ["html","markdown"]`. Add `docs --warnings-as-errors` to the `ci:` alias so
   broken cross-links fail CI. *(Today `mix.exs` docs/0 ≈ lines 123–141 has none of this →
   ~200 modules + 9 guides render as one flat, ungrouped sidebar.)*
-- **Phase C — Guides restructure (Diátaxis).** Reshape `docs/`/`guides/` into
+- **Phase C — Guides restructure (Diátaxis) — STABLE guides only.** Reshape `docs/`/`guides/` into
   `introduction/ flows/ reference/ recipes/` (+ `recipes/companion-libs/` cross-linking sibling
-  szTheory libs). Add the missing archetypes: getting-started, golden-path,
-  jtbd-and-user-flows, troubleshooting, production-checklist, a **comparison-vs-alternative**
-  page, and a `cheatsheet.cheatmd`. **Wire the currently-unexplained LLM-integration story:**
-  how you actually make a model call, where `req_llm` fits, what "OpenInference-style trace
-  capture" means, what MCP governance does.
+  szTheory libs). Add the **stable** archetypes: getting-started, golden-path, jtbd-and-user-flows,
+  troubleshooting, a **comparison-vs-alternative** page (the "vs hosted LLM-ops" reframe from delta c),
+  and a `cheatsheet.cheatmd`. Explain the *stable* LLM-integration basics (how you make a model call,
+  where `req_llm` fits, what MCP governance does at a high level).
+  **DEFER to build milestones (don't write here):** the RAG eval guide ([[SEED-009]]), the security/
+  trifecta guide + `SECURITY-BOUNDARY.md` ([[SEED-010]]), the retention/privacy/feedback guides
+  ([[SEED-011]]), the production-hardening checklist (depends on 010/011), and the
+  "OpenInference-compatible" trace-capture claim — only assert it once [[SEED-007]] makes it true
+  (until then use the softened wording from README delta, per [[SEED-007]]).
 - **Phase D — AI-accessibility surface (first-class goal).** Author a **curated root
   `llms.txt`** (public facade + guides index — NOT the auto-generated `doc/llms.txt` build
   artifact) and/or an `AGENTS.md`, so the library is genuinely LLM-navigable. The Phase A
   glossary doubles as grounding here.
-- **Phase E — Clean spot & release.** Resolve the release blockers (below) → green; push /
-  reconcile the unpushed `main` commits; prune stale branches; confirm green main CI; cut the
-  next Hex release via release-please. The `bootstrap-elixir-hex-lib` skill codifies this
-  pipeline.
+- **Phase E — Clean spot & release. ⛔ GATED behind [[SEED-006]] (P0 trust/security fixes) — do NOT
+  publish before 006 lands.** Resolve the release blockers (below) → green; push / reconcile the
+  unpushed `main` commits; prune stale branches; confirm green main CI; cut the next Hex release via
+  release-please. The `bootstrap-elixir-hex-lib` skill codifies this pipeline.
 
 ## szTheory Docs Blueprint (breadcrumbs — what "best-in-class" looks like)
 
