@@ -4,13 +4,13 @@ milestone: v3.3
 milestone_name: Design System Stress Test
 status: executing
 stopped_at: Phase 39 context gathered
-last_updated: "2026-07-03T09:08:45.653Z"
+last_updated: "2026-07-03T09:20:22.859Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 19
-  completed_plans: 14
+  completed_plans: 15
   percent: 50
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 39 (component-groups-and-operator-flows) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 Status: Ready to execute
 Last activity: 2026-07-03
 
@@ -85,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase 39-02]: Each per-domain copy module pairs a raw-value operator-label function (the literal offender fix, e.g. ConnectorCopy.runtime_status_label/1, ReviewCopy.status_label/1) with a record-branching orientation/1 function, satisfying D-24c in one module; wiring into the actual LiveView offenders is deferred to Plans 04/05.
 - [Phase 39]: 39-03: decision_receipt/3 reuses decision_outcome/1 internally so "Denied" (D-24d) has exactly one literal source; expired receipts may show a real audit-event time but never a fabricated actor.
 - [Phase 39]: 39-03: the D-20 write-invariant guard allow-lists exactly two Approval.changeset(...) update! call sites by {file,line} (creation-time audit_outbox_event_id backfill; the decision write inside approve/3), verified via a full-repo grep.
+- [Phase ?]: 39-04: prompt_live has no name field on PromptTemplate (verified schema/migration/dev_seed) — led title/column with the domain noun 'Prompt' + <.id> evidence for entity_id instead of fabricating a name or adding a schema column.
+- [Phase ?]: 39-04: coming_soon_live not-found branch uses page_header/1 + empty_state/1 rather than stub_page/1, since stub_page's Soon badge/works_today fields misrepresent a missing (not future) capability.
 
 ### Pending Todos
 
@@ -134,9 +136,10 @@ None at milestone start.
 | Phase 39 P01 | 15min | 2 tasks | 2 files |
 | Phase 39 P02 | 15min | 2 tasks | 6 files |
 | Phase 39 P03 | 20min | 3 tasks | 5 files |
+| Phase 39 P04 | 15min | 3 tasks | 6 files |
 
 ## Session Continuity
 
-Last session: 2026-07-03T09:07:27.421Z
+Last session: 2026-07-03T09:18:34.922Z
 Stopped at: Phase 39 context gathered
 Resume file: None
