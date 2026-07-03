@@ -2,15 +2,17 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: window is idle — collision-avoidance)
+current_phase: 40
+current_phase_name: accessibility-motion-and-responsive-proof
 status: executing
 stopped_at: Completed 40-02-PLAN.md
-last_updated: "2026-07-03T16:48:07.704Z"
+last_updated: "2026-07-03T17:48:02.048Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 24
-  completed_plans: 21
+  completed_plans: 22
   percent: 67
 ---
 
@@ -27,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 40 (accessibility-motion-and-responsive-proof) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-07-03
 
@@ -100,6 +102,11 @@ Recent decisions affecting current work:
 - [Phase ?]: axe.mjs calls .options({rules}) before .withTags(WCAG_TAGS) -- AxeBuilder#options() replaces the whole option object while #withTags() only merges runOnly, so the reverse order would silently drop the tag filter
 - [Phase 40]: 40-02: motion guard allow-lists scoria-skeleton-pulse and scoria-approval-pulse by animation NAME (not literal duration string) so a future duration edit on either D-20/D-21 exception can't silently defeat it; a dedicated test asserts both names are present to catch the false-RED-from-allow-listing-only-one risk.
 - [Phase 40]: 40-02: a11y guard's dialog check asserts role=dialog + aria-modal=true pairing only (not phx-key=Escape presence), since the mobile-nav drawer and shortcuts overlay are JS-hook-driven with no phx-key attribute at all; and its filter-controls check is scoped to the <:filter> slot only, not the table's th phx-click sort trigger (not literally a button today) — asserting the stricter claim would false-RED the already-green baseline.
+- [Phase 40]: 40-03: phx-remove={JS.pop_focus()} on the outer overlay shell (not wrapping on_dismiss) centralizes restore-on-close for drawer/modal without touching any existing on_dismiss string attribute -- keeps ui_component_test.exs literal-string assertions green.
+- [Phase 40]: 40-03: removed modal/1's old bare autofocus in favor of phx-mounted={JS.focus_first()} on focus_wrap -- one canonical tab-in mechanism shared by modal/1 and drawer/1.
+- [Phase 40]: 40-03: added JS.push_focus() at workflow_detail_panel_component.ex's promote-modal opener though that file wasn't in files_modified -- required so restore doesn't land on <body>.
+- [Phase 40]: 40-03: dataset_live/index.ex's promote drawer has no local opener (cross-page URL-param driven) -- trap/tab-in still applies via ui.ex, restore-to-cross-page-trigger is an accepted, documented scope boundary.
+- [Phase 40]: 40-03: D-13's live-patch collector uses a real cross-tab approval decision (no synthetic patch is reachable via the UI); bumped mix scoria.ui.e2e's pending-approval floor 5->10 to give the shared fixture pool headroom.
 
 ### Pending Todos
 
@@ -136,9 +143,10 @@ None at milestone start.
 | Phase 39 P08 | 48min | 3 tasks | 8 files |
 | Phase 40 P01 | 3min | 3 tasks | 4 files |
 | Phase 40 P02 | 25min | 2 tasks | 2 files |
+| Phase 40 P03 | 50min | 3 tasks | 13 files |
 
 ## Session Continuity
 
-Last session: 2026-07-03T16:48:07.700Z
+Last session: 2026-07-03T17:45:16.546Z
 Stopped at: Completed 40-02-PLAN.md
 Resume file: None
