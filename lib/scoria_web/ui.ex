@@ -48,11 +48,36 @@ defmodule ScoriaWeb.UI do
 
   def tone(_), do: :neutral
 
-  @doc "Human label for a status string (title-cased, underscores → spaces)."
+  @doc """
+  Human label for a status string (curated D-25 operator vocabulary, falling back to
+  a title-cased/underscore-to-space transform for anything not curated).
+
+  ADDITIVE upgrade (D-24a): curated clauses sit above the generic fallback and the
+  generic fallback + `"Unknown"` catch-all are retained deliberately — this function
+  is the atom fallback inside `evidence_text/1` and `object_header/1` across ≥6
+  disjoint domains, so a closed allow-list would raise `FunctionClauseError` inside
+  `render/1` on any unseen status (a page-500). Does NOT curate `"rejected"` — the
+  operator word "Denied" is approval-domain only (D-24d, `ApprovalCopy.decision_outcome/1`).
+  """
   def status_label(status) when is_atom(status), do: status |> Atom.to_string() |> status_label()
 
   def status_label(status) when is_binary(status) do
-    status |> String.replace("_", " ") |> String.capitalize()
+    case status do
+      "pending" -> "Pending"
+      "approved" -> "Approved"
+      "expired" -> "Expired"
+      "passed" -> "Passed"
+      "failed" -> "Failed"
+      "regressed" -> "Regressed"
+      "running" -> "Running"
+      "promoted" -> "Promoted"
+      "draft" -> "Draft"
+      "published" -> "Published"
+      "connected" -> "Connected"
+      "disconnected" -> "Disconnected"
+      "idle" -> "Idle"
+      _ -> status |> String.replace("_", " ") |> String.capitalize()
+    end
   end
 
   def status_label(_), do: "Unknown"
