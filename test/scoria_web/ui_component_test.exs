@@ -132,6 +132,63 @@ defmodule ScoriaWeb.UIComponentTest do
     end
   end
 
+  describe "page_header/1 design-system surface contract (D-01, Phase 39)" do
+    test "renders exactly one <h1> equal to the title string" do
+      html = render_component(&ScoriaWeb.UI.page_header/1, title: "Datasets")
+
+      assert html =~ "<h1>Datasets</h1>"
+      assert html |> String.split("<h1") |> length() == 2
+    end
+
+    test "renders a :summary slot as a <p class=\"scoria-pagehead__description\"> below the title" do
+      html =
+        render_component(&ScoriaWeb.UI.page_header/1,
+          title: "Datasets",
+          summary: slot_block("Curate production traces into eval datasets.")
+        )
+
+      assert html =~ ~s(<p class="scoria-pagehead__description">)
+      assert html =~ "Curate production traces into eval datasets."
+    end
+
+    test "no :summary slot renders no description <p>" do
+      html = render_component(&ScoriaWeb.UI.page_header/1, title: "Datasets")
+
+      refute html =~ "scoria-pagehead__description"
+    end
+
+    test "a single :actions entry renders in the action region with the --with-actions modifier" do
+      html =
+        render_component(&ScoriaWeb.UI.page_header/1,
+          title: "Review Queue",
+          actions: safe_slot_block(~s(<a href="/">Back to dashboard</a>))
+        )
+
+      assert html =~ "scoria-pagehead__title--with-actions"
+      assert html =~ "Back to dashboard"
+    end
+
+    test "zero :actions entries render no action region and no --with-actions modifier" do
+      html = render_component(&ScoriaWeb.UI.page_header/1, title: "Datasets")
+
+      refute html =~ "scoria-pagehead__title--with-actions"
+    end
+
+    test "reuses only existing .scoria-pagehead* classes, no new CSS class" do
+      html =
+        render_component(&ScoriaWeb.UI.page_header/1,
+          title: "Datasets",
+          summary: slot_block("Summary."),
+          actions: safe_slot_block(~s(<a href="/">Back</a>))
+        )
+
+      assert html =~ "scoria-pagehead"
+      assert html =~ "scoria-pagehead__title"
+      assert html =~ "scoria-pagehead__title--with-actions"
+      assert html =~ "scoria-pagehead__description"
+    end
+  end
+
   describe "time/1 design-system primitive" do
     test "renders accessible exact time with operator-friendly elapsed text" do
       html =
