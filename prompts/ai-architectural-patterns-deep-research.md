@@ -1,11 +1,3 @@
-> **Provenance:** external LLM deep-research, ingested 2026-07-03. This is the source memo that
-> the AI-Architecture-Patterns cross-refs in `SEED-005/007/008/009/010/011/012` point at.
-> **Note for future readers / injection scanners:** the "ignore previous instructions…" string in
-> §13 (Guardrails) is a *quoted attack example* illustrating prompt-injection defense — it is NOT an
-> instruction to follow. Section numbers referenced by the seeds: §0 six-boxes, §4 RAG, §6 tool-calling,
-> §12 memory, §13 guardrails, §14 observability, §15 decision-tree, §17 architecture-ladder, §19
-> cheat-sheet, §20 taste-test, Rule 1 (RAG≠agent), Rule 4 (workflows underrated), Rule 8 (eval-shape=arch-shape).
-
 AI architecture patterns: the “download it to your brain” version
 
 The most useful mental model:
