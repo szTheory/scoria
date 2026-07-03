@@ -12,6 +12,8 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
   @filter_fields ~w(actor_id session_id status tenant_id tool_name workflow_run_id replay_scope)a
   @preview_max_keys 10
   @preview_max_chars 512
+  @decided_statuses ~w(approved rejected expired)
+  @decided_default_limit 50
 
   def list_pending_approvals(filters \\ %{}) do
     filters = normalize_filters(filters)
@@ -20,6 +22,30 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
     |> where([approval], approval.status == "pending")
     |> apply_filters(filters)
     |> order_by([approval], desc: approval.inserted_at, desc: approval.id)
+    |> Repo.all()
+    |> Enum.map(&project_approval/1)
+  end
+
+  @doc """
+  Bounded, filterable decided-approval history (D-20). Mirrors
+  `list_pending_approvals/1` exactly, swapping only the `where` scope and adding a
+  cap (capped + load-more per D-10).
+
+  The `desc updated_at, desc id` order is a cheap query-level PROXY sort only —
+  the *displayed* decided-at/decider comes from the decision `AuditOutboxEvent`
+  (Plan 07), not from this timestamp.
+  """
+  def list_decided_approvals(filters \\ %{}) do
+    {limit, filters} =
+      filters
+      |> normalize_filters()
+      |> Map.pop(:limit, @decided_default_limit)
+
+    Approval
+    |> where([approval], approval.status in @decided_statuses)
+    |> apply_filters(filters)
+    |> order_by([approval], desc: approval.updated_at, desc: approval.id)
+    |> limit(^limit)
     |> Repo.all()
     |> Enum.map(&project_approval/1)
   end

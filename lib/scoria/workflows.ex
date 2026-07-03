@@ -45,6 +45,9 @@ defmodule Scoria.Workflows do
   def list_pending_approvals(filters \\ %{}),
     do: RemoteApprovalProjection.list_pending_approvals(filters)
 
+  def list_decided_approvals(filters \\ %{}),
+    do: RemoteApprovalProjection.list_decided_approvals(filters)
+
   def get_approval_lineage!(approval_id),
     do: RemoteApprovalProjection.get_approval_lineage!(approval_id)
 
