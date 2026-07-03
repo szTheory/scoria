@@ -140,8 +140,13 @@ Plans:
 **Plans:** 5 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 40-01-PLAN.md — Shared e2e infra: @axe-core/playwright pin + overrides, boxesIntersect + axe-run helpers, gap register scaffold
 - [ ] 40-02-PLAN.md — Browserless source-scan guards: motion tokenization/keyframe guard + a11y structural-presence guard
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 40-03-PLAN.md — D-10 drawer/modal focus trap+restore fix + atomic drawer/modal keyboard specs (SC 2.4.11, live-patch collector)
 - [ ] 40-04-PLAN.md — axe WCAG 2.2 AA scan: report-only baseline (both themes) → curated assert-zero on real pages
 - [ ] 40-05-PLAN.md — Responsive proof (D-16 catalog, 6 widths) + reduced-motion e2e + 6-width screenshot evidence
