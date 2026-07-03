@@ -111,35 +111,15 @@ None at milestone start.
 | Fleet targets | FLEET-02: `make nuke-all` fleet-wide teardown (high blast radius) | Deferred | v3.2 out-of-scope |
 | v3.0 gaps | Phase 13/14 verification-doc gaps (functional: 0 unsatisfied; 10 partials are proof-only) | Deferred | v3.0 close |
 | Release | Publish 0.1.1 → superseded by 0.1.2 in Phase 35 | Absorbed into REL-01 | v3.2 REL |
-| Phase 30 P01 | 319 | 2 tasks | 2 files |
-| Phase 32 P01 | 18 min | 2 tasks | 5 files |
-| Phase 32 P02 | 10 min | 1 task | 4 files |
-| Phase 33 P01 | 18min | 2 tasks | 1 files |
-| Phase 33 P02 | 12min | 2 tasks | 5 files |
-| Phase 33 P03 | 14min | 3 tasks | 9 files |
-| Phase 33 P04 | 28min | 3 tasks | 11 files |
-| Phase 34 P01 | 3 min | 2 tasks | 1 files |
-| Phase 34 P02 | 4 min | 2 tasks | 2 files |
-| Phase 34 P03 | 2 min | 1 tasks | 1 files |
-| Phase 35 P01 | 14 min | 2 tasks | 3 files |
-| Phase 35 P02 | 30 min | 3 tasks | 18 files |
-| Phase 35 P03 | 48 min | 3 tasks | 6 files |
-| Phase 36 PP01 | 5 min | 2 tasks | 3 files |
-| Phase 36 PP02 | 9min | 2 tasks | 3 files |
-| Phase 37 P01 | 21min | 3 tasks | 6 files |
-| Phase 37 P02 | 35min | 2 tasks | 2 files |
-| Phase 37 P03 | ~30min | 2 tasks | 2 files |
-| Phase 37 P04 | ~15min | 2 tasks | 2 files |
-| Phase 37 P05 | 25min | 2 tasks | 2 files |
-| Phase 37 P06 | 55min | 2 tasks | 3 files |
-| Phase 38 P01 | 32min | 3 tasks | 5 files |
-| Phase 38 P02 | 20min | 3 tasks | 4 files |
-| Phase 38 P03 | 15min | 2 tasks | 1 files |
-| Phase 39 P01 | 15min | 2 tasks | 2 files |
-| Phase 39 P02 | 15min | 2 tasks | 6 files |
-| Phase 39 P03 | 20min | 3 tasks | 5 files |
-| Phase 39 P04 | 15min | 3 tasks | 6 files |
-| Phase 39 P05 | 30min | 3 tasks | 5 files |
+| Trust/security P0 | SEED-006: eval fail-open, knowledge cross-tenant leak, dashboard auth bypass — **GATES next Hex release** | Deferred | 2026-07-03 eval-posture audit |
+| Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt | Deferred | 2026-07-03 audit |
+| Observability | SEED-007: OTel-GenAI/OpenInference trace foundation | Deferred | 2026-07-03 audit |
+| Eval depth | SEED-008: real scorers, judge calibration, regression comparison | Deferred | 2026-07-03 audit |
+| RAG depth | SEED-009: precision/NDCG/abstention/staleness + faithfulness/rerank hooks | Deferred | 2026-07-03 audit |
+| Agent security | SEED-010: lethal-trifecta governance (⭐ flagship differentiator) | Deferred | 2026-07-03 audit |
+| Privacy/feedback | SEED-011: retention/purge, PII masking hook, human-feedback flywheel | Deferred | 2026-07-03 audit |
+
+> **Ordered roadmap + dependencies** for SEED-005…011 live in `ROADMAP.md` `## Backlog` (999.1–999.7); "why" index in `.planning/seeds/README.md`. Stray per-plan timing rows that previously polluted this table were removed 2026-07-03 (canonical per-plan metrics live in the phase manifests).
 
 ## Session Continuity
 
