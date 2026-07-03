@@ -10,7 +10,7 @@
 // Prerequisites (owned by `mix scoria.ui.e2e` caller / CI):
 //   make dev           # serves the dashboard at PLAYWRIGHT_BASE_URL
 //
-// Fixture note: mix scoria.ui.e2e tops up 5 pending approvals for tenant
+// Fixture note: mix scoria.ui.e2e tops up 10 pending approvals for tenant
 // "acme-corp" before Playwright starts (via mark_waiting_for_approval on a
 // non-queued step). Each approval decision is destructive, so the toast specs run
 // serially with no retries.
@@ -35,11 +35,11 @@ async function openDecisionModal(page, decision) {
   await waitForReady(page);
 
   const drawerDecision = page.locator(
-    `#approval-detail-drawer button[phx-click="open_decision_modal"][phx-value-decision="${decision}"]`
+    `#approval-detail-drawer button[phx-value-decision="${decision}"]`
   );
 
   if ((await drawerDecision.count()) === 0) {
-    const trigger = page.locator('button[phx-click="select_approval"]').first();
+    const trigger = page.getByRole('button', { name: 'Inspect approval' }).filter({ visible: true }).first();
     await expect(
       trigger,
       'expected a seeded pending approval in the inbox (mix dev.setup applies dev_seed.exs)'

@@ -157,7 +157,7 @@ test.describe('Phase 39 — approval drawer decision-first (FLOW-03, D-12..D-16)
   }) => {
     await goto(page, '/approvals');
 
-    const trigger = page.locator('button[phx-click="select_approval"]').first();
+    const trigger = page.getByRole('button', { name: 'Inspect approval' }).filter({ visible: true }).first();
     await expect(
       trigger,
       'expected a seeded pending approval in the inbox (mix scoria.ui.e2e tops up fixtures)'
@@ -207,7 +207,7 @@ test.describe('Phase 39 — Pending|Decided scope + decided receipt + deep-link 
     }) => {
       await goto(page, '/approvals');
 
-      const trigger = page.locator('button[phx-click="select_approval"]').first();
+      const trigger = page.getByRole('button', { name: 'Inspect approval' }).filter({ visible: true }).first();
       await expect(
         trigger,
         'expected a seeded pending approval in the inbox (mix scoria.ui.e2e tops up fixtures)'
@@ -215,7 +215,7 @@ test.describe('Phase 39 — Pending|Decided scope + decided receipt + deep-link 
       await trigger.click();
 
       const drawerApprove = page.locator(
-        '#approval-detail-drawer button[phx-click="open_decision_modal"][phx-value-decision="approve"]'
+        '#approval-detail-drawer button[phx-value-decision="approve"]'
       );
       await expect(drawerApprove).toBeVisible();
       await drawerApprove.click();
@@ -228,7 +228,7 @@ test.describe('Phase 39 — Pending|Decided scope + decided receipt + deep-link 
       );
 
       await goto(page, '/approvals?scope=decided');
-      const decidedRow = page.locator('button[phx-click="select_approval"]').first();
+      const decidedRow = page.getByRole('button', { name: 'View decision' }).filter({ visible: true }).first();
       await expect(
         decidedRow,
         'expected the just-decided approval to appear in the Decided scope'

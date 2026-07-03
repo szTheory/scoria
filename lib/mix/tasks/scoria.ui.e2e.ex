@@ -49,7 +49,15 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
 
   import Ecto.Query, only: [from: 2]
 
-  @pending_approval_floor 5
+  # Bumped from 5 (Phase 12) to 10 in Phase 40: drawer_focus.spec.mjs's D-13
+  # live-patch collector adds one more destructive decision to the shared
+  # tenant-scoped pool, and the full e2e lane runs multiple spec files
+  # concurrently (Playwright's default worker parallelism) — uat.spec.mjs
+  # (3 decisions), ia_orientation.spec.mjs (1 decision), and drawer_focus's
+  # D-13 collector (up to 1 decision) all race over the same floor. A floor
+  # of 5 left no safety margin, occasionally starving a concurrently-running
+  # spec of a pending row mid-interaction.
+  @pending_approval_floor 10
   @switches [base_url: :string, url: :string, seed_approvals: :boolean]
 
   @impl Mix.Task
