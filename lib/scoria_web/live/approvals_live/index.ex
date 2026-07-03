@@ -152,12 +152,21 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
           <p class="scoria-approval-summary__effect">{ApprovalCopy.impact(@active_approval)}</p>
 
-          <div class="scoria-approval-actions" aria-label="Approval actions">
+          <div
+            :if={!decided?(@active_approval)}
+            class="scoria-approval-actions"
+            aria-label="Approval actions"
+          >
+            <%!-- D-15: Deny is the safe, reversible hold — it keeps the run
+                  paused, nothing irreversible happens. Approve is the
+                  irreversible action, so it alone carries --primary emphasis;
+                  Deny stays neutral/ghost rather than --danger so red chrome
+                  isn't mistaken for the higher-risk choice. --%>
             <button
               type="button"
               phx-click="open_decision_modal"
               phx-value-decision="reject"
-              class="scoria-button scoria-button--danger"
+              class="scoria-button scoria-button--ghost"
             >
               {ApprovalCopy.reject_label(@active_approval)}
             </button>
@@ -227,19 +236,25 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         </.evidence_action_row>
       </.drawer>
 
-      <.modal id="approval-decision-modal" show={@decision_modal != nil} on_dismiss="close_decision_modal">
+      <.modal
+        id="approval-decision-modal"
+        show={@decision_modal != nil && !decided?(@active_approval)}
+        on_dismiss="close_decision_modal"
+      >
         <:title_slot>{ApprovalCopy.decision_title(@decision_modal, @active_approval)}</:title_slot>
         <.badge tone={decision_tone(@decision_modal)} label={decision_badge(@decision_modal)} dot={false} />
-        <p>{ApprovalCopy.decision_copy(@decision_modal, @active_approval)}</p>
+        <p>{decision_confirm_copy(@decision_modal, @active_approval)}</p>
         <:footer>
           <button type="button" phx-click="close_decision_modal" class="scoria-button scoria-button--ghost">
             Keep reviewing
           </button>
+          <%!-- D-15: Deny stays neutral/ghost here too — see the drawer action
+                comment above for the risk-gradient rationale. --%>
           <button
             :if={@decision_modal == "reject"}
             type="button"
             phx-click="reject"
-            class="scoria-button scoria-button--danger"
+            class="scoria-button scoria-button--ghost"
           >
             {ApprovalCopy.reject_label(@active_approval)}
           </button>
@@ -439,4 +454,31 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   defp run_href(_base_path, nil), do: nil
   defp run_href(base_path, run_id), do: base_path <> "/workflows/#{run_id}"
+
+  # D-19: positive-whitelist predicate — only these three statuses are
+  # decided. Fails safe (mirrors the server's :not_pending/StaleEntryError
+  # guard in `approval_error_message/2` above): anything else (including a
+  # missing status) is treated as NOT decided, so the action section +
+  # confirm modal keep rendering rather than silently hiding a genuinely
+  # pending approval.
+  defp decided?(%{status: status}) when is_binary(status),
+    do: status in ~w(approved rejected expired)
+
+  defp decided?(_approval), do: false
+
+  # D-15/D-27: the concrete irreversible-effect magnitude (impact_lead/1)
+  # reused for both approve and deny confirms, so a Deny confirm also shows
+  # the operator what is at stake — this is what makes the two-step confirm
+  # earn its friction instead of restating the title. Never claims resume/
+  # side-effect success; the trailing clause only describes what Scoria does
+  # with the DECISION itself (records it, then either continues or holds).
+  defp decision_confirm_copy("approve", approval) do
+    "#{ApprovalCopy.impact_lead(approval)} Scoria records the decision, then continues the run."
+  end
+
+  defp decision_confirm_copy("reject", approval) do
+    "#{ApprovalCopy.impact_lead(approval)} Scoria records the decision; the run stays paused until approved."
+  end
+
+  defp decision_confirm_copy(_decision, _approval), do: nil
 end

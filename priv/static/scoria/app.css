@@ -1276,109 +1276,38 @@
     gap: var(--scoria-space-3);
   }
 
-  .scoria-approval-summary {
-    border: 1px solid var(--scoria-tone-warn-border);
-    border-radius: var(--scoria-radius-md);
-    background:
-      linear-gradient(135deg, var(--scoria-tone-warn-bg), transparent 72%),
-      var(--scoria-surface-panel-raised);
-    padding: var(--scoria-space-4);
-  }
-
-  .scoria-approval-summary__label {
-    color: var(--scoria-tone-warn-fg);
-    font-size: var(--scoria-fs-label);
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    margin-bottom: var(--scoria-space-2);
-    text-transform: uppercase;
-  }
-
+  /* D-13 de-alarm: the .scoria-approval-summary warn-bordered/gradient card
+     and its uppercase .scoria-approval-summary__label are deleted — status is
+     stated once via the badge; salience lives in the exact-magnitude
+     consequence line below, not red chrome. */
   .scoria-approval-summary__effect {
     color: var(--scoria-text);
     line-height: var(--scoria-lh-body);
     text-wrap: pretty;
   }
 
+  /* D-12: sticky-BOTTOM action footer (not sticky-top) — the actions sit
+     directly under the consequence in reading flow; sticking them to the
+     bottom keeps Deny/Approve reachable without a scroll-jacking top bar. */
   .scoria-approval-actions {
     position: sticky;
-    top: 0;
+    bottom: 0;
     z-index: var(--scoria-z-sticky);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--scoria-space-2);
-    border-bottom: 1px solid var(--scoria-border);
-    background:
-      linear-gradient(180deg, var(--scoria-surface-panel-raised), color-mix(in srgb, var(--scoria-surface-panel-raised) 92%, transparent));
+    border-top: 1px solid var(--scoria-border);
+    background: var(--scoria-surface-panel-raised);
     padding-block: var(--scoria-space-3);
   }
 
-  .scoria-approval-decision__audit {
-    color: var(--scoria-text-muted);
-    font-size: var(--scoria-fs-label);
-    line-height: var(--scoria-lh-body);
-    text-wrap: pretty;
-  }
+  /* D-16 dedup: the drawer audit line (.scoria-approval-decision__audit) is
+     deleted — audit reassurance now lives only in the confirm modal copy. */
 
-  .scoria-approval-details {
-    border: 1px solid var(--scoria-border);
-    border-radius: var(--scoria-radius-sm);
-    background: var(--scoria-surface-panel);
-  }
-
-  .scoria-approval-details__summary {
-    display: flex;
-    align-items: center;
-    gap: var(--scoria-space-2);
-    color: var(--scoria-text-muted);
-    cursor: pointer;
-    font-size: var(--scoria-fs-body);
-    font-weight: 600;
-    padding: var(--scoria-space-2) var(--scoria-space-3);
-    user-select: none;
-  }
-
-  .scoria-approval-details__summary::marker { content: ""; }
-  .scoria-approval-details__summary::-webkit-details-marker { display: none; }
-  .scoria-approval-details__summary::before {
-    content: "";
-    inline-size: 0.45rem;
-    block-size: 0.45rem;
-    border-block-end: 2px solid currentColor;
-    border-inline-end: 2px solid currentColor;
-    transform: rotate(-45deg);
-    transition: transform var(--scoria-dur-fast) var(--scoria-ease-out);
-  }
-  .scoria-approval-details[open] > .scoria-approval-details__summary::before {
-    transform: rotate(45deg);
-  }
-
-  .scoria-approval-tech-grid {
-    display: grid;
-    gap: var(--scoria-space-2);
-    margin: 0;
-    padding: 0 var(--scoria-space-3) var(--scoria-space-3);
-  }
-
-  .scoria-approval-tech-grid__row {
-    display: grid;
-    grid-template-columns: minmax(5.5rem, 0.35fr) minmax(0, 1fr);
-    gap: var(--scoria-space-3);
-    align-items: center;
-  }
-
-  .scoria-approval-tech-grid__row dt {
-    color: var(--scoria-text-subtle);
-    font-size: var(--scoria-fs-label);
-    font-weight: 600;
-  }
-
-  .scoria-approval-tech-grid__row dd {
-    min-width: 0;
-    margin: 0;
-    overflow-wrap: anywhere;
-  }
+  /* D-14: the bespoke .scoria-approval-details/.scoria-approval-tech-grid
+     tech-grid is deleted — the identifiers disclosure reuses a plain native
+     <details>/<summary> with no bespoke CSS. */
 
   /* ---------- Drawer + modal ---------- */
   /* The scrim sits at the BASE of its overlay's stacking context. Its parent
