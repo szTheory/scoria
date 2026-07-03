@@ -10,6 +10,7 @@ defmodule ScoriaWeb.OrchestratorLive do
       evidence_rows: 1,
       flash_group: 1,
       id: 1,
+      page_header: 1,
       panel: 1
     ]
 
@@ -91,12 +92,11 @@ defmodule ScoriaWeb.OrchestratorLive do
     ~H"""
     <div class="scoria-dashboard relative">
       <div>
-        <div class="scoria-pagehead">
-          <h1>Home</h1>
-          <p class="scoria-home__identity">
+        <.page_header title="Home">
+          <:summary>
             Every AI run in this app, traced. Approve tools, triage incidents, and gate prompt releases from here.
-          </p>
-        </div>
+          </:summary>
+        </.page_header>
 
         <section id="home-attention" class="scoria-home__attention" aria-label="Needs attention">
           <.async_result :let={status_home} assign={@status_home}>

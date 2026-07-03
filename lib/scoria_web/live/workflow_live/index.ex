@@ -28,12 +28,9 @@ defmodule ScoriaWeb.WorkflowLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="scoria-pagehead">
-      <div class="scoria-pagehead__title">
-        <h1>Runs</h1>
-      </div>
-      <p>Inspect recorded workflow runs and open the trace that explains them.</p>
-    </div>
+    <.page_header title="Runs">
+      <:summary>Inspect recorded workflow runs and open the trace that explains them.</:summary>
+    </.page_header>
 
     <.panel variant={:flat} flush={true}>
       <.table id="runs" rows={@runs}>
