@@ -125,7 +125,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
       match?({:ok, %{status: "waiting_for_approval"}}, Runtime.get_run(started.run_id))
     end)
 
-    eventually(fn -> render(view) =~ "Approval request" end)
+    eventually(fn -> render(view) =~ "publish approval" end)
 
     html = render(view)
     assert html =~ "publish"
@@ -159,7 +159,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     eventually(fn ->
       html = render(view)
-      html =~ "Approval request" and html =~ "publish" and not (html =~ "super-secret-key")
+      html =~ "publish approval" and html =~ "publish" and not (html =~ "super-secret-key")
     end)
 
     [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
@@ -169,7 +169,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     eventually(fn ->
       html = render(view)
 
-      not (html =~ "Approval request") and Repo.get!(Approval, approval_id).status == "approved" and
+      not (html =~ "publish approval") and Repo.get!(Approval, approval_id).status == "approved" and
         not (html =~ "super-secret-key")
     end)
 
@@ -201,7 +201,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     eventually(fn ->
       html = render(view)
-      html =~ "Approval request" and html =~ "publish"
+      html =~ "publish approval" and html =~ "publish"
     end)
 
     [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
@@ -211,7 +211,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     eventually(fn ->
       html = render(view)
 
-      not (html =~ "Approval request") and html =~ "publish" and
+      not (html =~ "publish approval") and html =~ "publish" and
         Repo.get!(Approval, approval_id).status == "pending"
     end)
   end
@@ -237,18 +237,18 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
                handlers: %{"approval" => {Handlers, :wait_for_approval}}
              )
 
-    eventually(fn -> render(view) =~ "Approval request" end)
+    eventually(fn -> render(view) =~ "publish approval" end)
 
     [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
     projection = RemoteApprovalProjection.get_approval_lineage!(approval_id)
 
     assert {:ok, _} = Workflows.approve(approval_id, "approved", %{actor_id: "other-operator"})
 
-    eventually(fn -> not (render(view) =~ "Approval request") end)
+    eventually(fn -> not (render(view) =~ "publish approval") end)
 
     OperatorBroadcast.hitl_request(tenant_id, projection)
 
-    eventually(fn -> render(view) =~ "Approval request" end)
+    eventually(fn -> render(view) =~ "publish approval" end)
 
     render_click(view, "approve", %{})
 
@@ -278,7 +278,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     eventually(fn ->
       html = render(view)
-      html =~ "Approval request" and html =~ "publish"
+      html =~ "publish approval" and html =~ "publish"
     end)
 
     assert {:ok, _started_b} =
@@ -297,7 +297,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     eventually(fn ->
       html = render(view)
 
-      html =~ "Approval request" and html =~ "publish" and html =~ "other_tool" and
+      html =~ "publish approval" and html =~ "publish" and html =~ "other_tool" and
         html =~ ~s(data-highlight="true")
     end)
   end
@@ -329,7 +329,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     eventually(fn ->
       html = render(view)
-      html =~ "Approval request" and html =~ "publish" and not (html =~ "super-secret-key")
+      html =~ "publish approval" and html =~ "publish" and not (html =~ "super-secret-key")
     end)
 
     [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
@@ -338,14 +338,14 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     |> element("button[phx-click='open_decision_modal'][phx-value-decision='reject']")
     |> render_click()
 
-    assert render(view) =~ "Denying records your decision"
+    assert render(view) =~ "Scoria records the decision; the run stays paused until approved."
 
     render_click(view, "reject", %{})
 
     eventually(fn ->
       html = render(view)
 
-      not (html =~ "Approval request") and Repo.get!(Approval, approval_id).status == "rejected" and
+      not (html =~ "publish approval") and Repo.get!(Approval, approval_id).status == "rejected" and
         match?({:ok, %{status: "waiting_for_approval"}}, Runtime.get_run(started.run_id)) and
         not (html =~ "super-secret-key")
     end)
@@ -377,7 +377,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
 
     {:ok, _view, html} = render_reconnect(conn, view, focused_path)
 
-    assert html =~ "Approval request"
+    assert html =~ "publish approval"
     assert html =~ "publish"
     refute html =~ "super-secret-key"
   end
@@ -410,7 +410,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
       html = render(view)
 
       html =~ "publish" and html =~ ~s(data-highlight="true") and
-        not (html =~ "Approval request") and not (html =~ "super-secret-key")
+        not (html =~ "publish approval") and not (html =~ "super-secret-key")
     end)
   end
 
