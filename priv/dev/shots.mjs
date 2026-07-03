@@ -173,9 +173,20 @@ const SCREENS = [
 // Viewport configurations
 // ---------------------------------------------------------------------------
 
+// Phase 40 D-14: widened from the original 2 entries (desktop/mobile) to the
+// same 6-width RESP-01 responsive_scan.spec.mjs asserts against
+// (VIEWPORT_WIDTHS, priv/dev/e2e/lab.spec.mjs) — screenshots are human
+// evidence only, never a gate (D-14), but they should cover the identical
+// widths the e2e assertions prove so a maintainer eyeballing the contact
+// sheet sees the same breakpoints the harness already checked. Heights are
+// representative-device values per width, not asserted against.
 const VIEWPORTS = [
-  { name: 'desktop', width: 1280, height: 900 },
-  { name: 'mobile', width: 375, height: 812 },
+  { name: 'w320', width: 320, height: 812 },
+  { name: 'w375', width: 375, height: 812 },
+  { name: 'w768', width: 768, height: 1024 },
+  { name: 'w1024', width: 1024, height: 900 },
+  { name: 'w1440', width: 1440, height: 900 },
+  { name: 'w1920', width: 1920, height: 1080 },
 ];
 
 const THEMES = ['dark', 'light'];
