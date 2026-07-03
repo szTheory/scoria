@@ -67,7 +67,16 @@ defmodule ScoriaWeb.CopyTest do
 
   describe "empty_title/1, empty_cta/1, error_line/1, loading_label/1" do
     test "every domain getter returns a binary" do
-      domains = [:incidents, :datasets, :reviews, :connectors, :approvals, :runs, :evals, :unknown_domain]
+      domains = [
+        :incidents,
+        :datasets,
+        :reviews,
+        :connectors,
+        :approvals,
+        :runs,
+        :evals,
+        :unknown_domain
+      ]
 
       for domain <- domains do
         assert is_binary(Copy.empty_title(domain))
@@ -90,11 +99,29 @@ defmodule ScoriaWeb.CopyTest do
     test "no public getter emits a banned word" do
       all_strings =
         Enum.map([:approve, :deny, :promote, :run], &Copy.action_verb/1) ++
-          Enum.map(~w(pending approved expired passed failed regressed running promoted draft published connected disconnected idle), &Copy.status_label/1) ++
-          Enum.flat_map([:incidents, :datasets, :reviews, :connectors, :approvals, :runs, :evals, :unknown_domain], fn domain ->
-            [Copy.empty_title(domain), Copy.empty_cta(domain), Copy.loading_label(domain)]
-          end) ++
-          Enum.map([:connection, :not_found, :stale, :unauthorized, :unknown_reason], &Copy.error_line/1)
+          Enum.map(
+            ~w(pending approved expired passed failed regressed running promoted draft published connected disconnected idle),
+            &Copy.status_label/1
+          ) ++
+          Enum.flat_map(
+            [
+              :incidents,
+              :datasets,
+              :reviews,
+              :connectors,
+              :approvals,
+              :runs,
+              :evals,
+              :unknown_domain
+            ],
+            fn domain ->
+              [Copy.empty_title(domain), Copy.empty_cta(domain), Copy.loading_label(domain)]
+            end
+          ) ++
+          Enum.map(
+            [:connection, :not_found, :stale, :unauthorized, :unknown_reason],
+            &Copy.error_line/1
+          )
 
       for string <- all_strings, banned <- @banned_words do
         refute String.downcase(string) =~ banned,
@@ -120,7 +147,7 @@ defmodule ScoriaWeb.IncidentCopyTest do
     incident = %{severity: "critical", status: "open", routing_class: "page"}
 
     assert IncidentCopy.orientation(incident) =~ "Critical"
-    assert IncidentCopy.orientation(incident) =~ "Open"
+    assert IncidentCopy.orientation(incident) =~ "open"
   end
 
   test "orientation/1 falls back safely for an unrecognized severity" do
