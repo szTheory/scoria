@@ -123,6 +123,13 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
   # page and skip gracefully when absent. Never fails the run — returns [] on error.
   defp resolve_demo_env do
     start_fixture_services!()
+
+    replay_run_env() ++ prompt_release_env()
+  rescue
+    _ -> []
+  end
+
+  defp replay_run_env do
     tenant_id = Scoria.SupportJourney.tenant_id()
 
     replay_run_id =
@@ -142,6 +149,34 @@ defmodule Mix.Tasks.Scoria.Ui.E2e do
       id ->
         Mix.shell().info("[scoria.ui.e2e] Seeded replay run id: #{id}")
         [{"SCORIA_E2E_REPLAY_RUN_ID", to_string(id)}]
+    end
+  rescue
+    _ -> []
+  end
+
+  # priv/repo/dev_seed.exs seeds a draft PromptTemplate at the stable sentinel
+  # entity_id "00000000-0000-0000-0000-000000000001"/version 1 and starts its
+  # release workflow (a pending "prompt_release" approval) — this is the
+  # deterministic "Reject Release"/"Approve Prompt Release" modal surface
+  # modal_focus.spec.mjs deep-links to (Phase 40, D-10/D-11 modal proof).
+  @seed_draft_prompt_entity_id "00000000-0000-0000-0000-000000000001"
+
+  defp prompt_release_env do
+    prompt_release_id =
+      Scoria.Repo.one(
+        from(t in Scoria.PromptRegistry.PromptTemplate,
+          where: t.entity_id == ^@seed_draft_prompt_entity_id and t.version == 1,
+          select: t.id
+        )
+      )
+
+    case prompt_release_id do
+      nil ->
+        []
+
+      id ->
+        Mix.shell().info("[scoria.ui.e2e] Seeded draft prompt (release workbench) id: #{id}")
+        [{"SCORIA_E2E_PROMPT_RELEASE_ID", to_string(id)}]
     end
   rescue
     _ -> []

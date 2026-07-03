@@ -68,6 +68,18 @@ async function activeElementId(page) {
   return page.evaluate(() => document.activeElement && document.activeElement.id);
 }
 
+// The FocusWrap client hook's wrap-around redirect (ARIA.focusFirst/focusLast
+// inside a synchronous "focus" event listener — hooks.js) normally settles
+// well within a frame, but under heavy parallel CI/CD load (many concurrent
+// Chromium workers contending for CPU) a bare post-keypress read can win a
+// race against that redirect. Poll briefly instead of a single-shot read so
+// the assertion reflects the settled state, not a transient mid-redirect one.
+async function expectActiveElementId(page, expectedId, message) {
+  await expect
+    .poll(() => activeElementId(page), { message, timeout: 2000 })
+    .toBe(expectedId);
+}
+
 async function focusIsInside(page, containerId) {
   return page.evaluate((id) => {
     const container = document.getElementById(id);
@@ -122,20 +134,22 @@ test.describe('Phase 40 — approval decision drawer focus trap + restore (A11Y-
     const lastId = focusableIds[focusableIds.length - 1];
 
     // focus_first() already landed on the first focusable element on open.
-    expect(await activeElementId(page)).toBe(firstId);
+    await expectActiveElementId(page, firstId, 'expected focus_first() to land on the first focusable element on open');
 
     await page.keyboard.press('Shift+Tab');
-    expect(
-      await activeElementId(page),
+    await expectActiveElementId(
+      page,
+      lastId,
       'Shift+Tab from the first focusable element should wrap to the last, never past the drawer into the background'
-    ).toBe(lastId);
+    );
     expect(await focusIsInside(page, DRAWER_ID)).toBe(true);
 
     await page.keyboard.press('Tab');
-    expect(
-      await activeElementId(page),
+    await expectActiveElementId(
+      page,
+      firstId,
       'Tab from the last focusable element should wrap back to the first, never past the drawer into the background'
-    ).toBe(firstId);
+    );
     expect(await focusIsInside(page, DRAWER_ID)).toBe(true);
   });
 
