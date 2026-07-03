@@ -180,12 +180,12 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     send(view.pid, {:hitl_request, projection})
 
     html = render(view)
-    assert html =~ "Approval request"
+    assert html =~ "test_tool approval"
     assert html =~ "test_tool"
     assert html =~ "Requires approval"
     assert html =~ "Approve request"
     assert html =~ "Deny request"
-    assert html =~ "audit evidence"
+    refute html =~ "audit evidence"
     assert html =~ "Technical details"
     assert html =~ "Request payload"
     assert html =~ ~r/<details[^>]*class="[^"]*scoria-raw-evidence[^"]*"[^>]*open/
@@ -198,7 +198,7 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     render_click(view, "approve", %{})
 
-    eventually(fn -> not (render(view) =~ "Approval request") end)
+    eventually(fn -> not (render(view) =~ "test_tool approval") end)
 
     updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
     assert updated_approval.status == "approved"
@@ -259,7 +259,7 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     }
 
     send(view.pid, {:hitl_request, projection})
-    assert render(view) =~ "Approval request"
+    assert render(view) =~ "dismiss_tool approval"
 
     html =
       view
@@ -270,7 +270,7 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     render_click(view, "dismiss_approval", %{})
 
-    refute render(view) =~ "Approval request"
+    refute render(view) =~ "dismiss_tool approval"
   end
 
   test "approval_decided clears active modal" do
@@ -289,11 +289,11 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
        }}
     )
 
-    assert render(view) =~ "Approval request"
+    assert render(view) =~ "sync_tool approval"
 
     send(view.pid, {:approval_decided, approval_id, "approved"})
 
-    refute render(view) =~ "Approval request"
+    refute render(view) =~ "sync_tool approval"
   end
 
   test "select_approval opens the modal for a chosen inbox row" do
@@ -303,10 +303,10 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     html = render(view)
     assert html =~ "test_tool"
-    refute html =~ "Approval request"
+    refute html =~ "test_tool approval"
 
     render_click(view, "select_approval", %{"id" => approval.id})
-    assert render(view) =~ "Approval request"
+    assert render(view) =~ "test_tool approval"
     assert render(view) =~ "test_tool"
   end
 
@@ -416,14 +416,14 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     drain_pubsub_messages()
 
     send(view.pid, {:hitl_request, projection_a})
-    assert render(view) =~ "Approval request"
+    assert render(view) =~ "run_a_tool approval"
     assert render(view) =~ "run_a_tool"
 
     send(view.pid, {:hitl_request, projection_b})
 
     html = render(view)
     assert html =~ "run_a_tool"
-    assert html =~ "Approval request"
+    assert html =~ "run_a_tool approval"
     assert html =~ "run_b_tool"
     assert html =~ ~s(data-highlight="true")
   end
@@ -445,7 +445,7 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     )
 
     assert render(view) =~ "focused_tool"
-    assert render(view) =~ "Approval request"
+    assert render(view) =~ "focused_tool approval"
   end
 
   test "approvals inbox boots and renders the toast region shell" do

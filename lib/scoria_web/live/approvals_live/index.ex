@@ -12,11 +12,14 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       drawer: 1,
       evidence_action_row: 1,
       evidence_rows: 1,
+      evidence_section: 1,
       flash_group: 1,
       id: 1,
       modal: 1,
+      page_header: 1,
       raw_evidence: 1,
       time: 1,
+      tone: 1,
       toast: 1
     ]
 
@@ -118,12 +121,11 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   def render(assigns) do
     ~H"""
     <div class="scoria-dashboard relative">
-      <div class="scoria-pagehead">
-        <h1>Approvals</h1>
-        <p>
+      <.page_header title="Approvals">
+        <:summary>
           Requests that need a person to decide before Scoria continues. Review what will happen, then approve or deny.
-        </p>
-      </div>
+        </:summary>
+      </.page_header>
 
       <.flash_group flash={@flash} />
 
@@ -139,14 +141,16 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       />
 
       <.drawer id="approval-detail-drawer" show={@active_approval != nil} on_dismiss="dismiss_approval">
-        <:eyebrow>Approval request</:eyebrow>
+        <:eyebrow>{ApprovalCopy.eyebrow(@active_approval)}</:eyebrow>
         <:title_slot>{ApprovalCopy.title(@active_approval)}</:title_slot>
 
         <section :if={@active_approval} class="scoria-approval-decision">
-          <div class="scoria-approval-summary">
-            <p class="scoria-approval-summary__label">Review before Scoria continues this run.</p>
-            <p class="scoria-approval-summary__effect">{ApprovalCopy.impact(@active_approval)}</p>
-          </div>
+          <.badge
+            tone={tone(ApprovalCopy.field(@active_approval, :status))}
+            label={ApprovalCopy.status_line(@active_approval)}
+          />
+
+          <p class="scoria-approval-summary__effect">{ApprovalCopy.impact(@active_approval)}</p>
 
           <div class="scoria-approval-actions" aria-label="Approval actions">
             <button
@@ -166,24 +170,12 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
               {ApprovalCopy.approve_label(@active_approval)}
             </button>
           </div>
-
-          <p class="scoria-approval-decision__audit">
-            Scoria records your decision and audit evidence before it tries to continue the run.
-          </p>
         </section>
 
-        <.evidence_rows rows={ApprovalCopy.request_rows(@active_approval)} />
-
-        <.evidence_rows rows={ApprovalCopy.evidence_rows(@active_approval)} />
-
-        <.evidence_action_row :if={@active_approval && @active_approval[:workflow_run_id]} class="mt-2">
-          <a
-            href={run_href(assigns[:scoria_base] || "", @active_approval[:workflow_run_id])}
-            class="scoria-button scoria-button--ghost scoria-button--sm"
-          >
-            View run details
-          </a>
-        </.evidence_action_row>
+        <.evidence_section :if={@active_approval} title="What you're approving">
+          <.evidence_rows rows={ApprovalCopy.request_rows(@active_approval)} />
+          <.evidence_rows rows={ApprovalCopy.evidence_rows(@active_approval)} />
+        </.evidence_section>
 
         <details :if={@active_approval} class="scoria-approval-details">
           <summary class="scoria-approval-details__summary">Technical details</summary>
@@ -216,6 +208,15 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
           copy_label="Copy request payload"
         >
         </.raw_evidence>
+
+        <.evidence_action_row :if={@active_approval && @active_approval[:workflow_run_id]} class="mt-2">
+          <a
+            href={run_href(assigns[:scoria_base] || "", @active_approval[:workflow_run_id])}
+            class="scoria-button scoria-button--ghost scoria-button--sm"
+          >
+            View run details
+          </a>
+        </.evidence_action_row>
       </.drawer>
 
       <.modal id="approval-decision-modal" show={@decision_modal != nil} on_dismiss="close_decision_modal">
