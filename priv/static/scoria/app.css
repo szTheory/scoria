@@ -1126,6 +1126,11 @@
   .scoria-button--sm {
     padding: var(--scoria-space-1) var(--scoria-space-3);
     font-size: var(--scoria-fs-label);
+    /* Phase 40 D-16(6): WCAG 2.5.8 (2.2) minimum target size is 24x24 CSS px.
+       Padding + 12px label text alone renders ~22px tall (responsive_scan.spec.mjs
+       surfaced this at 320/375px) — floor the height at the existing 24px spacing
+       token rather than introducing a new sizing primitive. */
+    min-height: var(--scoria-space-5);
   }
   .scoria-button--icon {
     min-width: 2.5rem;
