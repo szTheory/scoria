@@ -213,6 +213,38 @@ provide a typographic tier above the primary title."
     """
   end
 
+  attr(:title, :string, required: true)
+  attr(:class, :string, default: nil)
+  attr(:rest, :global)
+  slot(:summary)
+  slot(:actions)
+
+  @doc """
+  Page-level heading — owns the single `<h1>` for a dashboard page.
+
+  `title` is a required plain-string attr, not a slot, so schema/module names or
+  opaque IDs cannot be interpolated into the page's only `<h1>` (D-01/D-23/D-26).
+  Use the `:summary` slot for a one-line operator-orientation `<p>` and the
+  `:actions` slot for at most one header action (a primary action or a
+  ghost/secondary nav link, e.g. review_queue's "Back to dashboard" link).
+  """
+  def page_header(assigns) do
+    ~H"""
+    <div class={["scoria-pagehead", @class]} {@rest}>
+      <div class={[
+        "scoria-pagehead__title",
+        @actions != [] && "scoria-pagehead__title--with-actions"
+      ]}>
+        <h1>{@title}</h1>
+        <div :if={@actions != []}>{render_slot(@actions)}</div>
+      </div>
+      <p :if={@summary != []} class="scoria-pagehead__description">
+        {render_slot(@summary)}
+      </p>
+    </div>
+    """
+  end
+
   attr(:label, :string, required: true)
   attr(:value, :string, required: true)
   attr(:delta, :string, default: nil)
