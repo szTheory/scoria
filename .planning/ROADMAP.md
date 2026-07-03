@@ -137,12 +137,12 @@ Plans:
 4. Motion uses tokenized transform/opacity patterns, communicates state, and respects reduced motion.
 5. 320, 375, 768, 1024, 1440, and wide desktop widths show no clipped content, trapped scroll, squished essential columns, or floating controls covering navigation.
 
-**Plans:** 5 plans
+**Plans:** 1/5 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 40-01-PLAN.md — Shared e2e infra: @axe-core/playwright pin + overrides, boxesIntersect + axe-run helpers, gap register scaffold
+- [x] 40-01-PLAN.md — Shared e2e infra: @axe-core/playwright pin + overrides, boxesIntersect + axe-run helpers, gap register scaffold
 - [ ] 40-02-PLAN.md — Browserless source-scan guards: motion tokenization/keyframe guard + a11y structural-presence guard
 
 **Wave 2** *(blocked on Wave 1 completion)*

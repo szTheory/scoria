@@ -4,13 +4,13 @@ milestone: v3.3
 milestone_name: window is idle — collision-avoidance)
 status: executing
 stopped_at: Phase 40 context gathered
-last_updated: "2026-07-03T16:21:52.070Z"
-last_activity: 2026-07-03 -- Phase 40 planning complete
+last_updated: "2026-07-03T16:34:22.210Z"
+last_activity: 2026-07-03
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 24
-  completed_plans: 19
+  completed_plans: 20
   percent: 67
 ---
 
@@ -22,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 39 — component-groups-and-operator-flows
+**Current focus:** Phase 40 — accessibility-motion-and-responsive-proof
 
 ## Current Position
 
-Phase: 40 — Accessibility, Motion, And Responsive Proof
-Plan: Not started
+Phase: 40 (accessibility-motion-and-responsive-proof) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-07-03 -- Phase 40 planning complete
+Last activity: 2026-07-03
 
 ## Performance Metrics
 
@@ -96,6 +96,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 39-08: single_header_guard_test.exs excludes dataset_live/promote_component.ex (dialog-scoped, rendered inside dataset_live/index.ex's <.drawer>) alongside ui.ex, since the plan's named drawer/modal/palette/notebook filename fragments don't literally match this file's name
 - [Phase ?]: 39-08: scan_convention_guard_test.exs scopes D-11 to the plan task's literal instruction (filter/scope-not-socket-only + sort exemption) rather than the broader CONTEXT.md D-11 section-order restatement
 - [Phase ?]: 39-08: Fixed incidents_live/index.ex + show.ex to route incident.severity through IncidentCopy.severity_label/1 instead of a raw atom (Rule 1, required for the new D-26 copy guard to be green on arrival) -- caught the same offender class as the connectors runtime.status fix from Plan 05
+- [Phase ?]: priv/dev/package-lock.json stays uncommitted (gitignored per commit 7e1cde4b); package.json exact-pin + overrides.axe-core is the real D-05 reproducibility contract
+- [Phase ?]: axe.mjs calls .options({rules}) before .withTags(WCAG_TAGS) -- AxeBuilder#options() replaces the whole option object while #withTags() only merges runOnly, so the reverse order would silently drop the tag filter
 
 ### Pending Todos
 
@@ -130,9 +132,10 @@ None at milestone start.
 | Phase 39 P06 | ~20min | 3 tasks | 5 files |
 | Phase 39 P07 | ~50min | 2 tasks | 3 files |
 | Phase 39 P08 | 48min | 3 tasks | 8 files |
+| Phase 40 P01 | 3min | 3 tasks | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-07-03T15:45:12.380Z
+Last session: 2026-07-03T16:32:22.999Z
 Stopped at: Phase 40 context gathered
-Resume file: .planning/phases/40-accessibility-motion-and-responsive-proof/40-CONTEXT.md
+Resume file: None

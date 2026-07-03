@@ -145,3 +145,7 @@ None - no external service configuration required. `@axe-core/playwright` is a d
 ---
 *Phase: 40-accessibility-motion-and-responsive-proof*
 *Completed: 2026-07-03*
+
+## Self-Check: PASSED
+
+All created files verified present on disk (`priv/dev/package.json`, `priv/dev/e2e/lib/axe.mjs`, `priv/dev/e2e/lib/boxes_intersect.mjs`, `40-GAP-REGISTER.md`, `40-01-SUMMARY.md`). All 4 task/plan commit hashes (`715cb721`, `9d8d0dbf`, `64a9cdb0`, `19ed66e4`) verified present in `git log`.
