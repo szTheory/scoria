@@ -20,19 +20,15 @@ defmodule ScoriaWeb.DatasetLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    rows = dataset_rows()
-
     {:ok,
      socket
      |> assign(:page_title, "Dataset Builder")
      |> assign(:sort_by, :updated_at)
      |> assign(:sort_dir, :desc)
-     |> assign(:dataset_rows, rows)
-     |> assign(:datasets, sort_rows(rows, :updated_at, :desc))
-     |> assign(:metrics, metrics(rows))
      |> assign(:promotion_context, nil)
      |> assign(:promotion_source, nil)
-     |> assign(:promotion_error, nil)}
+     |> assign(:promotion_error, nil)
+     |> load_datasets()}
   end
 
   @impl true
@@ -56,15 +52,16 @@ defmodule ScoriaWeb.DatasetLive.Index do
     {:noreply, push_patch(socket, to: dataset_path(socket.assigns[:scoria_base] || ""))}
   end
 
+  def handle_event("retry_load", _params, socket) do
+    {:noreply, load_datasets(socket)}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="scoria-pagehead">
-      <div class="scoria-pagehead__title">
-        <h1>Dataset Builder</h1>
-      </div>
-      <p>Curate production traces into eval datasets and baseline approval requests.</p>
-    </div>
+    <.page_header title="Dataset Builder">
+      <:summary>Curate production traces into eval datasets and baseline approval requests.</:summary>
+    </.page_header>
 
     <.overview_stats label="Dataset library summary">
       <:stat label="Drafts" value={dataset_count(@metrics.open, "open dataset")} tone={if(@metrics.open > 0, do: :info, else: :neutral)}>
@@ -78,8 +75,16 @@ defmodule ScoriaWeb.DatasetLive.Index do
       </:stat>
     </.overview_stats>
 
-    <.panel variant={:flat} flush={true} class="mt-6">
-      <:title>Datasets</:title>
+    <.panel :if={@load_error} variant={:flat} flush={true} class="mt-6">
+      <div class="scoria-flash scoria-flash--fail" role="alert">
+        Datasets could not be loaded right now.
+      </div>
+      <div class="mt-4">
+        <.button type="button" phx-click="retry_load" variant={:ghost} size={:sm}>Retry</.button>
+      </div>
+    </.panel>
+
+    <.panel :if={!@load_error} variant={:flat} flush={true} class="mt-6">
       <.table
         id="datasets"
         rows={@datasets}
@@ -95,7 +100,7 @@ defmodule ScoriaWeb.DatasetLive.Index do
         <:col :let={dataset} label="Dataset" key={:name}>
           <div>
             <strong>{dataset.name}</strong>
-            <div><.id value={"v#{dataset.version}"} title="Dataset version" /></div>
+            <div class="font-mono text-xs">v{dataset.version}</div>
           </div>
         </:col>
         <:col :let={dataset} label="State" key={:state}>
@@ -271,11 +276,31 @@ defmodule ScoriaWeb.DatasetLive.Index do
     end
   end
 
+  defp load_datasets(socket) do
+    case dataset_rows() do
+      {:ok, rows} ->
+        socket
+        |> assign(:load_error, false)
+        |> assign(:dataset_rows, rows)
+        |> assign(:datasets, sort_rows(rows, socket.assigns.sort_by, socket.assigns.sort_dir))
+        |> assign(:metrics, metrics(rows))
+
+      :error ->
+        socket
+        |> assign(:load_error, true)
+        |> assign(:dataset_rows, [])
+        |> assign(:datasets, [])
+        |> assign(:metrics, metrics([]))
+    end
+  end
+
+  # D-08: distinguish a genuine query failure (renders inline scoria-flash--fail + retry)
+  # from a legitimately empty dataset library (renders empty_state/1 via the table's
+  # :empty slot) instead of silently collapsing both cases into "[]".
   defp dataset_rows do
-    Eval.list_datasets()
-    |> Enum.map(&dataset_row/1)
+    {:ok, Eval.list_datasets() |> Enum.map(&dataset_row/1)}
   rescue
-    _ -> []
+    _ -> :error
   end
 
   defp dataset_row(dataset) do

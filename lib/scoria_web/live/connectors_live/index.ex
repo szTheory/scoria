@@ -8,6 +8,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
 
   import ScoriaWeb.UI
 
+  alias ScoriaWeb.ConnectorCopy
   alias ScoriaWeb.ConnectorDetailDrawerComponent
   alias ScoriaWeb.OperatorSurface
   alias ScoriaWeb.RuntimeDetailDrawerComponent
@@ -56,18 +57,30 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
     {:noreply, assign(socket, :connector_drawer, nil)}
   end
 
+  def handle_event("retry_load", _, socket) do
+    {:noreply, load_fleet(socket)}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="scoria-dashboard relative">
-      <div class="scoria-pagehead">
-        <h1>Connectors</h1>
-        <p>
+      <.page_header title="Connectors">
+        <:summary>
           External runtime presence and connector health for this tenant. Open a row for its detail drawer.
-        </p>
+        </:summary>
+      </.page_header>
+
+      <div :if={@load_error} class="mt-6">
+        <div class="scoria-flash scoria-flash--fail" role="alert">
+          Connector and runtime data could not be loaded right now.
+        </div>
+        <div class="mt-4">
+          <.button type="button" phx-click="retry_load" variant={:ghost} size={:sm}>Retry</.button>
+        </div>
       </div>
 
-      <div class="grid gap-6 lg:grid-cols-2">
+      <div :if={!@load_error} class="grid gap-6 lg:grid-cols-2">
         <.panel flush={true}>
           <:eyebrow>external runtimes</:eyebrow>
           <:title>Runtime posture</:title>
@@ -76,13 +89,21 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
               <span class="font-mono"><%= short_id(runtime.id) %></span>
             </:col>
             <:col :let={runtime} label="Status">
-              <.badge tone={tone(runtime.status)} label={runtime.status} />
+              <.badge tone={tone(runtime.status)} label={ConnectorCopy.runtime_status_label(runtime.status)} />
             </:col>
             <:col :let={runtime} label="Active runs">
-              <span class="font-mono"><%= runtime.current_run_id || "None" %></span>
+              <%= if runtime.current_run_id do %>
+                <.id value={runtime.current_run_id} id={"run-id-#{runtime.id}"} title="Active run ID" />
+              <% else %>
+                <span>None</span>
+              <% end %>
             </:col>
             <:col :let={runtime} label="Presence or Queue">
-              <%= runtime.host_session_id || "No host session" %>
+              <%= if runtime.host_session_id do %>
+                <.id value={runtime.host_session_id} id={"host-session-#{runtime.id}"} title="Host session ID" />
+              <% else %>
+                <span>No host session</span>
+              <% end %>
             </:col>
             <:col :let={runtime} label="Last seen">
               <%= format_ts(runtime[:last_seen_at]) %>
@@ -113,13 +134,13 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
               <span class="font-semibold"><%= connector.connector_label %></span>
             </:col>
             <:col :let={connector} label="Health">
-              <.badge tone={tone(connector.health_state)} label={connector.health_state} />
+              <.badge tone={tone(connector.health_state)} label={ConnectorCopy.health_label(connector.health_state)} />
             </:col>
             <:col :let={connector} label="Auth or Provenance">
               <%= connector.auth_provenance.status %>
             </:col>
             <:col :let={connector} label="Refresh state">
-              <.badge tone={tone(connector.last_refresh_status)} label={connector.last_refresh_status} />
+              <.badge tone={tone(connector.last_refresh_status)} label={status_label(connector.last_refresh_status)} />
             </:col>
             <:col :let={connector} label="Last checked">
               pending tools <%= connector.pending_local_tool_count %>, approvals <%= connector.pending_approval_count %>
@@ -140,7 +161,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
                   <span class="font-semibold">{connector.connector_label}</span>
                 </div>
                 <div class="scoria-mobile-summary__status">
-                  <.badge tone={tone(connector.health_state)} label={connector.health_state} />
+                  <.badge tone={tone(connector.health_state)} label={ConnectorCopy.health_label(connector.health_state)} />
                 </div>
                 <div class="scoria-mobile-summary__meta">
                   {connector.auth_provenance.status}
@@ -184,9 +205,28 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
   defp load_fleet(socket) do
     tenant_id = socket.assigns.tenant_id
 
-    socket
-    |> assign(:runtimes, OperatorSurface.load_runtimes(tenant_id))
-    |> assign(:connector_fleet, OperatorSurface.connector_fleet(tenant_id))
+    case fetch_fleet(tenant_id) do
+      {:ok, runtimes, connector_fleet} ->
+        socket
+        |> assign(:load_error, false)
+        |> assign(:runtimes, runtimes)
+        |> assign(:connector_fleet, connector_fleet)
+
+      :error ->
+        socket
+        |> assign(:load_error, true)
+        |> assign(:runtimes, [])
+        |> assign(:connector_fleet, [])
+    end
+  end
+
+  # D-08: distinguish a genuine fleet-query failure (renders inline scoria-flash--fail +
+  # retry) from a legitimately empty fleet (renders empty_state/1 via each table's :empty
+  # slot) instead of letting an unrescued query crash the LiveView.
+  defp fetch_fleet(tenant_id) do
+    {:ok, OperatorSurface.load_runtimes(tenant_id), OperatorSurface.connector_fleet(tenant_id)}
+  rescue
+    _ -> :error
   end
 
   defp short_id(nil), do: "Not recorded"
