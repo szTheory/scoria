@@ -260,7 +260,9 @@ defmodule ScoriaWeb.IncidentsLiveTest do
       |> Floki.find(".scoria-badge")
       |> Enum.map(&(&1 |> Floki.text() |> String.trim()))
 
-    assert "critical" in badge_text
+    # D-26 copy guard: severity renders via IncidentCopy.severity_label/1 (an
+    # approved label function), never the raw "critical" atom.
+    assert "Critical" in badge_text
     assert "Open" in badge_text
   end
 
