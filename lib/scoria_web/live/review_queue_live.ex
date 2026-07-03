@@ -4,21 +4,33 @@ defmodule ScoriaWeb.ReviewQueueLive do
   import ScoriaWeb.UI
 
   alias Scoria.Eval
+  alias ScoriaWeb.ReviewCopy
+
+  @default_filters %{"review_status" => "pending", "severity" => "", "promotion_state" => ""}
+  @review_statuses ~w(pending in_review) ++ [""]
+  @severities ~w(policy_triggered low_quality promotion_candidate) ++ [""]
+  @promotion_states ~w(promotion_candidate approval_requested) ++ [""]
 
   @impl true
-  def mount(params, _session, socket) do
-    filters = %{
-      "review_status" => Map.get(params, "review_status", "pending"),
-      "severity" => Map.get(params, "severity", ""),
-      "promotion_state" => Map.get(params, "promotion_state", "")
-    }
-
+  def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(:page_title, "Review Queue")
-     |> assign(:filters, filters)
      |> assign(:notice, nil)
-     |> assign(:selected_candidate_id, Map.get(params, "review_candidate_id"))
+     |> assign(:filters, @default_filters)
+     |> assign(:selected_candidate_id, nil)
+     |> assign(:load_error, false)}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    selected_candidate_id =
+      Map.get(params, "review_candidate_id") || socket.assigns.selected_candidate_id
+
+    {:noreply,
+     socket
+     |> assign(:filters, filters_from_params(params))
+     |> assign(:selected_candidate_id, selected_candidate_id)
      |> refresh_queue()}
   end
 
@@ -29,7 +41,13 @@ defmodule ScoriaWeb.ReviewQueueLive do
 
   @impl true
   def handle_event("change_filters", %{"filters" => params}, socket) do
-    {:noreply, socket |> assign(:filters, params) |> refresh_queue()}
+    {:noreply,
+     push_patch(socket, to: review_queue_path(socket.assigns[:scoria_base] || "", params))}
+  end
+
+  @impl true
+  def handle_event("retry_load", _params, socket) do
+    {:noreply, refresh_queue(socket)}
   end
 
   @impl true
@@ -49,22 +67,17 @@ defmodule ScoriaWeb.ReviewQueueLive do
   def render(assigns) do
     ~H"""
     <div class="scoria-dashboard relative">
-      <div class="scoria-pagehead">
-        <div class="scoria-pagehead__title scoria-pagehead__title--with-actions">
-          <div>
-            <h1>Review Queue</h1>
-            <p class="scoria-pagehead__description">
-              Review flagged traces before they become datasets, baselines, or dismissed noise.
-            </p>
-          </div>
+      <.page_header title="Review Queue">
+        <:summary>Review flagged traces before they become datasets, baselines, or dismissed noise.</:summary>
+        <:actions>
           <a
             href={home_path(assigns[:scoria_base] || "")}
             class="scoria-button scoria-button--ghost scoria-button--sm"
           >
             Back to dashboard
           </a>
-        </div>
-      </div>
+        </:actions>
+      </.page_header>
 
       <.overview_stats label="Review queue summary" class="mb-6">
         <:stat label="Needs review" value={review_count(@summary.total_flagged, "flagged item")} tone={if(@summary.total_flagged > 0, do: :info, else: :pass)}>
@@ -88,7 +101,17 @@ defmodule ScoriaWeb.ReviewQueueLive do
       <% end %>
 
       <div class="scoria-page-split">
-        <.panel>
+        <.panel :if={@load_error}>
+          <:title>Flagged traces</:title>
+          <div class="scoria-flash scoria-flash--fail" role="alert">
+            Review queue could not be loaded right now.
+          </div>
+          <div class="mt-4">
+            <.button type="button" phx-click="retry_load" variant={:ghost} size={:sm}>Retry</.button>
+          </div>
+        </.panel>
+
+        <.panel :if={!@load_error}>
           <:title>Flagged traces</:title>
           <.table id="review-queue" rows={@queue_rows}>
             <:filter>
@@ -130,7 +153,7 @@ defmodule ScoriaWeb.ReviewQueueLive do
               <.badge tone={tone(row.score_status)} label={status_label(row.score_status || row.status)} />
             </:col>
             <:col :let={row} label="Sample">
-              <%= row.sample_reason || row.status %>
+              <%= row.sample_reason || ReviewCopy.status_label(row.status) %>
             </:col>
             <:col :let={row} label="Promotion">
               <%= promotion_label(row) %>
@@ -232,21 +255,49 @@ defmodule ScoriaWeb.ReviewQueueLive do
   end
 
   defp refresh_queue(socket, reset_selection \\ true) do
-    rows = Eval.list_review_queue(socket.assigns.filters)
-    summary = Eval.summarize_review_queue(socket.assigns.filters)
+    case load_queue(socket.assigns.filters) do
+      {:ok, rows, summary} ->
+        selected_candidate_id =
+          if reset_selection do
+            socket.assigns.selected_candidate_id || (List.first(rows) && List.first(rows).id)
+          else
+            socket.assigns.selected_candidate_id
+          end
 
-    selected_candidate_id =
-      if reset_selection do
-        socket.assigns.selected_candidate_id || (List.first(rows) && List.first(rows).id)
-      else
-        socket.assigns.selected_candidate_id
-      end
+        socket
+        |> assign(:load_error, false)
+        |> assign(:queue_rows, rows)
+        |> assign(:summary, summary)
+        |> assign(:selected_candidate_id, selected_candidate_id)
+        |> refresh_selection()
 
-    socket
-    |> assign(:queue_rows, rows)
-    |> assign(:summary, summary)
-    |> assign(:selected_candidate_id, selected_candidate_id)
-    |> refresh_selection()
+      :error ->
+        socket
+        |> assign(:load_error, true)
+        |> assign(:queue_rows, [])
+        |> assign(:summary, empty_summary())
+        |> refresh_selection()
+    end
+  end
+
+  # D-08: distinguish a genuine query failure (renders inline scoria-flash--fail + retry)
+  # from a legitimately empty queue (renders empty_state/1 via the table's :empty slot)
+  # instead of letting an unrescued query crash the LiveView.
+  defp load_queue(filters) do
+    rows = Eval.list_review_queue(filters)
+    summary = Eval.summarize_review_queue(filters)
+    {:ok, rows, summary}
+  rescue
+    _ -> :error
+  end
+
+  defp empty_summary do
+    %{
+      total_flagged: 0,
+      low_quality_count: 0,
+      policy_triggered_count: 0,
+      promotion_candidate_count: 0
+    }
   end
 
   defp refresh_selection(socket) do
@@ -256,6 +307,36 @@ defmodule ScoriaWeb.ReviewQueueLive do
       Eval.get_review_candidate(socket.assigns.selected_candidate_id)
     )
   end
+
+  # D-09: shareable scan state (filter facets) lives in the URL, validated here against a
+  # closed enum allow-list so a tampered/unknown query value falls back to the default
+  # rather than being trusted as-is (T-39-05-T).
+  defp filters_from_params(params) do
+    %{
+      "review_status" =>
+        validate_facet(Map.get(params, "review_status"), @review_statuses, "pending"),
+      "severity" => validate_facet(Map.get(params, "severity"), @severities, ""),
+      "promotion_state" =>
+        validate_facet(Map.get(params, "promotion_state"), @promotion_states, "")
+    }
+  end
+
+  defp validate_facet(value, allowed, default) do
+    if value in allowed, do: value, else: default
+  end
+
+  defp review_queue_path(scoria_base, filters) do
+    query =
+      filters
+      |> Enum.reject(fn {_key, value} -> value in [nil, ""] end)
+      |> URI.encode_query()
+
+    base = review_queue_base_path(scoria_base)
+    if query == "", do: base, else: "#{base}?#{query}"
+  end
+
+  defp review_queue_base_path(""), do: "/reviews"
+  defp review_queue_base_path(base), do: "#{base}/reviews"
 
   defp review_count(1, noun), do: "1 #{noun}"
   defp review_count(count, noun), do: "#{count} #{noun}s"

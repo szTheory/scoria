@@ -207,6 +207,48 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     render_async(view)
   end
 
+  test "changing a filter push_patches the URL and reloads from validated URL params", _ctx do
+    pending = candidate_fixture(%{score_explanation: "Pending candidate", review_status: "pending"})
+
+    in_review =
+      candidate_fixture(%{score_explanation: "In-review candidate", review_status: "in_review"})
+
+    {:ok, view, html} = live(test_conn(), "/scoria/reviews")
+
+    assert html =~ pending.score_explanation
+    refute html =~ in_review.score_explanation
+
+    view
+    |> element("form[phx-change='change_filters']")
+    |> render_change(%{
+      "filters" => %{"review_status" => "in_review", "severity" => "", "promotion_state" => ""}
+    })
+
+    assert_patch(view, "/scoria/reviews?review_status=in_review")
+
+    # Scope the assertion to the table itself: the detail rail intentionally keeps
+    # the previously-selected candidate visible across a filter change (ephemeral
+    # selection state, unaffected by the URL-held filter per this plan's scope).
+    table_html =
+      view
+      |> render()
+      |> Floki.parse_document!()
+      |> Floki.find("#review-queue")
+      |> Floki.raw_html()
+
+    assert table_html =~ in_review.score_explanation
+    refute table_html =~ pending.score_explanation
+  end
+
+  test "an unrecognized review_status URL param falls back to the validated default", _ctx do
+    pending = candidate_fixture(%{score_explanation: "Falls back to pending", review_status: "pending"})
+
+    {:ok, _view, html} =
+      live(test_conn(), "/scoria/reviews?review_status=not-a-real-status")
+
+    assert html =~ pending.score_explanation
+  end
+
   defp test_conn do
     Phoenix.ConnTest.build_conn()
     |> Plug.Test.init_test_session(%{})
