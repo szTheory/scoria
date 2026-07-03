@@ -2,17 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: Design System Stress Test
-current_phase: 39
 status: executing
 stopped_at: Phase 39 context gathered
-last_updated: "2026-07-03T08:34:27.653Z"
+last_updated: "2026-07-03T08:46:34.607Z"
 last_activity: 2026-07-03
-last_activity_desc: Phase 39 planning complete
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 19
+  completed_plans: 12
   percent: 50
 ---
 
@@ -24,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 39 — component groups and operator flows
+**Current focus:** Phase 39 — component-groups-and-operator-flows
 
 ## Current Position
 
-Phase: 39
-Plan: Not started
+Phase: 39 (component-groups-and-operator-flows) — EXECUTING
+Plan: 2 of 8
 Status: Ready to execute
-Last activity: 2026-07-03 — Phase 39 planning complete
+Last activity: 2026-07-03
 
 ## Performance Metrics
 
@@ -81,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 38]: Phase 38-01: flash banners repointed to the same new opaque --scoria-toast-<tone>-bg tokens as toasts (D-03 fallback); confirmed no floating .scoria-flash exists in lib/scoria_web/components/layouts.
 - [Phase 38]: 38-02: split Task 1/2's overlapping ui.ex + ui_component_test.exs edits into separate atomic commits by temporarily reverting/reapplying later-task hunks; .scoria-id aria-label derived from @value (displayed/truncated) not @copy (full ID) per plan instruction
 - [Phase ?]: 38-03: audit-and-lock plan -- all 7 remaining Criterion 2 primitives (links/badges/timestamps/metadata-rows/panels/drawers/modals/forms/tables/lists) were already coherent; zero lib/scoria_web/ui.ex changes, 12 new regression-guard tests added instead
+- [Phase 39]: 39-01: page_header/1's :actions wrapper carries no class attribute (not even unstyled), satisfying zero-new-CSS-class literally while still applying the existing .scoria-pagehead__title--with-actions modifier.
+- [Phase 39]: 39-01: status_label/1 curates exactly the D-25 vocabulary (13 statuses) above the retained generic fallback; does NOT curate rejected->Denied (D-24d stays approval-domain-only, ApprovalCopy.decision_outcome/1).
 
 ### Pending Todos
 
@@ -127,9 +127,10 @@ None at milestone start.
 | Phase 38 P01 | 32min | 3 tasks | 5 files |
 | Phase 38 P02 | 20min | 3 tasks | 4 files |
 | Phase 38 P03 | 15min | 2 tasks | 1 files |
+| Phase 39 P01 | 15min | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-07-03T00:46:55.997Z
+Last session: 2026-07-03T08:45:19.593Z
 Stopped at: Phase 39 context gathered
-Resume file: .planning/phases/39-component-groups-and-operator-flows/39-CONTEXT.md
+Resume file: None

@@ -92,12 +92,12 @@ Plans:
 
 **Requirements:** FLOW-01, FLOW-02, FLOW-03, FLOW-04, COPY-01
 
-**Plans:** 8 plans
+**Plans:** 1/8 plans executed
 
 Plans:
 **Wave 1** *(foundation — parallel, no file overlap)*
 
-- [ ] 39-01-PLAN.md — page_header/1 + additive status_label/1 in ScoriaWeb.UI (Wave 1)
+- [x] 39-01-PLAN.md — page_header/1 + additive status_label/1 in ScoriaWeb.UI (Wave 1)
 - [ ] 39-02-PLAN.md — strings-only ScoriaWeb.Copy + per-domain copy modules (Wave 1)
 - [ ] 39-03-PLAN.md — ApprovalCopy SSOT + list_decided_approvals/1 + real-path fixtures + write-invariant guard (Wave 1)
 

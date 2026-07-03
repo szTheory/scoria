@@ -25,11 +25,11 @@
 
 ### Component Groups And Page Flows
 
-- [ ] **FLOW-01**: Operator can understand each dashboard page by its page title, summary, primary action, data region, empty state, loading state, error state, and next action without redundant headers or implementation jargon.
+- [x] **FLOW-01**: Operator can understand each dashboard page by its page title, summary, primary action, data region, empty state, loading state, error state, and next action without redundant headers or implementation jargon.
 - [ ] **FLOW-02**: Operator can scan and act on approvals, incidents, reviews, datasets, workflow detail, connectors, prompts, and eval screens using consistent IA and page-section conventions.
 - [ ] **FLOW-03**: Operator can inspect approval decisions with action-first drawers, plain-language consequences, progressive disclosure for raw payload and metadata, and no duplicated decision copy.
 - [ ] **FLOW-04**: Operator can find approved, denied, expired, or otherwise decided approvals through a decision-history surface without implying that a denied approval can be approved in place.
-- [ ] **COPY-01**: UI copy consistently uses user-flow language first, with technical terms, IDs, traces, payloads, and audit details exposed only where they help the operator or developer.
+- [x] **COPY-01**: UI copy consistently uses user-flow language first, with technical terms, IDs, traces, payloads, and audit details exposed only where they help the operator or developer.
 
 ### Accessibility, Motion, And Responsive Behavior
 
