@@ -159,6 +159,15 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     refute live_source =~ "stream(socket, :approval_inbox"
     refute inbox_source =~ "phx-update=\"stream\""
 
+    # D-20: decided-at/decider are sourced from the decision AuditOutboxEvent
+    # (inserted_at/actor_ref), batch-loaded by the visible id-set for the
+    # history table — never from updated_at or get_approval_lineage!'s
+    # requesting actor.
+    assert live_source =~ "defp approval_decision_event(approval)"
+    assert live_source =~ "defp decision_events_by_approval_id("
+    assert live_source =~ "event.actor_ref"
+    assert live_source =~ "event.inserted_at"
+
     for forbidden <- [
           "stone-",
           "gray-",
@@ -678,6 +687,72 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
       render_click(view, "dismiss_approval", %{})
 
       assert_patch(view, "/scoria/approvals")
+    end
+  end
+
+  describe "decided read-only receipt (D-19, D-20, D-27)" do
+    test "a decided approval's drawer shows a read-only receipt with no Approve/Deny buttons" do
+      %{approval: approval} = pending_approval()
+      decide_approval(approval, "approved", "ops-lead-1")
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?approval=#{approval.id}")
+
+      assert html =~ "Approved by ops-lead-1"
+      assert html =~ "Start a new request"
+      refute html =~ "Approve request"
+      refute html =~ "Deny request"
+      refute html =~ ~s(aria-label="Approval actions")
+    end
+
+    test "attribution comes from the decision event's actor, not the request event" do
+      %{approval: approval} = pending_approval()
+      decide_approval(approval, "rejected", "ops-lead-99")
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?approval=#{approval.id}")
+
+      # request actor is "operator-live" (per the wait_for_approval fixture);
+      # the receipt must attribute to the DECIDER (ops-lead-99), never the
+      # requester.
+      assert html =~ "Denied by ops-lead-99"
+      refute html =~ "Denied by operator-live"
+    end
+
+    test "the decided history row shows the same audit-sourced receipt" do
+      %{approval: approval} = pending_approval()
+      decide_approval(approval, "approved", "ops-lead-2")
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?scope=decided")
+
+      assert html =~ "Approved by ops-lead-2"
+    end
+
+    test "an expired row with no audit event renders no fabricated time or actor" do
+      %{approval: approval} = pending_approval()
+
+      # D-21: this deliberately bypasses approve/3 to reproduce the real
+      # no-producer expiry state (no decision audit event, no updated_at
+      # bump) so the honest "time unavailable" fallback path is exercised.
+      Repo.get!(Scoria.Observe.Approval, approval.id)
+      |> Ecto.Changeset.change(status: "expired")
+      |> Repo.update!()
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?scope=decided&outcome=expired")
+
+      assert html =~ "Decided · time unavailable"
+      refute html =~ "Expired by"
+    end
+
+    test "the drawer for an expired approval with no audit event also renders no fabrication" do
+      %{approval: approval} = pending_approval()
+
+      Repo.get!(Scoria.Observe.Approval, approval.id)
+      |> Ecto.Changeset.change(status: "expired")
+      |> Repo.update!()
+
+      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?approval=#{approval.id}")
+
+      assert html =~ "Decided · time unavailable"
+      refute html =~ "Expired by"
     end
   end
 

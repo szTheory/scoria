@@ -17,6 +17,10 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
   attr(:pending_href, :string, default: "/approvals")
   attr(:decided_href, :string, default: "/approvals?scope=decided")
   attr(:has_more, :boolean, default: false)
+  # D-20: approval id -> audit-sourced "Approved by {actor} · {time}"-style
+  # receipt text, batch-loaded by the parent LiveView (never per-row queried
+  # here). Missing entries render nothing extra beyond the outcome badge.
+  attr(:decision_receipts, :map, default: %{})
 
   def render(assigns) do
     ~H"""
@@ -93,6 +97,9 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
             tone={tone(ApprovalCopy.field(approval, :status))}
             label={ApprovalCopy.decision_outcome(approval)}
           />
+          <p class="scoria-table__cell-note">
+            {Map.get(@decision_receipts, ApprovalCopy.field(approval, :id), "Decided · time unavailable")}
+          </p>
         </:col>
         <:col :let={approval} label="Run">
           <.run_link approval={approval} scoria_base={@scoria_base} />

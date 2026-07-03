@@ -47,9 +47,11 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       socket
       |> assign(:page_title, "Approvals")
       |> assign(:active_approval, nil)
+      |> assign(:active_approval_receipt, nil)
       |> assign(:decision_modal, nil)
       |> assign(:highlighted_approval_id, nil)
       |> assign(:approval_inbox, [])
+      |> assign(:decision_receipts, %{})
       |> assign(:runtime_query, Map.get(params, "runtime"))
       |> assign(
         :actor_id,
@@ -130,7 +132,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       if focused_runtime_query?(socket.assigns.runtime_query) and
            approval_matches_focus?(projection, socket.assigns.runtime_query) do
         socket
-        |> assign(:active_approval, projection)
+        |> put_active_approval(projection)
         |> assign(:highlighted_approval_id, nil)
       else
         assign(socket, :highlighted_approval_id, projection.id)
@@ -230,6 +232,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         pending_href={approvals_path(assigns[:scoria_base] || "", %{})}
         decided_href={approvals_path(assigns[:scoria_base] || "", %{"scope" => "decided"})}
         has_more={@scope == "decided" and length(@approval_inbox) >= @decided_limit}
+        decision_receipts={@decision_receipts}
       />
 
       <.drawer id="approval-detail-drawer" show={@active_approval != nil} on_dismiss="dismiss_approval">
@@ -242,7 +245,13 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
             label={ApprovalCopy.status_line(@active_approval)}
           />
 
-          <p class="scoria-approval-summary__effect">{ApprovalCopy.impact(@active_approval)}</p>
+          <p :if={!decided?(@active_approval)} class="scoria-approval-summary__effect">{ApprovalCopy.impact(@active_approval)}</p>
+
+          <%!-- D-19/D-20/D-27: the decided receipt states only the RECORDED
+                DECISION (audit-event-sourced decider/time via
+                @active_approval_receipt) — never that the tool side-effect or
+                run continuation succeeded. --%>
+          <p :if={decided?(@active_approval)} class="scoria-approval-summary__effect">{@active_approval_receipt}</p>
 
           <div
             :if={!decided?(@active_approval)}
@@ -270,6 +279,22 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
             >
               {ApprovalCopy.approve_label(@active_approval)}
             </button>
+          </div>
+
+          <%!-- D-18: a legitimate re-decision offers "Start a new request"
+                routing to the origin run — never a re-approve. No decision
+                affordances are emitted once an approval is decided. --%>
+          <div
+            :if={decided?(@active_approval) && @active_approval[:workflow_run_id]}
+            class="scoria-approval-actions"
+            aria-label="Decision receipt"
+          >
+            <a
+              href={run_href(assigns[:scoria_base] || "", @active_approval[:workflow_run_id])}
+              class="scoria-button scoria-button--ghost scoria-button--sm"
+            >
+              Start a new request
+            </a>
           </div>
         </section>
 
@@ -369,12 +394,20 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   # D-10: decided history loads via list_decided_approvals/1 (capped + load-more);
   # the pending inbox stays PubSub-reload driven with assign-based lookups — do NOT
   # stream it (see seed_focused_active_approval/1, select handling below).
+  #
+  # D-20: decided-at/decider SSOT is the decision AuditOutboxEvent, batch-loaded
+  # by the visible id-set (a single query, not one per row) to avoid N+1.
   defp reload_inbox(%{assigns: %{scope: "decided"}} = socket) do
     filters =
       %{tenant_id: socket.assigns.tenant_id, limit: socket.assigns.decided_limit}
       |> maybe_put_outcome_status(socket.assigns.outcome)
 
-    assign(socket, :approval_inbox, Workflows.list_decided_approvals(filters))
+    approvals = Workflows.list_decided_approvals(filters)
+    events_by_approval_id = decision_events_by_approval_id(approvals)
+
+    socket
+    |> assign(:approval_inbox, approvals)
+    |> assign(:decision_receipts, decision_receipts_for(approvals, events_by_approval_id))
   end
 
   defp reload_inbox(socket) do
@@ -384,6 +417,70 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       Workflows.list_pending_remote_approvals(%{tenant_id: socket.assigns.tenant_id})
     )
   end
+
+  defp decision_receipts_for(approvals, events_by_approval_id) do
+    Map.new(approvals, fn approval ->
+      {ApprovalCopy.field(approval, :id),
+       decision_receipt_text(approval, Map.get(events_by_approval_id, ApprovalCopy.field(approval, :id)))}
+    end)
+  end
+
+  # D-20: missing event -> "Decided · time unavailable", never "unknown" and
+  # never a fabricated actor/time. ApprovalCopy.decision_receipt/3 (Plan 03,
+  # locked) is the SSOT for the "have decider+time" vs "bare outcome word"
+  # cases; this function owns only the "no event at all" fallback.
+  defp decision_receipt_text(_approval, nil), do: "Decided · time unavailable"
+
+  defp decision_receipt_text(approval, event) do
+    ApprovalCopy.decision_receipt(
+      ApprovalCopy.field(approval, :status),
+      decider_ref(event),
+      format_decided_at(event.inserted_at)
+    )
+  end
+
+  # ⚠ SAFETY (D-20/D-27, T-39-07-R): Workflows.approve/3 (pre-existing,
+  # lib/scoria/workflows.ex, out of this plan's files_modified scope) writes
+  # the decision AuditOutboxEvent's `actor_ref` from the run/approval's
+  # IMMUTABLE ROOT identity (the original requester) — the SAME value the
+  # `approval.requested` event's actor_ref carries — NOT the operator who
+  # actually recorded THIS decision. The real decision-time actor is captured
+  # separately as `event.metadata["metadata"]["decision_actor_id"]` (verified
+  # against a live `approve/3` write). Reading bare `actor_ref` here would
+  # silently misattribute every decision to the requester — the exact
+  # repudiation defect D-20/T-39-07-R exist to prevent — so the decider is
+  # sourced from the metadata field first, falling back to actor_ref only if
+  # that field is absent (defensive compat with any older/malformed event).
+  defp decider_ref(event) do
+    get_in(event.metadata, ["metadata", "decision_actor_id"]) || event.actor_ref
+  end
+
+  defp format_decided_at(nil), do: nil
+  defp format_decided_at(%DateTime{} = dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M UTC")
+  defp format_decided_at(%NaiveDateTime{} = dt), do: Calendar.strftime(dt, "%Y-%m-%d %H:%M UTC")
+
+  # D-20: batch-load by the visible id-set (single `in ^ids` query) rather than
+  # one approval_decision_event/1 call per row — the history-table analog of
+  # approval_decision_event/1 below.
+  defp decision_events_by_approval_id([]), do: %{}
+
+  defp decision_events_by_approval_id(approvals) do
+    ids = Enum.map(approvals, &to_string(ApprovalCopy.field(&1, :id)))
+
+    AuditOutboxEvent
+    |> where([event], event.event_type in ^decision_event_types())
+    |> where([event], fragment("?->>?", event.redacted_refs, "approval_id") in ^ids)
+    |> order_by([event], desc: event.inserted_at)
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn event, acc ->
+      # ORDER BY desc inserted_at + Map.put_new keeps the most recent decision
+      # event per approval id (there is normally exactly one terminal decision
+      # event per approval; defensive against any duplicate).
+      Map.put_new(acc, get_in(event.redacted_refs, ["approval_id"]), event)
+    end)
+  end
+
+  defp decision_event_types, do: Enum.map(~w(approved rejected expired), &"approval.#{&1}")
 
   defp maybe_put_outcome_status(filters, outcome) do
     case outcome_status(outcome) do
@@ -414,10 +511,53 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   # across tenants.
   defp assign_active_approval(socket, approval_id)
        when is_binary(approval_id) and approval_id != "" do
-    assign(socket, :active_approval, resolve_scoped_approval(socket, approval_id))
+    put_active_approval(socket, resolve_scoped_approval(socket, approval_id))
   end
 
-  defp assign_active_approval(socket, _approval_id), do: assign(socket, :active_approval, nil)
+  defp assign_active_approval(socket, _approval_id), do: put_active_approval(socket, nil)
+
+  # D-19/D-20/D-27: every place :active_approval is assigned routes through
+  # here so the audit-sourced decided receipt (:active_approval_receipt) never
+  # drifts out of sync with which approval is open.
+  defp put_active_approval(socket, nil) do
+    socket
+    |> assign(:active_approval, nil)
+    |> assign(:active_approval_receipt, nil)
+  end
+
+  defp put_active_approval(socket, approval) do
+    socket
+    |> assign(:active_approval, approval)
+    |> assign(:active_approval_receipt, decided_receipt_for(approval))
+  end
+
+  defp decided_receipt_for(approval) do
+    if decided?(approval) do
+      decision_receipt_text(approval, approval_decision_event(approval))
+    else
+      nil
+    end
+  end
+
+  # D-20: single-approval analog of decision_events_by_approval_id/1 above,
+  # mirroring approval_request_event/1 but matching the decision event type
+  # "approval.<status>" and reading inserted_at (decided-at) / actor_ref
+  # (decider) — NOT updated_at and NOT get_approval_lineage!'s requesting actor.
+  defp approval_decision_event(approval) do
+    AuditOutboxEvent
+    |> where(
+      [event],
+      event.workflow_run_id == ^ApprovalCopy.field(approval, :workflow_run_id) and
+        event.event_type in ^decision_event_types()
+    )
+    |> where(
+      [event],
+      fragment("?->>? = ?", event.redacted_refs, "approval_id", ^ApprovalCopy.field(approval, :id))
+    )
+    |> order_by([event], desc: event.inserted_at)
+    |> limit(1)
+    |> Repo.one()
+  end
 
   defp resolve_scoped_approval(socket, approval_id) do
     case Enum.find(socket.assigns.approval_inbox, &(to_string(&1.id) == approval_id)) do
@@ -487,7 +627,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
            &approval_matches_focus?(&1, socket.assigns.runtime_query)
          ) do
       nil -> socket
-      projection -> assign(socket, :active_approval, projection)
+      projection -> put_active_approval(socket, projection)
     end
   end
 
@@ -610,7 +750,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   defp maybe_clear_active_approval(socket, approval_id) do
     if socket.assigns.active_approval && socket.assigns.active_approval.id == approval_id do
       socket
-      |> assign(:active_approval, nil)
+      |> put_active_approval(nil)
       |> assign(:decision_modal, nil)
     else
       socket
