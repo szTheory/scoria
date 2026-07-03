@@ -25,6 +25,8 @@ own feature docs + a release).
 | 999.5 | [SEED-008](SEED-008-trustworthy-eval-depth.md) | Trustworthy Eval Depth | Medium | 006, 007 |
 | 999.6 | [SEED-009](SEED-009-retrieval-eval-depth-and-seams.md) | Retrieval Eval Depth & Seams | Medium | 006 |
 | 999.7 | [SEED-011](SEED-011-privacy-and-feedback-governance.md) | Privacy & Feedback Governance | Medium | — |
+| 999.8 | [SEED-012](SEED-012-architecture-archetype-awareness.md) | Architecture-Archetype Awareness (Rule-8 lens) | Medium (small capstone) | 007, 008 |
+| 999.9 | [SEED-013](SEED-013-operator-ia-pivot.md) | Operator IA Pivot (Control-Room v2) | High (dashboard coherence) | — (shell); composes 005/007/008/010/011/012 |
 
 **Dependency graph (text):**
 ```
@@ -32,10 +34,28 @@ SEED-006 (P0, release gate) ── first, unblocks everything
    ├── SEED-005 (docs; also gates the release cut)
    ├── SEED-007 (trace foundation)
    │      ├── SEED-010 ⭐ (lethal-trifecta; also needs 006)
-   │      └── SEED-008 (eval depth; also needs 006)
+   │      ├── SEED-008 (eval depth; also needs 006)
+   │      └── SEED-012 (archetype lens / Rule-8; needs 007 + 008 — capstone)
    ├── SEED-009 (retrieval depth)
    └── SEED-011 (privacy & feedback)
+
+SEED-013 (operator IA pivot / Control-Room v2) ── structural shell buildable on today's backend
+   (depends_on: none); the umbrella that 005/007/008/010/011/012 each fold a UI slice into.
+   Sequence after 006 (P0), alongside/after 005 (vocab).
 ```
+
+**Source memo for the 2026-07-03 AI-architecture-patterns ingest:** `.planning/research/ai-architectural-patterns.md`
+— the 14-pattern field guide the 005/007/008/009/010/011/012 "AI-Architecture-Patterns cross-ref" sections
+point at. It *validated* ~85% of Scoria as-built (patterns map ~1:1 onto shipped subsystems), so the ingest
+produced annotations + one new capstone seed (012), not new milestones. Sibling memo
+`prompts/ai-eval-best-practices-deep-research.md` is a candidate for the same ingest treatment later.
+
+**Source memo for the 2026-07-03 operator-UI storyboard ingest:** `.planning/research/operator-ui-north-star.md`
+— the doctrine-filtered UI source-of-record the 005/007/008/009/010/011/012 "Operator-UI North-Star cross-ref"
+sections point at (distilled from `prompts/scoria-ideal-admin-operator-ui-ux-storyboard-deep-research.md`). The
+storyboard was blank-slate/maximalist; ~40% already ships, so the ingest produced the North-Star doc + one
+structural seed (013, the IA pivot / Control-Room v2) + annotations — not a from-scratch redesign. The doc's
+"which screen rides which seed" slice map tells each future UI-touching milestone exactly which slice it owns.
 
 **The interleaving rule (why docs aren't wasted):** SEED-005 ships only the *stable* adopter docs
 (terminology, positioning/scope-doctrine, ExDoc grouping, glossary, README first-screen) — these
@@ -59,6 +79,8 @@ pre-written obsoletely.
 | [SEED-009](SEED-009-retrieval-eval-depth-and-seams.md) | dormant | RAG / knowledge / retrieval quality |
 | [SEED-010](SEED-010-lethal-trifecta-governance.md) | dormant | agent security / governance |
 | [SEED-011](SEED-011-privacy-and-feedback-governance.md) | dormant | privacy / compliance / HITL feedback |
+| [SEED-012](SEED-012-architecture-archetype-awareness.md) | dormant | pattern lens / archetype / router analytics / Rule-8 evals |
+| [SEED-013](SEED-013-operator-ia-pivot.md) | dormant | dashboard IA / operator UX / content-hierarchy pivot / control-room redesign |
 
 ## Post-v3.3 housekeeping (collision-avoidance — do when the v3.3 window is idle)
 - Record the 6-principle **scope doctrine** into `PROJECT.md` (`## Key Decisions` + `## Constraints`).

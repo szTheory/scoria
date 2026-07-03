@@ -72,6 +72,8 @@ owns the noun (identity, business truth, policy value, end-user)":**
 - **ADJACENT (hooks/docs, no dedicated surface):** Trust & Safety, security engineer, privacy/legal/compliance (the 3 highest-leverage underserved), data scientist, domain expert, feature PM, support/CS.
 - **NOT-OURS (explicitly out of scope):** end user of the LLM flows, product designer of the host feature, finance/exec dashboards.
 
+**Persona posture — roles-not-headcount (n=1 default):** the CORE roles above are *hats one person wears*, not separate people. Docs must speak to the **smallest-viable team (n=1)** — a solo SWE running an AI feature in their Phoenix SaaS with no dedicated ML/platform/T&S team — while degrading gracefully to a few (n=1 is the default *lens*, not an invariant). Now recorded in `PROJECT.md` Core Value; headline it in the "Who it's for" rewrite. Source: `.planning/research/ai-architectural-patterns.md`.
+
 **Differentiators to headline:** embedded-not-SaaS (data ownership by default); governance that *blocks*, not observability that watches; **lethal-trifecta-as-policy** (the flagship bet — [[SEED-010]]); BEAM-native durable runs + branch-and-replay.
 
 ### 5 concrete docs deltas from the audit
@@ -313,6 +315,44 @@ folded into Phase 41); (c) terminology strategy = **full sense-aware rename** (a
 - **Blueprint exemplars:** `/Users/jon/projects/{lattice_stripe,sigra,scrypath,mailglass,relyra,oban_powertools}`.
 - **Release pipeline skill:** `bootstrap-elixir-hex-lib`. Seed exemplar shape: `SEED-003-ci-efficiency-overhaul.md`.
 - **Full session plan:** `~/.claude/plans/so-i-m-looking-at-quizzical-widget.md`.
+
+## AI-Architecture-Patterns cross-ref (2026-07-03)
+
+Source memo: `.planning/research/ai-architectural-patterns.md` (a 14-pattern field guide + decision-tree
++ ladder + cheat-sheet). Highest adoption ROI of the whole ingest — this is the *front-door* concept.
+
+- **Fold the pattern map into the "Choose Your Route" onboarding nav** (the szTheory blueprint's
+  `lattice_stripe` "Docs Ladder"/"Choose Your Route" pattern, referenced above): a **"Which pattern is
+  your AI feature? → which Scoria surface you'll use"** table. The memo's §17 architecture-ladder *is*
+  that nav; §15 decision-tree, §16 "how these compose", §19 cheat-sheet, and §20 "taste test" are the
+  content. Pure docs — P3/P5-safe.
+- **Add two glossary disambiguation entries** (same class of naming-hazard the operator→reviewer rename
+  already handles): **(1) `Orchestrator`** — `Scoria.Orchestrator` = single-call generation + model
+  fallback chains (LOW agency) ≠ the memo's §9 "orchestrator-workers" pattern (HIGH agency, dynamic
+  delegation). Prevents durable adopter mis-mapping the moment this memo becomes onboarding material.
+  **(2) RAG-vs-agent (Rule 1)** — RAG answers *"what should the model know?"*; an agent answers *"what
+  should the system do next?"*.
+- **Ladder ethos in positioning:** Scoria supports the full ladder but defaults/educates toward
+  workflows + RAG + tools + gates (Rule 4). Now a `PROJECT.md` Key Decision; carry it into the
+  positioning page.
+- Cross-ref §15 / §17 / §19 / §20. Sibling memo `prompts/ai-eval-best-practices-deep-research.md` is a
+  candidate for the same ingest treatment later (not done yet).
+
+## Operator-UI North-Star cross-ref (2026-07-03)
+
+Source memo: `.planning/research/operator-ui-north-star.md` (from the operator-UI storyboard ingest).
+The docs rewrite **owns the vocabulary + copy standards** that the [[SEED-013]] IA pivot depends on:
+- **The "AI Feature" concept** — the operator-facing grouping object (`support_copilot`,
+  `billing_refund_assistant`) that ties runs/prompts/evals/tools/knowledge/budgets/policies together.
+  Glossary + positioning must define it as a **host-declared attribute Scoria segments by**, never a
+  Scoria-modeled business noun (same posture as `archetype`/`route`/`intent`).
+- **The operator-moments framing** (Orient → Act → Investigate → Recover → Improve → Govern → Audit) —
+  the mental model the nav and docs onboarding ("Choose Your Route") should share.
+- **Plain-language operator-grade copy standards** — consequence-first microcopy that always distinguishes
+  **proposed / completed / blocked / approved / denied** ("Run paused before calling send_email. No
+  external message has been sent."), so the operator knows whether damage happened or was prevented. This
+  is a docs/positioning deliverable AND the copy contract the UI pivot enforces. No new work here beyond
+  folding these terms + standards into the rename map + glossary + first-screen.
 
 ## Notes
 

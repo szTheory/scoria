@@ -89,6 +89,40 @@ in-scope for an embedded lib without over-reaching into host policy.
 - Sources: memo §11,12; Willison "lethal trifecta"; Meta "Agents Rule of Two" (Nov 2025); OWASP LLM Top 10
   2025; MSRC spotlighting. Full audit: `~/.claude/plans/so-i-m-looking-at-quizzical-widget.md`. Related: [[SEED-006]], [[SEED-007]], [[SEED-005]] (headline in docs).
 
+## AI-Architecture-Patterns cross-ref (2026-07-03)
+
+Source memo: `.planning/research/ai-architectural-patterns.md` §6 (tool-calling) + §13 (guardrail/safety
+harness) + **Rule 3 ("a tool is a loaded interface")**. Reinforces the tool-declared-classification bet:
+prefer **narrow / typed / permission-aware / idempotent / reversible / dry-run-capable** tools that make
+mistakes harder; expose a safer intermediate (`draft_refund_request`) not the raw effectful op
+(`send_money_now`). The memo's "the real defense is the agent does not have the blast radius" is exactly
+this seed's mechanism-over-prompt thesis.
+
+- **One addition — per-run agent-rails note (§10 agentic loop):** the memo hammers `max_steps` /
+  `max_tool_calls` / `timeout` scoped to a *single run* ("an agent without a step limit is a fork bomb
+  with prose"). This is **distinct** from SRE's *tenant-level* budgets/breakers — it's a per-run rail.
+  Fold as a small addition to the confluence-escalation / executor work here (or note for the host
+  contract); do NOT spin a new seed.
+
+## Operator-UI North-Star cross-ref (2026-07-03)
+
+Source memo: `.planning/research/operator-ui-north-star.md`. **Richest UI match in the storyboard** — this
+flagship seed owns the **Govern section** the [[SEED-013]] IA pivot elevates to first-class ("don't bury
+the differentiator under Settings"):
+- **Tools & blast-radius panel** — per tool/connector, the compound-risk facts *reads private data ·
+  reads untrusted content · external egress · side effect · irreversible · approval required* — this is
+  the tool-declared trifecta classification (item in "What to build") rendered visually.
+- **The "exfiltration path" framing** — the UI must **name dangerous combinations**, not just label "high
+  risk": "private data + untrusted content + external egress → **exfiltration path**." That is the
+  confluence/Meta-Rule-of-Two escalation shown to a human.
+- **Approval-policy builder + policy test-on-past-runs** — plain-language `When … Then pause & require
+  approval`, plus a **simulate-on-history** step ("would have matched 38 runs — 32 correct, 4 unnecessary,
+  2 need review") as an explicit **approval-fatigue preventer**. Mechanism, not opinion (P2).
+- **Guardrail screens** — gate location (input/context/tool/output/memory), decision (allow/warn/block/
+  escalate), triggering evidence, FP/FN feedback. Reinforces the seam that Scoria's edge is **inline
+  blocking, not passive observation**. The North-Star doc is the UI "why"; the enforcement seams are this
+  seed's build.
+
 ## Notes
 Planted during v3.3 from a 6-agent adjudicated audit; elevated to **flagship** by maintainer decision.
 The safety adjudicator's verdict: Scoria is "one leg (untrusted-content taint) and one confluence

@@ -79,6 +79,40 @@ judge-calibration join is pure mechanism Scoria already has both inputs for — 
   `lib/scoria/prompt_registry/**` (reuse for versioned rubric).
 - Source memo §5,6,14,15,16. Full audit: `~/.claude/plans/so-i-m-looking-at-quizzical-widget.md`. Related: [[SEED-006]], [[SEED-007]].
 
+## AI-Architecture-Patterns cross-ref (2026-07-03)
+
+Source memo: `.planning/research/ai-architectural-patterns.md` — **Rule 8 ("the eval shape should match
+the architecture shape")** is this seed's premise made explicit, plus §1/§2 (single-call + structured
+extraction evals). Additions, all annotations riding existing mechanisms:
+
+- **`archetype` as a typed slot** beside the existing `intent` / `risk_tier` slots on `DatasetItem`
+  (item 5) — host sets the value; Scoria records/segments, never infers. One more host-supplied slot,
+  not new machinery.
+- **Rule-8 eval-set-per-archetype preset** (guidance/config on top of the scorer library, never enforced
+  values — P2): router → routing-accuracy; rag → retrieval + faithfulness + citation; tool-assistant →
+  tool-selection + args + permissions; agent → trace + goal-completion + stop-behavior.
+- **The confusion-matrix + Cohen's-kappa machinery (item 2) also serves routing accuracy** — same
+  machinery on a different axis (predicted-route vs gold-route instead of judge-verdict vs human-label).
+  So Router observability needs no new eval primitive; it reuses item 2.
+
+Together these are the eval half of the [[SEED-012]] archetype lens (the trace-attribute half is in
+[[SEED-007]]).
+
+## Operator-UI North-Star cross-ref (2026-07-03)
+
+Source memo: `.planning/research/operator-ui-north-star.md`. This seed owns the **Quality-depth screens**
+the [[SEED-013]] IA pivot frames:
+- **Eval Run Detail** — candidate-vs-baseline, overall pass rate, a per-segment/per-intent **breakdown
+  table**, and an explicit **Decision: Blocked/Passed** with blocker reasons.
+- **Eval-case-as-story** — a failed case is inspectable (input, expected/forbidden behavior, baseline vs
+  candidate output, per-scorer pass/fail, link back to the source trace), never "just a red number."
+- **Release-gate view** — checklist of checks with ✓/✕/⚠ + a note-required, receipt-producing **override**
+  (mechanism, not policy — P2).
+- **Feeds the Workbench inspector's Diagnosis slot mechanically** — "similar-failure count," "linked
+  regression failures: 12" are *counts over eval records*, which is exactly how the North-Star guardrail
+  wants Diagnosis driven (mechanical signal, **not** an in-lib LLM opinion). Reinforces, doesn't expand,
+  this seed's scope.
+
 ## Notes
 Planted during v3.3 from a 6-agent adjudicated audit. Judge calibration (item 2) is flagged by the
 audit as an under-sold *differentiator* — Scoria captures both signals and discards the join; no other

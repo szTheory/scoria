@@ -75,6 +75,29 @@ the *models* (NLI, cross-encoder, embeddings) are the host's — Scoria provides
   `priv/repo/knowledge_migrations/...create_knowledge_tables.exs` (graded-label / is_current join support).
 - Source memo §10. Full audit: `~/.claude/plans/so-i-m-looking-at-quizzical-widget.md`. Related: [[SEED-006]] (P0 knowledge fixes), [[SEED-007]] (RETRIEVER span).
 
+## AI-Architecture-Patterns cross-ref (2026-07-03)
+
+Source memo: `.planning/research/ai-architectural-patterns.md` §4 (RAG / grounded generation). Reinforces
+this seed's core discipline: **evaluate retrieval and generation separately** (a bad answer is either a
+retriever miss *or* a generator that ignored good evidence — the logs must tell them apart), **citation
+eval** ("cite claims, not vibes"), and **abstention as a valid success case** ("not found in sources" is
+a correct outcome, not a failure — matches item 2's abstention scorer). No new work; the memo validates
+the model-free-BUILD / model-requiring-DELEGATE split already here.
+
+## Operator-UI North-Star cross-ref (2026-07-03)
+
+Source memo: `.planning/research/operator-ui-north-star.md`. This seed owns the **retrieval diagnostic
+screens** the [[SEED-013]] IA pivot frames:
+- **Retrieval Explorer** — enter a query + scope (tenant/feature/index/filters), run a retrieval test, see
+  ranked chunks with scores, "cited in N% of good answers," stale warnings, and (importantly)
+  **permission-excluded docs shown explicitly** so the operator sees what tenant filtering removed.
+- **Citation map** — claim → supporting-chunk, with **unsupported claims visually obvious** and linked to
+  eval failures. Renders inside the Workbench retrieval-span evidence canvas ([[SEED-007]] RETRIEVER span).
+- **Retrieval-vs-generation failure classification** — the "Likely component: retrieval (expected source
+  not in top-10)" vs "generation (source retrieved but answer contradicted it)" split. **Mechanical**
+  (derived from retrieved-set + citation membership), not an LLM verdict — satisfies the North-Star
+  no-in-lib-opinion guardrail. No new work; the memo is the "why" for the explorer + citation-map surfaces.
+
 ## Notes
 Planted during v3.3 from a 6-agent adjudicated audit. Peer precedent: Ragas, Arize Phoenix RAG evals,
 TruLens RAG triad, LlamaIndex two-stage retrieval.

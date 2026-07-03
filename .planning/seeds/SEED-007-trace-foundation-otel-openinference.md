@@ -87,6 +87,37 @@ Datadog/Langfuse for warehousing, NOT Scoria becoming an analytics platform.
   `README.md:272` (the "OpenInference-style" overclaim).
 - Source memo §7. Full audit: `~/.claude/plans/so-i-m-looking-at-quizzical-widget.md`. Related: [[SEED-006]], [[SEED-008]], [[SEED-005]] (README claim fix).
 
+## AI-Architecture-Patterns cross-ref (2026-07-03)
+
+Source memo: `.planning/research/ai-architectural-patterns.md` §14 (the trace schema this seed realizes —
+prompt version, model config, retrieved doc IDs, tool calls, guardrail decisions, output, eval scores;
+already OTel-GenAI-aligned). Two additions surfaced by the memo, both **annotations to this seed, no new
+primitive** (they ride the existing `attributes` map — the same convention-not-columns discipline as §What-to-build item 1):
+
+- **Host-declared `route` / `archetype` / `intent` attribute convention.** Add these to the conventional
+  key set on prompt/LLM spans. This is what makes Router per-route analytics (per-route cost/latency,
+  routing accuracy) possible **with zero new primitive** — the memo's own §14 example literally puts
+  `"intent": "billing_duplicate_charge"` in the trace. **Host declares; Scoria never infers** (inference
+  would be a P2 "opinion" / P1 "business-truth" violation). This is the substrate [[SEED-012]] consumes.
+- **Context-pack / token-budget composition (Rule 7 "context is architecture").** The one genuinely
+  under-served observability theme: capture *which* chunks + *which* memories + the token split that
+  actually entered the assembled prompt, alongside `gen_ai.usage.input_tokens`. Today Scoria captures
+  prompt version + retrieved_doc_ids + (post-this-seed) model config, but not the composition of the
+  context pack. A conventional-key addition on the prompt span, not a schema change.
+
+## Operator-UI North-Star cross-ref (2026-07-03)
+
+Source memo: `.planning/research/operator-ui-north-star.md`. This seed is the **attribute substrate** the
+[[SEED-013]] IA pivot reads from:
+- The **persistent scope bar** (Tenant / Feature / Time / Live) filters on the host-declared
+  `feature`/`route`/`archetype`/`intent` attributes this seed standardizes — no new attribute work, the
+  scope bar just surfaces them.
+- The **per-span-kind evidence canvas** in the 3-pane Run Workbench is driven by `span_kind` — the
+  prompt/LLM/retrieval/tool/guardrail/eval/error tab sets map 1:1 onto the structured span kinds this seed
+  lands. The RETRIEVER span this seed adds is what the [[SEED-009]] retrieval-span canvas renders.
+- The **story-spine-with-vesicles** viz reads span state (evidence present / redacted / error / live) off
+  the same structured span/event fields. No new primitive — the trace UI is a projection of these attrs.
+
 ## Notes
 Planted during v3.3 from a 6-agent adjudicated audit. Peer precedent: OTel-GenAI spans/events semconv,
 OpenInference (Arize Phoenix), Langfuse + LangSmith (both OTel-native). This is the layer [[SEED-008]]

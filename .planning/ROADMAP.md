@@ -242,6 +242,19 @@ interleaving its own feature docs + a release as it lands.
    From the 2026-07-03 AI-architecture-patterns ingest (memo: `.planning/research/ai-architectural-patterns.md`,
    which validated ~85% of Scoria as-built). → see `SEED-012`.
 
+9. **999.9 → SEED-013 — Operator IA Pivot (Control-Room v2)**  (dashboard coherence; sequence after 006, alongside/after 005)
+   The **structural** operator-UI pivot buildable on today's backend: a tighter nav re-group
+   (Home · Queue · Features · Runs · Quality · Govern · [Data & Privacy] · [Audit]), a **unified Queue**
+   (one ranked human-work inbox over existing approvals+incidents+reviews), a persistent scope contract
+   (Tenant/Feature/Time/Live, cross-tenant loud), a 3-pane **Run Workbench**, the progressive-disclosure
+   law + receipts + "create policy rule from this," a **Feature Cockpit shell** (host-declared feature
+   attribute), and the "story-spine-with-vesicles" trace viz. It is the umbrella the feature-specific
+   screens fold into: Govern/blast-radius rides `SEED-010`, Data & Privacy rides `SEED-011`, Quality depth
+   rides `SEED-008`/`SEED-009`, Feature Cockpit content rides `SEED-012`. From the 2026-07-03 operator-UI
+   storyboard ingest (**UI source-of-record: `.planning/research/operator-ui-north-star.md`**, which
+   doctrine-filtered a blank-slate/maximalist storyboard down to this one structural seed + annotations —
+   ~40% of its ideas already ship). → see `SEED-013`.
+
 ### Carried-forward deferred work (pre-audit)
 
 - **SEED-004 — Test-code determinism** (async `IntegrationCase`, remove `Process.sleep`→`eventually/2`,

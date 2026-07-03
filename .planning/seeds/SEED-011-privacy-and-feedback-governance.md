@@ -83,6 +83,32 @@ P2/P4 (masking + authz are *hooks/contracts*, not opinions — host supplies the
   `lib/scoria_web/router.ex` (`scoria_dashboard/2` authz seam — shared with [[SEED-006]] P0-3).
 - Sources: memo §7,13; Langfuse data-retention/deletion/masking docs; LangSmith annotation queues. Full audit: `~/.claude/plans/so-i-m-looking-at-quizzical-widget.md`. Related: [[SEED-006]], [[SEED-007]], [[SEED-005]].
 
+## AI-Architecture-Patterns cross-ref (2026-07-03)
+
+Source memo: `.planning/research/ai-architectural-patterns.md` §12 (memory / personalization). Validates
+this seed's stance that **memory is a database, not a bigger prompt** — scoped, permissioned, reviewable,
+and deletable; the memory-types table (preference / project-fact / user-profile / task-state) with
+per-type write policy; and the hard rule **"never store account state as memory — fetch it fresh"**
+(cross-tenant/stale-memory hazards). Directly reinforces item 1 (forget/expire on `ai_compacted_memories`)
+and item 2 (masking contract). No new work; the memo is the "why" for the retention/forget deliverables.
+
+## Operator-UI North-Star cross-ref (2026-07-03)
+
+Source memo: `.planning/research/operator-ui-north-star.md`. This seed owns the **Data & Privacy section**
+the [[SEED-013]] IA pivot reserves as a top-level home:
+- **Forget-actor / forget-tenant / purge-run flow** — enter a reference → **impact preview** (affected
+  traces / memory / cache / eval cases / audit constraints) → choose purge policy → confirm → receipt.
+  **Purge must preserve an anonymized audit receipt** even while deleting payloads (reconciles
+  right-to-erasure with immutable audit — directly item 1 of this seed).
+- **Retention + PII-masking display** — retention windows (raw prompts / redacted traces / eval cases /
+  memory / cache) and masking coverage surfaced as **operational controls, not hidden config** (item 2's
+  `:mfa` masking contract made visible).
+- **Memory & semantic-cache made inspectable-like-a-run** — memory records (scope/subject-ref/source-run/
+  last-used/PII flag) with edit/delete/forget; cache entries with eligibility + invalidation reasons.
+- **Human-feedback capture feeds the unified Queue** — thumbs/accept/edit/report events (item 3) become
+  **Queue "review case" items** in the North-Star inbox and flow to the promote-to-dataset flywheel. No
+  new work; the memo is the "why" for giving these a first-class operational home.
+
 ## Notes
 Planted during v3.3 from a 6-agent adjudicated audit. Serves the "your AI audit trail never leaves your
 own Postgres" embedded story — a killer compliance differentiator vs every SaaS competitor, low build
