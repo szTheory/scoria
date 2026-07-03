@@ -2,15 +2,17 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: Design System Stress Test
+current_phase: 39
+current_phase_name: component-groups-and-operator-flows
 status: executing
-stopped_at: Phase 39 context gathered
-last_updated: "2026-07-03T09:58:53.137Z"
+stopped_at: Completed 39-07-PLAN.md
+last_updated: "2026-07-03T10:29:35.218Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 19
-  completed_plans: 17
+  completed_plans: 18
   percent: 50
 ---
 
@@ -27,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 39 (component-groups-and-operator-flows) — EXECUTING
-Plan: 7 of 8
+Plan: 8 of 8
 Status: Ready to execute
 Last activity: 2026-07-03
 
@@ -91,6 +93,8 @@ Recent decisions affecting current work:
 - [Phase 39-05]: No D-08 error/retry split added to incidents_live: OperatorSurface.list_tenant_incidents/1 already rescues internally to [] outside this plan's files_modified scope, so a LiveView-level rescue would be dead code.
 - [Phase ?]: 39-06: Deny buttons (drawer + confirm modal) switch from scoria-button--danger to neutral scoria-button--ghost since the locked button vocabulary has no dedicated middle tone; risk-gradient rationale documented in code comments.
 - [Phase ?]: 39-06: decided?/1 positive-whitelist predicate (approved/rejected/expired, fails safe) gates the action section + confirm modal so reversal affordances are structurally absent once decided; full decided-receipt (decider/time) wiring deferred to Plan 07 per this plan's stated scope.
+- [Phase 39]: 39-07: decider_ref/1 sources event.metadata["metadata"]["decision_actor_id"] first, falling back to actor_ref, since Workflows.approve/3 writes actor_ref from immutable root identity (the requester), not the deciding operator. — Reading bare actor_ref per the plan's literal D-20 instruction would have silently misattributed every decision to the requester -- fixed within approvals_live/index.ex alone, no workflows.ex change.
+- [Phase 39]: 39-07: runtime-focused PubSub auto-open stays a one-shot assign-based seed (runtime_seeded? flag), not migrated to the URL -- only the operator-initiated ?approval=<id> selection became a URL param per D-09's scope.
 
 ### Pending Todos
 
@@ -123,9 +127,10 @@ None at milestone start.
 
 > **Ordered roadmap + dependencies** for SEED-005…011 live in `ROADMAP.md` `## Backlog` (999.1–999.7); "why" index in `.planning/seeds/README.md`. Stray per-plan timing rows that previously polluted this table were removed 2026-07-03 (canonical per-plan metrics live in the phase manifests).
 | Phase 39 P06 | ~20min | 3 tasks | 5 files |
+| Phase 39 P07 | ~50min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-07-03T09:57:02.756Z
-Stopped at: Phase 39 context gathered
+Last session: 2026-07-03T10:29:35.214Z
+Stopped at: Completed 39-07-PLAN.md
 Resume file: None
