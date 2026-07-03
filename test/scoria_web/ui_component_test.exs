@@ -189,6 +189,65 @@ defmodule ScoriaWeb.UIComponentTest do
     end
   end
 
+  describe "status_label/1 additive curated upgrade (D-24a/D-25, Phase 39)" do
+    test "curates the D-25 canonical status vocabulary" do
+      curated = %{
+        "pending" => "Pending",
+        "approved" => "Approved",
+        "expired" => "Expired",
+        "passed" => "Passed",
+        "failed" => "Failed",
+        "regressed" => "Regressed",
+        "running" => "Running",
+        "promoted" => "Promoted",
+        "draft" => "Draft",
+        "published" => "Published",
+        "connected" => "Connected",
+        "disconnected" => "Disconnected",
+        "idle" => "Idle"
+      }
+
+      for {status, label} <- curated do
+        assert ScoriaWeb.UI.status_label(status) == label
+      end
+    end
+
+    test "an unseen status still returns a titleized string via the retained generic clause, never raises" do
+      assert ScoriaWeb.UI.status_label("some_unseen_status") == "Some unseen status"
+    end
+
+    test "atom input delegates through the binary path unchanged" do
+      assert ScoriaWeb.UI.status_label(:pending) == "Pending"
+    end
+
+    test "does not curate \"rejected\" to \"Denied\" (D-24d, approval-domain only)" do
+      assert ScoriaWeb.UI.status_label("rejected") == "Rejected"
+    end
+
+    test "still returns \"Unknown\" for non-atom, non-binary input" do
+      assert ScoriaWeb.UI.status_label(123) == "Unknown"
+    end
+
+    test "curated clauses are structurally above the retained generic fallback (D-24a)" do
+      ui_source = File.read!("lib/scoria_web/ui.ex")
+
+      [_before, after_start] =
+        String.split(ui_source, "def status_label(status) when is_binary(status) do", parts: 2)
+
+      [binary_clause_body, _rest] =
+        String.split(after_start, "\n  def status_label(_), do: \"Unknown\"", parts: 2)
+
+      assert binary_clause_body =~ "case status do"
+      assert binary_clause_body =~ ~s("approved" -> "Approved")
+      assert binary_clause_body =~ "String.replace(\"_\", \" \")"
+      refute binary_clause_body =~ ~s("rejected" -> "Denied")
+
+      {case_index, _} = :binary.match(binary_clause_body, "case status do")
+      {fallback_index, _} = :binary.match(binary_clause_body, "String.replace(\"_\", \" \")")
+      assert fallback_index > case_index
+    end
+  end
+
   describe "time/1 design-system primitive" do
     test "renders accessible exact time with operator-friendly elapsed text" do
       html =
