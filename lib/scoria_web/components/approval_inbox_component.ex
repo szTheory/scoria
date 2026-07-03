@@ -1,6 +1,7 @@
 defmodule ScoriaWeb.ApprovalInboxComponent do
   use Phoenix.Component
 
+  alias Phoenix.LiveView.JS
   alias ScoriaWeb.ApprovalCopy
 
   import ScoriaWeb.UI
@@ -107,7 +108,7 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
         <:action :let={approval}>
           <button
             type="button"
-            phx-click={@select_event}
+            phx-click={@select_event && (JS.push_focus() |> JS.push(@select_event))}
             phx-value-id={@select_event && ApprovalCopy.field(approval, :id)}
             class="scoria-button scoria-button--ghost scoria-button--sm"
           >
@@ -131,7 +132,7 @@ defmodule ScoriaWeb.ApprovalInboxComponent do
             <div class="scoria-mobile-summary__action">
               <button
                 type="button"
-                phx-click={@select_event}
+                phx-click={@select_event && (JS.push_focus() |> JS.push(@select_event))}
                 phx-value-id={@select_event && ApprovalCopy.field(approval, :id)}
                 class="scoria-button scoria-button--ghost scoria-button--sm"
               >

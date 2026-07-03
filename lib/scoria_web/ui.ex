@@ -704,10 +704,28 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
   @doc "Slot-based modal dialog shell (DS-02).
   Renders nothing when show=false. When show=true, renders a scrim + panel with
   a consistent triple dismiss contract: close button + scrim click + Escape key.
-  The caller owns all dismiss events via on_dismiss."
+  The caller owns all dismiss events via on_dismiss.
+
+  D-10: the panel body is wrapped in `focus_wrap/1` (distinct id `\#{@id}-focus`,
+  nested INSIDE this `role=\"dialog\"` element — never reusing `@id`) so Tab/
+  Shift+Tab wrap inside the dialog and never land on the page behind the scrim.
+  `phx-mounted={JS.focus_first()}` moves focus in on open (replacing the old
+  bare `autofocus` attribute so there is exactly one tab-in mechanism, not two
+  racing). `phx-remove={JS.pop_focus()}` on the outer shell restores focus to
+  whatever opener called `JS.push_focus()` when this element leaves the DOM —
+  i.e. whenever the caller's `on_dismiss` flips `show` back to false, covering
+  the close button, scrim click, and Escape dismiss paths from one place."
   def modal(assigns) do
     ~H"""
-    <div :if={@show} id={@id} class="scoria-modal" phx-window-keydown={@on_dismiss} phx-key="Escape" {@rest}>
+    <div
+      :if={@show}
+      id={@id}
+      class="scoria-modal"
+      phx-window-keydown={@on_dismiss}
+      phx-key="Escape"
+      phx-remove={JS.pop_focus()}
+      {@rest}
+    >
       <div class="scoria-scrim" phx-click={@on_dismiss} aria-hidden="true"></div>
       <div
         class="scoria-modal__panel"
@@ -716,29 +734,30 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
         aria-labelledby={(@title_slot != [] or @title != nil) && "#{@id}-title"}
         style={"max-width: #{@max_width}"}
       >
-        <div class="scoria-modal__header">
-          <div>
-            <h2 :if={@title_slot != []} id={"#{@id}-title"}>{render_slot(@title_slot)}</h2>
-            <h2 :if={@title_slot == [] and @title != nil} id={"#{@id}-title"}>{@title}</h2>
+        <.focus_wrap id={"#{@id}-focus"} phx-mounted={JS.focus_first()}>
+          <div class="scoria-modal__header">
+            <div>
+              <h2 :if={@title_slot != []} id={"#{@id}-title"}>{render_slot(@title_slot)}</h2>
+              <h2 :if={@title_slot == [] and @title != nil} id={"#{@id}-title"}>{@title}</h2>
+            </div>
+            <.icon_button
+              phx-click={@on_dismiss}
+              size={:md}
+              aria-label="Close dialog"
+              title="Close dialog"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+                <path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
+              </svg>
+            </.icon_button>
           </div>
-          <.icon_button
-            autofocus
-            phx-click={@on_dismiss}
-            size={:md}
-            aria-label="Close dialog"
-            title="Close dialog"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
-              <path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
-            </svg>
-          </.icon_button>
-        </div>
-        <div class="scoria-modal__body">
-          {render_slot(@inner_block)}
-        </div>
-        <div :if={@footer != []} class="scoria-modal__footer">
-          {render_slot(@footer)}
-        </div>
+          <div class="scoria-modal__body">
+            {render_slot(@inner_block)}
+          </div>
+          <div :if={@footer != []} class="scoria-modal__footer">
+            {render_slot(@footer)}
+          </div>
+        </.focus_wrap>
       </div>
     </div>
     """
@@ -757,10 +776,18 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
   @doc "Slot-based drawer panel shell (DS-02).
   Renders nothing when show=false. When show=true, renders a scrim + aside panel with
   a consistent triple dismiss contract: close button + scrim click + Escape key.
-  The caller owns all dismiss events via on_dismiss."
+  The caller owns all dismiss events via on_dismiss.
+
+  D-10: same focus-trap/restore wiring as `modal/1` — `focus_wrap/1` at the
+  distinct id `\#{@id}-focus` nested inside this `role=\"dialog\"` `<aside>`,
+  `phx-mounted={JS.focus_first()}` to move focus in on open, and
+  `phx-remove={JS.pop_focus()}` on the outer shell to restore focus to
+  whatever opener called `JS.push_focus()` once this element leaves the DOM.
+  This is the $10k-refund approval decision surface — the drawer previously
+  shipped with role/aria-modal but NO trap, autofocus, or restore at all."
   def drawer(assigns) do
     ~H"""
-    <div :if={@show} id={@id} class="scoria-drawer-shell" {@rest}>
+    <div :if={@show} id={@id} class="scoria-drawer-shell" phx-remove={JS.pop_focus()} {@rest}>
       <div
         class="scoria-scrim"
         phx-click={@on_dismiss}
@@ -774,29 +801,31 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
         aria-modal="true"
         aria-labelledby={(@title_slot != [] or @title != nil) && "#{@id}-title"}
       >
-        <div class="scoria-drawer__header">
-          <div class="scoria-drawer__header-text">
-            <p :if={@eyebrow != []} class="scoria-eyebrow">{render_slot(@eyebrow)}</p>
-            <h2 :if={@title_slot != []} id={"#{@id}-title"}>{render_slot(@title_slot)}</h2>
-            <h2 :if={@title_slot == [] and @title != nil} id={"#{@id}-title"}>{@title}</h2>
+        <.focus_wrap id={"#{@id}-focus"} phx-mounted={JS.focus_first()}>
+          <div class="scoria-drawer__header">
+            <div class="scoria-drawer__header-text">
+              <p :if={@eyebrow != []} class="scoria-eyebrow">{render_slot(@eyebrow)}</p>
+              <h2 :if={@title_slot != []} id={"#{@id}-title"}>{render_slot(@title_slot)}</h2>
+              <h2 :if={@title_slot == [] and @title != nil} id={"#{@id}-title"}>{@title}</h2>
+            </div>
+            <div class="scoria-drawer__header-actions">
+              <div :if={@actions != []}>{render_slot(@actions)}</div>
+              <.icon_button
+                phx-click={@on_dismiss}
+                size={:md}
+                aria-label="Close drawer"
+                title="Close drawer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
+                  <path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
+                </svg>
+              </.icon_button>
+            </div>
           </div>
-          <div class="scoria-drawer__header-actions">
-            <div :if={@actions != []}>{render_slot(@actions)}</div>
-            <.icon_button
-              phx-click={@on_dismiss}
-              size={:md}
-              aria-label="Close drawer"
-              title="Close drawer"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor">
-                <path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
-              </svg>
-            </.icon_button>
+          <div class="scoria-drawer__body">
+            {render_slot(@inner_block)}
           </div>
-        </div>
-        <div class="scoria-drawer__body">
-          {render_slot(@inner_block)}
-        </div>
+        </.focus_wrap>
       </aside>
     </div>
     """

@@ -25,6 +25,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   import Ecto.Query, warn: false
 
+  alias Phoenix.LiveView.JS
   alias Scoria.Repo
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
@@ -265,7 +266,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
                   isn't mistaken for the higher-risk choice. --%>
             <button
               type="button"
-              phx-click="open_decision_modal"
+              phx-click={JS.push_focus() |> JS.push("open_decision_modal")}
               phx-value-decision="reject"
               class="scoria-button scoria-button--ghost"
             >
@@ -273,7 +274,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
             </button>
             <button
               type="button"
-              phx-click="open_decision_modal"
+              phx-click={JS.push_focus() |> JS.push("open_decision_modal")}
               phx-value-decision="approve"
               class="scoria-button scoria-button--primary"
             >

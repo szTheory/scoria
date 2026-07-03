@@ -854,7 +854,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     modal_html =
       view
-      |> element("button[phx-click='open_promote_modal'][phx-value-step-id='#{replay_step.id}']")
+      |> element("button[phx-value-step-id='#{replay_step.id}']")
       |> render_click()
 
     assert modal_html =~ ~s(name="promotion[notes]")

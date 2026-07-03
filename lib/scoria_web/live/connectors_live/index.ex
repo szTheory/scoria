@@ -8,6 +8,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
 
   import ScoriaWeb.UI
 
+  alias Phoenix.LiveView.JS
   alias ScoriaWeb.ConnectorCopy
   alias ScoriaWeb.ConnectorDetailDrawerComponent
   alias ScoriaWeb.OperatorSurface
@@ -111,7 +112,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
             <:action :let={runtime}>
               <button
                 type="button"
-                phx-click="open_runtime_drawer"
+                phx-click={JS.push_focus() |> JS.push("open_runtime_drawer")}
                 phx-value-id={runtime.id}
                 class="scoria-button scoria-button--ghost scoria-button--sm"
               >
@@ -148,7 +149,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
             <:action :let={connector}>
               <button
                 type="button"
-                phx-click="open_connector_drawer"
+                phx-click={JS.push_focus() |> JS.push("open_connector_drawer")}
                 phx-value-id={connector.connector_id}
                 class="scoria-button scoria-button--ghost scoria-button--sm"
               >
@@ -169,7 +170,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
                 <div class="scoria-mobile-summary__action">
                   <button
                     type="button"
-                    phx-click="open_connector_drawer"
+                    phx-click={JS.push_focus() |> JS.push("open_connector_drawer")}
                     phx-value-id={connector.connector_id}
                     class="scoria-button scoria-button--ghost scoria-button--sm"
                   >

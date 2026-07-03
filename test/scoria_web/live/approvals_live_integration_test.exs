@@ -335,7 +335,7 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     [%{id: approval_id}] = Workflows.list_pending_remote_approvals(%{tenant_id: tenant_id})
 
     view
-    |> element("button[phx-click='open_decision_modal'][phx-value-decision='reject']")
+    |> element("button[phx-value-decision='reject']")
     |> render_click()
 
     assert render(view) =~ "Scoria records the decision; the run stays paused until approved."

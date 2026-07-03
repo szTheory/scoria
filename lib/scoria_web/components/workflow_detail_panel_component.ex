@@ -1,6 +1,8 @@
 defmodule ScoriaWeb.WorkflowDetailPanelComponent do
   use Phoenix.Component
 
+  alias Phoenix.LiveView.JS
+
   import ScoriaWeb.UI, only: [evidence_rows: 1, panel: 1]
 
   alias ScoriaWeb.ReplayEvidenceNotebookComponent
@@ -27,7 +29,7 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
 
           <button
             type="button"
-            phx-click="open_promote_modal"
+            phx-click={JS.push_focus() |> JS.push("open_promote_modal")}
             phx-value-step-id={@step.id}
             disabled={promotion_disabled?(@promotion_context)}
             class={[

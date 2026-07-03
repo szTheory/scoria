@@ -279,7 +279,7 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     html =
       view
-      |> element("button[phx-click='open_decision_modal'][phx-value-decision='approve']")
+      |> element("button[phx-value-decision='approve']")
       |> render_click()
 
     assert html =~ "Keep reviewing"

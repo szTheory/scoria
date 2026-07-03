@@ -3,6 +3,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   import Ecto.Query, warn: false
   import ScoriaWeb.UI
 
+  alias Phoenix.LiveView.JS
   alias Scoria.Repo
   alias Scoria.PromptRegistry
   alias Scoria.PromptRegistry.PromptTemplate
@@ -269,11 +270,18 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
             Request Release
           </.button>
         <% else %>
-          <.button variant={:danger} phx-click="open_reject" disabled={@draft.status != "draft"}>
+          <.button
+            variant={:danger}
+            phx-click={JS.push_focus() |> JS.push("open_reject")}
+            disabled={@draft.status != "draft"}
+          >
             Reject Release
           </.button>
 
-          <.button phx-click="open_approve" disabled={!can_approve?(@draft, @draft_run, @active, @active_run)}>
+          <.button
+            phx-click={JS.push_focus() |> JS.push("open_approve")}
+            disabled={!can_approve?(@draft, @draft_run, @active, @active_run)}
+          >
             Approve Prompt Release
           </.button>
         <% end %>

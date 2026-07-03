@@ -143,7 +143,7 @@ defmodule ScoriaWeb.ConnectorsLiveTest do
 
     html =
       view
-      |> element("button[phx-click='open_runtime_drawer'][phx-value-id='#{offline_instance.id}']")
+      |> element("button[phx-value-id='#{offline_instance.id}']")
       |> render_click()
 
     assert html =~ "Terminal exited"
@@ -151,7 +151,7 @@ defmodule ScoriaWeb.ConnectorsLiveTest do
 
     html =
       view
-      |> element("button[phx-click='open_runtime_drawer'][phx-value-id='#{active_instance.id}']")
+      |> element("button[phx-value-id='#{active_instance.id}']")
       |> render_click()
 
     assert html =~ "lookup_status"
