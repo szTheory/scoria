@@ -13,18 +13,15 @@
 
 import { test, expect } from '@playwright/test';
 import { waitForReady } from './lib/ready.mjs';
+import { isInstantDuration } from './lib/instant_duration.mjs';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4799/scoria';
 
 // Reduced-motion kill switch (05-motion.css) sets transition/animation-duration
 // to 0.001ms. Chromium's getComputedStyle serializes 0.001ms as the scientific
-// string "1e-06s". Accept all equivalent "effectively instant" serializations.
-const INSTANT_DURATIONS = ['0s', '0.001ms', '1e-06s'];
-function isInstantDuration(value) {
-  return value
-    .split(',')
-    .every((d) => INSTANT_DURATIONS.includes(d.trim()));
-}
+// string "1e-06s". isInstantDuration (Phase 40 D-19) accepts all equivalent
+// "effectively instant" serializations — factored into lib/instant_duration.mjs
+// so reduced_motion.spec.mjs can reuse the exact same proven predicate.
 
 // MOTION-02 focus ring is `:focus-visible` (01-reset.css). Chromium only applies
 // `:focus-visible` to KEYBOARD-driven focus, not to programmatic `.focus()`. To
