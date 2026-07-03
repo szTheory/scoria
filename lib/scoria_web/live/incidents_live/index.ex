@@ -20,9 +20,10 @@ defmodule ScoriaWeb.IncidentsLive.Index do
       socket
       |> assign(:page_title, "Incidents")
       |> assign(:tenant_id, tenant_id)
-      |> assign(:incidents, incidents)
+      |> assign(:has_incidents, incidents != [])
       |> assign(:triage_summary, triage_summary(incidents))
       |> assign(:not_found_from, nil)
+      |> stream(:incidents, incidents)
 
     {:ok, socket}
   end
@@ -53,20 +54,19 @@ defmodule ScoriaWeb.IncidentsLive.Index do
   def render(assigns) do
     ~H"""
     <div class="scoria-dashboard relative">
-      <div class="scoria-pagehead">
-        <h1>Incidents</h1>
-        <p style="margin-top: var(--scoria-space-1); color: var(--scoria-text-muted);">
+      <.page_header title="Incidents">
+        <:summary>
           SRE triage for this tenant. Select an incident to inspect its trace-first evidence — budget, breaker, alerts, and audit relay.
-        </p>
-      </div>
+        </:summary>
+      </.page_header>
 
-      <div :if={@incidents == []}>
+      <div :if={!@has_incidents}>
         <.empty_state title="No open incidents">
           Runtime failures, breaker trips, and delivery issues will appear here with links back to the affected run.
         </.empty_state>
       </div>
 
-      <div :if={@incidents != []}>
+      <div :if={@has_incidents}>
         <.page_section class="scoria-incident-index__triage">
           <:eyebrow>incident posture</:eyebrow>
           <:title>Tenant triage</:title>
@@ -102,8 +102,14 @@ defmodule ScoriaWeb.IncidentsLive.Index do
             No incident is linked to <span class="font-mono">{@not_found_from}</span> for this tenant.
           </p>
 
-          <ul class="scoria-selectable-list" aria-label="Tenant incidents">
-            <li :for={incident <- @incidents}>
+          <%!--
+            D-07/D-10: this stays a LIST, not a table — incident triage is a heterogeneous
+            "open the pressing one" JTBD (severity/routing/trace context read at a glance,
+            not scanned column-by-column), and it's the ONE safe stream target on this page:
+            mount-only load with no PubSub, so phx-update="stream" can't race a live reload.
+          --%>
+          <ul id="tenant-incidents" class="scoria-selectable-list" aria-label="Tenant incidents" phx-update="stream">
+            <li :for={{id, incident} <- @streams.incidents} id={id}>
               <.selectable_card
                 href={incident_path(incident, assigns[:scoria_base] || "")}
                 tone={severity_tone(incident.severity)}
