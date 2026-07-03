@@ -92,6 +92,29 @@ Plans:
 
 **Requirements:** FLOW-01, FLOW-02, FLOW-03, FLOW-04, COPY-01
 
+**Plans:** 8 plans
+
+Plans:
+**Wave 1** *(foundation — parallel, no file overlap)*
+
+- [ ] 39-01-PLAN.md — page_header/1 + additive status_label/1 in ScoriaWeb.UI (Wave 1)
+- [ ] 39-02-PLAN.md — strings-only ScoriaWeb.Copy + per-domain copy modules (Wave 1)
+- [ ] 39-03-PLAN.md — ApprovalCopy SSOT + list_decided_approvals/1 + real-path fixtures + write-invariant guard (Wave 1)
+
+**Wave 2** *(page adoption — blocked on Wave 1)*
+
+- [ ] 39-04-PLAN.md — Index-page header migration + microcopy (orchestrator, workflow, eval-spec, prompt, coming-soon) (Wave 2)
+- [ ] 39-05-PLAN.md — Scan conventions + microcopy (dataset, connectors, review_queue, incidents) (Wave 2)
+- [ ] 39-06-PLAN.md — Approval drawer decision-first redesign + alarm-chrome removal (Wave 2)
+
+**Wave 3** *(blocked on Wave 2 — shares approvals_live/index.ex with 39-06)*
+
+- [ ] 39-07-PLAN.md — Decision-history surface (Pending|Decided scope, read-only receipt, audit-sourced attribution) (Wave 3)
+
+**Wave 4** *(guards + proof — blocked on Waves 2-3)*
+
+- [ ] 39-08-PLAN.md — Warning-grade guards (single-header, scan-convention, copy) + automated flow proof (Wave 4)
+
 **Success criteria:**
 
 1. Every primary page has clear page orientation, a single obvious primary scan/action path, and no redundant single-region headers.
