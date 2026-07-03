@@ -194,6 +194,118 @@ defmodule ScoriaWeb.ApprovalCopy do
   def decision_copy(_decision, _approval),
     do: "Review the evidence before recording a durable approval decision."
 
+  @doc """
+  Single canonical decision-status string for the drawer/history badge (D-16 dedup).
+
+  Delegates the "rejected" clause to `decision_outcome/1` so "Denied" has exactly
+  one source (D-24d).
+  """
+  def status_line(approval) do
+    case field(approval, :status) do
+      "approved" -> "Approved"
+      "rejected" -> decision_outcome(approval)
+      "expired" -> "Expired"
+      _ -> "Decision pending"
+    end
+  end
+
+  @doc """
+  Tool context for the drawer eyebrow, replacing the generic "Approval request" (D-16).
+  """
+  def eyebrow(nil), do: "Approval request"
+
+  def eyebrow(approval) do
+    case field(approval, :tool_name) do
+      "issue_refund" -> "Refund approval"
+      "dataset_baseline_promotion" -> "Baseline approval"
+      "grant_connector_scope" -> "Connector approval"
+      "send_customer_update" -> "Customer message approval"
+      nil -> "Approval request"
+      tool_name -> "#{tool_label(tool_name)} approval"
+    end
+  end
+
+  @doc """
+  The single home for the operator word "Denied" (D-24d) — never duplicate this
+  mapping elsewhere (the global `status_label/1` titlecases "rejected" generically
+  and must stay that way).
+  """
+  def decision_outcome(approval) do
+    case field(approval, :status) do
+      "approved" -> "Approved"
+      "rejected" -> "Denied"
+      "expired" -> "Expired"
+      _ -> "Decision pending"
+    end
+  end
+
+  @doc """
+  The concrete, irreversible-effect lead clause reused by the confirm modal (D-15)
+  and the drawer consequence line — the lead sentence of `impact/1` without the
+  "Approving"/"Denying" framing.
+  """
+  def impact_lead(nil), do: nil
+
+  def impact_lead(approval) do
+    case field(approval, :tool_name) do
+      "issue_refund" ->
+        amount = money_amount(argument(approval, "amount_cents"))
+        customer = argument(approval, "customer") || argument(approval, "ticket_id")
+
+        case {amount, customer} do
+          {amount, customer} when is_binary(amount) and is_binary(customer) ->
+            "This issues a #{amount} refund to #{customer}."
+
+          {amount, _customer} when is_binary(amount) ->
+            "This issues a #{amount} refund."
+
+          _ ->
+            "This issues the refund."
+        end
+
+      "dataset_baseline_promotion" ->
+        "This changes the baseline used by regression gates."
+
+      "grant_connector_scope" ->
+        "This grants the requested connector scope."
+
+      "send_customer_update" ->
+        "This sends the customer update."
+
+      _ ->
+        "This lets the run continue."
+    end
+  end
+
+  @doc """
+  ⚠ SAFETY (D-27): states the RECORDED DECISION only — never that the tool
+  side-effect or run continuation succeeded. `decider`/`decided_at` are explicit
+  arguments sourced by the caller from the decision `AuditOutboxEvent` (Plan 07);
+  this function never invents values. "Expired" renders without a fabricated actor
+  (no operator decides an expiry) and only shows a time when the caller supplies one
+  from a real `approval.expired` audit event (D-18/D-21).
+  """
+  def decision_receipt("approved", decider, decided_at)
+      when is_binary(decider) and not is_nil(decided_at) do
+    "Approved by #{decider} · #{decided_at}"
+  end
+
+  def decision_receipt("rejected", decider, decided_at)
+      when is_binary(decider) and not is_nil(decided_at) do
+    "Denied by #{decider} · #{decided_at}"
+  end
+
+  def decision_receipt("expired", _decider, decided_at) when not is_nil(decided_at) do
+    "Expired · #{decided_at}"
+  end
+
+  def decision_receipt(status, _decider, _decided_at)
+      when status in ["approved", "rejected", "expired"] do
+    decision_outcome(%{"status" => status})
+  end
+
+  def decision_receipt(_status, _decider, _decided_at), do: "Decision pending"
+
   def request_rows(nil), do: []
 
   def request_rows(approval) do
@@ -211,8 +323,7 @@ defmodule ScoriaWeb.ApprovalCopy do
       {"Requested by", requested_by(approval)},
       {"Connector", connector_label(approval)},
       {"Policy", policy(approval)},
-      {"Session", field(approval, :session_id)},
-      {"Status", field(approval, :status)}
+      {"Session", field(approval, :session_id)}
     ]
     |> reject_blank_rows()
   end
