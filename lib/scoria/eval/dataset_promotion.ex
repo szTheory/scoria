@@ -6,6 +6,7 @@ defmodule Scoria.Eval.DatasetPromotion do
   alias Ecto.Multi
   alias Scoria.Eval.DatasetItem
   alias Scoria.Repo
+  alias Scoria.Workflows.Step
 
   @required_keys ~w(
     dataset_id
@@ -76,21 +77,81 @@ defmodule Scoria.Eval.DatasetPromotion do
   end
 
   defp build_item_attrs(attrs) do
-    %{
-      "input" => %{
-        "workflow_run_id" => attrs["workflow_run_id"],
-        "workflow_step_id" => attrs["workflow_step_id"],
-        "source_variant" => attrs["source_variant"],
-        "provenance" => normalize_map(attrs["provenance"]),
-        "checkpoint_output" => normalize_map(attrs["checkpoint_output"]),
-        "safety" => normalize_map(attrs["safety"]),
-        "promotion_snapshot" => normalize_map(attrs["promotion_snapshot"]),
-        "notes" => attrs["notes"]
-      },
-      "expected_output" => normalize_map(attrs["expected_output"]),
-      "metadata" => build_metadata(attrs)
-    }
+    item_attrs =
+      %{
+        "input" => %{
+          "workflow_run_id" => attrs["workflow_run_id"],
+          "workflow_step_id" => attrs["workflow_step_id"],
+          "source_variant" => attrs["source_variant"],
+          "provenance" => normalize_map(attrs["provenance"]),
+          "checkpoint_output" => normalize_map(attrs["checkpoint_output"]),
+          "safety" => normalize_map(attrs["safety"]),
+          "promotion_snapshot" => normalize_map(attrs["promotion_snapshot"]),
+          "notes" => attrs["notes"]
+        },
+        "expected_output" => normalize_map(attrs["expected_output"]),
+        "metadata" => build_metadata(attrs)
+      }
+
+    Map.merge(item_attrs, captured_output_attrs(attrs))
   end
+
+  defp captured_output_attrs(attrs) do
+    case captured_output(attrs["workflow_step_id"]) do
+      %{} = captured_output when map_size(captured_output) > 0 ->
+        %{
+          "captured_output" => captured_output,
+          "captured_output_sha256" => captured_output_sha256(captured_output),
+          "captured_at" => DateTime.utc_now() |> DateTime.truncate(:microsecond)
+        }
+
+      _empty_or_absent ->
+        %{}
+    end
+  end
+
+  defp captured_output(nil), do: nil
+
+  defp captured_output(workflow_step_id) do
+    case Repo.get(Step, workflow_step_id) do
+      %Step{result_envelope: result_envelope} ->
+        result_envelope
+        |> normalize_map()
+        |> output_from_envelope()
+        |> normalize_capture()
+
+      nil ->
+        nil
+    end
+  rescue
+    Ecto.Query.CastError -> nil
+  end
+
+  defp output_from_envelope(%{} = result_envelope), do: Map.get(result_envelope, "output")
+  defp output_from_envelope(_), do: nil
+
+  defp normalize_capture(%{} = output), do: normalize_map(output)
+  defp normalize_capture(_), do: nil
+
+  defp captured_output_sha256(captured_output) do
+    captured_output
+    |> canonical_json_value()
+    |> Jason.encode!()
+    |> then(&:crypto.hash(:sha256, &1))
+    |> Base.encode16(case: :lower)
+  end
+
+  defp canonical_json_value(%{} = value) do
+    value
+    |> Enum.map(fn {key, nested} -> {to_string(key), canonical_json_value(nested)} end)
+    |> Enum.sort_by(fn {key, _nested} -> key end)
+    |> Jason.OrderedObject.new()
+  end
+
+  defp canonical_json_value(value) when is_list(value),
+    do: Enum.map(value, &canonical_json_value/1)
+
+  defp canonical_json_value(value), do: value
 
   defp build_metadata(attrs) do
     provenance = normalize_map(attrs["provenance"])
@@ -124,8 +185,12 @@ defmodule Scoria.Eval.DatasetPromotion do
     |> Map.keys()
     |> Enum.reject(&MapSet.member?(allowed, &1))
     |> case do
-      [] -> :ok
-      extra_keys -> raise ArgumentError, "unexpected workflow promotion attributes: #{Enum.join(extra_keys, ", ")}"
+      [] ->
+        :ok
+
+      extra_keys ->
+        raise ArgumentError,
+              "unexpected workflow promotion attributes: #{Enum.join(extra_keys, ", ")}"
     end
   end
 
