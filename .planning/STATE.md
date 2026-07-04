@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Pre-1.0 Trust & Security Hardening
 status: executing
-stopped_at: Completed 42-01-PLAN.md
-last_updated: "2026-07-04T22:06:42.011Z"
-last_activity: 2026-07-04 -- Completed 42-01 verdict spine
+stopped_at: Completed 42-02-PLAN.md
+last_updated: "2026-07-04T22:19:29.854Z"
+last_activity: 2026-07-04 -- Completed 42-02 subject-output capture
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 7
-  completed_plans: 1
-  percent: 14
+  completed_plans: 2
+  percent: 28
 ---
 
 # Project State
@@ -27,15 +27,16 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 ## Current Position
 
 Phase: 42 (eval-fails-closed) — EXECUTING
-Plan: 2 of 7
-Status: Ready to execute 42-02
-Last activity: 2026-07-04 -- Completed 42-01 verdict spine
+Plan: 3 of 7
+Status: Ready to execute 42-03
+Last activity: 2026-07-04 -- Completed 42-02 subject-output capture
 
 ## Performance Metrics
 
 - **Latest Shipped:** `v3.3 Design System Stress Test` (2026-07-04) — 30 plans, 7 phases, 74 tasks. Audit `passed` (22/22 requirements, 6/6 seams); tag `v3.3` local.
 - **Previous Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
 - **Phase 42 P01:** 6 min — 3 tasks, 7 files, verification 14 tests green.
+- **Phase 42 P02:** 7 min — 3 tasks, 6 files, verification 7 required tests green plus 11 eval promotion regression tests.
 
 *Updated after each plan completion*
 
@@ -130,6 +131,8 @@ Recent decisions affecting current work:
 - [Phase 41.1]: UI.status_label/1 delegates to Copy.status_label/1; Copy stays a dependency-free leaf (D1)
 - [Phase 41.1]: Dataset empty-state CTA kept inline (no byte-identical Copy accessor exists, D2)
 - [Phase 41.1]: DatasetCopy.orientation/1 intentionally left unwired on dataset index page (D3)
+- [Phase 42-02]: Dataset promotion loads Scoria.Workflows.Step internally from existing workflow_step_id; captured_output is not a promotion attr key.
+- [Phase 42-02]: SubjectOutput.resolve/2 is the shared frozen-capture contract for offline_replay and live_judge; nil or empty capture returns {:not_scored, :empty_capture}.
 
 ### Pending Todos
 
@@ -189,10 +192,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-04T22:06:42.007Z
-Stopped at: Completed 42-01-PLAN.md
+Last session: 2026-07-04T22:18:56.095Z
+Stopped at: Completed 42-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
 
-- Continue Phase 42 with `42-02-PLAN.md` (subject-output capture).
+- Continue Phase 42 with `42-03-PLAN.md` (ExactMatch deterministic scorer).
