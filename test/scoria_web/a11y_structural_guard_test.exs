@@ -126,6 +126,14 @@ defmodule ScoriaWeb.A11yStructuralGuardTest do
            tabindex="0" in #{@ui_file} so keyboard users can reach the horizontal-scroll
            container (D-11 calmer-surface contract, table sort/filter/scroll surface).
            """
+
+    assert Regex.match?(~r/<div\b[^>]*scoria-table__viewport[^>]*aria-label="[^"]+"[^>]*>/s, source) or
+             Regex.match?(~r/<div\b[^>]*aria-label="[^"]+"[^>]*scoria-table__viewport[^>]*>/s, source),
+           """
+           A11Y structural guard: expected the .scoria-table__viewport <div> to carry an
+           aria-label in #{@ui_file} so screen-reader users know the region is scrollable
+           (D-18).
+           """
   end
 
   test "filter controls are real interactive elements, never a bare clickable <div> (D-08(a)/D-11)" do

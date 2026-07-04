@@ -1317,7 +1317,7 @@ supplementary copy or a link."
       </div>
       <%!-- Overflow viewport: keyboard-reachable horizontal scroll container (D-13).
            sticky thead still works inside overflow-x: auto (vertical sticky is unaffected). --%>
-      <div class="scoria-table__viewport" tabindex="0">
+      <div class="scoria-table__viewport" tabindex="0" aria-label="Scrollable table content">
         <table class="scoria-table" id={@id} {@rest}>
           <thead>
             <tr>
