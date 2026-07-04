@@ -167,6 +167,19 @@ const SCREENS = [
       },
     ],
   },
+  {
+    // Phase 41 D-14/D-15: the real RISK-TOAST-LEGIBILITY static toast fixture
+    // lives at dev/lab/sections/overlays.ex:91-94 (NOT states.ex, which is
+    // badges only). freshMountPerCapture beats toast/1's default 4000ms
+    // phx-mounted auto-hide (lib/scoria_web/ui.ex) by re-navigating before
+    // every theme×viewport capture below, so each shot lands inside a fresh
+    // window instead of racing a timer that started at the top of the loop.
+    name: 'lab_overlays',
+    path: '/_lab/overlays',
+    tenantScoped: false,
+    overlays: [],
+    freshMountPerCapture: true,
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -234,8 +247,29 @@ async function captureScreen(page, screen, args) {
 
     // Capture baseline across theme × viewport
     for (const theme of THEMES) {
-      await setTheme(page, theme);
+      if (!screen.freshMountPerCapture) {
+        await setTheme(page, theme);
+      }
       for (const vp of VIEWPORTS) {
+        if (screen.freshMountPerCapture) {
+          // D-15: re-navigate before EVERY capture (not just once per screen)
+          // so a transient toast's phx-mounted auto-hide timer (default
+          // 4000ms — see toast/1 in lib/scoria_web/ui.ex) resets to "now" for
+          // each shot. Without this, later theme×viewport combinations in
+          // this loop would race the timer started at the top of the screen
+          // and could land on an already-hidden toast. Do NOT assert exact
+          // timing — re-navigating resets the clock instead of racing it.
+          await page.goto(url);
+          await waitForReady(page);
+          await setTheme(page, theme);
+          // Pitfall 4 sanity check: warn (do not fail) if the toast isn't in
+          // the DOM, surfacing a silent-empty-shot flake during authoring
+          // instead of shipping an unnoticed empty capture.
+          const toastCount = await page.locator('.scoria-toast').count();
+          if (toastCount === 0) {
+            console.log(`  ! WARNING: ${screen.name} (${presence}) ${theme}/${vp.name}: no .scoria-toast found in DOM — capture may be empty`);
+          }
+        }
         await page.setViewportSize({ width: vp.width, height: vp.height });
         const filename = `${presence}_${theme}_${vp.name}`;
         const filepath = join(screenDir, `${filename}.png`);

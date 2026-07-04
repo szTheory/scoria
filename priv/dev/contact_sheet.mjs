@@ -69,6 +69,7 @@ const SCREENS = [
   { name: 'eval_specs', tenantScoped: false },
   { name: 'prompts', tenantScoped: false },
   { name: 'prompt_release', tenantScoped: false },
+  { name: 'lab_overlays', tenantScoped: false },
 ];
 
 // ---------------------------------------------------------------------------
