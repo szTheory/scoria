@@ -304,6 +304,32 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
     end
   end
 
+  describe "WR-04: mount/2 assigns a safe :origin_context default" do
+    test "render/1 does not depend on handle_params/3 having run first", %{draft: draft} do
+      session = %{"actor_id" => "op-1", "tenant_id" => "default"}
+
+      {:ok, socket} =
+        ScoriaWeb.PromptLive.ReleaseWorkbenchLive.mount(
+          %{"id" => draft.id},
+          session,
+          %Phoenix.LiveView.Socket{}
+        )
+
+      rendered = ScoriaWeb.PromptLive.ReleaseWorkbenchLive.render(socket.assigns)
+      assert %Phoenix.LiveView.Rendered{} = rendered
+
+      # `render/1` returning a %Phoenix.LiveView.Rendered{} struct alone proves
+      # nothing here (RESEARCH A1 pitfall): the `dynamic` field is a lazily
+      # evaluated closure, so an unassigned @origin_context KeyError is only
+      # raised once the tree is actually forced to iodata/HTML — exactly what
+      # Phoenix.LiveViewTest.render/1 does under the hood via
+      # Phoenix.HTML.Safe.to_iodata/1. Force it here so this test genuinely
+      # fails on pre-fix source instead of false-passing like a bare
+      # %Rendered{} match would.
+      assert is_binary(Phoenix.HTML.Safe.to_iodata(rendered) |> IO.iodata_to_binary())
+    end
+  end
+
   defp link_href(html, label) do
     html
     |> Floki.parse_document!()
