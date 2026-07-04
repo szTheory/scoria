@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Pre-1.0 Trust & Security Hardening
-status: completed
-stopped_at: Phase 42 context gathered
-last_updated: "2026-07-04T21:21:21.404Z"
-last_activity: 2026-07-04 — Roadmap created for v3.4 (Phases 42–45)
+status: executing
+stopped_at: Completed 42-01-PLAN.md
+last_updated: "2026-07-04T22:06:42.011Z"
+last_activity: 2026-07-04 -- Completed 42-01 verdict spine
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 7
+  completed_plans: 1
+  percent: 14
 ---
 
 # Project State
@@ -22,19 +22,20 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v3.4 Pre-1.0 Trust & Security Hardening (🔴 P0, gates next Hex release / held 0.1.3 PR #12) — roadmap set: Phases 42 (eval) / 43 (knowledge) / 44 (dashboard) independent; Phase 45 (correctness sweep + closeout) depends on 42 + 43. See `ROADMAP.md ## Phase Details`; backlog 999.1 / SEED-006.
+**Current focus:** Phase 42 — eval-fails-closed
 
 ## Current Position
 
-Phase: 42–45 planned (roadmap set); ready to plan Phase 42
-Plan: —
-Status: Roadmap complete — 4 phases, 17/17 requirements mapped
-Last activity: 2026-07-04 — Roadmap created for v3.4 (Phases 42–45)
+Phase: 42 (eval-fails-closed) — EXECUTING
+Plan: 2 of 7
+Status: Ready to execute 42-02
+Last activity: 2026-07-04 -- Completed 42-01 verdict spine
 
 ## Performance Metrics
 
 - **Latest Shipped:** `v3.3 Design System Stress Test` (2026-07-04) — 30 plans, 7 phases, 74 tasks. Audit `passed` (22/22 requirements, 6/6 seams); tag `v3.3` local.
 - **Previous Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
+- **Phase 42 P01:** 6 min — 3 tasks, 7 files, verification 14 tests green.
 
 *Updated after each plan completion*
 
@@ -48,6 +49,7 @@ Recent decisions affecting current work:
 - v3.4: Phases 42 (eval) / 43 (knowledge) / 44 (dashboard) are independent subsystems — parallelizable; Phase 45 (correctness sweep + doctrine + closeout) depends on 42 + 43.
 - v3.4: Fix + prove only — NO Hex publish. The honest `0.1.3` release cut belongs to SEED-005 / Backlog 999.2. `0.1.3` PR #12 stays held.
 - v3.4: DOC-01 is confirm-and-cross-link (P1–P6 scope doctrine already recorded in PROJECT.md Constraints + Key Decisions at v3.3 close) — kept lightweight in Phase 45.
+- [Phase 42-01]: `Scoria.Eval.Verdict` is the single fail-closed verdict spine; empty, all-unscored, and strict coverage violations return `:inconclusive`, and only persisted `"passed"` is the non-blocking release verdict string.
 - v3.2: `make nuke` uses ONLY `docker compose down -v` — no `docker system/volume prune`; no interactive TTY prompt; named-scope warning is the safety signal.
 - v3.2: `PORT ?= 4799` baked into `make dev` (static, stable for shots-native harness; overridable via `PORT=XXXX make dev`; no `config/dev.exs` change).
 - v3.2: Stream B (Phase 35) is fully independent of Stream A (Phases 29–34) — can execute in parallel.
@@ -187,10 +189,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-04T21:21:21.400Z
-Stopped at: Phase 42 context gathered
-Resume file: .planning/phases/42-eval-fails-closed/42-CONTEXT.md
+Last session: 2026-07-04T22:06:42.007Z
+Stopped at: Completed 42-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
-- Plan the first phase with `/gsd-plan-phase 42` (or 43 / 44 — the three subsystem phases are independent and can start in any order).
+- Continue Phase 42 with `42-02-PLAN.md` (subject-output capture).

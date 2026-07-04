@@ -23,7 +23,7 @@ itself, `Eval.OnlineScoring.deterministic_scores/3` decides on `sample_reason` a
   output is a real result — the `expected_output["answer"]` shortcut in `build_subject_output` is removed.
 - [ ] **EVAL-02**: At least one real deterministic scorer compares actual output vs expectation,
   reusing the existing `Scoria.Knowledge.Grounding` scorer style and the `Scoria.Eval.Score` write sink.
-- [ ] **EVAL-03**: When no real scorer is configured, eval emits `:not_scored` and `threshold_verdict`
+- [x] **EVAL-03**: When no real scorer is configured, eval emits `:not_scored` and `threshold_verdict`
   / `ReleaseGate` fail CLOSED (`failed`/`inconclusive`) — a run is never reported green by default.
 - [ ] **EVAL-04**: `Runtime.ReleaseGate` consults `threshold_verdict` before allowing a release, not
   only the prompt's `status: "draft"`.
@@ -104,7 +104,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 |-------------|-------|--------|
 | EVAL-01 | Phase 42 | Pending |
 | EVAL-02 | Phase 42 | Pending |
-| EVAL-03 | Phase 42 | Pending |
+| EVAL-03 | Phase 42 | Complete |
 | EVAL-04 | Phase 42 | Pending |
 | EVAL-05 | Phase 42 | Pending |
 | KNOW-01 | Phase 43 | Pending |
