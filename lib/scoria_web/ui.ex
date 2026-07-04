@@ -32,7 +32,7 @@ defmodule ScoriaWeb.UI do
         :info
 
       s
-      when s in ~w(waiting_for_approval pending_approval retrying warning warn drift degraded stale pending approval_requested needs_review) ->
+      when s in ~w(waiting_for_approval pending_approval retrying warning warn drift degraded stale pending approval_requested needs_review not_scored inconclusive) ->
         :warn
 
       s

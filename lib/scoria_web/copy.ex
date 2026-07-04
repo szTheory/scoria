@@ -43,6 +43,8 @@ defmodule ScoriaWeb.Copy do
     {"pending", "Pending"},
     {"approved", "Approved"},
     {"expired", "Expired"},
+    {"not_scored", "Not scored"},
+    {"inconclusive", "Inconclusive"},
     {"passed", "Passed"},
     {"failed", "Failed"},
     {"regressed", "Regressed"},
