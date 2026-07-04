@@ -27,11 +27,19 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - **The next Hex release (`0.1.3`, PR #12) is HELD** behind SEED-006 (999.1) — three live P0 bugs in shipped `0.1.2` (eval fail-open, knowledge cross-tenant retrieval leak, dashboard auth bypass) must be fixed before publishing over them.
 - Scoria remains the reference implementation for the embedded Traefik + `*.localhost` stack; sibling-repo migration and proxy bake-offs remain out of scope.
 
-## Next Milestone (candidate): v3.4 — SEED-006 Pre-1.0 Trust & Security Hardening
+## Current Milestone: v3.4 Pre-1.0 Trust & Security Hardening
 
-**Why next:** The 2026-07-03 eval-posture audit validated Scoria's direction but found 3 P0 bugs live in shipped `0.1.2`. This is a 🔴 P0 milestone that **gates the next Hex release** — no publish until it lands. Full ordered backlog (999.1–999.9) lives in `ROADMAP.md ## Backlog`; scope it via `/gsd-new-milestone` or promote via `/gsd-review-backlog`.
+**Goal:** Fix the three P0 correctness/security bugs live in shipped `0.1.2` — making eval fail CLOSED, knowledge retrieval tenant-isolated, and the dashboard auth boundary host-injectable — plus a correctness sweep, so Scoria's "trustworthy, governed, inspectable" promise holds before the next Hex release. (🔴 P0 · **gates the next Hex release**; ROADMAP `## Backlog` 999.1 / SEED-006.)
 
-**Likely scope (→ see `SEED-006`):** eval fail-open fixes (fake-green scorers, judge expected-vs-expected, decorative release gate), knowledge cross-tenant retrieval isolation, dashboard auth bypass, plus correctness bugs (fake-cosine `score_chunk`, citation-presence abstention penalty, chunker overlap no-op, latency-vs-0).
+**Target features:**
+- **Eval fails CLOSED** — execute the real subject prompt (kill the `expected_output["answer"]` shortcut), a real deterministic scorer, and `:not_scored` + `ReleaseGate` consulting `threshold_verdict` so no run is ever fake-green (EVAL-01..05).
+- **Knowledge tenant isolation** — `tenant_id`/`actor_id`/`scope_kind` on sources + chunks (new knowledge migration), propagated to retrieval runs/results/citations, with a mandatory fail-closed filter that RAISES on a nil tenant (mirrors `SemanticCache.Lookup`) (KNOW-01..04).
+- **Dashboard auth seam** — `scoria_dashboard/2` accepts a pass-through `on_mount:` list + host-asserted tenant resolution so `?tenant=` is no longer spoofable; authz stays delegated (no in-lib RBAC) (AUTH-01..03).
+- **Correctness sweep** — real cosine `score_chunk`, label-aware `citation_presence` (no abstention penalty), dead chunker-overlap param removed, real latency gate; + confirm the scope-doctrine SSOT (FIX-01..04, DOC-01).
+
+**Boundary:** fix + prove only — the honest `0.1.3` Hex release cut belongs to SEED-005 (999.2). Deeper scorers → SEED-008; full abstention/rerank → SEED-009; masking/retention → SEED-011.
+
+**Sequencing:** Phases 42 (eval) / 43 (knowledge) / 44 (dashboard) are independent subsystems and can run in parallel; Phase 45 (sweep + doctrine + closeout) depends on 42 + 43. Full ordered backlog 999.1–999.9 in `ROADMAP.md ## Backlog`.
 
 ## Previous Shipped Milestone: v3.0 Control Room (2026-06-14)
 
@@ -269,11 +277,17 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-**Milestone v3.3 Design System Stress Test SHIPPED (2026-07-04)** — all 7 phases (36–41.1), 30 plans, 74 tasks verified; audit `passed` (22/22 requirements). Archived in `.planning/milestones/v3.3-*`. Tag `v3.3` created (local).
+**Milestone v3.4 Pre-1.0 Trust & Security Hardening (ACTIVE, started 2026-07-04)** 🔴 P0 — GATES the next Hex release (`0.1.3` PR #12 held). Requirements in `REQUIREMENTS.md`; phases 42–45 in `ROADMAP.md`.
 
-**Next milestone (candidate): SEED-006 Pre-1.0 Trust & Security Hardening** 🔴 P0 — GATES the next Hex release (`0.1.3` PR #12 held). Ordered backlog 999.1–999.9 in `ROADMAP.md ## Backlog`. Start with `/gsd-new-milestone`.
+- [ ] **EVAL-01..05**: Eval fails CLOSED — real subject output, ≥1 real deterministic scorer, `:not_scored`, `ReleaseGate` consults `threshold_verdict`, online scoring stops fabricating from `sample_reason`.
+- [ ] **KNOW-01..04**: Knowledge tenant isolation — migration adds `tenant_id`/`actor_id`/`scope_kind`, propagated to runs/results/citations; mandatory fail-closed filter (nil RAISES); cross-tenant proof test.
+- [ ] **AUTH-01..03**: Dashboard auth seam — pass-through `on_mount:`, host-asserted tenant, `?tenant=` spoof closed, bare macro form still compiles.
+- [ ] **FIX-01..04**: Correctness sweep — real cosine `score_chunk`, label-aware `citation_presence`, dead chunker-overlap param removed, real latency gate.
+- [ ] **DOC-01**: Scope doctrine confirmed/cross-linked in PROJECT.md Constraints + Key Decisions (P1–P6 already recorded at v3.3 close — confirm + link from the fix rationale).
 
-**Deferred (not the immediate P0 milestone):**
+**v3.3 Design System Stress Test SHIPPED (2026-07-04)** — 7 phases (36–41.1), 30 plans, 74 tasks; audit `passed` (22/22). Archived in `.planning/milestones/v3.3-*`. Tag `v3.3` (local).
+
+**Deferred (not this P0 milestone):**
 - [ ] **SEED-004 (test-code determinism):** convert forced-serial `IntegrationCase` files to `async: true`, de-globalize per-module Phoenix test endpoints, and replace ~14 `Process.sleep` sites with the `eventually/2` helper — then raise partition count past 4 once the serial floor drops. (Higher product risk; touches 9+ test files. Leading candidate for the milestone after v3.2.)
 - [ ] **DOCKER-01 cross-repo convergence:** migrate sibling repos (rulestead/parapet/etc.) onto the shared Traefik + unpublished-DB standard. (Out of v3.2 scope by decision; stays in the `docker-dx-fleet-hardening` todo.)
 
@@ -394,6 +408,8 @@ _(Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verificatio
 | 2026-07-03 operator-UI storyboard ingest → adopt `.planning/research/operator-ui-north-star.md` as the UI source-of-record + plant SEED-013 (Operator IA Pivot) as the structural pivot; feature-screens ride their backend seeds. Guardrails: **Feature/archetype/route/env are host-declared attributes Scoria segments by, never modeled/inferred**; **no in-lib LLM diagnosis/opinion** (mechanical signals or host-supplied only); **tighter nav, not the storyboard's 10 sections**; **incremental, not big-bang**. | A blank-slate/maximalist storyboard over-scopes for n=1 and presupposes the unbuilt backlog; ~40% already ships (v3.0 IA spine sound). Doctrine-filtering it to a North-Star doc + one structural seed + annotations prevents scope bloat while capturing the coherence win. | — Pending — ROADMAP ## Backlog 999.9; North-Star doc is the UI source-of-record |
 | v3.3 stress-tests the design system as a whole (inventory → dev-only Component Lab → tightened primitives → JTBD flows → a11y/motion/responsive proof → durable guards) rather than continuing one-off page tweaks; the dev lab stays out of the public macro + Hex footprint | The prior UX cleanup was per-page and unproven; a systematic pass with a stress harness + drift guards makes coherence durable and idempotently improving without runtime-surface risk | ✓ Good — shipped v3.3; audit `passed` 22/22, 6/6 seams wired |
 | v3.3 milestone audit surfaced a COPY-01 SSOT drift (orphaned `ScoriaWeb.Copy`/`DatasetCopy`); closed it via inserted Phase 41.1 rather than deferring | An unwired copy SSOT invites silent divergence; wiring it byte-stable with parity + literal-absence guards closed the only open audit tech-debt item before close | ✓ Good — shipped 41.1; COPY-01 SSOT closed, re-verified against live code |
+| v3.4 (SEED-006) is **fix + prove only** — no Hex publish; the honest `0.1.3` release cut is deferred to SEED-005 (999.2) | The seed's stated order is *SEED-006 → SEED-005 Phase E → publish*; separating the fixes from the release keeps the security milestone focused and lets the docs milestone own the clean-spot/release work | — Pending — v3.4 started 2026-07-04; `0.1.3` PR #12 stays held |
+| v3.4 fixes fail CLOSED and isolate by tenant by **mirroring proven in-repo patterns** (eval reuses `Knowledge.Grounding`+`Eval.Score`; knowledge mirrors `SemanticCache.Lookup.base_query`'s mandatory-tenant raise; dashboard ships an `on_mount:` seam, authz delegated) rather than inventing new machinery | The safe scoping + scoring patterns already exist and are contract-guarded elsewhere; reusing them minimizes blast radius and keeps the P4 "delegate authz, ship the seam" doctrine intact | — Pending — verified against `main` 2026-07-04 |
 
 ## Milestone History
 
@@ -489,4 +505,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-04 after v3.3 Design System Stress Test milestone completion.*
+*Last updated: 2026-07-04 after starting milestone v3.4 Pre-1.0 Trust & Security Hardening.*
