@@ -3,7 +3,9 @@ import Config
 config :scoria,
   ecto_repos: [Scoria.Repo],
   live_token_coalesce_ms: 75,
-  orchestrator_hydrate_trace_limit: 25
+  orchestrator_hydrate_trace_limit: 25,
+  # Defaults open for adopters without evals; set true to require a completed passing eval verdict.
+  require_eval_verdict: false
 
 config :scoria, Scoria.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
