@@ -60,6 +60,10 @@ defmodule ScoriaWeb.ReviewQueueLive do
        |> assign(:selected_candidate, updated)
        |> assign(:selected_candidate_id, nil)
        |> refresh_queue()}
+    else
+      _ ->
+        {:noreply,
+         assign(socket, :notice, "Could not dismiss this candidate. Refresh and try again.")}
     end
   end
 
