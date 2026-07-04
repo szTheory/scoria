@@ -292,7 +292,7 @@ interleaving its own feature docs + a release as it lands.
 
 **Requirements:** COPY-01
 **Depends on:** Phase 41
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 **Success criteria:**
 
@@ -304,4 +304,4 @@ interleaving its own feature docs + a release as it lands.
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 41.1 to break down)
+- [ ] 41.1-01-PLAN.md — Wire dataset_live to Copy/DatasetCopy + delegate UI.status_label; byte-stable, with parity + literal-absence regression guards (D1–D4)
