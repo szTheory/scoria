@@ -254,6 +254,8 @@ Producer-path integration tests prove runtime→PubSub→LiveView without test `
 
 ## Design-system component catalog
 
+For the maintainer conventions doc pairing every named design-system convention with its enforcing drift guard, see [Design system conventions](https://github.com/szTheory/scoria/blob/main/docs/design_system.md) (dev-only; not shipped to Hex).
+
 `ScoriaWeb.UI` is the single enforced token gateway for all dashboard UI components.
 Every function component emits brand-book semantic classes (`assets/css/04-components.css`)
 driven by design tokens; raw Tailwind palette classes (`bg-rose-200`, etc.) are blocked
