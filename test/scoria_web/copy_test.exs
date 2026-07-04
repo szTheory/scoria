@@ -2,6 +2,7 @@ defmodule ScoriaWeb.CopyTest do
   use ExUnit.Case, async: true
 
   alias ScoriaWeb.Copy
+  alias ScoriaWeb.UI
 
   @banned_words ["magic", "seamless", "nothing here"]
 
@@ -62,6 +63,17 @@ defmodule ScoriaWeb.CopyTest do
 
     test "never raises on nil or unexpected input" do
       assert Copy.status_label(nil) == "Unknown"
+    end
+  end
+
+  describe "UI.status_label/1 parity (D4a)" do
+    test "UI.status_label/1 matches Copy.status_label/1 for the curated vocabulary + nil + an unseen key" do
+      curated = ~w(pending approved expired passed failed regressed running promoted draft published connected disconnected idle)
+
+      for status <- curated ++ [nil, "archived_forever"] do
+        assert UI.status_label(status) == Copy.status_label(status),
+               "expected UI.status_label(#{inspect(status)}) to match Copy.status_label/1 (D4a parity guard)"
+      end
     end
   end
 

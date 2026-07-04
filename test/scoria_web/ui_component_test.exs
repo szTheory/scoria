@@ -228,23 +228,12 @@ defmodule ScoriaWeb.UIComponentTest do
       assert ScoriaWeb.UI.status_label(123) == "Unknown"
     end
 
-    test "curated clauses are structurally above the retained generic fallback (D-24a)" do
+    test "status_label/1 delegates to ScoriaWeb.Copy.status_label/1, no inline status map (D1/D4a)" do
       ui_source = File.read!("lib/scoria_web/ui.ex")
 
-      [_before, after_start] =
-        String.split(ui_source, "def status_label(status) when is_binary(status) do", parts: 2)
-
-      [binary_clause_body, _rest] =
-        String.split(after_start, "\n  def status_label(_), do: \"Unknown\"", parts: 2)
-
-      assert binary_clause_body =~ "case status do"
-      assert binary_clause_body =~ ~s("approved" -> "Approved")
-      assert binary_clause_body =~ "String.replace(\"_\", \" \")"
-      refute binary_clause_body =~ ~s("rejected" -> "Denied")
-
-      {case_index, _} = :binary.match(binary_clause_body, "case status do")
-      {fallback_index, _} = :binary.match(binary_clause_body, "String.replace(\"_\", \" \")")
-      assert fallback_index > case_index
+      assert ui_source =~ "def status_label(status), do: Copy.status_label(status)"
+      refute ui_source =~ ~s("approved" -> "Approved")
+      refute ui_source =~ "String.replace(\"_\", \" \")"
     end
   end
 

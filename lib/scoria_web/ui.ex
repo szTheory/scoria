@@ -11,6 +11,7 @@ defmodule ScoriaWeb.UI do
   """
   use Phoenix.Component
   alias Phoenix.LiveView.JS
+  alias ScoriaWeb.Copy
 
   @doc """
   Maps a domain status/kind string (or atom) to a semantic tone atom.
@@ -59,28 +60,7 @@ defmodule ScoriaWeb.UI do
   `render/1` on any unseen status (a page-500). Does NOT curate `"rejected"` — the
   operator word "Denied" is approval-domain only (D-24d, `ApprovalCopy.decision_outcome/1`).
   """
-  def status_label(status) when is_atom(status), do: status |> Atom.to_string() |> status_label()
-
-  def status_label(status) when is_binary(status) do
-    case status do
-      "pending" -> "Pending"
-      "approved" -> "Approved"
-      "expired" -> "Expired"
-      "passed" -> "Passed"
-      "failed" -> "Failed"
-      "regressed" -> "Regressed"
-      "running" -> "Running"
-      "promoted" -> "Promoted"
-      "draft" -> "Draft"
-      "published" -> "Published"
-      "connected" -> "Connected"
-      "disconnected" -> "Disconnected"
-      "idle" -> "Idle"
-      _ -> status |> String.replace("_", " ") |> String.capitalize()
-    end
-  end
-
-  def status_label(_), do: "Unknown"
+  def status_label(status), do: Copy.status_label(status)
 
   attr(:tone, :atom, default: :neutral)
   attr(:label, :string, default: nil)
