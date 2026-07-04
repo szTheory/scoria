@@ -43,9 +43,19 @@ defmodule Scoria.Eval.Score do
       :eval_run_id,
       :dataset_item_id
     ])
-    |> validate_required([:score, :status, :scorer_kind, :eval_run_id, :dataset_item_id])
+    |> validate_required([:status, :scorer_kind, :eval_run_id, :dataset_item_id])
+    |> require_score_unless_not_scored()
     |> foreign_key_constraint(:eval_run_id)
     |> foreign_key_constraint(:dataset_item_id)
+  end
+
+  defp require_score_unless_not_scored(changeset) do
+    # not_scored count is derived as total - passed - failed; no stored counter.
+    if get_field(changeset, :status) == "not_scored" do
+      changeset
+    else
+      validate_required(changeset, [:score])
+    end
   end
 
   defp normalize_attrs(attrs) do
