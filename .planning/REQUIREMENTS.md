@@ -34,7 +34,7 @@
 ### Accessibility, Motion, And Responsive Behavior
 
 - [x] **A11Y-01**: Keyboard-only users can complete navigation, search/command palette, table/list scan, drawer/modal decisions, copy controls, disclosures, and form flows with visible focus and predictable focus restoration.
-- [ ] **A11Y-02**: Dialogs, drawers, tabs/disclosures, icon buttons, status indicators, forms, empty states, toasts, and tables/lists meet WCAG 2.2 AA intent using native semantics or correct ARIA.
+- [x] **A11Y-02**: Dialogs, drawers, tabs/disclosures, icon buttons, status indicators, forms, empty states, toasts, and tables/lists meet WCAG 2.2 AA intent using native semantics or correct ARIA.
 - [x] **MOTION-01**: Motion is restrained, tokenized, useful, transform/opacity-based where possible, and respects `prefers-reduced-motion`.
 - [x] **RESP-01**: Primary dashboard pages remain usable at 320, 375, 768, 1024, 1440, and wide desktop widths without squished tables, trapped scrolling, clipped content, or floating elements covering navigation.
 

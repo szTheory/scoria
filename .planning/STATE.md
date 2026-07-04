@@ -6,14 +6,14 @@ current_phase: 40
 current_phase_name: accessibility-motion-and-responsive-proof
 status: verifying
 stopped_at: Completed 40-02-PLAN.md
-last_updated: "2026-07-03T18:13:48.009Z"
-last_activity: 2026-07-03
+last_updated: "2026-07-04T01:16:58.576Z"
+last_activity: 2026-07-04
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 24
-  completed_plans: 23
-  percent: 67
+  completed_plans: 24
+  percent: 83
 ---
 
 # Project State
@@ -31,7 +31,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 Phase: 40 (accessibility-motion-and-responsive-proof) — EXECUTING
 Plan: 5 of 5
 Status: Phase complete — ready for verification
-Last activity: 2026-07-03
+Last activity: 2026-07-04
 
 ## Performance Metrics
 
@@ -109,6 +109,8 @@ Recent decisions affecting current work:
 - [Phase 40]: 40-03: D-13's live-patch collector uses a real cross-tab approval decision (no synthetic patch is reachable via the UI); bumped mix scoria.ui.e2e's pending-approval floor 5->10 to give the shared fixture pool headroom.
 - [Phase ?]: 40-05: Anchor set for the D-15 ~4-page responsive scan is Home+Workflows (generalized phase16_parity baseline) + Approvals + Incidents; workflow-detail deliberately left out since its grid-split primitive is already exercised by Incidents and its drawer-occlusion risk belongs to drawer_focus.spec.mjs (D-11), not D-16.
 - [Phase ?]: 40-05: Every new responsive_scan.spec.mjs / reduced_motion.spec.mjs assertion ships as a throwing expect() (not a warning-grade collector) because each was run live against a real dev server during authoring and found clean except one defect (fixed inline, .scoria-button--sm 24px floor) — per D-04 this is fix-and-assert-atomic, not new-and-uncertain.
+- [Phase 40]: 40-04: Curated axe assert-zero allow-list = all 7 seeded real pages (Home, Workflows, Approvals, Incidents, Review Queue, Datasets, Connectors), both themes.
+- [Phase 40]: 40-04: Fixed --scoria-text-subtle AA contrast failure via token SSOT — repointed the semantic alias per-theme to the nearest existing ramp step (dark->muted-warm, light->graphite-700); pumice-500 primitive untouched.
 
 ### Pending Todos
 
@@ -148,9 +150,10 @@ None at milestone start.
 | Phase 40 P03 | 50min | 3 tasks | 13 files |
 | Phase 40 P05 | 40min | - tasks | - files |
 | Phase 40 P05 | 40min | 3 tasks | 7 files |
+| Phase 40 P04 | 25min | 2 tasks | 6 files |
 
 ## Session Continuity
 
-Last session: 2026-07-03T18:11:42.293Z
+Last session: 2026-07-04T01:16:48.643Z
 Stopped at: Completed 40-02-PLAN.md
 Resume file: None
