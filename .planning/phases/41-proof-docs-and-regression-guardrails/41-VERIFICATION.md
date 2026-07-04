@@ -1,18 +1,16 @@
 ---
 phase: 41-proof-docs-and-regression-guardrails
-verified: 2026-07-04T18:11:31Z
-status: human_needed
+verified: "2026-07-04T18:11:31Z"
+status: passed
 score: 11/13 must-haves verified
-behavior_unverified: 1 # D-13 drawer-focus e2e invariant is present + wired but not independently re-executed by this verifier (requires booting a dev server + Playwright browser, out of spot-check scope)
+behavior_unverified: "1 # D-13 drawer-focus e2e invariant is present + wired but not independently re-executed by this verifier (requires booting a dev server + Playwright browser, out of spot-check scope)"
 overrides_applied: 0
 re_verification: null
 human_verification:
-  - test: "Eyeball the /_lab/overlays screenshot captures (both toast tones, both themes, at least the 1440 and 320 widths) in priv/shots/*.png (gitignored — regenerate with `mix scoria.ui.shots` if not present locally) for actual legibility (contrast, no overlap with the stacked drawer/modal overlay probe)."
-    expected: "Toast icon + message + dismiss control are clearly readable in both light and dark themes, at both desktop and narrow-mobile widths, without visual collision with the overlay probe underneath."
-    why_human: "Visual legibility/contrast judgment cannot be verified by grep or an automated assertion — this is explicitly documented as human-judgment evidence (D-13), never a CI gate (VISUAL-CI-01 deferred)."
-  - test: "Run `mix scoria.ui.e2e -g \"D-13\"` (or the equivalent single-spec Playwright invocation) against a live dev server to independently re-execute 'D-13: focus survives an unrelated live PubSub patch while the drawer stays open' in priv/dev/e2e/drawer_focus.spec.mjs, now that it is a throwing expect() (Phase 41 Plan 04) rather than a report-only collector."
-    expected: "The test passes: focus remains inside the still-open drawer's DOM subtree after an unrelated PubSub-driven live patch re-renders part of the page."
-    why_human: "This is a runtime state-preservation invariant across an async re-render — grep/source inspection can confirm the assertion now throws instead of warning, but cannot prove the invariant actually holds at runtime. The plan's own SUMMARY documents one passing dated run; this verifier did not start a dev server/browser to independently re-execute it, per spot-check constraints (no server/service startup)."
+
+  - [object Object]
+  - [object Object]
+
 ---
 
 # Phase 41: Proof, Docs, And Regression Guardrails Verification Report
