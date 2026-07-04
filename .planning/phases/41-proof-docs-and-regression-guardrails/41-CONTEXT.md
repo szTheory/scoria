@@ -208,8 +208,15 @@ lock-and-document work that reuses the existing harness; add no toolchain, no pr
     move them to **Section A (fixed-in-milestone)** each locked by a regression test; **defer WR-01/WR-02**
     (UX/cosmetic) to Section B2 as accepted tech debt. The owner picks one of: **(a)** this bounded
     2-crash fix pass [recommended]; **(b)** fix all four; **(c)** defer all four as recorded debt. Until
-    the owner confirms, the planner **defaults to D-16a (record-only)**. *(User was away when asked;
-    revisit before/at planning.)*
+    the owner confirms, the planner **defaults to D-16a (record-only)**.
+    - **✅ RESOLVED 2026-07-04 — owner picked (a):** Open the bounded fix lane for the **two CRASH-class
+      bugs only** — `CR-01(39-review)` (`review_queue_live.ex:54-63` missing `else`) + `WR-04`
+      (`release_workbench_live.ex` unassigned `@origin_context`). Each moves to **Section A
+      (fixed-in-v3.3)**, each **locked by a regression test**. **D-18** (table-scroll `aria-label`,
+      `ui.ex:1320`) **rides this lane** — apply the internal `aria-label` and tighten its guard to assert
+      it. **WR-01 / WR-02** (UX/cosmetic) + the minor IN-* items **stay deferred** in Section B2 as
+      accepted debt. Planner: plan this fix lane as its own bounded wave/plan; do NOT expand it beyond
+      these two crashes + D-18.
 - **D-17 (final gap register · structure + home):** Lives at
   `.planning/phases/41-.../41-GAP-REGISTER.md` (a **phase** artifact — the milestone-level
   `v3.3-MILESTONE-AUDIT.md` is the audit step's job, D-19). Three parts:
