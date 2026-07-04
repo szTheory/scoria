@@ -75,3 +75,40 @@ tier" — both scoped runs (`drawer_focus.spec.mjs`, `modal_focus.spec.mjs`) pas
 row by a criterion that can't collide across files (e.g. tag/consume specific seeded approval IDs per spec),
 or (b) force `mix scoria.ui.e2e`'s Playwright invocation to a single worker when destructive approval-decision
 specs are present, or (c) shard destructive specs into their own serial project in `playwright.config.mjs`.
+
+## Phase-40 post-execution regression gate: 3 pre-existing full-suite `mix test` failures (NOT caused by Phase 40)
+
+**Found during:** the `/gsd-execute-phase 40` post-execution regression gate — full `mix test` run
+(923 tests, 3 failures) after all 5 plans + the CR-01/WR-03 code-review fixes landed.
+
+**Confirmed pre-existing / unrelated to Phase 40** (evidence below), so logged, not fixed. Phase 40's own
+surface is green: guard suites (19 + 13), the phase-40-touched LiveView tests (62/0 in the fixer's isolated
+run), and the new CR-01 stacked-overlay regression spec (verified fail→pass).
+
+1. **`Scoria.CiPolicyContractTest` — "planning ledgers reflect shipped hex consumer and connector milestones"**
+   `assert roadmap =~ "v2.15"` (reads `.planning/ROADMAP.md`). The current roadmap is the v3.3 milestone,
+   which legitimately does not reference `v2.15`. **Proof it's pre-existing:** baseline commit `bc22ffa8`
+   (pre-Phase-40 HEAD) `.planning/ROADMAP.md` also had 0 occurrences of `v2.15`, and `git diff bc22ffa8..HEAD`
+   added/removed no `v2.15` lines. This is a stale v2.x-era planning-ledger contract that has been red since
+   the milestone rolled to v3.3. Fix belongs to milestone bookkeeping (update the contract's expected
+   milestone tokens), not this phase.
+
+2. **`Scoria.WarningInventory.CaptureParityTest` — "optimized compile-only capture catches high-signal
+   unclassified warning (injected)"** — compile-warning ratchet/inventory parity check
+   (`__ratchet_parity_tmp`). Environmental/compile-cache dependent; unrelated to any accessibility/motion/
+   responsive file Phase 40 touched (none of its `files_modified` intersect the warning-inventory tooling).
+
+3. **`Scoria.SupportCopilotGalleryTest` — "support copilot gallery proves advisory adoption journey"**
+   (and its cascaded `SupportCopilotWeb.OrchestratorProducerTest` sub-assertion "approvals page shows
+   approval from producer path"). Root cause is a `DBConnection.ConnectionError` — the async
+   `Scoria.Workflows.Reconciler` `Task.Supervised` keeps using a sandbox connection after its owner PID exits,
+   during a nested-`mix` end-to-end gallery run (`Runner.run!` → `run_mix!`). Classic sandbox-ownership race
+   in a heavy nested-suite runner; the failed `assert html =~ "Approval inbox"` is a downstream symptom of the
+   connection dying mid-render (note: `"Approval inbox"` is not a literal in `lib/` — it belongs to the
+   SupportCopilot fixture app). Not a Phase-40 rendering regression.
+
+**Suggested fix for whoever picks this up:** (1) update `ci_policy_contract_test.exs` to assert the current
+milestone's tokens (or scope the v2.15 assertion to the archived `v2.10-ROADMAP.md`); (2/3) treat as
+known-flaky infra tests — the SupportCopilot gallery runner needs the Reconciler task to complete/checkin its
+connection before the sandbox owner exits (e.g. `Ecto.Adapters.SQL.Sandbox.allow/3` for the Reconciler, or a
+synchronous drain in the gallery runner teardown).
