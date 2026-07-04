@@ -5,16 +5,16 @@ milestone_name: Pre-1.0 Trust & Security Hardening
 current_phase: 42
 current_phase_name: eval-fails-closed
 status: executing
-stopped_at: Completed 42-03-PLAN.md
-last_updated: "2026-07-04T22:32:36.623Z"
+stopped_at: Completed 42-04-PLAN.md
+last_updated: "2026-07-04T22:46:27.421Z"
 last_activity: 2026-07-04
-last_activity_desc: Completed 42-03 exact match scorer
+last_activity_desc: Completed 42-04 offline runner scorer dispatch
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 7
-  completed_plans: 3
-  percent: 43
+  completed_plans: 4
+  percent: 57
 ---
 
 # Project State
@@ -30,9 +30,9 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 ## Current Position
 
 Phase: 42 (eval-fails-closed) — EXECUTING
-Plan: 4 of 7
-Status: Ready to execute 42-04
-Last activity: 2026-07-04 -- Completed 42-03 exact match scorer
+Plan: 5 of 7
+Status: Ready to execute 42-05
+Last activity: 2026-07-04 -- Completed 42-04 offline runner scorer dispatch
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Last activity: 2026-07-04 -- Completed 42-03 exact match scorer
 - **Phase 42 P01:** 6 min — 3 tasks, 7 files, verification 14 tests green.
 - **Phase 42 P02:** 7 min — 3 tasks, 6 files, verification 7 required tests green plus 11 eval promotion regression tests.
 - **Phase 42 P03:** 8 min — 1 task, 2 files, verification 9 exact-match scorer tests green; full-suite residual failures logged in 42-03 summary.
+- **Phase 42 P04:** 7 min — 2 tasks, 3 files, verification 26 focused eval tests green; not_scored score-nullability migration added.
 
 *Updated after each plan completion*
 
@@ -140,6 +141,7 @@ Recent decisions affecting current work:
 - [Phase 42-03]: ExactMatch.score/3 treats clean mismatches as failed/0.0 and couldn't-run inputs as {:not_scored, reason}. — Preserves the plan's sharp line between real negative signals and unscoreable inputs.
 - [Phase 42-03]: ExactMatch string comparison normalizes Unicode NFC, trims, collapses internal whitespace, and remains case-sensitive unless case_insensitive is true. — Matches D-03 while avoiding fuzzy or semantic matching.
 - [Phase 42-03]: ExactMatch whole-map matching is opt-in via match: "map" and canonicalizes atom/string keys recursively. — Keeps non-string default field comparisons fail-closed while supporting runner map comparison specs.
+- [Phase 42-04]: Offline replay now extracts captured output by scorer field for ExactMatch, persists not_scored for empty/unknown scorer paths, and computes threshold_verdict through Scoria.Eval.Verdict. — Plan 42-04 replaced the hardcoded pass path while keeping live LLM usage opt-in only through injected seams.
 
 ### Pending Todos
 
@@ -199,10 +201,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-04T22:31:32.016Z
-Stopped at: Completed 42-03-PLAN.md
+Last session: 2026-07-04T22:46:03.672Z
+Stopped at: Completed 42-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
 
-- Continue Phase 42 with `42-03-PLAN.md` (ExactMatch deterministic scorer).
+- Continue Phase 42 with `42-05-PLAN.md` (Judge runner SubjectOutput + Verdict).
