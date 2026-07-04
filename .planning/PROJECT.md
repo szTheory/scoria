@@ -37,7 +37,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Re-audit primary operator flows through JTBD, persona, accessibility, responsive, reduced-motion, and dense-data lenses.
 - Lock the improvements with tests, screenshots, docs, and drift guards so later UI work keeps moving forward.
 
-**Progress (updated 2026-07-04):** Phase 40 (Accessibility, Motion And Responsive Proof) complete — A11Y-01, A11Y-02, MOTION-01, RESP-01 validated (22/22 must-haves). `drawer/1` + `modal/1` now have real focus trap + restore (the approval decision surface no longer strands focus on the trigger behind the scrim); axe-core WCAG 2.2 AA assert-zero scan is green across all 7 seeded pages in both themes after repointing the `--scoria-text-subtle` semantic token off `pumice-500` (both themes clear 4.5:1, primitive preserved); browserless MOTION/A11Y source-scan guards + reduced-motion and responsive (6-width) e2e proofs are in place. A post-execution code review caught a Critical stacked modal-over-drawer window-Escape collision (CR-01) on the approvals surface — fixed with a verified regression test. Next: Phase 41 (Proof, Docs And Regression Guardrails).
+**Progress (updated 2026-07-04):** Phase 40 (Accessibility, Motion And Responsive Proof) complete — A11Y-01, A11Y-02, MOTION-01, RESP-01 validated (22/22 must-haves). `drawer/1` + `modal/1` now have real focus trap + restore (the approval decision surface no longer strands focus on the trigger behind the scrim); axe-core WCAG 2.2 AA assert-zero scan is green across all 7 seeded pages in both themes after repointing the `--scoria-text-subtle` semantic token off `pumice-500` (both themes clear 4.5:1, primitive preserved); browserless MOTION/A11Y source-scan guards + reduced-motion and responsive (6-width) e2e proofs are in place. A post-execution code review caught a Critical stacked modal-over-drawer window-Escape collision (CR-01) on the approvals surface — fixed with a verified regression test. Phase 41 (Proof, Docs And Regression Guardrails) complete, and inserted Phase 41.1 (COPY-01 SSOT) closed the final v3.3 milestone-audit tech-debt item — `ScoriaWeb.UI.status_label/1` now delegates to `ScoriaWeb.Copy.status_label/1`, and `dataset_live/index.ex` sources its empty-state title, state labels, and version tokens from the previously-orphaned `Copy`/`DatasetCopy` modules, byte-stable, with parity + literal-absence regression guards (5/5 must-haves verified). v3.3 phases are complete.
 
 ## Previous Shipped Milestone: v3.0 Control Room (2026-06-14)
 
@@ -484,4 +484,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-04 after Phase 40 accessibility-motion-and-responsive-proof verification.*
+*Last updated: 2026-07-04 after Phase 41.1 COPY-01 SSOT wiring verification (v3.3 phases complete).*
