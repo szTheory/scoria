@@ -3,6 +3,8 @@ defmodule Scoria.Eval.JudgeRunner do
 
   alias Scoria.Eval
   alias Scoria.Eval.EvalRun
+  alias Scoria.Eval.SubjectOutput
+  alias Scoria.Eval.Verdict
   alias ReqLLM.Response
 
   def run_live(attrs) when is_map(attrs) do
@@ -32,7 +34,10 @@ defmodule Scoria.Eval.JudgeRunner do
            Eval.complete_eval_run(eval_run, %{
              status: "completed",
              duration_ms: 0,
-             threshold_verdict: threshold_verdict(eval_spec, scores)
+             threshold_verdict:
+               eval_spec.threshold_policy
+               |> then(&Verdict.compute(scores, &1))
+               |> Atom.to_string()
            }) do
       {:ok, %{eval_run: completed_run, scores: scores}}
     end
@@ -47,12 +52,16 @@ defmodule Scoria.Eval.JudgeRunner do
       raise ArgumentError, "live judge runs require sealed datasets"
     end
 
-    with {:ok, eval_run, scores} <- judge_dataset(eval_run, eval_spec, dataset, attrs, base_score_attrs),
+    with {:ok, eval_run, scores} <-
+           judge_dataset(eval_run, eval_spec, dataset, attrs, base_score_attrs),
          {:ok, completed_run} <-
            Eval.complete_eval_run(eval_run, %{
              status: "completed",
-             duration_ms: Enum.sum(Enum.map(scores, &latency_ms/1)),
-             threshold_verdict: threshold_verdict(eval_spec, scores)
+             duration_ms: 0,
+             threshold_verdict:
+               eval_spec.threshold_policy
+               |> then(&Verdict.compute(scores, &1))
+               |> Atom.to_string()
            }) do
       {:ok, %{eval_run: completed_run, scores: scores}}
     end
@@ -103,30 +112,36 @@ defmodule Scoria.Eval.JudgeRunner do
       |> Enum.sort_by(& &1.id)
 
     Enum.reduce_while(dataset_items, {:ok, []}, fn dataset_item, {:ok, acc} ->
-      subject_output = build_subject_output(dataset_item)
-      prompt = build_judge_prompt(dataset_item, subject_output)
+      case SubjectOutput.resolve(dataset_item, :live_judge) do
+        {:ok, actual_output} ->
+          prompt = build_judge_prompt(dataset_item, actual_output)
 
-      case orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts) do
-        {:ok, response} ->
-          verdict = extract_object(response)
-          scorer = eval_spec.scorers |> List.first() || %{}
+          case orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts) do
+            {:ok, response} ->
+              verdict = extract_object(response)
+              scorer = eval_spec.scorers |> List.first() || %{}
 
-          score_attrs = %{
-            dataset_item_id: dataset_item.id,
-            scorer_kind: scorer |> fetch(:scorer_kind) |> to_string(),
-            status: Map.get(verdict, "status", "failed"),
-            score: Map.get(verdict, "score", 0.0),
-            explanation: Map.get(verdict, "explanation", "Judge verdict unavailable"),
-            judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
-            rubric_version: "eval-spec-v#{eval_spec.version}",
-            evidence_refs: Map.get(verdict, "evidence_refs", %{}),
-            metadata: %{"cost_usd" => "0.0", "latency_ms" => 0}
-          }
+              score_attrs = %{
+                dataset_item_id: dataset_item.id,
+                scorer_kind: scorer_kind(scorer),
+                status: Map.get(verdict, "status", "failed"),
+                score: Map.get(verdict, "score", 0.0),
+                explanation: Map.get(verdict, "explanation", "Judge verdict unavailable"),
+                judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
+                rubric_version: "eval-spec-v#{eval_spec.version}",
+                evidence_refs: Map.get(verdict, "evidence_refs", %{}),
+                metadata: %{"cost_usd" => "0.0", "latency_ms" => 0}
+              }
 
+              {:cont, {:ok, [score_attrs | acc]}}
+
+            {:error, reason} ->
+              {:halt, {:error, reason}}
+          end
+
+        {:not_scored, reason} ->
+          score_attrs = not_scored_score_attrs(dataset_item, eval_spec, attrs, reason)
           {:cont, {:ok, [score_attrs | acc]}}
-
-        {:error, reason} ->
-          {:halt, {:error, reason}}
       end
     end)
     |> case do
@@ -135,18 +150,41 @@ defmodule Scoria.Eval.JudgeRunner do
     end
   end
 
-  defp build_subject_output(dataset_item) do
-    get_in(dataset_item.expected_output || %{}, ["answer"]) || ""
-  end
-
   defp build_judge_prompt(dataset_item, subject_output) do
     """
     Evaluate whether the response matches the sealed expectation.
 
     Input: #{Jason.encode!(dataset_item.input || %{})}
     Expected: #{Jason.encode!(dataset_item.expected_output || %{})}
-    Actual: #{subject_output}
+    Actual: #{Jason.encode!(subject_output)}
     """
+  end
+
+  defp not_scored_score_attrs(dataset_item, eval_spec, attrs, reason) do
+    reason = to_string(reason)
+    scorer = eval_spec.scorers |> List.first() || %{}
+
+    %{
+      dataset_item_id: dataset_item.id,
+      scorer_kind: scorer_kind(scorer),
+      status: "not_scored",
+      score: nil,
+      explanation: "Live judge could not score the sealed dataset item: #{reason}",
+      judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
+      rubric_version: "eval-spec-v#{eval_spec.version}",
+      evidence_refs: %{},
+      details: %{"reason" => reason},
+      metadata: %{"cost_usd" => "0.0", "latency_ms" => 0, "not_scored_reason" => reason}
+    }
+  end
+
+  defp scorer_kind(scorer) do
+    scorer
+    |> fetch(:scorer_kind)
+    |> case do
+      nil -> "llm_judge"
+      kind -> to_string(kind)
+    end
   end
 
   defp judge_schema do
@@ -161,35 +199,6 @@ defmodule Scoria.Eval.JudgeRunner do
   defp extract_object(%Response{} = response), do: Response.object(response) || %{}
   defp extract_object(%{object: object}) when is_map(object), do: object
   defp extract_object(object) when is_map(object), do: object
-
-  defp threshold_verdict(eval_spec, scores) do
-    total = length(scores)
-    pass_rate = if total == 0, do: 0.0, else: Enum.count(scores, &(&1.status == "passed")) / total
-    mean_score = if total == 0, do: 0.0, else: Enum.sum(Enum.map(scores, & &1.score)) / total
-    avg_latency = if total == 0, do: 0, else: Enum.sum(Enum.map(scores, &latency_ms/1)) / total
-
-    pass_rate_gte = fetch(eval_spec.threshold_policy, :pass_rate_gte) || 0.0
-    mean_score_gte = fetch(eval_spec.threshold_policy, :mean_score_gte) || 0.0
-    max_latency_ms = fetch(eval_spec.threshold_policy, :max_latency_ms) || 0
-
-    if pass_rate >= pass_rate_gte and
-         mean_score >= mean_score_gte and
-         avg_latency <= max_latency_ms do
-      "passed"
-    else
-      "failed"
-    end
-  end
-
-  defp latency_ms(score) do
-    score.metadata
-    |> Map.get("latency_ms", 0)
-    |> case do
-      value when is_integer(value) -> value
-      value when is_binary(value) -> String.to_integer(value)
-      _ -> 0
-    end
-  end
 
   defp fetch!(attrs, key) do
     case fetch(attrs, key) do
