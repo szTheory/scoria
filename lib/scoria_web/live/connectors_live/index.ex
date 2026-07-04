@@ -41,9 +41,15 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
   def handle_info(_message, socket), do: {:noreply, socket}
 
   @impl true
+  # WR-03 (phase 40 review): opening one drawer clears the other so at most one
+  # is ever mounted at a time. Both drawers attach their own window-scoped Escape
+  # listener (drawer/1); if both @runtime_drawer and @connector_drawer were ever
+  # non-nil simultaneously, a single Escape would fire both close_* handlers —
+  # the same collision class as CR-01's stacked modal/drawer, just latent here
+  # because the scrim usually blocks reaching the second opener.
   def handle_event("open_runtime_drawer", %{"id" => id}, socket) do
     runtime = Enum.find(socket.assigns.runtimes, &(&1.id == id))
-    {:noreply, assign(socket, :runtime_drawer, runtime)}
+    {:noreply, socket |> assign(:runtime_drawer, runtime) |> assign(:connector_drawer, nil)}
   end
 
   def handle_event("close_runtime_drawer", _, socket) do
@@ -51,7 +57,10 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
   end
 
   def handle_event("open_connector_drawer", %{"id" => connector_id}, socket) do
-    {:noreply, assign(socket, :connector_drawer, OperatorSurface.connector_drawer(connector_id))}
+    {:noreply,
+     socket
+     |> assign(:connector_drawer, OperatorSurface.connector_drawer(connector_id))
+     |> assign(:runtime_drawer, nil)}
   end
 
   def handle_event("close_connector_drawer", _, socket) do
