@@ -201,6 +201,73 @@ test.describe('Phase 40 — approval decision drawer focus trap + restore (A11Y-
     }
   });
 
+  // CR-01 regression (phase 40 review fix): the approval decision modal opens
+  // ON TOP of the still-mounted approval drawer (the drawer intentionally
+  // stays open behind the confirm modal so the operator keeps their place).
+  // Before the fix, modal/1 and drawer/1 both attached a WINDOW-scoped Escape
+  // listener, so a single Escape while the modal was open fired BOTH
+  // close_decision_modal AND dismiss_approval — ejecting the operator all the
+  // way out of the drawer and dropping the ?approval= deep-link, instead of
+  // just cancelling the confirm. drawer_focus.spec.mjs and modal_focus.spec.mjs
+  // previously only exercised each overlay in isolation, so this stacked case
+  // was untested and the regression was invisible to the gate.
+  test('CR-01: Escape while the decision modal is stacked over the drawer cancels ONLY the modal — drawer stays open, ?approval= deep-link is preserved, and focus pops exactly once back to the modal opener', async ({
+    page,
+  }) => {
+    const { drawer } = await openApprovalDrawer(page);
+
+    const approvalUrlBefore = new URL(page.url());
+    const approvalParamBefore = approvalUrlBefore.searchParams.get('approval');
+    expect(
+      approvalParamBefore,
+      'expected opening the drawer to set a deep-linkable ?approval= query param'
+    ).toBeTruthy();
+
+    // "Deny request" is a stable label regardless of which tool/approval was
+    // seeded (ApprovalCopy.reject_label/1 always returns it), unlike
+    // approve_label/1 which varies by tool_name — a deterministic opener
+    // across any seeded fixture.
+    const denyButton = drawer.getByRole('button', { name: 'Deny request' });
+    await expect(denyButton, 'expected the drawer to offer a Deny action for a pending approval').toBeVisible();
+    await denyButton.click();
+
+    const modal = page.locator('#approval-decision-modal');
+    await expect(modal, 'expected the decision confirm modal to open on top of the still-open drawer').toBeVisible();
+    // The drawer must remain mounted underneath — this is the stacked case
+    // the two isolated specs never exercised.
+    await expect(drawer, 'expected the drawer to stay mounted while the confirm modal is stacked on top').toBeVisible();
+
+    // Stamp a stable id on the modal opener BEFORE pressing Escape, so the
+    // post-Escape focus check below reads a real id rather than racing the
+    // id assignment against the pop_focus-driven refocus.
+    const denyButtonId = await denyButton.evaluate((el) => el.id || (el.id = 'e2e-cr01-deny-button'));
+
+    await page.keyboard.press('Escape');
+
+    await expect(modal, 'expected Escape to close ONLY the confirm modal').toBeHidden();
+    await expect(
+      drawer,
+      'expected Escape to leave the approval drawer open — CR-01 regression: both modal/1 and drawer/1 window-keydown Escape listeners fired, ejecting the operator from the drawer'
+    ).toBeVisible();
+
+    const approvalUrlAfter = new URL(page.url());
+    expect(
+      approvalUrlAfter.searchParams.get('approval'),
+      'expected the ?approval= deep-link to survive an Escape that only cancels the stacked confirm modal'
+    ).toBe(approvalParamBefore);
+
+    // Exactly one pop: the modal's phx-remove={JS.pop_focus()} restores focus
+    // to the Deny button that opened it (JS.push_focus() at the opener). The
+    // drawer must NOT have also unmounted (and thus must not also have fired
+    // its own pop_focus), which would either overshoot focus restoration back
+    // past the drawer entirely or land on an already-removed element.
+    await expectActiveElementId(
+      page,
+      denyButtonId,
+      "expected focus to pop back to the Deny button exactly once (single pop_focus, not the drawer's too)"
+    );
+  });
+
   // D-13 (warning-grade, non-throwing collector — D-04 two-bucket rule): the
   // approval drawer is a live PubSub surface. An unrelated broadcast can
   // phx-update it while open; a naive focus_wrap does not guarantee focus
