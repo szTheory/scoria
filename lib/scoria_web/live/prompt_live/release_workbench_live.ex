@@ -43,6 +43,10 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
       |> assign(:draft_run, fetch_eval_run(draft.id))
       |> assign(:active_run, fetch_eval_run(if active, do: active.id, else: nil))
       |> assign(:pending_approval, fetch_pending_approval(draft.id))
+      # T-41-02: render/1 reads @origin_context unconditionally; assign a safe
+      # default here so render never KeyErrors if it ever runs before
+      # handle_params/3. handle_params/3 (unchanged) still overrides this.
+      |> assign(:origin_context, nil)
 
     {:ok, socket}
   end
