@@ -150,3 +150,7 @@ None - no external service configuration required.
 ---
 *Phase: 41-proof-docs-and-regression-guardrails*
 *Completed: 2026-07-04*
+
+## Self-Check: PASSED
+
+All 6 modified/created source files and all 6 commit hashes (test-RED, fix-GREEN for Tasks 1/2, combined for Task 3, plus this SUMMARY's own doc commit) were verified present.
