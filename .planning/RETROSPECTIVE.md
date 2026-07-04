@@ -2,6 +2,42 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v3.3 — Design System Stress Test
+
+**Shipped:** 2026-07-04
+**Phases:** 7 (36–41.1) | **Plans:** 30 | **Tasks:** 74
+
+### What Was Built
+The embedded `/scoria` operator UI was made internally coherent from foundations to proof: a design-system inventory baseline (86 rows), a dev-only Component Lab at `/scoria/_lab` (10 states × 6 viewports × ugly-data fixtures, zero public-macro/Hex footprint), opaque toast tokens + coherent primitives, `page_header/1` adoption across all 7 index pages, a decision-first approval drawer + Pending|Decided decision-history surface, domain Copy SSOT, WCAG 2.2 AA assert-zero + focus trap/restore + reduced-motion + 6-width responsive proof, and durable `docs/design_system.md` + screenshots + drift guards. Inserted Phase 41.1 closed the COPY-01 SSOT drift the milestone audit surfaced.
+
+### What Worked
+- **Baseline-first gating.** Phase 36's inventory artifact gated every later implementation phase — no page work started without a quality map, so the stress test had a scoped target set instead of open-ended tweaking.
+- **Dev-only lab as a stress harness.** Building the Component Lab out-of-macro (guarded by a source-scan boundary test) let every primitive be exercised across ugly data / themes / viewports without any runtime-surface risk — the a11y contrast defect and target-size defect were both found in the lab, not in production.
+- **Fix-and-assert-atomic discipline.** Defects found during authoring (contrast token, 24px target-size, incidents raw-status leak, decision-attribution bug) were fixed inline and locked with a red→green test in the same plan, rather than deferred as debt.
+- **Shift-left proof.** Human visual checks were repeatedly replaced by automated e2e (axe assert-zero, 6-width responsive, reduced-motion, drawer/modal focus) — matching the UAT→automation preference, so verification is repeatable.
+- **Drift guards as the durable win.** Every design-system rule shipped paired with the guard that enforces it (`docs/design_system.md` Rule→SSOT→Guard→Example), wired into the CI policy lane — the coherence is now idempotently improving.
+
+### What Was Inefficient
+- **The COPY-01 SSOT orphan.** Phase 39 built `ScoriaWeb.Copy`/`DatasetCopy` + unit tests but never wired real callers; the modules sat orphaned until the milestone audit caught it, forcing an inserted Phase 41.1. Building a SSOT module and its consumer in the same plan (or a caller-presence guard from the start) would have avoided the extra close-time phase.
+- **Planning-doc bookkeeping drift.** STATE.md's Deferred Items table accumulated corrupted stray per-plan metric rows and the frontmatter `milestone_name` got mangled — both cleaned up at close. Machine-written planning state needs the same drift guards the code has.
+- **Auto-extracted accomplishments were noisy.** The milestone-complete CLI pulled a per-plan bug-note ("[Rule 1 - Bug] …") in as a top-level accomplishment; SUMMARY one-liners aren't all milestone-level highlights.
+
+### Patterns Established
+- **Dev-only surface pattern:** new scope textually separate from the public macro + a source-scan boundary test proving it stays out of `lib/` and the Hex tarball (reusable for future dev tooling).
+- **Copy SSOT + caller-presence guard:** a copy module plus a literal-absence/parity guard that fails if a call site reverts to an inline literal or a duplicated map.
+- **Rendered-DOM drift guard:** Floki-over-`live/2` guard that catches dynamic/interpolated violations a static source-scan can't see (used for the single-header rule).
+- **Two-tier axe proof:** report-only full-lab baseline (surfaces real defects) → curated assert-zero on real pages (the merge bar).
+
+### Key Lessons
+- **Build the SSOT and its first consumer together, or guard for orphans immediately.** An unwired "single source of truth" is worse than no abstraction — it invites silent divergence and shows up as audit debt.
+- **A stress harness pays for itself in defects found early.** The lab surfaced contrast/target-size/copy defects cheaply and off the runtime surface.
+- **Automated proof beats human checkpoints for design-system invariants** — and is the only thing that keeps them from regressing.
+- **Treat planning-state files as data that drifts.** They need cleanup passes (or guards) just like source.
+
+### Cost Observations
+- Sessions spanned ~15 days (2026-06-20 → 2026-07-04); 220 files changed (code-only 71, +7,007/−606).
+- One inserted phase (41.1) was pure audit-debt closure — cheap (1 plan, byte-stable) but avoidable with tighter SSOT-wiring discipline upstream.
+
 ## Milestone: v3.1 — CI/CD Velocity
 
 **Shipped:** 2026-06-17

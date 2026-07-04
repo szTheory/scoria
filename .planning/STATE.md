@@ -1,13 +1,11 @@
 ---
 gsd_state_version: 1.0
 milestone: v3.3
-milestone_name: window is idle — collision-avoidance)
-current_phase: 41.1
-status: verifying
+milestone_name: Design System Stress Test
+status: Awaiting next milestone
 stopped_at: Completed 41.1-01-PLAN.md
-last_updated: "2026-07-04T19:30:44.743Z"
-last_activity: 2026-07-04
-last_activity_desc: Phase 41.1 complete
+last_updated: "2026-07-04T20:29:41.636Z"
+last_activity: 2026-07-04 — Milestone v3.3 completed and archived
 progress:
   total_phases: 7
   completed_phases: 7
@@ -20,23 +18,23 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Test)
+See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 41.1 — wire-orphaned-scoriaweb-copy-datasetcopy-into-dataset-page-c
+**Current focus:** Planning next milestone — SEED-006 Pre-1.0 Trust & Security Hardening (🔴 P0, gates next Hex release). See `ROADMAP.md ## Backlog` 999.1.
 
 ## Current Position
 
-Phase: 41.1
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-07-04 — Phase 41.1 complete
+Phase: Milestone v3.3 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-04 — Milestone v3.3 completed and archived
 
 ## Performance Metrics
 
-- **Latest Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
-- **Previous Shipped:** `v3.1 CI/CD Velocity` (2026-06-17) — 9 plans, 6 phases, 13 tasks. Audit `passed`; PR CI 77m→7m38s MEASURED.
+- **Latest Shipped:** `v3.3 Design System Stress Test` (2026-07-04) — 30 plans, 7 phases, 74 tasks. Audit `passed` (22/22 requirements, 6/6 seams); tag `v3.3` local.
+- **Previous Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
 
 *Updated after each plan completion*
 
@@ -161,25 +159,34 @@ None at milestone start.
 | Agent security | SEED-010: lethal-trifecta governance (⭐ flagship differentiator) | Deferred | 2026-07-03 audit |
 | Privacy/feedback | SEED-011: retention/purge, PII masking hook, human-feedback flywheel | Deferred | 2026-07-03 audit |
 
-> **Ordered roadmap + dependencies** for SEED-005…011 live in `ROADMAP.md` `## Backlog` (999.1–999.7); "why" index in `.planning/seeds/README.md`. Stray per-plan timing rows that previously polluted this table were removed 2026-07-03 (canonical per-plan metrics live in the phase manifests).
-| Phase 39 P06 | ~20min | 3 tasks | 5 files |
-| Phase 39 P07 | ~50min | 2 tasks | 3 files |
-| Phase 39 P08 | 48min | 3 tasks | 8 files |
-| Phase 40 P01 | 3min | 3 tasks | 4 files |
-| Phase 40 P02 | 25min | 2 tasks | 2 files |
-| Phase 40 P03 | 50min | 3 tasks | 13 files |
-| Phase 40 P05 | 40min | - tasks | - files |
-| Phase 40 P05 | 40min | 3 tasks | 7 files |
-| Phase 40 P04 | 25min | 2 tasks | 6 files |
-| Phase 41 P01 | 10min | 3 tasks | 6 files |
-| Phase 41 P02 | 20min | 1 tasks | 1 files |
-| Phase 41 P03 | 45min | 3 tasks | 5 files |
-| Phase 41 P04 | 25min | 3 tasks | 4 files |
-| Phase 41 P05 | 20min | 2 tasks | 2 files |
-| Phase 41.1 P01 | 25min | 3 tasks | 5 files |
+> **Ordered roadmap + dependencies** for SEED-005…011 live in `ROADMAP.md` `## Backlog` (999.1–999.7); "why" index in `.planning/seeds/README.md`. (Stray per-plan timing rows that previously polluted this table were removed at v3.3 close 2026-07-04 — canonical per-plan metrics live in the phase manifests.)
+
+### Acknowledged at v3.3 milestone close (2026-07-04)
+
+13 open artifacts surfaced by the pre-close audit were **acknowledged as deferred** (not v3.3 gaps — all are forward-backlog seeds or out-of-scope todos). Closeout recorded as `override_closeout`; all 22 requirements met and all 7 phases verified.
+
+| Category | Item | Status |
+|----------|------|--------|
+| todo | `add-approval-decision-history` (functionally delivered by FLOW-04 / Phase 39; file stale) | Deferred |
+| todo | `ci-policy-job-cache-key-mislabel` (CI copy cleanup; out of UI scope) | Deferred |
+| todo | `docker-dx-fleet-hardening` (FLEET-01/02; out of scope) | Deferred |
+| seed | SEED-003 CI/CD efficiency overhaul | Dormant |
+| seed | SEED-005 Documentation & positioning overhaul (ROADMAP 999.2) | Dormant |
+| seed | SEED-006 Pre-1.0 Trust & Security Hardening — GATES next Hex release (ROADMAP 999.1) | Dormant |
+| seed | SEED-007 Trace foundation OTel-GenAI/OpenInference (ROADMAP 999.3) | Dormant |
+| seed | SEED-008 Trustworthy eval depth (ROADMAP 999.5) | Dormant |
+| seed | SEED-009 Retrieval eval depth & seams (ROADMAP 999.6) | Dormant |
+| seed | SEED-010 Lethal-trifecta governance ⭐ flagship (ROADMAP 999.4) | Dormant |
+| seed | SEED-011 Privacy & feedback governance (ROADMAP 999.7) | Dormant |
+| seed | SEED-012 Architecture-archetype awareness (ROADMAP 999.8) | Dormant |
+| seed | SEED-013 Operator IA pivot / Control-Room v2 (ROADMAP 999.9) | Dormant |
 
 ## Session Continuity
 
 Last session: 2026-07-04T19:18:17.110Z
 Stopped at: Completed 41.1-01-PLAN.md
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

@@ -14,30 +14,24 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ## Current State
 
-**Shipped version:** `v3.2 Drydock` (2026-06-19)
+**Shipped version:** `v3.3 Design System Stress Test` (2026-07-04)
 
 **What shipped:**
-- Docker dev-DX hardening landed: `make dev` now defaults to `4799`, `make nuke` / `make clean` are scope-safe, `make fleet` exposes stale instances, and the launch banner is router-derived and copy-pasteable.
-- The Docker dev-DX reference docs were rewritten and pinned with a policy-lane contract so stale `localhost:4000` guidance cannot drift back in quietly.
-- The `0.1.2` maintenance release shipped on Hex and the live post-publish registry smoke passed, including fresh-install and upgrade proofs.
+- The embedded `/scoria` operator UI is now internally coherent from foundations to proof: a complete design-system inventory (86 rows, 9 layers) preserved as baseline truth, plus a dev-only Component Lab at `/scoria/_lab` that stress-tests every `ScoriaWeb.UI` primitive across 10 states × 6 viewports × ugly-data fixtures — with zero change to the public dashboard macro or the Hex runtime footprint (guarded by a source-scan boundary test).
+- Foundations and operator flows were re-cut JTBD-first: opaque toast tokens, coherent primitive controls, `page_header/1` adoption across all 7 index pages, a decision-first approval drawer, a Pending|Decided decision-history surface with audit-sourced receipts, and domain Copy SSOT (`ScoriaWeb.Copy` + per-domain modules).
+- Operability was proven, not asserted: real focus trap + restore on `drawer/1`/`modal/1`, axe-core WCAG 2.2 AA assert-zero across all 7 seeded pages in both themes, reduced-motion collapse, and a 6-width responsive geometry harness — backed by browserless source-scan drift guards.
+- Locked with durable proof: `docs/design_system.md` (Rule → SSOT → Guard → Example) wired into the CI policy lane, screenshot/contact-sheet evidence, a three-part gap register, and the COPY-01 SSOT closure (Phase 41.1) wiring the previously-orphaned `Copy`/`DatasetCopy` modules.
 
 **Current posture:**
-- Scoria remains the reference implementation for the embedded Traefik + `*.localhost` stack.
-- Sibling-repo migration and proxy bake-offs remain out of scope.
-- The dashboard has recently had a focused UX cleanup pass. The next milestone intentionally turns that into a systematic design-system stress test instead of continuing one-off page tweaks.
+- The design system is coherent and drift-guarded end-to-end; future UI work is idempotently improving rather than one-off page tweaks. The structural operator-IA pivot (unified Queue, Run Workbench, scope contract) is planted as SEED-013 / ROADMAP 999.9, gated behind the backend seeds.
+- **The next Hex release (`0.1.3`, PR #12) is HELD** behind SEED-006 (999.1) — three live P0 bugs in shipped `0.1.2` (eval fail-open, knowledge cross-tenant retrieval leak, dashboard auth bypass) must be fixed before publishing over them.
+- Scoria remains the reference implementation for the embedded Traefik + `*.localhost` stack; sibling-repo migration and proxy bake-offs remain out of scope.
 
-## Current Milestone: v3.3 Design System Stress Test
+## Next Milestone (candidate): v3.4 — SEED-006 Pre-1.0 Trust & Security Hardening
 
-**Goal:** Make the embedded `/scoria` admin/operator UI internally coherent at the foundation, component, component-group, page-flow, copy, accessibility, motion, fixture, and proof levels without regressing the recent cleanup work.
+**Why next:** The 2026-07-03 eval-posture audit validated Scoria's direction but found 3 P0 bugs live in shipped `0.1.2`. This is a 🔴 P0 milestone that **gates the next Hex release** — no publish until it lands. Full ordered backlog (999.1–999.9) lives in `ROADMAP.md ## Backlog`; scope it via `/gsd-new-milestone` or promote via `/gsd-review-backlog`.
 
-**Target features:**
-- Inventory every dashboard primitive, component group, page flow, fixture path, and one-off style pattern so the system has a clear quality map.
-- Add a dev-only component lab that stress-tests Scoria UI primitives and recurring groups across theme, viewport, state, and ugly-data cases without changing the public dashboard macro or Hex footprint.
-- Tighten shared controls, stats, overlays, toasts, evidence/code blocks, drawers, tables/lists, forms, navigation, copy, focus, and motion through shared components and tokens rather than page-local patches.
-- Re-audit primary operator flows through JTBD, persona, accessibility, responsive, reduced-motion, and dense-data lenses.
-- Lock the improvements with tests, screenshots, docs, and drift guards so later UI work keeps moving forward.
-
-**Progress (updated 2026-07-04):** Phase 40 (Accessibility, Motion And Responsive Proof) complete — A11Y-01, A11Y-02, MOTION-01, RESP-01 validated (22/22 must-haves). `drawer/1` + `modal/1` now have real focus trap + restore (the approval decision surface no longer strands focus on the trigger behind the scrim); axe-core WCAG 2.2 AA assert-zero scan is green across all 7 seeded pages in both themes after repointing the `--scoria-text-subtle` semantic token off `pumice-500` (both themes clear 4.5:1, primitive preserved); browserless MOTION/A11Y source-scan guards + reduced-motion and responsive (6-width) e2e proofs are in place. A post-execution code review caught a Critical stacked modal-over-drawer window-Escape collision (CR-01) on the approvals surface — fixed with a verified regression test. Phase 41 (Proof, Docs And Regression Guardrails) complete, and inserted Phase 41.1 (COPY-01 SSOT) closed the final v3.3 milestone-audit tech-debt item — `ScoriaWeb.UI.status_label/1` now delegates to `ScoriaWeb.Copy.status_label/1`, and `dataset_live/index.ex` sources its empty-state title, state labels, and version tokens from the previously-orphaned `Copy`/`DatasetCopy` modules, byte-stable, with parity + literal-absence regression guards (5/5 must-haves verified). v3.3 phases are complete.
+**Likely scope (→ see `SEED-006`):** eval fail-open fixes (fake-green scorers, judge expected-vs-expected, decorative release gate), knowledge cross-tenant retrieval isolation, dashboard auth bypass, plus correctness bugs (fake-cosine `score_chunk`, citation-presence abstention penalty, chunker overlap no-op, latency-vs-0).
 
 ## Previous Shipped Milestone: v3.0 Control Room (2026-06-14)
 
@@ -268,12 +262,18 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ Maintainer can see which components and page patterns are canonical, legacy, duplicated, missing, or intentionally page-specific. — Phase 36 `baseline-and-inventory` (INV-02)
 - ✓ Maintainer can browse every `ScoriaWeb.UI` primitive and recurring component group across all ten states, six proof viewports, and curated overlay flows in a dev-only lab. — Phase 37 `dev-component-lab-and-stress-fixtures` (LAB-01, LAB-02)
 - ✓ Maintainer can stress components with a deterministic fixture matrix (ugly/edge-case data) and inspect the catalog itself. — Phase 37 `dev-component-lab-and-stress-fixtures` (FIXT-01)
+- ✓ Operator-facing UI uses semantic tokens, primitive controls are coherent, one shared design-system language spans stats/overlays/evidence/drawers/tables, and approval toasts stay readable over dense UI in both themes — with opaque toast tokens + drift guards for stats/copy/focus/size invariants. — `v3.3 Design System Stress Test` (DS-01, DS-02, DS-03, DS-04)
+- ✓ Operator flows are JTBD-first: every page has clear orientation via `page_header/1` (7/7 index pages), consistent scan/IA conventions, a decision-first approval drawer with progressive disclosure, and a Pending|Decided decision-history surface with audit-sourced receipts that never implies in-place reversal. — `v3.3 Design System Stress Test` (FLOW-01, FLOW-02, FLOW-03, FLOW-04)
+- ✓ UI copy uses operator-flow language first with technical detail as evidence, sourced from a single copy SSOT — `ScoriaWeb.UI.status_label/1` delegates to `ScoriaWeb.Copy.status_label/1` and `dataset_live` sources labels/titles/version tokens from the wired `Copy`/`DatasetCopy` modules (COPY-01 SSOT closed by Phase 41.1), byte-stable with parity + literal-absence guards. — `v3.3 Design System Stress Test` (COPY-01)
+- ✓ The milestone is locked into durable proof: focused ExUnit + Playwright cover lab states/themes/overlays/flows, `docs/design_system.md` (Rule→SSOT→Guard→Example) is CI-policy-lane wired, and drift guards prevent regressions to headers/palette/toasts/stats/copy/icon-buttons/untested-states. — `v3.3 Design System Stress Test` (PROOF-01, PROOF-02, PROOF-03)
 
 ### Active
 
-**Milestone v3.3 Design System Stress Test is active** — Phases 36 (baseline/inventory), 37 (dev component lab + fixtures), 38 (foundations + primitive controls), 39 (component groups + operator flows), and 40 (accessibility, motion & responsive proof) are complete and verified. Next up is Phase 41 `proof-docs-and-regression-guardrails`.
+**Milestone v3.3 Design System Stress Test SHIPPED (2026-07-04)** — all 7 phases (36–41.1), 30 plans, 74 tasks verified; audit `passed` (22/22 requirements). Archived in `.planning/milestones/v3.3-*`. Tag `v3.3` created (local).
 
-**Deferred (not this milestone):**
+**Next milestone (candidate): SEED-006 Pre-1.0 Trust & Security Hardening** 🔴 P0 — GATES the next Hex release (`0.1.3` PR #12 held). Ordered backlog 999.1–999.9 in `ROADMAP.md ## Backlog`. Start with `/gsd-new-milestone`.
+
+**Deferred (not the immediate P0 milestone):**
 - [ ] **SEED-004 (test-code determinism):** convert forced-serial `IntegrationCase` files to `async: true`, de-globalize per-module Phoenix test endpoints, and replace ~14 `Process.sleep` sites with the `eventually/2` helper — then raise partition count past 4 once the serial floor drops. (Higher product risk; touches 9+ test files. Leading candidate for the milestone after v3.2.)
 - [ ] **DOCKER-01 cross-repo convergence:** migrate sibling repos (rulestead/parapet/etc.) onto the shared Traefik + unpublished-DB standard. (Out of v3.2 scope by decision; stays in the `docker-dx-fleet-hardening` todo.)
 
@@ -326,7 +326,8 @@ _(Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verificatio
 
 ## Context
 
-- **Latest shipped:** v3.2 Drydock (Docker dev-DX hardening + maintenance release — 4799 default, router-derived banner, docs contract, `0.1.2` live) — archived 2026-06-19; tag `v3.2` pending.
+- **Latest shipped:** v3.3 Design System Stress Test (`/scoria` UI coherence foundation→proof — inventory + Component Lab, tightened primitives/tokens, JTBD operator flows, WCAG 2.2 AA + reduced-motion + 6-width proof, docs/screenshots/drift-guards, COPY-01 SSOT) — archived 2026-07-04; tag `v3.3` local. Audit `passed` (22/22).
+- v3.2 Drydock (Docker dev-DX hardening + maintenance release — 4799 default, router-derived banner, docs contract, `0.1.2` live) — archived 2026-06-19; tag `v3.2` pending.
 - v3.0 Control Room (dashboard design-system / IA / motion / proof) — archived 2026-06-14; tag `v3.0` local-only.
 - v2.17 Vesicle (brand system) — archived 2026-06-11.
 - v2.16 ReqLLM peer bump (`~> 1.13`) — archived 2026-05-30.
@@ -391,6 +392,8 @@ _(Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verificatio
 | 2026-07-03 eval-posture audit validated Scoria's direction (Level 3→4, embedded-governance differentiator) and codified the 6-principle scope doctrine (see Constraints) as the build-vs-delegate SSOT | 6-agent adjudication vs peer LLM-ops libs (LangSmith/Langfuse/Phoenix/Ragas/Braintrust/Inspect/OTel) found Scoria correctly aimed but with 3 P0 bugs in shipped 0.1.2 + the flagship differentiator unbuilt; a durable doctrine prevents future scope drift | — Pending — SEED-006..011 planted; ordered roadmap in ROADMAP.md ## Backlog |
 | SEED-006 (P0 trust/security hardening) GATES the next Hex release; lethal-trifecta-as-policy is the flagship differentiator | Fake-green eval + 2 cross-tenant exposures are live in 0.1.2 (must not publish over them); no peer ships trifecta enforcement and Scoria is 2/3 built | — Pending — ROADMAP ## Backlog 999.1 (gate) / 999.4 (flagship) |
 | 2026-07-03 operator-UI storyboard ingest → adopt `.planning/research/operator-ui-north-star.md` as the UI source-of-record + plant SEED-013 (Operator IA Pivot) as the structural pivot; feature-screens ride their backend seeds. Guardrails: **Feature/archetype/route/env are host-declared attributes Scoria segments by, never modeled/inferred**; **no in-lib LLM diagnosis/opinion** (mechanical signals or host-supplied only); **tighter nav, not the storyboard's 10 sections**; **incremental, not big-bang**. | A blank-slate/maximalist storyboard over-scopes for n=1 and presupposes the unbuilt backlog; ~40% already ships (v3.0 IA spine sound). Doctrine-filtering it to a North-Star doc + one structural seed + annotations prevents scope bloat while capturing the coherence win. | — Pending — ROADMAP ## Backlog 999.9; North-Star doc is the UI source-of-record |
+| v3.3 stress-tests the design system as a whole (inventory → dev-only Component Lab → tightened primitives → JTBD flows → a11y/motion/responsive proof → durable guards) rather than continuing one-off page tweaks; the dev lab stays out of the public macro + Hex footprint | The prior UX cleanup was per-page and unproven; a systematic pass with a stress harness + drift guards makes coherence durable and idempotently improving without runtime-surface risk | ✓ Good — shipped v3.3; audit `passed` 22/22, 6/6 seams wired |
+| v3.3 milestone audit surfaced a COPY-01 SSOT drift (orphaned `ScoriaWeb.Copy`/`DatasetCopy`); closed it via inserted Phase 41.1 rather than deferring | An unwired copy SSOT invites silent divergence; wiring it byte-stable with parity + literal-absence guards closed the only open audit tech-debt item before close | ✓ Good — shipped 41.1; COPY-01 SSOT closed, re-verified against live code |
 
 ## Milestone History
 
@@ -421,6 +424,8 @@ _(Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verificatio
 - `v2.16 ReqLLM Peer Bump`: ReqLLM `~> 1.13` peer bump with integration + CI trust verification; Phase 10.1 process closeout.
 - `v3.0 Control Room`: Dashboard "insane polish" — fully-adopted `ui.ex` design system with build-failing DS-06 raw-palette guard (verified zero), persona/JTBD IA spine (3-group nav, Status Home, breadcrumbs, ⌘K palette, honest reserved stubs), full screen conversion + thin notebook evidence adapters, brand-tied motion + light/dark WCAG-AA parity, and a committed screenshot+critique evaluation loop. Closed `gaps_found` (10 verification-doc/proof partials, 0 unsatisfied).
 - `v3.1 CI/CD Velocity`: Infra/docs CI overhaul (SEED-003) — build-once artifact job, knowledge lane `--only knowledge`, serial→parallel lane fan-out behind one `verify-summary`, 4-way partition sharding, Postgres host-port flake fix + zero-retry policy, and a `mix ci` local-gate alias. PR CI critical path 77m→7m38s MEASURED, bar preserved (`closeout_order/0` byte-stable, `CI / ci-gate` name unchanged, nothing demoted). Audit `passed` (13/13).
+- `v3.2 Drydock`: Docker dev-DX hardening + maintenance release (Phases 29–35) — Makefile as single entry point (`PORT ?= 4799`, self-documenting targets, scope-safe cleanup ladder), router-derived launch banner, Docker-DX docs drift guard in the policy lane, and the `0.1.2` Hex release with green post-publish smoke (fresh install + `0.1.0→0.1.2` upgrade). Audit `passed` (14/14).
+- `v3.3 Design System Stress Test`: `/scoria` operator-UI coherence foundation→proof (Phases 36–41.1) — design-system inventory baseline, dev-only Component Lab (`/scoria/_lab`, 10 states × 6 viewports × ugly-data, zero macro/Hex footprint), opaque toast tokens + coherent primitives, `page_header/1` adoption across 7 pages, decision-first approval drawer + decision-history surface, domain Copy SSOT, WCAG 2.2 AA assert-zero + focus trap/restore + reduced-motion + 6-width responsive proof, and durable docs/screenshots/drift-guards. COPY-01 SSOT closed by inserted Phase 41.1. Audit `passed` (22/22, 6/6 seams).
 
 ## Archived Planning Notes
 
@@ -484,4 +489,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-04 after Phase 41.1 COPY-01 SSOT wiring verification (v3.3 phases complete).*
+*Last updated: 2026-07-04 after v3.3 Design System Stress Test milestone completion.*
