@@ -40,7 +40,7 @@
 
 ### Proof, Documentation, And Guardrails
 
-- [ ] **PROOF-01**: Maintainer can run focused tests and browser proofs that cover component lab states, theme switching, overlays, mobile shell, copy affordances, toast legibility, and core operator flows.
+- [x] **PROOF-01**: Maintainer can run focused tests and browser proofs that cover component lab states, theme switching, overlays, mobile shell, copy affordances, toast legibility, and core operator flows.
 - [x] **PROOF-02**: Maintainer docs explain the Scoria design-system conventions for BEM, tokens, page headers, stats, overlays, evidence/code, copy controls, fixtures, motion, accessibility, and drift guards.
 - [x] **PROOF-03**: Drift guards prevent regressions to duplicate density controls, inconsistent stats, redundant single-region headers, raw palette leakage, inaccessible icon buttons, unreadable toasts, oversized copy buttons, and untested component states.
 

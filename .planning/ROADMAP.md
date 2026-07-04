@@ -157,7 +157,7 @@ Plans:
 
 **Requirements:** PROOF-01, PROOF-02, PROOF-03
 
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 **Wave 1** *(no file overlap — parallel)*
@@ -165,7 +165,7 @@ Plans:
 - [x] 41-01-PLAN.md — D-16b bounded crash-fix lane: CR-01(39-review) + WR-04 fixes + D-18 aria-label, each locked by a regression test (Wave 1)
 - [x] 41-02-PLAN.md — D-06 GAP-A rendered-DOM single-header drift guard (closes the 8th PROOF-03 regression) (Wave 1)
 - [x] 41-03-PLAN.md — docs/design_system.md (11 sections) + doc-contract test + CI policy-lane wiring (Wave 1)
-- [ ] 41-04-PLAN.md — Screenshot proof: /_lab/overlays SCREENS + toast-timing-safe capture + contact-sheet manifest (Wave 1)
+- [x] 41-04-PLAN.md — Screenshot proof: /_lab/overlays SCREENS + toast-timing-safe capture + contact-sheet manifest (Wave 1)
 
 **Wave 2** *(blocked on Waves 1 — consumes all lane outputs)*
 

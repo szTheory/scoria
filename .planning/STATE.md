@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: window is idle — collision-avoidance)
 status: executing
-stopped_at: Completed 41-03-PLAN.md
-last_updated: "2026-07-04T17:19:50.704Z"
+stopped_at: Completed 41-04-PLAN.md
+last_updated: "2026-07-04T17:33:32.801Z"
 last_activity: 2026-07-04
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 29
-  completed_plans: 27
+  completed_plans: 28
   percent: 83
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 41 (proof-docs-and-regression-guardrails) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-07-04
 
@@ -118,6 +118,9 @@ Recent decisions affecting current work:
 - [Phase 41]: 41-03: Guard-path regex in the doc contract scans for the test/..._test.exs substring anywhere in backtick-fenced text, not just backtick-anchored paths, since the doc cites guards both as bare filenames and full mix test invocations.
 - [Phase 41]: 41-03: BEM/selectors section states plainly that no test enforces BEM structure directly -- convention, guarded only for palette leakage via ds06_drift_guard_test.exs -- per D-10.
 - [Phase 41]: 41-03: Overlays section pairs a11y_structural_guard_test.exs (static role=dialog/aria-modal pairing) with modal_focus.spec.mjs/drawer_focus.spec.mjs (e2e trap+restore) since no single ExUnit test owns overlay focus behavior end-to-end.
+- [Phase 41]: 41-04: lab_overlays SCREENS entry uses path '/_lab/overlays' (baseUrl already includes /scoria)
+- [Phase 41]: 41-04: contact_sheet_index.md update is an additive Phase 41 addendum, not a rewrite of the historical v3.0 before/after record
+- [Phase 41]: 41-04: D-13 drawer live-patch collector flipped to a throwing expect() after mix scoria.ui.e2e observed zero warnings (D-04 VERIFY-THEN-DEFER)
 
 ### Pending Todos
 
@@ -161,9 +164,10 @@ None at milestone start.
 | Phase 41 P01 | 10min | 3 tasks | 6 files |
 | Phase 41 P02 | 20min | 1 tasks | 1 files |
 | Phase 41 P03 | 45min | 3 tasks | 5 files |
+| Phase 41 P04 | 25min | 3 tasks | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-07-04T17:19:50.700Z
-Stopped at: Completed 41-03-PLAN.md
+Last session: 2026-07-04T17:33:32.685Z
+Stopped at: Completed 41-04-PLAN.md
 Resume file: None
