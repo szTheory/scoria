@@ -7,9 +7,16 @@
 - ✅ **v3.1 CI/CD Velocity** — Phases 23–28, PR CI 77m → 7m38s (shipped 2026-06-17)
 - ✅ **v3.2 Drydock** — Phases 29–35, Docker dev-DX hardening + `0.1.2` maintenance release (shipped 2026-06-19)
 - ✅ **v3.3 Design System Stress Test** — Phases 36–41.1, `/scoria` UI coherence foundation→proof (shipped 2026-07-04)
-- 📋 **Next** — see `## Backlog` (999.1 SEED-006 Trust & Security Hardening gates the next Hex release)
+- 🚧 **v3.4 Pre-1.0 Trust & Security Hardening** — Phases 42–45, fix 3 P0 bugs (eval fail-open, knowledge cross-tenant leak, dashboard auth bypass) + correctness sweep 🔴 **[P0 · GATES THE NEXT HEX RELEASE]** (active, started 2026-07-04)
 
 ## Phases
+
+**Current milestone: v3.4 Pre-1.0 Trust & Security Hardening** 🔴 P0 — SEED-006 / Backlog 999.1. Fix + prove only; no Hex publish (that release cut belongs to SEED-005 / 999.2). Phases 42/43/44 are independent subsystems (eval / knowledge / web) and can run in parallel or any order; Phase 45 depends on 42 + 43.
+
+- [ ] **Phase 42: Eval fails closed** - Kill the fake-green shortcuts so eval runs a real subject output, a real deterministic scorer, `:not_scored`, and a verdict-consulting release gate
+- [ ] **Phase 43: Knowledge tenant isolation** - Add tenant/actor/scope columns + a mandatory fail-closed retrieval filter (nil tenant RAISES) so no tenant reads another tenant's chunks
+- [ ] **Phase 44: Dashboard auth seam** - Pass-through `on_mount:` + host-asserted tenant resolution so `?tenant=` is no longer spoofable (authz stays delegated)
+- [ ] **Phase 45: Correctness sweep + fail-closed proof & closeout** - Real cosine `score_chunk`, label-aware citation scoring, dead chunker param removed, real latency gate, and scope-doctrine cross-link
 
 <details>
 <summary>✅ v3.3 Design System Stress Test (Phases 36–41.1) — SHIPPED 2026-07-04</summary>
@@ -41,17 +48,61 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 </details>
 
+## Phase Details
+
+### Phase 42: Eval fails closed
+**Goal**: Scoria's eval engine fails CLOSED — no run is ever reported green without a real subject output scored by a real deterministic scorer, and the release gate consults the verdict instead of the prompt's draft flag.
+**Depends on**: Nothing (independent subsystem — eval)
+**Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05
+**Success Criteria** (what must be TRUE):
+  1. Offline/judge eval executes or replays the real subject prompt so the "Actual" output is a real result — an eval whose real output differs from the sealed expectation yields `failed`/`:not_scored`, never `passed` (the `expected_output["answer"]` self-grading shortcut in `build_subject_output` is gone).
+  2. At least one real deterministic scorer compares actual vs expected output, in the `Scoria.Knowledge.Grounding` scorer style, writing through the existing `Scoria.Eval.Score` sink.
+  3. When no real scorer is configured, eval emits `:not_scored` and `threshold_verdict` / `ReleaseGate` return `failed`/`inconclusive` — a run is never reported green by default.
+  4. `Runtime.ReleaseGate` blocks a release when `threshold_verdict` is not passing, not only when the prompt is `status: "draft"`.
+  5. Online scoring no longer fabricates pass/fail from `sample_reason == "policy_trigger"` alone — it inspects real trace output or marks the candidate `:not_scored`.
+**Plans**: TBD
+
+### Phase 43: Knowledge tenant isolation
+**Goal**: Knowledge retrieval is tenant-isolated end to end — a nil tenant raises rather than matching all — so no tenant's query embedding can retrieve another tenant's raw chunk body or citation quote.
+**Depends on**: Nothing (independent subsystem — knowledge)
+**Requirements**: KNOW-01, KNOW-02, KNOW-03, KNOW-04
+**Success Criteria** (what must be TRUE):
+  1. Running the new knowledge migration adds `tenant_id` (+ optional `actor_id`/`scope_kind`, mirroring `SemanticCache`) with `[tenant_id]` and `[tenant_id, source_id]` indexes to sources + chunks; the production run path (`KnowledgeMigrationRepo` / `schema_migrations_knowledge`) is documented.
+  2. `retrieval_runs`, `retrieval_results`, and `citations` carry tenant/actor for audit.
+  3. A retrieval call with a nil tenant RAISES (mirrors `SemanticCache.Lookup.base_query`'s `Map.fetch!`) across `similar_chunks`, `Scrypath.retrieve`, `list_source_chunks`, and `Knowledge.retrieve/ingest` — never a silent match-all.
+  4. A cross-tenant isolation test proves tenant A's query returns zero of tenant B's chunks.
+**Plans**: TBD
+
+### Phase 44: Dashboard auth seam
+**Goal**: The host can inject its own auth hook and Scoria resolves `tenant_id` from a host-asserted source, so a `?tenant=<victim>` spoof no longer reads foreign data — while authz stays delegated (no in-lib RBAC).
+**Depends on**: Nothing (independent subsystem — web)
+**Requirements**: AUTH-01, AUTH-02, AUTH-03
+**Success Criteria** (what must be TRUE):
+  1. `scoria_dashboard/2` accepts a pass-through `on_mount:` list — a host hook runs before `DashboardNav` (which stays in the chain) — and the bare `scoria_dashboard "/scoria"` form still compiles (installer, dev router, and example host all emit it).
+  2. A documented tenant-resolution/authorization callback makes `tenant_id` host-asserted, not a spoofable `?tenant=` param; no in-lib role/RBAC model is added.
+  3. Dashboard LiveViews resolve tenant from the host-asserted source; the unauthenticated `params["tenant"] → "default"` spoof path is closed (a `?tenant=<victim>` request no longer returns another tenant's data).
+**Plans**: TBD
+
+### Phase 45: Correctness sweep + fail-closed proof & closeout
+**Goal**: Retrieval scoring and the latency gate report real numbers instead of fabricated ones, and the scope doctrine is confirmed and cross-linked — closing out the fix milestone on the fail-closed foundations from Phases 42 + 43.
+**Depends on**: Phase 42 (FIX-04's real-latency gate is enabled by EVAL's real scorers), Phase 43 (FIX-01/FIX-02 layer on the knowledge tenant-isolation work)
+**Requirements**: FIX-01, FIX-02, FIX-03, FIX-04, DOC-01
+**Success Criteria** (what must be TRUE):
+  1. `Knowledge.Backends.Pgvector.score_chunk/2` persists a real cosine similarity that matches the `cosine_distance` ranking metric — the fake `1/(1+|Σemb−Σquery|)` component-sum score is gone.
+  2. `Knowledge.Grounding.score_citation_presence` is label-aware — a correct abstention on an unanswerable query is no longer penalized as `0.0/"failed"`.
+  3. `Chunker.Default`'s dead `overlap` param (the `max(end - overlap, end)` no-op) is removed and the chunker is documented as non-overlapping.
+  4. The `max_latency_ms` gate operates on real recorded latency (enabled once EVAL's real scorers record actual latency instead of a hardcoded 0).
+  5. The 6-principle scope doctrine ("Scoria owns the verb; host owns the noun", P1–P6) is confirmed present in `PROJECT.md ## Constraints` + `## Key Decisions` and cross-linked from the eval / knowledge / dashboard fix rationale (confirm-and-cross-link — the doctrine was already recorded at v3.3 close).
+**Plans**: TBD
+
 ## Progress
 
-| Phase                                    | Milestone | Plans Complete | Status   | Completed  |
-| ---------------------------------------- | --------- | -------------- | -------- | ---------- |
-| 36. Baseline And Inventory               | v3.3      | 2/2            | Complete | 2026-06-20 |
-| 37. Dev Component Lab And Stress Fixtures | v3.3      | 6/6            | Complete | 2026-07-02 |
-| 38. Foundations And Primitive Controls   | v3.3      | 3/3            | Complete | 2026-07-02 |
-| 39. Component Groups And Operator Flows  | v3.3      | 8/8            | Complete | 2026-07-03 |
-| 40. Accessibility, Motion, Responsive    | v3.3      | 5/5            | Complete | 2026-07-03 |
-| 41. Proof, Docs, And Regression Guardrails | v3.3    | 5/5            | Complete | 2026-07-04 |
-| 41.1 Wire Copy/DatasetCopy (COPY-01 SSOT) | v3.3     | 1/1            | Complete | 2026-07-04 |
+| Phase                                          | Milestone | Plans Complete | Status      | Completed |
+| ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
+| 42. Eval fails closed                          | v3.4      | 0/?            | Not started | -         |
+| 43. Knowledge tenant isolation                 | v3.4      | 0/?            | Not started | -         |
+| 44. Dashboard auth seam                        | v3.4      | 0/?            | Not started | -         |
+| 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
 ## Previous Milestones
 

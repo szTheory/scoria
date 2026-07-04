@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Pre-1.0 Trust & Security Hardening
 status: planning
-last_updated: "2026-07-04T20:49:19.673Z"
+last_updated: "2026-07-04T21:15:00.000Z"
 last_activity: 2026-07-04
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Planning next milestone — SEED-006 Pre-1.0 Trust & Security Hardening (🔴 P0, gates next Hex release). See `ROADMAP.md ## Backlog` 999.1.
+**Current focus:** v3.4 Pre-1.0 Trust & Security Hardening (🔴 P0, gates next Hex release / held 0.1.3 PR #12) — roadmap set: Phases 42 (eval) / 43 (knowledge) / 44 (dashboard) independent; Phase 45 (correctness sweep + closeout) depends on 42 + 43. See `ROADMAP.md ## Phase Details`; backlog 999.1 / SEED-006.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 42–45 planned (roadmap set); ready to plan Phase 42
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-04 — Milestone v3.4 started
+Status: Roadmap complete — 4 phases, 17/17 requirements mapped
+Last activity: 2026-07-04 — Roadmap created for v3.4 (Phases 42–45)
 
 ## Performance Metrics
 
@@ -44,6 +44,9 @@ Last activity: 2026-07-04 — Milestone v3.4 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v3.4: Phases 42 (eval) / 43 (knowledge) / 44 (dashboard) are independent subsystems — parallelizable; Phase 45 (correctness sweep + doctrine + closeout) depends on 42 + 43.
+- v3.4: Fix + prove only — NO Hex publish. The honest `0.1.3` release cut belongs to SEED-005 / Backlog 999.2. `0.1.3` PR #12 stays held.
+- v3.4: DOC-01 is confirm-and-cross-link (P1–P6 scope doctrine already recorded in PROJECT.md Constraints + Key Decisions at v3.3 close) — kept lightweight in Phase 45.
 - v3.2: `make nuke` uses ONLY `docker compose down -v` — no `docker system/volume prune`; no interactive TTY prompt; named-scope warning is the safety signal.
 - v3.2: `PORT ?= 4799` baked into `make dev` (static, stable for shots-native harness; overridable via `PORT=XXXX make dev`; no `config/dev.exs` change).
 - v3.2: Stream B (Phase 35) is fully independent of Stream A (Phases 29–34) — can execute in parallel.
@@ -139,6 +142,7 @@ None at milestone start.
 
 ### Roadmap Evolution
 
+- v3.4 roadmap created (2026-07-04): Phases 42–45 (SEED-006 / Backlog 999.1). 42 eval / 43 knowledge / 44 dashboard independent; 45 correctness sweep + closeout depends on 42 + 43. 17/17 requirements mapped.
 - Phase 41.1 inserted after Phase 41: Wire orphaned ScoriaWeb.Copy/DatasetCopy into dataset page (COPY-01 SSOT) — surfaced by v3.3 milestone audit (URGENT)
 
 ## Deferred Items
@@ -150,7 +154,7 @@ None at milestone start.
 | Fleet targets | FLEET-02: `make nuke-all` fleet-wide teardown (high blast radius) | Deferred | v3.2 out-of-scope |
 | v3.0 gaps | Phase 13/14 verification-doc gaps (functional: 0 unsatisfied; 10 partials are proof-only) | Deferred | v3.0 close |
 | Release | Publish 0.1.1 → superseded by 0.1.2 in Phase 35 | Absorbed into REL-01 | v3.2 REL |
-| Trust/security P0 | SEED-006: eval fail-open, knowledge cross-tenant leak, dashboard auth bypass — **GATES next Hex release** | Deferred | 2026-07-03 eval-posture audit |
+| Trust/security P0 | SEED-006: eval fail-open, knowledge cross-tenant leak, dashboard auth bypass — **GATES next Hex release** — ACTIVE as v3.4 (Phases 42–45) | Promoted | 2026-07-03 eval-posture audit |
 | Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt | Deferred | 2026-07-03 audit |
 | Observability | SEED-007: OTel-GenAI/OpenInference trace foundation | Deferred | 2026-07-03 audit |
 | Eval depth | SEED-008: real scorers, judge calibration, regression comparison | Deferred | 2026-07-03 audit |
@@ -171,7 +175,7 @@ None at milestone start.
 | todo | `docker-dx-fleet-hardening` (FLEET-01/02; out of scope) | Deferred |
 | seed | SEED-003 CI/CD efficiency overhaul | Dormant |
 | seed | SEED-005 Documentation & positioning overhaul (ROADMAP 999.2) | Dormant |
-| seed | SEED-006 Pre-1.0 Trust & Security Hardening — GATES next Hex release (ROADMAP 999.1) | Dormant |
+| seed | SEED-006 Pre-1.0 Trust & Security Hardening — GATES next Hex release (ROADMAP 999.1) | ACTIVE (v3.4) |
 | seed | SEED-007 Trace foundation OTel-GenAI/OpenInference (ROADMAP 999.3) | Dormant |
 | seed | SEED-008 Trustworthy eval depth (ROADMAP 999.5) | Dormant |
 | seed | SEED-009 Retrieval eval depth & seams (ROADMAP 999.6) | Dormant |
@@ -182,10 +186,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-04T19:18:17.110Z
-Stopped at: Completed 41.1-01-PLAN.md
+Last session: 2026-07-04T21:15:00.000Z
+Stopped at: Roadmap created for v3.4 (Phases 42–45)
 Resume file: None
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan the first phase with `/gsd-plan-phase 42` (or 43 / 44 — the three subsystem phases are independent and can start in any order).
