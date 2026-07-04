@@ -5,16 +5,16 @@ milestone_name: Pre-1.0 Trust & Security Hardening
 current_phase: 42
 current_phase_name: eval-fails-closed
 status: executing
-stopped_at: Completed 42-05-PLAN.md
-last_updated: "2026-07-04T23:28:42Z"
+stopped_at: Completed 42-06-PLAN.md
+last_updated: "2026-07-04T23:49:36.865Z"
 last_activity: 2026-07-04
-last_activity_desc: Completed 42-05 judge runner capture wiring
+last_activity_desc: Completed 42-06 online scoring negative-signal detector
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -30,9 +30,9 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 ## Current Position
 
 Phase: 42 (eval-fails-closed) — EXECUTING
-Plan: 6 of 7
-Status: Ready to execute 42-06
-Last activity: 2026-07-04 -- Completed 42-05 judge runner capture wiring
+Plan: 7 of 7
+Status: Ready to execute 42-07
+Last activity: 2026-07-04 -- Completed 42-06 online scoring negative-signal detector
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Last activity: 2026-07-04 -- Completed 42-05 judge runner capture wiring
 - **Phase 42 P03:** 8 min — 1 task, 2 files, verification 9 exact-match scorer tests green; full-suite residual failures logged in 42-03 summary.
 - **Phase 42 P04:** 7 min — 2 tasks, 3 files, verification 26 focused eval tests green; not_scored score-nullability migration added.
 - **Phase 42 P05:** 39 min — 2 tasks, 2 files, verification 15 focused eval tests green.
+- **Phase 42 P06:** 11 min — 3 tasks, 3 files, verification 16 online/campaign tests and 15 related eval tests green.
 
 *Updated after each plan completion*
 
@@ -146,6 +147,8 @@ Recent decisions affecting current work:
 - [Phase 42-05]: Judge Actual is JSON-encoded frozen captured_output from SubjectOutput.resolve(dataset_item, :live_judge), never expected_output["answer"].
 - [Phase 42-05]: Empty or absent judge captures persist not_scored score evidence with reason empty_capture and skip the injected judge seam.
 - [Phase 42-05]: Judge runner persists threshold_verdict from Verdict.compute/2; the local threshold_verdict/2 duplicate and latency helper were removed.
+- [Phase 42]: 42-06: Clean online traces emit no deterministic base scores; only judge scores can produce positive online evidence. — Prevents reference-free deterministic checks from laundering clean production traces into golden labels.
+- [Phase 42]: 42-06: Empty, failed, or not_scored online score sets remain needs_review and compute to inconclusive. — Keeps online scoring fail-closed and delegates threshold semantics to Scoria.Eval.Verdict.compute/2.
 
 ### Pending Todos
 
@@ -205,10 +208,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-04T23:28:42Z
-Stopped at: Completed 42-05-PLAN.md
+Last session: 2026-07-04T23:49:16.835Z
+Stopped at: Completed 42-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
 
-- Continue Phase 42 with `42-06-PLAN.md` (Online scoring negative-signal detector).
+- Continue Phase 42 with `42-07-PLAN.md` (ReleaseGate verdict consult).

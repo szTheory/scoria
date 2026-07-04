@@ -68,7 +68,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 - [x] 42-03-PLAN.md — ExactMatch deterministic scorer (binary, not_scored on couldn't-run) [D-03]
 - [x] 42-04-PLAN.md — Offline runner: scorer_kind dispatch + Verdict, kill hardcoded pass, rewrite offline_runner_test [D-03, D-04]
 - [x] 42-05-PLAN.md — Judge runner: kill self-grade → SubjectOutput.resolve + Verdict [D-01, D-04]
-- [ ] 42-06-PLAN.md — Online scoring negative-signal detector (no fabricated pass; span/step signals) [D-01, D-06]
+- [x] 42-06-PLAN.md — Online scoring negative-signal detector (no fabricated pass; span/step signals) [D-01, D-06]
 - [ ] 42-07-PLAN.md — ReleaseGate verdict consult (allowlist, online-exclusion, ungated telemetry, index) [D-05]
 
 ### Phase 43: Knowledge tenant isolation
@@ -108,7 +108,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 | Phase                                          | Milestone | Plans Complete | Status      | Completed |
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
-| 42. Eval fails closed                          | v3.4      | 5/7            | In Progress | -         |
+| 42. Eval fails closed                          | v3.4      | 6/7            | In Progress | -         |
 | 43. Knowledge tenant isolation                 | v3.4      | 0/?            | Not started | -         |
 | 44. Dashboard auth seam                        | v3.4      | 0/?            | Not started | -         |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |

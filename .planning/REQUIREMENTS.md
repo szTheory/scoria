@@ -27,7 +27,7 @@ itself, `Eval.OnlineScoring.deterministic_scores/3` decides on `sample_reason` a
   / `ReleaseGate` fail CLOSED (`failed`/`inconclusive`) — a run is never reported green by default.
 - [ ] **EVAL-04**: `Runtime.ReleaseGate` consults `threshold_verdict` before allowing a release, not
   only the prompt's `status: "draft"`.
-- [ ] **EVAL-05**: Online scoring stops fabricating pass/fail from `sample_reason == "policy_trigger"`
+- [x] **EVAL-05**: Online scoring stops fabricating pass/fail from `sample_reason == "policy_trigger"`
   alone — it inspects real trace output or marks the candidate `:not_scored`.
 
 ### KNOW — Knowledge tenant isolation (P0-2)
@@ -106,7 +106,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | EVAL-02 | Phase 42 | Complete |
 | EVAL-03 | Phase 42 | Complete |
 | EVAL-04 | Phase 42 | Pending |
-| EVAL-05 | Phase 42 | Pending |
+| EVAL-05 | Phase 42 | Complete |
 | KNOW-01 | Phase 43 | Pending |
 | KNOW-02 | Phase 43 | Pending |
 | KNOW-03 | Phase 43 | Pending |
