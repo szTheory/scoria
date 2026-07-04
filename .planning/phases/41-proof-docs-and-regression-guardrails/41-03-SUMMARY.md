@@ -144,3 +144,12 @@ None - no external service configuration required.
 ---
 *Phase: 41-proof-docs-and-regression-guardrails*
 *Completed: 2026-07-04*
+
+## Self-Check: PASSED
+- FOUND: docs/design_system.md
+- FOUND: test/scoria_web/design_system_doc_contract_test.exs
+- FOUND: .planning/phases/41-proof-docs-and-regression-guardrails/41-03-SUMMARY.md
+- FOUND commit: 3a46a30e
+- FOUND commit: 82746042
+- FOUND commit: ee5f296b
+- FOUND commit: 3314fa3f
