@@ -157,7 +157,7 @@ Plans:
 
 **Requirements:** PROOF-01, PROOF-02, PROOF-03
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 **Wave 1** *(no file overlap — parallel)*
@@ -169,7 +169,7 @@ Plans:
 
 **Wave 2** *(blocked on Waves 1 — consumes all lane outputs)*
 
-- [ ] 41-05-PLAN.md — 41-GAP-REGISTER.md (Sections A/B/B2) + D-19 verification-evidence manifest (Wave 2)
+- [x] 41-05-PLAN.md — 41-GAP-REGISTER.md (Sections A/B/B2) + D-19 verification-evidence manifest (Wave 2)
 
 **Success criteria:**
 

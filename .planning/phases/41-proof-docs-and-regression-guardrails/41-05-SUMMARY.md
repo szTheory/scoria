@@ -187,3 +187,10 @@ None - no external service configuration required.
 ---
 *Phase: 41-proof-docs-and-regression-guardrails*
 *Completed: 2026-07-04*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/41-proof-docs-and-regression-guardrails/41-GAP-REGISTER.md`
+- FOUND: `.planning/phases/41-proof-docs-and-regression-guardrails/41-05-SUMMARY.md`
+- FOUND commit: `aa0e3371` (Task 1: gap register)
+- FOUND commit: `f804b9f9` (Task 2: evidence manifest)
