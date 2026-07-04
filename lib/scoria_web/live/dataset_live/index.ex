@@ -9,6 +9,13 @@ defmodule ScoriaWeb.DatasetLive.Index do
 
   alias Scoria.Eval
   alias Scoria.Runtime
+  alias ScoriaWeb.Copy
+  alias ScoriaWeb.DatasetCopy
+
+  # DatasetCopy.orientation/1 is intentionally unwired on this page: the dataset
+  # index is a sortable table with no per-row orientation-prose surface —
+  # orientation lines belong to dataset-detail / promote surfaces, which are
+  # out of scope this phase (D3). Documented, not silently orphaned.
 
   @promotion_modes ~w(review workflow)
   @workflow_source_variants ~w(original replay)
@@ -93,18 +100,24 @@ defmodule ScoriaWeb.DatasetLive.Index do
         on_sort="sort"
       >
         <:empty>
-          <.empty_state title="No datasets match this view">
+          <.empty_state title={Copy.empty_title(:datasets)}>
+            <%!-- D2: filtered-empty CTA — deliberately NOT sourced from Copy.
+                  Copy.empty_cta(:datasets) ("Promote a production trace...") and the
+                  generic Copy.empty_cta(_) ("...once new data arrives.") are both
+                  byte-different from this page's visible filtered-empty text, so
+                  there is no byte-identical Copy home. Kept inline; any wording
+                  change here is an owner decision, not a silent SSOT drift. --%>
             Adjust your filters or check back when data is available.
           </.empty_state>
         </:empty>
         <:col :let={dataset} label="Dataset" key={:name}>
           <div>
             <strong>{dataset.name}</strong>
-            <div class="font-mono text-xs">v{dataset.version}</div>
+            <div class="font-mono text-xs">{DatasetCopy.version_label(dataset)}</div>
           </div>
         </:col>
         <:col :let={dataset} label="State" key={:state}>
-          <.badge tone={state_tone(dataset.state)} label={state_label(dataset.state)} />
+          <.badge tone={state_tone(dataset.state)} label={DatasetCopy.state_label(dataset.state)} />
         </:col>
         <:col :let={dataset} label="Items" key={:item_count}>
           {dataset.item_count}
@@ -124,10 +137,10 @@ defmodule ScoriaWeb.DatasetLive.Index do
           <div class="scoria-mobile-summary">
             <div class="scoria-mobile-summary__label">
               <strong>{dataset.name}</strong>
-              <span class="font-mono"> v{dataset.version}</span>
+              <span class="font-mono"> {DatasetCopy.version_label(dataset)}</span>
             </div>
             <div class="scoria-mobile-summary__status">
-              <.badge tone={state_tone(dataset.state)} label={state_label(dataset.state)} />
+              <.badge tone={state_tone(dataset.state)} label={DatasetCopy.state_label(dataset.state)} />
             </div>
             <div class="scoria-mobile-summary__meta">
               {dataset.item_count} items
@@ -351,10 +364,6 @@ defmodule ScoriaWeb.DatasetLive.Index do
   defp state_tone(:open), do: :info
   defp state_tone(:sealed), do: :pass
   defp state_tone(_), do: :neutral
-
-  defp state_label(:open), do: "Open"
-  defp state_label(:sealed), do: "Sealed"
-  defp state_label(_), do: "Unknown"
 
   defp dataset_count(1, noun), do: "1 #{noun}"
   defp dataset_count(count, noun), do: "#{count} #{noun}s"
