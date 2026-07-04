@@ -4,13 +4,13 @@ milestone: v3.3
 milestone_name: window is idle — collision-avoidance)
 status: executing
 stopped_at: Phase 41 context gathered
-last_updated: "2026-07-04T17:02:40.507Z"
+last_updated: "2026-07-04T17:10:36.284Z"
 last_activity: 2026-07-04
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 29
-  completed_plans: 25
+  completed_plans: 26
   percent: 83
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 41 (proof-docs-and-regression-guardrails) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-07-04
 
@@ -112,6 +112,9 @@ Recent decisions affecting current work:
 - [Phase 41]: WR-04: used direct-callback regression test (mount/2 + render/1 + Phoenix.HTML.Safe.to_iodata/1 forced evaluation), not the A1 source-scan fallback
 - [Phase 41]: CR-01 notice literal: 'Could not dismiss this candidate. Refresh and try again.'
 - [Phase 41]: D-18 aria-label copy: 'Scrollable table content'
+- [Phase 41]: 41-02: New guard module is async: false (real LiveView render + DB) and kept separate from the async: true, no-DB single_header_guard_test.exs source-scan module rather than merging async settings.
+- [Phase 41]: 41-02: Skipped /workflows/:id, /incidents/:id, /prompts/:id/release (object_header/1 has no :title slot) and /coming/:screen (ComingSoonLive never pairs a header with a region :title slot) -- documented as an honesty caveat, mirroring dev_lab_boundary_test.exs.
+- [Phase 41]: 41-02: CSS selectors verified directly against lib/scoria_web/ui.ex before landing (Assumption A2): page title is .scoria-pagehead__title h1; region titles are .scoria-panel__header h2 and .scoria-page-section__header h2.
 
 ### Pending Todos
 
@@ -153,9 +156,10 @@ None at milestone start.
 | Phase 40 P05 | 40min | 3 tasks | 7 files |
 | Phase 40 P04 | 25min | 2 tasks | 6 files |
 | Phase 41 P01 | 10min | 3 tasks | 6 files |
+| Phase 41 P02 | 20min | 1 tasks | 1 files |
 
 ## Session Continuity
 
-Last session: 2026-07-04T16:59:55.153Z
+Last session: 2026-07-04T17:08:32.207Z
 Stopped at: Phase 41 context gathered
 Resume file: None
