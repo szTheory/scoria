@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: window is idle — collision-avoidance)
-status: milestone_complete
-stopped_at: Milestone complete (Phase 41 was final phase)
-last_updated: 2026-07-04T18:40:23.733Z
+status: verifying
+stopped_at: Completed 41.1-01-PLAN.md
+last_updated: "2026-07-04T19:18:17.115Z"
 last_activity: 2026-07-04
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 29
-  completed_plans: 29
+  total_phases: 7
+  completed_phases: 7
+  total_plans: 30
+  completed_plans: 30
   percent: 100
 ---
 
@@ -22,13 +22,13 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Milestone complete
+**Current focus:** Phase 41.1 — wire-orphaned-scoriaweb-copy-datasetcopy-into-dataset-page-c
 
 ## Current Position
 
-Phase: 41
-Plan: Not started
-Status: Milestone complete
+Phase: 41.1 (wire-orphaned-scoriaweb-copy-datasetcopy-into-dataset-page-c) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
 Last activity: 2026-07-04
 
 ## Performance Metrics
@@ -122,6 +122,9 @@ Recent decisions affecting current work:
 - [Phase 41]: 41-04: contact_sheet_index.md update is an additive Phase 41 addendum, not a rewrite of the historical v3.0 before/after record
 - [Phase 41]: 41-04: D-13 drawer live-patch collector flipped to a throwing expect() after mix scoria.ui.e2e observed zero warnings (D-04 VERIFY-THEN-DEFER)
 - [Phase 41-05]: Placed D-06 guard, PROOF-02 doc+contract, D-14/D-15 screenshot additions, and the D-04/D-13 collector flip in gap-register Section A (labeled as Phase 41's own lock-and-document deliverables) rather than laundering them as bare fixes.
+- [Phase 41.1]: UI.status_label/1 delegates to Copy.status_label/1; Copy stays a dependency-free leaf (D1)
+- [Phase 41.1]: Dataset empty-state CTA kept inline (no byte-identical Copy accessor exists, D2)
+- [Phase 41.1]: DatasetCopy.orientation/1 intentionally left unwired on dataset index page (D3)
 
 ### Pending Todos
 
@@ -134,6 +137,10 @@ Recent decisions affecting current work:
 ### Blockers/Concerns
 
 None at milestone start.
+
+### Roadmap Evolution
+
+- Phase 41.1 inserted after Phase 41: Wire orphaned ScoriaWeb.Copy/DatasetCopy into dataset page (COPY-01 SSOT) — surfaced by v3.3 milestone audit (URGENT)
 
 ## Deferred Items
 
@@ -167,9 +174,10 @@ None at milestone start.
 | Phase 41 P03 | 45min | 3 tasks | 5 files |
 | Phase 41 P04 | 25min | 3 tasks | 4 files |
 | Phase 41 P05 | 20min | 2 tasks | 2 files |
+| Phase 41.1 P01 | 25min | 3 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-07-04T17:54:39.788Z
-Stopped at: Completed 41-05-PLAN.md — Phase 41 complete
+Last session: 2026-07-04T19:18:17.110Z
+Stopped at: Completed 41.1-01-PLAN.md
 Resume file: None
