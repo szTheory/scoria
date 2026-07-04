@@ -38,7 +38,17 @@ defmodule ScoriaWeb.TokenContrastGuardTest do
     {"--scoria-focus-ring", "--scoria-surface-panel", @nontext_floor,
      "focus ring on panel surface"},
     {"--scoria-focus-ring", "--scoria-surface-panel-raised", @nontext_floor,
-     "focus ring on raised surface"}
+     "focus ring on raised surface"},
+    # Phase 40 (D-31/A11Y-02): guards the axe-surfaced sidebar/breadcrumb
+    # contrast defect fixed by repointing --scoria-text-subtle off
+    # --scoria-pumice-500 (see assets/css/02-tokens.css). Both backgrounds
+    # this token actually renders against (sidebar/panel surface + app
+    # surface, e.g. the breadcrumb separator) must stay guarded so this pair
+    # cannot silently regress.
+    {"--scoria-text-subtle", "--scoria-surface-panel", @text_floor,
+     "subtle text on panel/sidebar background"},
+    {"--scoria-text-subtle", "--scoria-surface-app", @text_floor,
+     "subtle text on app background (e.g. breadcrumb separator)"}
   ]
 
   # ──────────────────────────────────────────────────────────────────────────

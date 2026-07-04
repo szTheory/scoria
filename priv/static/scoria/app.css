@@ -216,7 +216,13 @@
 
     --scoria-text: var(--scoria-ash-50);
     --scoria-text-muted: var(--scoria-muted-warm);
-    --scoria-text-subtle: var(--scoria-pumice-500);
+    /* Phase 40 (D-31/A11Y-02): --scoria-pumice-500 measures 4.29:1 against
+       --scoria-surface-panel here — below the 4.5:1 AA body-text floor.
+       Repointed to the next-lighter existing neutral-ramp step
+       (--scoria-muted-warm, 8.44:1) rather than inventing a new primitive;
+       the pumice-500 primitive itself is untouched (still used elsewhere,
+       e.g. --scoria-span-redacted). See token_contrast_guard_test.exs. */
+    --scoria-text-subtle: var(--scoria-muted-warm);
     --scoria-text-onaccent: var(--scoria-basalt-950);
     --scoria-link: var(--scoria-ember-500);
     --scoria-link-hover: var(--scoria-molten-400);
@@ -298,7 +304,13 @@
 
     --scoria-text: var(--scoria-basalt-950);
     --scoria-text-muted: var(--scoria-graphite-700);
-    --scoria-text-subtle: var(--scoria-pumice-500);
+    /* Phase 40 (D-31/A11Y-02): --scoria-pumice-500 measures 3.91:1 against
+       --scoria-surface-app (breadcrumb separator) here — below the 4.5:1 AA
+       body-text floor. Repointed to the next-darker existing neutral-ramp
+       step (--scoria-graphite-700, 11.43:1) rather than inventing a new
+       primitive; the pumice-500 primitive itself is untouched. See
+       token_contrast_guard_test.exs. */
+    --scoria-text-subtle: var(--scoria-graphite-700);
     --scoria-text-onaccent: var(--scoria-white-hot);
     --scoria-link: var(--scoria-600);
     --scoria-link-hover: var(--scoria-700);
