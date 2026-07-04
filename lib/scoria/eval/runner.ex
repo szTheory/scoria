@@ -2,6 +2,10 @@ defmodule Scoria.Eval.Runner do
   @moduledoc false
 
   alias Scoria.Eval
+  alias Scoria.Eval.JudgeRunner
+  alias Scoria.Eval.Scorers.ExactMatch
+  alias Scoria.Eval.SubjectOutput
+  alias Scoria.Eval.Verdict
 
   def run_offline(attrs) when is_map(attrs) do
     eval_spec = Eval.get_eval_spec!(fetch!(attrs, :eval_spec_id))
@@ -14,7 +18,10 @@ defmodule Scoria.Eval.Runner do
            Eval.complete_eval_run(eval_run, %{
              status: "completed",
              duration_ms: 0,
-             threshold_verdict: threshold_verdict(eval_spec, scores)
+             threshold_verdict:
+               eval_spec.threshold_policy
+               |> then(&Verdict.compute(scores, &1))
+               |> Atom.to_string()
            }) do
       {:ok,
        %{
@@ -55,6 +62,26 @@ defmodule Scoria.Eval.Runner do
   end
 
   defp record_scores(eval_run, dataset, eval_spec, attrs) do
+    scorer = primary_scorer(eval_spec)
+    scorer_kind = scorer_kind(scorer)
+
+    if scorer_kind == "llm_judge" and judge_seam_supplied?(attrs) do
+      eval_run
+      |> JudgeRunner.run_existing(
+        attrs
+        |> Map.put(:eval_spec, eval_spec)
+        |> Map.put(:dataset, dataset)
+      )
+      |> case do
+        {:ok, %{eval_run: updated_run, scores: scores}} -> {:ok, updated_run, scores}
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      record_offline_scores(eval_run, dataset, eval_spec, attrs, scorer, scorer_kind)
+    end
+  end
+
+  defp record_offline_scores(eval_run, dataset, eval_spec, attrs, scorer, scorer_kind) do
     dataset_items =
       dataset.id
       |> Eval.list_dataset_items()
@@ -62,17 +89,7 @@ defmodule Scoria.Eval.Runner do
 
     score_attrs =
       Enum.map(dataset_items, fn dataset_item ->
-        %{
-          dataset_item_id: dataset_item.id,
-          scorer_kind: scorer_kind(eval_spec),
-          status: "passed",
-          score: 1.0,
-          explanation: "Offline replay matched the sealed dataset expectation",
-          judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
-          rubric_version: "eval-spec-v#{eval_spec.version}",
-          evidence_refs: %{"fixture_key" => eval_run.fixture_key},
-          metadata: %{"latency_ms" => 0, "cost_usd" => "0.0"}
-        }
+        score_dataset_item(dataset_item, eval_run, eval_spec, attrs, scorer, scorer_kind)
       end)
 
     Eval.record_eval_scores(eval_run, score_attrs)
@@ -113,42 +130,120 @@ defmodule Scoria.Eval.Runner do
     |> Base.encode16(case: :lower)
   end
 
-  defp scorer_kind(eval_spec) do
+  defp score_dataset_item(dataset_item, eval_run, eval_spec, attrs, scorer, "exact_match") do
+    base_attrs = base_score_attrs(dataset_item, eval_run, eval_spec, attrs, "exact_match")
+
+    case SubjectOutput.resolve(dataset_item, :offline_replay) do
+      {:ok, actual_output} ->
+        actual = exact_match_actual(actual_output, scorer)
+
+        case ExactMatch.score(actual, dataset_item.expected_output || %{}, scorer) do
+          %{
+            status: status,
+            score: score,
+            scorer_kind: kind,
+            scorer_version: version,
+            details: details
+          } ->
+            Map.merge(base_attrs, %{
+              scorer_kind: kind,
+              scorer_version: version,
+              status: status,
+              score: score,
+              details: details,
+              explanation: exact_match_explanation(status)
+            })
+
+          {:not_scored, reason} ->
+            not_scored_score_attrs(base_attrs, reason)
+        end
+
+      {:not_scored, reason} ->
+        not_scored_score_attrs(base_attrs, reason)
+    end
+  end
+
+  defp score_dataset_item(dataset_item, eval_run, eval_spec, attrs, _scorer, "llm_judge") do
+    dataset_item
+    |> base_score_attrs(eval_run, eval_spec, attrs, "llm_judge")
+    |> not_scored_score_attrs(:llm_judge_unavailable)
+  end
+
+  defp score_dataset_item(dataset_item, eval_run, eval_spec, attrs, _scorer, scorer_kind) do
+    normalized_kind = scorer_kind || "unknown"
+
+    reason =
+      case scorer_kind do
+        nil -> :missing_scorer_kind
+        "" -> :missing_scorer_kind
+        _ -> :unknown_scorer
+      end
+
+    dataset_item
+    |> base_score_attrs(eval_run, eval_spec, attrs, normalized_kind)
+    |> not_scored_score_attrs(reason)
+  end
+
+  defp exact_match_actual(actual_output, scorer) do
+    if match_mode(scorer) in ["map", :map] do
+      actual_output
+    else
+      field = fetch(scorer, :field) || "answer"
+      fetch(actual_output, field)
+    end
+  end
+
+  defp base_score_attrs(dataset_item, eval_run, eval_spec, attrs, scorer_kind) do
+    %{
+      dataset_item_id: dataset_item.id,
+      scorer_kind: scorer_kind,
+      judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
+      rubric_version: "eval-spec-v#{eval_spec.version}",
+      evidence_refs: %{"fixture_key" => eval_run.fixture_key},
+      metadata: %{"latency_ms" => 0, "cost_usd" => "0.0"}
+    }
+  end
+
+  defp not_scored_score_attrs(base_attrs, reason) do
+    reason = to_string(reason)
+
+    Map.merge(base_attrs, %{
+      status: "not_scored",
+      score: nil,
+      explanation: "Offline replay could not score the sealed dataset item: #{reason}",
+      details: %{"reason" => reason},
+      metadata: Map.put(base_attrs.metadata, "not_scored_reason", reason)
+    })
+  end
+
+  defp exact_match_explanation("passed"),
+    do: "Offline replay captured output matched the sealed dataset expectation"
+
+  defp exact_match_explanation("failed"),
+    do: "Offline replay captured output differed from the sealed dataset expectation"
+
+  defp primary_scorer(eval_spec) do
     eval_spec.scorers
     |> List.first()
     |> case do
-      nil -> "llm_judge"
-      scorer -> scorer |> fetch(:scorer_kind) |> Kernel.||("llm_judge") |> to_string()
+      nil -> %{}
+      scorer -> scorer
     end
   end
 
-  defp threshold_verdict(eval_spec, scores) do
-    total = length(scores)
-    pass_rate = if total == 0, do: 0.0, else: Enum.count(scores, &(&1.status == "passed")) / total
-    mean_score = if total == 0, do: 0.0, else: Enum.sum(Enum.map(scores, & &1.score)) / total
-    avg_latency = if total == 0, do: 0, else: Enum.sum(Enum.map(scores, &latency_ms/1)) / total
-
-    pass_rate_gte = fetch(eval_spec.threshold_policy, :pass_rate_gte) || 0.0
-    mean_score_gte = fetch(eval_spec.threshold_policy, :mean_score_gte) || 0.0
-    max_latency_ms = fetch(eval_spec.threshold_policy, :max_latency_ms) || 0
-
-    if pass_rate >= pass_rate_gte and
-         mean_score >= mean_score_gte and
-         avg_latency <= max_latency_ms do
-      "passed"
-    else
-      "failed"
-    end
-  end
-
-  defp latency_ms(score) do
-    score.metadata
-    |> Map.get("latency_ms", 0)
+  defp scorer_kind(scorer) do
+    scorer
+    |> fetch(:scorer_kind)
     |> case do
-      value when is_integer(value) -> value
-      value when is_binary(value) -> String.to_integer(value)
-      _ -> 0
+      nil -> nil
+      kind -> to_string(kind)
     end
+  end
+
+  defp match_mode(scorer), do: fetch(scorer, :match)
+
+  defp judge_seam_supplied?(attrs) do
+    not is_nil(fetch(attrs, :orchestrator_module)) or not is_nil(fetch(attrs, :req_llm_module))
   end
 
   defp fetch!(attrs, key) do
