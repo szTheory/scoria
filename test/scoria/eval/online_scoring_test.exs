@@ -84,6 +84,81 @@ defmodule Scoria.Eval.OnlineScoringTest do
     end
   end
 
+  describe "execute_candidate/2 clean traces" do
+    test "clean trace with no judgeable capture persists no deterministic pass and stays in review" do
+      result =
+        execute_online_fixture(
+          sample_reason: "production_sample",
+          span_status: "OK",
+          step_result_envelope: %{"output" => %{"answer" => "runtime output"}},
+          captured_output: nil
+        )
+
+      candidate = Repo.get!(OnlineScoreCandidate, result.candidate.id)
+      eval_run = Repo.get!(EvalRun, result.eval_run.id)
+      scores = Repo.all(from(score in Score, where: score.eval_run_id == ^eval_run.id))
+
+      refute_received {:orchestrator_called, _, _, _, _}
+      assert candidate.status == "needs_review"
+      assert candidate.review_status == "pending"
+      assert candidate.score_status == "not_scored"
+      assert eval_run.threshold_verdict == "inconclusive"
+
+      assert [%Score{} = score] = scores
+      assert score.scorer_kind == "llm_judge"
+      assert score.status == "not_scored"
+      assert is_nil(score.score)
+      assert score.metadata["not_scored_reason"] == "empty_capture"
+
+      refute Enum.any?(
+               scores,
+               &(&1.scorer_kind == "deterministic_rule" and &1.status == "passed")
+             )
+    end
+
+    test "clean trace with a passing judge persists only judge scores before promotion" do
+      result =
+        execute_online_fixture(
+          sample_reason: "production_sample",
+          span_status: "OK",
+          step_result_envelope: %{"output" => %{"answer" => "runtime output"}},
+          captured_output: %{"answer" => "runtime output"}
+        )
+
+      candidate = Repo.get!(OnlineScoreCandidate, result.candidate.id)
+      eval_run = Repo.get!(EvalRun, result.eval_run.id)
+      scores = Repo.all(from(score in Score, where: score.eval_run_id == ^eval_run.id))
+
+      assert_received {:orchestrator_called, "openai:gpt-4o-mini", _prompt, _schema, _opts}
+      assert candidate.status == "promotion_candidate"
+      assert candidate.score_status == "passed"
+      assert eval_run.threshold_verdict == "passed"
+      assert [%Score{} = score] = scores
+      assert score.scorer_kind == "llm_judge"
+      assert score.status == "passed"
+      refute Enum.any?(scores, &(&1.scorer_kind == "deterministic_rule"))
+    end
+
+    test "empty score set stays inconclusive and never becomes a promotion candidate" do
+      result =
+        execute_online_fixture(
+          sample_reason: "policy_trigger",
+          span_status: "OK",
+          step_result_envelope: %{"output" => %{"answer" => "runtime output"}},
+          items: []
+        )
+
+      candidate = Repo.get!(OnlineScoreCandidate, result.candidate.id)
+      eval_run = Repo.get!(EvalRun, result.eval_run.id)
+      scores = Repo.all(from(score in Score, where: score.eval_run_id == ^eval_run.id))
+
+      refute_received {:orchestrator_called, _, _, _, _}
+      assert scores == []
+      assert candidate.status == "needs_review"
+      assert eval_run.threshold_verdict == "inconclusive"
+    end
+  end
+
   defp assert_terminal_negative(%{candidate: candidate, eval_run: eval_run}, negative_signal) do
     refute_received {:orchestrator_called, _, _, _, _}
 
@@ -113,18 +188,24 @@ defmodule Scoria.Eval.OnlineScoringTest do
     step_result_envelope = Keyword.fetch!(opts, :step_result_envelope)
     span_status = Keyword.get(opts, :span_status)
 
+    captured_output =
+      Keyword.get(opts, :captured_output, %{"answer" => "An embedded Phoenix AI runtime"})
+
+    items =
+      Keyword.get(opts, :items, [
+        %{
+          input: %{"question" => "What is Scoria?"},
+          expected_output: %{"answer" => "An embedded Phoenix AI runtime"},
+          captured_output: captured_output,
+          metadata: %{}
+        }
+      ])
+
     {:ok, dataset} =
       Eval.create_dataset(%{
         name: "online-scoring-dataset",
         version: "1",
-        items: [
-          %{
-            input: %{"question" => "What is Scoria?"},
-            expected_output: %{"answer" => "An embedded Phoenix AI runtime"},
-            captured_output: %{"answer" => "An embedded Phoenix AI runtime"},
-            metadata: %{}
-          }
-        ]
+        items: items
       })
 
     {:ok, dataset} = Eval.seal_dataset(dataset)
