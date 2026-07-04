@@ -2,16 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Pre-1.0 Trust & Security Hardening
+current_phase: 42
+current_phase_name: eval-fails-closed
 status: executing
-stopped_at: Completed 42-02-PLAN.md
-last_updated: "2026-07-04T22:19:29.854Z"
-last_activity: 2026-07-04 -- Completed 42-02 subject-output capture
+stopped_at: Completed 42-03-PLAN.md
+last_updated: "2026-07-04T22:32:36.623Z"
+last_activity: 2026-07-04
+last_activity_desc: Completed 42-03 exact match scorer
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 7
-  completed_plans: 2
-  percent: 28
+  completed_plans: 3
+  percent: 43
 ---
 
 # Project State
@@ -27,9 +30,9 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 ## Current Position
 
 Phase: 42 (eval-fails-closed) — EXECUTING
-Plan: 3 of 7
-Status: Ready to execute 42-03
-Last activity: 2026-07-04 -- Completed 42-02 subject-output capture
+Plan: 4 of 7
+Status: Ready to execute 42-04
+Last activity: 2026-07-04 -- Completed 42-03 exact match scorer
 
 ## Performance Metrics
 
@@ -37,6 +40,7 @@ Last activity: 2026-07-04 -- Completed 42-02 subject-output capture
 - **Previous Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
 - **Phase 42 P01:** 6 min — 3 tasks, 7 files, verification 14 tests green.
 - **Phase 42 P02:** 7 min — 3 tasks, 6 files, verification 7 required tests green plus 11 eval promotion regression tests.
+- **Phase 42 P03:** 8 min — 1 task, 2 files, verification 9 exact-match scorer tests green; full-suite residual failures logged in 42-03 summary.
 
 *Updated after each plan completion*
 
@@ -133,6 +137,9 @@ Recent decisions affecting current work:
 - [Phase 41.1]: DatasetCopy.orientation/1 intentionally left unwired on dataset index page (D3)
 - [Phase 42-02]: Dataset promotion loads Scoria.Workflows.Step internally from existing workflow_step_id; captured_output is not a promotion attr key.
 - [Phase 42-02]: SubjectOutput.resolve/2 is the shared frozen-capture contract for offline_replay and live_judge; nil or empty capture returns {:not_scored, :empty_capture}.
+- [Phase 42-03]: ExactMatch.score/3 treats clean mismatches as failed/0.0 and couldn't-run inputs as {:not_scored, reason}. — Preserves the plan's sharp line between real negative signals and unscoreable inputs.
+- [Phase 42-03]: ExactMatch string comparison normalizes Unicode NFC, trims, collapses internal whitespace, and remains case-sensitive unless case_insensitive is true. — Matches D-03 while avoiding fuzzy or semantic matching.
+- [Phase 42-03]: ExactMatch whole-map matching is opt-in via match: "map" and canonicalizes atom/string keys recursively. — Keeps non-string default field comparisons fail-closed while supporting runner map comparison specs.
 
 ### Pending Todos
 
@@ -192,8 +199,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-04T22:18:56.095Z
-Stopped at: Completed 42-02-PLAN.md
+Last session: 2026-07-04T22:31:32.016Z
+Stopped at: Completed 42-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
