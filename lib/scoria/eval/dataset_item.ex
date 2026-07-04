@@ -3,18 +3,30 @@ defmodule Scoria.Eval.DatasetItem do
   import Ecto.Changeset
 
   schema "ai_eval_dataset_items" do
-    belongs_to :dataset, Scoria.Eval.Dataset
-    field :source_trace_id, :string
-    field :input, :map
-    field :expected_output, :map
-    field :metadata, :map, default: %{}
+    belongs_to(:dataset, Scoria.Eval.Dataset)
+    field(:source_trace_id, :string)
+    field(:input, :map)
+    field(:expected_output, :map)
+    field(:captured_output, :map)
+    field(:captured_output_sha256, :string)
+    field(:captured_at, :utc_datetime_usec)
+    field(:metadata, :map, default: %{})
 
     timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(item, attrs, dataset_state \\ :open) do
     item
-    |> cast(attrs, [:dataset_id, :source_trace_id, :input, :expected_output, :metadata])
+    |> cast(attrs, [
+      :dataset_id,
+      :source_trace_id,
+      :input,
+      :expected_output,
+      :captured_output,
+      :captured_output_sha256,
+      :captured_at,
+      :metadata
+    ])
     |> validate_required([:dataset_id, :input])
     |> validate_dataset_state(dataset_state)
   end
