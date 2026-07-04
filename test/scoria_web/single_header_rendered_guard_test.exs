@@ -25,7 +25,12 @@ defmodule ScoriaWeb.SingleHeaderRenderedGuardTest.Endpoint do
   plug(ScoriaWeb.SingleHeaderRenderedGuardTest.Router)
 end
 
-defmodule ScoriaWeb.ErrorView do
+defmodule ScoriaWeb.SingleHeaderRenderedGuardTest.ErrorView do
+  # File-scoped stub (mirrors the already-namespaced Router/Endpoint above).
+  # A bare `ScoriaWeb.ErrorView` here collides with the identical definition in
+  # review_queue_live_test.exs under Elixir's parallel test compiler
+  # ("cannot define module ScoriaWeb.ErrorView because it is currently being
+  # defined in ..."). Namespacing keeps this endpoint's error stub self-contained.
   def render(_template, assigns), do: inspect(assigns)
 end
 
