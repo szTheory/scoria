@@ -395,10 +395,13 @@ defmodule Scoria.Eval.CampaignWorkerTest do
       assert candidate.scorer_kind == "deterministic_rule"
       assert candidate.score_explanation =~ "Policy trigger"
       assert eval_run.threshold_verdict == "failed"
-      assert Enum.all?(scores, &(&1.scorer_kind == "deterministic_rule"))
+      assert [score] = scores
+      assert score.scorer_kind == "deterministic_rule"
+      assert score.status == "failed"
+      assert score.metadata["negative_signal"] == "policy_trigger"
     end
 
-    test "online scoring appends judge rationale without overwriting deterministic evidence" do
+    test "online scoring clean samples persist judge rationale without deterministic evidence" do
       %{candidate: candidate, eval_run: eval_run, job: job} = seeded_online_scoring_execution()
 
       assert :ok = CampaignWorker.perform(%Job{args: job.args})
@@ -412,7 +415,7 @@ defmodule Scoria.Eval.CampaignWorkerTest do
       assert candidate.review_status == "pending"
       assert candidate.score_status == "passed"
       assert candidate.score_explanation == "Stubbed judge verdict"
-      assert Enum.any?(scores, &(&1.scorer_kind == "deterministic_rule"))
+      refute Enum.any?(scores, &(&1.scorer_kind == "deterministic_rule"))
       assert Enum.any?(scores, &(&1.scorer_kind == "llm_judge"))
 
       assert :ok = CampaignWorker.perform(%Job{args: job.args})
@@ -487,6 +490,7 @@ defmodule Scoria.Eval.CampaignWorkerTest do
         items: [
           %{
             input: %{"question" => "What is Scoria?"},
+            captured_output: %{"answer" => "An embedded Phoenix AI runtime"},
             expected_output: %{"answer" => "An embedded Phoenix AI runtime"},
             metadata: %{}
           }
@@ -576,7 +580,14 @@ defmodule Scoria.Eval.CampaignWorkerTest do
       all_enqueued(worker: CampaignWorker)
       |> Enum.find(&(&1.args["campaign_target_id"] == target.id))
 
-    %{candidate: candidate, campaign: campaign, target: target, eval_run: eval_run, job: job, dataset: dataset}
+    %{
+      candidate: candidate,
+      campaign: campaign,
+      target: target,
+      eval_run: eval_run,
+      job: job,
+      dataset: dataset
+    }
   end
 
   defp persisted_trace_fixture(trace_attributes) do
@@ -606,7 +617,8 @@ defmodule Scoria.Eval.CampaignWorkerTest do
         sequence: 1,
         kind: "llm_call",
         role_id: "assistant",
-        status: "completed"
+        status: "completed",
+        result_envelope: %{"output" => %{"answer" => "An embedded Phoenix AI runtime"}}
       })
       |> Repo.insert()
 

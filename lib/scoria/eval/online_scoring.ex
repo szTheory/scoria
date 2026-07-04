@@ -9,6 +9,7 @@ defmodule Scoria.Eval.OnlineScoring do
   alias Scoria.Eval.EvalRun
   alias Scoria.Eval.EvalSpec
   alias Scoria.Eval.EvalCampaignTarget
+  alias Scoria.Eval.Verdict
   alias Scoria.Repo
   alias Scoria.Repo.Trace
   alias Scoria.Workflows.Step
@@ -275,13 +276,13 @@ defmodule Scoria.Eval.OnlineScoring do
     end
   end
 
-  defp maybe_run_judge(eval_run, _eval_spec, _dataset, _target, deterministic_scores, true) do
+  defp maybe_run_judge(eval_run, eval_spec, _dataset, _target, deterministic_scores, true) do
     with {:ok, updated_run, scores} <- Eval.replace_eval_scores(eval_run, deterministic_scores),
          {:ok, completed_run} <-
            Eval.complete_eval_run(updated_run, %{
              status: "completed",
              duration_ms: 0,
-             threshold_verdict: threshold_verdict(scores)
+             threshold_verdict: threshold_verdict(scores, eval_spec.threshold_policy)
            }) do
       {:ok, %{eval_run: completed_run, scores: scores}}
     end
@@ -323,41 +324,78 @@ defmodule Scoria.Eval.OnlineScoring do
   defp summarize_scores(scores) do
     failed_score = Enum.find(scores, &(&1.status == "failed"))
     last_score = List.last(scores)
-    mean_score = scores |> Enum.map(& &1.score) |> average_score()
 
-    if failed_score do
-      %{
-        status: "needs_review",
-        review_status: "pending",
-        score: mean_score,
-        score_status: failed_score.status,
-        score_explanation: failed_score.explanation,
-        scorer_kind: failed_score.scorer_kind,
-        scorer_version: failed_score.scorer_version,
-        judge_model: failed_score.judge_model,
-        rubric_version: failed_score.rubric_version
-      }
-    else
-      %{
-        status: "promotion_candidate",
-        review_status: "pending",
-        score: mean_score,
-        score_status: last_score && last_score.status,
-        score_explanation: last_score && last_score.explanation,
-        scorer_kind: last_score && last_score.scorer_kind,
-        scorer_version: last_score && last_score.scorer_version,
-        judge_model: last_score && last_score.judge_model,
-        rubric_version: last_score && last_score.rubric_version
-      }
+    mean_score =
+      scores
+      |> Enum.filter(&Verdict.item_scored?/1)
+      |> Enum.map(& &1.score)
+      |> average_score()
+
+    cond do
+      failed_score ->
+        review_summary(failed_score, mean_score)
+
+      scores == [] ->
+        empty_review_summary()
+
+      Enum.any?(scores, &(not Verdict.item_scored?(&1))) ->
+        review_summary(last_score, mean_score)
+
+      Enum.all?(scores, &(&1.status == Verdict.passing_verdict())) ->
+        promotion_summary(last_score, mean_score)
+
+      true ->
+        review_summary(last_score, mean_score)
     end
+  end
+
+  defp review_summary(score, mean_score) do
+    %{
+      status: "needs_review",
+      review_status: "pending",
+      score: mean_score,
+      score_status: score && score.status,
+      score_explanation: score && score.explanation,
+      scorer_kind: score && score.scorer_kind,
+      scorer_version: score && score.scorer_version,
+      judge_model: score && score.judge_model,
+      rubric_version: score && score.rubric_version
+    }
+  end
+
+  defp empty_review_summary do
+    %{
+      status: "needs_review",
+      review_status: "pending",
+      score: nil,
+      score_status: "not_scored",
+      score_explanation: "No online score evidence was produced",
+      scorer_kind: nil,
+      scorer_version: nil,
+      judge_model: nil,
+      rubric_version: nil
+    }
+  end
+
+  defp promotion_summary(score, mean_score) do
+    %{
+      status: "promotion_candidate",
+      review_status: "pending",
+      score: mean_score,
+      score_status: score && score.status,
+      score_explanation: score && score.explanation,
+      scorer_kind: score && score.scorer_kind,
+      scorer_version: score && score.scorer_version,
+      judge_model: score && score.judge_model,
+      rubric_version: score && score.rubric_version
+    }
   end
 
   defp average_score([]), do: nil
   defp average_score(scores), do: Enum.sum(scores) / length(scores)
 
-  defp threshold_verdict(scores) do
-    if Enum.all?(scores, &(&1.status == "passed")), do: "passed", else: "failed"
-  end
+  defp threshold_verdict(scores, threshold_policy),
+    do: scores |> Verdict.compute(threshold_policy) |> Atom.to_string()
 
   defp candidate_id(%EvalCampaignTarget{} = target) do
     target.metadata
