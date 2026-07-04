@@ -5,8 +5,8 @@ milestone_name: window is idle — collision-avoidance)
 current_phase: 41
 current_phase_name: Proof, Docs, And Regression Guardrails
 status: verifying
-stopped_at: Completed 40-02-PLAN.md
-last_updated: "2026-07-04T02:16:14.354Z"
+stopped_at: Phase 41 context gathered
+last_updated: "2026-07-04T02:47:21.284Z"
 last_activity: 2026-07-04
 last_activity_desc: Phase 40 complete, transitioned to Phase 41
 progress:
@@ -155,6 +155,6 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-04T01:16:48.643Z
-Stopped at: Completed 40-02-PLAN.md
-Resume file: None
+Last session: 2026-07-04T02:47:21.279Z
+Stopped at: Phase 41 context gathered
+Resume file: .planning/phases/41-proof-docs-and-regression-guardrails/41-CONTEXT.md
