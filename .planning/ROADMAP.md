@@ -285,3 +285,23 @@ interleaving its own feature docs + a release as it lands.
 
 - Clean up `STATE.md` `## Deferred Items` (currently corrupted with stray per-plan metric rows) and
   add rows for SEED-005…011 so STATE.md's deferred view matches this Backlog.
+
+### Phase 41.1: Wire orphaned ScoriaWeb.Copy/DatasetCopy into dataset page (COPY-01 SSOT) (INSERTED)
+
+**Goal:** Close the COPY-01 SSOT drift surfaced by the v3.3 milestone audit: wire the built-and-tested-but-orphaned `ScoriaWeb.Copy` (base) and `ScoriaWeb.DatasetCopy` modules into `dataset_live/index.ex`, and delegate `ScoriaWeb.UI.status_label/1` to `ScoriaWeb.Copy.status_label/1` — one source of truth per string, no operator-visible copy regression.
+
+**Requirements:** COPY-01
+**Depends on:** Phase 41
+**Plans:** 0 plans
+
+**Success criteria:**
+
+1. `ScoriaWeb.Copy` base module and `ScoriaWeb.DatasetCopy` each have at least one real caller in `lib/` (no longer orphaned).
+2. `dataset_live/index.ex` sources its dataset-state label and empty-state title from `DatasetCopy`/`Copy` instead of local literals/duplicated clauses; the `v{version}` displays route through `DatasetCopy.version_label/1` where appropriate.
+3. `ScoriaWeb.UI.status_label/1` delegates to `ScoriaWeb.Copy.status_label/1` (single status-label map); `Copy` remains a dependency-free leaf (D-24b honored).
+4. No operator-visible copy changes without an explicit, recorded decision — strings that passed COPY-01 verification stay byte-stable.
+5. A regression guard prevents the wired call sites from silently reverting to inline literals or a duplicated status map.
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 41.1 to break down)
