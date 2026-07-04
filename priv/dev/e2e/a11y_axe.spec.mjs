@@ -150,3 +150,63 @@ test.describe('axe-core WCAG 2.2 AA — full dev lab report-only baseline (D-06)
     }
   }
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Tier 2 — CURATED assert-zero on the human-confirmed real-page allow-list,
+// both themes (D-06/T-40-07). Added after the Task-1 checkpoint was approved.
+// ────────────────────────────────────────────────────────────────────────────
+
+// Checkpoint-confirmed allow-list: ALL 7 seeded real operator pages, per the
+// router's demo-tenant scope (lib/scoria_web/router.ex). Unlike the dev lab's
+// specimen gallery, these are the pages operators actually use — zero
+// violations here is the A11Y-02 computed-truth proof, not noise.
+const REAL_PAGES = [
+  { name: 'Home', path: '/' },
+  { name: 'Workflows', path: '/workflows' },
+  { name: 'Approvals', path: '/approvals' },
+  { name: 'Incidents', path: '/incidents' },
+  { name: 'Review Queue', path: '/reviews' },
+  { name: 'Datasets', path: '/datasets' },
+  { name: 'Connectors', path: '/connectors' },
+];
+
+/**
+ * Formats a violation list into a readable multi-line failure message.
+ *
+ * @param {import('axe-core').Result[]} violations
+ */
+function formatViolations(violations) {
+  if (violations.length === 0) return 'none';
+  return violations
+    .map((v) => `  - ${v.id} (${v.impact ?? 'unknown impact'}): ${v.nodes.length} node(s) — ${v.help}`)
+    .join('\n');
+}
+
+test.describe('axe-core WCAG 2.2 AA — curated assert-zero on seeded real pages (D-06/T-40-07)', () => {
+  for (const theme of THEMES) {
+    for (const p of REAL_PAGES) {
+      test(`assert-zero: ${p.name} (${p.path}) in ${theme} theme`, async ({ page }, testInfo) => {
+        await page.goto(`${DASHBOARD_BASE}${p.path}`);
+        await waitForReady(page);
+        await setTheme(page, theme);
+
+        const results = await runAxeScan(page);
+
+        await testInfo.attach(`axe-curated-${p.name.replace(/\s+/g, '-').toLowerCase()}-${theme}.json`, {
+          body: JSON.stringify(results.violations, null, 2),
+          contentType: 'application/json',
+        });
+
+        // target-size (2.5.8) stays report-only through Phase 40 even on the
+        // curated allow-list (D-06) — every other WCAG tag in the shared
+        // axe.mjs config is asserted zero here.
+        const assertedViolations = results.violations.filter((v) => v.id !== 'target-size');
+
+        expect(
+          assertedViolations,
+          `${p.name} (${theme} theme) has genuine axe violations:\n${formatViolations(assertedViolations)}`
+        ).toEqual([]);
+      });
+    }
+  }
+});
