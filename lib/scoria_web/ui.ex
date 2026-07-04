@@ -767,6 +767,20 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
   attr(:show, :boolean, required: true)
   attr(:on_dismiss, :string, required: true)
   attr(:title, :string, default: nil)
+
+  attr(:keydown_enabled, :boolean,
+    default: true,
+    doc:
+      "CR-01 (phase 40 review): set to false when a modal (or other overlay) is stacked " <>
+        "on top of this drawer. Both modal/1 and drawer/1 attach a WINDOW-scoped Escape " <>
+        "listener, so with two overlays mounted at once a single Escape keypress fires " <>
+        "BOTH dismiss handlers — ejecting the operator from the drawer the topmost modal " <>
+        "was meant to be scoped to. Setting keydown_enabled={false} omits this drawer's " <>
+        "phx-window-keydown/phx-key entirely so only the topmost overlay owns Escape; " <>
+        "the close button and scrim click are left as-is since a stacked modal already " <>
+        "covers them visually/positionally."
+  )
+
   attr(:rest, :global)
   slot(:eyebrow)
   slot(:title_slot)
@@ -784,15 +798,19 @@ help text to label key bindings (e.g. `⌘K`, `Escape`, `↑↓`)."
   `phx-remove={JS.pop_focus()}` on the outer shell to restore focus to
   whatever opener called `JS.push_focus()` once this element leaves the DOM.
   This is the $10k-refund approval decision surface — the drawer previously
-  shipped with role/aria-modal but NO trap, autofocus, or restore at all."
+  shipped with role/aria-modal but NO trap, autofocus, or restore at all.
+
+  CR-01 (phase 40 review): pass `keydown_enabled={false}` when a modal is stacked on
+  top of this drawer so only the topmost overlay's window-scoped Escape listener is
+  live — see the `keydown_enabled` attr doc above."
   def drawer(assigns) do
     ~H"""
     <div :if={@show} id={@id} class="scoria-drawer-shell" phx-remove={JS.pop_focus()} {@rest}>
       <div
         class="scoria-scrim"
         phx-click={@on_dismiss}
-        phx-window-keydown={@on_dismiss}
-        phx-key="Escape"
+        phx-window-keydown={@keydown_enabled && @on_dismiss}
+        phx-key={@keydown_enabled && "Escape"}
         aria-hidden="true"
       ></div>
       <aside

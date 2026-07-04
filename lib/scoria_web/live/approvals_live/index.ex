@@ -209,6 +209,21 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   @impl true
   def render(assigns) do
+    # CR-01 (phase 40 review): the decision modal renders on top of the still-mounted
+    # approval drawer (the drawer intentionally stays open behind the confirm modal).
+    # Both modal/1 and drawer/1 attach a window-scoped Escape listener, so without this
+    # gate a single Escape while the modal is open fires BOTH close_decision_modal and
+    # dismiss_approval — ejecting the operator from the drawer and dropping the
+    # ?approval= deep-link instead of just cancelling the confirm. Compute the "modal is
+    # topmost" condition once and share it between the modal's `show` and the drawer's
+    # `keydown_enabled` so they can never fall out of sync.
+    assigns =
+      assign(
+        assigns,
+        :decision_modal_open?,
+        assigns.decision_modal != nil && !decided?(assigns.active_approval)
+      )
+
     ~H"""
     <div class="scoria-dashboard relative">
       <.page_header title="Approvals">
@@ -236,7 +251,12 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         decision_receipts={@decision_receipts}
       />
 
-      <.drawer id="approval-detail-drawer" show={@active_approval != nil} on_dismiss="dismiss_approval">
+      <.drawer
+        id="approval-detail-drawer"
+        show={@active_approval != nil}
+        on_dismiss="dismiss_approval"
+        keydown_enabled={!@decision_modal_open?}
+      >
         <:eyebrow>{ApprovalCopy.eyebrow(@active_approval)}</:eyebrow>
         <:title_slot>{ApprovalCopy.title(@active_approval)}</:title_slot>
 
@@ -356,7 +376,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
       <.modal
         id="approval-decision-modal"
-        show={@decision_modal != nil && !decided?(@active_approval)}
+        show={@decision_modal_open?}
         on_dismiss="close_decision_modal"
       >
         <:title_slot>{ApprovalCopy.decision_title(@decision_modal, @active_approval)}</:title_slot>
