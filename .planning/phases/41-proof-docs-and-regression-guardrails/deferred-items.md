@@ -25,3 +25,21 @@ see 41-04-SUMMARY.md):
 all are in files outside Plan 04's `files_modified` scope. Candidates for a future phase's
 e2e-harness flake/regression sweep (see 41-RESEARCH.md's Section B note: "e2e-harness
 flakes").
+
+## Wave-1 post-merge gate: pre-existing `mix test` (ExUnit) failures (2026-07-04)
+
+The Wave-1 post-merge full-suite gate (`mix test`, 937 tests) surfaced 3 ExUnit failures.
+One was a genuine Wave-1 regression and was **fixed in-lane** (commit `f6e3e0c6`): the new
+`single_header_rendered_guard_test.exs` (41-02) defined a bare `ScoriaWeb.ErrorView`
+that collided with the identical stub in `review_queue_live_test.exs` under Elixir's
+parallel test compiler, producing a non-deterministic `CompileError` on subset runs;
+resolved by namespacing it to `ScoriaWeb.SingleHeaderRenderedGuardTest.ErrorView`.
+
+The remaining 3 are pre-existing and unrelated to any Phase 41 file scope — logged here per
+the SCOPE BOUNDARY rule, candidates for a future flake/regression sweep:
+
+| Test | Location | Cause | Disposition |
+|------|----------|-------|-------------|
+| `Scoria.CiPolicyContractTest` planning-ledgers | `test/scoria/ci_policy_contract_test.exs:692` | `assert roadmap =~ "v2.15"` — roadmap is now `v3.3`; stale assertion | Already tracked as Phase 40 D-21 deferred item |
+| `Scoria.WarningInventory.CaptureParityTest` compile-only capture | `test/scoria/warning_inventory/capture_parity_test.exs:53` | Warning-inventory ratchet's compile-only offender capture is full-suite-order-sensitive; **passes deterministically in isolation** (`2 tests, 0 failures`, verified twice). Not touched by Phase 41. | Flake — future warning-inventory harness hardening |
+| `Scoria.SupportCopilotGalleryTest` advisory-adoption | `test/scoria/support_copilot_gallery_test.exs:8` | Shells out to `examples/support_copilot`'s suite; `Scoria.Workflows.Reconciler` async tasks race the Ecto SQL sandbox → `DBConnection.ConnectionError` owner-exit + `assert html =~ "Approval inbox"`. Entirely within the untouched `examples/support_copilot` subtree. | Flake/environmental — future example-project sandbox-ownership fix |
