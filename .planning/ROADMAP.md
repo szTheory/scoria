@@ -61,13 +61,13 @@ See `.planning/MILESTONES.md` for full closeout history.
   4. `Runtime.ReleaseGate` blocks a release when `threshold_verdict` is not passing, not only when the prompt is `status: "draft"`.
   5. Online scoring no longer fabricates pass/fail from `sample_reason == "policy_trigger"` alone — it inspects real trace output or marks the candidate `:not_scored`.
 
-**Plans**: 3/7 plans executed
+**Plans**: 5/7 plans executed
 
 - [x] 42-01-PLAN.md — Verdict spine (compute/blocks_release?/item_scored?) + honest tri-state vocabulary (Score not_scored, dashboard amber) [D-01, D-02]
 - [x] 42-02-PLAN.md — Subject-output capture: captured_output fields + migration, promotion population, SubjectOutput.resolve/2 [D-04]
 - [x] 42-03-PLAN.md — ExactMatch deterministic scorer (binary, not_scored on couldn't-run) [D-03]
 - [x] 42-04-PLAN.md — Offline runner: scorer_kind dispatch + Verdict, kill hardcoded pass, rewrite offline_runner_test [D-03, D-04]
-- [ ] 42-05-PLAN.md — Judge runner: kill self-grade → SubjectOutput.resolve + Verdict [D-01, D-04]
+- [x] 42-05-PLAN.md — Judge runner: kill self-grade → SubjectOutput.resolve + Verdict [D-01, D-04]
 - [ ] 42-06-PLAN.md — Online scoring negative-signal detector (no fabricated pass; span/step signals) [D-01, D-06]
 - [ ] 42-07-PLAN.md — ReleaseGate verdict consult (allowlist, online-exclusion, ungated telemetry, index) [D-05]
 
@@ -108,7 +108,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 | Phase                                          | Milestone | Plans Complete | Status      | Completed |
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
-| 42. Eval fails closed                          | v3.4      | 4/7            | In Progress | -         |
+| 42. Eval fails closed                          | v3.4      | 5/7            | In Progress | -         |
 | 43. Knowledge tenant isolation                 | v3.4      | 0/?            | Not started | -         |
 | 44. Dashboard auth seam                        | v3.4      | 0/?            | Not started | -         |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
