@@ -3,6 +3,7 @@ defmodule Scoria.Eval.JudgeRunnerTest do
 
   alias Scoria.Eval
   alias Scoria.Eval.JudgeRunner
+  alias Scoria.Eval.Verdict
 
   defmodule ReqLLMStub do
     def generate_object(model_spec, prompt, _schema, _opts) do
@@ -20,8 +21,15 @@ defmodule Scoria.Eval.JudgeRunnerTest do
     end
   end
 
-  test "run_live/1 persists structured judge verdicts through the canonical eval APIs" do
-    {:ok, dataset, eval_spec, prompt_entity_id} = seeded_eval_contract()
+  test "run_live/1 sends frozen captured output as the judge Actual" do
+    expected_answer = "Sealed expectation that must not become Actual"
+    captured_answer = "Workflow output captured before the dataset was sealed"
+
+    {:ok, dataset, eval_spec, prompt_entity_id} =
+      seeded_eval_contract(
+        expected_answer: expected_answer,
+        captured_output: %{"answer" => captured_answer}
+      )
 
     assert {:ok, result} =
              JudgeRunner.run_live(%{
@@ -33,9 +41,16 @@ defmodule Scoria.Eval.JudgeRunnerTest do
                req_llm_module: ReqLLMStub
              })
 
-    assert_received {:req_llm_called, "openai:gpt-4o-mini", _prompt}
+    assert_received {:req_llm_called, "openai:gpt-4o-mini", prompt}
+    assert prompt =~ ~s(Actual: {"answer":"#{captured_answer}"})
+    refute prompt =~ ~s(Actual: #{expected_answer})
+
     assert result.eval_run.runner_mode == :live_judge
     assert result.eval_run.threshold_verdict == "passed"
+
+    assert result.eval_run.threshold_verdict ==
+             Verdict.compute(result.scores, eval_spec.threshold_policy) |> Atom.to_string()
+
     assert [score] = result.scores
     assert score.scorer_kind == "llm_judge"
     assert score.status == "passed"
@@ -44,18 +59,53 @@ defmodule Scoria.Eval.JudgeRunnerTest do
     assert score.evidence_refs["judge"] == "stub"
   end
 
-  defp seeded_eval_contract do
+  test "run_live/1 marks empty capture not_scored without invoking the judge" do
+    {:ok, dataset, eval_spec, prompt_entity_id} = seeded_eval_contract(captured_output: nil)
+
+    assert {:ok, result} =
+             JudgeRunner.run_live(%{
+               dataset_id: dataset.id,
+               eval_spec_id: eval_spec.id,
+               prompt: prompt_entity_id,
+               provider: "openai",
+               model: "gpt-4o-mini",
+               req_llm_module: ReqLLMStub
+             })
+
+    refute_received {:req_llm_called, _, _}
+    assert result.eval_run.runner_mode == :live_judge
+    assert result.eval_run.threshold_verdict == "inconclusive"
+
+    assert result.eval_run.threshold_verdict ==
+             Verdict.compute(result.scores, eval_spec.threshold_policy) |> Atom.to_string()
+
+    assert [score] = result.scores
+    assert score.scorer_kind == "llm_judge"
+    assert score.status == "not_scored"
+    assert is_nil(score.score)
+    assert score.details["reason"] == "empty_capture"
+    assert score.metadata["not_scored_reason"] == "empty_capture"
+  end
+
+  defp seeded_eval_contract(opts) do
+    expected_answer =
+      Keyword.get(opts, :expected_answer, "Scoria is an embedded Phoenix AI runtime")
+
+    captured_output = Keyword.get(opts, :captured_output, %{"answer" => expected_answer})
+
+    item_attrs =
+      %{
+        input: %{"request_kind" => "prompt"},
+        expected_output: %{"answer" => expected_answer},
+        metadata: %{}
+      }
+      |> maybe_put_capture(captured_output)
+
     {:ok, dataset} =
       Eval.create_dataset(%{
         name: "judge-dataset",
         version: "1",
-        items: [
-          %{
-            input: %{"request_kind" => "prompt"},
-            expected_output: %{"answer" => "Scoria is an embedded Phoenix AI runtime"},
-            metadata: %{}
-          }
-        ]
+        items: [item_attrs]
       })
 
     {:ok, dataset} = Eval.seal_dataset(dataset)
@@ -93,4 +143,9 @@ defmodule Scoria.Eval.JudgeRunnerTest do
 
     {:ok, dataset, eval_spec, prompt_entity_id}
   end
+
+  defp maybe_put_capture(attrs, nil), do: attrs
+
+  defp maybe_put_capture(attrs, captured_output),
+    do: Map.put(attrs, :captured_output, captured_output)
 end
