@@ -2,18 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: window is idle — collision-avoidance)
-current_phase: 41
-current_phase_name: Proof, Docs, And Regression Guardrails
-status: verifying
+status: executing
 stopped_at: Phase 41 context gathered
-last_updated: "2026-07-04T02:47:21.284Z"
+last_updated: "2026-07-04T17:02:40.507Z"
 last_activity: 2026-07-04
-last_activity_desc: Phase 40 complete, transitioned to Phase 41
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 24
-  completed_plans: 24
+  total_plans: 29
+  completed_plans: 25
   percent: 83
 ---
 
@@ -25,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 40 — accessibility-motion-and-responsive-proof
+**Current focus:** Phase 41 — proof-docs-and-regression-guardrails
 
 ## Current Position
 
-Phase: 41 — Proof, Docs, And Regression Guardrails
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-07-04 — Phase 40 complete, transitioned to Phase 41
+Phase: 41 (proof-docs-and-regression-guardrails) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-07-04
 
 ## Performance Metrics
 
@@ -112,6 +109,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 40-05: Every new responsive_scan.spec.mjs / reduced_motion.spec.mjs assertion ships as a throwing expect() (not a warning-grade collector) because each was run live against a real dev server during authoring and found clean except one defect (fixed inline, .scoria-button--sm 24px floor) — per D-04 this is fix-and-assert-atomic, not new-and-uncertain.
 - [Phase 40]: 40-04: Curated axe assert-zero allow-list = all 7 seeded real pages (Home, Workflows, Approvals, Incidents, Review Queue, Datasets, Connectors), both themes.
 - [Phase 40]: 40-04: Fixed --scoria-text-subtle AA contrast failure via token SSOT — repointed the semantic alias per-theme to the nearest existing ramp step (dark->muted-warm, light->graphite-700); pumice-500 primitive untouched.
+- [Phase 41]: WR-04: used direct-callback regression test (mount/2 + render/1 + Phoenix.HTML.Safe.to_iodata/1 forced evaluation), not the A1 source-scan fallback
+- [Phase 41]: CR-01 notice literal: 'Could not dismiss this candidate. Refresh and try again.'
+- [Phase 41]: D-18 aria-label copy: 'Scrollable table content'
 
 ### Pending Todos
 
@@ -152,9 +152,10 @@ None at milestone start.
 | Phase 40 P05 | 40min | - tasks | - files |
 | Phase 40 P05 | 40min | 3 tasks | 7 files |
 | Phase 40 P04 | 25min | 2 tasks | 6 files |
+| Phase 41 P01 | 10min | 3 tasks | 6 files |
 
 ## Session Continuity
 
-Last session: 2026-07-04T02:47:21.279Z
+Last session: 2026-07-04T16:59:55.153Z
 Stopped at: Phase 41 context gathered
-Resume file: .planning/phases/41-proof-docs-and-regression-guardrails/41-CONTEXT.md
+Resume file: None
