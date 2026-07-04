@@ -37,7 +37,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - Re-audit primary operator flows through JTBD, persona, accessibility, responsive, reduced-motion, and dense-data lenses.
 - Lock the improvements with tests, screenshots, docs, and drift guards so later UI work keeps moving forward.
 
-**Progress (updated 2026-07-02):** Phase 38 (Foundations And Primitive Controls) complete — DS-01..04 validated. Opaque `--scoria-toast-*-bg` status tokens fix unreadable toasts over dense UI (light + dark, e2e-proven); the `signal_strip/1` stat duplicate is deleted onto the single canonical `overview_stats/1`; copy-control accessible names/`aria-live` gaps are closed; and the full Criterion-2 primitive set is locked by regression guards. Next: Phase 39 (Component Groups And Operator Flows).
+**Progress (updated 2026-07-04):** Phase 40 (Accessibility, Motion And Responsive Proof) complete — A11Y-01, A11Y-02, MOTION-01, RESP-01 validated (22/22 must-haves). `drawer/1` + `modal/1` now have real focus trap + restore (the approval decision surface no longer strands focus on the trigger behind the scrim); axe-core WCAG 2.2 AA assert-zero scan is green across all 7 seeded pages in both themes after repointing the `--scoria-text-subtle` semantic token off `pumice-500` (both themes clear 4.5:1, primitive preserved); browserless MOTION/A11Y source-scan guards + reduced-motion and responsive (6-width) e2e proofs are in place. A post-execution code review caught a Critical stacked modal-over-drawer window-Escape collision (CR-01) on the approvals surface — fixed with a verified regression test. Next: Phase 41 (Proof, Docs And Regression Guardrails).
 
 ## Previous Shipped Milestone: v3.0 Control Room (2026-06-14)
 
@@ -253,6 +253,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ✓ The design system is fully adopted: shared `ui.ex` components replace hand-rolled markup, with zero raw-palette class leakage enforced by the DS-06 drift guard (verified zero across `lib/scoria_web/`). — `v3.0 Control Room` (DS-01..06, SCREEN-01..04)
 - ✓ A newcomer dropped on the dashboard immediately understands what Scoria does and how to reach their job; power users keep a zero-click path (Status Home, three-group nav, breadcrumbs, ⌘K palette, cross-screen threading). — `v3.0 Control Room` (IA-01..06; IA-05 quality-loop threading partial — see Known Gaps)
 - ✓ Every screen reaches a consistent high-polish bar in both light and dark themes, with restrained brand-tied motion and mobile-first responsive behavior (22/22 parity smoke). — `v3.0 Control Room` (MOTION-01..04)
+- ✓ Redesigned controls and flows are proven operable, readable, and stable across accessibility, motion, and viewport constraints: keyboard focus trap + restore on drawer/modal, axe-core WCAG 2.2 AA assert-zero on all 7 seeded pages (both themes), reduced-motion duration collapse, and a 6-width responsive geometry harness — browser-proven plus browserless source-scan guards. — `v3.3 Design System Stress Test` (A11Y-01, A11Y-02, MOTION-01, RESP-01)
 - ✓ Reserved brand-name screens read as complete in the IA via honest "coming soon" stubs (no fake data). — `v3.0 Control Room` (IA-06)
 - ✓ The iteration is proven and documented: baseline→final rubric delta, raw-color count zero, before/after contact sheets, MAINTAINERS.md catalog + harness usage. — `v3.0 Control Room` (PROOF-01..03; PROOF-01/02 partial — see Known Gaps)
 - ✓ CI cache keys are env-scoped (OS+OTP+Elixir+MIX_ENV+lock) and a `build` job compiles once and ships `_build/test`+`deps` as an artifact every downstream job restores. — `v3.1 CI/CD Velocity` (CACHE-01, CACHE-02)
@@ -270,7 +271,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-**Milestone v3.3 Design System Stress Test is active** — Phases 36 (baseline/inventory) and 37 (dev component lab + fixtures) are complete and verified. Next up is Phase 38 `foundations-and-primitive-controls`.
+**Milestone v3.3 Design System Stress Test is active** — Phases 36 (baseline/inventory), 37 (dev component lab + fixtures), 38 (foundations + primitive controls), 39 (component groups + operator flows), and 40 (accessibility, motion & responsive proof) are complete and verified. Next up is Phase 41 `proof-docs-and-regression-guardrails`.
 
 **Deferred (not this milestone):**
 - [ ] **SEED-004 (test-code determinism):** convert forced-serial `IntegrationCase` files to `async: true`, de-globalize per-module Phoenix test endpoints, and replace ~14 `Process.sleep` sites with the `eventually/2` helper — then raise partition count past 4 once the serial floor drops. (Higher product risk; touches 9+ test files. Leading candidate for the milestone after v3.2.)
@@ -483,4 +484,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-02 after Phase 37 dev-component-lab-and-stress-fixtures verification.*
+*Last updated: 2026-07-04 after Phase 40 accessibility-motion-and-responsive-proof verification.*
