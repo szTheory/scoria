@@ -11,6 +11,7 @@ defmodule Scoria.Eval.OnlineScoring do
   alias Scoria.Eval.EvalCampaignTarget
   alias Scoria.Repo
   alias Scoria.Repo.Trace
+  alias Scoria.Workflows.Step
 
   def enqueue_sampled_trace(attrs, opts \\ []) when is_map(attrs) do
     payload = normalize_payload(attrs)
@@ -43,7 +44,8 @@ defmodule Scoria.Eval.OnlineScoring do
     with {:ok, candidate} <- fetch_candidate(target),
          {:ok, trace} <- fetch_trace(candidate.trace_id),
          {:ok, deterministic_scores, terminal?} <- deterministic_scores(candidate, trace, dataset),
-         {:ok, result} <- maybe_run_judge(eval_run, eval_spec, dataset, target, deterministic_scores, terminal?),
+         {:ok, result} <-
+           maybe_run_judge(eval_run, eval_spec, dataset, target, deterministic_scores, terminal?),
          {:ok, candidate} <- sync_candidate(candidate.id, result.scores) do
       {:ok, Map.put(result, :candidate, candidate)}
     end
@@ -54,7 +56,8 @@ defmodule Scoria.Eval.OnlineScoring do
 
     with {:ok, enqueue_result} <- Eval.create_and_enqueue_campaign(campaign_attrs),
          [eval_run | _] = eval_runs <- enqueue_result.eval_runs,
-         {:ok, candidate} <- update_candidate_lineage(candidate, enqueue_result.campaign.id, eval_run.id) do
+         {:ok, candidate} <-
+           update_candidate_lineage(candidate, enqueue_result.campaign.id, eval_run.id) do
       {:ok,
        %{
          candidate: candidate,
@@ -227,48 +230,49 @@ defmodule Scoria.Eval.OnlineScoring do
 
   defp fetch_trace(trace_id) do
     case Repo.get(Trace, trace_id) do
-      %Trace{} = trace -> {:ok, trace}
+      %Trace{} = trace -> {:ok, Repo.preload(trace, :spans)}
       nil -> {:error, {:invalid_campaign_contract, :missing_online_score_trace}}
     end
   end
 
   defp deterministic_scores(candidate, %Trace{} = trace, dataset) do
     dataset_items = dataset.id |> Eval.list_dataset_items() |> Enum.sort_by(& &1.id)
-    sample_reason = Map.get(candidate.sampling_metadata || %{}, "sample_reason", "production_sample")
-    policy_triggered? = sample_reason == "policy_trigger"
+
+    sample_reason =
+      Map.get(candidate.sampling_metadata || %{}, "sample_reason", "production_sample")
+
     trace_env = trace.attributes |> normalize_map() |> Map.get("env", "unknown")
-    score_status = if(policy_triggered?, do: "failed", else: "passed")
-    score_value = if(policy_triggered?, do: 0.0, else: 1.0)
+    step = fetch_step(candidate.workflow_step_id)
 
-    explanation =
-      if policy_triggered? do
-        "Policy trigger requires operator review"
-      else
-        "Deterministic online checks passed for #{trace_env} trace"
-      end
+    case negative_signal(sample_reason, trace, step) do
+      nil ->
+        {:ok, [], false}
 
-    score_attrs =
-      Enum.map(dataset_items, fn dataset_item ->
-        %{
-          dataset_item_id: dataset_item.id,
-          scorer_kind: "deterministic_rule",
-          scorer_version: "policy-rules@2026.05.23",
-          status: score_status,
-          score: score_value,
-          explanation: explanation,
-          rubric_version: "online-feedback-v1",
-          evidence_refs: evidence_refs(candidate, trace, sample_reason),
-          metadata: %{
-            "candidate_id" => candidate.id,
-            "sample_reason" => sample_reason,
-            "trace_env" => trace_env,
-            "latency_ms" => 0,
-            "cost_usd" => "0.0"
-          }
-        }
-      end)
+      signal ->
+        score_attrs =
+          Enum.map(dataset_items, fn dataset_item ->
+            %{
+              dataset_item_id: dataset_item.id,
+              scorer_kind: "deterministic_rule",
+              scorer_version: "policy-rules@2026.05.23",
+              status: "failed",
+              score: 0.0,
+              explanation: negative_signal_explanation(signal),
+              rubric_version: "online-feedback-v1",
+              evidence_refs: evidence_refs(candidate, trace, sample_reason, signal),
+              metadata: %{
+                "candidate_id" => candidate.id,
+                "sample_reason" => sample_reason,
+                "negative_signal" => signal,
+                "trace_env" => trace_env,
+                "latency_ms" => 0,
+                "cost_usd" => "0.0"
+              }
+            }
+          end)
 
-    {:ok, score_attrs, policy_triggered?}
+        {:ok, score_attrs, true}
+    end
   end
 
   defp maybe_run_judge(eval_run, _eval_spec, _dataset, _target, deterministic_scores, true) do
@@ -361,7 +365,51 @@ defmodule Scoria.Eval.OnlineScoring do
     |> Map.get("candidate_id")
   end
 
-  defp evidence_refs(candidate, trace, sample_reason) do
+  defp fetch_step(workflow_step_id), do: Repo.get(Step, workflow_step_id)
+
+  defp negative_signal("policy_trigger", _trace, _step), do: "policy_trigger"
+
+  defp negative_signal(_sample_reason, %Trace{} = trace, step) do
+    cond do
+      trace_error?(trace) -> "span_error"
+      step_output_empty?(step) -> "empty_output"
+      true -> nil
+    end
+  end
+
+  defp trace_error?(%Trace{} = trace) do
+    trace
+    |> trace_spans()
+    |> Enum.any?(fn span ->
+      span.status_code |> to_string() |> String.upcase() == "ERROR"
+    end)
+  end
+
+  defp trace_spans(%Trace{spans: spans}) when is_list(spans), do: spans
+  defp trace_spans(_trace), do: []
+
+  defp step_output_empty?(%Step{result_envelope: result_envelope}) do
+    result_envelope
+    |> normalize_map()
+    |> Map.get("output")
+    |> empty_output?()
+  end
+
+  defp step_output_empty?(_step), do: true
+
+  defp empty_output?(nil), do: true
+  defp empty_output?(value) when is_binary(value), do: String.trim(value) == ""
+  defp empty_output?(value) when is_map(value), do: map_size(value) == 0
+  defp empty_output?(value) when is_list(value), do: value == []
+  defp empty_output?(_value), do: false
+
+  defp negative_signal_explanation("policy_trigger"),
+    do: "Policy trigger requires operator review"
+
+  defp negative_signal_explanation("span_error"), do: "Trace contains an ERROR span"
+  defp negative_signal_explanation("empty_output"), do: "Workflow step output is empty or absent"
+
+  defp evidence_refs(candidate, trace, sample_reason, negative_signal) do
     candidate.evidence_refs
     |> normalize_map()
     |> Map.merge(%{
@@ -369,7 +417,8 @@ defmodule Scoria.Eval.OnlineScoring do
       "trace_id" => trace.id,
       "workflow_run_id" => candidate.workflow_run_id,
       "workflow_step_id" => candidate.workflow_step_id,
-      "sample_reason" => sample_reason
+      "sample_reason" => sample_reason,
+      "negative_signal" => negative_signal
     })
   end
 end
