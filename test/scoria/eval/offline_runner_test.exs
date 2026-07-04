@@ -7,7 +7,7 @@ defmodule Scoria.Eval.OfflineRunnerTest do
   @moduletag :eval
   @moduletag dataset: "offline-replay"
 
-  test "run_offline/1 replays the committed cassette and persists eval evidence" do
+  test "run_offline/1 passes when exact_match sees a matching captured output" do
     {:ok, dataset, eval_spec} = seeded_eval_contract()
 
     assert {:ok, result} =
@@ -27,7 +27,47 @@ defmodule Scoria.Eval.OfflineRunnerTest do
     assert result.eval_run.total_items == 1
     assert [score] = result.scores
     assert score.status == "passed"
+    assert score.score == 1.0
+    assert score.scorer_kind == "exact_match"
     assert score.evidence_refs["fixture_key"] == result.fixture_key
+  end
+
+  test "run_offline/1 fails when exact_match sees a real mismatch" do
+    {:ok, dataset, eval_spec} =
+      seeded_eval_contract(captured_output: %{"answer" => "A different runtime answer"})
+
+    assert {:ok, result} = run_offline(dataset, eval_spec)
+
+    assert result.threshold_verdict == "failed"
+    assert [score] = result.scores
+    assert score.status == "failed"
+    assert score.score == 0.0
+    assert score.scorer_kind == "exact_match"
+  end
+
+  test "run_offline/1 marks empty captures not_scored and leaves the run inconclusive" do
+    {:ok, dataset, eval_spec} = seeded_eval_contract(captured_output: nil)
+
+    assert {:ok, result} = run_offline(dataset, eval_spec)
+
+    assert result.threshold_verdict == "inconclusive"
+    assert [score] = result.scores
+    assert score.status == "not_scored"
+    assert is_nil(score.score)
+    assert score.details["reason"] == "empty_capture"
+  end
+
+  test "run_offline/1 marks unknown scorer kinds not_scored and leaves the run inconclusive" do
+    {:ok, dataset, eval_spec} = seeded_eval_contract(scorer_kind: "unknown_scorer")
+
+    assert {:ok, result} = run_offline(dataset, eval_spec)
+
+    assert result.threshold_verdict == "inconclusive"
+    assert [score] = result.scores
+    assert score.status == "not_scored"
+    assert is_nil(score.score)
+    assert score.scorer_kind == "unknown_scorer"
+    assert score.details["reason"] == "unknown_scorer"
   end
 
   test "assert_dataset/1 returns :ok for a sealed dataset and matching cassette" do
@@ -42,7 +82,22 @@ defmodule Scoria.Eval.OfflineRunnerTest do
              })
   end
 
-  defp seeded_eval_contract do
+  defp run_offline(dataset, eval_spec) do
+    Runner.run_offline(%{
+      dataset_id: dataset.id,
+      eval_spec_id: eval_spec.id,
+      provider: "openai",
+      model: "gpt-4o-mini"
+    })
+  end
+
+  defp seeded_eval_contract(opts \\ []) do
+    expected_answer =
+      Keyword.get(opts, :expected_answer, "Scoria is an embedded Phoenix AI runtime")
+
+    captured_output = Keyword.get(opts, :captured_output, %{"answer" => expected_answer})
+    scorer_kind = Keyword.get(opts, :scorer_kind, :exact_match)
+
     {:ok, dataset} =
       Eval.create_dataset(%{
         name: "offline-replay-dataset",
@@ -50,7 +105,8 @@ defmodule Scoria.Eval.OfflineRunnerTest do
         items: [
           %{
             input: %{"request_kind" => "prompt"},
-            expected_output: %{"answer" => "Scoria is an embedded Phoenix AI runtime"},
+            expected_output: %{"answer" => expected_answer},
+            captured_output: captured_output,
             metadata: %{}
           }
         ]
@@ -73,11 +129,8 @@ defmodule Scoria.Eval.OfflineRunnerTest do
         scorers: [
           %{
             metric_key: "correctness",
-            scorer_kind: :llm_judge,
-            judge_prompt_template_id: Ecto.UUID.generate(),
-            judge_prompt_version: 1,
-            judge_provider: "openai",
-            judge_model: "gpt-4o",
+            scorer_kind: scorer_kind,
+            field: "answer",
             weight: 1.0
           }
         ],
