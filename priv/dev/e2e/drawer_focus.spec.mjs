@@ -9,10 +9,12 @@
 //
 // Fix-and-assert ATOMIC (D-04 two-bucket rule): the ui.ex focus_wrap/
 // push_focus/pop_focus fix landed in Task 1 of THIS SAME PLAN, so every
-// assertion below is a THROWING expect() — except the D-13 live-patch
-// survival check, which is an explicitly non-throwing WARNING-GRADE
-// collector (console.warn + testInfo.attach, never expect()/test.fail()/
-// expect.soft — those are banned as the warning mechanism per D-04).
+// assertion below is a THROWING expect(). The D-13 live-patch survival
+// check started as a non-throwing WARNING-GRADE collector (console.warn +
+// testInfo.attach) because the fix had not landed and its behavior across a
+// real run was unverified. Phase 41 Plan 04 (D-04 VERIFY-THEN-DEFER) ran
+// `mix scoria.ui.e2e` and observed it pass with zero warnings, so it is now
+// flipped to a throwing expect() — a free lock, zero product code.
 //
 // Lane: auto-discovered by `mix scoria.ui.e2e` via testMatch '**/*.spec.mjs'.
 // Seeded by mix scoria.ui.e2e's ensure_pending_approval_fixtures! (floor of
@@ -268,19 +270,21 @@ test.describe('Phase 40 — approval decision drawer focus trap + restore (A11Y-
     );
   });
 
-  // D-13 (warning-grade, non-throwing collector — D-04 two-bucket rule): the
-  // approval drawer is a live PubSub surface. An unrelated broadcast can
-  // phx-update it while open; a naive focus_wrap does not guarantee focus
-  // survives that patch. This test drives a REAL unrelated broadcast (a
-  // decision recorded on a DIFFERENT pending approval, from a second
-  // browser tab) and checks whether focus is still inside THIS drawer
-  // afterward — but it only warns (never throws) since the fix for this
-  // specific risk has not landed and D-04 bans expect()/test.fail()/
-  // expect.soft as the warning mechanism.
-  test('D-13 (warning-grade collector): focus survives an unrelated live PubSub patch while the drawer stays open', async ({
+  // D-13 (flipped to a throwing assertion — Phase 41 Plan 04, D-04
+  // VERIFY-THEN-DEFER): the approval drawer is a live PubSub surface. An
+  // unrelated broadcast can phx-update it while open; a naive focus_wrap
+  // does not guarantee focus survives that patch. This test drives a REAL
+  // unrelated broadcast (a decision recorded on a DIFFERENT pending
+  // approval, from a second browser tab) and asserts focus is still inside
+  // THIS drawer afterward. Originally a non-throwing console.warn +
+  // testInfo.attach collector while the risk was unverified; a real
+  // `mix scoria.ui.e2e` run observed zero warnings, so this is now a
+  // throwing expect() per the locked D-04 rule (verify-then-flip, never
+  // flip blind).
+  test('D-13: focus survives an unrelated live PubSub patch while the drawer stays open', async ({
     page,
     context,
-  }, testInfo) => {
+  }) => {
     await openApprovalDrawer(page);
     const beforeId = await activeElementId(page);
 
@@ -317,14 +321,14 @@ test.describe('Phase 40 — approval decision drawer focus trap + restore (A11Y-
     const afterId = await activeElementId(page);
     const stillInside = await focusIsInside(page, DRAWER_ID);
 
-    if (!stillInside || beforeId !== afterId) {
-      const message =
-        'D-13 WARNING (non-blocking, does not fail the run): focus did not survive an unrelated ' +
-        `live patch on the approval drawer (before="${beforeId}" after="${afterId}" ` +
-        `stillInside=${stillInside}). focus_wrap alone may not hold focus through this patch path ` +
-        '— Phase 41 should consider hardening with a private restore hook keyed on the drawer id.';
-      console.warn(message);
-      await testInfo.attach('d13-live-patch-focus-warning', { body: message, contentType: 'text/plain' });
-    }
+    expect(
+      stillInside,
+      `focus should still be inside the approval drawer after an unrelated live PubSub patch ` +
+        `(before="${beforeId}" after="${afterId}" stillInside=${stillInside})`
+    ).toBe(true);
+    expect(
+      afterId,
+      `focus should not have moved after an unrelated live PubSub patch (before="${beforeId}" after="${afterId}")`
+    ).toBe(beforeId);
   });
 });
