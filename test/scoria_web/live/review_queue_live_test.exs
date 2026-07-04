@@ -249,6 +249,15 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
     assert html =~ pending.score_explanation
   end
 
+  test "dismiss_candidate with no selected candidate does not crash the LiveView", _ctx do
+    {:ok, view, _html} = live(test_conn(), "/scoria/reviews")
+
+    html = render_click(view, "dismiss_candidate", %{})
+
+    assert html =~ "Could not dismiss this candidate. Refresh and try again."
+    assert Process.alive?(view.pid)
+  end
+
   defp test_conn do
     Phoenix.ConnTest.build_conn()
     |> Plug.Test.init_test_session(%{})
