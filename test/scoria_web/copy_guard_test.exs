@@ -107,6 +107,32 @@ defmodule ScoriaWeb.CopyGuardTest do
            """
   end
 
+  @dataset_index_path "lib/scoria_web/live/dataset_live/index.ex"
+  @dataset_empty_title_literal "No datasets match this view"
+
+  test "dataset index empty-state title is sourced from Copy.empty_title(:datasets), not an inline literal (D4b)" do
+    source = File.read!(@dataset_index_path)
+
+    present = source =~ "Copy.empty_title(:datasets)"
+    offenders = if String.contains?(source, @dataset_empty_title_literal), do: [@dataset_index_path], else: []
+
+    assert present,
+           """
+           D-26/D4b copy guard: #{@dataset_index_path} no longer calls
+           Copy.empty_title(:datasets) for the dataset empty-state title.
+           Fix: source the title from Copy.empty_title(:datasets).
+           """
+
+    assert offenders == [],
+           """
+           D-26/D4b copy guard: the raw empty-state title literal #{inspect(@dataset_empty_title_literal)}
+           was found inline in #{@dataset_index_path} instead of being sourced from
+           Copy.empty_title(:datasets).
+           Fix: source the title from Copy.empty_title(:datasets).
+           #{Enum.map_join(offenders, "\n", &"  #{&1}")}
+           """
+  end
+
   defp page_files, do: @page_glob |> Path.wildcard() |> Enum.reject(&(&1 in @excluded))
 
   # Static-literal text only: title="..." attrs on page_header/stub_page, and
