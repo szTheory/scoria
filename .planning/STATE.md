@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: window is idle — collision-avoidance)
 status: executing
-stopped_at: Phase 41 context gathered
-last_updated: "2026-07-04T17:10:36.284Z"
+stopped_at: Completed 41-03-PLAN.md
+last_updated: "2026-07-04T17:19:50.704Z"
 last_activity: 2026-07-04
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 29
-  completed_plans: 26
+  completed_plans: 27
   percent: 83
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-20 for v3.3 Design System Stress Te
 ## Current Position
 
 Phase: 41 (proof-docs-and-regression-guardrails) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-07-04
 
@@ -115,6 +115,9 @@ Recent decisions affecting current work:
 - [Phase 41]: 41-02: New guard module is async: false (real LiveView render + DB) and kept separate from the async: true, no-DB single_header_guard_test.exs source-scan module rather than merging async settings.
 - [Phase 41]: 41-02: Skipped /workflows/:id, /incidents/:id, /prompts/:id/release (object_header/1 has no :title slot) and /coming/:screen (ComingSoonLive never pairs a header with a region :title slot) -- documented as an honesty caveat, mirroring dev_lab_boundary_test.exs.
 - [Phase 41]: 41-02: CSS selectors verified directly against lib/scoria_web/ui.ex before landing (Assumption A2): page title is .scoria-pagehead__title h1; region titles are .scoria-panel__header h2 and .scoria-page-section__header h2.
+- [Phase 41]: 41-03: Guard-path regex in the doc contract scans for the test/..._test.exs substring anywhere in backtick-fenced text, not just backtick-anchored paths, since the doc cites guards both as bare filenames and full mix test invocations.
+- [Phase 41]: 41-03: BEM/selectors section states plainly that no test enforces BEM structure directly -- convention, guarded only for palette leakage via ds06_drift_guard_test.exs -- per D-10.
+- [Phase 41]: 41-03: Overlays section pairs a11y_structural_guard_test.exs (static role=dialog/aria-modal pairing) with modal_focus.spec.mjs/drawer_focus.spec.mjs (e2e trap+restore) since no single ExUnit test owns overlay focus behavior end-to-end.
 
 ### Pending Todos
 
@@ -157,9 +160,10 @@ None at milestone start.
 | Phase 40 P04 | 25min | 2 tasks | 6 files |
 | Phase 41 P01 | 10min | 3 tasks | 6 files |
 | Phase 41 P02 | 20min | 1 tasks | 1 files |
+| Phase 41 P03 | 45min | 3 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-07-04T17:08:32.207Z
-Stopped at: Phase 41 context gathered
+Last session: 2026-07-04T17:19:50.700Z
+Stopped at: Completed 41-03-PLAN.md
 Resume file: None
