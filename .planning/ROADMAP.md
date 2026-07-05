@@ -87,11 +87,24 @@ See `.planning/MILESTONES.md` for full closeout history.
   4. A cross-tenant isolation test proves tenant A's query returns zero of tenant B's chunks.
 
 **Plans**: 5 plans
+**Wave 1**
 
 - [ ] 43-01-PLAN.md — Scope contract and tenant isolation test spine
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 43-02-PLAN.md — Additive knowledge migration and schema fields
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 43-03-PLAN.md — Public Knowledge API write/list/run/result enforcement
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 43-04-PLAN.md — Pgvector and Scrypath tenant-qualified retrieval
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 43-05-PLAN.md — Citation/grounding scope, docs, and full knowledge proof
 
 ### Phase 44: Dashboard auth seam
