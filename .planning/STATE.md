@@ -4,9 +4,9 @@ milestone: v3.4
 milestone_name: Pre-1.0 Trust & Security Hardening
 current_phase: 42
 current_phase_name: eval-fails-closed
-status: ready_for_verification
-stopped_at: Completed 42-07-PLAN.md
-last_updated: "2026-07-05T00:00:55.580Z"
+status: ready_to_plan
+stopped_at: Phase 42 complete (7/7) — ready to discuss Phase 43
+last_updated: 2026-07-05T00:10:14.263Z
 last_activity: 2026-07-04
 last_activity_desc: Completed 42-07 release gate verdict consult
 progress:
@@ -25,14 +25,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 42 — eval-fails-closed
+**Current focus:** Phase 43 — knowledge tenant isolation
 
 ## Current Position
 
-Phase: 42 (eval-fails-closed) — READY FOR VERIFICATION
-Plan: 7 of 7
-Status: Phase 42 complete; ready for verification
-Last activity: 2026-07-04 -- Completed 42-07 release gate verdict consult
+Phase: 43
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-05
 
 ## Performance Metrics
 

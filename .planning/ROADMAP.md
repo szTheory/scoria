@@ -120,7 +120,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 | Phase                                          | Milestone | Plans Complete | Status      | Completed |
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
-| 42. Eval fails closed                          | v3.4      | 7/7 | Complete   | 2026-07-04 |
+| 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
 | 43. Knowledge tenant isolation                 | v3.4      | 0/?            | Not started | -         |
 | 44. Dashboard auth seam                        | v3.4      | 0/?            | Not started | -         |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
