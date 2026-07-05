@@ -86,7 +86,13 @@ See `.planning/MILESTONES.md` for full closeout history.
   3. A retrieval call with a nil tenant RAISES (mirrors `SemanticCache.Lookup.base_query`'s `Map.fetch!`) across `similar_chunks`, `Scrypath.retrieve`, `list_source_chunks`, and `Knowledge.retrieve/ingest` — never a silent match-all.
   4. A cross-tenant isolation test proves tenant A's query returns zero of tenant B's chunks.
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+- [ ] 43-01-PLAN.md — Scope contract and tenant isolation test spine
+- [ ] 43-02-PLAN.md — Additive knowledge migration and schema fields
+- [ ] 43-03-PLAN.md — Public Knowledge API write/list/run/result enforcement
+- [ ] 43-04-PLAN.md — Pgvector and Scrypath tenant-qualified retrieval
+- [ ] 43-05-PLAN.md — Citation/grounding scope, docs, and full knowledge proof
 
 ### Phase 44: Dashboard auth seam
 
@@ -121,7 +127,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | Phase                                          | Milestone | Plans Complete | Status      | Completed |
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
-| 43. Knowledge tenant isolation                 | v3.4      | 0/?            | Not started | -         |
+| 43. Knowledge tenant isolation                 | v3.4      | 0/5            | Not started | -         |
 | 44. Dashboard auth seam                        | v3.4      | 0/?            | Not started | -         |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
