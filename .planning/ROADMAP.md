@@ -39,6 +39,7 @@ Full phase detail archived in `.planning/milestones/v3.3-ROADMAP.md`; requiremen
 <summary>✅ Earlier milestones (v2.17 → v3.2)</summary>
 
 Archived under `.planning/milestones/`:
+
 - **v3.2 Drydock** — Phases 29–35 (`v3.2-ROADMAP.md`)
 - **v3.1 CI/CD Velocity** — Phases 23–28 (`v3.1-ROADMAP.md`)
 - **v3.0 Control Room** — Phases 11–17 (`v3.0-ROADMAP.md`)
@@ -51,17 +52,19 @@ See `.planning/MILESTONES.md` for full closeout history.
 ## Phase Details
 
 ### Phase 42: Eval fails closed
+
 **Goal**: Scoria's eval engine fails CLOSED — no run is ever reported green without a real subject output scored by a real deterministic scorer, and the release gate consults the verdict instead of the prompt's draft flag.
 **Depends on**: Nothing (independent subsystem — eval)
 **Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05
 **Success Criteria** (what must be TRUE):
+
   1. Offline/judge eval executes or replays the real subject prompt so the "Actual" output is a real result — an eval whose real output differs from the sealed expectation yields `failed`/`:not_scored`, never `passed` (the `expected_output["answer"]` self-grading shortcut in `build_subject_output` is gone).
   2. At least one real deterministic scorer compares actual vs expected output, in the `Scoria.Knowledge.Grounding` scorer style, writing through the existing `Scoria.Eval.Score` sink.
   3. When no real scorer is configured, eval emits `:not_scored` and `threshold_verdict` / `ReleaseGate` return `failed`/`inconclusive` — a run is never reported green by default.
   4. `Runtime.ReleaseGate` blocks a release when `threshold_verdict` is not passing, not only when the prompt is `status: "draft"`.
   5. Online scoring no longer fabricates pass/fail from `sample_reason == "policy_trigger"` alone — it inspects real trace output or marks the candidate `:not_scored`.
 
-**Plans**: 5/7 plans executed
+**Plans**: 7/7 plans complete
 
 - [x] 42-01-PLAN.md — Verdict spine (compute/blocks_release?/item_scored?) + honest tri-state vocabulary (Score not_scored, dashboard amber) [D-01, D-02]
 - [x] 42-02-PLAN.md — Subject-output capture: captured_output fields + migration, promotion population, SubjectOutput.resolve/2 [D-04]
@@ -69,46 +72,55 @@ See `.planning/MILESTONES.md` for full closeout history.
 - [x] 42-04-PLAN.md — Offline runner: scorer_kind dispatch + Verdict, kill hardcoded pass, rewrite offline_runner_test [D-03, D-04]
 - [x] 42-05-PLAN.md — Judge runner: kill self-grade → SubjectOutput.resolve + Verdict [D-01, D-04]
 - [x] 42-06-PLAN.md — Online scoring negative-signal detector (no fabricated pass; span/step signals) [D-01, D-06]
-- [ ] 42-07-PLAN.md — ReleaseGate verdict consult (allowlist, online-exclusion, ungated telemetry, index) [D-05]
+- [x] 42-07-PLAN.md — ReleaseGate verdict consult (allowlist, online-exclusion, ungated telemetry, index) [D-05]
 
 ### Phase 43: Knowledge tenant isolation
+
 **Goal**: Knowledge retrieval is tenant-isolated end to end — a nil tenant raises rather than matching all — so no tenant's query embedding can retrieve another tenant's raw chunk body or citation quote.
 **Depends on**: Nothing (independent subsystem — knowledge)
 **Requirements**: KNOW-01, KNOW-02, KNOW-03, KNOW-04
 **Success Criteria** (what must be TRUE):
+
   1. Running the new knowledge migration adds `tenant_id` (+ optional `actor_id`/`scope_kind`, mirroring `SemanticCache`) with `[tenant_id]` and `[tenant_id, source_id]` indexes to sources + chunks; the production run path (`KnowledgeMigrationRepo` / `schema_migrations_knowledge`) is documented.
   2. `retrieval_runs`, `retrieval_results`, and `citations` carry tenant/actor for audit.
   3. A retrieval call with a nil tenant RAISES (mirrors `SemanticCache.Lookup.base_query`'s `Map.fetch!`) across `similar_chunks`, `Scrypath.retrieve`, `list_source_chunks`, and `Knowledge.retrieve/ingest` — never a silent match-all.
   4. A cross-tenant isolation test proves tenant A's query returns zero of tenant B's chunks.
+
 **Plans**: TBD
 
 ### Phase 44: Dashboard auth seam
+
 **Goal**: The host can inject its own auth hook and Scoria resolves `tenant_id` from a host-asserted source, so a `?tenant=<victim>` spoof no longer reads foreign data — while authz stays delegated (no in-lib RBAC).
 **Depends on**: Nothing (independent subsystem — web)
 **Requirements**: AUTH-01, AUTH-02, AUTH-03
 **Success Criteria** (what must be TRUE):
+
   1. `scoria_dashboard/2` accepts a pass-through `on_mount:` list — a host hook runs before `DashboardNav` (which stays in the chain) — and the bare `scoria_dashboard "/scoria"` form still compiles (installer, dev router, and example host all emit it).
   2. A documented tenant-resolution/authorization callback makes `tenant_id` host-asserted, not a spoofable `?tenant=` param; no in-lib role/RBAC model is added.
   3. Dashboard LiveViews resolve tenant from the host-asserted source; the unauthenticated `params["tenant"] → "default"` spoof path is closed (a `?tenant=<victim>` request no longer returns another tenant's data).
+
 **Plans**: TBD
 
 ### Phase 45: Correctness sweep + fail-closed proof & closeout
+
 **Goal**: Retrieval scoring and the latency gate report real numbers instead of fabricated ones, and the scope doctrine is confirmed and cross-linked — closing out the fix milestone on the fail-closed foundations from Phases 42 + 43.
 **Depends on**: Phase 42 (FIX-04's real-latency gate is enabled by EVAL's real scorers), Phase 43 (FIX-01/FIX-02 layer on the knowledge tenant-isolation work)
 **Requirements**: FIX-01, FIX-02, FIX-03, FIX-04, DOC-01
 **Success Criteria** (what must be TRUE):
+
   1. `Knowledge.Backends.Pgvector.score_chunk/2` persists a real cosine similarity that matches the `cosine_distance` ranking metric — the fake `1/(1+|Σemb−Σquery|)` component-sum score is gone.
   2. `Knowledge.Grounding.score_citation_presence` is label-aware — a correct abstention on an unanswerable query is no longer penalized as `0.0/"failed"`.
   3. `Chunker.Default`'s dead `overlap` param (the `max(end - overlap, end)` no-op) is removed and the chunker is documented as non-overlapping.
   4. The `max_latency_ms` gate operates on real recorded latency (enabled once EVAL's real scorers record actual latency instead of a hardcoded 0).
   5. The 6-principle scope doctrine ("Scoria owns the verb; host owns the noun", P1–P6) is confirmed present in `PROJECT.md ## Constraints` + `## Key Decisions` and cross-linked from the eval / knowledge / dashboard fix rationale (confirm-and-cross-link — the doctrine was already recorded at v3.3 close).
+
 **Plans**: TBD
 
 ## Progress
 
 | Phase                                          | Milestone | Plans Complete | Status      | Completed |
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
-| 42. Eval fails closed                          | v3.4      | 6/7            | In Progress | -         |
+| 42. Eval fails closed                          | v3.4      | 7/7 | Complete   | 2026-07-04 |
 | 43. Knowledge tenant isolation                 | v3.4      | 0/?            | Not started | -         |
 | 44. Dashboard auth seam                        | v3.4      | 0/?            | Not started | -         |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |

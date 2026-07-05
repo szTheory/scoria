@@ -4,17 +4,17 @@ milestone: v3.4
 milestone_name: Pre-1.0 Trust & Security Hardening
 current_phase: 42
 current_phase_name: eval-fails-closed
-status: executing
-stopped_at: Completed 42-06-PLAN.md
-last_updated: "2026-07-04T23:49:36.865Z"
+status: ready_for_verification
+stopped_at: Completed 42-07-PLAN.md
+last_updated: "2026-07-05T00:00:55.580Z"
 last_activity: 2026-07-04
-last_activity_desc: Completed 42-06 online scoring negative-signal detector
+last_activity_desc: Completed 42-07 release gate verdict consult
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 25
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 
 ## Current Position
 
-Phase: 42 (eval-fails-closed) — EXECUTING
+Phase: 42 (eval-fails-closed) — READY FOR VERIFICATION
 Plan: 7 of 7
-Status: Ready to execute 42-07
-Last activity: 2026-07-04 -- Completed 42-06 online scoring negative-signal detector
+Status: Phase 42 complete; ready for verification
+Last activity: 2026-07-04 -- Completed 42-07 release gate verdict consult
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Last activity: 2026-07-04 -- Completed 42-06 online scoring negative-signal dete
 - **Phase 42 P04:** 7 min — 2 tasks, 3 files, verification 26 focused eval tests green; not_scored score-nullability migration added.
 - **Phase 42 P05:** 39 min — 2 tasks, 2 files, verification 15 focused eval tests green.
 - **Phase 42 P06:** 11 min — 3 tasks, 3 files, verification 16 online/campaign tests and 15 related eval tests green.
+- **Phase 42 P07:** 6 min — 3 tasks, 4 files, verification 10 release gate tests green plus migration rollback/reapply.
 
 *Updated after each plan completion*
 
@@ -149,6 +150,9 @@ Recent decisions affecting current work:
 - [Phase 42-05]: Judge runner persists threshold_verdict from Verdict.compute/2; the local threshold_verdict/2 duplicate and latency helper were removed.
 - [Phase 42]: 42-06: Clean online traces emit no deterministic base scores; only judge scores can produce positive online evidence. — Prevents reference-free deterministic checks from laundering clean production traces into golden labels.
 - [Phase 42]: 42-06: Empty, failed, or not_scored online score sets remain needs_review and compute to inconclusive. — Keeps online scoring fail-closed and delegates threshold semantics to Scoria.Eval.Verdict.compute/2.
+- [Phase 42]: ReleaseGate treats completed nil, unknown, failed, and inconclusive verdicts as blocking because only persisted string "passed" is allowed. — Preserves the 42-01 Verdict allowlist and avoids treating malformed completed eval evidence as ungated.
+- [Phase 42]: ReleaseGate uses a left join to EvalCampaign so standalone and offline campaign eval runs count, while metadata source "online_scoring" runs are excluded. — Online scoring runs are review evidence, not offline release evidence; standalone legacy runs should remain compatible.
+- [Phase 42]: No completed eval verdict remains default-open for adopter compatibility, emits [:scoria, :release_gate, :ungated] telemetry, and can be made strict with require_eval_verdict. — Keeps existing adopters from being bricked while making ungated prompts inspectable and opt-in blockable.
 
 ### Pending Todos
 
@@ -208,8 +212,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-04T23:49:16.835Z
-Stopped at: Completed 42-06-PLAN.md
+Last session: 2026-07-05T00:00:13.649Z
+Stopped at: Completed 42-07-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

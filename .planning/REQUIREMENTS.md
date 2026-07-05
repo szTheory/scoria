@@ -21,12 +21,16 @@ itself, `Eval.OnlineScoring.deterministic_scores/3` decides on `sample_reason` a
 
 - [x] **EVAL-01**: Offline/judge eval executes or replays the real subject prompt so the "Actual"
   output is a real result — the `expected_output["answer"]` shortcut in `build_subject_output` is removed.
+
 - [x] **EVAL-02**: At least one real deterministic scorer compares actual output vs expectation,
   reusing the existing `Scoria.Knowledge.Grounding` scorer style and the `Scoria.Eval.Score` write sink.
+
 - [x] **EVAL-03**: When no real scorer is configured, eval emits `:not_scored` and `threshold_verdict`
   / `ReleaseGate` fail CLOSED (`failed`/`inconclusive`) — a run is never reported green by default.
-- [ ] **EVAL-04**: `Runtime.ReleaseGate` consults `threshold_verdict` before allowing a release, not
+
+- [x] **EVAL-04**: `Runtime.ReleaseGate` consults `threshold_verdict` before allowing a release, not
   only the prompt's `status: "draft"`.
+
 - [x] **EVAL-05**: Online scoring stops fabricating pass/fail from `sample_reason == "policy_trigger"`
   alone — it inspects real trace output or marks the candidate `:not_scored`.
 
@@ -42,10 +46,12 @@ can enforce scoping (it already does so for `SemanticCache` and `Connectors`).
   mirroring `SemanticCache`) to sources + chunks, with `[tenant_id]` and `[tenant_id, source_id]`
   indexes. (Migration runs via the separate `KnowledgeMigrationRepo` / `schema_migrations_knowledge`
   path; confirm the production run path is documented.)
+
 - [ ] **KNOW-02**: `retrieval_runs`, `retrieval_results`, and `citations` carry tenant/actor for audit.
 - [ ] **KNOW-03**: `similar_chunks`, `Scrypath.retrieve`, `list_source_chunks`, and
   `Knowledge.retrieve/ingest` enforce a mandatory fail-closed tenant filter — a nil tenant RAISES
   (mirrors `SemanticCache.Lookup.base_query`'s `Map.fetch!`), never match-all.
+
 - [ ] **KNOW-04**: A cross-tenant isolation test proves tenant A's query returns zero of tenant B's chunks.
 
 ### AUTH — Dashboard auth seam (P0-3)
@@ -59,8 +65,10 @@ ship the *seam*.
 - [ ] **AUTH-01**: `scoria_dashboard/2` accepts a pass-through `on_mount:` list (host hooks run before
   `DashboardNav`, which stays in the chain); the bare `scoria_dashboard "/scoria"` form still compiles
   (installer, dev router, and example host all emit it).
+
 - [ ] **AUTH-02**: A documented tenant-resolution/authorization callback makes `tenant_id`
   host-asserted, not a spoofable `?tenant=` param. No in-lib role/RBAC model is added.
+
 - [ ] **AUTH-03**: Dashboard LiveViews resolve tenant from the host-asserted source; the
   unauthenticated `params["tenant"] → "default"` spoof path is closed.
 
@@ -68,10 +76,13 @@ ship the *seam*.
 
 - [ ] **FIX-01**: `Knowledge.Backends.Pgvector.score_chunk/2` persists real cosine similarity matching
   the `cosine_distance` ranking metric, not the fake `1/(1+|Σemb−Σquery|)` component-sum score.
+
 - [ ] **FIX-02**: `Knowledge.Grounding.score_citation_presence` is label-aware — correct abstention on
   unanswerable queries is not penalized as `0.0/"failed"`.
+
 - [ ] **FIX-03**: `Chunker.Default`'s dead `overlap` param (the `max(end - overlap, end)` no-op) is
   removed and the chunker is documented as non-overlapping.
+
 - [ ] **FIX-04**: The `max_latency_ms` gate operates on real recorded latency (enabled once EVAL's real
   scorers record actual latency instead of a hardcoded 0).
 
@@ -105,7 +116,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | EVAL-01 | Phase 42 | Complete |
 | EVAL-02 | Phase 42 | Complete |
 | EVAL-03 | Phase 42 | Complete |
-| EVAL-04 | Phase 42 | Pending |
+| EVAL-04 | Phase 42 | Complete |
 | EVAL-05 | Phase 42 | Complete |
 | KNOW-01 | Phase 43 | Pending |
 | KNOW-02 | Phase 43 | Pending |
@@ -121,6 +132,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | DOC-01 | Phase 45 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 17 total
 - Mapped to phases: 17 (proposed; finalized by roadmapper)
 - Unmapped: 0
