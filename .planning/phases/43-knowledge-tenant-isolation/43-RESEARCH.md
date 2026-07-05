@@ -649,17 +649,15 @@ Ecto documents `:where` for partial indexes and string expression columns for da
 |---|-------|---------|---------------|
 | — | No `[ASSUMED]` claims are used as planning inputs; all recommendations are from CONTEXT.md, local code/commands, or official docs. | All | None. [VERIFIED: codebase grep] [CITED: https://ecto-sql.hexdocs.pm/Ecto.Migration.html] [CITED: https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html] |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should not-null/check constraints land in this phase or a follow-up?**  
    What we know: D-02 allows nullable columns for upgrade safety and requires new writes to fail closed. [VERIFIED: CONTEXT.md]  
-   What's unclear: Whether the planner wants a same-phase hardening migration after tests prove no local null rows remain. [VERIFIED: CONTEXT.md]  
-   Recommendation: Keep columns nullable in the additive migration, enforce in changesets/API, and document a later hardening slice unless adding constraints is cheap and does not harm adopter upgrade path. [VERIFIED: CONTEXT.md]
+   RESOLVED: Phase 43 keeps tenant columns nullable in the additive migration for adopter upgrade safety, enforces non-empty tenant scope immediately in `Scoria.Knowledge.Scope`, changesets, and public API paths, and quarantines null-tenant legacy rows from reads. Hard not-null/check constraints are deferred to a post-backfill hardening slice after hosts can provide explicit tenant mappings for historical rows. [VERIFIED: CONTEXT.md] [VERIFIED: PLAN.md]
 
 2. **Should `create_source/1` remain public without options?**  
    What we know: D-03 lists `create_source/1` as a public boundary that must normalize scope. [VERIFIED: CONTEXT.md]  
-   What's unclear: Whether to keep `create_source(attrs, opts \\ [])` compatibility or force all writes through `ingest_source/2`. [VERIFIED: codebase grep]  
-   Recommendation: Add an opts variant and keep a failing one-arity wrapper if no tenant shorthand/scope is present; update tests/call sites explicitly. [VERIFIED: CONTEXT.md]
+   RESOLVED: Add opts-aware `create_source/2` so callers can pass `scope:` or tenant/actor/scope shorthand through the same normalization path as other Knowledge write APIs. Keep public `create_source/1` only as fail-closed compatibility that raises without tenant scope rather than silently creating unscoped rows; update tests and call sites to use explicit scoped writes. [VERIFIED: CONTEXT.md] [VERIFIED: PLAN.md]
 
 ## Environment Availability
 
