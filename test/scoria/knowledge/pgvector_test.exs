@@ -50,7 +50,10 @@ defmodule Scoria.Knowledge.PgvectorTest do
     assert [_ | _] = Knowledge.list_source_chunks(source.id, scope: @scope)
 
     assert {:ok, %{results: results}} =
-             Knowledge.retrieve("grounded retrieval", filters: %{source_id: source.id}, scope: @scope)
+             Knowledge.retrieve("grounded retrieval",
+               filters: %{source_id: source.id},
+               scope: @scope
+             )
 
     assert [%{rank: 1} | _] = Enum.map(results, &Map.from_struct/1)
   end
@@ -95,16 +98,21 @@ defmodule Scoria.Knowledge.PgvectorTest do
 
   test "similar_chunks/2 honors actor scoped visibility" do
     assert {:ok, shared_source} = Knowledge.create_source(source_attrs("shared"), scope: @scope)
-    assert {:ok, actor_source} = Knowledge.create_source(source_attrs("actor"), scope: @actor_scope)
+
+    assert {:ok, actor_source} =
+             Knowledge.create_source(source_attrs("actor"), scope: @actor_scope)
 
     assert {:ok, other_actor_source} =
              Knowledge.create_source(source_attrs("other-actor"), scope: @other_actor_scope)
 
     shared_chunk = insert_chunk!(shared_source, "shared", @scope, [0.2, 0.2, 0.2])
     actor_chunk = insert_chunk!(actor_source, "actor", @actor_scope, [0.3, 0.3, 0.3])
-    other_actor_chunk = insert_chunk!(other_actor_source, "other-actor", @other_actor_scope, [0.9, 0.9, 0.9])
 
-    assert {:ok, results} = Pgvector.similar_chunks([0.9, 0.9, 0.9], scope: @actor_scope, limit: 5)
+    other_actor_chunk =
+      insert_chunk!(other_actor_source, "other-actor", @other_actor_scope, [0.9, 0.9, 0.9])
+
+    assert {:ok, results} =
+             Pgvector.similar_chunks([0.9, 0.9, 0.9], scope: @actor_scope, limit: 5)
 
     chunk_ids = Enum.map(results, & &1.chunk_id)
     assert shared_chunk.id in chunk_ids

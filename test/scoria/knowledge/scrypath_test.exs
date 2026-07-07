@@ -10,18 +10,28 @@ defmodule Scoria.Knowledge.ScrypathTest do
 
   test "normalize_results/2 returns only scoped source_id and chunk_id hits" do
     assert {:ok, source} =
-             Knowledge.ingest_source(%{
-               kind: "doc",
-               title: "scrypath",
-               uri: "file:///scrypath.md",
-               body: "Scoria normalizes external retrieval hits."
-             }, scope: @scope)
+             Knowledge.ingest_source(
+               %{
+                 kind: "doc",
+                 title: "scrypath",
+                 uri: "file:///scrypath.md",
+                 body: "Scoria normalizes external retrieval hits."
+               },
+               scope: @scope
+             )
 
     [chunk | _] = Knowledge.list_source_chunks(source.id, scope: @scope)
 
     assert {:ok, [result]} =
              apply(Scrypath, :normalize_results, [
-               [%{chunk_id: chunk.id, source_id: source.id, chunk_digest: chunk.chunk_digest, score: 0.9}],
+               [
+                 %{
+                   chunk_id: chunk.id,
+                   source_id: source.id,
+                   chunk_digest: chunk.chunk_digest,
+                   score: 0.9
+                 }
+               ],
                [scope: @scope]
              ])
 
@@ -48,7 +58,9 @@ defmodule Scoria.Knowledge.ScrypathTest do
 
     assert {:error, message} =
              Scrypath.retrieve("query",
-               results: [%{chunk_id: tenant_b_chunk.id, source_id: tenant_b_source.id, score: 0.9}],
+               results: [
+                 %{chunk_id: tenant_b_chunk.id, source_id: tenant_b_source.id, score: 0.9}
+               ],
                scope: @scope
              )
 
