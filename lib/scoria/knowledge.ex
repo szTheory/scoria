@@ -179,10 +179,22 @@ defmodule Scoria.Knowledge do
     CitationFormatter.build_anchors(chunks, opts)
   end
 
-  def create_citation(attrs \\ %{}) do
-    %Citation{}
-    |> Citation.changeset(attrs)
-    |> Repo.insert()
+  def create_citation(attrs \\ %{}, opts \\ [])
+
+  def create_citation(attrs, opts) do
+    attrs = attrs_to_map(attrs)
+    scope = Scope.for_write!(scope_input(attrs, opts))
+
+    with {:ok, _anchor} <- CitationFormatter.validate_anchor(attrs, scope: scope) do
+      attrs =
+        attrs
+        |> Scope.put_source_attrs(scope)
+        |> Map.delete(:scope)
+
+      %Citation{}
+      |> Citation.changeset(attrs)
+      |> Repo.insert()
+    end
   end
 
   def retrieve(query_text, opts \\ []) do
