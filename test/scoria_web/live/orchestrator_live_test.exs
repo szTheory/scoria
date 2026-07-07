@@ -78,12 +78,17 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     :ok
   end
 
-  test "OrchestratorLive mounts successfully and renders dummy wrapper" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+  defp session_conn(tenant_id \\ "tenant-live") do
+    build_conn()
+    |> Plug.Test.init_test_session(%{
+      "actor_id" => "operator-live",
+      "tenant_id" => tenant_id
+    })
+    |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+  end
 
+  test "OrchestratorLive mounts successfully and renders dummy wrapper" do
+    conn = session_conn()
     {:ok, view, _html} = live(conn, "/scoria")
     html = render_async(view)
 
@@ -91,12 +96,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "Status Home renders exact orientation copy and day-zero stream empty state" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
-    {:ok, view, _html} = live(conn, "/scoria?tenant=tenant-status-empty")
+    conn = session_conn("tenant-status-empty")
+    {:ok, view, _html} = live(conn, "/scoria")
 
     html = render_async(view)
 
@@ -119,11 +120,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "dashboard shell renders command palette and keyboard shortcut affordances" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
+    conn = session_conn()
     {:ok, view, _html} = live(conn, "/scoria")
 
     html = render_async(view)
@@ -146,12 +143,8 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     tenant_id = "tenant-status-attention"
     status_home_fixture(tenant_id)
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
-    {:ok, view, _html} = live(conn, "/scoria?tenant=#{tenant_id}")
+    conn = session_conn(tenant_id)
+    {:ok, view, _html} = live(conn, "/scoria")
 
     html = render_async(view)
 
@@ -163,11 +156,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "OrchestratorLive subscribes to PubSub and renders streaming traces" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
+    conn = session_conn()
     {:ok, view, _html} = live(conn, "/scoria")
     render_async(view)
 
@@ -182,17 +171,13 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "trace_opened and trace_span sequence renders span name incrementally" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
+    conn = session_conn()
     {:ok, view, _html} = live(conn, "/scoria")
     render_async(view)
 
     trace_id = "trace-incr-1"
 
-    send(view.pid, {:trace_opened, %{id: trace_id, tenant_id: "default"}})
+    send(view.pid, {:trace_opened, %{id: trace_id, tenant_id: "tenant-live"}})
 
     refute render(view) =~ "agent_turn"
 
@@ -202,16 +187,12 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "duplicate trace_opened is ignored idempotently" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
+    conn = session_conn()
     {:ok, view, _html} = live(conn, "/scoria")
     render_async(view)
 
     trace_id = "trace-dup-1"
-    header = %{id: trace_id, tenant_id: "default"}
+    header = %{id: trace_id, tenant_id: "tenant-live"}
 
     send(view.pid, {:trace_opened, header})
     send(view.pid, {:trace_span, trace_id, %{id: "span-1", name: "first_span"}})
@@ -223,11 +204,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "trace_span upsert replaces span with same id" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
+    conn = session_conn()
     {:ok, view, _html} = live(conn, "/scoria")
     render_async(view)
 
@@ -244,11 +221,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "trace_delta coalesces preview on LLM span row without global token strip" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
+    conn = session_conn()
     {:ok, view, html} = live(conn, "/scoria")
     render_async(view)
 
@@ -270,11 +243,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "trace stream is read-only and omits inline evidence replay and promotion controls" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
+    conn = session_conn()
     {:ok, view, _html} = live(conn, "/scoria")
     render_async(view)
 
@@ -293,11 +262,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   end
 
   test "trace stream renders compact deep links when a workflow run backs the trace" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
-
+    conn = session_conn()
     {:ok, view, _html} = live(conn, "/scoria")
     render_async(view)
 
@@ -323,10 +288,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
   test "review candidate deep links preserve queue evidence on the runtime landing surface" do
     candidate = review_candidate_fixture()
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.OrchestratorLiveTest.Endpoint)
+    conn = session_conn(candidate.tenant_id)
 
     {:ok, view, _html} =
       live(conn, "/scoria?runtime=session-review&review_candidate_id=#{candidate.id}")
