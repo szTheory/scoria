@@ -3,6 +3,7 @@ defmodule Scoria.Knowledge.Backends.Pgvector do
   import Pgvector.Ecto.Query
 
   alias Scoria.Knowledge.Chunk
+  alias Scoria.Knowledge.Scope
   alias Scoria.Repo
 
   def upsert_chunk_embeddings(chunks, embeddings) when is_list(chunks) and is_list(embeddings) do
@@ -16,11 +17,13 @@ defmodule Scoria.Knowledge.Backends.Pgvector do
   end
 
   def similar_chunks(query_embedding, opts \\ []) do
+    scope = Scope.from_opts!(opts)
     limit = Keyword.get(opts, :limit, 5)
     filters = Keyword.get(opts, :filters, %{})
     source_id = Map.get(filters, :source_id) || Map.get(filters, "source_id")
 
     Chunk
+    |> Scope.visible_to(scope)
     |> maybe_filter_source(source_id)
     |> order_by(
       [chunk],
