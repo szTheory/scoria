@@ -3,7 +3,16 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
 
   import Ecto.Query, warn: false
 
-  alias Scoria.Knowledge.{Chunk, Citation, RetrievalResult, RetrievalRun, Scope, Source}
+  alias Scoria.Knowledge.{
+    Chunk,
+    Citation,
+    CitationFormatter,
+    RetrievalResult,
+    RetrievalRun,
+    Scope,
+    Source
+  }
+
   alias Scoria.TestSupport.Migrations
 
   @tenant_a_scope [tenant_id: "tenant-a", actor_id: "actor-a", scope_kind: :tenant_shared]
@@ -363,6 +372,80 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
     end
   end
 
+  describe "citation tenant isolation" do
+    test "citation creation requires scope and persists audit evidence" do
+      assert {:ok, %Source{} = source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("citation-a"),
+                 scope: @tenant_a_scope
+               )
+
+      chunk = insert_chunk!(source, "citation-a", @tenant_a_scope)
+      [anchor] = Scoria.Knowledge.build_citations([Repo.preload(chunk, :source)], label: "[1]")
+
+      assert_raise ArgumentError, ~r/tenant_id is required/, fn ->
+        Scoria.Knowledge.create_citation(citation_attrs(anchor))
+      end
+
+      assert {:ok, %Citation{} = citation} =
+               Scoria.Knowledge.create_citation(citation_attrs(anchor),
+                 scope: @tenant_a_scope
+               )
+
+      assert citation.tenant_id == "tenant-a"
+      assert citation.actor_id == "actor-a"
+      assert citation.scope_kind == "tenant_shared"
+    end
+
+    test "citation anchor validation rejects foreign, legacy, source-mismatched, and digest-mismatched anchors" do
+      assert {:ok, %Source{} = tenant_a_source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("citation-tenant-a"),
+                 scope: @tenant_a_scope
+               )
+
+      assert {:ok, %Source{} = tenant_b_source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("citation-tenant-b"),
+                 scope: @tenant_b_scope
+               )
+
+      tenant_a_chunk = insert_chunk!(tenant_a_source, "citation-tenant-a", @tenant_a_scope)
+      tenant_b_chunk = insert_chunk!(tenant_b_source, "citation-tenant-b", @tenant_b_scope)
+      legacy_chunk = insert_legacy_chunk!(tenant_a_source, "citation-legacy-null")
+
+      [tenant_a_anchor] =
+        Scoria.Knowledge.build_citations([Repo.preload(tenant_a_chunk, :source)], label: "[1]")
+
+      [tenant_b_anchor] =
+        Scoria.Knowledge.build_citations([Repo.preload(tenant_b_chunk, :source)], label: "[2]")
+
+      legacy_anchor =
+        %{
+          source_id: tenant_a_source.id,
+          chunk_id: legacy_chunk.id,
+          chunk_digest: legacy_chunk.chunk_digest,
+          start_offset: legacy_chunk.start_offset,
+          end_offset: legacy_chunk.end_offset,
+          label: "[3]",
+          locator: %{title: "legacy"}
+        }
+
+      assert {:error, %{reason: :missing_chunk}} =
+               CitationFormatter.validate_anchor(tenant_b_anchor, scope: @tenant_a_scope)
+
+      assert {:error, %{reason: :missing_chunk}} =
+               CitationFormatter.validate_anchor(legacy_anchor, scope: @tenant_a_scope)
+
+      assert {:error, %{reason: :missing_chunk}} =
+               tenant_a_anchor
+               |> Map.put(:source_id, tenant_b_source.id)
+               |> CitationFormatter.validate_anchor(scope: @tenant_a_scope)
+
+      assert {:error, %{reason: :digest_mismatch}} =
+               tenant_a_anchor
+               |> Map.put(:chunk_digest, "wrong-digest")
+               |> CitationFormatter.validate_anchor(scope: @tenant_a_scope)
+    end
+  end
+
   defp column_exists?(table_name, column_name) do
     %{rows: [[exists?]]} =
       Repo.query!(
@@ -496,6 +579,12 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
     RetrievalResult
     |> where([result], result.retrieval_run_id == ^run.id)
     |> Repo.aggregate(:count)
+  end
+
+  defp citation_attrs(anchor) do
+    anchor
+    |> Map.put(:quote, "Chunk citation-a")
+    |> Map.put(:metadata, %{})
   end
 
   defp valid_chunk_attrs do
