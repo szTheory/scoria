@@ -1,6 +1,8 @@
 defmodule Scoria.Knowledge.TenantIsolationTest do
   use Scoria.KnowledgeCase, async: false
 
+  import Ecto.Query, warn: false
+
   alias Scoria.Knowledge.{Chunk, Citation, RetrievalResult, RetrievalRun, Scope, Source}
   alias Scoria.TestSupport.Migrations
 
@@ -257,6 +259,83 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
     end
   end
 
+  describe "retrieval run and result tenant isolation" do
+    test "retrieval run creation persists audit scope from scope option" do
+      assert {:ok, %RetrievalRun{} = run} =
+               Scoria.Knowledge.create_retrieval_run(%{
+                 query_text: "tenant scoped run",
+                 backend: "test",
+                 scope: @tenant_a_scope
+               })
+
+      assert run.tenant_id == "tenant-a"
+      assert run.actor_id == "actor-a"
+    end
+
+    test "retrieval results derive tenant audit fields from the run" do
+      assert {:ok, %Source{} = source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("retrieval-a"),
+                 scope: @tenant_a_scope
+               )
+
+      chunk = insert_chunk!(source, "retrieval-a", @tenant_a_scope)
+
+      assert {:ok, %RetrievalRun{} = run} =
+               Scoria.Knowledge.create_retrieval_run(%{
+                 query_text: "tenant scoped results",
+                 backend: "test",
+                 scope: @tenant_a_scope
+               })
+
+      assert {:ok, [%RetrievalResult{} = result]} =
+               Scoria.Knowledge.append_retrieval_results(run, [
+                 %{
+                   chunk_id: chunk.id,
+                   source_id: source.id,
+                   rank: 1,
+                   score: 0.99,
+                   tenant_id: "tenant-b",
+                   actor_id: "actor-b"
+                 }
+               ])
+
+      assert result.tenant_id == run.tenant_id
+      assert result.actor_id == run.actor_id
+    end
+
+    test "mixed cross-tenant or null-tenant retrieval results fail atomically" do
+      assert {:ok, %Source{} = tenant_a_source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("retrieval-tenant-a"),
+                 scope: @tenant_a_scope
+               )
+
+      assert {:ok, %Source{} = tenant_b_source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("retrieval-tenant-b"),
+                 scope: @tenant_b_scope
+               )
+
+      tenant_a_chunk = insert_chunk!(tenant_a_source, "retrieval-tenant-a", @tenant_a_scope)
+      tenant_b_chunk = insert_chunk!(tenant_b_source, "retrieval-tenant-b", @tenant_b_scope)
+      legacy_chunk = insert_legacy_chunk!(tenant_a_source, "retrieval-legacy-null")
+
+      assert {:ok, %RetrievalRun{} = run} =
+               Scoria.Knowledge.create_retrieval_run(%{
+                 query_text: "poisoned results",
+                 backend: "test",
+                 scope: @tenant_a_scope
+               })
+
+      assert {:error, _reason} =
+               Scoria.Knowledge.append_retrieval_results(run.id, [
+                 result_attrs(tenant_a_chunk, tenant_a_source, 1),
+                 result_attrs(tenant_b_chunk, tenant_b_source, 2),
+                 result_attrs(legacy_chunk, tenant_a_source, 3)
+               ])
+
+      assert 0 == result_count(run)
+    end
+  end
+
   defp column_exists?(table_name, column_name) do
     %{rows: [[exists?]]} =
       Repo.query!(
@@ -370,6 +449,25 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
       token_count: 2,
       metadata: %{}
     })
+  end
+
+  defp result_attrs(%Chunk{} = chunk, %Source{} = source, rank) do
+    %{
+      chunk_id: chunk.id,
+      source_id: source.id,
+      rank: rank,
+      score: 1.0 / rank,
+      tenant_id: "tenant-a",
+      actor_id: "actor-a",
+      metadata: %{},
+      backend_payload: %{}
+    }
+  end
+
+  defp result_count(%RetrievalRun{} = run) do
+    RetrievalResult
+    |> where([result], result.retrieval_run_id == ^run.id)
+    |> Repo.aggregate(:count)
   end
 
   defp valid_chunk_attrs do
