@@ -9,6 +9,7 @@ defmodule Scoria.Eval.OnlineScoring do
   alias Scoria.Eval.EvalRun
   alias Scoria.Eval.EvalSpec
   alias Scoria.Eval.EvalCampaignTarget
+  alias Scoria.Eval.Timing
   alias Scoria.Eval.Verdict
   alias Scoria.Repo
   alias Scoria.Repo.Trace
@@ -42,11 +43,21 @@ defmodule Scoria.Eval.OnlineScoring do
           dataset: dataset
         } = _context
       ) do
+    run_started_at = Timing.mark()
+
     with {:ok, candidate} <- fetch_candidate(target),
          {:ok, trace} <- fetch_trace(candidate.trace_id),
          {:ok, deterministic_scores, terminal?} <- deterministic_scores(candidate, trace, dataset),
          {:ok, result} <-
-           maybe_run_judge(eval_run, eval_spec, dataset, target, deterministic_scores, terminal?),
+           maybe_run_judge(
+             eval_run,
+             eval_spec,
+             dataset,
+             target,
+             deterministic_scores,
+             terminal?,
+             run_started_at
+           ),
          {:ok, candidate} <- sync_candidate(candidate.id, result.scores) do
       {:ok, Map.put(result, :candidate, candidate)}
     end
@@ -245,7 +256,11 @@ defmodule Scoria.Eval.OnlineScoring do
     trace_env = trace.attributes |> normalize_map() |> Map.get("env", "unknown")
     step = fetch_step(candidate.workflow_step_id)
 
-    case negative_signal(sample_reason, trace, step) do
+    score_started_at = Timing.mark()
+    signal = negative_signal(sample_reason, trace, step)
+    latency_ms = Timing.elapsed_ms(score_started_at)
+
+    case signal do
       nil ->
         {:ok, [], false}
 
@@ -266,7 +281,7 @@ defmodule Scoria.Eval.OnlineScoring do
                 "sample_reason" => sample_reason,
                 "negative_signal" => signal,
                 "trace_env" => trace_env,
-                "latency_ms" => 0,
+                "latency_ms" => latency_ms,
                 "cost_usd" => "0.0"
               }
             }
@@ -276,19 +291,35 @@ defmodule Scoria.Eval.OnlineScoring do
     end
   end
 
-  defp maybe_run_judge(eval_run, eval_spec, _dataset, _target, deterministic_scores, true) do
+  defp maybe_run_judge(
+         eval_run,
+         eval_spec,
+         _dataset,
+         _target,
+         deterministic_scores,
+         true,
+         run_started_at
+       ) do
     with {:ok, updated_run, scores} <- Eval.replace_eval_scores(eval_run, deterministic_scores),
          {:ok, completed_run} <-
            Eval.complete_eval_run(updated_run, %{
              status: "completed",
-             duration_ms: 0,
+             duration_ms: Timing.elapsed_ms(run_started_at),
              threshold_verdict: threshold_verdict(scores, eval_spec.threshold_policy)
            }) do
       {:ok, %{eval_run: completed_run, scores: scores}}
     end
   end
 
-  defp maybe_run_judge(eval_run, eval_spec, dataset, target, deterministic_scores, false) do
+  defp maybe_run_judge(
+         eval_run,
+         eval_spec,
+         dataset,
+         target,
+         deterministic_scores,
+         false,
+         _run_started_at
+       ) do
     Scoria.Eval.JudgeRunner.run_existing(eval_run, %{
       eval_spec: eval_spec,
       dataset: dataset,

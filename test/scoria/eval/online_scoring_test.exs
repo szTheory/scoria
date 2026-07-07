@@ -171,6 +171,8 @@ defmodule Scoria.Eval.OnlineScoringTest do
     assert candidate.score_status == "failed"
     assert candidate.scorer_kind == "deterministic_rule"
     assert eval_run.threshold_verdict == "failed"
+    assert is_integer(eval_run.duration_ms)
+    assert eval_run.duration_ms >= 0
 
     assert [%Score{} = score] = scores
     assert score.scorer_kind == "deterministic_rule"
@@ -178,6 +180,8 @@ defmodule Scoria.Eval.OnlineScoringTest do
     assert score.status == "failed"
     assert score.score == 0.0
     assert score.metadata["negative_signal"] == negative_signal
+    assert is_integer(score.metadata["latency_ms"])
+    assert score.metadata["latency_ms"] >= 0
     assert score.evidence_refs["candidate_id"] == candidate.id
     assert score.evidence_refs["workflow_step_id"] == candidate.workflow_step_id
   end
