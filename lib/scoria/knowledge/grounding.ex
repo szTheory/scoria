@@ -2,10 +2,16 @@ defmodule Scoria.Knowledge.Grounding do
   alias Scoria.Knowledge.CitationFormatter
   alias Scoria.Knowledge.Scope
 
-  def score_citation_presence(%{citations: citations}) when is_list(citations) do
-    score = if citations == [], do: 0.0, else: 1.0
+  def score_citation_presence(%{citations: citations} = payload) when is_list(citations) do
+    expected_answerable = answerability_label(payload)
+    score = citation_presence_score(citations, expected_answerable)
     status = if score == 1.0, do: "passed", else: "failed"
-    %{status: status, score: score, details: %{count: length(citations)}}
+
+    details =
+      %{count: length(citations)}
+      |> maybe_put_expected_answerable(expected_answerable)
+
+    %{status: status, score: score, details: details}
   end
 
   def score_citation_presence(_payload), do: %{status: "failed", score: 0.0, details: %{count: 0}}
@@ -99,6 +105,32 @@ defmodule Scoria.Knowledge.Grounding do
   defp status(score) when score >= 0.4, do: "warning"
   defp status(_score), do: "failed"
 
+  defp citation_presence_score([], false), do: 1.0
+  defp citation_presence_score([_ | _], false), do: 0.0
+  defp citation_presence_score([_ | _], true), do: 1.0
+  defp citation_presence_score([], true), do: 0.0
+  defp citation_presence_score([], _missing_label), do: 0.0
+  defp citation_presence_score([_ | _], _missing_label), do: 1.0
+
+  defp answerability_label(payload) do
+    case fetch(payload, :expected_answerable) do
+      value when is_boolean(value) -> value
+      _ -> answerable_alias(payload)
+    end
+  end
+
+  defp answerable_alias(payload) do
+    case fetch(payload, :answerable) do
+      value when is_boolean(value) -> value
+      _ -> nil
+    end
+  end
+
+  defp maybe_put_expected_answerable(details, nil), do: details
+
+  defp maybe_put_expected_answerable(details, expected_answerable),
+    do: Map.put(details, :expected_answerable, expected_answerable)
+
   defp citation_validity_score(citations, invalid) do
     total = max(length(citations), 1)
     score = (total - invalid) / total
@@ -121,4 +153,12 @@ defmodule Scoria.Knowledge.Grounding do
   defp attrs_to_map(attrs) when is_list(attrs), do: Enum.into(attrs, %{})
   defp attrs_to_map(attrs) when is_map(attrs), do: attrs
   defp attrs_to_map(nil), do: %{}
+
+  defp fetch(attrs, key) when is_map(attrs) do
+    cond do
+      Map.has_key?(attrs, key) -> Map.get(attrs, key)
+      Map.has_key?(attrs, Atom.to_string(key)) -> Map.get(attrs, Atom.to_string(key))
+      true -> nil
+    end
+  end
 end

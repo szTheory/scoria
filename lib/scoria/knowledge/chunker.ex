@@ -1,14 +1,21 @@
 defmodule Scoria.Knowledge.Chunker do
+  @moduledoc """
+  Splits knowledge sources into deterministic, non-overlapping chunks.
+  """
+
   @callback chunk(Scoria.Knowledge.Source.t() | map(), keyword()) :: [map()]
 
   defmodule Default do
+    @moduledoc """
+    Section/paragraph chunker with deterministic non-overlapping offsets and digests.
+    """
+
     @behaviour Scoria.Knowledge.Chunker
 
     @impl true
-    def chunk(source, opts) do
+    def chunk(source, _opts) do
       body = Map.get(source, :body) || Map.get(source, "body") || ""
       source_digest = Map.get(source, :digest) || Map.get(source, "digest") || ""
-      overlap = Keyword.get(opts, :overlap, 24)
 
       body
       |> split_sections()
@@ -28,7 +35,7 @@ defmodule Scoria.Knowledge.Chunker do
             "#{source_digest}:#{chunk.start_offset}:#{chunk.end_offset}"
           )
 
-        next_offset = max(chunk.end_offset - overlap, chunk.end_offset)
+        next_offset = chunk.end_offset
         {chunk, next_offset}
       end)
       |> elem(0)

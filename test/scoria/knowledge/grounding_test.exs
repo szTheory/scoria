@@ -7,6 +7,66 @@ defmodule Scoria.Knowledge.GroundingTest do
   @scope [tenant_id: "tenant-a", actor_id: "actor-a", scope_kind: :tenant_shared]
   @other_scope [tenant_id: "tenant-b", actor_id: "actor-b", scope_kind: :tenant_shared]
 
+  test "score_citation_presence/1 respects explicit answerability labels" do
+    citation = %{chunk_id: Ecto.UUID.generate()}
+
+    assert %{
+             status: "passed",
+             score: 1.0,
+             details: %{count: 1, expected_answerable: true}
+           } =
+             Grounding.score_citation_presence(%{
+               expected_answerable: true,
+               citations: [citation]
+             })
+
+    answerable_without_citations =
+      Grounding.score_citation_presence(%{expected_answerable: true, citations: []})
+
+    assert answerable_without_citations.status == "failed"
+    assert answerable_without_citations.score == 0.0
+    assert answerable_without_citations.details == %{count: 0, expected_answerable: true}
+
+    assert %{
+             status: "passed",
+             score: 1.0,
+             details: %{count: 0, expected_answerable: false}
+           } = Grounding.score_citation_presence(%{expected_answerable: false, citations: []})
+
+    unanswerable_with_citations =
+      Grounding.score_citation_presence(%{
+        expected_answerable: false,
+        citations: [citation]
+      })
+
+    assert unanswerable_with_citations.status == "failed"
+    assert unanswerable_with_citations.score == 0.0
+    assert unanswerable_with_citations.details == %{count: 1, expected_answerable: false}
+  end
+
+  test "score_citation_presence/1 supports string keys and answerable alias only for booleans" do
+    citation = %{chunk_id: Ecto.UUID.generate()}
+
+    assert %{status: "passed", details: %{expected_answerable: false}} =
+             Grounding.score_citation_presence(%{"expected_answerable" => false, citations: []})
+
+    assert %{status: "passed", details: %{expected_answerable: true}} =
+             Grounding.score_citation_presence(%{"answerable" => true, citations: [citation]})
+
+    assert %{status: "failed", details: %{count: 0} = details} =
+             Grounding.score_citation_presence(%{answerable: "false", citations: []})
+
+    refute Map.has_key?(details, :expected_answerable)
+  end
+
+  test "score_citation_presence/1 preserves missing-label empty-citation failure" do
+    result = Grounding.score_citation_presence(%{citations: []})
+
+    assert result.status == "failed"
+    assert result.score == 0.0
+    assert result.details == %{count: 0}
+  end
+
   test "score_grounding/2 persists unsupported_claims and retrieval_ranking checks before judge review" do
     assert {:ok, source} =
              Knowledge.ingest_source(

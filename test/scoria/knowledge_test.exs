@@ -35,6 +35,45 @@ defmodule Scoria.KnowledgeTest do
     assert Enum.all?(chunks, &(is_integer(&1.start_offset) and is_integer(&1.end_offset)))
   end
 
+  test "default chunker produces non-overlapping chunks even when overlap is requested" do
+    chunks = Scoria.Knowledge.Chunker.Default.chunk(@source_attrs, overlap: 999)
+
+    assert [_first, _second | _] = chunks
+
+    chunks
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.each(fn [previous, next] ->
+      assert next.start_offset >= previous.end_offset
+    end)
+
+    default_digests =
+      @source_attrs
+      |> Scoria.Knowledge.Chunker.Default.chunk([])
+      |> Enum.map(& &1.chunk_digest)
+
+    assert Enum.map(chunks, & &1.chunk_digest) == default_digests
+  end
+
+  test "repeat ingest keeps chunk digests and offsets stable when overlap option is supplied" do
+    assert {:ok, %Source{} = source} =
+             Knowledge.ingest_source(@source_attrs, scope: @scope, overlap: 999)
+
+    first_chunks =
+      source.id
+      |> Knowledge.list_source_chunks(scope: @scope)
+      |> Enum.map(&{&1.chunk_digest, &1.start_offset, &1.end_offset})
+
+    assert {:ok, %Source{} = rerun_source} =
+             Knowledge.ingest_source(@source_attrs, scope: @scope, overlap: 999)
+
+    rerun_chunks =
+      rerun_source.id
+      |> Knowledge.list_source_chunks(scope: @scope)
+      |> Enum.map(&{&1.chunk_digest, &1.start_offset, &1.end_offset})
+
+    assert rerun_chunks == first_chunks
+  end
+
   test "reembed_source/2 updates persisted embeddings" do
     assert {:ok, %Source{} = source} = Knowledge.ingest_source(@source_attrs, scope: @scope)
     assert {:ok, chunks} = Knowledge.reembed_source(source)
