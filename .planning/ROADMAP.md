@@ -118,7 +118,7 @@ See `.planning/MILESTONES.md` for full closeout history.
   2. A documented tenant-resolution/authorization callback makes `tenant_id` host-asserted, not a spoofable `?tenant=` param; no in-lib role/RBAC model is added.
   3. Dashboard LiveViews resolve tenant from the host-asserted source; the unauthenticated `params["tenant"] → "default"` spoof path is closed (a `?tenant=<victim>` request no longer returns another tenant's data).
 
-**Plans**: 3/7 plans executed
+**Plans**: 7/7 plans complete
 **Wave 1**
 
 - [x] 44-01-PLAN.md — Router `on_mount:` pass-through plus `ScoriaWeb.DashboardScope` resolver/gate
@@ -136,7 +136,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 44-07-PLAN.md — Docs, source guard, and focused Phase 44 proof
+- [x] 44-07-PLAN.md — Docs, source guard, and focused Phase 44 proof (completed 2026-07-07)
 
 ### Phase 45: Correctness sweep + fail-closed proof & closeout
 
@@ -159,7 +159,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
 | 43. Knowledge tenant isolation                 | v3.4      | 5/5 | Complete   | 2026-07-07 |
-| 44. Dashboard auth seam                        | v3.4      | 6/7 | In Progress|  |
+| 44. Dashboard auth seam                        | v3.4      | 7/7 | Complete   | 2026-07-07 |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
 ## Previous Milestones
