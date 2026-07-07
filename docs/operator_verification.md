@@ -170,6 +170,8 @@ mix test.knowledge
 
 That lane is explicitly optional. It verifies pgvector-backed retrieval and grounding behavior after the core runtime and operator surface already work.
 
+For maintainer proof, `mix test.knowledge --warnings-as-errors` verifies missing-tenant raises, cross-tenant retrieval exclusion, actor-scoped narrowing, and citation scope evidence. Knowledge schema changes use the separate `KnowledgeMigrationRepo` path, record versions in `schema_migrations_knowledge`, and live under `priv/repo/knowledge_migrations/` rather than the default host migration lane.
+
 ## Maintainer release-preview lane
 
 When you are validating Scoria's publish-facing package and docs surface, use the bounded release-preview lane:

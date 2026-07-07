@@ -222,6 +222,8 @@ mix scoria.pgvector.bootstrap
 mix test.knowledge
 ```
 
+Retrieval and citations in this lane are tenant-scoped; the host supplies tenant/actor identity, and missing tenant scope fails closed instead of broadening a query.
+
 The knowledge lane does not define first adoption. You do not need pgvector, knowledge tables, retrieval, grounding, semantic fast-path setup, or `mix test.knowledge` to prove the core runtime, identity, approval, and operator-evidence path.
 
 Optional remote connector lane:

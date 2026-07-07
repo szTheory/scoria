@@ -136,6 +136,8 @@ mix scoria.pgvector.bootstrap
 mix test.knowledge
 ```
 
+The host app supplies tenant/actor identity for this lane. Scoria enforces that scope at storage, retrieval, citation, and grounding boundaries; metadata filters can narrow results inside a tenant but are not security proof.
+
 This lane is explicitly optional. It is not required to prove the core runtime, handoff, or semantic fast-path adoption story, and it is not a prerequisite for first adoption.
 
 ### 5. Remote connector lane
