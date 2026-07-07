@@ -14,13 +14,11 @@ defmodule ScoriaWeb.WorkflowLive.Show do
       skeleton: 1
     ]
 
-  alias Scoria.Eval
   alias Scoria.PromptRegistry.PromptTemplate
   alias Scoria.Repo
   alias Scoria.Runtime
-  alias Scoria.SRE
-  alias Scoria.SRE.Incident
   alias Scoria.Workflows
+  alias ScoriaWeb.OperatorSurface
 
   alias ScoriaWeb.{
     DelegatedEvidenceComponent,
@@ -37,18 +35,18 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   @impl true
   def mount(%{"id" => run_id} = params, _session, socket) do
     review_candidate_id = Map.get(params, "review_candidate_id")
+    tenant_id = socket.assigns.tenant_id
 
-    if connected?(socket) do
-      Workflows.subscribe_run(run_id)
-    end
+    socket = load_run(socket, tenant_id, run_id)
 
     socket =
       socket
-      |> load_run(run_id)
-      |> assign(:review_candidate, load_review_candidate(run_id, review_candidate_id))
-      |> assign_async(:compacted_memories, fn ->
-        {:ok, %{compacted_memories: Runtime.list_compacted_memories_for_run(run_id)}}
-      end)
+      |> assign(
+        :review_candidate,
+        load_review_candidate(tenant_id, socket.assigns.run, review_candidate_id)
+      )
+      |> maybe_subscribe_to_run()
+      |> maybe_load_compacted_memories()
 
     {:ok, socket}
   end
@@ -93,10 +91,11 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   end
 
   @impl true
-  def handle_info({:workflow_updated, run_id}, socket), do: {:noreply, load_run(socket, run_id)}
+  def handle_info({:workflow_updated, run_id}, socket),
+    do: {:noreply, load_run(socket, socket.assigns.tenant_id, run_id)}
 
   def handle_info({:approval_requested, run_id, _approval_id}, socket),
-    do: {:noreply, load_run(socket, run_id)}
+    do: {:noreply, load_run(socket, socket.assigns.tenant_id, run_id)}
 
   @impl true
   def handle_info({:promote_successful}, socket) do
@@ -123,67 +122,73 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   def render(assigns) do
     ~H"""
     <div class="scoria-dashboard">
-      <.object_header
-        parent_label="Runs"
-        parent_path={(assigns[:scoria_base] || "") <> "/workflows"}
-        object_type="Run"
-        object_id={@run.id}
-        status={@run.status}
-        key_scalar={run_key_scalar(@run)}
-        provenance={replay_provenance(@run, @replay_provenance_strip)}
-        origin={@origin_context}
-      />
-
-      <.evidence_action_row class="mb-6" aria-label="Run next steps">
-        <a href={replay_run_path(@run, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">
-          Replay run
-        </a>
-        <a
-          :if={!promote_span_disabled?(@selected_step_id, %{})}
-          href={workflow_dataset_builder_path(@run, @selected_step_id, @selected_source_variant, assigns[:scoria_base] || "")}
-          class="scoria-button scoria-button--primary scoria-button--sm"
-        >
-          Promote in Dataset Builder
-        </a>
-        <a
-          :if={@linked_incident}
-          href={linked_incident_path(@run, @linked_incident, assigns[:scoria_base] || "")}
-          class="scoria-button scoria-button--ghost scoria-button--sm"
-        >
-          Open incident
-        </a>
-        <a
-          :if={@prompt_target_id}
-          href={prompt_release_path(@prompt_target_id, @run, assigns[:scoria_base] || "")}
-          class="scoria-button scoria-button--ghost scoria-button--sm"
-        >
-          Open prompt
-        </a>
-        <a :if={@run.session_id} href={runtime_presence_path(@run, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">
-          View associated runtime presence
-        </a>
-      </.evidence_action_row>
-
-      <.panel :if={@run.execution_mode == "replay" and map_size(@replay_provenance_strip) > 0} class="mb-6">
-        <:eyebrow>Replay branch</:eyebrow>
-        <:title>Replay provenance strip</:title>
-        <:actions>
-          <.badge tone={:trace} label="Replay branch" dot={false} />
-        </:actions>
-        <p>
-          Typed replay lineage stays visible on the workflow page instead of hiding in raw payloads.
-        </p>
-        <.evidence_rows rows={[
-          {"source run", provenance_value(@replay_provenance_strip.source_run_id)},
-          {"source checkpoint", provenance_value(@replay_provenance_strip.source_checkpoint_id)},
-          {"execution mode", provenance_value(@replay_provenance_strip.execution_mode)},
-          {"Override summary", override_summary(@replay_provenance_strip)},
-          {"Latest replay disposition summary", disposition_summary(@replay_provenance_strip)},
-          {"Run identity", "replay run #{@run.id}"}
-        ]} />
+      <.panel :if={!@run} class="mb-6">
+        <:title>Workflow run not found</:title>
+        <p>This workflow run either does not exist or is not available for the current tenant.</p>
       </.panel>
 
-      <div :if={@promotion_notice || @baseline_notice} class="mb-6 space-y-3">
+      <div :if={@run}>
+        <.object_header
+          parent_label="Runs"
+          parent_path={(assigns[:scoria_base] || "") <> "/workflows"}
+          object_type="Run"
+          object_id={@run.id}
+          status={@run.status}
+          key_scalar={run_key_scalar(@run)}
+          provenance={replay_provenance(@run, @replay_provenance_strip)}
+          origin={@origin_context}
+        />
+
+        <.evidence_action_row class="mb-6" aria-label="Run next steps">
+          <a href={replay_run_path(@run, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">
+            Replay run
+          </a>
+          <a
+            :if={!promote_span_disabled?(@selected_step_id, %{})}
+            href={workflow_dataset_builder_path(@run, @selected_step_id, @selected_source_variant, assigns[:scoria_base] || "")}
+            class="scoria-button scoria-button--primary scoria-button--sm"
+          >
+            Promote in Dataset Builder
+          </a>
+          <a
+            :if={@linked_incident}
+            href={linked_incident_path(@run, @linked_incident, assigns[:scoria_base] || "")}
+            class="scoria-button scoria-button--ghost scoria-button--sm"
+          >
+            Open incident
+          </a>
+          <a
+            :if={@prompt_target_id}
+            href={prompt_release_path(@prompt_target_id, @run, assigns[:scoria_base] || "")}
+            class="scoria-button scoria-button--ghost scoria-button--sm"
+          >
+            Open prompt
+          </a>
+          <a :if={@run.session_id} href={runtime_presence_path(@run, assigns[:scoria_base] || "")} class="scoria-button scoria-button--ghost scoria-button--sm">
+            View associated runtime presence
+          </a>
+        </.evidence_action_row>
+
+        <.panel :if={@run.execution_mode == "replay" and map_size(@replay_provenance_strip) > 0} class="mb-6">
+          <:eyebrow>Replay branch</:eyebrow>
+          <:title>Replay provenance strip</:title>
+          <:actions>
+            <.badge tone={:trace} label="Replay branch" dot={false} />
+          </:actions>
+          <p>
+            Typed replay lineage stays visible on the workflow page instead of hiding in raw payloads.
+          </p>
+          <.evidence_rows rows={[
+            {"source run", provenance_value(@replay_provenance_strip.source_run_id)},
+            {"source checkpoint", provenance_value(@replay_provenance_strip.source_checkpoint_id)},
+            {"execution mode", provenance_value(@replay_provenance_strip.execution_mode)},
+            {"Override summary", override_summary(@replay_provenance_strip)},
+            {"Latest replay disposition summary", disposition_summary(@replay_provenance_strip)},
+            {"Run identity", "replay run #{@run.id}"}
+          ]} />
+        </.panel>
+
+        <div :if={@promotion_notice || @baseline_notice} class="mb-6 space-y-3">
         <.panel :if={@promotion_notice}>
           <:eyebrow>Promotion succeeded</:eyebrow>
           <:actions>
@@ -208,83 +213,109 @@ defmodule ScoriaWeb.WorkflowLive.Show do
             <span class="font-mono">v<%= @baseline_notice[:dataset_version] || @baseline_notice["dataset_version"] %></span>.
           </p>
         </.panel>
-      </div>
+        </div>
 
-      <.panel :if={@review_candidate} class="mb-6">
-        <:eyebrow>Review candidate evidence</:eyebrow>
-        <:title>{@review_candidate.rationale}</:title>
-        <.evidence_rows rows={[
-          {"Severity", @review_candidate.severity},
-          {"trace", @review_candidate.trace_id},
-          {"candidate", @review_candidate.id}
-        ]} />
-      </.panel>
-
-      <div class="scoria-page-split">
-        <.panel flush={true}>
-          <:title>Trace-First Workflow Tree</:title>
-          <WorkflowTreeComponent.workflow_tree steps={@steps} selected_step_id={@selected_step_id} />
+        <.panel :if={@review_candidate} class="mb-6">
+          <:eyebrow>Review candidate evidence</:eyebrow>
+          <:title>{@review_candidate.rationale}</:title>
+          <.evidence_rows rows={[
+            {"Severity", @review_candidate.severity},
+            {"trace", @review_candidate.trace_id},
+            {"candidate", @review_candidate.id}
+          ]} />
         </.panel>
 
-        <WorkflowDetailPanelComponent.workflow_detail_panel
-          step={@selected_step}
-          checkpoint={@selected_checkpoint}
-          comparison={@selected_comparison}
-          semantic_evidence={@run_detail.semantic_evidence}
-          selected_source_variant={@selected_source_variant}
-          selected_comparison_entry={@selected_comparison_entry}
-          promotion_context={@promotion_context}
-        />
-      </div>
-
-      <DelegatedEvidenceComponent.render delegated_handoffs={@delegated_handoffs} />
-
-      <.async_result :let={memories} assign={@compacted_memories}>
-        <:loading><.skeleton rows={3} class="mt-6" /></:loading>
-        <:failed :let={_failure}>
-          <.panel class="mt-6">
-            <:title>Memory evidence unavailable</:title>
-            <:actions>
-              <.badge tone={:fail} label="Load failed" dot={false} />
-            </:actions>
-            <p>Failed to load memories.</p>
+        <div class="scoria-page-split">
+          <.panel flush={true}>
+            <:title>Trace-First Workflow Tree</:title>
+            <WorkflowTreeComponent.workflow_tree steps={@steps} selected_step_id={@selected_step_id} />
           </.panel>
-        </:failed>
-        <MemoryNotebookComponent.render :if={memories != []} memories={memories} runtime_instance_id={@run.session_id || "unknown"} />
-      </.async_result>
 
-      <.panel class="mt-6">
-        <:title>Timeline</:title>
-        <ol id="workflow-timeline" class="space-y-2">
-          <li :for={event <- @events} class="scoria-span">
-            <span class="font-medium"><%= event.event_type %></span>
-            <span class="ml-2 font-mono text-xs"><%= event.sequence %></span>
-          </li>
-        </ol>
-      </.panel>
+          <WorkflowDetailPanelComponent.workflow_detail_panel
+            step={@selected_step}
+            checkpoint={@selected_checkpoint}
+            comparison={@selected_comparison}
+            semantic_evidence={@run_detail.semantic_evidence}
+            selected_source_variant={@selected_source_variant}
+            selected_comparison_entry={@selected_comparison_entry}
+            promotion_context={@promotion_context}
+          />
+        </div>
 
-      <RemoteInvocationEvidenceComponent.render
-        :if={@remote_invocation_evidence.approvals != []}
-        evidence={@remote_invocation_evidence}
-      />
+        <DelegatedEvidenceComponent.render delegated_handoffs={@delegated_handoffs} />
 
-      <.modal id="promote-modal" show={@promote_step_id != nil} on_dismiss="close_modal" max_width="768px">
-        <:title_slot>Promote workflow evidence</:title_slot>
-        <.live_component
-          module={ScoriaWeb.DatasetLive.PromoteComponent}
-          id="promote-component"
-          step={Enum.find(@steps, &(&1.id == @promote_step_id))}
-          promotion_context={@promotion_context}
-          scoria_base={assigns[:scoria_base] || ""}
+        <.async_result :let={memories} assign={@compacted_memories}>
+          <:loading><.skeleton rows={3} class="mt-6" /></:loading>
+          <:failed :let={_failure}>
+            <.panel class="mt-6">
+              <:title>Memory evidence unavailable</:title>
+              <:actions>
+                <.badge tone={:fail} label="Load failed" dot={false} />
+              </:actions>
+              <p>Failed to load memories.</p>
+            </.panel>
+          </:failed>
+          <MemoryNotebookComponent.render :if={memories != []} memories={memories} runtime_instance_id={@run.session_id || "unknown"} />
+        </.async_result>
+
+        <.panel class="mt-6">
+          <:title>Timeline</:title>
+          <ol id="workflow-timeline" class="space-y-2">
+            <li :for={event <- @events} class="scoria-span">
+              <span class="font-medium"><%= event.event_type %></span>
+              <span class="ml-2 font-mono text-xs"><%= event.sequence %></span>
+            </li>
+          </ol>
+        </.panel>
+
+        <RemoteInvocationEvidenceComponent.render
+          :if={@remote_invocation_evidence.approvals != []}
+          evidence={@remote_invocation_evidence}
         />
-      </.modal>
+
+        <.modal id="promote-modal" show={@promote_step_id != nil} on_dismiss="close_modal" max_width="768px">
+          <:title_slot>Promote workflow evidence</:title_slot>
+          <.live_component
+            module={ScoriaWeb.DatasetLive.PromoteComponent}
+            id="promote-component"
+            step={Enum.find(@steps, &(&1.id == @promote_step_id))}
+            promotion_context={@promotion_context}
+            scoria_base={assigns[:scoria_base] || ""}
+          />
+        </.modal>
+      </div>
     </div>
     """
   end
 
-  defp load_run(socket, run_id) do
-    run = Workflows.get_run_tree!(run_id)
-    detail = Runtime.get_run_detail!(run_id)
+  defp load_run(socket, tenant_id, run_id) do
+    case OperatorSurface.fetch_tenant_run_detail(tenant_id, run_id) do
+      nil -> assign_run_not_found(socket)
+      detail -> assign_run_detail(socket, detail)
+    end
+  end
+
+  defp assign_run_not_found(socket) do
+    socket
+    |> assign(:page_title, "Workflow run not found")
+    |> assign(:run, nil)
+    |> assign(:linked_incident, nil)
+    |> assign(:prompt_target_id, nil)
+    |> assign(:run_detail, nil)
+    |> assign(:steps, [])
+    |> assign(:events, [])
+    |> assign(:comparison_by_step, %{})
+    |> assign(:replay_provenance_strip, %{})
+    |> assign(:delegated_handoffs, [])
+    |> assign(:selected_source_variant, "original")
+    |> assign(:remote_invocation_evidence, %{approvals: []})
+    |> assign_new(:promote_step_id, fn -> nil end)
+    |> assign_new(:promotion_notice, fn -> nil end)
+    |> assign_new(:baseline_notice, fn -> nil end)
+    |> assign_selection(nil)
+  end
+
+  defp assign_run_detail(socket, %{run: run, detail: detail} = run_detail) do
     steps = decorate_steps(detail.steps)
     selected_step_id = socket.assigns[:selected_step_id] || default_step_id(steps)
 
@@ -294,7 +325,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     socket
     |> assign(:page_title, "Workflow Run")
     |> assign(:run, run)
-    |> assign(:linked_incident, linked_incident(run.id))
+    |> assign(:linked_incident, Map.get(run_detail, :linked_incident))
     |> assign(:prompt_target_id, prompt_target_id(run))
     |> assign(:run_detail, detail)
     |> assign(:steps, steps)
@@ -303,12 +334,31 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     |> assign(:replay_provenance_strip, detail.replay_provenance_strip)
     |> assign(:delegated_handoffs, detail.delegated_handoffs)
     |> assign(:selected_source_variant, selected_source_variant)
-    |> assign(:remote_invocation_evidence, SRE.remote_invocation_evidence(run_id))
+    |> assign(
+      :remote_invocation_evidence,
+      Map.get(run_detail, :remote_invocation_evidence, %{approvals: []})
+    )
     |> assign_new(:promote_step_id, fn -> nil end)
     |> assign_new(:promotion_notice, fn -> nil end)
     |> assign_new(:baseline_notice, fn -> nil end)
     |> assign_selection(selected_step_id)
   end
+
+  defp maybe_subscribe_to_run(%{assigns: %{run: %{id: run_id}}} = socket) do
+    if connected?(socket), do: Workflows.subscribe_run(run_id)
+
+    socket
+  end
+
+  defp maybe_subscribe_to_run(socket), do: socket
+
+  defp maybe_load_compacted_memories(%{assigns: %{run: %{id: run_id}}} = socket) do
+    assign_async(socket, :compacted_memories, fn ->
+      {:ok, %{compacted_memories: Runtime.list_compacted_memories_for_run(run_id)}}
+    end)
+  end
+
+  defp maybe_load_compacted_memories(socket), do: socket
 
   defp assign_selection(socket, nil) do
     socket
@@ -510,14 +560,6 @@ defmodule ScoriaWeb.WorkflowLive.Show do
 
   defp origin_query(noun, id), do: URI.encode_query([{"from", "#{noun}:#{id}"}])
 
-  defp linked_incident(run_id) do
-    Incident
-    |> where([incident], incident.workflow_run_id == ^run_id)
-    |> order_by([incident], desc: incident.last_seen_at)
-    |> limit(1)
-    |> Repo.one()
-  end
-
   defp prompt_target_id(run) do
     [run.metadata, run.replay_overrides]
     |> Kernel.++(
@@ -558,12 +600,11 @@ defmodule ScoriaWeb.WorkflowLive.Show do
     end
   end
 
-  defp load_review_candidate(_run_id, nil), do: nil
+  defp load_review_candidate(_tenant_id, _run, nil), do: nil
 
-  defp load_review_candidate(run_id, candidate_id) do
-    case Eval.get_review_candidate(candidate_id) do
-      %{workflow_run_id: ^run_id} = candidate -> candidate
-      _ -> nil
-    end
+  defp load_review_candidate(_tenant_id, nil, _candidate_id), do: nil
+
+  defp load_review_candidate(tenant_id, run, candidate_id) do
+    OperatorSurface.fetch_tenant_review_candidate(tenant_id, run, candidate_id)
   end
 end

@@ -13,10 +13,13 @@ defmodule ScoriaWeb.OperatorSurface do
   alias Decimal, as: D
   alias Scoria.Connectors
   alias Scoria.Connectors.Connector
+  alias Scoria.Eval
   alias Scoria.Eval.OnlineScoreCandidate
   alias Scoria.Repo
   alias Scoria.Runtime
+  alias Scoria.SRE
   alias Scoria.Workflows
+  alias Scoria.Workflows.Run
 
   alias Scoria.SRE.{
     AlertEvent,
@@ -185,6 +188,73 @@ defmodule ScoriaWeb.OperatorSurface do
     |> Repo.aggregate(:count)
   rescue
     _error -> 0
+  end
+
+  # ── Workflows (tenant rollup + routed detail) ──────────────────────────────
+
+  @doc "Recent workflow runs for a tenant, newest first — the /workflows list."
+  def list_tenant_runs(tenant_id) when is_binary(tenant_id) and tenant_id != "" do
+    Run
+    |> where([run], run.tenant_id == ^tenant_id)
+    |> order_by([run], desc: run.inserted_at)
+    |> limit(50)
+    |> Repo.all()
+  rescue
+    _error -> []
+  end
+
+  def list_tenant_runs(_tenant_id), do: []
+
+  @doc "Tenant-scoped workflow detail lookup for routed workflow pages."
+  def fetch_tenant_run_detail(tenant_id, run_id)
+      when is_binary(tenant_id) and tenant_id != "" and is_binary(run_id) do
+    with {:ok, id} <- Ecto.UUID.cast(run_id),
+         %Run{} <- fetch_visible_run(tenant_id, id) do
+      %{
+        run: Workflows.get_run_tree!(id),
+        detail: Runtime.get_run_detail!(id),
+        linked_incident: find_tenant_incident_for_run(tenant_id, id),
+        remote_invocation_evidence: SRE.remote_invocation_evidence(id)
+      }
+    else
+      _ -> nil
+    end
+  rescue
+    _error -> nil
+  end
+
+  def fetch_tenant_run_detail(_tenant_id, _run_id), do: nil
+
+  @doc "Tenant-scoped review candidate projection for workflow detail deep links."
+  def fetch_tenant_review_candidate(tenant_id, %{id: run_id}, candidate_id)
+      when is_binary(tenant_id) and tenant_id != "" and is_binary(run_id) and
+             is_binary(candidate_id) do
+    with {:ok, id} <- Ecto.UUID.cast(candidate_id),
+         true <- tenant_review_candidate?(tenant_id, run_id, id) do
+      Eval.get_review_candidate(id)
+    else
+      _ -> nil
+    end
+  rescue
+    _error -> nil
+  end
+
+  def fetch_tenant_review_candidate(_tenant_id, _run, _candidate_id), do: nil
+
+  defp fetch_visible_run(tenant_id, run_id) do
+    Run
+    |> where([run], run.tenant_id == ^tenant_id and run.id == ^run_id)
+    |> Repo.one()
+  end
+
+  defp tenant_review_candidate?(tenant_id, run_id, candidate_id) do
+    Repo.exists?(
+      from(candidate in OnlineScoreCandidate,
+        where:
+          candidate.id == ^candidate_id and candidate.tenant_id == ^tenant_id and
+            candidate.workflow_run_id == ^run_id
+      )
+    )
   end
 
   # ── Incidents (tenant rollup) ──────────────────────────────────────────────

@@ -5,24 +5,16 @@ defmodule ScoriaWeb.WorkflowLive.Index do
   """
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
 
-  import Ecto.Query, warn: false
   import ScoriaWeb.UI
 
-  alias Scoria.Repo
-  alias Scoria.Workflows.Run
+  alias ScoriaWeb.OperatorSurface
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(:page_title, "Runs")
-     |> assign(:runs, list_runs())}
-  end
-
-  defp list_runs do
-    Repo.all(from(r in Run, order_by: [desc: r.inserted_at], limit: 50))
-  rescue
-    _ -> []
+     |> assign(:runs, OperatorSurface.list_tenant_runs(socket.assigns.tenant_id))}
   end
 
   @impl true
