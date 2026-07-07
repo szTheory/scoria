@@ -1,5 +1,6 @@
 defmodule ScoriaWeb.PromptLive.IndexTest.Router do
   use Phoenix.Router
+  import ScoriaWeb.Router
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -8,6 +9,7 @@ defmodule ScoriaWeb.PromptLive.IndexTest.Router do
 
   scope "/" do
     pipe_through(:browser)
+    scoria_dashboard("/scoria")
   end
 end
 
@@ -25,9 +27,12 @@ end
 
 defmodule ScoriaWeb.PromptLive.IndexTest do
   use Scoria.EvalCase, async: true
+  import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
   @endpoint ScoriaWeb.PromptLive.IndexTest.Endpoint
+  @tenant "tenant-prompt-index"
+  @actor "prompt-index-operator"
 
   alias Scoria.PromptRegistry
 
@@ -49,12 +54,7 @@ defmodule ScoriaWeb.PromptLive.IndexTest do
   end
 
   test "renders an empty state when no prompt versions exist" do
-    conn =
-      Phoenix.ConnTest.build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.PromptLive.IndexTest.Endpoint)
-
-    {:ok, _view, html} = live_isolated(conn, ScoriaWeb.PromptLive.Index)
+    {:ok, _view, html} = live(scoped_conn(), "/scoria/prompts")
 
     assert html =~ "Prompt Registry"
     assert html =~ "No prompt versions yet"
@@ -72,12 +72,7 @@ defmodule ScoriaWeb.PromptLive.IndexTest do
         user_template: "Translate this: {{text}}"
       })
 
-    conn =
-      Phoenix.ConnTest.build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.PromptLive.IndexTest.Endpoint)
-
-    {:ok, view, html} = live_isolated(conn, ScoriaWeb.PromptLive.Index)
+    {:ok, view, html} = live(scoped_conn(), "/scoria/prompts")
 
     # Initial render should list the template
     assert html =~ "Prompt Registry"
@@ -126,5 +121,11 @@ defmodule ScoriaWeb.PromptLive.IndexTest do
     # If the logic upgrades version, it would be version 2, but for draft it's usually 1
     # Actually `update_prompt_template` might create a new version if not draft.
     # The requirement is that we can edit it.
+  end
+
+  defp scoped_conn do
+    build_conn()
+    |> Plug.Test.init_test_session(%{"tenant_id" => @tenant, "actor_id" => @actor})
+    |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.PromptLive.IndexTest.Endpoint)
   end
 end
