@@ -101,7 +101,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 43-04-PLAN.md — Pgvector and Scrypath tenant-qualified retrieval
+- [x] 43-04-PLAN.md — Pgvector and Scrypath tenant-qualified retrieval
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -140,7 +140,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | Phase                                          | Milestone | Plans Complete | Status      | Completed |
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
-| 43. Knowledge tenant isolation                 | v3.4      | 3/5 | In Progress|  |
+| 43. Knowledge tenant isolation                 | v3.4      | 4/5 | In Progress|  |
 | 44. Dashboard auth seam                        | v3.4      | 0/?            | Not started | -         |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
