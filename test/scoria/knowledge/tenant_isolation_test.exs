@@ -334,6 +334,33 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
 
       assert 0 == result_count(run)
     end
+
+    test "retrieval excludes closer chunks from another tenant before ranking" do
+      assert {:ok, %Source{} = tenant_a_source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("rank-tenant-a"),
+                 scope: @tenant_a_scope
+               )
+
+      assert {:ok, %Source{} = tenant_b_source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("rank-tenant-b"),
+                 scope: @tenant_b_scope
+               )
+
+      tenant_a_chunk =
+        insert_chunk!(tenant_a_source, "rank-tenant-a", @tenant_a_scope, [0.1, 0.1, 0.1])
+
+      tenant_b_chunk =
+        insert_chunk!(tenant_b_source, "rank-tenant-b", @tenant_b_scope, [0.9, 0.9, 0.9])
+
+      assert {:ok, %{results: [result]}} =
+               Scoria.Knowledge.retrieve("tenant scoped ranking",
+                 query_embedding: [0.9, 0.9, 0.9],
+                 scope: @tenant_a_scope
+               )
+
+      assert result.chunk_id == tenant_a_chunk.id
+      refute result.chunk_id == tenant_b_chunk.id
+    end
   end
 
   defp column_exists?(table_name, column_name) do
@@ -420,7 +447,7 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
     }
   end
 
-  defp insert_chunk!(%Source{} = source, suffix, scope) do
+  defp insert_chunk!(%Source{} = source, suffix, scope, embedding \\ nil) do
     %Chunk{}
     |> Chunk.changeset(%{
       source_id: source.id,
@@ -433,6 +460,7 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
       start_offset: 0,
       end_offset: 12,
       token_count: 2,
+      embedding: embedding,
       metadata: %{scope: inspect(scope)}
     })
     |> Repo.insert!()
