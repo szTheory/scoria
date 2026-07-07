@@ -24,6 +24,8 @@ Scoria is a Phoenix-native runtime with a narrow public surface — **start with
 
 Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Use mix test.runtime_to_handoff as the bounded escalation proof lane when the same durable run needs narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
 
+Optional lanes follow the scope doctrine SSOT in `.planning/PROJECT.md ## Constraints`: Scoria owns proof mechanisms such as retrieval filtering, eval gates, and dashboard seams while the host owns identity, policy values, and business truth.
+
 ## Who This Is For
 
 Scoria is for Phoenix teams that want AI runtime governance, durable workflow state, operator-visible evidence, and executable verification without turning their app into a hosted agent platform.

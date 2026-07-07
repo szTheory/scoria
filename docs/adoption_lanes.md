@@ -49,6 +49,8 @@ end
 
 `scope_resolver:` may be a module implementing `ScoriaWeb.DashboardScope.Resolver` or an MFA tuple. Return `{:ok, %{tenant_id: current_account.id, actor_id: current_user.id}}` after the host has already authenticated the operator and checked tenant membership. Authorization remains delegated to the host; Scoria does not introduce a role model.
 
+Scope doctrine mechanism-vs-noun boundary: Scoria owns the dashboard scope seam and trusted scope record; the host owns authentication, authorization, membership policy, and role values.
+
 Query params do not choose tenants for the dashboard. A URL such as `/scoria?tenant=other-account` can be a host-defined hint only if your resolver chooses to inspect it after authentication and membership checks; Scoria's default resolver ignores it.
 
 The bare `scoria_dashboard "/scoria"` form still compiles. It uses the session-backed default resolver for compatibility with existing installer/dev/example mounts, so host apps can still provide the same tenant and actor keys in the session:
@@ -157,6 +159,8 @@ mix test.knowledge
 ```
 
 The host app supplies tenant/actor identity for this lane. Scoria enforces that scope at storage, retrieval, citation, and grounding boundaries; metadata filters can narrow results inside a tenant but are not security proof.
+
+Scope doctrine mechanism-vs-noun boundary: Scoria owns retrieval filtering, citation validation, and persisted evidence; the host owns tenant/actor identity, business truth, and end-user semantics.
 
 This lane is explicitly optional. It is not required to prove the core runtime, handoff, or semantic fast-path adoption story, and it is not a prerequisite for first adoption.
 

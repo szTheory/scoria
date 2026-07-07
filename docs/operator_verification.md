@@ -23,6 +23,8 @@ This lane does not require semantic fast-path setup, knowledge/pgvector bootstra
 
 The host app authenticates the operator and asserts dashboard tenant scope. Query params do not choose tenants for the dashboard. Authorization remains delegated to the host; Scoria does not introduce a role model.
 
+Dashboard proof follows the scope doctrine: authorization remains delegated to the host while Scoria ships the seam and records trusted scope.
+
 Use Phoenix auth and membership checks before Scoria's dashboard scope gate:
 
 ```elixir
@@ -110,6 +112,8 @@ What this proves:
 - the Scoria-owned core tables are available through copied host-app migrations
 - baseline runtime defaults are present
 - the app passes the bounded default-lane adoption verifier
+
+Eval proof follows the scope doctrine: Scoria owns scorer execution, score latency, and release gates; the host owns prompts, business truth, policy values, and end-user semantics.
 
 Use `mix test.adoption` as the canonical default-lane verifier when you want one bounded proof that covers installer truth, the fresh-host install/migrate/route/runtime smoke, and the repo-local adoption guards without waiting for the whole suite. Maintainers can still use `mix test` as broader repo-health context.
 The bounded verifier carries the slow generated-host proof under a local proof-only timeout; support guidance should not widen that into a suite-wide timeout change or a `mix test.adoption --trace` contract.
@@ -218,6 +222,8 @@ mix test.knowledge
 
 That lane is explicitly optional. It verifies pgvector-backed retrieval and grounding behavior after the core runtime and operator surface already work.
 
+Knowledge proof follows the scope doctrine: Scoria owns retrieval filtering, citation validation, and persisted evidence; the host supplies tenant/actor identity.
+
 For maintainer proof, `mix test.knowledge --warnings-as-errors` verifies missing-tenant raises, cross-tenant retrieval exclusion, actor-scoped narrowing, and citation scope evidence. Knowledge schema changes use the separate `KnowledgeMigrationRepo` path, record versions in `schema_migrations_knowledge`, and live under `priv/repo/knowledge_migrations/` rather than the default host migration lane.
 
 ## Maintainer release-preview lane
@@ -276,6 +282,7 @@ Use `mix test.runtime_to_handoff` as the canonical bounded escalation proof lane
 Use `mix test.semantic_fast_path` only for the canonical semantic fast-path troubleshooting lane.
 Use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
 Use `mix test` as broader repo-health context when you want to classify failures outside the canonical proof lane.
+Phase 45 closeout proof: `.planning/phases/45-correctness-sweep-fail-closed-proof-closeout/45-VERIFICATION.md` ties eval, knowledge, dashboard, and correctness-sweep repairs back to the scope doctrine SSOT.
 
 ## Warning baseline and inventory
 
