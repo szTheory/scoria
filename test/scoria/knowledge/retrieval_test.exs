@@ -2,6 +2,7 @@ defmodule Scoria.Knowledge.RetrievalTest do
   use Scoria.KnowledgeCase, async: false
 
   alias Scoria.Knowledge
+  alias Scoria.Knowledge.Chunk
   alias Scoria.Knowledge.RetrievalRun
   alias Scoria.Repo
   alias Scoria.Repo.Span
@@ -70,6 +71,38 @@ defmodule Scoria.Knowledge.RetrievalTest do
     assert result.actor_id == "actor-a"
   end
 
+  test "retrieve/2 persists the pgvector-projected cosine score unchanged" do
+    assert {:ok, source} =
+             Knowledge.create_source(
+               %{
+                 kind: "doc",
+                 title: "known vector retrieval",
+                 uri: "file:///known-vector.md",
+                 body: "known vector retrieval"
+               },
+               scope: @scope
+             )
+
+    exact_chunk = insert_chunk!(source, "exact", [1.0, 0.0, 0.0])
+    _orthogonal_chunk = insert_chunk!(source, "orthogonal", [0.0, 1.0, 0.0])
+
+    assert {:ok, %{run: %RetrievalRun{} = run, results: [result | _]}} =
+             Knowledge.retrieve("known vector",
+               query_embedding: [1.0, 0.0, 0.0],
+               filters: %{source_id: source.id},
+               scope: @scope
+             )
+
+    [persisted_result | _] = Knowledge.list_retrieval_results(run)
+
+    assert result.id == persisted_result.id
+    assert persisted_result.chunk_id == exact_chunk.id
+    assert persisted_result.rank == 1
+    assert_in_delta persisted_result.score, 1.0, 0.000001
+    assert persisted_result.tenant_id == "tenant-a"
+    assert persisted_result.actor_id == "actor-a"
+  end
+
   test "retrieve/2 passes normalized scope to the backend before persistence" do
     assert {:ok, %{run: %RetrievalRun{}, results: []}} =
              Knowledge.retrieve("scoped backend",
@@ -102,5 +135,26 @@ defmodule Scoria.Knowledge.RetrievalTest do
     end
 
     refute_received {:backend_opts, _embedding, _opts}
+  end
+
+  defp insert_chunk!(source, suffix, embedding) do
+    scope = Scoria.Knowledge.Scope.for_write!(@scope)
+
+    %Chunk{}
+    |> Chunk.changeset(%{
+      source_id: source.id,
+      tenant_id: scope.tenant_id,
+      actor_id: scope.actor_id,
+      scope_kind: scope.scope_kind,
+      chunk_digest: "retrieval-#{suffix}",
+      body: "Retrieval #{suffix}",
+      heading_path: [],
+      start_offset: 0,
+      end_offset: 16,
+      token_count: 2,
+      embedding: embedding,
+      metadata: %{}
+    })
+    |> Repo.insert!()
   end
 end

@@ -80,6 +80,35 @@ defmodule Scoria.Knowledge.PgvectorTest do
     refute Enum.any?(results, &(&1.chunk_id == tenant_b_chunk.id))
   end
 
+  test "similar_chunks/2 projects raw cosine similarity and excludes nil embeddings" do
+    assert {:ok, source} = Knowledge.create_source(source_attrs("score-proof"), scope: @scope)
+
+    exact_chunk = insert_chunk!(source, "exact", @scope, [1.0, 0.0, 0.0])
+    orthogonal_chunk = insert_chunk!(source, "orthogonal", @scope, [0.0, 1.0, 0.0])
+    nil_chunk = insert_chunk!(source, "nil", @scope, nil)
+
+    assert {:ok, results} = Pgvector.similar_chunks([1.0, 0.0, 0.0], scope: @scope, limit: 5)
+
+    assert [exact_result, orthogonal_result] = results
+    assert exact_result.chunk_id == exact_chunk.id
+    assert_in_delta exact_result.score, 1.0, 0.000001
+    assert exact_result.body == exact_chunk.body
+
+    assert orthogonal_result.chunk_id == orthogonal_chunk.id
+    assert_in_delta orthogonal_result.score, 0.0, 0.000001
+
+    refute Enum.any?(results, &(&1.chunk_id == nil_chunk.id))
+  end
+
+  test "similar_chunks/2 fails loudly for invalid vector dimensions" do
+    assert {:ok, source} = Knowledge.create_source(source_attrs("dimension"), scope: @scope)
+    _chunk = insert_chunk!(source, "dimension", @scope, [1.0, 0.0, 0.0])
+
+    assert_raise Postgrex.Error, fn ->
+      Pgvector.similar_chunks([1.0, 0.0], scope: @scope)
+    end
+  end
+
   test "similar_chunks/2 applies source filters only inside tenant scope" do
     assert {:ok, source_a} = Knowledge.create_source(source_attrs("source-a"), scope: @scope)
     assert {:ok, source_b} = Knowledge.create_source(source_attrs("source-b"), scope: @scope)
