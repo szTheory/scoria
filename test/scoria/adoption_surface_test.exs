@@ -22,6 +22,7 @@ defmodule Scoria.AdoptionSurfaceTest do
   @gap_ledger "docs/bounded_handoffs.md"
   @semantic_guide "docs/semantic_fast_path.md"
   @operator_guide "docs/operator_verification.md"
+  @maintainer_guide "docs/MAINTAINERS.md"
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
   @release_preview_command VerificationLanes.command(:release_preview)
@@ -353,6 +354,33 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert moduledoc_text =~ "SCORIA_CHECK_RESULT"
     assert moduledoc_text =~ "mix scoria.install --check"
     assert moduledoc_text =~ "docs/operator_verification.md"
+  end
+
+  test "dashboard auth seam docs teach host-owned scope without Scoria-owned authorization" do
+    lane_guide = File.read!(@lane_guide)
+    operator_guide = File.read!(@operator_guide)
+    maintainer_guide = File.read!(@maintainer_guide)
+
+    for content <- [lane_guide, operator_guide] do
+      assert content =~ "The host app authenticates the operator and asserts dashboard tenant scope."
+      assert content =~ "scoria_dashboard \"/scoria\""
+      assert content =~ "on_mount:"
+      assert content =~ "scope_resolver:"
+      assert content =~ "Query params do not choose tenants for the dashboard."
+      assert content =~ "Authorization remains delegated to the host; Scoria does not introduce a role model."
+      assert content =~ "This Scoria dashboard is not available for this session."
+    end
+
+    assert lane_guide =~ "bare `scoria_dashboard \"/scoria\"` form still compiles"
+    assert lane_guide =~ "session-backed default resolver"
+
+    assert operator_guide =~ "mount the dashboard with host-authenticated scope"
+    assert operator_guide =~ "tenant query hint does not change the asserted dashboard scope"
+
+    assert maintainer_guide =~ "Phase 44 dashboard scope proof"
+    assert maintainer_guide =~ "Review Queue, Eval Workbench, Prompt Registry, and Workflow Index now mount through DashboardScope"
+    refute maintainer_guide =~ "do not support `?tenant=` query-param switching"
+    refute maintainer_guide =~ "they list all records globally"
   end
 
   test "public modules expose compiled moduledocs on current Elixir" do
