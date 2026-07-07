@@ -46,7 +46,14 @@ findings:
   warning: 0
   info: 0
   total: 3
-status: issues_found
+status: fixed
+resolution:
+  fixed_commit: bc293bba
+  fixed_at: 2026-07-07T20:53:20Z
+  fixed_findings:
+    - CR-01
+    - CR-02
+    - CR-03
 ---
 
 # Phase 44: Code Review Report
@@ -54,11 +61,27 @@ status: issues_found
 **Reviewed:** 2026-07-07T20:42:55Z
 **Depth:** standard
 **Files Reviewed:** 37
-**Status:** issues_found
+**Status:** fixed
 
 ## Summary
 
 Reviewed the Phase 44 dashboard-auth changes across the listed docs, LiveViews, router/scope helpers, operator surface, prompt release workflow, and focused tests. I found three blocker issues: one release gate can be bypassed with forged LiveView events, one connector drawer path leaks cross-tenant connector details, and prompt approval violates the single-active-version release invariant.
+
+## Resolution Update
+
+All three blocker findings were fixed in `bc293bba`:
+
+- CR-01: `request_release` and `approve_release` now re-check release readiness server-side before side effects; forged event regression tests prove no approval is created and pending approvals stay pending when evidence is incomplete.
+- CR-02: connector drawer lookup now uses the assigned tenant scope through `OperatorSurface.connector_drawer/2` and `Connectors.get_connector_drawer/2`; forged tenant B drawer events render no tenant B details.
+- CR-03: prompt release approval now promotes through `PromptRegistry.activate_prompt_template!/1`, clearing `is_current` from sibling versions and archiving prior active versions before activating the approved draft.
+
+Verification after the fix:
+
+- `MIX_ENV=test mix test test/scoria_web/live/dashboard_auth_prompts_test.exs test/scoria_web/live/dashboard_auth_home_connectors_incidents_test.exs test/scoria/workflows/prompt_release_test.exs test/scoria/connectors/adoption_lane_test.exs --warnings-as-errors` — 17 tests, 0 failures.
+- `MIX_ENV=test mix test test/scoria_web/router_test.exs test/scoria_web/dashboard_scope_test.exs test/scoria_web/dashboard_scope_source_guard_test.exs test/scoria/adoption_surface_test.exs test/scoria_web/live/dashboard_auth_home_connectors_incidents_test.exs test/scoria_web/live/dashboard_auth_approvals_test.exs test/scoria_web/live/dashboard_auth_workflows_test.exs test/scoria_web/live/dashboard_auth_quality_data_test.exs test/scoria_web/live/dashboard_auth_prompts_test.exs --warnings-as-errors` — 64 tests, 0 failures.
+- `MIX_ENV=test mix test test/scoria_web/live/prompt_live/release_workbench_live_test.exs test/scoria/prompt_registry_test.exs --warnings-as-errors` — 13 tests, 0 failures.
+- `make build` — passed.
+- `MIX_ENV=test mix test` — still has unrelated residual failures: 3 doctests, 1030 tests, 20 failures (48 excluded), matching the known broad-suite drift class outside the Phase 44 proof.
 
 ## Narrative Findings (AI reviewer)
 
