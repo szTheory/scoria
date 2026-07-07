@@ -120,9 +120,13 @@ defmodule Scoria.Knowledge do
   end
 
   def create_retrieval_run(attrs \\ %{}) do
+    attrs = attrs_to_map(attrs)
+    scope = Scope.from_opts!(attrs)
+
     %RetrievalRun{}
     |> RetrievalRun.changeset(
       attrs
+      |> Scope.put_audit_attrs(scope)
       |> Map.new()
       |> Map.put_new(:backend, inspect(Pgvector))
       |> Map.put_new(:status, "pending")
@@ -135,15 +139,34 @@ defmodule Scoria.Knowledge do
     do: append_retrieval_results(run_id, results)
 
   def append_retrieval_results(run_id, results) do
-    results
-    |> Enum.map(fn attrs ->
-      attrs
-      |> Map.new()
-      |> Map.put(:retrieval_run_id, run_id)
-      |> then(&RetrievalResult.changeset(%RetrievalResult{}, &1))
-      |> Repo.insert()
+    Multi.new()
+    |> Multi.run(:run, fn repo, _changes ->
+      case repo.get(RetrievalRun, run_id) do
+        nil -> {:error, :retrieval_run_not_found}
+        %RetrievalRun{} = run -> {:ok, run}
+      end
     end)
-    |> collect_multi_results()
+    |> Multi.run(:validated_results, fn repo, %{run: run} ->
+      validate_retrieval_results(repo, run, results)
+    end)
+    |> Multi.run(:results, fn repo, %{run: run, validated_results: validated_results} ->
+      run_scope = retrieval_run_scope(run)
+
+      validated_results
+      |> Enum.map(fn attrs ->
+        attrs
+        |> Scope.put_audit_attrs(run_scope)
+        |> Map.put(:retrieval_run_id, run.id)
+        |> then(&RetrievalResult.changeset(%RetrievalResult{}, &1))
+        |> repo.insert()
+      end)
+      |> collect_multi_results()
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{results: persisted_results}} -> {:ok, persisted_results}
+      {:error, _op, reason, _changes} -> {:error, reason}
+    end
   end
 
   def create_grounding_score(attrs \\ %{}) do
@@ -163,6 +186,8 @@ defmodule Scoria.Knowledge do
   end
 
   def retrieve(query_text, opts \\ []) do
+    scope = Scope.from_opts!(opts)
+    opts = Keyword.put(opts, :scope, scope)
     backend = Keyword.get(opts, :backend, Pgvector)
     retriever = Keyword.get(opts, :retriever)
     limit = Keyword.get(opts, :limit, 5)
@@ -195,6 +220,7 @@ defmodule Scoria.Knowledge do
              filters: filters,
              trace_id: opts[:trace_id],
              span_id: opts[:span_id],
+             scope: scope,
              status: "completed",
              latency_ms: System.monotonic_time(:millisecond) - started_at
            }),
@@ -291,6 +317,73 @@ defmodule Scoria.Knowledge do
   defp attrs_to_map(attrs) when is_list(attrs), do: Enum.into(attrs, %{})
   defp attrs_to_map(attrs) when is_map(attrs), do: attrs
   defp attrs_to_map(nil), do: %{}
+
+  defp validate_retrieval_results(repo, %RetrievalRun{} = run, results) do
+    scope = retrieval_run_scope(run)
+
+    results
+    |> Enum.map(&attrs_to_map/1)
+    |> Enum.reduce_while({:ok, []}, fn attrs, {:ok, acc} ->
+      case validate_retrieval_result(repo, attrs, scope) do
+        :ok -> {:cont, {:ok, [attrs | acc]}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, validated} -> {:ok, Enum.reverse(validated)}
+      error -> error
+    end
+  end
+
+  defp validate_retrieval_result(repo, attrs, scope) do
+    chunk_id = get_attr(attrs, :chunk_id)
+    source_id = get_attr(attrs, :source_id)
+
+    cond do
+      is_nil(chunk_id) ->
+        {:error, {:invalid_retrieval_result, :missing_chunk_id}}
+
+      is_nil(source_id) ->
+        {:error, {:invalid_retrieval_result, :missing_source_id}}
+
+      not visible_source?(repo, source_id, scope) ->
+        {:error, {:invalid_retrieval_result, :source_not_visible, source_id}}
+
+      not visible_chunk?(repo, chunk_id, source_id, scope) ->
+        {:error, {:invalid_retrieval_result, :chunk_not_visible, chunk_id}}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp visible_source?(repo, source_id, scope) do
+    Source
+    |> Scope.visible_to(scope)
+    |> where([source], source.id == ^source_id)
+    |> select([_source], true)
+    |> limit(1)
+    |> repo.one()
+    |> Kernel.==(true)
+  end
+
+  defp visible_chunk?(repo, chunk_id, source_id, scope) do
+    Chunk
+    |> Scope.visible_to(scope)
+    |> where([chunk], chunk.id == ^chunk_id and chunk.source_id == ^source_id)
+    |> select([_chunk], true)
+    |> limit(1)
+    |> repo.one()
+    |> Kernel.==(true)
+  end
+
+  defp retrieval_run_scope(%RetrievalRun{} = run) do
+    Scope.from_opts!(tenant_id: run.tenant_id, actor_id: run.actor_id)
+  end
+
+  defp get_attr(attrs, key) do
+    Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
+  end
 
   defp digest_body(attrs) do
     body =

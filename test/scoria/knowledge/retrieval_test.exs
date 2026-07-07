@@ -11,12 +11,15 @@ defmodule Scoria.Knowledge.RetrievalTest do
 
   test "retrieve/2 persists RetrievalRun and ordered results" do
     assert {:ok, source} =
-             Knowledge.ingest_source(%{
-               kind: "doc",
-               title: "retrieval",
-               uri: "file:///retrieval.md",
-               body: "retrieval evidence keeps every answer challengeable."
-             }, scope: @scope)
+             Knowledge.ingest_source(
+               %{
+                 kind: "doc",
+                 title: "retrieval",
+                 uri: "file:///retrieval.md",
+                 body: "retrieval evidence keeps every answer challengeable."
+               },
+               scope: @scope
+             )
 
     [chunk | _] = Knowledge.list_source_chunks(source.id, scope: @scope)
 
