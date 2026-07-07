@@ -13,6 +13,11 @@ defmodule ScoriaWeb.RouterTest do
     def on_mount(:scoria_access, _params, _session, socket), do: {:cont, socket}
   end
 
+  defmodule ScopeResolver do
+    def resolve(_params, _session, _socket),
+      do: {:ok, %{tenant_id: "tenant-router", actor_id: "actor-router"}}
+  end
+
   defmodule CallerLayout do
     def render(_template, assigns), do: assigns
   end
@@ -56,6 +61,24 @@ defmodule ScoriaWeb.RouterTest do
     scope "/" do
       pipe_through(:browser)
       scoria_dashboard("/scoria", on_mount: [HostHookOne, {HostHookTwo, :scoria_access}])
+    end
+  end
+
+  defmodule ScopeResolverRouter do
+    use Phoenix.Router
+    import ScoriaWeb.Router
+
+    pipeline :browser do
+      plug(:accepts, ["html"])
+    end
+
+    scope "/" do
+      pipe_through(:browser)
+
+      scoria_dashboard("/scoria",
+        on_mount: HostHook,
+        scope_resolver: ScopeResolver
+      )
     end
   end
 
@@ -134,6 +157,14 @@ defmodule ScoriaWeb.RouterTest do
   test "hook ordering keeps DashboardNav last after host hooks and dashboard scope" do
     assert List.last(hook_ids(HostHookListRouter)) == {ScoriaWeb.DashboardNav, :default}
     assert Enum.at(hook_ids(HostHookListRouter), -2) == {ScoriaWeb.DashboardScope, :default}
+  end
+
+  test "scope_resolver router opt becomes the DashboardScope hook argument" do
+    assert hook_ids(ScopeResolverRouter) == [
+             {HostHook, :default},
+             {ScoriaWeb.DashboardScope, ScopeResolver},
+             {ScoriaWeb.DashboardNav, :default}
+           ]
   end
 
   test "caller opts cannot remove DashboardNav or replace Scoria root layout" do
