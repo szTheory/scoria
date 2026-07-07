@@ -36,6 +36,8 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
   alias Scoria.Repo
 
   @endpoint ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest.Endpoint
+  @tenant "tenant-release-workbench"
+  @actor "release-workbench-operator"
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest.Endpoint,
@@ -113,7 +115,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
       spec: spec,
       conn:
         build_conn()
-        |> Plug.Test.init_test_session(%{})
+        |> Plug.Test.init_test_session(%{"tenant_id" => @tenant, "actor_id" => @actor})
         |> Plug.Conn.put_private(
           :phoenix_endpoint,
           ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest.Endpoint
@@ -176,6 +178,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
         Eval.create_eval_run(%{
           eval_spec_id: spec.id,
           runner_mode: "offline_replay",
+          tenant_id: @tenant,
           prompt_template_id: active.id,
           prompt_version: active.version
         })
@@ -192,6 +195,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
         Eval.create_eval_run(%{
           eval_spec_id: spec.id,
           runner_mode: "offline_replay",
+          tenant_id: @tenant,
           prompt_template_id: draft.id,
           prompt_version: draft.version
         })
@@ -245,6 +249,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
         Eval.create_eval_run(%{
           eval_spec_id: spec.id,
           runner_mode: "offline_replay",
+          tenant_id: @tenant,
           prompt_template_id: active.id,
           prompt_version: active.version
         })
@@ -261,6 +266,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
         Eval.create_eval_run(%{
           eval_spec_id: spec.id,
           runner_mode: "offline_replay",
+          tenant_id: @tenant,
           prompt_template_id: draft.id,
           prompt_version: draft.version
         })
@@ -290,7 +296,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
     test "Reject CTA records a rejection and remains on the page", %{conn: conn, draft: draft} do
       alias Scoria.Workflows.PromptRelease
-      {:ok, _} = PromptRelease.start_release_workflow(draft.id, "admin-1")
+      {:ok, _} = PromptRelease.start_release_workflow(draft.id, "admin-1", tenant_id: @tenant)
 
       {:ok, view, _html} = live(conn, "/scoria/prompts/#{draft.id}/release")
 
@@ -306,13 +312,22 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLiveTest do
 
   describe "WR-04: mount/2 assigns a safe :origin_context default" do
     test "render/1 does not depend on handle_params/3 having run first", %{draft: draft} do
-      session = %{"actor_id" => "op-1", "tenant_id" => "default"}
+      session = %{}
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          scoria_scope: %ScoriaWeb.DashboardScope{tenant_id: @tenant, actor_id: "op-1"},
+          tenant_id: @tenant,
+          actor_id: "op-1"
+        }
+      }
 
       {:ok, socket} =
         ScoriaWeb.PromptLive.ReleaseWorkbenchLive.mount(
           %{"id" => draft.id},
           session,
-          %Phoenix.LiveView.Socket{}
+          socket
         )
 
       rendered = ScoriaWeb.PromptLive.ReleaseWorkbenchLive.render(socket.assigns)

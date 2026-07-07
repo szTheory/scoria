@@ -13,10 +13,9 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   @origin_nouns ~w(incident review run dataset eval prompt)
 
   @impl true
-  def mount(%{"id" => id}, session, socket) do
-    # T-26-03: Validate operator's session identity
-    actor_id = session["actor_id"] || session["operator_id"] || "operator-fallback"
-    tenant_id = session["tenant_id"] || "default"
+  def mount(%{"id" => id}, _session, socket) do
+    tenant_id = tenant_id_from_scope(socket)
+    actor_id = actor_id_from_scope(socket)
 
     # Fetch draft template
     draft = PromptRegistry.get_prompt_template!(id)
@@ -40,9 +39,9 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
       |> assign(:approval_notice, nil)
       |> assign(:show_approve_modal, false)
       |> assign(:show_reject_modal, false)
-      |> assign(:draft_run, fetch_eval_run(draft.id))
-      |> assign(:active_run, fetch_eval_run(if active, do: active.id, else: nil))
-      |> assign(:pending_approval, fetch_pending_approval(draft.id))
+      |> assign(:draft_run, fetch_eval_run(tenant_id, draft.id))
+      |> assign(:active_run, fetch_eval_run(tenant_id, if(active, do: active.id, else: nil)))
+      |> assign(:pending_approval, fetch_pending_approval(tenant_id, draft.id))
       # T-41-02: render/1 reads @origin_context unconditionally; assign a safe
       # default here so render never KeyErrors if it ever runs before
       # handle_params/3. handle_params/3 (unchanged) still overrides this.
@@ -61,25 +60,26 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
      )}
   end
 
-  defp fetch_eval_run(nil), do: nil
+  defp fetch_eval_run(_tenant_id, nil), do: nil
 
-  defp fetch_eval_run(prompt_id) do
+  defp fetch_eval_run(tenant_id, prompt_id) do
     Repo.one(
       from(r in EvalRun,
-        where: r.prompt_template_id == ^prompt_id,
+        where: r.tenant_id == ^tenant_id and r.prompt_template_id == ^prompt_id,
         order_by: [desc: r.inserted_at],
         limit: 1
       )
     )
   end
 
-  defp fetch_pending_approval(prompt_id) do
+  defp fetch_pending_approval(tenant_id, prompt_id) do
     alias Scoria.Observe.Approval
 
     Repo.one(
       from(a in Approval,
         where:
-          a.tool_name == "prompt_release" and a.status == "pending" and
+          a.tenant_id == ^tenant_id and a.tool_name == "prompt_release" and
+            a.status == "pending" and
             fragment("?->>'template_id' = ?", a.arguments, ^prompt_id),
         order_by: [desc: a.inserted_at],
         limit: 1
@@ -107,11 +107,11 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   def handle_event("request_release", _params, socket) do
     draft_id = socket.assigns.draft.id
     actor_id = socket.assigns.actor_id
-    alias Scoria.Workflows.PromptRelease
+    tenant_id = socket.assigns.tenant_id
 
-    case PromptRelease.start_release_workflow(draft_id, actor_id) do
+    case PromptRelease.start_release_workflow(draft_id, actor_id, tenant_id: tenant_id) do
       {:ok, _} ->
-        {:noreply, assign(socket, pending_approval: fetch_pending_approval(draft_id))}
+        {:noreply, assign(socket, pending_approval: fetch_pending_approval(tenant_id, draft_id))}
 
       _ ->
         {:noreply, assign(socket, rejection_notice: "Failed to request release.")}
@@ -121,7 +121,6 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   def handle_event("approve_release", _params, socket) do
     actor_id = socket.assigns.actor_id
     approval = socket.assigns.pending_approval
-    alias Scoria.Workflows.PromptRelease
 
     if approval do
       case PromptRelease.approve(approval.id, "approved", %{actor_id: actor_id}) do
@@ -146,7 +145,6 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   def handle_event("reject_release", _params, socket) do
     actor_id = socket.assigns.actor_id
     approval = socket.assigns.pending_approval
-    alias Scoria.Workflows.PromptRelease
 
     if approval do
       case PromptRelease.approve(approval.id, "rejected", %{actor_id: actor_id}) do
@@ -345,6 +343,49 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   defp prompt_release_status(%{status: "draft"}), do: "draft_blocked"
   defp prompt_release_status(%{status: status}) when is_binary(status), do: status
   defp prompt_release_status(_draft), do: "draft_blocked"
+
+  defp tenant_id_from_scope(%{assigns: %{scoria_scope: %{tenant_id: tenant_id}}}),
+    do: required_scope_id!(tenant_id, :tenant_id)
+
+  defp tenant_id_from_scope(%{assigns: %{tenant_id: tenant_id}}),
+    do: required_scope_id!(tenant_id, :tenant_id)
+
+  defp tenant_id_from_scope(_socket) do
+    raise ArgumentError,
+          "dashboard tenant scope is required before mounting prompt release workbench"
+  end
+
+  defp actor_id_from_scope(%{assigns: %{scoria_scope: %{actor_id: actor_id}}}) do
+    optional_scope_id!(actor_id, :actor_id)
+  end
+
+  defp actor_id_from_scope(%{assigns: %{actor_id: actor_id}}),
+    do: optional_scope_id!(actor_id, :actor_id)
+
+  defp actor_id_from_scope(_socket), do: nil
+
+  defp required_scope_id!(value, field) do
+    case optional_scope_id!(value, field) do
+      nil -> raise ArgumentError, "#{field} is required before mounting prompt release workbench"
+      id -> id
+    end
+  end
+
+  defp optional_scope_id!(value, _field) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> nil
+      id -> id
+    end
+  end
+
+  defp optional_scope_id!(nil, _field), do: nil
+
+  defp optional_scope_id!(value, field) do
+    raise ArgumentError,
+          "#{field} must be a string before mounting prompt release workbench, got: #{inspect(value)}"
+  end
 
   defp origin_context(nil, _base_path), do: nil
 
