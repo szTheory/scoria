@@ -201,7 +201,7 @@ defmodule Scoria.Knowledge do
             opts[:query_embedding] ||
               Embedder.Deterministic.embed_query(query_text, opts)
 
-          backend.similar_chunks(query_embedding, limit: limit, filters: filters)
+          backend.similar_chunks(query_embedding, limit: limit, filters: filters, scope: scope)
 
         Scrypath ->
           Scrypath.retrieve(query_text, opts)
