@@ -46,8 +46,8 @@ defmodule Scoria.Eval.VerdictTest do
 
     test "returns failed when scored items fall below policy thresholds" do
       scores = [
-        score(status: "passed", score: 1.0),
-        score(status: "failed", score: 0.0)
+        score(status: "passed", score: 1.0, metadata: %{"latency_ms" => 10}),
+        score(status: "failed", score: 0.0, metadata: %{"latency_ms" => 10})
       ]
 
       assert Verdict.compute(scores, policy()) == :failed
@@ -55,13 +55,48 @@ defmodule Scoria.Eval.VerdictTest do
 
     test "ignores nil-score items before mean and latency math" do
       scores = [
-        score(status: "passed", score: 1.0),
+        score(status: "passed", score: 1.0, metadata: %{"latency_ms" => 10}),
         score(status: "passed", score: nil)
       ]
 
       assert Verdict.compute(scores, policy()) == :inconclusive
 
       assert Verdict.compute(scores, Map.put(policy(), :not_scored_tolerance, 1)) == :passed
+    end
+
+    test "returns failed when any scored item exceeds configured max latency" do
+      scores = [
+        score(status: "passed", score: 1.0, metadata: %{"latency_ms" => 10}),
+        score(status: "passed", score: 1.0, metadata: %{"latency_ms" => "51"})
+      ]
+
+      assert Verdict.compute(scores, policy()) == :failed
+    end
+
+    test "returns inconclusive when configured max latency lacks score metadata" do
+      scores = [
+        score(status: "passed", score: 1.0, metadata: %{})
+      ]
+
+      assert Verdict.compute(scores, policy()) == :inconclusive
+    end
+
+    test "returns inconclusive when configured max latency has invalid score metadata" do
+      scores = [
+        score(status: "passed", score: 1.0, metadata: %{"latency_ms" => "fast"})
+      ]
+
+      assert Verdict.compute(scores, policy()) == :inconclusive
+    end
+
+    test "preserves pass behavior when no latency policy is configured" do
+      scores = [
+        score(status: "passed", score: 1.0, metadata: %{})
+      ]
+
+      policy = Map.drop(policy(), [:max_latency_ms])
+
+      assert Verdict.compute(scores, policy) == :passed
     end
   end
 

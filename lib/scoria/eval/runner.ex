@@ -5,9 +5,11 @@ defmodule Scoria.Eval.Runner do
   alias Scoria.Eval.JudgeRunner
   alias Scoria.Eval.Scorers.ExactMatch
   alias Scoria.Eval.SubjectOutput
+  alias Scoria.Eval.Timing
   alias Scoria.Eval.Verdict
 
   def run_offline(attrs) when is_map(attrs) do
+    run_started_at = Timing.mark()
     eval_spec = Eval.get_eval_spec!(fetch!(attrs, :eval_spec_id))
     dataset = Eval.get_dataset!(fetch!(attrs, :dataset_id))
 
@@ -17,7 +19,7 @@ defmodule Scoria.Eval.Runner do
          {:ok, completed_run} <-
            Eval.complete_eval_run(eval_run, %{
              status: "completed",
-             duration_ms: 0,
+             duration_ms: Timing.elapsed_ms(run_started_at),
              threshold_verdict:
                eval_spec.threshold_policy
                |> then(&Verdict.compute(scores, &1))
@@ -89,7 +91,12 @@ defmodule Scoria.Eval.Runner do
 
     score_attrs =
       Enum.map(dataset_items, fn dataset_item ->
-        score_dataset_item(dataset_item, eval_run, eval_spec, attrs, scorer, scorer_kind)
+        {score_attrs, latency_ms} =
+          Timing.measure(fn ->
+            score_dataset_item(dataset_item, eval_run, eval_spec, attrs, scorer, scorer_kind)
+          end)
+
+        put_score_latency(score_attrs, latency_ms)
       end)
 
     Eval.record_eval_scores(eval_run, score_attrs)
@@ -200,8 +207,14 @@ defmodule Scoria.Eval.Runner do
       judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
       rubric_version: "eval-spec-v#{eval_spec.version}",
       evidence_refs: %{"fixture_key" => eval_run.fixture_key},
-      metadata: %{"latency_ms" => 0, "cost_usd" => "0.0"}
+      metadata: %{"cost_usd" => "0.0"}
     }
+  end
+
+  defp put_score_latency(score_attrs, latency_ms) do
+    Map.update(score_attrs, :metadata, %{"latency_ms" => latency_ms}, fn metadata ->
+      Map.put(metadata, "latency_ms", latency_ms)
+    end)
   end
 
   defp not_scored_score_attrs(base_attrs, reason) do

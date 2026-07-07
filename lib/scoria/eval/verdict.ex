@@ -18,6 +18,12 @@ defmodule Scoria.Eval.Verdict do
       Enum.any?(scores, &(not item_scored?(&1))) and not_scored_tolerance(threshold_policy) == nil ->
         :inconclusive
 
+      latency_policy_result(scored, threshold_policy) == :inconclusive ->
+        :inconclusive
+
+      latency_policy_result(scored, threshold_policy) == :failed ->
+        :failed
+
       passes_policy?(scored, threshold_policy) ->
         :passed
 
@@ -37,43 +43,62 @@ defmodule Scoria.Eval.Verdict do
     total = length(scores)
     pass_rate = Enum.count(scores, &(fetch(&1, :status) == @passing_verdict)) / total
     mean_score = Enum.sum(Enum.map(scores, &(fetch(&1, :score) || 0.0))) / total
-    avg_latency = Enum.sum(Enum.map(scores, &latency_ms/1)) / total
 
     pass_rate_gte = fetch(threshold_policy, :pass_rate_gte) || 0.0
     mean_score_gte = fetch(threshold_policy, :mean_score_gte) || 0.0
-    max_latency_ms = fetch(threshold_policy, :max_latency_ms) || 0
 
-    pass_rate >= pass_rate_gte and
-      mean_score >= mean_score_gte and
-      avg_latency <= max_latency_ms
+    pass_rate >= pass_rate_gte and mean_score >= mean_score_gte
   end
 
-  defp latency_ms(score) do
-    score
-    |> fetch(:metadata)
-    |> case do
-      metadata when is_map(metadata) -> fetch(metadata, :latency_ms) || 0
-      _ -> 0
-    end
-    |> case do
-      value when is_integer(value) -> value
-      value when is_binary(value) -> parse_integer(value)
-      _ -> 0
+  defp latency_policy_result(scores, threshold_policy) do
+    case fetch(threshold_policy, :max_latency_ms) do
+      nil ->
+        :ok
+
+      max_latency_ms ->
+        case parse_latency_ms(max_latency_ms) do
+          {:ok, max_latency_ms} ->
+            scores
+            |> Enum.map(&score_latency_ms/1)
+            |> Enum.reduce_while(:ok, fn
+              {:ok, latency_ms}, :ok when latency_ms <= max_latency_ms -> {:cont, :ok}
+              {:ok, _latency_ms}, :ok -> {:halt, :failed}
+              :error, :ok -> {:halt, :inconclusive}
+            end)
+
+          :error ->
+            :inconclusive
+        end
     end
   end
 
-  defp parse_integer(value) do
+  defp score_latency_ms(score) do
+    case fetch(score, :metadata) do
+      metadata when is_map(metadata) -> metadata |> fetch(:latency_ms) |> parse_latency_ms()
+      _ -> :error
+    end
+  end
+
+  defp parse_latency_ms(value) when is_integer(value) and value >= 0, do: {:ok, value}
+
+  defp parse_latency_ms(value) when is_binary(value) do
     case Integer.parse(value) do
-      {integer, ""} -> integer
-      _ -> 0
+      {integer, ""} when integer >= 0 -> {:ok, integer}
+      _ -> :error
     end
   end
+
+  defp parse_latency_ms(_value), do: :error
 
   defp not_scored_tolerance(policy), do: fetch(policy, :not_scored_tolerance)
 
   defp fetch(nil, _key), do: nil
 
   defp fetch(attrs, key) when is_map(attrs) do
-    Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
+    cond do
+      Map.has_key?(attrs, key) -> Map.get(attrs, key)
+      Map.has_key?(attrs, Atom.to_string(key)) -> Map.get(attrs, Atom.to_string(key))
+      true -> nil
+    end
   end
 end

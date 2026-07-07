@@ -25,11 +25,16 @@ defmodule Scoria.Eval.OfflineRunnerTest do
     assert result.eval_run.runner_mode == :offline_replay
     assert result.eval_run.status == "completed"
     assert result.eval_run.total_items == 1
+    assert is_integer(result.eval_run.duration_ms)
+    assert result.eval_run.duration_ms >= 0
     assert [score] = result.scores
     assert score.status == "passed"
     assert score.score == 1.0
     assert score.scorer_kind == "exact_match"
     assert score.evidence_refs["fixture_key"] == result.fixture_key
+    assert is_integer(score.metadata["latency_ms"])
+    assert score.metadata["latency_ms"] >= 0
+    assert score.metadata["cost_usd"] == "0.0"
   end
 
   test "run_offline/1 fails when exact_match sees a real mismatch" do

@@ -4,10 +4,12 @@ defmodule Scoria.Eval.JudgeRunner do
   alias Scoria.Eval
   alias Scoria.Eval.EvalRun
   alias Scoria.Eval.SubjectOutput
+  alias Scoria.Eval.Timing
   alias Scoria.Eval.Verdict
   alias ReqLLM.Response
 
   def run_live(attrs) when is_map(attrs) do
+    run_started_at = Timing.mark()
     eval_spec = Eval.get_eval_spec!(fetch!(attrs, :eval_spec_id))
     dataset = Eval.get_dataset!(fetch!(attrs, :dataset_id))
 
@@ -33,7 +35,7 @@ defmodule Scoria.Eval.JudgeRunner do
          {:ok, completed_run} <-
            Eval.complete_eval_run(eval_run, %{
              status: "completed",
-             duration_ms: 0,
+             duration_ms: Timing.elapsed_ms(run_started_at),
              threshold_verdict:
                eval_spec.threshold_policy
                |> then(&Verdict.compute(scores, &1))
@@ -44,6 +46,7 @@ defmodule Scoria.Eval.JudgeRunner do
   end
 
   def run_existing(%EvalRun{} = eval_run, attrs) when is_map(attrs) do
+    run_started_at = Timing.mark()
     eval_spec = fetch!(attrs, :eval_spec)
     dataset = fetch!(attrs, :dataset) || Eval.get_dataset!(eval_run.dataset_id)
     base_score_attrs = fetch(attrs, :base_score_attrs) || []
@@ -57,7 +60,7 @@ defmodule Scoria.Eval.JudgeRunner do
          {:ok, completed_run} <-
            Eval.complete_eval_run(eval_run, %{
              status: "completed",
-             duration_ms: 0,
+             duration_ms: Timing.elapsed_ms(run_started_at),
              threshold_verdict:
                eval_spec.threshold_policy
                |> then(&Verdict.compute(scores, &1))
@@ -112,41 +115,68 @@ defmodule Scoria.Eval.JudgeRunner do
       |> Enum.sort_by(& &1.id)
 
     Enum.reduce_while(dataset_items, {:ok, []}, fn dataset_item, {:ok, acc} ->
-      case SubjectOutput.resolve(dataset_item, :live_judge) do
-        {:ok, actual_output} ->
-          prompt = build_judge_prompt(dataset_item, actual_output)
+      {result, latency_ms} =
+        Timing.measure(fn ->
+          score_dataset_item(
+            dataset_item,
+            eval_spec,
+            attrs,
+            model_spec,
+            orchestrator_module,
+            opts
+          )
+        end)
 
-          case orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts) do
-            {:ok, response} ->
-              verdict = extract_object(response)
-              scorer = eval_spec.scorers |> List.first() || %{}
+      case result do
+        {:ok, score_attrs} ->
+          {:cont, {:ok, [put_score_latency(score_attrs, latency_ms) | acc]}}
 
-              score_attrs = %{
-                dataset_item_id: dataset_item.id,
-                scorer_kind: scorer_kind(scorer),
-                status: Map.get(verdict, "status", "failed"),
-                score: Map.get(verdict, "score", 0.0),
-                explanation: Map.get(verdict, "explanation", "Judge verdict unavailable"),
-                judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
-                rubric_version: "eval-spec-v#{eval_spec.version}",
-                evidence_refs: Map.get(verdict, "evidence_refs", %{}),
-                metadata: %{"cost_usd" => "0.0", "latency_ms" => 0}
-              }
-
-              {:cont, {:ok, [score_attrs | acc]}}
-
-            {:error, reason} ->
-              {:halt, {:error, reason}}
-          end
-
-        {:not_scored, reason} ->
-          score_attrs = not_scored_score_attrs(dataset_item, eval_spec, attrs, reason)
-          {:cont, {:ok, [score_attrs | acc]}}
+        {:error, reason} ->
+          {:halt, {:error, reason}}
       end
     end)
     |> case do
       {:ok, score_attrs} -> {:ok, Enum.reverse(score_attrs)}
       error -> error
+    end
+  end
+
+  defp score_dataset_item(
+         dataset_item,
+         eval_spec,
+         attrs,
+         model_spec,
+         orchestrator_module,
+         opts
+       ) do
+    case SubjectOutput.resolve(dataset_item, :live_judge) do
+      {:ok, actual_output} ->
+        prompt = build_judge_prompt(dataset_item, actual_output)
+
+        case orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts) do
+          {:ok, response} ->
+            verdict = extract_object(response)
+            scorer = eval_spec.scorers |> List.first() || %{}
+
+            {:ok,
+             %{
+               dataset_item_id: dataset_item.id,
+               scorer_kind: scorer_kind(scorer),
+               status: Map.get(verdict, "status", "failed"),
+               score: Map.get(verdict, "score", 0.0),
+               explanation: Map.get(verdict, "explanation", "Judge verdict unavailable"),
+               judge_model: fetch(attrs, :judge_model) || fetch!(attrs, :model),
+               rubric_version: "eval-spec-v#{eval_spec.version}",
+               evidence_refs: Map.get(verdict, "evidence_refs", %{}),
+               metadata: %{"cost_usd" => "0.0"}
+             }}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+
+      {:not_scored, reason} ->
+        {:ok, not_scored_score_attrs(dataset_item, eval_spec, attrs, reason)}
     end
   end
 
@@ -174,8 +204,14 @@ defmodule Scoria.Eval.JudgeRunner do
       rubric_version: "eval-spec-v#{eval_spec.version}",
       evidence_refs: %{},
       details: %{"reason" => reason},
-      metadata: %{"cost_usd" => "0.0", "latency_ms" => 0, "not_scored_reason" => reason}
+      metadata: %{"cost_usd" => "0.0", "not_scored_reason" => reason}
     }
+  end
+
+  defp put_score_latency(score_attrs, latency_ms) do
+    Map.update(score_attrs, :metadata, %{"latency_ms" => latency_ms}, fn metadata ->
+      Map.put(metadata, "latency_ms", latency_ms)
+    end)
   end
 
   defp scorer_kind(scorer) do

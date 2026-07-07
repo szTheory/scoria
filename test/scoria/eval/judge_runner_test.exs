@@ -47,6 +47,8 @@ defmodule Scoria.Eval.JudgeRunnerTest do
 
     assert result.eval_run.runner_mode == :live_judge
     assert result.eval_run.threshold_verdict == "passed"
+    assert is_integer(result.eval_run.duration_ms)
+    assert result.eval_run.duration_ms >= 0
 
     assert result.eval_run.threshold_verdict ==
              Verdict.compute(result.scores, eval_spec.threshold_policy) |> Atom.to_string()
@@ -57,6 +59,9 @@ defmodule Scoria.Eval.JudgeRunnerTest do
     assert score.explanation =~ "Stubbed judge"
     assert score.judge_model == "gpt-4o-mini"
     assert score.evidence_refs["judge"] == "stub"
+    assert is_integer(score.metadata["latency_ms"])
+    assert score.metadata["latency_ms"] >= 0
+    assert score.metadata["cost_usd"] == "0.0"
   end
 
   test "run_live/1 marks empty capture not_scored without invoking the judge" do
