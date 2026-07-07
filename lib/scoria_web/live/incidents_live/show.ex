@@ -12,8 +12,8 @@ defmodule ScoriaWeb.IncidentsLive.Show do
   alias ScoriaWeb.OperatorSurface
 
   @impl true
-  def mount(_params, session, socket) do
-    tenant_id = session["tenant_id"] || "default"
+  def mount(_params, _session, socket) do
+    tenant_id = socket.assigns.tenant_id
 
     {:ok,
      socket

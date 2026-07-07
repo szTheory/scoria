@@ -23,8 +23,8 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   alias ScoriaWeb.OperatorSurface
 
-  def mount(params, session, socket) do
-    tenant_id = params["tenant"] || session["tenant_id"] || "default"
+  def mount(params, _session, socket) do
+    tenant_id = socket.assigns.tenant_id
 
     socket =
       socket
@@ -34,7 +34,10 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> assign(:token_timers, %{})
       |> assign(:trace_records, %{})
       |> assign(:runtime_query, Map.get(params, "runtime"))
-      |> assign(:review_candidate, load_review_candidate(Map.get(params, "review_candidate_id")))
+      |> assign(
+        :review_candidate,
+        load_review_candidate(tenant_id, Map.get(params, "review_candidate_id"))
+      )
       |> assign(:tenant_id, tenant_id)
       |> load_status_home()
       |> stream(:traces, [])
@@ -186,8 +189,10 @@ defmodule ScoriaWeb.OrchestratorLive do
     ])
   end
 
-  defp load_review_candidate(nil), do: nil
-  defp load_review_candidate(candidate_id), do: Eval.get_review_candidate(candidate_id)
+  defp load_review_candidate(_tenant_id, nil), do: nil
+
+  defp load_review_candidate(tenant_id, candidate_id),
+    do: Eval.get_review_candidate_for_tenant(tenant_id, candidate_id)
 
   @doc false
   defp hydrate_traces(socket, tenant_id) do

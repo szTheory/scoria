@@ -13,8 +13,8 @@ defmodule ScoriaWeb.IncidentsLive.Index do
   alias ScoriaWeb.OperatorSurface
 
   @impl true
-  def mount(params, session, socket) do
-    tenant_id = (is_map(params) && params["tenant"]) || session["tenant_id"] || "default"
+  def mount(_params, _session, socket) do
+    tenant_id = socket.assigns.tenant_id
     incidents = OperatorSurface.list_tenant_incidents(tenant_id)
 
     socket =

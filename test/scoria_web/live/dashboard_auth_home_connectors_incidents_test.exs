@@ -54,6 +54,7 @@ defmodule ScoriaWeb.DashboardAuthHomeConnectorsIncidentsTest do
   end
 
   setup do
+    Code.ensure_loaded!(Scoria.Connectors)
     start_supervised!(ScoriaWeb.DashboardAuthHomeConnectorsIncidentsTest.Endpoint)
     :ok
   end

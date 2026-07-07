@@ -15,8 +15,8 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
   alias ScoriaWeb.RuntimeDetailDrawerComponent
 
   @impl true
-  def mount(params, session, socket) do
-    tenant_id = params["tenant"] || session["tenant_id"] || "default"
+  def mount(_params, _session, socket) do
+    tenant_id = socket.assigns.tenant_id
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Scoria.PubSub, "mcp:runtimes:#{tenant_id}")
