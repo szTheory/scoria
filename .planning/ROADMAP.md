@@ -125,7 +125,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 **Wave 2** *(blocked on Wave 1 completion; parallel by dashboard surface)*
 
-- [ ] 44-03-PLAN.md — Approvals display/actions consume assigned dashboard scope
+- [x] 44-03-PLAN.md — Approvals display/actions consume assigned dashboard scope
 - [ ] 44-04-PLAN.md — Workflow index/detail tenant-qualified read model
 - [ ] 44-05-PLAN.md — Review Queue, Eval Workbench, and Dataset Builder tenant-owned evidence filters
 - [ ] 44-06-PLAN.md — Prompt catalog/release workbench tenant-owned evidence filters

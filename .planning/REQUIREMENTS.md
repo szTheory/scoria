@@ -69,7 +69,7 @@ ship the *seam*.
 - [x] **AUTH-02**: A documented tenant-resolution/authorization callback makes `tenant_id`
   host-asserted, not a spoofable `?tenant=` param. No in-lib role/RBAC model is added.
 
-- [ ] **AUTH-03**: Dashboard LiveViews resolve tenant from the host-asserted source; the
+- [x] **AUTH-03**: Dashboard LiveViews resolve tenant from the host-asserted source; the
   unauthenticated `params["tenant"] → "default"` spoof path is closed.
 
 ### FIX — Correctness sweep
@@ -124,7 +124,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | KNOW-04 | Phase 43 | Pending |
 | AUTH-01 | Phase 44 | Complete |
 | AUTH-02 | Phase 44 | Complete |
-| AUTH-03 | Phase 44 | Pending |
+| AUTH-03 | Phase 44 | Complete |
 | FIX-01 | Phase 45 | Pending |
 | FIX-02 | Phase 45 | Pending |
 | FIX-03 | Phase 45 | Pending |
