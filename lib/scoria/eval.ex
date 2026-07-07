@@ -16,10 +16,21 @@ defmodule Scoria.Eval do
   alias Scoria.Eval.EvalSpec
   alias Scoria.Eval.EvalRun
   alias Scoria.Eval.JudgeRunner
+  alias Scoria.Eval.OnlineScoreCandidate
   alias Scoria.Eval.OnlineScoring
   alias Scoria.Eval.OnlineScoreSampler
   alias Scoria.Eval.ReviewQueue
   alias Scoria.Eval.Score
+  alias Scoria.Observe.Approval
+  alias Scoria.Workflows.Run
+
+  @dashboard_review_default_filters %{review_status: "pending"}
+  @dashboard_review_filter_keys %{
+    "promotion_state" => :promotion_state,
+    "review_status" => :review_status,
+    "scorer_kind" => :scorer_kind,
+    "severity" => :severity
+  }
 
   @doc """
   Returns the list of datasets.
@@ -272,6 +283,27 @@ defmodule Scoria.Eval do
   end
 
   @doc """
+  Lists projected review-queue candidates visible to one asserted dashboard tenant.
+  """
+  def list_review_queue_for_tenant(tenant_id, filters \\ %{}) do
+    case normalize_dashboard_tenant_id(tenant_id) do
+      nil ->
+        []
+
+      tenant_id ->
+        filters = normalize_dashboard_review_filters(filters)
+
+        OnlineScoreCandidate
+        |> where([candidate], candidate.tenant_id == ^tenant_id)
+        |> apply_dashboard_review_filters(filters)
+        |> order_by([candidate], asc: candidate.inserted_at, asc: candidate.id)
+        |> Repo.all()
+        |> Enum.map(&project_dashboard_review_summary/1)
+        |> sort_dashboard_review_rows()
+    end
+  end
+
+  @doc """
   Returns summary strip counts for the projected review queue.
   """
   def summarize_review_queue(filters \\ %{}) do
@@ -279,10 +311,56 @@ defmodule Scoria.Eval do
   end
 
   @doc """
+  Returns summary strip counts for one asserted dashboard tenant's review queue.
+  """
+  def summarize_review_queue_for_tenant(tenant_id, filters \\ %{}) do
+    rows = list_review_queue_for_tenant(tenant_id, filters)
+
+    %{
+      total_flagged: length(rows),
+      low_quality_count: Enum.count(rows, &(&1.severity == "low_quality")),
+      policy_triggered_count: Enum.count(rows, &(&1.severity == "policy_triggered")),
+      promotion_candidate_count: Enum.count(rows, &(&1.status == "promotion_candidate"))
+    }
+  end
+
+  @doc """
   Returns one projected review candidate or nil.
   """
   def get_review_candidate(candidate_id) do
     ReviewQueue.get_candidate(candidate_id)
+  end
+
+  @doc """
+  Returns one projected review candidate only when it belongs to the asserted dashboard tenant.
+  """
+  def get_review_candidate_for_tenant(tenant_id, candidate_id) do
+    with tenant_id when not is_nil(tenant_id) <- normalize_dashboard_tenant_id(tenant_id),
+         {:ok, id} <- cast_dashboard_uuid(candidate_id),
+         %OnlineScoreCandidate{} = candidate <-
+           Repo.get_by(OnlineScoreCandidate, id: id, tenant_id: tenant_id) do
+      project_dashboard_review_detail(candidate)
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Lists recent eval runs for one asserted dashboard tenant with rendered score evidence preloaded.
+  """
+  def list_eval_runs_for_tenant(tenant_id) do
+    case normalize_dashboard_tenant_id(tenant_id) do
+      nil ->
+        []
+
+      tenant_id ->
+        EvalRun
+        |> where([run], run.tenant_id == ^tenant_id)
+        |> order_by([run], desc: run.inserted_at)
+        |> limit(20)
+        |> preload(:scores)
+        |> Repo.all()
+    end
   end
 
   @doc """
@@ -565,6 +643,251 @@ defmodule Scoria.Eval do
       _ -> false
     end
   end
+
+  defp apply_dashboard_review_filters(query, filters) do
+    Enum.reduce(filters, query, fn
+      {_key, nil}, query ->
+        query
+
+      {:review_status, review_status}, query ->
+        where(query, [candidate], candidate.review_status == ^review_status)
+
+      {:severity, severity}, query ->
+        severity_statuses = dashboard_review_severity_statuses(severity)
+
+        where(query, [candidate], candidate.status in ^severity_statuses)
+
+      {:scorer_kind, scorer_kind}, query ->
+        where(query, [candidate], candidate.scorer_kind == ^scorer_kind)
+
+      {:promotion_state, promotion_state}, query ->
+        where(query, [candidate], candidate.status == ^promotion_state)
+
+      {_key, _value}, query ->
+        query
+    end)
+  end
+
+  defp normalize_dashboard_review_filters(filters) when is_map(filters) do
+    Enum.reduce(filters, @dashboard_review_default_filters, fn {key, value}, acc ->
+      case normalize_dashboard_review_filter_key(key) do
+        nil -> acc
+        key -> Map.put(acc, key, blank_dashboard_filter_to_nil(value))
+      end
+    end)
+  end
+
+  defp normalize_dashboard_review_filters(_filters), do: @dashboard_review_default_filters
+
+  defp normalize_dashboard_review_filter_key(key) when is_atom(key), do: key
+
+  defp normalize_dashboard_review_filter_key(key) when is_binary(key),
+    do: Map.get(@dashboard_review_filter_keys, key)
+
+  defp normalize_dashboard_review_filter_key(_key), do: nil
+
+  defp project_dashboard_review_summary(candidate) do
+    run = fetch_dashboard_review_run(candidate)
+    severity = dashboard_review_severity(candidate)
+    sample_reason = dashboard_map_value(candidate.sampling_metadata, "sample_reason")
+
+    %{
+      id: candidate.id,
+      status: candidate.status,
+      review_status: candidate.review_status,
+      severity: severity,
+      score: candidate.score,
+      score_status: candidate.score_status,
+      rationale: candidate.score_explanation,
+      scorer_kind: candidate.scorer_kind,
+      scorer_version: candidate.scorer_version,
+      sample_reason: sample_reason,
+      trace_id: candidate.trace_id,
+      workflow_run_id: candidate.workflow_run_id,
+      workflow_step_id: candidate.workflow_step_id,
+      runtime_id: run && run.session_id,
+      workflow_path:
+        "/scoria/workflows/#{candidate.workflow_run_id}?review_candidate_id=#{candidate.id}",
+      runtime_path: dashboard_runtime_path(run && run.session_id, candidate.id),
+      inserted_at: candidate.inserted_at,
+      promotion_state: candidate.status,
+      dataset_ref: dashboard_promoted_dataset_ref(candidate)
+    }
+  end
+
+  defp project_dashboard_review_detail(candidate) do
+    run = fetch_dashboard_review_run(candidate)
+    approval = find_dashboard_review_approval(candidate)
+
+    %{
+      id: candidate.id,
+      status: candidate.status,
+      review_status: candidate.review_status,
+      severity: dashboard_review_severity(candidate),
+      score: candidate.score,
+      score_status: candidate.score_status,
+      rationale: candidate.score_explanation,
+      scorer_kind: candidate.scorer_kind,
+      scorer_version: candidate.scorer_version,
+      judge_model: candidate.judge_model,
+      rubric_version: candidate.rubric_version,
+      trace_id: candidate.trace_id,
+      workflow_run_id: candidate.workflow_run_id,
+      workflow_step_id: candidate.workflow_step_id,
+      runtime_id: run && run.session_id,
+      workflow_path:
+        "/scoria/workflows/#{candidate.workflow_run_id}?review_candidate_id=#{candidate.id}",
+      runtime_path: dashboard_runtime_path(run && run.session_id, candidate.id),
+      sampling_provenance: candidate.sampling_metadata || %{},
+      evidence_refs: candidate.evidence_refs || %{},
+      promotion_snapshot: candidate.promotion_snapshot || %{},
+      promotion_context: build_dashboard_review_promotion_context(candidate, run),
+      dataset_ref: dashboard_promoted_dataset_ref(candidate),
+      approval_lineage:
+        approval &&
+          %{
+            id: approval.id,
+            status: approval.status,
+            tool_name: approval.tool_name
+          },
+      inserted_at: candidate.inserted_at
+    }
+  end
+
+  defp fetch_dashboard_review_run(candidate) do
+    Run
+    |> where(
+      [run],
+      run.id == ^candidate.workflow_run_id and run.tenant_id == ^candidate.tenant_id
+    )
+    |> Repo.one()
+  end
+
+  defp find_dashboard_review_approval(candidate) do
+    Repo.one(
+      from(approval in Approval,
+        where:
+          approval.workflow_run_id == ^candidate.workflow_run_id and
+            approval.step_id == ^candidate.workflow_step_id and
+            approval.tenant_id == ^candidate.tenant_id and
+            approval.tool_name == "dataset_baseline_promotion",
+        order_by: [desc: approval.inserted_at, desc: approval.id],
+        limit: 1
+      )
+    )
+  end
+
+  defp build_dashboard_review_promotion_context(candidate, run) do
+    source_variant =
+      dashboard_map_value(candidate.promotion_snapshot, "source_variant") || "original"
+
+    replay_reason_code = dashboard_map_value(candidate.promotion_snapshot, "replay_reason_code")
+    replay_disposition = if(run && run.execution_mode == "replay", do: "blocked", else: nil)
+
+    %{
+      workflow_run_id: candidate.workflow_run_id,
+      workflow_step_id: candidate.workflow_step_id,
+      source_variant: source_variant,
+      provenance: %{
+        workflow_run_id: candidate.workflow_run_id,
+        workflow_step_id: candidate.workflow_step_id,
+        source_variant: source_variant,
+        execution_mode: (run && run.execution_mode) || "live",
+        source_run_id: run && run.source_run_id,
+        source_checkpoint_id: run && run.source_checkpoint_id,
+        replay_disposition: replay_disposition,
+        replay_reason_code: replay_reason_code
+      },
+      checkpoint_output: %{
+        "projected_context" => %{"review_candidate_id" => candidate.id},
+        "recorded_outcome" =>
+          dashboard_map_value(candidate.promotion_snapshot, "recorded_outcome")
+      },
+      safety: %{
+        "replay_scope" => if(run && run.execution_mode == "replay", do: "replay_live", else: nil),
+        "replay_disposition" => replay_disposition,
+        "replay_reason_code" => replay_reason_code
+      },
+      promotion_snapshot: candidate.promotion_snapshot || %{},
+      notes: "",
+      expected_output: %{}
+    }
+  end
+
+  defp sort_dashboard_review_rows(rows) do
+    Enum.sort_by(rows, fn row ->
+      {dashboard_review_severity_rank(row.severity),
+       DateTime.to_unix(row.inserted_at, :microsecond), row.id}
+    end)
+  end
+
+  defp dashboard_review_severity(%OnlineScoreCandidate{} = candidate) do
+    cond do
+      dashboard_map_value(candidate.sampling_metadata, "sample_reason") == "policy_trigger" ->
+        "policy_triggered"
+
+      candidate.status == "promotion_candidate" ->
+        "promotion_candidate"
+
+      candidate.score_status == "failed" or candidate.status == "needs_review" ->
+        "low_quality"
+
+      true ->
+        "needs_review"
+    end
+  end
+
+  defp dashboard_review_severity_rank("policy_triggered"), do: 0
+  defp dashboard_review_severity_rank("low_quality"), do: 1
+  defp dashboard_review_severity_rank("promotion_candidate"), do: 2
+  defp dashboard_review_severity_rank(_severity), do: 3
+
+  defp dashboard_review_severity_statuses("policy_triggered"), do: ["needs_review"]
+  defp dashboard_review_severity_statuses("low_quality"), do: ["needs_review"]
+  defp dashboard_review_severity_statuses("promotion_candidate"), do: ["promotion_candidate"]
+
+  defp dashboard_review_severity_statuses(_severity),
+    do: ["queued", "needs_review", "promotion_candidate", "approval_requested"]
+
+  defp dashboard_promoted_dataset_ref(candidate) do
+    metadata = candidate.metadata || %{}
+
+    case dashboard_map_value(metadata, "promoted_dataset") do
+      %{} = dataset -> dataset
+      _ -> nil
+    end
+  end
+
+  defp dashboard_runtime_path(nil, candidate_id),
+    do: "/scoria?review_candidate_id=#{candidate_id}"
+
+  defp dashboard_runtime_path(runtime_id, candidate_id),
+    do: "/scoria?runtime=#{runtime_id}&review_candidate_id=#{candidate_id}"
+
+  defp cast_dashboard_uuid(value) when is_binary(value), do: Ecto.UUID.cast(value)
+  defp cast_dashboard_uuid(_value), do: :error
+
+  defp normalize_dashboard_tenant_id(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> nil
+      tenant_id -> tenant_id
+    end
+  end
+
+  defp normalize_dashboard_tenant_id(_value), do: nil
+
+  defp blank_dashboard_filter_to_nil(""), do: nil
+  defp blank_dashboard_filter_to_nil(value), do: value
+
+  defp dashboard_map_value(map, key) when is_map(map) do
+    Map.get(map, key, Map.get(map, String.to_atom(key), nil))
+  rescue
+    ArgumentError -> Map.get(map, key)
+  end
+
+  defp dashboard_map_value(_map, _key), do: nil
 
   defp persist_eval_scores(%EvalRun{} = eval_run, score_attrs_list, opts) do
     replace? = Keyword.get(opts, :replace?, false)
