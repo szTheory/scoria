@@ -75,7 +75,7 @@ Each task was committed atomically:
 2. **Task 2: Replace local tenant derivation with assigned scope** - `fe163157` (feat)
 3. **Task 3: Refresh existing page harnesses for host-asserted scope** - `265659ed` (test)
 
-**Plan metadata:** pending final docs commit
+**Plan metadata:** `004ec003` (docs)
 
 ## Files Created/Modified
 
