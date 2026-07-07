@@ -93,7 +93,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 43-02-PLAN.md — Additive knowledge migration and schema fields
+- [x] 43-02-PLAN.md — Additive knowledge migration and schema fields
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -140,7 +140,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | Phase                                          | Milestone | Plans Complete | Status      | Completed |
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
-| 43. Knowledge tenant isolation                 | v3.4      | 1/5 | In Progress|  |
+| 43. Knowledge tenant isolation                 | v3.4      | 2/5 | In Progress|  |
 | 44. Dashboard auth seam                        | v3.4      | 0/?            | Not started | -         |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
