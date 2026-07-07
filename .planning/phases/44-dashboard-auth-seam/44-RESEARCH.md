@@ -595,19 +595,19 @@ end
 |---|-------|---------|---------------|
 | A1 | BEAM compilation artifacts are the only build artifacts affected by the macro/hook refactor. | Runtime State Inventory | Low; planner may add a clean compile task if stale artifacts are suspected. |
 | A2 | Developer diagnostics in browser failure copy can leak useful auth state to attackers. | Common Pitfalls | Low; OWASP supports generic auth failure copy, but exact threat severity depends on host deployment. |
-| A3 | Tenant-less dashboard schemas may be either global metadata or missing tenant scope depending on product intent. | Runtime State Inventory / Open Questions | Medium; planner must resolve before claiming AUTH-03 for those surfaces. |
+| A3 | Tenant-less dashboard schemas are treated as global catalog metadata only; tenant-owned evidence must be tenant-filtered or suppressed until scoped. | Runtime State Inventory / Open Questions (RESOLVED) | Low after resolution; plans 44-05 and 44-06 encode this rule for eval, dataset, prompt, and review evidence. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **How should unauthorized/missing-scope render in production?**
    - What we know: Phase context allows generic empty-state render, redirect, or exception in test/dev, but all options must fail closed. `[VERIFIED: local context]`
-   - What's unclear: Whether the first implementation should render an in-dashboard generic unavailable state or redirect to host login by default. `[VERIFIED: local context]`
-   - Recommendation: default to a generic unavailable state for Scoria's built-in resolver failures, while accepting `{:redirect, to}` and `{:halt, socket}` from host resolver outcomes. `[VERIFIED: local context]`
+   - Resolution: Scoria's built-in resolver failures default to the generic unavailable fail-closed dashboard state: `This Scoria dashboard is not available for this session.` Host resolver outcomes may still return `{:redirect, to}` or `{:halt, socket}` for host-owned login and denial flows. Malformed resolver output raises loudly in development/test. `[VERIFIED: local context]`
+   - Plan coverage: 44-01 implements and tests the built-in failure behavior; 44-07 documents the generic browser-facing copy. `[VERIFIED: local plan]`
 
 2. **Are datasets, eval specs, and prompt templates tenant-owned for AUTH-03?**
    - What we know: The context says global reads exposing tenant-owned data are in scope; local schemas for some dashboard resources lack visible `tenant_id`. `[VERIFIED: local context]` `[VERIFIED: local code]`
-   - What's unclear: Whether these resources are intended as global catalog metadata or tenant-isolated records before 1.0. `[VERIFIED: local code]`
-   - Recommendation: planner must decide per surface: add tenant fields/filtering where tenant-owned, or suppress tenant-owned evidence from global pages until scoped. `[VERIFIED: local context]`
+   - Resolution: tenantless catalog records may render only catalog-level metadata. They are not allowed to carry tenant-owned evidence without a tenant filter. Where the evidence is tenant-owned, plans must add tenant fields/filtering through tenant-aware helpers; where a tenant-qualified path is not available, the dashboard suppresses that evidence from global pages until scoped. `[VERIFIED: local context]`
+   - Plan coverage: 44-05 adds tenant-aware Eval helpers including `get_review_candidate_for_tenant/2`; 44-06 tenant-filters prompt release evidence; 44-02 depends on 44-05 before wiring OrchestratorLive review-candidate deep links. `[VERIFIED: local plan]`
 
 ## Environment Availability
 
@@ -642,22 +642,22 @@ Baseline checked during research: `mix test test/scoria_web/router_test.exs --wa
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|--------------|
 | AUTH-01 | Bare macro compiles; host `on_mount` single/list hooks compile; hook order is host -> scope gate -> `DashboardNav`; `DashboardNav` cannot be omitted. | unit/router compile | `mix test test/scoria_web/router_test.exs --warnings-as-errors` | Existing file yes; new cases required `[VERIFIED: local tests]` |
-| AUTH-02 | Resolver accepts valid host scope, rejects nil/blank/malformed scope, supports unauthorized/redirect/halt outcomes, and never reads params/default. | unit | `mix test test/scoria_web/dashboard_scope_test.exs --warnings-as-errors` | Missing; Wave 0 add `[VERIFIED: local tests]` |
+| AUTH-02 | Resolver accepts valid host scope, rejects nil/blank/malformed scope, supports unauthorized/redirect/halt outcomes, and never reads params/default. | unit | `mix test test/scoria_web/dashboard_scope_test.exs --warnings-as-errors` | Missing; 44-01 Task 2 creates before gate implementation `[VERIFIED: local tests]` |
 | AUTH-03 | Mount as tenant A with `?tenant=tenant-b`; dashboard renders A or empty data only, PubSub topics use A, object detail routes reject B-only IDs. | integration/LiveView | `mix test test/scoria_web/live --warnings-as-errors` | Partial existing coverage; new cross-tenant cases required `[VERIFIED: local tests]` |
-| AUTH-03 | Static guard forbids `params["tenant"]`, `session["tenant_id"] || "default"`, and suspicious `|| "default"` near dashboard tenant assignment. | source guard | `mix test test/scoria_web/dashboard_scope_source_guard_test.exs --warnings-as-errors` | Missing; Wave 0 add `[VERIFIED: local tests]` |
+| AUTH-03 | Static guard forbids `params["tenant"]`, `session["tenant_id"] || "default"`, and suspicious `|| "default"` near dashboard tenant assignment. | source guard | `mix test test/scoria_web/dashboard_scope_source_guard_test.exs --warnings-as-errors` | Missing; 44-07 Task 1 creates before final proof `[VERIFIED: local tests]` |
 
 ### Sampling Rate
 
-- **Per task commit:** `mix test test/scoria_web/router_test.exs test/scoria_web/dashboard_scope_test.exs --warnings-as-errors`
+- **Per task commit:** `mix test test/scoria_web/router_test.exs test/scoria_web/dashboard_scope_test.exs test/scoria_web/dashboard_scope_source_guard_test.exs --warnings-as-errors` once the named test files exist, plus touched tests.
 - **Per wave merge:** `mix test test/scoria_web/live --warnings-as-errors`
 - **Phase gate:** `mix test --warnings-as-errors` plus source guard green before `$gsd-verify-work`
 
-### Wave 0 Gaps
+### Planned Test Gaps
 
-- [ ] `test/scoria_web/dashboard_scope_test.exs` - resolver/gate behavior for AUTH-02.
-- [ ] `test/scoria_web/dashboard_scope_source_guard_test.exs` - static regression guard for AUTH-03.
-- [ ] Additional cases in `test/scoria_web/router_test.exs` - hook pass-through/order for AUTH-01.
-- [ ] Cross-tenant fixtures/tests for dashboard LiveViews that read tenant-owned rows.
+- [ ] `test/scoria_web/dashboard_scope_test.exs` - resolver/gate behavior for AUTH-02; created by 44-01 Task 2.
+- [ ] `test/scoria_web/dashboard_scope_source_guard_test.exs` - static regression guard for AUTH-03; created by 44-07 Task 1.
+- [ ] Additional cases in `test/scoria_web/router_test.exs` - hook pass-through/order for AUTH-01; created by 44-01 Task 1.
+- [ ] Cross-tenant fixtures/tests for dashboard LiveViews that read tenant-owned rows; created by 44-02 through 44-06.
 
 ## Security Domain
 
@@ -670,9 +670,10 @@ The current OWASP ASVS Index is based on ASVS 5.0.x; the GSD template uses older
 | ASVS Category | Applies | Standard Control |
 |---------------|---------|------------------|
 | V6 Authentication | yes | Host app authenticates before Scoria dashboard entry; Scoria accepts host hook chain. `[CITED: https://cheatsheetseries.owasp.org/IndexASVS.html]` |
-| V7 Session Management | yes | Host session/assigns are resolver inputs; LiveView mount validates scope for disconnected and connected lifecycle. `[CITED: https://phoenix-live-view.hexdocs.pm/security-model.html]` |
-| V8 Authorization | yes | Host-owned resolver plus Scoria fail-closed tenant-qualified reads. `[CITED: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html]` |
-| V2 Validation and Business Logic | yes | Normalize non-empty tenant scope; reject malformed resolver outputs. `[CITED: https://cheatsheetseries.owasp.org/IndexASVS.html]` |
+| V4 Access Control | yes | Host-owned resolver plus Scoria fail-closed tenant-qualified reads prevent IDOR/cross-tenant access. `[CITED: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html]` |
+| V13 API and Web Service | yes | Dashboard LiveViews and context helpers are server-side API surfaces; tenant-qualified reads/writes must validate host-asserted scope before returning data. `[CITED: https://cheatsheetseries.owasp.org/IndexASVS.html]` |
+| V2 Validation and Business Logic | yes | Normalize non-empty tenant scope; reject malformed resolver outputs and invalid deep-link IDs. `[CITED: https://cheatsheetseries.owasp.org/IndexASVS.html]` |
+| V7 Session Management | supporting | Host session/assigns are resolver inputs; LiveView mount validates scope for disconnected and connected lifecycle. `[CITED: https://phoenix-live-view.hexdocs.pm/security-model.html]` |
 | V11 Cryptography | no new cryptography | Do not add custom crypto; rely on Phoenix/Plug session stack already configured by host. `[ASSUMED]` |
 | V16 Security Logging and Error Handling | yes | Generic browser failure copy; developer detail in docs/logs/tests. `[CITED: https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html]` |
 

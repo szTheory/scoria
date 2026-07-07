@@ -125,7 +125,6 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 **Wave 2** *(blocked on Wave 1 completion; parallel by dashboard surface)*
 
-- [ ] 44-02-PLAN.md — Home, Connectors, and Incidents consume assigned dashboard scope
 - [ ] 44-03-PLAN.md — Approvals display/actions consume assigned dashboard scope
 - [ ] 44-04-PLAN.md — Workflow index/detail tenant-qualified read model
 - [ ] 44-05-PLAN.md — Review Queue, Eval Workbench, and Dataset Builder tenant-owned evidence filters
@@ -133,7 +132,11 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 44-07-PLAN.md — Docs, source-scan guard, and focused Phase 44 proof
+- [ ] 44-02-PLAN.md — Home, Connectors, Incidents, and Orchestrator review candidates consume assigned dashboard scope
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 44-07-PLAN.md — Docs, source guard, and focused Phase 44 proof
 
 ### Phase 45: Correctness sweep + fail-closed proof & closeout
 
