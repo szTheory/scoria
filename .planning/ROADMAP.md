@@ -132,7 +132,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 44-02-PLAN.md — Home, Connectors, Incidents, and Orchestrator review candidates consume assigned dashboard scope
+- [x] 44-02-PLAN.md — Home, Connectors, Incidents, and Orchestrator review candidates consume assigned dashboard scope
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -159,7 +159,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
 | 43. Knowledge tenant isolation                 | v3.4      | 5/5 | Complete   | 2026-07-07 |
-| 44. Dashboard auth seam                        | v3.4      | 5/7 | In Progress|  |
+| 44. Dashboard auth seam                        | v3.4      | 6/7 | In Progress|  |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
 ## Previous Milestones
