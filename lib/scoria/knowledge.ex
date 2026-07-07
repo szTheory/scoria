@@ -17,13 +17,17 @@ defmodule Scoria.Knowledge do
   alias Scoria.Knowledge.RetrievalResult
   alias Scoria.Knowledge.RetrievalRun
   alias Scoria.Knowledge.Retrievers.Scrypath
+  alias Scoria.Knowledge.Scope
   alias Scoria.Knowledge.Source
   alias Scoria.Repo
 
-  def create_source(attrs \\ %{}) do
+  def create_source(attrs \\ %{}, opts \\ []) do
+    scope = Scope.for_write!(scope_input(attrs, opts))
+
     attrs =
       attrs
-      |> Map.new()
+      |> attrs_to_map()
+      |> Scope.put_source_attrs(scope)
       |> Map.put_new(:entity_id, Ecto.UUID.generate())
       |> Map.put_new(:version, 1)
       |> Map.put_new(:is_current, true)
@@ -37,6 +41,7 @@ defmodule Scoria.Knowledge do
   def ingest_source(source_or_attrs, opts \\ [])
 
   def ingest_source(%Source{} = source, opts) do
+    scope = Scope.for_write!(scope_input(source, opts))
     chunker = Keyword.get(opts, :chunker, Chunker.Default)
     embedder = Keyword.get(opts, :embedder, Embedder.Deterministic)
     backend = Keyword.get(opts, :backend, Pgvector)
@@ -45,10 +50,15 @@ defmodule Scoria.Knowledge do
     embeddings = embedder.embed_chunks(chunks, opts)
 
     Multi.new()
-    |> Multi.delete_all(:delete_chunks, from(chunk in Chunk, where: chunk.source_id == ^source.id))
+    |> Multi.delete_all(
+      :delete_chunks,
+      from(chunk in Chunk,
+        where: chunk.source_id == ^source.id and chunk.tenant_id == ^scope.tenant_id
+      )
+    )
     |> Multi.run(:chunks, fn repo, _changes ->
       chunks
-      |> Enum.map(&Map.put(&1, :source_id, source.id))
+      |> Enum.map(&(&1 |> Map.put(:source_id, source.id) |> Scope.put_source_attrs(scope)))
       |> Enum.map(fn attrs ->
         %Chunk{}
         |> Chunk.changeset(attrs)
@@ -67,31 +77,42 @@ defmodule Scoria.Knowledge do
   end
 
   def ingest_source(attrs, opts) when is_map(attrs) do
-    with {:ok, source} <- create_source(attrs),
+    with {:ok, source} <- create_source(attrs, opts),
          {:ok, _chunks} <- ingest_source(source, Keyword.put(opts, :source_payload, attrs)) do
       {:ok, source}
     end
   end
 
   def reembed_source(%Source{} = source, opts \\ []) do
+    scope = Scope.for_write!(scope_input(source, opts))
     embedder = Keyword.get(opts, :embedder, Embedder.Deterministic)
     backend = Keyword.get(opts, :backend, Pgvector)
-    chunks = list_source_chunks(source.id)
+    chunks = list_source_chunks(source.id, scope: scope)
     embeddings = embedder.embed_chunks(chunks, opts)
     backend.upsert_chunk_embeddings(chunks, embeddings)
   end
 
   def reindex_source(%Source{} = source, opts \\ []) do
+    scope = Scope.for_write!(scope_input(source, opts))
+
     with :ok <- Pgvector.delete_source_embeddings(source.id),
-         {:ok, chunks} <- reembed_source(source, opts) do
+         {:ok, chunks} <- reembed_source(source, Keyword.put(opts, :scope, scope)) do
       {:ok, chunks}
     end
   end
 
-  def list_source_chunks(%Source{id: id}), do: list_source_chunks(id)
+  def list_source_chunks(source_or_id, opts \\ [])
 
-  def list_source_chunks(source_id) do
+  def list_source_chunks(%Source{} = source, opts) do
+    scope = Scope.from_opts!(scope_input(source, opts))
+    list_source_chunks(source.id, scope: scope)
+  end
+
+  def list_source_chunks(source_id, opts) do
+    scope = Scope.from_opts!(opts)
+
     Chunk
+    |> Scope.visible_to(scope)
     |> where([chunk], chunk.source_id == ^source_id)
     |> preload(:source)
     |> order_by([chunk], asc: chunk.start_offset)
@@ -110,7 +131,8 @@ defmodule Scoria.Knowledge do
     |> Repo.insert()
   end
 
-  def append_retrieval_results(%RetrievalRun{id: run_id}, results), do: append_retrieval_results(run_id, results)
+  def append_retrieval_results(%RetrievalRun{id: run_id}, results),
+    do: append_retrieval_results(run_id, results)
 
   def append_retrieval_results(run_id, results) do
     results
@@ -211,7 +233,9 @@ defmodule Scoria.Knowledge do
           status: result.status,
           reasoning: "Deterministic grounding check",
           details: result.details,
-          evidence_refs: %{citations: Enum.map(payload[:citations] || [], &Map.take(&1, [:chunk_id, :source_id]))}
+          evidence_refs: %{
+            citations: Enum.map(payload[:citations] || [], &Map.take(&1, [:chunk_id, :source_id]))
+          }
         })
       end)
 
@@ -256,6 +280,17 @@ defmodule Scoria.Knowledge do
       payload -> Map.merge(Map.from_struct(source), payload)
     end
   end
+
+  defp scope_input(attrs, opts) do
+    attrs
+    |> attrs_to_map()
+    |> Map.merge(attrs_to_map(opts))
+  end
+
+  defp attrs_to_map(%_{} = attrs), do: attrs |> Map.from_struct() |> attrs_to_map()
+  defp attrs_to_map(attrs) when is_list(attrs), do: Enum.into(attrs, %{})
+  defp attrs_to_map(attrs) when is_map(attrs), do: attrs
+  defp attrs_to_map(nil), do: %{}
 
   defp digest_body(attrs) do
     body =
