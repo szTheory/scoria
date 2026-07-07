@@ -1,7 +1,8 @@
 ---
 phase: 45
 slug: correctness-sweep-fail-closed-proof-closeout
-status: draft
+status: approved
+reviewed_at: 2026-07-07T17:43:56-0400
 shadcn_initialized: false
 preset: none
 created: 2026-07-07
