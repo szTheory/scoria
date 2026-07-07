@@ -151,7 +151,13 @@ See `.planning/MILESTONES.md` for full closeout history.
   4. The `max_latency_ms` gate operates on real recorded latency (enabled once EVAL's real scorers record actual latency instead of a hardcoded 0).
   5. The 6-principle scope doctrine ("Scoria owns the verb; host owns the noun", P1–P6) is confirmed present in `PROJECT.md ## Constraints` + `## Key Decisions` and cross-linked from the eval / knowledge / dashboard fix rationale (confirm-and-cross-link — the doctrine was already recorded at v3.3 close).
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+- [ ] 45-01-PLAN.md — Pgvector cosine score repair and persisted retrieval proof
+- [ ] 45-02-PLAN.md — Citation answerability labels and default chunker non-overlap cleanup
+- [ ] 45-03-PLAN.md — Shared latency timing helper plus offline/judge fail-closed latency proof
+- [ ] 45-04-PLAN.md — Online scoring latency measurement and duration proof
+- [ ] 45-05-PLAN.md — Scope doctrine cross-links and Phase 45 closeout verification
 
 ## Progress
 
@@ -160,7 +166,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
 | 43. Knowledge tenant isolation                 | v3.4      | 5/5 | Complete   | 2026-07-07 |
 | 44. Dashboard auth seam                        | v3.4      | 7/7 | Complete    | 2026-07-07 |
-| 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
+| 45. Correctness sweep + fail-closed proof      | v3.4      | 0/5            | Not started | -         |
 
 ## Previous Milestones
 
