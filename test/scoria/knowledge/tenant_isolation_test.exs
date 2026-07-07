@@ -1,7 +1,7 @@
 defmodule Scoria.Knowledge.TenantIsolationTest do
   use Scoria.KnowledgeCase, async: false
 
-  alias Scoria.Knowledge.Scope
+  alias Scoria.Knowledge.{Chunk, Citation, RetrievalResult, RetrievalRun, Scope, Source}
   alias Scoria.TestSupport.Migrations
 
   @tenant_scope_migration 20_260_705_010_000
@@ -133,6 +133,70 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
     end
   end
 
+  describe "tenant-owned knowledge schema changesets" do
+    test "source, chunk, and citation expose tenant scope fields" do
+      for schema <- [Source, Chunk, Citation] do
+        fields = schema.__schema__(:fields)
+
+        assert :tenant_id in fields
+        assert :actor_id in fields
+        assert :scope_kind in fields
+      end
+    end
+
+    test "retrieval audit schemas expose tenant and actor fields" do
+      for schema <- [RetrievalRun, RetrievalResult] do
+        fields = schema.__schema__(:fields)
+
+        assert :tenant_id in fields
+        assert :actor_id in fields
+      end
+    end
+
+    test "source, chunk, and citation changesets reject unscoped new writes" do
+      for {schema, attrs} <- [
+            {Source, valid_source_attrs()},
+            {Chunk, valid_chunk_attrs()},
+            {Citation, valid_citation_attrs()}
+          ] do
+        errors =
+          schema
+          |> struct()
+          |> schema.changeset(Map.drop(attrs, [:tenant_id, :scope_kind]))
+          |> errors_on()
+
+        assert "can't be blank" in errors.tenant_id
+        assert "can't be blank" in errors.scope_kind
+
+        assert schema.changeset(struct(schema), attrs).valid?
+
+        invalid_scope_errors =
+          schema
+          |> struct()
+          |> schema.changeset(Map.put(attrs, :scope_kind, "public"))
+          |> errors_on()
+
+        assert "is invalid" in invalid_scope_errors.scope_kind
+      end
+    end
+
+    test "retrieval run and result changesets reject missing tenant audit evidence" do
+      for {schema, attrs} <- [
+            {RetrievalRun, valid_retrieval_run_attrs()},
+            {RetrievalResult, valid_retrieval_result_attrs()}
+          ] do
+        errors =
+          schema
+          |> struct()
+          |> schema.changeset(Map.delete(attrs, :tenant_id))
+          |> errors_on()
+
+        assert "can't be blank" in errors.tenant_id
+        assert schema.changeset(struct(schema), attrs).valid?
+      end
+    end
+  end
+
   defp column_exists?(table_name, column_name) do
     %{rows: [[exists?]]} =
       Repo.query!(
@@ -192,5 +256,86 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
       )
 
     exists?
+  end
+
+  defp valid_source_attrs do
+    %{
+      entity_id: Ecto.UUID.generate(),
+      version: 1,
+      is_current: true,
+      kind: "doc",
+      digest: "source-digest",
+      tenant_id: "tenant-a",
+      actor_id: nil,
+      scope_kind: "tenant_shared",
+      metadata: %{}
+    }
+  end
+
+  defp valid_chunk_attrs do
+    %{
+      source_id: Ecto.UUID.generate(),
+      chunk_digest: "chunk-digest",
+      body: "Tenant scoped chunk",
+      heading_path: [],
+      start_offset: 0,
+      end_offset: 19,
+      token_count: 3,
+      tenant_id: "tenant-a",
+      actor_id: "actor-a",
+      scope_kind: "actor_scoped",
+      metadata: %{}
+    }
+  end
+
+  defp valid_citation_attrs do
+    %{
+      source_id: Ecto.UUID.generate(),
+      chunk_id: Ecto.UUID.generate(),
+      label: "[1]",
+      chunk_digest: "chunk-digest",
+      start_offset: 0,
+      end_offset: 10,
+      locator: %{"title" => "Tenant scoped citation"},
+      tenant_id: "tenant-a",
+      actor_id: "actor-a",
+      scope_kind: "actor_scoped",
+      metadata: %{}
+    }
+  end
+
+  defp valid_retrieval_run_attrs do
+    %{
+      query_text: "tenant scoped question",
+      backend: "test",
+      top_k: 5,
+      status: "pending",
+      tenant_id: "tenant-a",
+      actor_id: "actor-a",
+      filters: %{},
+      metadata: %{}
+    }
+  end
+
+  defp valid_retrieval_result_attrs do
+    %{
+      retrieval_run_id: Ecto.UUID.generate(),
+      chunk_id: Ecto.UUID.generate(),
+      source_id: Ecto.UUID.generate(),
+      rank: 1,
+      score: 0.99,
+      tenant_id: "tenant-a",
+      actor_id: "actor-a",
+      metadata: %{},
+      backend_payload: %{}
+    }
+  end
+
+  defp errors_on(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
+      Enum.reduce(opts, message, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
   end
 end
