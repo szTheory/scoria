@@ -6,19 +6,21 @@ defmodule Scoria.Knowledge.RetrievalRun do
   @foreign_key_type :binary_id
 
   schema "ai_retrieval_runs" do
-    field :query_text, :string
-    field :backend, :string
-    field :retriever, :string
-    field :top_k, :integer, default: 5
-    field :filters, :map, default: %{}
-    field :trace_id, :binary_id
-    field :span_id, :binary_id
-    field :status, :string, default: "pending"
-    field :latency_ms, :integer
-    field :metadata, :map, default: %{}
+    field(:tenant_id, :string)
+    field(:actor_id, :string)
+    field(:query_text, :string)
+    field(:backend, :string)
+    field(:retriever, :string)
+    field(:top_k, :integer, default: 5)
+    field(:filters, :map, default: %{})
+    field(:trace_id, :binary_id)
+    field(:span_id, :binary_id)
+    field(:status, :string, default: "pending")
+    field(:latency_ms, :integer)
+    field(:metadata, :map, default: %{})
 
-    has_many :results, Scoria.Knowledge.RetrievalResult
-    has_many :grounding_scores, Scoria.Knowledge.GroundingScore
+    has_many(:results, Scoria.Knowledge.RetrievalResult)
+    has_many(:grounding_scores, Scoria.Knowledge.GroundingScore)
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -26,6 +28,8 @@ defmodule Scoria.Knowledge.RetrievalRun do
   def changeset(run, attrs) do
     run
     |> cast(attrs, [
+      :tenant_id,
+      :actor_id,
       :query_text,
       :backend,
       :retriever,
@@ -37,6 +41,6 @@ defmodule Scoria.Knowledge.RetrievalRun do
       :latency_ms,
       :metadata
     ])
-    |> validate_required([:query_text, :backend, :top_k, :status])
+    |> validate_required([:tenant_id, :query_text, :backend, :top_k, :status])
   end
 end
