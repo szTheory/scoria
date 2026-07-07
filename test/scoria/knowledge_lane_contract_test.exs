@@ -9,6 +9,7 @@ defmodule Scoria.KnowledgeLaneContractTest do
     "test/scoria/knowledge/pgvector_test.exs",
     "test/scoria/knowledge/retrieval_test.exs",
     "test/scoria/knowledge/scrypath_test.exs",
+    "test/scoria/knowledge/tenant_isolation_test.exs",
     "test/scoria/knowledge_test.exs"
   ]
 

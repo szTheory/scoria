@@ -3,12 +3,11 @@ defmodule Mix.Tasks.Scoria.Test.Knowledge do
 
   @shortdoc "Runs the canonical optional knowledge verification lane"
 
-  @knowledge_test_files (
-                          Path.wildcard("test/scoria/knowledge_test.exs") ++
-                            Path.wildcard("test/scoria/knowledge/**/*_test.exs")
-                        ) |> Enum.sort()
-
-  def knowledge_test_files, do: @knowledge_test_files
+  def knowledge_test_files do
+    (Path.wildcard("test/scoria/knowledge_test.exs") ++
+       Path.wildcard("test/scoria/knowledge/**/*_test.exs"))
+    |> Enum.sort()
+  end
 
   @impl Mix.Task
   def run(args) do
