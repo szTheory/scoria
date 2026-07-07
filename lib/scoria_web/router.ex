@@ -17,11 +17,23 @@ defmodule ScoriaWeb.Router do
     end
   end
 
-  defmacro scoria_dashboard(path, _opts \\ []) do
+  defmacro scoria_dashboard(path, opts \\ []) do
     quote bind_quoted: binding() do
       scope path, alias: false, as: false do
         import Phoenix.LiveView.Router, only: [live: 3, live: 4, live_session: 2, live_session: 3]
         import Phoenix.Router, only: [get: 3]
+
+        host_on_mount_hooks = List.wrap(Keyword.get(opts, :on_mount, []))
+        scope_resolver = Keyword.get(opts, :scope_resolver, :default)
+
+        dashboard_scope_hook =
+          case scope_resolver do
+            :default -> ScoriaWeb.DashboardScope
+            resolver -> {ScoriaWeb.DashboardScope, resolver}
+          end
+
+        on_mount_hooks =
+          host_on_mount_hooks ++ [dashboard_scope_hook, ScoriaWeb.DashboardNav]
 
         get("/connectors/:connector_id/auth/start", ScoriaWeb.ConnectorAuthController, :start)
 
@@ -33,7 +45,7 @@ defmodule ScoriaWeb.Router do
 
         live_session :scoria_dashboard,
           root_layout: {ScoriaWeb.Layouts, :root},
-          on_mount: ScoriaWeb.DashboardNav do
+          on_mount: on_mount_hooks do
           live("/", ScoriaWeb.OrchestratorLive, :index)
           live("/approvals", ScoriaWeb.ApprovalsLive.Index, :index)
           live("/reviews", ScoriaWeb.ReviewQueueLive, :index)
