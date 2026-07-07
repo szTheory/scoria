@@ -8,9 +8,9 @@ defmodule ScoriaWeb.DatasetLive.Index do
   import ScoriaWeb.UI
 
   alias Scoria.Eval
-  alias Scoria.Runtime
   alias ScoriaWeb.Copy
   alias ScoriaWeb.DatasetCopy
+  alias ScoriaWeb.OperatorSurface
 
   # DatasetCopy.orientation/1 is intentionally unwired on this page: the dataset
   # index is a sortable table with no per-row orientation-prose surface —
@@ -185,7 +185,7 @@ defmodule ScoriaWeb.DatasetLive.Index do
 
   defp assign_promotion_params(socket, %{"promote" => promote} = params)
        when promote in @promotion_modes do
-    case promotion_from_params(promote, params) do
+    case promotion_from_params(socket.assigns.tenant_id, promote, params) do
       {:ok, promotion_context, promotion_source} ->
         socket
         |> assign(:promotion_context, promotion_context)
@@ -207,9 +207,9 @@ defmodule ScoriaWeb.DatasetLive.Index do
     |> assign(:promotion_error, nil)
   end
 
-  defp promotion_from_params("review", %{"review_candidate_id" => review_candidate_id})
+  defp promotion_from_params(tenant_id, "review", %{"review_candidate_id" => review_candidate_id})
        when is_binary(review_candidate_id) and review_candidate_id != "" do
-    case Eval.get_review_candidate(review_candidate_id) do
+    case Eval.get_review_candidate_for_tenant(tenant_id, review_candidate_id) do
       %{promotion_context: promotion_context} = candidate when is_map(promotion_context) ->
         {:ok, promotion_context,
          %{
@@ -223,14 +223,14 @@ defmodule ScoriaWeb.DatasetLive.Index do
     end
   end
 
-  defp promotion_from_params("workflow", %{
+  defp promotion_from_params(tenant_id, "workflow", %{
          "run_id" => run_id,
          "step_id" => step_id,
          "source_variant" => source_variant
        })
        when is_binary(run_id) and run_id != "" and is_binary(step_id) and step_id != "" and
               source_variant in @workflow_source_variants do
-    with {:ok, context} <- workflow_promotion_context(run_id, step_id, source_variant) do
+    with {:ok, context} <- workflow_promotion_context(tenant_id, run_id, step_id, source_variant) do
       {:ok, context,
        %{
          eyebrow: "Workflow evidence",
@@ -242,10 +242,10 @@ defmodule ScoriaWeb.DatasetLive.Index do
     end
   end
 
-  defp promotion_from_params(_promote, _params), do: :error
+  defp promotion_from_params(_tenant_id, _promote, _params), do: :error
 
-  defp workflow_promotion_context(run_id, step_id, source_variant) do
-    detail = Runtime.get_run_detail!(run_id)
+  defp workflow_promotion_context(tenant_id, run_id, step_id, source_variant) do
+    %{detail: detail} = OperatorSurface.fetch_tenant_run_detail(tenant_id, run_id)
     source_key = String.to_existing_atom(source_variant)
 
     detail.comparison_by_step

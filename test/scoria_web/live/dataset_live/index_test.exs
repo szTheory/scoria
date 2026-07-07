@@ -152,7 +152,7 @@ defmodule ScoriaWeb.DatasetLive.IndexTest do
 
     {:ok, _view, html} =
       live(
-        test_conn(),
+        test_conn("tenant-replay-dataset"),
         "/scoria/datasets?promote=workflow&run_id=#{run.id}&step_id=#{step.id}&source_variant=replay"
       )
 
@@ -196,9 +196,9 @@ defmodule ScoriaWeb.DatasetLive.IndexTest do
     assert_patch(view, "/scoria/datasets?dataset_id=#{dataset.id}")
   end
 
-  defp test_conn do
+  defp test_conn(tenant_id \\ "tenant-review") do
     build_conn()
-    |> Plug.Test.init_test_session(%{})
+    |> Plug.Test.init_test_session(%{"tenant_id" => tenant_id, "actor_id" => "dataset-operator"})
     |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.DatasetLive.IndexTest.Endpoint)
   end
 

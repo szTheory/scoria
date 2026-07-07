@@ -1,5 +1,6 @@
 defmodule ScoriaWeb.EvalSpecLive.IndexTest.Router do
   use Phoenix.Router
+  import ScoriaWeb.Router
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -8,6 +9,7 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest.Router do
 
   scope "/" do
     pipe_through(:browser)
+    scoria_dashboard("/scoria")
   end
 end
 
@@ -25,6 +27,7 @@ end
 
 defmodule ScoriaWeb.EvalSpecLive.IndexTest do
   use Scoria.EvalCase, async: false
+  import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
   @endpoint ScoriaWeb.EvalSpecLive.IndexTest.Endpoint
@@ -51,12 +54,7 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
   end
 
   test "renders an empty state when no eval specs exist" do
-    conn =
-      Phoenix.ConnTest.build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
-
-    {:ok, _view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+    {:ok, _view, html} = live(eval_spec_conn(), "/scoria/eval_specs")
 
     assert html =~ "No evaluation rubrics yet"
     refute html =~ "<tbody>"
@@ -96,12 +94,7 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
         }
       })
 
-    conn =
-      Phoenix.ConnTest.build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
-
-    {:ok, _view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+    {:ok, _view, html} = live(eval_spec_conn(), "/scoria/eval_specs")
 
     assert html =~ "No eval runs yet"
 
@@ -144,12 +137,7 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
         }
       })
 
-    conn =
-      Phoenix.ConnTest.build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
-
-    {:ok, view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+    {:ok, view, html} = live(eval_spec_conn(), "/scoria/eval_specs")
 
     # Initial render should list the spec
     assert html =~ "Evaluation Rubrics"
@@ -225,12 +213,7 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
         }
       })
 
-    conn =
-      Phoenix.ConnTest.build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
-
-    {:ok, view, _html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+    {:ok, view, _html} = live(eval_spec_conn(), "/scoria/eval_specs")
 
     render_click(view, "edit", %{"id" => spec.id})
 
@@ -300,12 +283,15 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
         }
       })
 
-    {:ok, source_run} = Workflows.create_run(%{root_role_id: "executor"})
+    tenant_id = "tenant-eval-results"
+
+    {:ok, source_run} = Workflows.create_run(%{root_role_id: "executor", tenant_id: tenant_id})
 
     {:ok, eval_run} =
       Eval.create_eval_run(%{
         eval_spec_id: spec.id,
         runner_mode: :offline_replay,
+        tenant_id: tenant_id,
         prompt_template_id: prompt.id,
         prompt_version: prompt.version
       })
@@ -322,12 +308,7 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
         }
       ])
 
-    conn =
-      Phoenix.ConnTest.build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
-
-    {:ok, _view, html} = live_isolated(conn, ScoriaWeb.EvalSpecLive.Index)
+    {:ok, _view, html} = live(eval_spec_conn(tenant_id), "/scoria/eval_specs")
     decoded_html = URI.decode_www_form(html)
     eval_html = eval_workbench_html(html)
     eval_html_downcase = String.downcase(eval_html)
@@ -354,5 +335,11 @@ defmodule ScoriaWeb.EvalSpecLive.IndexTest do
     |> Floki.parse_document!()
     |> Floki.find(".eval-spec-index")
     |> Floki.raw_html()
+  end
+
+  defp eval_spec_conn(tenant_id \\ "tenant-eval-spec") do
+    Phoenix.ConnTest.build_conn()
+    |> Plug.Test.init_test_session(%{"tenant_id" => tenant_id, "actor_id" => "eval-operator"})
+    |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.EvalSpecLive.IndexTest.Endpoint)
   end
 end

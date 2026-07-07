@@ -259,7 +259,7 @@ defmodule ScoriaWeb.ReviewQueueLive do
   end
 
   defp refresh_queue(socket, reset_selection \\ true) do
-    case load_queue(socket.assigns.filters) do
+    case load_queue(socket.assigns.tenant_id, socket.assigns.filters) do
       {:ok, rows, summary} ->
         selected_candidate_id =
           if reset_selection do
@@ -287,9 +287,9 @@ defmodule ScoriaWeb.ReviewQueueLive do
   # D-08: distinguish a genuine query failure (renders inline scoria-flash--fail + retry)
   # from a legitimately empty queue (renders empty_state/1 via the table's :empty slot)
   # instead of letting an unrescued query crash the LiveView.
-  defp load_queue(filters) do
-    rows = Eval.list_review_queue(filters)
-    summary = Eval.summarize_review_queue(filters)
+  defp load_queue(tenant_id, filters) do
+    rows = Eval.list_review_queue_for_tenant(tenant_id, filters)
+    summary = Eval.summarize_review_queue_for_tenant(tenant_id, filters)
     {:ok, rows, summary}
   rescue
     _ -> :error
@@ -308,7 +308,10 @@ defmodule ScoriaWeb.ReviewQueueLive do
     assign(
       socket,
       :selected_candidate,
-      Eval.get_review_candidate(socket.assigns.selected_candidate_id)
+      Eval.get_review_candidate_for_tenant(
+        socket.assigns.tenant_id,
+        socket.assigns.selected_candidate_id
+      )
     )
   end
 

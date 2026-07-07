@@ -208,7 +208,8 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
   end
 
   test "changing a filter push_patches the URL and reloads from validated URL params", _ctx do
-    pending = candidate_fixture(%{score_explanation: "Pending candidate", review_status: "pending"})
+    pending =
+      candidate_fixture(%{score_explanation: "Pending candidate", review_status: "pending"})
 
     in_review =
       candidate_fixture(%{score_explanation: "In-review candidate", review_status: "in_review"})
@@ -241,7 +242,8 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
   end
 
   test "an unrecognized review_status URL param falls back to the validated default", _ctx do
-    pending = candidate_fixture(%{score_explanation: "Falls back to pending", review_status: "pending"})
+    pending =
+      candidate_fixture(%{score_explanation: "Falls back to pending", review_status: "pending"})
 
     {:ok, _view, html} =
       live(test_conn(), "/scoria/reviews?review_status=not-a-real-status")
@@ -260,7 +262,10 @@ defmodule ScoriaWeb.ReviewQueueLiveTest do
 
   defp test_conn do
     Phoenix.ConnTest.build_conn()
-    |> Plug.Test.init_test_session(%{})
+    |> Plug.Test.init_test_session(%{
+      "tenant_id" => "tenant-review",
+      "actor_id" => "operator-review"
+    })
     |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.ReviewQueueLiveTest.Endpoint)
   end
 

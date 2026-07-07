@@ -1,10 +1,8 @@
 defmodule ScoriaWeb.EvalSpecLive.Index do
   use Phoenix.LiveView, layout: {ScoriaWeb.Layouts, :app}
-  import Ecto.Query, warn: false
   import ScoriaWeb.UI
   alias Scoria.Eval
-  alias Scoria.Eval.{EvalRun, EvalSpec}
-  alias Scoria.Repo
+  alias Scoria.Eval.EvalSpec
 
   @regressed_score_statuses ~w(failed regressed regression)
   @run_id_keys [
@@ -25,7 +23,7 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
      socket
      |> assign(:page_title, "Eval Workbench")
      |> assign(:eval_specs, Eval.list_eval_specs())
-     |> assign(:eval_runs, list_eval_runs())
+     |> assign(:eval_runs, list_eval_runs(socket))
      |> assign(:edit_spec, nil)
      |> assign(:form, nil)}
   end
@@ -57,7 +55,7 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
        |> assign(:edit_spec, nil)
        |> assign(:form, nil)
        |> assign(:eval_specs, Eval.list_eval_specs())
-       |> assign(:eval_runs, list_eval_runs())}
+       |> assign(:eval_runs, list_eval_runs(socket))}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
@@ -177,13 +175,7 @@ defmodule ScoriaWeb.EvalSpecLive.Index do
     """
   end
 
-  defp list_eval_runs do
-    EvalRun
-    |> order_by([run], desc: run.inserted_at)
-    |> limit(20)
-    |> preload(:scores)
-    |> Repo.all()
-  end
+  defp list_eval_runs(socket), do: Eval.list_eval_runs_for_tenant(socket.assigns.tenant_id)
 
   defp parse_eval_spec_params(spec, spec_params) do
     case Map.get(spec_params, "rubric") do
