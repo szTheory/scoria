@@ -128,7 +128,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 - [x] 44-03-PLAN.md — Approvals display/actions consume assigned dashboard scope
 - [x] 44-04-PLAN.md — Workflow index/detail tenant-qualified read model
 - [x] 44-05-PLAN.md — Review Queue, Eval Workbench, and Dataset Builder tenant-owned evidence filters
-- [ ] 44-06-PLAN.md — Prompt catalog/release workbench tenant-owned evidence filters
+- [x] 44-06-PLAN.md — Prompt catalog/release workbench tenant-owned evidence filters
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -159,7 +159,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
 | 43. Knowledge tenant isolation                 | v3.4      | 5/5 | Complete   | 2026-07-07 |
-| 44. Dashboard auth seam                        | v3.4      | 4/7 | In Progress|  |
+| 44. Dashboard auth seam                        | v3.4      | 5/7 | In Progress|  |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
 ## Previous Milestones

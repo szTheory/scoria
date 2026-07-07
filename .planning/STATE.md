@@ -5,14 +5,14 @@ milestone_name: Pre-1.0 Trust & Security Hardening
 current_phase: 44
 current_phase_name: dashboard-auth-seam
 status: executing
-stopped_at: Completed 44-05-PLAN.md
-last_updated: "2026-07-07T16:28:43.496Z"
+stopped_at: Completed 44-06-PLAN.md
+last_updated: "2026-07-07T16:43:45.424Z"
 last_activity: 2026-07-07
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 19
-  completed_plans: 16
+  completed_plans: 17
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 ## Current Position
 
 Phase: 44 (dashboard-auth-seam) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-07-07
 
@@ -163,6 +163,9 @@ Recent decisions affecting current work:
 - [Phase 44-05]: Review Queue and Dataset Builder treat review candidate IDs as hints and reload them through Scoria.Eval.get_review_candidate_for_tenant/2. — Closes AUTH-03 IDOR risk by ensuring URL-provided candidate IDs cannot directly render tenant-owned evidence without tenant validation.
 - [Phase 44-05]: Eval Workbench keeps eval specs as global catalog metadata while listing eval runs only through Scoria.Eval.list_eval_runs_for_tenant/1. — Preserves useful tenantless rubric metadata while filtering tenant-owned eval run and score evidence through DashboardScope tenant assigns.
 - [Phase 44-05]: Dataset Builder validates workflow promotion run IDs through OperatorSurface.fetch_tenant_run_detail/2 before rendering promotion evidence. — Keeps workflow promotion deep links selector-only and prevents foreign run hydration under another tenant scope.
+- [Phase 44-06]: PromptTemplate reads stay global catalog metadata; EvalRun and Approval evidence are tenant-filtered by DashboardScope tenant.
+- [Phase 44-06]: Prompt release workflow requests require explicit tenant_id so release approval writes match dashboard scope.
+- [Phase 44-06]: Plan path test/scoria_web/live/prompt_live/index_test.exs maps to current test/scoria_web/live/prompt_live_test.exs.
 
 ### Pending Todos
 
@@ -203,6 +206,7 @@ None at milestone start.
 | Phase 44-dashboard-auth-seam P03 | 8m35s | 3 tasks | 4 files |
 | Phase 44-dashboard-auth-seam P04 | 11m26s | 3 tasks | 5 files |
 | Phase 44-dashboard-auth-seam P05 | 11 min | 3 tasks | 8 files |
+| Phase 44 P06 | 8 min | 3 tasks | 5 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -226,8 +230,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-07T16:28:23.575Z
-Stopped at: Completed 44-05-PLAN.md
+Last session: 2026-07-07T16:43:35.897Z
+Stopped at: Completed 44-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
