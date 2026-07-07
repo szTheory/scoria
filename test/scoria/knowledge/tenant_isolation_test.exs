@@ -2,6 +2,26 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
   use Scoria.KnowledgeCase, async: false
 
   alias Scoria.Knowledge.Scope
+  alias Scoria.TestSupport.Migrations
+
+  @tenant_scope_migration 20_260_705_010_000
+  @tenant_scope_columns %{
+    "ai_knowledge_sources" => ~w(tenant_id actor_id scope_kind),
+    "ai_knowledge_chunks" => ~w(tenant_id actor_id scope_kind),
+    "ai_retrieval_runs" => ~w(tenant_id actor_id),
+    "ai_retrieval_results" => ~w(tenant_id actor_id),
+    "ai_knowledge_citations" => ~w(tenant_id actor_id scope_kind)
+  }
+  @tenant_scope_indexes ~w(
+    ai_knowledge_sources_tenant_id_index
+    ai_knowledge_sources_tenant_entity_version_index
+    ai_knowledge_chunks_tenant_id_index
+    ai_knowledge_chunks_tenant_source_id_index
+    ai_retrieval_runs_tenant_status_inserted_at_index
+    ai_retrieval_results_tenant_run_rank_index
+    ai_knowledge_citations_tenant_source_id_index
+    ai_knowledge_citations_tenant_chunk_id_index
+  )
 
   defp tenant_a_scope do
     Scope.new!(tenant_id: "tenant-a", actor_id: "actor-a", scope_kind: :tenant_shared)
@@ -80,5 +100,97 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
       refute Scope.visible_to(actor_b, actor_scope("actor-a"))
       refute Scope.visible_to(other_tenant, actor_scope("actor-a"))
     end
+  end
+
+  describe "knowledge tenant-scope migration" do
+    setup do
+      Migrations.migrate_knowledge!()
+      :ok
+    end
+
+    test "adds nullable tenant scope columns through the knowledge migration path" do
+      assert migration_recorded?(Migrations.knowledge_migration_source(), @tenant_scope_migration)
+
+      for {table_name, column_names} <- @tenant_scope_columns,
+          column_name <- column_names do
+        assert column_exists?(table_name, column_name), "#{table_name}.#{column_name} is missing"
+
+        refute column_required?(table_name, column_name),
+               "#{table_name}.#{column_name} must stay nullable"
+      end
+    end
+
+    test "creates tenant indexes for knowledge storage and audit rows" do
+      for index_name <- @tenant_scope_indexes do
+        assert index_exists?(index_name), "#{index_name} is missing"
+      end
+
+      refute File.exists?("priv/repo/migrations/20260705010000_add_knowledge_tenant_scope.exs")
+
+      assert File.exists?(
+               "priv/repo/knowledge_migrations/20260705010000_add_knowledge_tenant_scope.exs"
+             )
+    end
+  end
+
+  defp column_exists?(table_name, column_name) do
+    %{rows: [[exists?]]} =
+      Repo.query!(
+        """
+        select exists (
+          select 1
+          from information_schema.columns
+          where table_schema = current_schema()
+            and table_name = $1
+            and column_name = $2
+        )
+        """,
+        [table_name, column_name]
+      )
+
+    exists?
+  end
+
+  defp column_required?(table_name, column_name) do
+    %{rows: [[nullable]]} =
+      Repo.query!(
+        """
+        select is_nullable
+        from information_schema.columns
+        where table_schema = current_schema()
+          and table_name = $1
+          and column_name = $2
+        """,
+        [table_name, column_name]
+      )
+
+    nullable == "NO"
+  end
+
+  defp index_exists?(index_name) do
+    %{rows: [[exists?]]} =
+      Repo.query!(
+        """
+        select exists (
+          select 1
+          from pg_indexes
+          where schemaname = current_schema()
+            and indexname = $1
+        )
+        """,
+        [index_name]
+      )
+
+    exists?
+  end
+
+  defp migration_recorded?(table_name, version) do
+    %{rows: [[exists?]]} =
+      Repo.query!(
+        "select exists (select 1 from #{table_name} where version = $1)",
+        [version]
+      )
+
+    exists?
   end
 end
