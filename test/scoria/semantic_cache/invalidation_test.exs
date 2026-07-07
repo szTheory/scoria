@@ -47,7 +47,9 @@ defmodule Scoria.SemanticCache.InvalidationTest do
              SemanticCache.admit(entry_attrs(%{policy_fingerprint: policy_fingerprint}))
 
     assert {:ok, %{entry: other_lane}} =
-             SemanticCache.admit(entry_attrs(%{lane_key: "other_lane", policy_fingerprint: policy_fingerprint}))
+             SemanticCache.admit(
+               entry_attrs(%{lane_key: "other_lane", policy_fingerprint: policy_fingerprint})
+             )
 
     assert {:ok, _} =
              SemanticCache.invalidate_by_policy(%{
@@ -130,13 +132,20 @@ defmodule Scoria.SemanticCache.InvalidationTest do
   end
 
   defp seeded_source_fingerprint do
+    scope = [tenant_id: "tenant-a", actor_id: "actor-a", scope_kind: :tenant_shared]
+
     {:ok, source} =
-      Knowledge.create_source(%{kind: "doc", digest: "digest-1", metadata: %{}, title: "FAQ"})
+      Knowledge.create_source(%{kind: "doc", digest: "digest-1", metadata: %{}, title: "FAQ"},
+        scope: scope
+      )
 
     {:ok, chunk} =
       %Chunk{}
       |> Chunk.changeset(%{
         source_id: source.id,
+        tenant_id: source.tenant_id,
+        actor_id: source.actor_id,
+        scope_kind: source.scope_kind,
         chunk_digest: "chunk-1",
         body: "Scoria answer",
         start_offset: 0,
@@ -146,11 +155,24 @@ defmodule Scoria.SemanticCache.InvalidationTest do
       })
       |> Repo.insert()
 
-    {:ok, retrieval_run} = Knowledge.create_retrieval_run(%{query_text: "what is scoria?", backend: "test"})
+    {:ok, retrieval_run} =
+      Knowledge.create_retrieval_run(%{
+        query_text: "what is scoria?",
+        backend: "test",
+        tenant_id: source.tenant_id,
+        actor_id: source.actor_id
+      })
 
     {:ok, _results} =
       Knowledge.append_retrieval_results(retrieval_run.id, [
-        %{chunk_id: chunk.id, source_id: source.id, rank: 1, score: 0.95}
+        %{
+          chunk_id: chunk.id,
+          source_id: source.id,
+          rank: 1,
+          score: 0.95,
+          tenant_id: source.tenant_id,
+          actor_id: source.actor_id
+        }
       ])
 
     Compatibility.source_fingerprint_for_retrieval_run(retrieval_run.id)

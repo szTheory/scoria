@@ -12,11 +12,17 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
   alias Scoria.Workflows
 
   defmodule AccountFaqLane do
-    use Scoria.SemanticLane, lane_key: "account_faq", default_scope: :tenant_shared, safe_read_only: true
+    use Scoria.SemanticLane,
+      lane_key: "account_faq",
+      default_scope: :tenant_shared,
+      safe_read_only: true
   end
 
   defmodule ActorLane do
-    use Scoria.SemanticLane, lane_key: "actor_help", default_scope: :actor_scoped, safe_read_only: true
+    use Scoria.SemanticLane,
+      lane_key: "actor_help",
+      default_scope: :actor_scoped,
+      safe_read_only: true
   end
 
   defmodule SourceAwareLane do
@@ -29,7 +35,9 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
 
   defmodule Handlers do
     def answer(_step, _run),
-      do: {:ok, %{"output" => %{"answer" => "fresh answer"}, "evidence_refs" => %{"docs" => ["faq"]}}}
+      do:
+        {:ok,
+         %{"output" => %{"answer" => "fresh answer"}, "evidence_refs" => %{"docs" => ["faq"]}}}
 
     def reject_writeback(_step, _run) do
       {:ok,
@@ -160,7 +168,11 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
 
     assert {:ok, summary} =
              Runtime.start_run(
-               %{tenant_id: "tenant-bypass", actor_id: "actor-bypass", session_id: "session-bypass"},
+               %{
+                 tenant_id: "tenant-bypass",
+                 actor_id: "actor-bypass",
+                 session_id: "session-bypass"
+               },
                semantic_cache: [lane: AccountFaqLane],
                input: "approval question",
                root_role_id: "executor",
@@ -173,7 +185,10 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
     detail = Runtime.get_run_detail!(summary.run_id)
 
     assert run.metadata["runtime"]["semantic_cache"]["lookup_status"] == "bypass"
-    assert run.metadata["runtime"]["semantic_cache"]["eligibility_reason_code"] == "approval_required"
+
+    assert run.metadata["runtime"]["semantic_cache"]["eligibility_reason_code"] ==
+             "approval_required"
+
     assert Repo.aggregate(Entry, :count, :id) == 0
     assert detail.semantic_evidence.summary.lookup_status == "bypass"
     assert detail.semantic_evidence.summary.eligibility_reason_code == "approval_required"
@@ -216,9 +231,16 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
     assert entry.origin_run_id == summary.run_id
     assert entry.answer_payload["answer"] == "fresh answer"
     assert entry.policy_fingerprint == policy_fingerprint("default")
-    assert entry.source_fingerprint == Compatibility.source_fingerprint_for_retrieval_run(retrieval_run_id)
-    assert Enum.zip(Pgvector.to_list(entry.query_embedding), Scoria.Knowledge.Embedder.Deterministic.embed_query("fresh question"))
+
+    assert entry.source_fingerprint ==
+             Compatibility.source_fingerprint_for_retrieval_run(retrieval_run_id)
+
+    assert Enum.zip(
+             Pgvector.to_list(entry.query_embedding),
+             Scoria.Knowledge.Embedder.Deterministic.embed_query("fresh question")
+           )
            |> Enum.all?(fn {left, right} -> abs(left - right) < 1.0e-6 end)
+
     assert not is_nil(entry.expires_at)
     assert detail.semantic_evidence.summary.lookup_status == "miss"
     assert detail.semantic_evidence.summary.fallback_executed
@@ -232,7 +254,11 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
   test "eligible misses can record writeback_rejected lifecycle lineage" do
     assert {:ok, summary} =
              Runtime.start_run(
-               %{tenant_id: "tenant-reject", actor_id: "actor-reject", session_id: "session-reject"},
+               %{
+                 tenant_id: "tenant-reject",
+                 actor_id: "actor-reject",
+                 session_id: "session-reject"
+               },
                semantic_cache: [lane: AccountFaqLane],
                input: "unsafe question",
                root_role_id: "executor",
@@ -269,7 +295,9 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
     eventually(fn -> Workflows.get_run!(summary.run_id).status == "completed" end)
     run = Workflows.get_run!(summary.run_id)
 
-    assert run.metadata["runtime"]["semantic_cache"]["eligibility_reason_code"] == "query_text_missing"
+    assert run.metadata["runtime"]["semantic_cache"]["eligibility_reason_code"] ==
+             "query_text_missing"
+
     assert run.metadata["runtime"]["semantic_cache"]["lookup_status"] == "bypass"
   end
 
@@ -296,7 +324,11 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
 
     assert {:ok, summary} =
              Runtime.start_run(
-               %{tenant_id: "tenant-reject", actor_id: "actor-reject", session_id: "session-reject"},
+               %{
+                 tenant_id: "tenant-reject",
+                 actor_id: "actor-reject",
+                 session_id: "session-reject"
+               },
                semantic_cache: [lane: AccountFaqLane],
                input: "what is scoria?",
                root_role_id: "executor",
@@ -311,7 +343,10 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
     detail = Runtime.get_run_detail!(summary.run_id)
 
     assert run.metadata["runtime"]["semantic_cache"]["lookup_status"] == "reject"
-    assert run.metadata["runtime"]["semantic_cache"]["lookup_reason_code"] == "prompt_version_mismatch"
+
+    assert run.metadata["runtime"]["semantic_cache"]["lookup_reason_code"] ==
+             "prompt_version_mismatch"
+
     assert run.metadata["runtime"]["semantic_cache"]["candidate_status"] == "invalidated"
     assert step.result_envelope["output"]["answer"] == "fresh answer"
     assert reloaded_entry.status == "invalidated"
@@ -343,7 +378,11 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
 
     assert {:ok, summary} =
              Runtime.start_run(
-               %{tenant_id: "tenant-source", actor_id: "actor-source", session_id: "session-source"},
+               %{
+                 tenant_id: "tenant-source",
+                 actor_id: "actor-source",
+                 session_id: "session-source"
+               },
                semantic_cache: [lane: SourceAwareLane],
                input: "what is scoria?",
                root_role_id: "executor",
@@ -356,7 +395,9 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
     [step] = run.steps
     reloaded_entry = Repo.get!(Entry, entry.id)
 
-    assert run.metadata["runtime"]["semantic_cache"]["lookup_reason_code"] == "source_fingerprint_mismatch"
+    assert run.metadata["runtime"]["semantic_cache"]["lookup_reason_code"] ==
+             "source_fingerprint_mismatch"
+
     assert run.metadata["runtime"]["semantic_cache"]["candidate_status"] == "invalidated"
     assert step.result_envelope["output"]["answer"] == "fresh answer"
     assert reloaded_entry.status == "invalidated"
@@ -377,7 +418,8 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
                query_text: "what is scoria?",
                query_embedding: [0.1, 0.2, 0.3],
                answer_payload: %{"answer" => "expired answer"},
-               expires_at: DateTime.add(DateTime.utc_now() |> DateTime.truncate(:microsecond), -60, :second)
+               expires_at:
+                 DateTime.add(DateTime.utc_now() |> DateTime.truncate(:microsecond), -60, :second)
              })
 
     assert {:ok, summary} =
@@ -406,13 +448,21 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
     alias Scoria.Knowledge
     alias Scoria.Knowledge.Chunk
 
+    scope = [tenant_id: "tenant-a", actor_id: "actor-a", scope_kind: :tenant_shared]
+
     {:ok, source} =
-      Knowledge.create_source(%{kind: "doc", digest: "digest-#{query_text}", metadata: %{}, title: "FAQ"})
+      Knowledge.create_source(
+        %{kind: "doc", digest: "digest-#{query_text}", metadata: %{}, title: "FAQ"},
+        scope: scope
+      )
 
     {:ok, chunk} =
       %Chunk{}
       |> Chunk.changeset(%{
         source_id: source.id,
+        tenant_id: source.tenant_id,
+        actor_id: source.actor_id,
+        scope_kind: source.scope_kind,
         chunk_digest: "chunk-#{query_text}",
         body: query_text,
         start_offset: 0,
@@ -422,10 +472,25 @@ defmodule Scoria.Runtime.SemanticFastPathTest do
       })
       |> Repo.insert()
 
-    {:ok, run} = Knowledge.create_retrieval_run(%{query_text: query_text, backend: "test"})
+    {:ok, run} =
+      Knowledge.create_retrieval_run(%{
+        query_text: query_text,
+        backend: "test",
+        tenant_id: source.tenant_id,
+        actor_id: source.actor_id
+      })
 
     {:ok, _results} =
-      Knowledge.append_retrieval_results(run.id, [%{chunk_id: chunk.id, source_id: source.id, rank: 1, score: 0.95}])
+      Knowledge.append_retrieval_results(run.id, [
+        %{
+          chunk_id: chunk.id,
+          source_id: source.id,
+          rank: 1,
+          score: 0.95,
+          tenant_id: source.tenant_id,
+          actor_id: source.actor_id
+        }
+      ])
 
     run.id
   end

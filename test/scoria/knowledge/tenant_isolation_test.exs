@@ -4,6 +4,8 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
   alias Scoria.Knowledge.{Chunk, Citation, RetrievalResult, RetrievalRun, Scope, Source}
   alias Scoria.TestSupport.Migrations
 
+  @tenant_a_scope [tenant_id: "tenant-a", actor_id: "actor-a", scope_kind: :tenant_shared]
+  @tenant_b_scope [tenant_id: "tenant-b", actor_id: "actor-b", scope_kind: :tenant_shared]
   @tenant_scope_migration 20_260_705_010_000
   @tenant_scope_columns %{
     "ai_knowledge_sources" => ~w(tenant_id actor_id scope_kind),
@@ -197,6 +199,64 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
     end
   end
 
+  describe "public source and chunk API tenant isolation" do
+    test "source write and chunk list paths raise without scope" do
+      assert_raise ArgumentError, ~r/tenant_id is required/, fn ->
+        Scoria.Knowledge.create_source(ingestable_source_attrs("unscoped-create"))
+      end
+
+      assert_raise ArgumentError, ~r/tenant_id is required/, fn ->
+        Scoria.Knowledge.ingest_source(ingestable_source_attrs("unscoped-ingest"))
+      end
+
+      assert_raise ArgumentError, ~r/tenant_id is required/, fn ->
+        Scoria.Knowledge.list_source_chunks(Ecto.UUID.generate())
+      end
+    end
+
+    test "ingested chunks inherit tenant scope from the source" do
+      assert {:ok, %Source{} = source} =
+               Scoria.Knowledge.ingest_source(ingestable_source_attrs("tenant-a"),
+                 scope: @tenant_a_scope
+               )
+
+      assert source.tenant_id == "tenant-a"
+      assert source.actor_id == "actor-a"
+      assert source.scope_kind == "tenant_shared"
+
+      assert [%Chunk{} = chunk | _] =
+               Scoria.Knowledge.list_source_chunks(source.id, scope: @tenant_a_scope)
+
+      assert chunk.source_id == source.id
+      assert chunk.tenant_id == source.tenant_id
+      assert chunk.actor_id == source.actor_id
+      assert chunk.scope_kind == source.scope_kind
+    end
+
+    test "scoped chunk lists exclude null-tenant and other-tenant rows" do
+      assert {:ok, %Source{} = tenant_a_source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("tenant-a"),
+                 scope: @tenant_a_scope
+               )
+
+      assert {:ok, %Source{} = tenant_b_source} =
+               Scoria.Knowledge.create_source(ingestable_source_attrs("tenant-b"),
+                 scope: @tenant_b_scope
+               )
+
+      tenant_a_chunk = insert_chunk!(tenant_a_source, "tenant-a", @tenant_a_scope)
+      _tenant_b_chunk = insert_chunk!(tenant_b_source, "tenant-b", @tenant_b_scope)
+      _legacy_chunk = insert_legacy_chunk!(tenant_a_source, "legacy-null")
+
+      assert [visible_chunk] =
+               Scoria.Knowledge.list_source_chunks(tenant_a_source.id, scope: @tenant_a_scope)
+
+      assert visible_chunk.id == tenant_a_chunk.id
+
+      assert [] = Scoria.Knowledge.list_source_chunks(tenant_a_source.id, scope: @tenant_b_scope)
+    end
+  end
+
   defp column_exists?(table_name, column_name) do
     %{rows: [[exists?]]} =
       Repo.query!(
@@ -270,6 +330,46 @@ defmodule Scoria.Knowledge.TenantIsolationTest do
       scope_kind: "tenant_shared",
       metadata: %{}
     }
+  end
+
+  defp ingestable_source_attrs(suffix) do
+    %{
+      kind: "doc",
+      uri: "file:///#{suffix}.md",
+      title: "Tenant #{suffix}",
+      body: "Tenant scoped body for #{suffix}"
+    }
+  end
+
+  defp insert_chunk!(%Source{} = source, suffix, scope) do
+    %Chunk{}
+    |> Chunk.changeset(%{
+      source_id: source.id,
+      tenant_id: source.tenant_id,
+      actor_id: source.actor_id,
+      scope_kind: source.scope_kind,
+      chunk_digest: "chunk-#{suffix}",
+      body: "Chunk #{suffix}",
+      heading_path: [],
+      start_offset: 0,
+      end_offset: 12,
+      token_count: 2,
+      metadata: %{scope: inspect(scope)}
+    })
+    |> Repo.insert!()
+  end
+
+  defp insert_legacy_chunk!(%Source{} = source, suffix) do
+    Repo.insert!(%Chunk{
+      source_id: source.id,
+      chunk_digest: "chunk-#{suffix}",
+      body: "Legacy chunk",
+      heading_path: [],
+      start_offset: 0,
+      end_offset: 12,
+      token_count: 2,
+      metadata: %{}
+    })
   end
 
   defp valid_chunk_attrs do
