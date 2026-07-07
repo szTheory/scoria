@@ -89,7 +89,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 **Plans**: 5 plans
 **Wave 1**
 
-- [ ] 43-01-PLAN.md — Scope contract and tenant isolation test spine
+- [x] 43-01-PLAN.md — Scope contract and tenant isolation test spine
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -140,7 +140,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | Phase                                          | Milestone | Plans Complete | Status      | Completed |
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
-| 43. Knowledge tenant isolation                 | v3.4      | 0/5            | Not started | -         |
+| 43. Knowledge tenant isolation                 | v3.4      | 1/5 | In Progress|  |
 | 44. Dashboard auth seam                        | v3.4      | 0/?            | Not started | -         |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
