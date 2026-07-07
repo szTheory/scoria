@@ -251,9 +251,14 @@ defmodule Scoria.Knowledge do
   end
 
   def score_grounding(payload, opts \\ []) do
+    payload =
+      payload
+      |> attrs_to_map()
+      |> Map.merge(attrs_to_map(opts))
+
     checks = [
       {"citation_presence", Grounding.score_citation_presence(payload)},
-      {"citation_validity", Grounding.score_citation_validity(payload)},
+      {"citation_validity", Grounding.score_citation_validity(payload, opts)},
       {"chunk_membership", Grounding.score_chunk_membership(payload.answer || "", payload)},
       {"unsupported_claims", Grounding.score_unsupported_claims(payload.answer || "", payload)},
       {"retrieval_hits", Grounding.score_retrieval_hits(payload.results || [], payload)},

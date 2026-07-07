@@ -1,5 +1,6 @@
 defmodule Scoria.Knowledge.Grounding do
   alias Scoria.Knowledge.CitationFormatter
+  alias Scoria.Knowledge.Scope
 
   def score_citation_presence(%{citations: citations}) when is_list(citations) do
     score = if citations == [], do: 0.0, else: 1.0
@@ -9,21 +10,35 @@ defmodule Scoria.Knowledge.Grounding do
 
   def score_citation_presence(_payload), do: %{status: "failed", score: 0.0, details: %{count: 0}}
 
-  def score_citation_validity(%{citations: citations}) do
-    results = Enum.map(citations, &CitationFormatter.validate_anchor/1)
-    invalid = Enum.count(results, &match?({:error, _}, &1))
-    total = max(length(citations), 1)
-    score = (total - invalid) / total
-    %{status: status(score), score: score, details: %{invalid: invalid, total: length(citations)}}
+  def score_citation_validity(payload, opts \\ [])
+
+  def score_citation_validity(%{citations: citations} = payload, opts) when is_list(citations) do
+    payload = scope_input(payload, opts)
+
+    case scope_from_payload(payload) do
+      {:ok, scope} ->
+        results = Enum.map(citations, &CitationFormatter.validate_anchor(&1, scope: scope))
+        invalid = Enum.count(results, &match?({:error, _}, &1))
+        citation_validity_score(citations, invalid)
+
+      :error ->
+        citation_validity_score(citations, max(length(citations), 1))
+    end
   end
 
-  def score_citation_validity(_payload), do: %{status: "failed", score: 0.0, details: %{invalid: 1}}
+  def score_citation_validity(_payload, _opts),
+    do: %{status: "failed", score: 0.0, details: %{invalid: 1}}
 
   def score_chunk_membership(answer, %{citations: citations}) do
     snippets = Enum.map(citations, fn citation -> citation[:quote] || citation["quote"] || "" end)
     matches = Enum.count(snippets, &String.contains?(answer, &1))
     total = max(length(snippets), 1)
-    %{status: status(matches / total), score: matches / total, details: %{matches: matches, total: length(snippets)}}
+
+    %{
+      status: status(matches / total),
+      score: matches / total,
+      details: %{matches: matches, total: length(snippets)}
+    }
   end
 
   def score_unsupported_claims(answer, %{citations: citations}) do
@@ -57,7 +72,8 @@ defmodule Scoria.Knowledge.Grounding do
     %{status: status(hits / total), score: hits / total, details: %{hit_rate: hits / total}}
   end
 
-  def score_retrieval_hits(_results, _labels), do: %{status: "passed", score: 1.0, details: %{hit_rate: 1.0}}
+  def score_retrieval_hits(_results, _labels),
+    do: %{status: "passed", score: 1.0, details: %{hit_rate: 1.0}}
 
   def score_retrieval_ranking(results, %{expected_chunk_ids: expected_chunk_ids}) do
     reciprocal_rank =
@@ -68,7 +84,11 @@ defmodule Scoria.Knowledge.Grounding do
         end
       end)
 
-    %{status: status(reciprocal_rank), score: reciprocal_rank, details: %{retrieval_ranking: reciprocal_rank}}
+    %{
+      status: status(reciprocal_rank),
+      score: reciprocal_rank,
+      details: %{retrieval_ranking: reciprocal_rank}
+    }
   end
 
   def score_retrieval_ranking(_results, _labels) do
@@ -78,4 +98,27 @@ defmodule Scoria.Knowledge.Grounding do
   defp status(score) when score >= 0.75, do: "passed"
   defp status(score) when score >= 0.4, do: "warning"
   defp status(_score), do: "failed"
+
+  defp citation_validity_score(citations, invalid) do
+    total = max(length(citations), 1)
+    score = (total - invalid) / total
+    %{status: status(score), score: score, details: %{invalid: invalid, total: length(citations)}}
+  end
+
+  defp scope_from_payload(payload) do
+    {:ok, Scope.from_opts!(payload)}
+  rescue
+    ArgumentError -> :error
+  end
+
+  defp scope_input(payload, opts) do
+    payload
+    |> attrs_to_map()
+    |> Map.merge(attrs_to_map(opts))
+  end
+
+  defp attrs_to_map(%_{} = attrs), do: attrs |> Map.from_struct() |> attrs_to_map()
+  defp attrs_to_map(attrs) when is_list(attrs), do: Enum.into(attrs, %{})
+  defp attrs_to_map(attrs) when is_map(attrs), do: attrs
+  defp attrs_to_map(nil), do: %{}
 end
