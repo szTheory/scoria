@@ -76,7 +76,11 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     :ok
   end
 
-  defp session_conn(session \\ %{"tenant_id" => "tenant-live"}) do
+  defp session_conn(session \\ %{}) do
+    session =
+      %{"tenant_id" => "tenant-live", "actor_id" => "operator-live"}
+      |> Map.merge(session)
+
     build_conn()
     |> Plug.Test.init_test_session(session)
     |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.ApprovalsLiveTest.Endpoint)
@@ -620,7 +624,8 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
       %{approval: rejected} = pending_approval()
       decide_approval(rejected, "rejected")
 
-      {:ok, _view, html} = live(session_conn(), "/scoria/approvals?scope=decided&outcome=approved")
+      {:ok, _view, html} =
+        live(session_conn(), "/scoria/approvals?scope=decided&outcome=approved")
 
       assert html =~ "scoria-badge scoria-badge--pass"
       refute html =~ "scoria-badge scoria-badge--fail"

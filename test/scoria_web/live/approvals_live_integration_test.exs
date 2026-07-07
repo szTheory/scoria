@@ -94,9 +94,9 @@ defmodule ScoriaWeb.ApprovalsLiveIntegrationTest do
     :ok
   end
 
-  defp approvals_conn(tenant_id) do
+  defp approvals_conn(tenant_id, actor_id \\ "operator-int") do
     build_conn()
-    |> Plug.Test.init_test_session(%{"tenant_id" => tenant_id, "actor_id" => "operator-int"})
+    |> Plug.Test.init_test_session(%{"tenant_id" => tenant_id, "actor_id" => actor_id})
     |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
   end
 
