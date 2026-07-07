@@ -152,11 +152,18 @@ See `.planning/MILESTONES.md` for full closeout history.
   5. The 6-principle scope doctrine ("Scoria owns the verb; host owns the noun", P1–P6) is confirmed present in `PROJECT.md ## Constraints` + `## Key Decisions` and cross-linked from the eval / knowledge / dashboard fix rationale (confirm-and-cross-link — the doctrine was already recorded at v3.3 close).
 
 **Plans**: 5 plans
+**Wave 1**
 
 - [ ] 45-01-PLAN.md — Pgvector cosine score repair and persisted retrieval proof
 - [ ] 45-02-PLAN.md — Citation answerability labels and default chunker non-overlap cleanup
 - [ ] 45-03-PLAN.md — Shared latency timing helper plus offline/judge fail-closed latency proof
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 45-04-PLAN.md — Online scoring latency measurement and duration proof
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 45-05-PLAN.md — Scope doctrine cross-links and Phase 45 closeout verification
 
 ## Progress
