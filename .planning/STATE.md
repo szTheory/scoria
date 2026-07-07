@@ -2,15 +2,17 @@
 gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Pre-1.0 Trust & Security Hardening
+current_phase: 44
+current_phase_name: dashboard-auth-seam
 status: executing
-stopped_at: Completed 44-03-PLAN.md
-last_updated: "2026-07-07T15:23:17.757Z"
+stopped_at: Completed 44-04-PLAN.md
+last_updated: "2026-07-07T16:13:02.055Z"
 last_activity: 2026-07-07
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 19
-  completed_plans: 14
+  completed_plans: 15
   percent: 50
 ---
 
@@ -27,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 ## Current Position
 
 Phase: 44 (dashboard-auth-seam) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-07-07
 
@@ -155,6 +157,9 @@ Recent decisions affecting current work:
 - [Phase 44-01]: Custom resolver failures either fail closed with generic Scoria copy, redirect/halt under host control, or raise InvalidReturnError for malformed returns. — This keeps browser-facing failures generic and makes malformed resolver output loud in tests/development.
 - [Phase 44-dashboard-auth-seam-03]: ApprovalsLive treats URL tenant/query values as UI hints only; tenant authority comes from DashboardScope assigns. — Closes the cross-tenant approvals spoof path by ensuring pending, decided, and deep-linked approvals use the authenticated dashboard scope rather than request hints.
 - [Phase 44-dashboard-auth-seam-03]: Approval decision context uses assigned dashboard tenant and actor; no approval-lineage or hardcoded default tenant fallback remains. — Keeps approval decisions and audit outbox events aligned with the host-asserted tenant and actor.
+- [Phase ?]: 44-04: Workflow list and detail reads use ScoriaWeb.DashboardScope assigns instead of params, session fallbacks, or default tenant derivation.
+- [Phase ?]: 44-04: Workflow detail checks tenant visibility before runtime hydration, linked incident lookup, review candidate projection, remote evidence lookup, or PubSub subscription.
+- [Phase ?]: 44-04: Review candidate deep links are tenant-gated in OperatorSurface before calling the existing Eval projection because the projected DTO omits tenant_id.
 
 ### Pending Todos
 
@@ -193,6 +198,7 @@ None at milestone start.
 > **Ordered roadmap + dependencies** for SEED-005…011 live in `ROADMAP.md` `## Backlog` (999.1–999.7); "why" index in `.planning/seeds/README.md`. (Stray per-plan timing rows that previously polluted this table were removed at v3.3 close 2026-07-04 — canonical per-plan metrics live in the phase manifests.)
 | Phase 44 P01 | 7 min | 3 tasks | 4 files |
 | Phase 44-dashboard-auth-seam P03 | 8m35s | 3 tasks | 4 files |
+| Phase 44-dashboard-auth-seam P04 | 11m26s | 3 tasks | 5 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -216,8 +222,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-07T15:23:03.631Z
-Stopped at: Completed 44-03-PLAN.md
+Last session: 2026-07-07T16:13:02.049Z
+Stopped at: Completed 44-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

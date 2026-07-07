@@ -118,7 +118,7 @@ See `.planning/MILESTONES.md` for full closeout history.
   2. A documented tenant-resolution/authorization callback makes `tenant_id` host-asserted, not a spoofable `?tenant=` param; no in-lib role/RBAC model is added.
   3. Dashboard LiveViews resolve tenant from the host-asserted source; the unauthenticated `params["tenant"] → "default"` spoof path is closed (a `?tenant=<victim>` request no longer returns another tenant's data).
 
-**Plans**: 1/7 plans executed
+**Plans**: 3/7 plans executed
 **Wave 1**
 
 - [x] 44-01-PLAN.md — Router `on_mount:` pass-through plus `ScoriaWeb.DashboardScope` resolver/gate
@@ -126,7 +126,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 **Wave 2** *(blocked on Wave 1 completion; parallel by dashboard surface)*
 
 - [x] 44-03-PLAN.md — Approvals display/actions consume assigned dashboard scope
-- [ ] 44-04-PLAN.md — Workflow index/detail tenant-qualified read model
+- [x] 44-04-PLAN.md — Workflow index/detail tenant-qualified read model
 - [ ] 44-05-PLAN.md — Review Queue, Eval Workbench, and Dataset Builder tenant-owned evidence filters
 - [ ] 44-06-PLAN.md — Prompt catalog/release workbench tenant-owned evidence filters
 
@@ -159,7 +159,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
 | 43. Knowledge tenant isolation                 | v3.4      | 5/5 | Complete   | 2026-07-07 |
-| 44. Dashboard auth seam                        | v3.4      | 1/7 | In Progress|  |
+| 44. Dashboard auth seam                        | v3.4      | 3/7 | In Progress|  |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
 ## Previous Milestones
