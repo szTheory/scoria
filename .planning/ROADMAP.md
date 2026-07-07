@@ -13,8 +13,8 @@
 
 **Current milestone: v3.4 Pre-1.0 Trust & Security Hardening** 🔴 P0 — SEED-006 / Backlog 999.1. Fix + prove only; no Hex publish (that release cut belongs to SEED-005 / 999.2). Phases 42/43/44 are independent subsystems (eval / knowledge / web) and can run in parallel or any order; Phase 45 depends on 42 + 43.
 
-- [ ] **Phase 42: Eval fails closed** - Kill the fake-green shortcuts so eval runs a real subject output, a real deterministic scorer, `:not_scored`, and a verdict-consulting release gate
-- [ ] **Phase 43: Knowledge tenant isolation** - Add tenant/actor/scope columns + a mandatory fail-closed retrieval filter (nil tenant RAISES) so no tenant reads another tenant's chunks
+- [x] **Phase 42: Eval fails closed** - Kill the fake-green shortcuts so eval runs a real subject output, a real deterministic scorer, `:not_scored`, and a verdict-consulting release gate
+- [x] **Phase 43: Knowledge tenant isolation** - Add tenant/actor/scope columns + a mandatory fail-closed retrieval filter (nil tenant RAISES) so no tenant reads another tenant's chunks
 - [ ] **Phase 44: Dashboard auth seam** - Pass-through `on_mount:` + host-asserted tenant resolution so `?tenant=` is no longer spoofable (authz stays delegated)
 - [ ] **Phase 45: Correctness sweep + fail-closed proof & closeout** - Real cosine `score_chunk`, label-aware citation scoring, dead chunker param removed, real latency gate, and scope-doctrine cross-link
 

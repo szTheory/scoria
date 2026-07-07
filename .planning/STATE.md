@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Pre-1.0 Trust & Security Hardening
-status: verifying
-stopped_at: Completed 43-05-PLAN.md
-last_updated: "2026-07-07T12:29:13.133Z"
+status: ready
+stopped_at: Completed Phase 43 post-wave build gate
+last_updated: "2026-07-07T12:31:03Z"
 last_activity: 2026-07-07
 progress:
   total_phases: 4
@@ -22,13 +22,13 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 43 — knowledge-tenant-isolation closeout verification
+**Current focus:** Phase 44 — dashboard-auth-seam
 
 ## Current Position
 
-Phase: 43 (knowledge-tenant-isolation) — COMPLETE
-Plan: 5 of 5
-Status: Phase complete — ready for post-wave build gate
+Phase: 44 (dashboard-auth-seam) — NOT STARTED
+Plan: not selected
+Status: Phase 43 complete; ready to start Phase 44
 Last activity: 2026-07-07
 
 ## Performance Metrics
@@ -209,10 +209,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-07T12:29:13.129Z
-Stopped at: Completed 43-05-PLAN.md
+Last session: 2026-07-07T12:31:03Z
+Stopped at: Completed Phase 43 post-wave build gate
 Resume file: None
 
 ## Operator Next Steps
 
-- Run the Phase 43 post-wave build gate, then continue v3.4 with Phase 44 (dashboard auth seam).
+- Start Phase 44 (dashboard auth seam).
