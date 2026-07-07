@@ -93,7 +93,7 @@ defmodule Scoria.Workflows.PromptRelease do
       if status == "approved" do
         template_id = updated_approval.arguments["template_id"]
         template = PromptRegistry.get_prompt_template!(template_id)
-        {:ok, _} = PromptRegistry.transition_status(template, "active")
+        PromptRegistry.activate_prompt_template!(template)
       end
 
       updated_approval

@@ -95,9 +95,9 @@ defmodule ScoriaWeb.OperatorSurface do
     end
   end
 
-  def connector_drawer(connector_id) do
-    if function_exported?(Connectors, :get_connector_drawer, 1) do
-      Connectors.get_connector_drawer(connector_id)
+  def connector_drawer(tenant_id, connector_id) do
+    if function_exported?(Connectors, :get_connector_drawer, 2) do
+      Connectors.get_connector_drawer(tenant_id, connector_id)
     else
       nil
     end

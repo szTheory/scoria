@@ -11,6 +11,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
   alias Scoria.Workflows.PromptRelease
 
   @origin_nouns ~w(incident review run dataset eval prompt)
+  @release_not_ready_notice "Release requires completed matching eval evidence."
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -20,14 +21,7 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
     # Fetch draft template
     draft = PromptRegistry.get_prompt_template!(id)
 
-    active =
-      Repo.one(
-        from(p in PromptTemplate,
-          where: p.entity_id == ^draft.entity_id and p.status == "active",
-          order_by: [desc: p.version],
-          limit: 1
-        )
-      )
+    active = active_template_for(draft.entity_id)
 
     socket =
       socket
@@ -72,6 +66,16 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
     )
   end
 
+  defp active_template_for(entity_id) do
+    Repo.one(
+      from(p in PromptTemplate,
+        where: p.entity_id == ^entity_id and p.status == "active",
+        order_by: [desc: p.version],
+        limit: 1
+      )
+    )
+  end
+
   defp fetch_pending_approval(tenant_id, prompt_id) do
     alias Scoria.Observe.Approval
 
@@ -109,12 +113,20 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
     actor_id = socket.assigns.actor_id
     tenant_id = socket.assigns.tenant_id
 
-    case PromptRelease.start_release_workflow(draft_id, actor_id, tenant_id: tenant_id) do
-      {:ok, _} ->
-        {:noreply, assign(socket, pending_approval: fetch_pending_approval(tenant_id, draft_id))}
+    if release_ready?(socket) do
+      case PromptRelease.start_release_workflow(draft_id, actor_id, tenant_id: tenant_id) do
+        {:ok, _} ->
+          {:noreply,
+           assign(socket,
+             pending_approval: fetch_pending_approval(tenant_id, draft_id),
+             rejection_notice: nil
+           )}
 
-      _ ->
-        {:noreply, assign(socket, rejection_notice: "Failed to request release.")}
+        _ ->
+          {:noreply, assign(socket, rejection_notice: "Failed to request release.")}
+      end
+    else
+      {:noreply, assign(socket, rejection_notice: @release_not_ready_notice)}
     end
   end
 
@@ -122,23 +134,37 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
     actor_id = socket.assigns.actor_id
     approval = socket.assigns.pending_approval
 
-    if approval do
-      case PromptRelease.approve(approval.id, "approved", %{actor_id: actor_id}) do
-        {:ok, _} ->
-          {:noreply,
-           assign(socket,
-             show_approve_modal: false,
-             approval_notice: "Prompt Release Approved.",
-             pending_approval: nil
-           )}
+    cond do
+      !release_ready?(socket) ->
+        {:noreply,
+         assign(socket,
+           show_approve_modal: false,
+           rejection_notice: @release_not_ready_notice
+         )}
 
-        _ ->
-          {:noreply,
-           assign(socket, show_approve_modal: false, rejection_notice: "Failed to approve.")}
-      end
-    else
-      {:noreply,
-       assign(socket, show_approve_modal: false, rejection_notice: "No pending approval found.")}
+      is_nil(approval) ->
+        {:noreply,
+         assign(socket, show_approve_modal: false, rejection_notice: "No pending approval found.")}
+
+      true ->
+        case PromptRelease.approve(approval.id, "approved", %{actor_id: actor_id}) do
+          {:ok, _} ->
+            socket =
+              socket
+              |> refresh_release_assigns()
+              |> assign(
+                show_approve_modal: false,
+                approval_notice: "Prompt Release Approved.",
+                rejection_notice: nil,
+                pending_approval: nil
+              )
+
+            {:noreply, socket}
+
+          _ ->
+            {:noreply,
+             assign(socket, show_approve_modal: false, rejection_notice: "Failed to approve.")}
+        end
     end
   end
 
@@ -338,6 +364,27 @@ defmodule ScoriaWeb.PromptLive.ReleaseWorkbenchLive do
           to_string(d.dataset_version) == to_string(a.dataset_version) and
           to_string(d.eval_spec_version) == to_string(a.eval_spec_version)
     end
+  end
+
+  defp release_ready?(socket) do
+    can_approve?(
+      socket.assigns.draft,
+      socket.assigns.draft_run,
+      socket.assigns.active,
+      socket.assigns.active_run
+    )
+  end
+
+  defp refresh_release_assigns(socket) do
+    tenant_id = socket.assigns.tenant_id
+    draft = PromptRegistry.get_prompt_template!(socket.assigns.draft.id)
+    active = active_template_for(draft.entity_id)
+
+    socket
+    |> assign(:draft, draft)
+    |> assign(:active, active)
+    |> assign(:draft_run, fetch_eval_run(tenant_id, draft.id))
+    |> assign(:active_run, fetch_eval_run(tenant_id, if(active, do: active.id, else: nil)))
   end
 
   defp prompt_release_status(%{status: "draft"}), do: "draft_blocked"

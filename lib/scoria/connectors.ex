@@ -28,6 +28,21 @@ defmodule Scoria.Connectors do
       |> Repo.get!(connector_id)
       |> Repo.preload([:capability_snapshot, :grants])
 
+    connector_drawer_item(connector)
+  end
+
+  def get_connector_drawer(tenant_id, connector_id) do
+    Connector
+    |> where([connector], connector.id == ^connector_id and connector.tenant_id == ^tenant_id)
+    |> preload([:capability_snapshot, :grants])
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      connector -> connector_drawer_item(connector)
+    end
+  end
+
+  defp connector_drawer_item(connector) do
     %{
       connector_id: connector.id,
       connector_label: connector.label,
@@ -44,12 +59,17 @@ defmodule Scoria.Connectors do
   end
 
   defp maybe_filter_tenant(query, nil), do: query
-  defp maybe_filter_tenant(query, tenant_id), do: where(query, [connector], connector.tenant_id == ^tenant_id)
+
+  defp maybe_filter_tenant(query, tenant_id),
+    do: where(query, [connector], connector.tenant_id == ^tenant_id)
 
   defp fleet_row(connector) do
     pending_approval_count =
       Approval
-      |> where([approval], approval.connector_id == ^connector.id and approval.status == "pending")
+      |> where(
+        [approval],
+        approval.connector_id == ^connector.id and approval.status == "pending"
+      )
       |> Repo.aggregate(:count)
 
     %{
@@ -64,7 +84,9 @@ defmodule Scoria.Connectors do
     }
   end
 
-  defp capability_tool_count(%CapabilitySnapshot{tool_count: count}) when is_integer(count), do: count
+  defp capability_tool_count(%CapabilitySnapshot{tool_count: count}) when is_integer(count),
+    do: count
+
   defp capability_tool_count(_snapshot), do: 0
 
   defp auth_provenance(connector) do
@@ -73,7 +95,7 @@ defmodule Scoria.Connectors do
       |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
       |> List.first()
 
-    %{status: latest_grant && latest_grant.status || connector.auth_mode}
+    %{status: (latest_grant && latest_grant.status) || connector.auth_mode}
   end
 
   defp capability_snapshot_item(nil), do: nil

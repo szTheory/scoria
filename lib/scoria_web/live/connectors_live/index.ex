@@ -59,7 +59,10 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
   def handle_event("open_connector_drawer", %{"id" => connector_id}, socket) do
     {:noreply,
      socket
-     |> assign(:connector_drawer, OperatorSurface.connector_drawer(connector_id))
+     |> assign(
+       :connector_drawer,
+       OperatorSurface.connector_drawer(socket.assigns.tenant_id, connector_id)
+     )
      |> assign(:runtime_drawer, nil)}
   end
 

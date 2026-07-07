@@ -36,6 +36,7 @@ defmodule ScoriaWeb.DashboardAuthPromptsTest do
   alias Scoria.Eval.EvalRun
   alias Scoria.Observe.Approval
   alias Scoria.PromptRegistry
+  alias Scoria.PromptRegistry.PromptTemplate
   alias Scoria.Repo
   alias Scoria.Workflows
 
@@ -166,6 +167,99 @@ defmodule ScoriaWeb.DashboardAuthPromptsTest do
     assert approval.actor_id == actor_a
   end
 
+  test "forged release request event is rejected when eval evidence is incomplete" do
+    unique = unique_suffix()
+    tenant_a = "dashboard-prompt-forged-request-a-#{unique}"
+    actor_a = "dashboard-prompt-forged-request-actor-a-#{unique}"
+
+    %{draft: draft} = seed_prompt_pair!(unique)
+    before_count = prompt_release_approval_count(draft.id)
+
+    {:ok, view, _html} =
+      live(scoped_conn(tenant_a, actor_a), "/scoria/prompts/#{draft.id}/release")
+
+    html = render_click(view, "request_release", %{})
+
+    assert html =~ "Release requires completed matching eval evidence."
+    assert prompt_release_approval_count(draft.id) == before_count
+  end
+
+  test "forged approval event is rejected when eval evidence is incomplete" do
+    unique = unique_suffix()
+    tenant_a = "dashboard-prompt-forged-approve-a-#{unique}"
+    actor_a = "dashboard-prompt-forged-approve-actor-a-#{unique}"
+
+    %{draft: draft} = seed_prompt_pair!(unique)
+
+    approval =
+      seed_prompt_release_approval!(tenant_a, actor_a, draft.id,
+        unique: unique,
+        reason: "tenant A forged approval marker #{unique}"
+      )
+
+    {:ok, view, _html} =
+      live(scoped_conn(tenant_a, actor_a), "/scoria/prompts/#{draft.id}/release")
+
+    html = render_click(view, "approve_release", %{})
+
+    assert html =~ "Release requires completed matching eval evidence."
+    assert Repo.get!(PromptTemplate, draft.id).status == "draft"
+    assert Repo.get!(Approval, approval.id).status == "pending"
+  end
+
+  test "approval promotes the draft as the only current active prompt version" do
+    unique = unique_suffix()
+    tenant_a = "dashboard-prompt-promote-a-#{unique}"
+    actor_a = "dashboard-prompt-promote-actor-a-#{unique}"
+    dataset_version = "tenant-a-prompt-release-dataset-#{unique}"
+
+    %{active: active, draft: draft} = seed_prompt_pair!(unique)
+
+    seed_completed_eval_run!(tenant_a, active,
+      unique: unique,
+      dataset_version: dataset_version,
+      dataset_name: "Prompt active dataset #{unique}"
+    )
+
+    seed_completed_eval_run!(tenant_a, draft,
+      unique: unique,
+      dataset_version: dataset_version,
+      dataset_name: "Prompt draft dataset #{unique}"
+    )
+
+    approval =
+      seed_prompt_release_approval!(tenant_a, actor_a, draft.id,
+        unique: unique,
+        reason: "tenant A promotion approval marker #{unique}"
+      )
+
+    {:ok, view, _html} =
+      live(scoped_conn(tenant_a, actor_a), "/scoria/prompts/#{draft.id}/release")
+
+    view |> element("button", "Approve Prompt Release") |> render_click()
+    view |> element("button", "Confirm Approval") |> render_click()
+
+    updated_draft = Repo.get!(PromptTemplate, draft.id)
+    demoted_active = Repo.get!(PromptTemplate, active.id)
+
+    assert updated_draft.status == "active"
+    assert updated_draft.is_current
+    assert demoted_active.status == "archived"
+    refute demoted_active.is_current
+    assert Repo.get!(Approval, approval.id).status == "approved"
+
+    active_current_versions =
+      Repo.all(
+        from(prompt in PromptTemplate,
+          where:
+            prompt.entity_id == ^draft.entity_id and prompt.status == "active" and
+              prompt.is_current
+        )
+      )
+
+    assert Enum.map(active_current_versions, & &1.id) == [draft.id]
+  end
+
   test "missing dashboard scope halts before prompt release evidence assigns are populated" do
     assert {:halt, halted_socket} =
              ScoriaWeb.DashboardScope.on_mount(
@@ -215,10 +309,11 @@ defmodule ScoriaWeb.DashboardAuthPromptsTest do
   defp seed_completed_eval_run!(tenant_id, prompt, opts) do
     unique = Keyword.fetch!(opts, :unique)
     dataset_version = Keyword.fetch!(opts, :dataset_version)
+    dataset_name = Keyword.get(opts, :dataset_name, "Prompt dataset #{dataset_version}")
 
     {:ok, dataset} =
       Eval.create_dataset(%{
-        name: "Prompt dataset #{dataset_version}",
+        name: dataset_name,
         version: dataset_version,
         state: :sealed
       })
@@ -324,6 +419,17 @@ defmodule ScoriaWeb.DashboardAuthPromptsTest do
         order_by: [desc: approval.inserted_at],
         limit: 1
       )
+    )
+  end
+
+  defp prompt_release_approval_count(template_id) do
+    Repo.aggregate(
+      from(approval in Approval,
+        where:
+          approval.tool_name == "prompt_release" and
+            fragment("?->>'template_id' = ?", approval.arguments, ^template_id)
+      ),
+      :count
     )
   end
 

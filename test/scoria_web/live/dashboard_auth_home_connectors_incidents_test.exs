@@ -137,6 +137,16 @@ defmodule ScoriaWeb.DashboardAuthHomeConnectorsIncidentsTest do
     assert html =~ connector_a.label
     refute html =~ connector_b.label
 
+    html = render_click(view, "open_connector_drawer", %{"id" => connector_b.id})
+    refute html =~ "connector-detail-drawer"
+    refute html =~ connector_b.label
+    refute html =~ connector_b.key
+
+    html = render_click(view, "open_connector_drawer", %{"id" => connector_a.id})
+    assert html =~ "connector-detail-drawer"
+    assert html =~ connector_a.label
+    refute html =~ connector_b.label
+
     runtime_b =
       seed_runtime_instance!(tenant_b,
         unique: unique,
@@ -192,7 +202,10 @@ defmodule ScoriaWeb.DashboardAuthHomeConnectorsIncidentsTest do
     refute html =~ incident_b.summary
 
     {:ok, _view, run_origin_html} =
-      live(scoped_conn(tenant_a), "/scoria/incidents?tenant=#{tenant_b}&from=run:#{foreign_run_id}")
+      live(
+        scoped_conn(tenant_a),
+        "/scoria/incidents?tenant=#{tenant_b}&from=run:#{foreign_run_id}"
+      )
 
     assert run_origin_html =~ "No incident is linked to"
     refute run_origin_html =~ incident_b.summary

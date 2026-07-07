@@ -13,7 +13,7 @@ defmodule Scoria.PromptRegistry do
   Lists all prompt templates, ordered by inserted_at descending.
   """
   def list_prompt_templates do
-    Repo.all(from p in PromptTemplate, order_by: [desc: p.inserted_at])
+    Repo.all(from(p in PromptTemplate, order_by: [desc: p.inserted_at]))
   end
 
   @doc """
@@ -26,15 +26,15 @@ defmodule Scoria.PromptRegistry do
   """
   def create_draft_template(attrs \\ %{}) do
     entity_id = Map.get(attrs, :entity_id) || Map.get(attrs, "entity_id") || Ecto.UUID.generate()
-    
+
     # We apply the attrs via changeset to the default struct to get the final payload
     # for the token estimator, ensuring all text fields are correctly merged.
     temp_changeset = PromptTemplate.changeset(%PromptTemplate{}, attrs)
     merged_struct = Ecto.Changeset.apply_changes(temp_changeset)
-    
+
     estimated_tokens = Tokenizer.estimate_tokens(merged_struct)
 
-    attrs_with_defaults = 
+    attrs_with_defaults =
       attrs
       |> Map.put_new(:entity_id, entity_id)
       |> Map.put_new(:version, 1)
@@ -54,14 +54,15 @@ defmodule Scoria.PromptRegistry do
     new_version = old_template.version + 1
     old_template_changeset = Ecto.Changeset.change(old_template, is_current: false)
 
-    base_attrs = Map.take(old_template, [:entity_id, :system_message, :few_shot_examples, :user_template])
-    
+    base_attrs =
+      Map.take(old_template, [:entity_id, :system_message, :few_shot_examples, :user_template])
+
     temp_changeset = PromptTemplate.changeset(struct(PromptTemplate, base_attrs), attrs)
     merged_struct = Ecto.Changeset.apply_changes(temp_changeset)
-    
+
     estimated_tokens = Tokenizer.estimate_tokens(merged_struct)
 
-    new_attrs = 
+    new_attrs =
       merged_struct
       |> Map.from_struct()
       |> Map.take([:entity_id, :system_message, :few_shot_examples, :user_template])
@@ -90,6 +91,31 @@ defmodule Scoria.PromptRegistry do
   end
 
   @doc """
+  Promotes a prompt template as the only current active version for its entity.
+  """
+  def activate_prompt_template(%PromptTemplate{} = template) do
+    Repo.transaction(fn -> activate_prompt_template!(template) end)
+  end
+
+  def activate_prompt_template!(%PromptTemplate{} = template) do
+    from(p in PromptTemplate,
+      where: p.entity_id == ^template.entity_id and p.id != ^template.id
+    )
+    |> Repo.update_all(set: [is_current: false])
+
+    from(p in PromptTemplate,
+      where:
+        p.entity_id == ^template.entity_id and p.id != ^template.id and
+          p.status == "active"
+    )
+    |> Repo.update_all(set: [status: "archived"])
+
+    template
+    |> Ecto.Changeset.change(status: "active", is_current: true)
+    |> Repo.update!()
+  end
+
+  @doc """
   Updates a draft template in place. Rejects if not draft.
   """
   def update_draft_template(%PromptTemplate{} = template, attrs) do
@@ -98,12 +124,13 @@ defmodule Scoria.PromptRegistry do
         template
         |> Ecto.Changeset.change()
         |> Ecto.Changeset.add_error(:status, "cannot modify content fields of non-draft template")
+
       {:error, changeset}
     else
       changeset = PromptTemplate.changeset(template, attrs)
       merged_struct = Ecto.Changeset.apply_changes(changeset)
       estimated_tokens = Tokenizer.estimate_tokens(merged_struct)
-      
+
       changeset
       |> Ecto.Changeset.put_change(:estimated_tokens, estimated_tokens)
       |> Repo.update()
