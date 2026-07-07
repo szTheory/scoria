@@ -41,8 +41,8 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   @decided_page_size 25
 
   @impl true
-  def mount(params, session, socket) do
-    tenant_id = params["tenant"] || session["tenant_id"] || "default"
+  def mount(params, _session, socket) do
+    tenant_id = socket.assigns.tenant_id
 
     socket =
       socket
@@ -54,10 +54,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
       |> assign(:approval_inbox, [])
       |> assign(:decision_receipts, %{})
       |> assign(:runtime_query, Map.get(params, "runtime"))
-      |> assign(
-        :actor_id,
-        session["actor_id"] || session["user_id"] || session["session_id"] || "operator"
-      )
+      |> assign(:actor_id, dashboard_actor_id(socket))
       |> assign(:tenant_id, tenant_id)
       |> assign(:toasts, [])
       |> assign(:scope, "pending")
@@ -158,7 +155,9 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     {:noreply,
      socket
      |> assign(:decision_modal, nil)
-     |> push_patch(to: approvals_path(socket.assigns[:scoria_base] || "", patch_params(socket, %{})))}
+     |> push_patch(
+       to: approvals_path(socket.assigns[:scoria_base] || "", patch_params(socket, %{}))
+     )}
   end
 
   # D-09: selection is a deep-linkable URL param, not a socket-only assign — the
@@ -442,7 +441,10 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   defp decision_receipts_for(approvals, events_by_approval_id) do
     Map.new(approvals, fn approval ->
       {ApprovalCopy.field(approval, :id),
-       decision_receipt_text(approval, Map.get(events_by_approval_id, ApprovalCopy.field(approval, :id)))}
+       decision_receipt_text(
+         approval,
+         Map.get(events_by_approval_id, ApprovalCopy.field(approval, :id))
+       )}
     end)
   end
 
@@ -573,7 +575,12 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     )
     |> where(
       [event],
-      fragment("?->>? = ?", event.redacted_refs, "approval_id", ^ApprovalCopy.field(approval, :id))
+      fragment(
+        "?->>? = ?",
+        event.redacted_refs,
+        "approval_id",
+        ^ApprovalCopy.field(approval, :id)
+      )
     )
     |> order_by([event], desc: event.inserted_at)
     |> limit(1)
@@ -708,11 +715,14 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     request_event = approval_request_event(approval)
 
     %{
-      actor_id: socket.assigns.actor_id || approval.session_id || "operator",
-      tenant_id:
-        socket.assigns.tenant_id || (request_event && request_event.tenant_id) || "default",
+      actor_id: dashboard_actor_id(socket),
+      tenant_id: socket.assigns.tenant_id,
       trace_id: request_event && request_event.trace_id
     }
+  end
+
+  defp dashboard_actor_id(socket) do
+    socket.assigns[:actor_id] || Map.get(socket.assigns[:scoria_scope] || %{}, :actor_id)
   end
 
   defp approval_request_event(approval) do
