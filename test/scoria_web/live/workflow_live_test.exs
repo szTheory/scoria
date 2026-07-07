@@ -40,6 +40,22 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   alias Scoria.Workflows
 
   @endpoint ScoriaWeb.WorkflowLiveTest.Endpoint
+  @tenant_id "workflow-live-tenant"
+
+  defp workflow_conn(tenant_id \\ @tenant_id) do
+    build_conn()
+    |> Plug.Test.init_test_session(%{
+      "tenant_id" => tenant_id,
+      "actor_id" => "workflow-live-operator"
+    })
+    |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+  end
+
+  defp create_workflow_run(attrs) do
+    attrs
+    |> Map.put_new(:tenant_id, @tenant_id)
+    |> Workflows.create_run()
+  end
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.WorkflowLiveTest.Endpoint,
@@ -61,10 +77,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "runs index renders the shared-table empty state and exact scan-surface copy" do
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, _view, html} = live(conn, "/scoria/workflows")
 
@@ -78,17 +91,14 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
   test "runs index renders persisted runs in the shared table with one Open trace action" do
     {:ok, run} =
-      Workflows.create_run(%{
+      create_workflow_run(%{
         root_role_id: "executor",
         status: "running",
         execution_mode: "live",
         session_id: "session-runs-index"
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, _view, html} = live(conn, "/scoria/workflows")
 
@@ -102,12 +112,9 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "async loading state renders scoria-skeleton in place of bespoke loading markup" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+    {:ok, run} = create_workflow_run(%{root_role_id: "executor"})
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
@@ -156,7 +163,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "LiveView mounts from persisted workflow records and subscribes for projection updates" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+    {:ok, run} = create_workflow_run(%{root_role_id: "executor"})
 
     {:ok, step} =
       Workflows.create_step(run.id, %{
@@ -173,10 +180,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         snapshot: %{"tool" => "fetch"}
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
@@ -189,12 +193,9 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "run page renders object header identity, copyable ID, status, and allowlisted origin chip" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", status: "running"})
+    {:ok, run} = create_workflow_run(%{root_role_id: "executor", status: "running"})
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}?from=incident:inc_42")
 
@@ -209,12 +210,9 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "run page ignores unknown origins without rendering a return chip or error" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", status: "running"})
+    {:ok, run} = create_workflow_run(%{root_role_id: "executor", status: "running"})
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}?from=unknown:123")
 
@@ -227,12 +225,9 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "run page recomputes origin context on route-param updates" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", status: "running"})
+    {:ok, run} = create_workflow_run(%{root_role_id: "executor", status: "running"})
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
@@ -256,7 +251,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       })
 
     {:ok, run} =
-      Workflows.create_run(%{
+      create_workflow_run(%{
         root_role_id: "executor",
         status: "running",
         metadata: %{"prompt_template_id" => prompt.id}
@@ -290,7 +285,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     {:ok, incident} =
       %Incident{}
       |> Incident.changeset(%{
-        tenant_id: "default",
+        tenant_id: @tenant_id,
         incident_key: "quality-loop-threading",
         severity: "warning",
         status: "open",
@@ -304,10 +299,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       })
       |> Repo.insert()
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
     decoded_html = URI.decode_www_form(html)
@@ -335,7 +327,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "run page renders lifecycle badges and responds to run and step updates without owning truth" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+    {:ok, run} = create_workflow_run(%{root_role_id: "executor"})
 
     {:ok, step} =
       Workflows.create_step(run.id, %{
@@ -345,10 +337,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         status: "running"
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, _html} = live(conn, "/scoria/workflows/#{run.id}")
 
@@ -363,12 +352,9 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "run page hides the remote invocation evidence notebook when no approvals are projected" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+    {:ok, run} = create_workflow_run(%{root_role_id: "executor"})
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
@@ -378,7 +364,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "workflow page renders delegated evidence from the curated runtime DTO and keeps step selection on the right rail" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "planner"})
+    {:ok, run} = create_workflow_run(%{root_role_id: "planner"})
 
     {:ok, parent_step} =
       Workflows.create_step(run.id, %{
@@ -411,10 +397,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         }
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
@@ -444,9 +427,9 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "workflow page renders delegated empty and pending states without altering the rest of the page" do
-    {:ok, empty_run} = Workflows.create_run(%{root_role_id: "executor"})
+    {:ok, empty_run} = create_workflow_run(%{root_role_id: "executor"})
 
-    {:ok, pending_run} = Workflows.create_run(%{root_role_id: "planner"})
+    {:ok, pending_run} = create_workflow_run(%{root_role_id: "planner"})
 
     {:ok, parent_step} =
       Workflows.create_step(pending_run.id, %{
@@ -464,10 +447,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         status: "pending"
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, empty_view, empty_html} = live(conn, "/scoria/workflows/#{empty_run.id}")
     {:ok, pending_view, pending_html} = live(conn, "/scoria/workflows/#{pending_run.id}")
@@ -491,7 +471,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
   end
 
   test "live-only steps show the typed replay comparison empty state" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+    {:ok, run} = create_workflow_run(%{root_role_id: "executor"})
 
     {:ok, _step} =
       Workflows.create_step(run.id, %{
@@ -502,10 +482,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         projected_context: %{"some" => "context"}
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
@@ -533,7 +510,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
              })
 
     {:ok, run} =
-      Workflows.create_run(%{
+      create_workflow_run(%{
         root_role_id: "assistant",
         tenant_id: "tenant-semantic-hit",
         session_id: "session-semantic-hit",
@@ -564,10 +541,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         }
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn("tenant-semantic-hit")
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
@@ -600,7 +574,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       SemanticCache.invalidate_entry(entry, "prompt_version_mismatch", %{"phase" => "46"})
 
     {:ok, run} =
-      Workflows.create_run(%{
+      create_workflow_run(%{
         root_role_id: "assistant",
         tenant_id: "tenant-semantic-reject",
         session_id: "session-semantic-reject",
@@ -629,10 +603,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         result_envelope: %{"output" => %{"answer" => "fresh answer"}}
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn("tenant-semantic-reject")
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
@@ -648,7 +619,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
   test "replay runs render provenance strip, source toggles, and durable promotion notices" do
     {:ok, source_run} =
-      Workflows.create_run(%{
+      create_workflow_run(%{
         root_role_id: "executor",
         session_id: "source-session"
       })
@@ -677,7 +648,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       })
 
     {:ok, replay_run} =
-      Workflows.create_run(%{
+      create_workflow_run(%{
         root_role_id: "executor",
         session_id: "replay-session",
         execution_mode: "replay",
@@ -725,10 +696,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         }
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{replay_run.id}")
 
@@ -774,7 +742,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
   test "promotion modal starts with a blank notes field" do
     {:ok, source_run} =
-      Workflows.create_run(%{root_role_id: "executor", session_id: "source-session"})
+      create_workflow_run(%{root_role_id: "executor", session_id: "source-session"})
 
     {:ok, source_step} =
       Workflows.create_step(source_run.id, %{
@@ -800,7 +768,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
       })
 
     {:ok, replay_run} =
-      Workflows.create_run(%{
+      create_workflow_run(%{
         root_role_id: "executor",
         session_id: "replay-session",
         execution_mode: "replay",
@@ -845,10 +813,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         }
       })
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn()
 
     {:ok, view, _html} = live(conn, "/scoria/workflows/#{replay_run.id}")
 
@@ -865,7 +830,11 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
   test "workflow deep links preserve review candidate evidence on the run page" do
     {:ok, run} =
-      Workflows.create_run(%{root_role_id: "executor", session_id: "candidate-session"})
+      create_workflow_run(%{
+        root_role_id: "executor",
+        tenant_id: "tenant-review",
+        session_id: "candidate-session"
+      })
 
     {:ok, step} =
       Workflows.create_step(run.id, %{
@@ -901,10 +870,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
         })
       )
 
-    conn =
-      build_conn()
-      |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.WorkflowLiveTest.Endpoint)
+    conn = workflow_conn("tenant-review")
 
     {:ok, view, html} =
       live(conn, "/scoria/workflows/#{run.id}?review_candidate_id=#{candidate.id}")
