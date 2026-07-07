@@ -5,15 +5,15 @@ milestone_name: Pre-1.0 Trust & Security Hardening
 current_phase: 44
 current_phase_name: dashboard-auth-seam
 status: executing
-stopped_at: Phase 44 planning complete
-last_updated: "2026-07-07T14:46:16.300Z"
+stopped_at: Completed 44-01-PLAN.md
+last_updated: "2026-07-07T15:05:56.633Z"
 last_activity: 2026-07-07
-last_activity_desc: Phase 44 planning complete
+last_activity_desc: Phase 44 execution started
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 19
+  completed_plans: 13
   percent: 50
 ---
 
@@ -29,10 +29,10 @@ See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
 
 ## Current Position
 
-Phase: 44 (dashboard-auth-seam) — PLANNED
-Plan: 7 plans ready
+Phase: 44 (dashboard-auth-seam) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
-Last activity: 2026-07-07 — Phase 44 planning complete
+Last activity: 2026-07-07 — Phase 44 execution started
 
 ## Performance Metrics
 
@@ -153,6 +153,9 @@ Recent decisions affecting current work:
 - [Phase 42]: ReleaseGate treats completed nil, unknown, failed, and inconclusive verdicts as blocking because only persisted string "passed" is allowed. — Preserves the 42-01 Verdict allowlist and avoids treating malformed completed eval evidence as ungated.
 - [Phase 42]: ReleaseGate uses a left join to EvalCampaign so standalone and offline campaign eval runs count, while metadata source "online_scoring" runs are excluded. — Online scoring runs are review evidence, not offline release evidence; standalone legacy runs should remain compatible.
 - [Phase 42]: No completed eval verdict remains default-open for adopter compatibility, emits [:scoria, :release_gate, :ungated] telemetry, and can be made strict with require_eval_verdict. — Keeps existing adopters from being bricked while making ungated prompts inspectable and opt-in blockable.
+- [Phase 44-01]: scoria_dashboard/2 accepts only :on_mount and :scope_resolver for this seam; root_layout and Scoria hooks remain owned by Scoria. — This satisfies AUTH-01 without adding broad live_session option pass-through during a P0 security fix.
+- [Phase 44-01]: The default dashboard scope resolver reads host session/socket assigns and ignores query params as tenant authority. — This closes the AUTH-02 spoof path while preserving bare macro compatibility.
+- [Phase 44-01]: Custom resolver failures either fail closed with generic Scoria copy, redirect/halt under host control, or raise InvalidReturnError for malformed returns. — This keeps browser-facing failures generic and makes malformed resolver output loud in tests/development.
 
 ### Pending Todos
 
@@ -189,6 +192,7 @@ None at milestone start.
 | Privacy/feedback | SEED-011: retention/purge, PII masking hook, human-feedback flywheel | Deferred | 2026-07-03 audit |
 
 > **Ordered roadmap + dependencies** for SEED-005…011 live in `ROADMAP.md` `## Backlog` (999.1–999.7); "why" index in `.planning/seeds/README.md`. (Stray per-plan timing rows that previously polluted this table were removed at v3.3 close 2026-07-04 — canonical per-plan metrics live in the phase manifests.)
+| Phase 44 P01 | 7 min | 3 tasks | 4 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -212,9 +216,9 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-07T14:46:16.300Z
-Stopped at: Phase 44 planning complete
-Resume file: .planning/phases/44-dashboard-auth-seam/44-01-PLAN.md
+Last session: 2026-07-07T15:05:56.629Z
+Stopped at: Completed 44-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
