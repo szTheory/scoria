@@ -4,6 +4,7 @@ defmodule Scoria.Knowledge.Chunk do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
+  @scope_fields [:tenant_id, :actor_id, :scope_kind]
   @scope_kinds ~w(tenant_shared actor_scoped)
 
   schema "ai_knowledge_chunks" do
@@ -27,20 +28,21 @@ defmodule Scoria.Knowledge.Chunk do
 
   def changeset(chunk, attrs) do
     chunk
-    |> cast(attrs, [
-      :tenant_id,
-      :actor_id,
-      :scope_kind,
-      :source_id,
-      :chunk_digest,
-      :body,
-      :heading_path,
-      :start_offset,
-      :end_offset,
-      :token_count,
-      :embedding,
-      :metadata
-    ])
+    |> cast(
+      attrs,
+      @scope_fields ++
+        [
+          :source_id,
+          :chunk_digest,
+          :body,
+          :heading_path,
+          :start_offset,
+          :end_offset,
+          :token_count,
+          :embedding,
+          :metadata
+        ]
+    )
     |> validate_required([
       :tenant_id,
       :scope_kind,

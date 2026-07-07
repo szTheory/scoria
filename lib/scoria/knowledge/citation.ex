@@ -4,6 +4,7 @@ defmodule Scoria.Knowledge.Citation do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
+  @scope_fields [:tenant_id, :actor_id, :scope_kind]
   @scope_kinds ~w(tenant_shared actor_scoped)
 
   schema "ai_knowledge_citations" do
@@ -28,22 +29,23 @@ defmodule Scoria.Knowledge.Citation do
 
   def changeset(citation, attrs) do
     citation
-    |> cast(attrs, [
-      :tenant_id,
-      :actor_id,
-      :scope_kind,
-      :source_id,
-      :chunk_id,
-      :trace_id,
-      :span_id,
-      :label,
-      :chunk_digest,
-      :start_offset,
-      :end_offset,
-      :quote,
-      :locator,
-      :metadata
-    ])
+    |> cast(
+      attrs,
+      @scope_fields ++
+        [
+          :source_id,
+          :chunk_id,
+          :trace_id,
+          :span_id,
+          :label,
+          :chunk_digest,
+          :start_offset,
+          :end_offset,
+          :quote,
+          :locator,
+          :metadata
+        ]
+    )
     |> validate_required([
       :tenant_id,
       :scope_kind,

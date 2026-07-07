@@ -6,6 +6,7 @@ defmodule Scoria.Knowledge.Source do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
+  @scope_fields [:tenant_id, :actor_id, :scope_kind]
   @scope_kinds ~w(tenant_shared actor_scoped)
 
   schema "ai_knowledge_sources" do
@@ -29,19 +30,11 @@ defmodule Scoria.Knowledge.Source do
 
   def changeset(source, attrs) do
     source
-    |> cast(attrs, [
-      :tenant_id,
-      :actor_id,
-      :scope_kind,
-      :entity_id,
-      :version,
-      :is_current,
-      :kind,
-      :uri,
-      :title,
-      :digest,
-      :metadata
-    ])
+    |> cast(
+      attrs,
+      @scope_fields ++
+        [:entity_id, :version, :is_current, :kind, :uri, :title, :digest, :metadata]
+    )
     |> validate_required([
       :tenant_id,
       :scope_kind,
