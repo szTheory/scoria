@@ -362,12 +362,17 @@ defmodule Scoria.AdoptionSurfaceTest do
     maintainer_guide = File.read!(@maintainer_guide)
 
     for content <- [lane_guide, operator_guide] do
-      assert content =~ "The host app authenticates the operator and asserts dashboard tenant scope."
+      assert content =~
+               "The host app authenticates the operator and asserts dashboard tenant scope."
+
       assert content =~ "scoria_dashboard \"/scoria\""
       assert content =~ "on_mount:"
       assert content =~ "scope_resolver:"
       assert content =~ "Query params do not choose tenants for the dashboard."
-      assert content =~ "Authorization remains delegated to the host; Scoria does not introduce a role model."
+
+      assert content =~
+               "Authorization remains delegated to the host; Scoria does not introduce a role model."
+
       assert content =~ "This Scoria dashboard is not available for this session."
     end
 
@@ -378,7 +383,10 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert operator_guide =~ "tenant query hint does not change the asserted dashboard scope"
 
     assert maintainer_guide =~ "Phase 44 dashboard scope proof"
-    assert maintainer_guide =~ "Review Queue, Eval Workbench, Prompt Registry, and Workflow Index now mount through DashboardScope"
+
+    assert maintainer_guide =~
+             "Review Queue, Eval Workbench, Prompt Registry, and Workflow Index now mount through DashboardScope"
+
     refute maintainer_guide =~ "do not support `?tenant=` query-param switching"
     refute maintainer_guide =~ "they list all records globally"
   end

@@ -15,8 +15,56 @@ You have proven the default lane when all of these are true:
 - one real run starts through `Scoria.start_run/2`
 - that same run can be read back through `Scoria.get_run/1` or found via `list_runs_for_session/1`
 - `/scoria/workflows/:run_id` shows operator evidence for that exact run
+- `/scoria` is mounted behind host-authenticated dashboard scope, not public tenant params
 
 This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
+
+## Dashboard auth and scope proof
+
+The host app authenticates the operator and asserts dashboard tenant scope. Query params do not choose tenants for the dashboard. Authorization remains delegated to the host; Scoria does not introduce a role model.
+
+Use Phoenix auth and membership checks before Scoria's dashboard scope gate:
+
+```elixir
+scope "/" do
+  pipe_through [:browser, :require_authenticated_user]
+
+  scoria_dashboard "/scoria",
+    on_mount: [{MyAppWeb.UserAuth, :require_authenticated}],
+    scope_resolver: MyAppWeb.ScoriaDashboardScope
+end
+```
+
+To mount the dashboard with host-authenticated scope, have your resolver return tenant data only after the host has authorized the operator for that tenant:
+
+```elixir
+defmodule MyAppWeb.ScoriaDashboardScope do
+  @behaviour ScoriaWeb.DashboardScope.Resolver
+
+  @impl true
+  def resolve(_params, _session, socket) do
+    account = socket.assigns.current_account
+    user = socket.assigns.current_user
+
+    {:ok,
+     %{
+       tenant_id: account.id,
+       actor_id: user.id,
+       display_tenant: account.name
+     }}
+  end
+end
+```
+
+Verification steps:
+
+1. Open `/scoria` while authenticated as an operator for a known tenant.
+2. Confirm the dashboard renders only that tenant's runs, approvals, incidents, eval evidence, and prompt release evidence.
+3. Open `/scoria?tenant=another-tenant` with the same authenticated session.
+4. Confirm the tenant query hint does not change the asserted dashboard scope.
+5. Remove or reject the resolver scope and confirm Scoria fails closed with generic browser-facing copy: This Scoria dashboard is not available for this session.
+
+The bare `scoria_dashboard "/scoria"` form still compiles and uses the session-backed default resolver for compatibility with generated/dev/example mounts. Prefer the explicit `on_mount:` plus `scope_resolver:` shape in authenticated host apps.
 
 ## Installer verification modes (upgrade-safe)
 

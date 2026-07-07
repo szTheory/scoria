@@ -31,9 +31,27 @@ Operator surfaces:
 - `/scoria`
 - `/scoria/workflows/:run_id`
 
-#### Host session identity
+#### Host-authenticated dashboard scope
 
-Host apps **must** set `session["tenant_id"]` and `session["actor_id"]` before mounting `/scoria` (or any route wired with `scoria_dashboard/2`). OrchestratorLive scopes PubSub to `scoria:runs:{tenant_id}` and uses both keys for audit refs on `Workflows.approve/3`. The runtime identity you pass to `Scoria.start_run/2` must use the **same** `tenant_id` as the LiveView session or live trace and HITL updates will not reach the operator UI.
+The host app authenticates the operator and asserts dashboard tenant scope. Scoria records and reads that scope; query params do not choose tenants.
+
+The recommended dashboard mount keeps authentication and membership checks in your Phoenix app, then returns the minimal scope Scoria needs:
+
+```elixir
+scope "/" do
+  pipe_through [:browser, :require_authenticated_user]
+
+  scoria_dashboard "/scoria",
+    on_mount: [{MyAppWeb.UserAuth, :require_authenticated}],
+    scope_resolver: MyAppWeb.ScoriaDashboardScope
+end
+```
+
+`scope_resolver:` may be a module implementing `ScoriaWeb.DashboardScope.Resolver` or an MFA tuple. Return `{:ok, %{tenant_id: current_account.id, actor_id: current_user.id}}` after the host has already authenticated the operator and checked tenant membership. Authorization remains delegated to the host; Scoria does not introduce a role model.
+
+Query params do not choose tenants for the dashboard. A URL such as `/scoria?tenant=other-account` can be a host-defined hint only if your resolver chooses to inspect it after authentication and membership checks; Scoria's default resolver ignores it.
+
+The bare `scoria_dashboard "/scoria"` form still compiles. It uses the session-backed default resolver for compatibility with existing installer/dev/example mounts, so host apps can still provide the same tenant and actor keys in the session:
 
 ```elixir
 conn
@@ -41,7 +59,9 @@ conn
 |> put_session("actor_id", conn.assigns.current_user.id)
 ```
 
-`mix scoria.install` does **not** inject auth or session keys — that contract is host-owned. When operator live broadcast is enabled, ensure Observe `Telemetry` and `Buffer` are started in your host application (see `test/scoria/observe/telemetry_test.exs` for the attach pattern).
+`mix scoria.install` does **not** inject auth hooks, authorization policy, role values, or session keys — that contract is host-owned. If scope is missing or rejected by the resolver, Scoria fails closed with generic browser-facing copy: This Scoria dashboard is not available for this session.
+
+The runtime identity you pass to `Scoria.start_run/2` must use the same `tenant_id` as the host-asserted dashboard scope or live trace and HITL updates will not reach the operator UI. When operator live broadcast is enabled, ensure Observe `Telemetry` and `Buffer` are started in your host application (see `test/scoria/observe/telemetry_test.exs` for the attach pattern).
 
 Proof lane:
 

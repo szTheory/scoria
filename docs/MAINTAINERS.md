@@ -510,13 +510,17 @@ Requires `ANTHROPIC_API_KEY`. Writes `priv/shots/{date}/{screen}/populated_dark_
 
 This step starts the Elixir application (to access ReqLLM and application config). The plain screenshot pass does **not** start the Elixir app — it only shells out to Node/Playwright.
 
-### Empty-state limitation (4 non-tenant-scoped screens)
+### Phase 44 dashboard scope proof
 
-**Review Queue**, **Eval Workbench**, **Prompt Registry**, and **Workflow Index** do not support `?tenant=` query-param switching — they list all records globally and do not read `params["tenant"]` in `mount/3`. As a result, the harness captures **populated-only** for these four screens; their `tenantScoped` manifest flag is `false`.
+Review Queue, Eval Workbench, Prompt Registry, and Workflow Index now mount through DashboardScope. Tenant-owned evidence on those screens is loaded from the host-asserted dashboard scope; prompt templates and eval specs remain catalog metadata only where the Phase 44 summaries explicitly document that boundary.
 
-Their empty state (all-empty DB) is a freshly-migrated-DB artifact, not a per-run harness capture. Document this when reviewing gap register findings — empty captures for these four screens require running the harness against a freshly-migrated database before applying the seed.
+Do not use a tenant query string to drive screenshot scope. The dashboard harness must mount through host session data or a host resolver, and a tenant query hint must not change the asserted scope. Empty-state captures for tenant-owned evidence still require either a freshly migrated database before applying the seed or a host scope whose tenant has no rows.
 
-The five remaining tenant-scoped screens (Live Ops, Approvals, Workflows, Incidents, Connectors) support both empty and populated state captures via `?tenant=` navigation.
+The focused Phase 44 proof for this contract is:
+
+```bash
+MIX_ENV=test mix test test/scoria_web/router_test.exs test/scoria_web/dashboard_scope_test.exs test/scoria_web/dashboard_scope_source_guard_test.exs test/scoria/adoption_surface_test.exs test/scoria_web/live/dashboard_auth_home_connectors_incidents_test.exs test/scoria_web/live/dashboard_auth_approvals_test.exs test/scoria_web/live/dashboard_auth_workflows_test.exs test/scoria_web/live/dashboard_auth_quality_data_test.exs test/scoria_web/live/dashboard_auth_prompts_test.exs --warnings-as-errors
+```
 
 ### Dev-only posture summary
 
