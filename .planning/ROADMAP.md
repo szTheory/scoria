@@ -15,7 +15,7 @@
 
 - [x] **Phase 42: Eval fails closed** - Kill the fake-green shortcuts so eval runs a real subject output, a real deterministic scorer, `:not_scored`, and a verdict-consulting release gate
 - [x] **Phase 43: Knowledge tenant isolation** - Add tenant/actor/scope columns + a mandatory fail-closed retrieval filter (nil tenant RAISES) so no tenant reads another tenant's chunks
-- [ ] **Phase 44: Dashboard auth seam** - Pass-through `on_mount:` + host-asserted tenant resolution so `?tenant=` is no longer spoofable (authz stays delegated)
+- [x] **Phase 44: Dashboard auth seam** - Pass-through `on_mount:` + host-asserted tenant resolution so `?tenant=` is no longer spoofable (authz stays delegated) (completed 2026-07-07)
 - [ ] **Phase 45: Correctness sweep + fail-closed proof & closeout** - Real cosine `score_chunk`, label-aware citation scoring, dead chunker param removed, real latency gate, and scope-doctrine cross-link
 
 <details>
@@ -159,7 +159,7 @@ See `.planning/MILESTONES.md` for full closeout history.
 | ---------------------------------------------- | --------- | -------------- | ----------- | --------- |
 | 42. Eval fails closed                          | v3.4      | 7/7 | Complete    | 2026-07-05 |
 | 43. Knowledge tenant isolation                 | v3.4      | 5/5 | Complete   | 2026-07-07 |
-| 44. Dashboard auth seam                        | v3.4      | 7/7 | Complete   | 2026-07-07 |
+| 44. Dashboard auth seam                        | v3.4      | 7/7 | Complete    | 2026-07-07 |
 | 45. Correctness sweep + fail-closed proof      | v3.4      | 0/?            | Not started | -         |
 
 ## Previous Milestones
