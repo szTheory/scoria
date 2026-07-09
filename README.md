@@ -215,7 +215,7 @@ Bounded runtime-to-handoff escalation proof lane:
 mix test.runtime_to_handoff
 ```
 
-This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
+This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 Optional knowledge lane:
 

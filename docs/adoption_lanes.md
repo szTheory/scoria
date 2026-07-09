@@ -83,7 +83,7 @@ for the dry-run → check → remediate → apply workflow. See
 [Check vs apply drift detection](operator_verification.md#check-vs-apply-drift-detection)
 for manifest fingerprint roles at check vs apply time.
 
-This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
+This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 ### 2. Bounded handoff lane
 
@@ -180,7 +180,7 @@ Proof lane:
 mix test.connector
 ```
 
-This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
+This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 See [connector_adoption.md](connector_adoption.md) for embedded-boundary framing.
 

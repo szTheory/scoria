@@ -17,7 +17,7 @@ You have proven the default lane when all of these are true:
 - `/scoria/workflows/:run_id` shows operator evidence for that exact run
 - `/scoria` is mounted behind host-authenticated dashboard scope, not public tenant params
 
-This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
+This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 ## Dashboard auth and scope proof
 
