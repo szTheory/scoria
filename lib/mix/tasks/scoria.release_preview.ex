@@ -9,6 +9,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     "lib/scoria.ex",
     "priv/repo/migrations/20260511000100_create_workflow_tables.exs",
     "priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs",
+    "docs/glossary.md",
     "docs/adoption_lanes.md",
     "docs/phoenix_runtime_example.md",
     "docs/bounded_handoffs.md",

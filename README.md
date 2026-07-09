@@ -43,6 +43,7 @@ Use the narrowest lane that solves your current app problem:
 
 Docs:
 
+- [Glossary](docs/glossary.md)
 - [Lane selection guide](docs/adoption_lanes.md)
 - [Phoenix runtime example](docs/phoenix_runtime_example.md)
 - [Bounded handoffs](docs/bounded_handoffs.md)
