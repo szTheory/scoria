@@ -69,6 +69,31 @@ defmodule Scoria.RuntimeTest do
     assert Enum.any?(detail.steps, &(&1.id == child_step.id))
   end
 
+  test "start_handoff_run accepts scoped_context as public bounded context input" do
+    assert {:ok, summary} =
+             Runtime.start_handoff_run(
+               %{
+                 actor_id: "actor-scoped",
+                 tenant_id: "tenant-scoped",
+                 session_id: "session-scoped"
+               },
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               scoped_context: %{"task" => "review", "draft_answer" => "hello"}
+             )
+
+    detail = Runtime.get_run_detail!(summary.run_id)
+
+    assert [
+             %{
+               delegated_role_id: "critic",
+               projected_context: %{"task" => "review", "draft_answer" => "hello"}
+             }
+           ] = detail.delegated_handoffs
+  end
+
   test "get_run_detail returns an empty delegated collection for non-handoff runs" do
     {:ok, summary} =
       Runtime.start_run(
@@ -229,6 +254,24 @@ defmodule Scoria.RuntimeTest do
              )
 
     assert Runtime.list_runs_for_session("session-unsafe") == []
+  end
+
+  test "start_handoff_run rejects unsafe scoped context before any durable write" do
+    assert {:error, :unsafe_projected_context} =
+             Runtime.start_handoff_run(
+               %{
+                 actor_id: "actor-unsafe-scoped",
+                 tenant_id: "tenant-unsafe-scoped",
+                 session_id: "session-unsafe-scoped"
+               },
+               "critic",
+               root_role_id: "planner",
+               delegated_kind: "review",
+               handoff_input: %{"brief" => "review draft"},
+               scoped_context: %{"safe" => %{"request_headers" => %{"authorization" => "secret"}}}
+             )
+
+    assert Runtime.list_runs_for_session("session-unsafe-scoped") == []
   end
 
   test "start_handoff_run rejects transcript, headers, and nested history projected context aliases" do
