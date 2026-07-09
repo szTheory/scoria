@@ -55,7 +55,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 46-07-PLAN.md — README and stable guide final vocabulary migration
+- [x] 46-07-PLAN.md — README and stable guide final vocabulary migration
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -135,7 +135,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 46. Terminology and public vocabulary migration | v3.5 | 6/8 | In Progress|  |
+| 46. Terminology and public vocabulary migration | v3.5 | 7/8 | In Progress|  |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 0/0 | Not started | — |
 | 48. ExDoc and guide ladder restructure | v3.5 | 0/0 | Not started | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
