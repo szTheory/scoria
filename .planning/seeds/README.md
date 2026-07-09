@@ -10,7 +10,7 @@ committed to git so they survive any context-window clear.
 > roadmap of record is `ROADMAP.md` `## Backlog`** (auto-read + preserved across milestone
 > completion). This file is the human-facing "why" index that mirrors it. Keep the two in sync.
 
-## Planned milestone order (mirrors ROADMAP.md ## Backlog)
+## Planned milestone order (mirrors ROADMAP.md ## Backlog plus active milestone)
 
 From a 2026-07-03 AI-eval posture audit (6-agent adjudication vs LangSmith/Langfuse/Phoenix/Ragas/
 Braintrust/Inspect/OTel). Cadence: **P0 → docs → features** (each feature milestone interleaves its
@@ -18,7 +18,7 @@ own feature docs + a release).
 
 | # | Seed | Milestone | Priority | Depends on |
 |---|------|-----------|----------|------------|
-| 999.2 | [SEED-005](SEED-005-documentation-overhaul.md) | Documentation & Positioning (stable docs) + release cut | High (adoption bottleneck) | 006 (release gate) |
+| v3.5 active | [SEED-005](SEED-005-documentation-overhaul.md) | Documentation & Positioning (stable docs) + release cut | High (adoption bottleneck) | 006 (release gate, shipped) |
 | 999.3 | [SEED-007](SEED-007-trace-foundation-otel-openinference.md) | Trace Foundation (OTel/OpenInference) | High (foundational) | 006 |
 | 999.4 | [SEED-010](SEED-010-lethal-trifecta-governance.md) | Lethal-Trifecta Governance | ⭐ **Flagship** | 006, 007 |
 | 999.5 | [SEED-008](SEED-008-trustworthy-eval-depth.md) | Trustworthy Eval Depth | Medium | 006, 007 |
@@ -30,7 +30,7 @@ own feature docs + a release).
 **Dependency graph (text):**
 ```
 SEED-006 (P0, release gate) ── shipped in v3.4; unblocks everything
-   ├── SEED-005 (docs; also gates the release cut)
+   ├── SEED-005 (active v3.5; docs; also gates the release cut)
    ├── SEED-007 (trace foundation)
    │      ├── SEED-010 ⭐ (lethal-trifecta; also needs 006)
    │      ├── SEED-008 (eval depth; also needs 006)
@@ -71,7 +71,7 @@ pre-written obsoletely.
 | [SEED-002](SEED-002-future-jtbd-capabilities.md) | archived | — |
 | [SEED-003](SEED-003-ci-efficiency-overhaul.md) | archived (v3.1 shipped) | — |
 | SEED-004 (no file) | deferred | test-code determinism — tracked in ROADMAP Backlog + STATE.md |
-| [SEED-005](SEED-005-documentation-overhaul.md) | deferred | docs / DX / adoption / Hex-release readiness |
+| [SEED-005](SEED-005-documentation-overhaul.md) | active (v3.5) | docs / DX / adoption / Hex-release readiness |
 | [SEED-006](SEED-006-pre-1.0-trust-security-hardening.md) | archived (v3.4 shipped) | — |
 | [SEED-007](SEED-007-trace-foundation-otel-openinference.md) | deferred | observability / eval / interop |
 | [SEED-008](SEED-008-trustworthy-eval-depth.md) | deferred | eval maturity |
@@ -83,6 +83,6 @@ pre-written obsoletely.
 
 ## Post-v3.3 housekeeping (collision-avoidance — do when the v3.3 window is idle)
 - Record the 6-principle **scope doctrine** into `PROJECT.md` (`## Key Decisions` + `## Constraints`).
-- Clean up the corrupted `STATE.md` `## Deferred Items` table + add SEED-005…011 rows.
+- Clean up the corrupted `STATE.md` `## Deferred Items` table + add SEED-005…011 rows. Completed at v3.5 start; SEED-005 is now active and SEED-007…013 remain ordered backlog.
 
 Full session context (the audit, adjudications, decisions): `~/.claude/plans/so-i-m-looking-at-quizzical-widget.md`.

@@ -3,10 +3,11 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness
 status: planning
-last_updated: "2026-07-09T19:44:32.868Z"
+last_updated: "2026-07-09T19:55:00.000Z"
 last_activity: 2026-07-09
+last_activity_desc: Roadmap created for milestone v3.5
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,10 +26,10 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 46 - Terminology and public vocabulary migration
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-09 — Milestone v3.5 started
+Status: Roadmap ready; next action is phase discussion/planning for Phase 46
+Last activity: 2026-07-09 — Roadmap created for milestone v3.5 (phases 46-50)
 
 ## Performance Metrics
 
@@ -186,6 +187,7 @@ None at milestone start.
 
 - v3.4 roadmap created (2026-07-04): Phases 42–45 promoted SEED-006 from the backlog. 42 eval / 43 knowledge / 44 dashboard independent; 45 correctness sweep + closeout depends on 42 + 43. 17/17 requirements mapped.
 - v3.4 completed and reconciled (2026-07-09): Phases 42–45, 24/24 plans, 17/17 requirements, audit `passed`; SEED-006 archived and removed from the forward backlog.
+- v3.5 roadmap created (2026-07-09): Phases 46-50 promote SEED-005 from the backlog for terminology, README/scope doctrine, ExDoc/guide ladder, AI-accessible docs, and the clean `0.1.3` release cut. 18/18 requirements mapped.
 - Phase 41.1 inserted after Phase 41: Wire orphaned ScoriaWeb.Copy/DatasetCopy into dataset page (COPY-01 SSOT) — surfaced by v3.3 milestone audit (URGENT)
 
 ## Deferred Items
@@ -198,14 +200,14 @@ None at milestone start.
 | v3.0 gaps | Phase 13/14 verification-doc gaps (functional: 0 unsatisfied; 10 partials are proof-only) | Deferred | v3.0 close |
 | Release | Publish 0.1.1 → superseded by 0.1.2 in Phase 35 | Absorbed into REL-01 | v3.2 REL |
 | Trust/security P0 | SEED-006: eval fail-open, knowledge cross-tenant leak, dashboard auth bypass — completed by v3.4 (Phases 42–45) | Completed | 2026-07-09 v3.4 close |
-| Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt | Deferred | 2026-07-03 audit |
+| Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt | Active in v3.5 | 2026-07-09 v3.5 start |
 | Observability | SEED-007: OTel-GenAI/OpenInference trace foundation | Deferred | 2026-07-03 audit |
 | Eval depth | SEED-008: real scorers, judge calibration, regression comparison | Deferred | 2026-07-03 audit |
 | RAG depth | SEED-009: precision/NDCG/abstention/staleness + faithfulness/rerank hooks | Deferred | 2026-07-03 audit |
 | Agent security | SEED-010: lethal-trifecta governance (⭐ flagship differentiator) | Deferred | 2026-07-03 audit |
 | Privacy/feedback | SEED-011: retention/purge, PII masking hook, human-feedback flywheel | Deferred | 2026-07-03 audit |
 
-> **Ordered roadmap + dependencies** for SEED-005…013 live in `ROADMAP.md` `## Backlog` (999.2–999.9); "why" index in `.planning/seeds/README.md`.
+> **Ordered roadmap + dependencies** for SEED-007…013 live in `ROADMAP.md` `## Backlog` (999.3–999.9); SEED-005 is active in v3.5. "Why" index in `.planning/seeds/README.md`.
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -217,7 +219,7 @@ None at milestone start.
 | todo | `ci-policy-job-cache-key-mislabel` (CI cache-key/env mismatch) | Completed at v3.4 closeout |
 | todo | `docker-dx-fleet-hardening` (FLEET-01/02; out of scope) | Deferred |
 | seed | SEED-003 CI/CD efficiency overhaul | Archived |
-| seed | SEED-005 Documentation & positioning overhaul (ROADMAP 999.2) | Deferred |
+| seed | SEED-005 Documentation & positioning overhaul (v3.5 active) | Active |
 | seed | SEED-006 Pre-1.0 Trust & Security Hardening — shipped in v3.4 | Archived |
 | seed | SEED-007 Trace foundation OTel-GenAI/OpenInference (ROADMAP 999.3) | Deferred |
 | seed | SEED-008 Trustworthy eval depth (ROADMAP 999.5) | Deferred |
@@ -235,4 +237,4 @@ Resume file: .planning/milestones/v3.4-MILESTONE-AUDIT.md
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start Phase 46 with /gsd-discuss-phase 46 or /gsd-plan-phase 46

@@ -2,14 +2,115 @@
 
 ## Milestones
 
+- ✅ **v2.15 Connector Adoption Lane** — named connector verification suite and docs/CI parity (shipped 2026-05-30)
 - ✅ **v2.17 Vesicle** — Phases 18–22, canonical brand system (shipped 2026-06-11)
 - ✅ **v3.0 Control Room** — Phases 11–17, dashboard design-system / IA / motion / proof (shipped 2026-06-14)
 - ✅ **v3.1 CI/CD Velocity** — Phases 23–28, PR CI 77m → 7m38s (shipped 2026-06-17)
 - ✅ **v3.2 Drydock** — Phases 29–35, Docker dev-DX hardening + `0.1.2` maintenance release (shipped 2026-06-19)
 - ✅ **v3.3 Design System Stress Test** — Phases 36–41.1, `/scoria` UI coherence foundation→proof (shipped 2026-07-04)
 - ✅ **v3.4 Pre-1.0 Trust & Security Hardening** — Phases 42–45, SEED-006 P0 trust/security gate (shipped 2026-07-09)
+- ◆ **v3.5 Documentation & Release Readiness** — Phases 46–50, SEED-005 stable docs + clean `0.1.3` release (active)
 
 ## Phases
+
+### v3.5 Documentation & Release Readiness — ACTIVE
+
+**Goal:** Make Scoria adoption-ready again after the v3.4 trust/security fixes by replacing jargon-first adopter docs with stable positioning, repairing release-blocking CI/browser drift, and cutting the honest `0.1.3` Hex release.
+
+**Selected seed:** `SEED-005 Documentation overhaul → clean Hex release`.
+
+**Boundary:** Stable adopter docs and release readiness only. Feature-specific docs for trace foundation, lethal-trifecta governance, eval depth, retrieval depth, and privacy/feedback stay with their owning future seeds.
+
+- [ ] **Phase 46: Terminology and public vocabulary migration** — final sense-aware rename map, glossary, code-name cleanup, and upgrade note.
+- [ ] **Phase 47: README first-screen positioning and scope doctrine** — plain-English front door, persona/not-ours framing, owns-vs-delegates table, and hosted LLM-ops comparison.
+- [ ] **Phase 48: ExDoc and guide ladder restructure** — grouped modules/extras, version-aware docs metadata, stable guide tree, and public moduledoc alignment.
+- [ ] **Phase 49: AI-accessible docs and docs verification gate** — curated `llms.txt`/`AGENTS.md`, guide index for coding agents, and warning-clean docs command.
+- [ ] **Phase 50: Release readiness and `0.1.3` cut** — policy/e2e release blockers, stale version refs, green release PR, Hex publish, and post-publish smoke.
+
+### Phase 46: Terminology and public vocabulary migration
+
+**Goal:** Public language uses the final SEED-005 vocabulary before the README/guides explain it, so docs describe the product users will actually see.
+
+**Depends on:** Nothing.
+
+**Requirements:** TERM-01, TERM-02, TERM-03, TERM-04
+
+**Success Criteria:**
+1. A committed glossary maps final Scoria terms to industry equivalents and defines `run`, reviewer/operator, trace, evidence, capability, verification suite, scoped context, semantic cache, knowledge base, grounding, and bounded handoff.
+2. Adopter-facing docs and user-visible copy apply the final terminology strategy, including reviewer for the persona and trace for run-inspection surface sense.
+3. RAG/citation use of evidence remains intact; no schema migration or global `evidence_refs` rename is introduced.
+4. Leaked internal code names (`Keystone`, `v2.0 Relay`) and the `Four Lanes` count bug are removed from adopter docs.
+5. CHANGELOG/upgrade notes explain pre-1.0 terminology changes and any renamed documented modules or user-visible copy.
+
+### Phase 47: README first-screen positioning and scope doctrine
+
+**Goal:** A Phoenix adopter immediately understands what Scoria is, who it is for, where its boundary is, and why embedded governance differs from hosted LLM-ops.
+
+**Depends on:** Phase 46.
+
+**Requirements:** POS-01, POS-02, POS-03, POS-04
+
+**Success Criteria:**
+1. README opens with a plain-English paragraph before coined vocabulary, using the SEED-005 wording as the baseline.
+2. README and stable docs state the n=1 default lens, CORE/ADJACENT/NOT-OURS persona boundaries, and the reviewer/operator role clearly.
+3. An adopter-facing owns-vs-delegates table makes the P1–P6 scope doctrine concrete.
+4. A stable comparison page explains Scoria vs hosted LLM-ops with honest strengths and ceded tradeoffs.
+5. README version references and install fallback examples no longer point at stale `0.1.1` guidance.
+
+### Phase 48: ExDoc and guide ladder restructure
+
+**Goal:** HexDocs becomes a navigable product surface instead of a flat dump of modules and historical guides.
+
+**Depends on:** Phase 47.
+
+**Requirements:** DOCS-01, DOCS-02, DOCS-03
+
+**Success Criteria:**
+1. `mix.exs` docs config groups modules by domain area and extras by adopter/maintainer guide ladder.
+2. Source/ref/doc links handle dev versions without pointing to missing tag URLs, and brand logo/favicon metadata is wired where supported.
+3. Stable guides are organized around getting started, golden path, JTBD/user flows, troubleshooting, hosted LLM-ops comparison, and cheatsheet content.
+4. Public moduledocs and README links point to the reorganized guide structure without stale file paths.
+
+### Phase 49: AI-accessible docs and docs verification gate
+
+**Goal:** Humans and coding agents can reliably navigate Scoria's public surface, and docs drift is caught before release.
+
+**Depends on:** Phase 48.
+
+**Requirements:** DOCS-04, AI-01, AI-02
+
+**Success Criteria:**
+1. A curated root `llms.txt` and/or `AGENTS.md` points to the public facade, guide ladder, glossary, capabilities, and verification suites.
+2. The AI-accessibility surface distinguishes curated source docs from generated ExDoc artifacts.
+3. The docs verification command runs warning-clean locally and is wired into the appropriate CI/policy path or documented release gate.
+4. New docs/source contracts cover the glossary, guide index, and docs command enough to prevent silent front-door drift.
+
+### Phase 50: Release readiness and `0.1.3` cut
+
+**Goal:** The release train is green, the package truth is current, and Hex `0.1.3` is published with post-publish proof.
+
+**Depends on:** Phases 46–49.
+
+**Requirements:** REL-01, REL-02, REL-03, REL-04
+
+**Success Criteria:**
+1. The current policy failure is fixed: `ROADMAP.md` keeps the archived `v2.15 Connector Adoption Lane` breadcrumb required by `CiPolicyContractTest`.
+2. Browser e2e failures observed on PR #12 are fixed or legitimately descoped with guard updates: IA orientation, release-workbench modal focus, and theme-toggle visibility/clickability.
+3. README, maintainer docs, CHANGELOG, release automation, and package metadata agree on live `0.1.2` baseline and `0.1.3` target.
+4. The release PR reaches green `ci-gate` and merges through the intended release-please path or a documented maintainer recovery path.
+5. Hex lists `0.1.3`, and post-publish smoke proves fresh install plus live-lineage upgrade.
+
+## Progress
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 46. Terminology and public vocabulary migration | v3.5 | 0/0 | Not started | — |
+| 47. README first-screen positioning and scope doctrine | v3.5 | 0/0 | Not started | — |
+| 48. ExDoc and guide ladder restructure | v3.5 | 0/0 | Not started | — |
+| 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
+| 50. Release readiness and `0.1.3` cut | v3.5 | 0/0 | Not started | — |
+
+## Archived Milestones
 
 <details>
 <summary>✅ v3.4 Pre-1.0 Trust & Security Hardening (Phases 42–45) — SHIPPED 2026-07-09</summary>
@@ -43,7 +144,7 @@ Full phase detail archived in `.planning/milestones/v3.3-ROADMAP.md`; requiremen
 </details>
 
 <details>
-<summary>✅ Earlier milestones (v2.17 → v3.2)</summary>
+<summary>✅ Earlier milestones</summary>
 
 Archived under `.planning/milestones/`:
 
@@ -51,6 +152,7 @@ Archived under `.planning/milestones/`:
 - **v3.1 CI/CD Velocity** — Phases 23–28 (`v3.1-ROADMAP.md`)
 - **v3.0 Control Room** — Phases 11–17 (`v3.0-ROADMAP.md`)
 - **v2.17 Vesicle** — Phases 18–22 (`v2.17-ROADMAP.md`)
+- **v2.15 Connector Adoption Lane** — named connector verification suite and docs/CI parity (`MILESTONES.md`)
 
 See `.planning/MILESTONES.md` for full closeout history.
 
@@ -70,38 +172,32 @@ See `.planning/MILESTONES.md` for full closeout history.
 Sequenced (dependency + priority). Order was set by a 2026-07-03 AI-eval posture audit
 (6-agent adjudication vs LangSmith/Langfuse/Phoenix/Ragas/Braintrust/Inspect/OTel). Cadence
 decision: **P0 fixes → docs/positioning → feature milestones**, each feature milestone
-interleaving its own feature docs + a release as it lands.
+interleaving its own feature docs + a release as it lands. SEED-005 has been promoted into
+active milestone v3.5.
 
-1. **999.2 → SEED-005 — Documentation & Positioning overhaul**  (adoption bottleneck; the *front door*)
-   STABLE docs only (terminology sense-aware rename, scope-doctrine + owns-vs-delegates table,
-   ExDoc grouping, glossary, README first-screen) + the honest release cut (unblocked by shipped
-   v3.4 / SEED-006).
-   Feature-specific guides are interleaved into the build milestones below, NOT pre-written here.
-   → see `SEED-005`.
-
-2. **999.3 → SEED-007 — Trace Foundation (OTel-GenAI / OpenInference interop)**  (foundational for eval attribution)
+1. **999.3 → SEED-007 — Trace Foundation (OTel-GenAI / OpenInference interop)**  (foundational for eval attribution)
    Semconv as a naming convention over the existing attrs map (not a schema rewrite) + span_kind +
    model config + structured spans/events + RETRIEVER span + README claim fix. → see `SEED-007`.
 
-3. **999.4 → SEED-010 — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR]**
+2. **999.4 → SEED-010 — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR]**
    Content trust tiers + spotlighting + tool-declared trifecta classification + confluence
    escalation policy (Meta Rule-of-Two) + moderation/output hooks + SECURITY-BOUNDARY.md. No peer
    ships this as a runtime seam; Scoria is 2/3 built. Sequence early (after 006 + 007). → see `SEED-010`.
 
-4. **999.5 → SEED-008 — Trustworthy Eval Depth**  (after 006 + 007)
+3. **999.5 → SEED-008 — Trustworthy Eval Depth**  (after 006 + 007)
    Real scorer library + regression-comparison engine + judge calibration (the unique join Scoria
    already captures but discards) + versioned rubric + typed risk/intent taxonomy slots. → see `SEED-008`.
 
-5. **999.6 → SEED-009 — Retrieval Eval Depth & Seams**  (after 006)
+4. **999.6 → SEED-009 — Retrieval Eval Depth & Seams**  (after 006)
    precision@k/NDCG/abstention/staleness (model-free, Scoria-owned) + faithfulness/rerank as
    host-supplied hooks (no model in-lib) + tiny gold set. → see `SEED-009`.
 
-6. **999.7 → SEED-011 — Privacy & Feedback Governance**
+5. **999.7 → SEED-011 — Privacy & Feedback Governance**
    Trace/memory retention/TTL/purge + right-to-erasure (Scoria owns the tables → owns deletion) +
    PII masking contract + regex pack + human-feedback capture → flywheel + memory forget/expire.
    Unblocks the currently-unserved privacy/legal/compliance persona. → see `SEED-011`.
 
-7. **999.8 → SEED-012 — Architecture-Archetype Awareness (Rule-8 lens)**  (small capstone; after 007 + 008)
+6. **999.8 → SEED-012 — Architecture-Archetype Awareness (Rule-8 lens)**  (small capstone; after 007 + 008)
    Host-declared `archetype`/`route` on runs (Scoria records/segments, never infers) + a
    segment-by-attribute dashboard facet (per-archetype/per-route cost/latency/scores) + per-archetype
    Rule-8 eval presets + Router observability (routing accuracy via the SEED-008 confusion-matrix reuse).
@@ -109,7 +205,7 @@ interleaving its own feature docs + a release as it lands.
    From the 2026-07-03 AI-architecture-patterns ingest (memo: `.planning/research/ai-architectural-patterns.md`,
    which validated ~85% of Scoria as-built). → see `SEED-012`.
 
-8. **999.9 → SEED-013 — Operator IA Pivot (Control-Room v2)**  (dashboard coherence; sequence after 006, alongside/after 005)
+7. **999.9 → SEED-013 — Operator IA Pivot (Control-Room v2)**  (dashboard coherence; sequence after 006, alongside/after 005)
    The **structural** operator-UI pivot buildable on today's backend: a tighter nav re-group
    (Home · Queue · Features · Runs · Quality · Govern · [Data & Privacy] · [Audit]), a **unified Queue**
    (one ranked human-work inbox over existing approvals+incidents+reviews), a persistent scope contract
@@ -125,16 +221,8 @@ interleaving its own feature docs + a release as it lands.
 ### Carried-forward deferred work (pre-audit)
 
 - **SEED-004 — Test-code determinism** (async `IntegrationCase`, remove `Process.sleep`→`eventually/2`,
-  raise shard count). Deferred at v3.1 close; leading pre-audit next-milestone candidate. *(No seed
+  raise shard count). Deferred at v3.1 close; keep separate unless a release-blocking test failure requires a narrow fix. *(No seed
   file on disk — tracked only here + STATE.md Deferred Items.)*
 
 - **FLEET-01** — migrate sibling repos onto the shared Traefik + unpublished-DB standard. Deferred v3.2.
 - **FLEET-02** — `make nuke-all` fleet-wide teardown (high blast radius). Deferred v3.2.
-
-### Post-v3.3 housekeeping follow-ups (do when the v3.3 window is idle — collision-avoidance)
-
-- Record the 6-principle **scope doctrine** (Scoria owns the verb; host owns the noun — P1–P6,
-  detailed in `SEED-005` / `SEED-006`) into `PROJECT.md` `## Key Decisions` + `## Constraints`.
-
-- ~~Clean up `STATE.md` `## Deferred Items` (stray per-plan metric rows)~~ — done at v3.3 close (2026-07-04);
-  SEED-005…013 rows now present in STATE.md's Deferred Items / acknowledged-at-close block.

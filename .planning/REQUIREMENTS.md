@@ -75,30 +75,30 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| POS-01 | — | Pending |
-| POS-02 | — | Pending |
-| POS-03 | — | Pending |
-| POS-04 | — | Pending |
-| TERM-01 | — | Pending |
-| TERM-02 | — | Pending |
-| TERM-03 | — | Pending |
-| TERM-04 | — | Pending |
-| DOCS-01 | — | Pending |
-| DOCS-02 | — | Pending |
-| DOCS-03 | — | Pending |
-| DOCS-04 | — | Pending |
-| AI-01 | — | Pending |
-| AI-02 | — | Pending |
-| REL-01 | — | Pending |
-| REL-02 | — | Pending |
-| REL-03 | — | Pending |
-| REL-04 | — | Pending |
+| POS-01 | Phase 47 | Pending |
+| POS-02 | Phase 47 | Pending |
+| POS-03 | Phase 47 | Pending |
+| POS-04 | Phase 47 | Pending |
+| TERM-01 | Phase 46 | Pending |
+| TERM-02 | Phase 46 | Pending |
+| TERM-03 | Phase 46 | Pending |
+| TERM-04 | Phase 46 | Pending |
+| DOCS-01 | Phase 48 | Pending |
+| DOCS-02 | Phase 48 | Pending |
+| DOCS-03 | Phase 48 | Pending |
+| DOCS-04 | Phase 49 | Pending |
+| AI-01 | Phase 49 | Pending |
+| AI-02 | Phase 49 | Pending |
+| REL-01 | Phase 50 | Pending |
+| REL-02 | Phase 50 | Pending |
+| REL-03 | Phase 50 | Pending |
+| REL-04 | Phase 50 | Pending |
 
 **Coverage:**
 - v1 requirements: 18 total
-- Mapped to phases: 0
-- Unmapped: 18 ⚠
+- Mapped to phases: 18
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-09*
-*Last updated: 2026-07-09 after initial definition*
+*Last updated: 2026-07-09 after roadmap creation*
