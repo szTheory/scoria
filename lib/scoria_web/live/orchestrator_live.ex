@@ -21,7 +21,7 @@ defmodule ScoriaWeb.OrchestratorLive do
   alias Scoria.Observe.Redactor
   alias Scoria.Observe.TraceProjection
 
-  alias ScoriaWeb.OperatorSurface
+  alias ScoriaWeb.ReviewerSurface
 
   def mount(params, _session, socket) do
     tenant_id = socket.assigns.tenant_id
@@ -283,7 +283,7 @@ defmodule ScoriaWeb.OrchestratorLive do
     tenant_id = socket.assigns.tenant_id
 
     assign_async(socket, :status_home, fn ->
-      {:ok, %{status_home: OperatorSurface.status_home_summary(tenant_id)}}
+      {:ok, %{status_home: ReviewerSurface.status_home_summary(tenant_id)}}
     end)
   end
 
@@ -484,7 +484,7 @@ defmodule ScoriaWeb.OrchestratorLive do
 
   defp enrich_trace_badges(%{id: trace_id, workflow_run_id: run_id} = trace)
        when is_binary(trace_id) and is_binary(run_id) and run_id != "" do
-    Map.merge(trace, OperatorSurface.compact_trace_badges(trace_id, run_id))
+    Map.merge(trace, ReviewerSurface.compact_trace_badges(trace_id, run_id))
   rescue
     _error -> trace
   end

@@ -7,14 +7,14 @@ defmodule ScoriaWeb.WorkflowLive.Index do
 
   import ScoriaWeb.UI
 
-  alias ScoriaWeb.OperatorSurface
+  alias ScoriaWeb.ReviewerSurface
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(:page_title, "Runs")
-     |> assign(:runs, OperatorSurface.list_tenant_runs(socket.assigns.tenant_id))}
+     |> assign(:runs, ReviewerSurface.list_tenant_runs(socket.assigns.tenant_id))}
   end
 
   @impl true

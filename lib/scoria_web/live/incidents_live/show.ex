@@ -9,7 +9,7 @@ defmodule ScoriaWeb.IncidentsLive.Show do
 
   alias ScoriaWeb.IncidentCopy
   alias ScoriaWeb.IncidentEvidenceComponent
-  alias ScoriaWeb.OperatorSurface
+  alias ScoriaWeb.ReviewerSurface
 
   @impl true
   def mount(_params, _session, socket) do
@@ -19,7 +19,7 @@ defmodule ScoriaWeb.IncidentsLive.Show do
      socket
      |> assign(:page_title, "Incident")
      |> assign(:tenant_id, tenant_id)
-     |> assign(:incidents, OperatorSurface.list_tenant_incidents(tenant_id))
+     |> assign(:incidents, ReviewerSurface.list_tenant_incidents(tenant_id))
      |> assign(:incident, nil)
      |> assign(:incident_evidence, nil)
      |> assign(:origin_context, nil)}
@@ -27,7 +27,7 @@ defmodule ScoriaWeb.IncidentsLive.Show do
 
   @impl true
   def handle_params(%{"id" => id} = params, _uri, socket) do
-    incident = OperatorSurface.fetch_tenant_incident(socket.assigns.tenant_id, id)
+    incident = ReviewerSurface.fetch_tenant_incident(socket.assigns.tenant_id, id)
 
     socket =
       socket
@@ -121,7 +121,7 @@ defmodule ScoriaWeb.IncidentsLive.Show do
   defp evidence_for(nil), do: nil
 
   defp evidence_for(incident),
-    do: OperatorSurface.load_incident_projection(incident.trace_id, incident.workflow_run_id)
+    do: ReviewerSurface.load_incident_projection(incident.trace_id, incident.workflow_run_id)
 
   defp incident_title(nil), do: "Incident not found"
   defp incident_title(incident), do: incident.summary || incident.incident_key || "Incident"

@@ -10,7 +10,7 @@ defmodule ScoriaWeb.DatasetLive.Index do
   alias Scoria.Eval
   alias ScoriaWeb.Copy
   alias ScoriaWeb.DatasetCopy
-  alias ScoriaWeb.OperatorSurface
+  alias ScoriaWeb.ReviewerSurface
 
   # DatasetCopy.orientation/1 is intentionally unwired on this page: the dataset
   # index is a sortable table with no per-row orientation-prose surface —
@@ -245,7 +245,7 @@ defmodule ScoriaWeb.DatasetLive.Index do
   defp promotion_from_params(_tenant_id, _promote, _params), do: :error
 
   defp workflow_promotion_context(tenant_id, run_id, step_id, source_variant) do
-    %{detail: detail} = OperatorSurface.fetch_tenant_run_detail(tenant_id, run_id)
+    %{detail: detail} = ReviewerSurface.fetch_tenant_run_detail(tenant_id, run_id)
     source_key = String.to_existing_atom(source_variant)
 
     detail.comparison_by_step

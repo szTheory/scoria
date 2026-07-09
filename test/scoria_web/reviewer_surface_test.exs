@@ -133,7 +133,7 @@ defmodule ScoriaWeb.ReviewerSurfaceTest do
   defp normalize_run_detail(%{run: run, detail: detail, linked_incident: linked_incident}) do
     %{
       run_id: run.id,
-      detail_run_id: detail.run.id,
+      detail_run_id: detail.summary.run_id,
       linked_incident_id: linked_incident && linked_incident.id
     }
   end

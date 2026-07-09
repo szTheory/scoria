@@ -11,7 +11,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
   alias Phoenix.LiveView.JS
   alias ScoriaWeb.ConnectorCopy
   alias ScoriaWeb.ConnectorDetailDrawerComponent
-  alias ScoriaWeb.OperatorSurface
+  alias ScoriaWeb.ReviewerSurface
   alias ScoriaWeb.RuntimeDetailDrawerComponent
 
   @impl true
@@ -61,7 +61,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
      socket
      |> assign(
        :connector_drawer,
-       OperatorSurface.connector_drawer(socket.assigns.tenant_id, connector_id)
+       ReviewerSurface.connector_drawer(socket.assigns.tenant_id, connector_id)
      )
      |> assign(:runtime_drawer, nil)}
   end
@@ -237,7 +237,7 @@ defmodule ScoriaWeb.ConnectorsLive.Index do
   # retry) from a legitimately empty fleet (renders empty_state/1 via each table's :empty
   # slot) instead of letting an unrescued query crash the LiveView.
   defp fetch_fleet(tenant_id) do
-    {:ok, OperatorSurface.load_runtimes(tenant_id), OperatorSurface.connector_fleet(tenant_id)}
+    {:ok, ReviewerSurface.load_runtimes(tenant_id), ReviewerSurface.connector_fleet(tenant_id)}
   rescue
     _ -> :error
   end

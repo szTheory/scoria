@@ -18,7 +18,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   alias Scoria.Repo
   alias Scoria.Runtime
   alias Scoria.Workflows
-  alias ScoriaWeb.OperatorSurface
+  alias ScoriaWeb.ReviewerSurface
 
   alias ScoriaWeb.{
     DelegatedEvidenceComponent,
@@ -289,7 +289,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   end
 
   defp load_run(socket, tenant_id, run_id) do
-    case OperatorSurface.fetch_tenant_run_detail(tenant_id, run_id) do
+    case ReviewerSurface.fetch_tenant_run_detail(tenant_id, run_id) do
       nil -> assign_run_not_found(socket)
       detail -> assign_run_detail(socket, detail)
     end
@@ -605,6 +605,6 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   defp load_review_candidate(_tenant_id, nil, _candidate_id), do: nil
 
   defp load_review_candidate(tenant_id, run, candidate_id) do
-    OperatorSurface.fetch_tenant_review_candidate(tenant_id, run, candidate_id)
+    ReviewerSurface.fetch_tenant_review_candidate(tenant_id, run, candidate_id)
   end
 end

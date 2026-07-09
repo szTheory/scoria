@@ -10,12 +10,12 @@ defmodule ScoriaWeb.IncidentsLive.Index do
   import ScoriaWeb.UI
 
   alias ScoriaWeb.IncidentCopy
-  alias ScoriaWeb.OperatorSurface
+  alias ScoriaWeb.ReviewerSurface
 
   @impl true
   def mount(_params, _session, socket) do
     tenant_id = socket.assigns.tenant_id
-    incidents = OperatorSurface.list_tenant_incidents(tenant_id)
+    incidents = ReviewerSurface.list_tenant_incidents(tenant_id)
 
     socket =
       socket
@@ -38,7 +38,7 @@ defmodule ScoriaWeb.IncidentsLive.Index do
         {:noreply, push_navigate(socket, to: incident_path(incident_id, base, params["from"]))}
 
       run_id = run_origin_id(params["from"]) ->
-        case OperatorSurface.find_tenant_incident_for_run(socket.assigns.tenant_id, run_id) do
+        case ReviewerSurface.find_tenant_incident_for_run(socket.assigns.tenant_id, run_id) do
           nil ->
             {:noreply, assign(socket, :not_found_from, params["from"])}
 
