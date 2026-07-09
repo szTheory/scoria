@@ -155,7 +155,12 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     end
 
     assert detail_source =~ "promotion_disabled?"
-    assert detail_source =~ "ReplayEvidenceNotebookComponent.render"
+    assert detail_source =~ "ReplayTraceNotebookComponent.render"
+    assert detail_source =~ "SemanticCacheTraceNotebookComponent.render"
+    refute detail_source =~ "ReplayEvidenceNotebookComponent.render"
+    refute detail_source =~ "SemanticEvidenceNotebookComponent.render"
+    assert source =~ "DelegatedTraceComponent.render"
+    refute source =~ "DelegatedEvidenceComponent.render"
 
     for forbidden <- ["stone-", "gray-", "emerald-", "amber-", "rose-", "red-", "blue-"] do
       refute detail_source =~ forbidden
@@ -401,15 +406,15 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
-    assert html =~ "Delegated Evidence"
-    assert html =~ "Inspect Delegated Evidence"
-    assert html =~ ~s(href="#delegated-evidence")
-    assert length(Regex.scan(~r/id="delegated-evidence"/, html)) == 1
+    assert html =~ "Delegated Trace"
+    assert html =~ "Inspect Delegated Trace"
+    assert html =~ ~s(href="#delegated-trace")
+    assert length(Regex.scan(~r/id="delegated-trace"/, html)) == 1
     assert html =~ "planner"
     assert html =~ "critic"
     assert html =~ "View full context"
     assert html =~ "handoff input"
-    assert html =~ "projected context"
+    assert html =~ "scoped context"
     assert html =~ "policy"
     assert html =~ "draft_answer"
 
@@ -421,7 +426,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert selected_html =~ "Role"
     assert selected_html =~ "critic"
     assert selected_html =~ "review"
-    assert selected_html =~ "Delegated Evidence"
+    assert selected_html =~ "Delegated Trace"
 
     render_async(view)
   end

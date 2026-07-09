@@ -3,14 +3,15 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponentTest do
   import Phoenix.Component
   import Phoenix.LiveViewTest
 
+  alias ScoriaWeb.SemanticCacheTraceNotebookComponent
   alias ScoriaWeb.SemanticEvidenceNotebookComponent
 
   @palette_regex ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
 
-  test "semantic and replay adapters use shared notebook evidence primitives" do
+  test "semantic cache and replay trace adapters use shared notebook primitives" do
     adapter_paths = [
-      "lib/scoria_web/components/replay_evidence_notebook_component.ex",
-      "lib/scoria_web/components/semantic_evidence_notebook_component.ex"
+      "lib/scoria_web/components/replay_trace_notebook_component.ex",
+      "lib/scoria_web/components/semantic_cache_trace_notebook_component.ex"
     ]
 
     for path <- adapter_paths do
@@ -22,17 +23,21 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponentTest do
       refute source =~ @palette_regex
     end
 
-    replay_source = File.read!("lib/scoria_web/components/replay_evidence_notebook_component.ex")
+    replay_source = File.read!("lib/scoria_web/components/replay_trace_notebook_component.ex")
 
     semantic_source =
-      File.read!("lib/scoria_web/components/semantic_evidence_notebook_component.ex")
+      File.read!("lib/scoria_web/components/semantic_cache_trace_notebook_component.ex")
 
     assert replay_source =~ ~s(phx-click="select_comparison_source")
     assert semantic_source =~ "Advanced raw evidence"
     assert semantic_source =~ "raw_evidence"
+
+    wrapper_source = File.read!("lib/scoria_web/components/semantic_evidence_notebook_component.ex")
+    assert wrapper_source =~ "0.1.x compatibility"
+    assert wrapper_source =~ "SemanticCacheTraceNotebookComponent"
   end
 
-  test "renders grouped semantic evidence sections and raw disclosure" do
+  test "renders grouped semantic cache trace sections and raw disclosure" do
     assigns = %{
       semantic_evidence: %{
         summary: %{
@@ -68,9 +73,11 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponentTest do
 
     html =
       rendered_to_string(~H"""
-      <SemanticEvidenceNotebookComponent.render semantic_evidence={@semantic_evidence} />
+      <SemanticCacheTraceNotebookComponent.render semantic_evidence={@semantic_evidence} />
       """)
 
+    assert html =~ ~s(id="semantic-cache-trace-notebook")
+    assert html =~ "Semantic cache trace inspection"
     assert html =~ "Compatibility"
     assert html =~ "Provenance"
     assert html =~ "Lifecycle"
@@ -78,5 +85,26 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponentTest do
     assert html =~ "lookup status"
     assert html =~ "admitted"
     assert html =~ "Advanced raw evidence"
+  end
+
+  test "legacy SemanticEvidenceNotebookComponent delegates to semantic cache trace rendering" do
+    assigns = %{
+      semantic_evidence: %{
+        summary: %{lookup_status: "hit", lane_key: "account_faq"},
+        compatibility: %{},
+        provenance: %{},
+        lifecycle: %{},
+        candidate: %{},
+        events: []
+      }
+    }
+
+    html =
+      rendered_to_string(~H"""
+      <SemanticEvidenceNotebookComponent.render semantic_evidence={@semantic_evidence} />
+      """)
+
+    assert html =~ ~s(id="semantic-cache-trace-notebook")
+    assert html =~ "Semantic cache trace inspection"
   end
 end
