@@ -6,6 +6,34 @@ defmodule Scoria.TerminologyContractTest do
   @semantic_cache_entry "lib/scoria/semantic_cache/entry.ex"
   @knowledge_tables_migration "priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs"
   @eval_score_migration "priv/repo/migrations/20260523000300_expand_ai_scores_and_create_online_score_candidates.exs"
+  @scoria_facade "lib/scoria.ex"
+  @stable_adopter_docs [
+    "README.md",
+    "docs/adoption_lanes.md",
+    "docs/bounded_handoffs.md",
+    "docs/phoenix_runtime_example.md",
+    "docs/semantic_fast_path.md",
+    "docs/operator_verification.md",
+    "docs/connector_adoption.md",
+    "docs/support_copilot_gallery.md"
+  ]
+  @preferred_public_examples [
+    "ScoriaWeb.ReviewerSurface",
+    "Scoria.Observe.ReviewerBroadcast",
+    "Scoria.VerificationSuites",
+    "Scoria.SemanticCache.Profile",
+    "semantic_cache: [profile: MyApp.AI.AccountFaqCache]",
+    "scoped_context:"
+  ]
+  @legacy_aliases [
+    "ScoriaWeb.OperatorSurface",
+    "Scoria.Observe.OperatorBroadcast",
+    "Scoria.VerificationLanes",
+    "Scoria.SemanticLane",
+    "lane:",
+    "lane_key",
+    "projected_context:"
+  ]
 
   test "storage terminology keeps evidence refs, projected context, and lane key fields" do
     assert active_source(@workflow_tables_migration) =~ ~r/add\s+:projected_context\b/
@@ -34,6 +62,73 @@ defmodule Scoria.TerminologyContractTest do
            # field :cache_key, :string
            add :evidence_refs, :map
            """) == "add :evidence_refs, :map"
+  end
+
+  test "stable adopter docs expose final vocabulary and preferred public examples" do
+    corpus = stable_doc_corpus() <> "\n" <> File.read!(@scoria_facade)
+
+    for example <- @preferred_public_examples do
+      assert corpus =~ example,
+             "expected stable docs or public facade docs to include #{inspect(example)}"
+    end
+
+    for term <- ["reviewer", "trace", "capability", "verification suite", "semantic cache"] do
+      assert String.downcase(corpus) =~ term
+    end
+  end
+
+  test "stable adopter docs link back to the glossary" do
+    for path <- @stable_adopter_docs do
+      content = File.read!(path)
+
+      assert content =~ "glossary",
+             "expected #{path} to link or refer to the terminology glossary"
+    end
+  end
+
+  test "stable adopter docs do not leak retired internal wording" do
+    for path <- @stable_adopter_docs do
+      content = File.read!(path)
+
+      refute content =~ "Keystone", "retired internal code name leaked in #{path}"
+      refute content =~ "v2.0 Relay", "retired internal code name leaked in #{path}"
+      refute content =~ "The Four Lanes", "stale count heading leaked in #{path}"
+    end
+  end
+
+  test "stable docs keep evidence only for support proof, not run inspection surfaces" do
+    corpus = stable_doc_corpus()
+
+    refute corpus =~ "operator evidence"
+    refute corpus =~ "operator-visible"
+    refute corpus =~ "Delegated Evidence"
+    assert corpus =~ "RAG/citation evidence" or corpus =~ "citation and grounding evidence"
+    assert corpus =~ "audit evidence" or corpus =~ "Budget evidence" or corpus =~ "policy evidence"
+  end
+
+  test "legacy aliases are framed as explicit 0.1.x compatibility notes" do
+    corpus = stable_doc_corpus() <> "\n" <> File.read!(@scoria_facade)
+
+    for alias_name <- @legacy_aliases do
+      assert corpus =~ alias_name,
+             "expected explicit compatibility note for #{inspect(alias_name)}"
+    end
+
+    assert corpus =~ "0.1.x compatibility"
+    assert corpus =~ "legacy"
+  end
+
+  test "Scoria.start_handoff_run docs prefer scoped_context and mark projected_context legacy" do
+    source = File.read!(@scoria_facade)
+
+    assert source =~ "scoped_context:"
+    assert source =~ "projected_context:"
+    assert source =~ "legacy 0.1.x compatibility alias"
+
+    scoped_index = :binary.match(source, "scoped_context:") |> elem(0)
+    projected_index = :binary.match(source, "projected_context:") |> elem(0)
+
+    assert scoped_index < projected_index
   end
 
   defp refute_storage_identifier!(identifier) do
@@ -68,6 +163,12 @@ defmodule Scoria.TerminologyContractTest do
       |> Enum.filter(&ecto_schema?/1)
 
     Enum.sort(migration_paths ++ schema_paths)
+  end
+
+  defp stable_doc_corpus do
+    @stable_adopter_docs
+    |> Enum.map(&File.read!/1)
+    |> Enum.join("\n")
   end
 
   defp ecto_schema?(path) do

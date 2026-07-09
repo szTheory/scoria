@@ -2,7 +2,7 @@ defmodule Scoria.AdoptionSurfaceTest do
   use ExUnit.Case, async: true
   alias Scoria.AdopterDocContract
   alias Scoria.HexConsumerContract
-  alias Scoria.VerificationLanes
+  alias Scoria.VerificationSuites
 
   for {path, fragments} <- HexConsumerContract.adopter_doc_surfaces() do
     test "adopter doc #{path} stays aligned with HexConsumerContract surface SSOT" do
@@ -26,28 +26,33 @@ defmodule Scoria.AdoptionSurfaceTest do
   @glossary "docs/glossary.md"
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
-  @release_preview_command VerificationLanes.command(:release_preview)
-  @default_lane_command VerificationLanes.command(:adoption)
-  @runtime_to_handoff_command VerificationLanes.command(:runtime_to_handoff)
-  @semantic_fast_path_command VerificationLanes.command(:semantic_fast_path)
-  @knowledge_lane_command VerificationLanes.command(:knowledge)
-  @connector_lane_command VerificationLanes.command(:connector)
-  @default_boundary_sentence VerificationLanes.boundary_sentence(:adoption)
-  @closeout_chain VerificationLanes.closeout_chain()
+  @release_preview_command VerificationSuites.command(:release_preview)
+  @default_lane_command VerificationSuites.command(:adoption)
+  @runtime_to_handoff_command VerificationSuites.command(:runtime_to_handoff)
+  @semantic_fast_path_command VerificationSuites.command(:semantic_fast_path)
+  @knowledge_lane_command VerificationSuites.command(:knowledge)
+  @connector_lane_command VerificationSuites.command(:connector)
+  @default_boundary_sentence VerificationSuites.boundary_sentence(:adoption)
+  @closeout_chain VerificationSuites.closeout_chain()
 
-  test "README documents the shipped lane model and canonical lane hierarchy" do
+  test "README documents the shipped capability model and canonical verification suites" do
     content = File.read!(@readme)
 
     assert content =~ "Who This Is For"
-    assert content =~ "Choose Your Lane"
-    assert content =~ "Lane selection guide"
+    assert content =~ "Choose Your Capability"
+    assert content =~ "Capability guide"
+    assert content =~ "Glossary"
     assert content =~ "identity -> start -> inspect -> resume"
     assert content =~ "Scoria.start_run"
     assert content =~ "Scoria.start_handoff_run"
-    assert content =~ "Scoria.SemanticLane"
-    assert content =~ "semantic_cache: [lane: MyApp.AI.AccountFaqLane]"
+    assert content =~ "Scoria.SemanticCache.Profile"
+    assert content =~ "semantic_cache: [profile: MyApp.AI.AccountFaqCache]"
+    assert content =~ "ScoriaWeb.ReviewerSurface"
+    assert content =~ "Scoria.Observe.ReviewerBroadcast"
+    assert content =~ "Scoria.VerificationSuites"
     assert content =~ "Scoria.get_run_detail"
     assert content =~ "delegated_handoffs"
+    assert content =~ "scoped_context:"
     assert content =~ "Scoria.resume_run"
     assert content =~ "session_id"
     assert content =~ "run_id"
@@ -62,9 +67,10 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "local proof-only timeout"
     assert content =~ "suite-wide timeout changes"
     assert content =~ "broader repo-health context"
-    assert content =~ "Optional knowledge lane"
+    assert content =~ "Optional knowledge base"
     assert content =~ "docs/adoption_lanes.md"
     assert content =~ "docs/semantic_fast_path.md"
+    assert content =~ "docs/glossary.md"
     refute content =~ "mix scoria.test.knowledge"
     refute content =~ "Scoria is shipped through `v1.9 Crucible`"
     assert File.read!(@scoria_doctest) =~ "doctest Scoria"
@@ -118,17 +124,18 @@ defmodule Scoria.AdoptionSurfaceTest do
     refute readme =~ "mix scoria.test.install_contract"
   end
 
-  test "lane selection guide documents the adoption order and optional boundaries" do
+  test "capability guide documents the adoption order and optional boundaries" do
     content = File.read!(@lane_guide)
 
-    assert content =~ "Default runtime lane"
-    assert content =~ "Bounded handoff lane"
-    assert content =~ "Semantic fast-path lane"
-    assert content =~ "Optional knowledge lane"
-    assert content =~ "Remote connector lane"
+    assert content =~ "Default runtime capability"
+    assert content =~ "Bounded handoff capability"
+    assert content =~ "Semantic cache capability"
+    assert content =~ "Optional knowledge base capability"
+    assert content =~ "Remote connector capability"
     assert content =~ "identity -> start -> inspect -> resume"
     assert content =~ "Scoria.start_handoff_run/3"
-    assert content =~ "use Scoria.SemanticLane"
+    assert content =~ "use Scoria.SemanticCache.Profile"
+    assert content =~ "semantic_cache: [profile: MyApp.AI.AccountFaqCache]"
     assert content =~ @default_lane_command
     assert content =~ @semantic_fast_path_command
     assert content =~ @knowledge_lane_command
@@ -136,11 +143,11 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "connector_adoption.md"
     assert content =~ "embedded-boundary framing"
     refute content =~ "mix scoria.test.knowledge"
-    assert content =~ "This lane is explicitly optional."
-    assert content =~ "Start narrow. Expand only when the current lane already feels boring."
+    assert content =~ "This capability is explicitly optional."
+    assert content =~ "Start narrow. Expand only when the current capability already feels boring."
   end
 
-  test "phase 54 docs keep default-first lane wording with canonical runtime-to-handoff proof guidance" do
+  test "phase 54 docs keep default-first capability wording with canonical runtime-to-handoff proof guidance" do
     readme = File.read!(@readme)
     lane_guide = File.read!(@lane_guide)
     operator_guide = File.read!(@operator_guide)
@@ -148,7 +155,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     handoff_guide = File.read!(@handoff_guide)
 
     for content <- [readme, lane_guide, operator_guide] do
-      assert content =~ "Start with the default runtime lane"
+      assert content =~ "Start with the default runtime capability"
       assert content =~ @runtime_to_handoff_command
       assert content =~ @default_lane_command
       assert content =~ @default_boundary_sentence
@@ -173,7 +180,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     end
   end
 
-  test "bounded handoff guide documents the narrow public delegation lane" do
+  test "bounded handoff guide documents the narrow public delegation capability" do
     content = File.read!(@handoff_guide)
 
     assert content =~ "identity -> start -> inspect -> resume"
@@ -183,25 +190,25 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "root_role_id"
     assert content =~ "delegated_kind"
     assert content =~ "handoff_input"
-    assert content =~ "projected_context"
-    assert content =~ "projected_context: %{}"
+    assert content =~ "scoped_context"
+    assert content =~ "scoped_context: %{}"
     assert content =~ "queued child step"
     assert content =~ "same durable run"
-    assert content =~ "Delegated Evidence"
+    assert content =~ "Delegated Trace"
     assert content =~ "No remaining adopter-facing gap"
     assert content =~ "deferred follow-up"
     assert content =~ "Host and Scoria ownership boundary"
 
     assert content =~
-             "The host app owns identity, escalation policy, prompt or draft selection, and projected-context selection."
+             "The host app owns identity, escalation policy, prompt or draft selection, and scoped-context selection."
 
     assert content =~
-             "Scoria owns durable run creation, projected-context validation, queued delegated child creation, and curated readback through `Scoria.get_run_detail/1`."
+             "Scoria owns durable run creation, scoped-context validation, queued delegated child creation, and curated readback through `Scoria.get_run_detail/1`."
 
     assert content =~ "{:error, :unsafe_projected_context}"
     assert content =~ "before creating a durable delegated run"
     assert content =~ @default_lane_command
-    assert content =~ "one canonical verifier lane"
+    assert content =~ "one canonical verification suite"
     assert content =~ "Broad runtime-state keys are rejected explicitly"
     assert content =~ "transcript"
     assert content =~ "provider_session"
@@ -218,15 +225,16 @@ defmodule Scoria.AdoptionSurfaceTest do
     refute content =~ "provider_session token"
   end
 
-  test "semantic fast-path guide documents the conservative reuse contract" do
+  test "semantic cache guide documents the conservative reuse contract" do
     content = File.read!(@semantic_guide)
 
-    assert content =~ "Use it only after the default runtime lane already works"
-    assert content =~ "use Scoria.SemanticLane"
+    assert content =~ "Use it only after the default runtime capability already works"
+    assert content =~ "use Scoria.SemanticCache.Profile"
+    assert content =~ "cache_key: \"account_faq\""
     assert content =~ "default_scope: :tenant_shared"
     assert content =~ "default_scope: :actor_scoped"
     assert content =~ "safe_read_only: true"
-    assert content =~ "semantic_cache: [lane: MyApp.AI.AccountFaqLane]"
+    assert content =~ "semantic_cache: [profile: MyApp.AI.AccountFaqCache]"
     assert content =~ "tenant partitioning"
     assert content =~ "prompt compatibility"
     assert content =~ "policy compatibility"
@@ -284,23 +292,23 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ @semantic_fast_path_command
     assert content =~ @knowledge_lane_command
     assert content =~ "SCORIA_DB_PORT=55432"
-    assert content =~ "canonical default-lane verifier"
+    assert content =~ "canonical default runtime verification suite"
     assert content =~ "fresh-host install/migrate/route/runtime smoke"
     assert content =~ "local proof-only timeout"
     assert content =~ "suite-wide timeout change"
-    assert content =~ "canonical semantic fast-path troubleshooting lane"
+    assert content =~ "canonical semantic cache troubleshooting verification suite"
     assert content =~ "broader repo-health context"
     assert content =~ "Scoria.start_run"
     assert content =~ "Scoria.get_run"
     assert content =~ "list_runs_for_session"
     assert content =~ "/scoria/workflows/:run_id"
-    assert content =~ "Optional knowledge lane"
+    assert content =~ "Optional knowledge base"
     assert content =~ "repository closeout, the canonical proof chain is exactly"
     assert content =~ @closeout_chain
     assert content =~ @runtime_to_handoff_command
 
     assert content =~
-             "CI should run this lane in `MIX_ENV=dev` because ExDoc stays a dev-only tool"
+             "CI should run this verification suite in `MIX_ENV=dev` because ExDoc stays a dev-only tool"
 
     assert content =~ @default_boundary_sentence
 
@@ -381,7 +389,7 @@ defmodule Scoria.AdoptionSurfaceTest do
 
     for content <- [lane_guide, operator_guide] do
       assert content =~
-               "The host app authenticates the operator and asserts dashboard tenant scope."
+               "The host app authenticates the reviewer and asserts dashboard tenant scope."
 
       assert content =~ "scoria_dashboard \"/scoria\""
       assert content =~ "on_mount:"
