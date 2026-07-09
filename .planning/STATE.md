@@ -2,41 +2,42 @@
 gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Pre-1.0 Trust & Security Hardening
-current_phase: 45
-current_phase_name: Correctness sweep + fail-closed proof & closeout
-status: executing
-stopped_at: Phase 45 UI-SPEC approved
-last_updated: "2026-07-07T22:20:35.991Z"
-last_activity: 2026-07-07
-last_activity_desc: Phase 44 complete, transitioned to Phase 45
+current_phase: 4
+status: Awaiting next milestone
+stopped_at: v3.4 archived
+last_updated: "2026-07-09T19:07:36.149Z"
+last_activity: 2026-07-09
+last_activity_desc: Milestone v3.4 completed and archived
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 19
-  completed_plans: 19
-  percent: 75
+  completed_phases: 4
+  total_plans: 24
+  completed_plans: 24
+  percent: 100
+current_phase_name: Correctness sweep + fail-closed proof & closeout
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-07-04 after v3.3 milestone completion)
+See: `.planning/PROJECT.md` (updated 2026-07-09 after v3.4 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 44 — dashboard-auth-seam
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 45 — Correctness sweep + fail-closed proof & closeout
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-07-07 — Phase 44 complete, transitioned to Phase 45
+Phase: Milestone v3.4 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-09 — Milestone v3.4 completed and archived
 
 ## Performance Metrics
 
-- **Latest Shipped:** `v3.3 Design System Stress Test` (2026-07-04) — 30 plans, 7 phases, 74 tasks. Audit `passed` (22/22 requirements, 6/6 seams); tag `v3.3` local.
+- **Latest Shipped:** `v3.4 Pre-1.0 Trust & Security Hardening` (2026-07-09) — 24 plans, 4 phases, 61 tasks. Audit `passed` (17/17 requirements, 4/4 phases); archived in `.planning/milestones/v3.4-*`.
+- **Previous Shipped:** `v3.3 Design System Stress Test` (2026-07-04) — 30 plans, 7 phases, 74 tasks. Audit `passed` (22/22 requirements, 6/6 seams); tag `v3.3` local.
 - **Previous Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
 - **Phase 42 P01:** 6 min — 3 tasks, 7 files, verification 14 tests green.
 - **Phase 42 P02:** 7 min — 3 tasks, 6 files, verification 7 required tests green plus 11 eval promotion regression tests.
@@ -45,6 +46,9 @@ Last activity: 2026-07-07 — Phase 44 complete, transitioned to Phase 45
 - **Phase 42 P05:** 39 min — 2 tasks, 2 files, verification 15 focused eval tests green.
 - **Phase 42 P06:** 11 min — 3 tasks, 3 files, verification 16 online/campaign tests and 15 related eval tests green.
 - **Phase 42 P07:** 6 min — 3 tasks, 4 files, verification 10 release gate tests green plus migration rollback/reapply.
+- **Phase 43:** 5 plans, 12 tasks — knowledge tenant isolation complete; full `mix test.knowledge --warnings-as-errors` green during closeout.
+- **Phase 44:** 7 plans, 21 tasks — dashboard auth seam complete; focused dashboard-auth lane green during closeout.
+- **Phase 45:** 5 plans, 11 tasks — correctness sweep + doctrine closeout complete; focused Phase 45 and scope-doctrine tests green during closeout.
 
 *Updated after each plan completion*
 
@@ -170,13 +174,13 @@ Recent decisions affecting current work:
 - [Phase 44]: 44-02: Home, Connectors, and Incidents now consume ScoriaWeb.DashboardScope tenant assigns before tenant-owned reads or PubSub subscriptions.
 - [Phase 44]: 44-02: OrchestratorLive review_candidate_id deep links use Scoria.Eval.get_review_candidate_for_tenant/2 so URL object IDs cannot cross tenant scope.
 
-### Pending Todos
+### Resolved And Deferred Work
 
-- UI follow-up: make approval rejection toasts legible over dense approvals UI — mapped to v3.3 Phase 38.
-- UI follow-up: add approval decision history for approved/denied/expired requests — mapped to v3.3 Phase 39.
+- UI follow-up: make approval rejection toasts legible over dense approvals UI — completed in v3.3 Phase 38.
+- UI follow-up: add approval decision history for approved/denied/expired requests — completed in v3.3 Phase 39; todo moved to completed at v3.4 closeout.
+- Post-v3.1 cleanup: `ci-policy-job-cache-key-mislabel` — completed by policy `MIX_ENV: test` and cache-key contract; todo moved to completed at v3.4 closeout.
 - Post-v3.2: SEED-004 test-code determinism (async `IntegrationCase`, `Process.sleep` removal) — leading candidate for next milestone.
 - Post-v3.2: FLEET-01 sibling-repo convergence (rulestead/parapet) — `docker-dx-fleet-hardening` todo.
-- Post-ship cleanup: `ci-policy-job-cache-key-mislabel` (carried from v3.1 close).
 
 ### Blockers/Concerns
 
@@ -184,7 +188,8 @@ None at milestone start.
 
 ### Roadmap Evolution
 
-- v3.4 roadmap created (2026-07-04): Phases 42–45 (SEED-006 / Backlog 999.1). 42 eval / 43 knowledge / 44 dashboard independent; 45 correctness sweep + closeout depends on 42 + 43. 17/17 requirements mapped.
+- v3.4 roadmap created (2026-07-04): Phases 42–45 promoted SEED-006 from the backlog. 42 eval / 43 knowledge / 44 dashboard independent; 45 correctness sweep + closeout depends on 42 + 43. 17/17 requirements mapped.
+- v3.4 completed and reconciled (2026-07-09): Phases 42–45, 24/24 plans, 17/17 requirements, audit `passed`; SEED-006 archived and removed from the forward backlog.
 - Phase 41.1 inserted after Phase 41: Wire orphaned ScoriaWeb.Copy/DatasetCopy into dataset page (COPY-01 SSOT) — surfaced by v3.3 milestone audit (URGENT)
 
 ## Deferred Items
@@ -196,7 +201,7 @@ None at milestone start.
 | Fleet targets | FLEET-02: `make nuke-all` fleet-wide teardown (high blast radius) | Deferred | v3.2 out-of-scope |
 | v3.0 gaps | Phase 13/14 verification-doc gaps (functional: 0 unsatisfied; 10 partials are proof-only) | Deferred | v3.0 close |
 | Release | Publish 0.1.1 → superseded by 0.1.2 in Phase 35 | Absorbed into REL-01 | v3.2 REL |
-| Trust/security P0 | SEED-006: eval fail-open, knowledge cross-tenant leak, dashboard auth bypass — **GATES next Hex release** — ACTIVE as v3.4 (Phases 42–45) | Promoted | 2026-07-03 eval-posture audit |
+| Trust/security P0 | SEED-006: eval fail-open, knowledge cross-tenant leak, dashboard auth bypass — completed by v3.4 (Phases 42–45) | Completed | 2026-07-09 v3.4 close |
 | Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt | Deferred | 2026-07-03 audit |
 | Observability | SEED-007: OTel-GenAI/OpenInference trace foundation | Deferred | 2026-07-03 audit |
 | Eval depth | SEED-008: real scorers, judge calibration, regression comparison | Deferred | 2026-07-03 audit |
@@ -204,14 +209,7 @@ None at milestone start.
 | Agent security | SEED-010: lethal-trifecta governance (⭐ flagship differentiator) | Deferred | 2026-07-03 audit |
 | Privacy/feedback | SEED-011: retention/purge, PII masking hook, human-feedback flywheel | Deferred | 2026-07-03 audit |
 
-> **Ordered roadmap + dependencies** for SEED-005…011 live in `ROADMAP.md` `## Backlog` (999.1–999.7); "why" index in `.planning/seeds/README.md`. (Stray per-plan timing rows that previously polluted this table were removed at v3.3 close 2026-07-04 — canonical per-plan metrics live in the phase manifests.)
-| Phase 44 P01 | 7 min | 3 tasks | 4 files |
-| Phase 44-dashboard-auth-seam P03 | 8m35s | 3 tasks | 4 files |
-| Phase 44-dashboard-auth-seam P04 | 11m26s | 3 tasks | 5 files |
-| Phase 44-dashboard-auth-seam P05 | 11 min | 3 tasks | 8 files |
-| Phase 44 P06 | 8 min | 3 tasks | 5 files |
-| Phase 44 P02 | 9min | 3 tasks | 6 files |
-| Phase 44 P07 | 3h22m elapsed including executor-disconnect recovery | 3 tasks | 5 files |
+> **Ordered roadmap + dependencies** for SEED-005…013 live in `ROADMAP.md` `## Backlog` (999.2–999.9); "why" index in `.planning/seeds/README.md`.
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -219,26 +217,26 @@ None at milestone start.
 
 | Category | Item | Status |
 |----------|------|--------|
-| todo | `add-approval-decision-history` (functionally delivered by FLOW-04 / Phase 39; file stale) | Deferred |
-| todo | `ci-policy-job-cache-key-mislabel` (CI copy cleanup; out of UI scope) | Deferred |
+| todo | `add-approval-decision-history` (functionally delivered by FLOW-04 / Phase 39; file stale) | Completed at v3.4 closeout |
+| todo | `ci-policy-job-cache-key-mislabel` (CI cache-key/env mismatch) | Completed at v3.4 closeout |
 | todo | `docker-dx-fleet-hardening` (FLEET-01/02; out of scope) | Deferred |
-| seed | SEED-003 CI/CD efficiency overhaul | Dormant |
-| seed | SEED-005 Documentation & positioning overhaul (ROADMAP 999.2) | Dormant |
-| seed | SEED-006 Pre-1.0 Trust & Security Hardening — GATES next Hex release (ROADMAP 999.1) | ACTIVE (v3.4) |
-| seed | SEED-007 Trace foundation OTel-GenAI/OpenInference (ROADMAP 999.3) | Dormant |
-| seed | SEED-008 Trustworthy eval depth (ROADMAP 999.5) | Dormant |
-| seed | SEED-009 Retrieval eval depth & seams (ROADMAP 999.6) | Dormant |
-| seed | SEED-010 Lethal-trifecta governance ⭐ flagship (ROADMAP 999.4) | Dormant |
-| seed | SEED-011 Privacy & feedback governance (ROADMAP 999.7) | Dormant |
-| seed | SEED-012 Architecture-archetype awareness (ROADMAP 999.8) | Dormant |
-| seed | SEED-013 Operator IA pivot / Control-Room v2 (ROADMAP 999.9) | Dormant |
+| seed | SEED-003 CI/CD efficiency overhaul | Archived |
+| seed | SEED-005 Documentation & positioning overhaul (ROADMAP 999.2) | Deferred |
+| seed | SEED-006 Pre-1.0 Trust & Security Hardening — shipped in v3.4 | Archived |
+| seed | SEED-007 Trace foundation OTel-GenAI/OpenInference (ROADMAP 999.3) | Deferred |
+| seed | SEED-008 Trustworthy eval depth (ROADMAP 999.5) | Deferred |
+| seed | SEED-009 Retrieval eval depth & seams (ROADMAP 999.6) | Deferred |
+| seed | SEED-010 Lethal-trifecta governance ⭐ flagship (ROADMAP 999.4) | Deferred |
+| seed | SEED-011 Privacy & feedback governance (ROADMAP 999.7) | Deferred |
+| seed | SEED-012 Architecture-archetype awareness (ROADMAP 999.8) | Deferred |
+| seed | SEED-013 Operator IA pivot / Control-Room v2 (ROADMAP 999.9) | Deferred |
 
 ## Session Continuity
 
-Last session: 2026-07-07T21:44:37.273Z
-Stopped at: Phase 45 UI-SPEC approved
-Resume file: .planning/phases/45-correctness-sweep-fail-closed-proof-closeout/45-UI-SPEC.md
+Last session: 2026-07-09T19:07:36Z
+Stopped at: v3.4 archived
+Resume file: .planning/milestones/v3.4-MILESTONE-AUDIT.md
 
 ## Operator Next Steps
 
-- Execute Phase 44 (dashboard auth seam).
+- Start the next milestone with /gsd-new-milestone

@@ -1,7 +1,8 @@
 ---
 id: SEED-005
-status: dormant
+status: deferred
 planted: 2026-07-03
+deferred_on: 2026-07-09
 planted_during: v3.3 Design System Stress Test (phase 39 in-flight)
 trigger_when: next milestone scoped as docs / DX / adoption / Hex-release readiness
 scope: large

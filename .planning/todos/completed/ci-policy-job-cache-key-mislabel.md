@@ -1,13 +1,21 @@
 ---
 id: ci-policy-job-cache-key-mislabel
 title: "CI policy job: -test-mix- cache key while compiling under MIX_ENV=dev (WR-01)"
-status: pending
+status: completed
 created: 2026-06-14
+completed: 2026-07-09
 priority: medium
 resolves_phase: null
 tags: [ci, cache, correctness, phase-23, pre-phase-25]
 source: "Surfaced by 23-REVIEW.md (WR-01) during Phase 23 code review. Non-blocking advisory; phase goal verified passed (5/5 must-haves)."
 ---
+
+## Resolution
+
+Resolved by the current CI contract. `.github/workflows/ci-verify.yml` now sets `MIX_ENV: test`
+on the `policy` job while retaining the `-test-mix-` cache key, and
+`test/scoria/ci_policy_contract_test.exs` pins both the policy env and env-scoped cache-key
+segments.
 
 ## Why this exists
 

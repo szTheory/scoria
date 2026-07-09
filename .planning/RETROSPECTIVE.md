@@ -2,6 +2,39 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v3.4 — Pre-1.0 Trust & Security Hardening
+
+**Shipped:** 2026-07-09
+**Phases:** 4 (42–45) | **Plans:** 24 | **Tasks:** 61
+
+### What Was Built
+SEED-006's release-gating P0s were fixed and proven without cutting a Hex release: eval now fails closed over real subject output and verdict semantics, knowledge retrieval is tenant-isolated end to end, the dashboard tenant boundary is host-asserted through an auth seam, and the correctness sweep replaced fake pgvector scores, answerability-blind citation scoring, dead chunker overlap, and hardcoded eval latency.
+
+### What Worked
+- **Subsystem split was right.** Eval, knowledge, and dashboard auth could move independently; the final sweep only needed to compose their proof.
+- **Fail-closed patterns reused existing local doctrine.** Eval reused the Score/Verdict spine, knowledge mirrored mandatory tenant scope patterns, and dashboard auth delegated identity/policy instead of inventing in-lib RBAC.
+- **Focused lanes gave useful confidence.** `mix test.knowledge`, dashboard-auth focused tests, Phase 42 eval tests, and the scope-doctrine contract gave targeted green proof even while broader repo-health failures stayed outside the milestone scope.
+- **Audit reconciliation caught process drift.** The first milestone audit found missing Phase 43/44 verification artifacts and stale Nyquist/ledger state before archive, which prevented a false close.
+
+### What Was Inefficient
+- **Verification artifacts lagged implementation.** Phase 43 and Phase 44 were functionally complete but lacked `*-VERIFICATION.md`, creating orphaned requirements until closeout.
+- **Planning ledgers drifted after work completed.** ROADMAP, REQUIREMENTS, STATE, seed status, and pending todos had to be reconciled in one large closeout pass.
+- **Open-artifact semantics were too noisy for planned seeds.** Future roadmap seeds with `status: dormant` blocked milestone close even when they were intentionally deferred.
+
+### Patterns Established
+- **Deferred seed status for future roadmap items:** planned future seeds should be `deferred`, not `dormant`, unless they are intentionally close-blocking.
+- **P0 fix + prove boundary:** security/trust fixes can ship as a no-release milestone, with release/docs explicitly owned by the next milestone.
+- **Formal verification catch-up:** missing verification artifacts are milestone blockers even when summaries and tests say the code is done.
+
+### Key Lessons
+- Close each phase by updating verification, validation, requirements, and roadmap state immediately; milestone-close reconciliation is more expensive and easier to get wrong.
+- Use `audit-open` before the final archive gate and resolve stale todos/seeds into completed/deferred/archive statuses, not blanket acknowledgments.
+- Keep broad repo-health failures separate from scoped milestone proof, but name the boundary explicitly so no one mistakes focused green for suite green.
+
+### Cost Observations
+- One closeout pass generated most of the planning churn: verification backfill, Nyquist reconciliation, seed/todo cleanup, audit rewrite, and archive.
+- The broad full-suite residual remains a future repo-health task; v3.4's cost was contained by relying on focused phase lanes.
+
 ## Milestone: v3.3 — Design System Stress Test
 
 **Shipped:** 2026-07-04

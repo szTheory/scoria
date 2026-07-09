@@ -1,7 +1,9 @@
 ---
 id: SEED-003
-status: dormant
+status: archived
 planted: 2026-06-14
+archived_on: 2026-07-09
+shipped_in: v3.1
 planted_during: v3.0 Control Room
 trigger_when: next milestone — when planning CI/CD, DX, or developer-velocity work
 scope: medium
@@ -23,6 +25,13 @@ target for the next milestone with GSD.
 
 **Trigger:** next milestone planning, especially any CI/CD, DX, or developer-velocity
 theme. Surface during `/gsd:new-milestone` scope discovery.
+
+## Resolution
+
+Archived at v3.4 closeout after confirming the core CI/CD efficiency work shipped in v3.1 CI/CD
+Velocity: build-once artifact reuse, parallel lane fan-out, knowledge lane narrowing, 4-way shard
+matrix, flake cleanup, `mix ci`, and measured PR critical path reduction to 7m38s. Remaining
+test-code determinism work is tracked separately as SEED-004 / deferred roadmap work.
 
 ## Scope Estimate
 

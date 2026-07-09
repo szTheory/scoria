@@ -1,13 +1,20 @@
 ---
 id: docker-dx-fleet-hardening
 title: "Docker dev-DX fleet hardening — port-conflict-free multi-lib local DX"
-status: pending
+status: deferred
 created: 2026-06-13
+deferred: 2026-07-09
 priority: medium
 resolves_phase: null
 tags: [dx, docker, infra, cross-repo]
 source: "Surfaced during Phase 16 (16-05 checkpoint) — user could not reach the dashboard through the wrong fixed localhost URL because the fleet owns :4000."
 ---
+
+## Deferred Status
+
+Deferred out of close-blocking todos at v3.4 closeout. The Scoria-local portions have mostly shipped
+across v3.2, but the cross-repo fleet convergence remains a separate initiative and stays represented
+in `PROJECT.md`, `STATE.md`, and `ROADMAP.md` deferred work.
 
 ## Why this exists
 

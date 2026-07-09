@@ -1,10 +1,11 @@
 ---
 phase: 44
 slug: dashboard-auth-seam
-status: planned
+status: complete
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-07-07
+updated: 2026-07-09T18:37:29Z
 ---
 
 # Phase 44 - Validation Strategy
@@ -40,10 +41,10 @@ Baseline checked during research: `mix test test/scoria_web/router_test.exs --wa
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 44-01-T1 | 44-01 | 1 | AUTH-01 | T-44-02 | Bare `scoria_dashboard "/scoria"` compiles, host `on_mount` single/list hooks compile, host hooks run before `DashboardScope`, and `DashboardNav` remains in the chain. | router/unit | `mix test test/scoria_web/router_test.exs --warnings-as-errors` | Yes - new cases required | pending |
-| 44-01-T2 | 44-01 | 1 | AUTH-02 | T-44-01 / T-44-03 | Dashboard scope resolver accepts valid host-asserted scope, rejects nil/blank/malformed scope, and never reads params or defaults. | unit | `mix test test/scoria_web/dashboard_scope_test.exs --warnings-as-errors` | No - 44-01 Task 2 creates before implementation | pending |
-| 44-02..06 | 44-02..44-06 | 2-3 | AUTH-03 | T-44-01 / T-44-04 | Mounting as tenant A with tenant B hints renders only tenant A data or an empty/not-found state, including object/detail pages and tenant-owned evidence. | LiveView integration | `mix test test/scoria_web/live --warnings-as-errors` | Partial - page-specific auth tests planned | pending |
-| 44-07-T1 | 44-07 | 4 | AUTH-03 | T-44-03 | Dashboard code forbids `params["tenant"]`, `session["tenant_id"] || "default"`, and suspicious `|| "default"` tenant fallbacks. | source guard | `mix test test/scoria_web/dashboard_scope_source_guard_test.exs --warnings-as-errors` | No - 44-07 Task 1 creates before final proof | pending |
+| 44-01-T1 | 44-01 | 1 | AUTH-01 | T-44-02 | Bare `scoria_dashboard "/scoria"` compiles, host `on_mount` single/list hooks compile, host hooks run before `DashboardScope`, and `DashboardNav` remains in the chain. | router/unit | `mix test test/scoria_web/router_test.exs --warnings-as-errors` | Yes | green |
+| 44-01-T2 | 44-01 | 1 | AUTH-02 | T-44-01 / T-44-03 | Dashboard scope resolver accepts valid host-asserted scope, rejects nil/blank/malformed scope, and never reads params or defaults. | unit | `mix test test/scoria_web/dashboard_scope_test.exs --warnings-as-errors` | Yes | green |
+| 44-02..06 | 44-02..44-06 | 2-3 | AUTH-03 | T-44-01 / T-44-04 | Mounting as tenant A with tenant B hints renders only tenant A data or an empty/not-found state, including object/detail pages and tenant-owned evidence. | LiveView integration | `mix test test/scoria_web/live/dashboard_auth_*_test.exs --warnings-as-errors` | Yes | green |
+| 44-07-T1 | 44-07 | 4 | AUTH-03 | T-44-03 | Dashboard code forbids `params["tenant"]`, `session["tenant_id"] || "default"`, and suspicious `|| "default"` tenant fallbacks. | source guard | `mix test test/scoria_web/dashboard_scope_source_guard_test.exs --warnings-as-errors` | Yes | green |
 
 *Status values: pending, green, red, flaky.*
 
@@ -51,11 +52,11 @@ Baseline checked during research: `mix test test/scoria_web/router_test.exs --wa
 
 ## Planned Test Requirements
 
-- [ ] `test/scoria_web/dashboard_scope_test.exs` - resolver and on-mount gate behavior for AUTH-02, created by 44-01 Task 2 before gate implementation.
-- [ ] `test/scoria_web/dashboard_scope_source_guard_test.exs` - static regression guard for AUTH-03 tenant spoof/default fallback paths, created by 44-07 Task 1 before final proof.
-- [ ] Additional cases in `test/scoria_web/router_test.exs` - hook pass-through and hook order for AUTH-01, created by 44-01 Task 1 before router edits.
-- [ ] Cross-tenant LiveView fixtures/tests for dashboard pages that read tenant-owned rows, created by 44-02 through 44-06 before each page-group implementation.
-- [ ] Tenant-qualified object/detail route cases where the object ID exists only for another tenant, created by 44-02, 44-04, and 44-05 before owning implementation.
+- [x] `test/scoria_web/dashboard_scope_test.exs` - resolver and on-mount gate behavior for AUTH-02.
+- [x] `test/scoria_web/dashboard_scope_source_guard_test.exs` - static regression guard for AUTH-03 tenant spoof/default fallback paths.
+- [x] Additional cases in `test/scoria_web/router_test.exs` - hook pass-through and hook order for AUTH-01.
+- [x] Cross-tenant LiveView fixtures/tests for dashboard pages that read tenant-owned rows.
+- [x] Tenant-qualified object/detail route cases where the object ID exists only for another tenant.
 
 ---
 
@@ -65,7 +66,19 @@ Baseline checked during research: `mix test test/scoria_web/router_test.exs --wa
 |----------|-------------|------------|-------------------|
 | Public documentation makes authz delegation clear without promising in-lib RBAC. | AUTH-02 | Copy and product-positioning intent need human review; source checks can only confirm strings/paths. | Review docs for the statement that the host authenticates and authorizes operators, Scoria consumes host-asserted dashboard scope, and query params do not choose tenants. |
 
-All tenant source, fail-closed resolver, hook ordering, cross-tenant spoof, PubSub tenant, and object detail isolation behaviors must have automated verification.
+Documentation wording is covered by `test/scoria/adoption_surface_test.exs`. All tenant source, fail-closed resolver, hook ordering, cross-tenant spoof, PubSub tenant, and object detail isolation behaviors have automated verification.
+
+---
+
+## Validation Audit 2026-07-09
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 3 requirements |
+| Escalated | 0 |
+
+Fresh closeout command passed: `MIX_ENV=test mix test test/scoria_web/router_test.exs test/scoria_web/dashboard_scope_test.exs test/scoria_web/dashboard_scope_source_guard_test.exs test/scoria/adoption_surface_test.exs test/scoria_web/live/dashboard_auth_home_connectors_incidents_test.exs test/scoria_web/live/dashboard_auth_approvals_test.exs test/scoria_web/live/dashboard_auth_workflows_test.exs test/scoria_web/live/dashboard_auth_quality_data_test.exs test/scoria_web/live/dashboard_auth_prompts_test.exs --warnings-as-errors` returned 64 tests, 0 failures.
 
 ---
 
@@ -87,6 +100,6 @@ All tenant source, fail-closed resolver, hook ordering, cross-tenant spoof, PubS
 - [x] Planned test-creation tasks cover all missing test references before their owning implementation/proof commands.
 - [x] No watch-mode flags.
 - [x] Feedback latency stays under 90 seconds for targeted checks.
-- [x] `nyquist_compliant: true` set in frontmatter for the planned validation strategy; execution remains pending.
+- [x] `nyquist_compliant: true` set in frontmatter after Wave 0 is complete and every dashboard-auth requirement has automated coverage.
 
-**Approval:** pending
+**Approval:** complete

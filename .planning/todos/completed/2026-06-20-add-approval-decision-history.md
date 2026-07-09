@@ -2,6 +2,8 @@
 created: 2026-06-20T13:51:23Z
 title: Add approval decision history
 area: ui
+status: completed
+completed: 2026-07-04
 resolves_phase: 39
 files:
   - lib/scoria/workflows/remote_approval_projection.ex:16
@@ -9,6 +11,12 @@ files:
   - lib/scoria_web/components/approval_inbox_component.ex
   - test/scoria_web/live/approvals_live_test.exs:488
 ---
+
+## Resolution
+
+Completed in v3.3 Phase 39 / FLOW-04. The approvals page now has a Pending|Decided scope,
+decision-history rows for approved/denied/expired approvals, audit-sourced receipts, and tests that
+prevent in-place reversal affordances for already-decided approvals.
 
 ## Problem
 

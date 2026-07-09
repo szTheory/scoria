@@ -51,6 +51,24 @@ defmodule Scoria.ScopeDoctrineContractTest do
     assert operator_verification =~ "Phase 45 closeout proof"
   end
 
+  test "knowledge tenant contract docs stay pinned to automated proof evidence" do
+    readme = File.read!(@readme)
+    adoption_lanes = File.read!(@adoption_lanes)
+    operator_verification = File.read!(@operator_verification)
+
+    assert readme =~
+             "Retrieval and citations in this lane are tenant-scoped; the host supplies tenant/actor identity, and missing tenant scope fails closed instead of broadening a query."
+
+    assert adoption_lanes =~
+             "The host app supplies tenant/actor identity for this lane. Scoria enforces that scope at storage, retrieval, citation, and grounding boundaries; metadata filters can narrow results inside a tenant but are not security proof."
+
+    assert operator_verification =~
+             "For maintainer proof, `mix test.knowledge --warnings-as-errors` verifies missing-tenant raises, cross-tenant retrieval exclusion, actor-scoped narrowing, and citation scope evidence."
+
+    assert operator_verification =~
+             "Knowledge schema changes use the separate `KnowledgeMigrationRepo` path, record versions in `schema_migrations_knowledge`, and live under `priv/repo/knowledge_migrations/` rather than the default host migration lane."
+  end
+
   test "phase 45 repaired code paths reject fake measurement leftovers" do
     pgvector = active_source(@pgvector)
     chunker = active_source(@chunker)

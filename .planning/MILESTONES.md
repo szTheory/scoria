@@ -1,5 +1,38 @@
 # Milestones
 
+## v3.4 Pre-1.0 Trust & Security Hardening (Shipped: 2026-07-09)
+
+**Phases completed:** 4 phases, 24 plans, 61 tasks
+
+**Key accomplishments:**
+
+- Fail-closed eval verdict spine with honest not_scored persistence and amber inconclusive dashboard vocabulary
+- Dataset promotion now freezes a hashable subject output from workflow step results, and SubjectOutput.resolve/2 fails closed for empty captures across offline and judge modes.
+- A key-free exact-match scorer now compares real actual output against expected output with binary pass/fail results and explicit not_scored couldn't-run outcomes.
+- Offline replay now scores frozen captured output through ExactMatch and fails closed for mismatches, empty captures, and unknown scorers.
+- Judge runner now grades frozen captured output, skips empty captures as not_scored, and persists Verdict-derived run verdicts without live LLM dependencies.
+- Online scoring now fails closed: deterministic scoring emits only real negative signals, and promotion requires non-empty real passes.
+- Runtime ReleaseGate now blocks non-passing completed eval verdicts with passed-only allowlist semantics, online-run exclusion, ungated telemetry, and an indexed lookup.
+- Fail-closed knowledge scope helper with actor-narrowed visibility and registered tenant isolation proof lane
+- Tenant-scope storage columns, indexes, and schema validation for knowledge storage and retrieval audit rows
+- Knowledge source/list/retrieval boundaries now fail closed on missing tenant scope and persist tenant audit evidence without trusting result payloads.
+- Pgvector and Scrypath retrieval leaves now fail closed on missing tenant scope and cannot return foreign-tenant chunks through direct backend or retriever paths.
+- Citation quote paths and grounding citation validity now require tenant scope, persist citation audit evidence, and are covered by the full optional knowledge proof lane.
+- Phoenix-native dashboard auth seam with host hook pass-through and fail-closed tenant scope resolution
+- Home, Connectors, and Incidents now use DashboardScope tenant authority, with spoof-shaped tests proving URL tenant hints cannot switch tenant data.
+- Approvals dashboard reads, deep links, PubSub filtering, and decision audit context now consume host-asserted DashboardScope tenant data.
+- Workflow dashboard list/detail tenant isolation using DashboardScope assigns and OperatorSurface tenant gates
+- Tenant-scoped quality/data dashboard evidence for review candidates, eval runs, and dataset promotion hints
+- Prompt release workbench now filters eval and approval evidence by host-asserted dashboard tenant while keeping prompt templates as global catalog metadata
+- Dashboard auth seam documentation and source guards now lock host-owned scope authority for AUTH-01 through AUTH-03
+- Pgvector retrieval now persists DB-projected raw cosine similarity instead of component-sum score evidence.
+- Citation presence now respects explicit answerability labels, and the default chunker is locked as non-overlapping.
+- Offline and judge eval paths now record measured score latency and fail closed when configured latency evidence is missing.
+- Online scoring now records measured deterministic latency and measured completion duration without fabricating clean-trace pass rows.
+- DOC-01 now has an executable doctrine/source contract plus a Phase 45 verification report covering every correctness repair.
+
+---
+
 ## v3.3 Design System Stress Test (Shipped: 2026-07-04)
 
 **Phases completed:** 7 phases (36–41.1), 30 plans, 74 tasks

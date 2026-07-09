@@ -1,7 +1,9 @@
 ---
 id: SEED-006
-status: dormant
+status: archived
 planted: 2026-07-03
+archived_on: 2026-07-09
+shipped_in: v3.4
 planted_during: v3.3 Design System Stress Test (phase 39 in-flight)
 trigger_when: BEFORE the next Hex publish — this GATES the release (maintainer decision 2026-07-03)
 scope: medium-large
@@ -122,3 +124,13 @@ Planted during v3.3 from a 6-agent adjudicated audit (3 posture-mapping + 6 vali
 LangSmith/Langfuse/Phoenix/Ragas/Braintrust/Inspect/OTel). These three were the only findings ranked
 P0; every other audit finding is a depth/differentiator seed ([[SEED-007]]…[[SEED-011]]). Related:
 [[SEED-005]] (docs — its Phase E is the clean-spot/release work this seed now precedes).
+
+## Resolution
+
+Archived on 2026-07-09 after v3.4 Pre-1.0 Trust & Security Hardening completed and verified.
+
+The release-gating P0s were implemented across Phases 42-45: eval now fails closed, knowledge
+retrieval is tenant-isolated end to end, dashboard tenant authority is host-asserted through the
+auth seam, and the correctness sweep closed the minimal score/citation/chunker/latency defects.
+The next Hex release remains deferred to SEED-005 for clean-spot docs and release work, but this
+seed is no longer open milestone debt.

@@ -18,7 +18,6 @@ own feature docs + a release).
 
 | # | Seed | Milestone | Priority | Depends on |
 |---|------|-----------|----------|------------|
-| 999.1 | [SEED-006](SEED-006-pre-1.0-trust-security-hardening.md) | Pre-1.0 Trust & Security Hardening | 🔴 **P0 — gates next Hex release** | — (first) |
 | 999.2 | [SEED-005](SEED-005-documentation-overhaul.md) | Documentation & Positioning (stable docs) + release cut | High (adoption bottleneck) | 006 (release gate) |
 | 999.3 | [SEED-007](SEED-007-trace-foundation-otel-openinference.md) | Trace Foundation (OTel/OpenInference) | High (foundational) | 006 |
 | 999.4 | [SEED-010](SEED-010-lethal-trifecta-governance.md) | Lethal-Trifecta Governance | ⭐ **Flagship** | 006, 007 |
@@ -30,7 +29,7 @@ own feature docs + a release).
 
 **Dependency graph (text):**
 ```
-SEED-006 (P0, release gate) ── first, unblocks everything
+SEED-006 (P0, release gate) ── shipped in v3.4; unblocks everything
    ├── SEED-005 (docs; also gates the release cut)
    ├── SEED-007 (trace foundation)
    │      ├── SEED-010 ⭐ (lethal-trifecta; also needs 006)
@@ -70,17 +69,17 @@ pre-written obsoletely.
 |------|--------|---------|
 | [SEED-001](SEED-001-agentcore-lessons.md) | archived | — |
 | [SEED-002](SEED-002-future-jtbd-capabilities.md) | archived | — |
-| [SEED-003](SEED-003-ci-efficiency-overhaul.md) | dormant (largely realized in v3.1) | CI/CD/DX/velocity |
+| [SEED-003](SEED-003-ci-efficiency-overhaul.md) | archived (v3.1 shipped) | — |
 | SEED-004 (no file) | deferred | test-code determinism — tracked in ROADMAP Backlog + STATE.md |
-| [SEED-005](SEED-005-documentation-overhaul.md) | dormant | docs / DX / adoption / Hex-release readiness |
-| [SEED-006](SEED-006-pre-1.0-trust-security-hardening.md) | dormant | **BEFORE next Hex publish (release gate)** |
-| [SEED-007](SEED-007-trace-foundation-otel-openinference.md) | dormant | observability / eval / interop |
-| [SEED-008](SEED-008-trustworthy-eval-depth.md) | dormant | eval maturity |
-| [SEED-009](SEED-009-retrieval-eval-depth-and-seams.md) | dormant | RAG / knowledge / retrieval quality |
-| [SEED-010](SEED-010-lethal-trifecta-governance.md) | dormant | agent security / governance |
-| [SEED-011](SEED-011-privacy-and-feedback-governance.md) | dormant | privacy / compliance / HITL feedback |
-| [SEED-012](SEED-012-architecture-archetype-awareness.md) | dormant | pattern lens / archetype / router analytics / Rule-8 evals |
-| [SEED-013](SEED-013-operator-ia-pivot.md) | dormant | dashboard IA / operator UX / content-hierarchy pivot / control-room redesign |
+| [SEED-005](SEED-005-documentation-overhaul.md) | deferred | docs / DX / adoption / Hex-release readiness |
+| [SEED-006](SEED-006-pre-1.0-trust-security-hardening.md) | archived (v3.4 shipped) | — |
+| [SEED-007](SEED-007-trace-foundation-otel-openinference.md) | deferred | observability / eval / interop |
+| [SEED-008](SEED-008-trustworthy-eval-depth.md) | deferred | eval maturity |
+| [SEED-009](SEED-009-retrieval-eval-depth-and-seams.md) | deferred | RAG / knowledge / retrieval quality |
+| [SEED-010](SEED-010-lethal-trifecta-governance.md) | deferred | agent security / governance |
+| [SEED-011](SEED-011-privacy-and-feedback-governance.md) | deferred | privacy / compliance / HITL feedback |
+| [SEED-012](SEED-012-architecture-archetype-awareness.md) | deferred | pattern lens / archetype / router analytics / Rule-8 evals |
+| [SEED-013](SEED-013-operator-ia-pivot.md) | deferred | dashboard IA / operator UX / content-hierarchy pivot / control-room redesign |
 
 ## Post-v3.3 housekeeping (collision-avoidance — do when the v3.3 window is idle)
 - Record the 6-principle **scope doctrine** into `PROJECT.md` (`## Key Decisions` + `## Constraints`).
