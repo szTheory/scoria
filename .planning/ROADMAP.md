@@ -51,7 +51,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 46-06-PLAN.md — Glossary creation plus package, release-preview, and Hex consumer exposure
+- [x] 46-06-PLAN.md — Glossary creation plus package, release-preview, and Hex consumer exposure
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -135,7 +135,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 46. Terminology and public vocabulary migration | v3.5 | 5/8 | In Progress|  |
+| 46. Terminology and public vocabulary migration | v3.5 | 6/8 | In Progress|  |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 0/0 | Not started | — |
 | 48. ExDoc and guide ladder restructure | v3.5 | 0/0 | Not started | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
