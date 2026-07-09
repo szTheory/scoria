@@ -38,13 +38,27 @@
 **Plans:** 8 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 46-01-PLAN.md — Public verification suite/reviewer broadcast aliases, call-site migration, and early storage guard
 - [ ] 46-02-PLAN.md — Reviewer surface and LiveView alias migration
 - [ ] 46-03-PLAN.md — Semantic cache profile and scoped-context runtime aliases
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 46-04-PLAN.md — Private run-inspection trace adapter rename
 - [ ] 46-05-PLAN.md — Remote invocation and incident trace/evidence copy boundary
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 46-06-PLAN.md — Glossary creation plus package, release-preview, and Hex consumer exposure
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 46-07-PLAN.md — README and stable guide final vocabulary migration
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 46-08-PLAN.md — README/CHANGELOG upgrade notes and focused phase verification
 
 **Success Criteria:**
