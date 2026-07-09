@@ -23,6 +23,7 @@ defmodule Scoria.AdoptionSurfaceTest do
   @semantic_guide "docs/semantic_fast_path.md"
   @operator_guide "docs/operator_verification.md"
   @maintainer_guide "docs/MAINTAINERS.md"
+  @glossary "docs/glossary.md"
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
   @release_preview_command VerificationLanes.command(:release_preview)
@@ -90,6 +91,23 @@ defmodule Scoria.AdoptionSurfaceTest do
       refute content =~ refute,
              "expected README not to contain #{inspect(refute)}"
     end
+  end
+
+  test "glossary documents the final public vocabulary and evidence boundary" do
+    content = File.read!(@glossary)
+
+    assert content =~ "## Core terms"
+    assert content =~ "## Legacy and industry equivalents"
+    assert content =~ "reviewer"
+    assert content =~ "trace"
+    assert content =~ "verification suite"
+    assert content =~ "scoped context"
+    assert content =~ "semantic cache"
+    assert content =~ "knowledge base"
+    assert content =~ "operator"
+    assert content =~ "RAG/citation evidence"
+    assert content =~ "evidence_refs"
+    assert content =~ "surface-sense evidence"
   end
 
   test "operator guide documents install_contract maintainer proofs" do
