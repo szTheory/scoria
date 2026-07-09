@@ -43,7 +43,20 @@ defmodule Scoria do
   def start_run(identity, opts \\ []), do: Runtime.start_run(identity, opts)
 
   @doc """
-  Starts a bounded delegated run with one explicit handoff and projected context.
+  Starts a bounded delegated run with one explicit handoff and scoped context.
+
+  Prefer `scoped_context:` for the host-curated context slice passed to the
+  delegated role:
+
+      Scoria.start_handoff_run(identity, "critic",
+        root_role_id: "planner",
+        delegated_kind: "review",
+        handoff_input: %{"brief" => "Review the draft answer"},
+        scoped_context: %{"task" => "policy review"}
+      )
+
+  `projected_context:` remains accepted as a legacy 0.1.x compatibility alias.
+  The stored field name is not renamed by the terminology migration.
   """
   def start_handoff_run(identity, delegated_role_id, opts \\ []),
     do: Runtime.start_handoff_run(identity, delegated_role_id, opts)

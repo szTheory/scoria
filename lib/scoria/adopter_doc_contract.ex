@@ -10,7 +10,7 @@ defmodule Scoria.AdopterDocContract do
   @shipped_capability_nouns [
     "default runtime",
     "bounded handoff",
-    "semantic fast path",
+    "semantic cache",
     "optional knowledge",
     "remote connector",
     "upgrade-safe install"

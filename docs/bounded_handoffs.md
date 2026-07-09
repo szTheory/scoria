@@ -1,17 +1,17 @@
 # Bounded Handoffs
 
-This guide documents the narrow public delegation lane for Scoria. Use it when your Phoenix app needs one role to hand a bounded slice of work to another role without turning Scoria into a general-purpose agent platform.
+This guide documents the narrow public delegation capability for Scoria. Use it when your Phoenix app needs one role to hand a bounded slice of work to another role without turning Scoria into a general-purpose agent platform. See [Glossary](glossary.md) for terminology.
 
-Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
+Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Add bounded handoff only when the same durable run needs a narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
 Keep the normal runtime order `identity -> start -> inspect -> resume` and branch to handoff only when that explicit delegation contract is needed.
-Bounded handoffs are added only after `mix test.adoption` proves the normal runtime lane.
-They extend the same runtime-first story through one canonical verifier lane: `mix test.runtime_to_handoff`.
+Bounded handoffs are added only after `mix test.adoption` proves the normal runtime capability.
+They extend the same runtime-first story through one canonical verification suite: `mix test.runtime_to_handoff`.
 
-## What this lane does
+## What this capability does
 
 - starts one durable run through the public `Scoria` facade
 - records one explicit delegated handoff with inspectable lineage
-- keeps the projected context narrow and host-controlled
+- keeps the scoped context narrow and host-controlled
 - creates a queued child step for the delegated role
 - leaves the same run visible at `/scoria/workflows/:run_id`
 
@@ -19,8 +19,8 @@ They extend the same runtime-first story through one canonical verifier lane: `m
 
 ## Host and Scoria ownership boundary
 
-The host app owns identity, escalation policy, prompt or draft selection, and projected-context selection.
-Scoria owns durable run creation, projected-context validation, queued delegated child creation, and curated readback through `Scoria.get_run_detail/1`.
+The host app owns identity, escalation policy, prompt or draft selection, and scoped-context selection.
+Scoria owns durable run creation, scoped-context validation, queued delegated child creation, and curated readback through `Scoria.get_run_detail/1`.
 Scoria does not copy hidden transcript, provider session, socket assigns, cookies, headers, or secrets into the handoff.
 
 Use `Scoria.start_handoff_run/3` when you already know:
@@ -29,7 +29,7 @@ Use `Scoria.start_handoff_run/3` when you already know:
 - the delegated role argument: the role that should own the child step
 - `delegated_kind`: the child step kind that host handlers should execute
 - `handoff_input`: the exact host-supplied work brief Scoria should persist
-- `projected_context`: the exact projected context slice that is safe to pass down
+- `scoped_context`: the exact scoped context slice that is safe to pass down
 
 The host app passes these fields explicitly. Scoria does not fill in hidden handoff defaults for you.
 
@@ -46,7 +46,7 @@ identity =
     root_role_id: "planner",
     delegated_kind: "review",
     handoff_input: %{"brief" => "Review the draft answer for policy and accuracy"},
-    projected_context: %{
+    scoped_context: %{
       "task" => "policy-and-accuracy review",
       "draft_answer" => draft_answer
     },
@@ -54,7 +54,9 @@ identity =
   )
 ```
 
-If the delegated role should receive no extra context, `projected_context: %{}` is a valid explicit choice.
+If the delegated role should receive no extra context, `scoped_context: %{}` is a valid explicit choice.
+
+`projected_context:` remains accepted as a legacy 0.1.x compatibility alias; new public examples should use `scoped_context:`.
 
 ## What gets persisted
 
@@ -67,9 +69,9 @@ Scoria records:
 
 The child step stays under the same durable run. Root ownership does not transfer.
 
-## Safety rule: projected context must stay narrow
+## Safety rule: scoped context must stay narrow
 
-Projected context is for the bounded slice only. Do not pass broad runtime state through the public handoff lane.
+Scoped context is for the bounded slice only. Do not pass broad runtime state through the public handoff capability.
 
 Broad runtime-state keys are rejected explicitly, including:
 
@@ -82,9 +84,9 @@ Broad runtime-state keys are rejected explicitly, including:
 - `secrets`
 - `socket_state`
 
-Narrow host-controlled slices such as `%{"task" => "review"}` and `projected_context: %{}` remain valid.
+Narrow host-controlled slices such as `%{"task" => "review"}` and `scoped_context: %{}` remain valid.
 
-Rejected projected context returns a runtime error before Scoria creates the delegated run:
+Rejected scoped context returns the existing runtime error before Scoria creates the delegated run:
 
 ```elixir
 assert {:error, :unsafe_projected_context} =
@@ -92,7 +94,7 @@ assert {:error, :unsafe_projected_context} =
            root_role_id: "planner",
            delegated_kind: "review",
            handoff_input: %{"brief" => "Review the draft answer for policy and accuracy"},
-           projected_context: %{"request_headers" => %{"authorization" => "secret"}}
+           scoped_context: %{"request_headers" => %{"authorization" => "secret"}}
          )
 ```
 
@@ -107,7 +109,7 @@ After `Scoria.start_handoff_run/3`:
 delegated = detail.delegated_handoffs
 ```
 
-`detail.delegated_handoffs` exposes the delegated role, delegated kind, handoff input, bounded projected context, and the parent/child same-run lineage needed to inspect the bounded lane without reading raw workflow tables.
+`detail.delegated_handoffs` exposes the delegated role, delegated kind, handoff input, bounded scoped context, and the parent/child same-run lineage needed to inspect the bounded capability without reading raw workflow tables.
 
 Open:
 
@@ -115,11 +117,11 @@ Open:
 /scoria/workflows/:run_id
 ```
 
-The workflow page keeps the topology-first tree and selected-step rail, and now adds a run-level `Delegated Evidence` section for the curated handoff story under the same durable run.
+The workflow page keeps the topology-first tree and selected-step rail, and now adds a run-level `Delegated Trace` section for the curated handoff story under the same durable run.
 
 ## Runtime-to-handoff verifier
 
-After the default lane is proven with `mix test.adoption`, use this bounded escalation verifier:
+After the default runtime capability is proven with `mix test.adoption`, use this bounded escalation verification suite:
 
 ```bash
 mix test.runtime_to_handoff
@@ -132,11 +134,11 @@ The verifier exercises the same delegated readback path in this guide: inspect `
 Use bounded handoffs when:
 
 - one role needs a second role to review, classify, summarize, or critique
-- the delegated role only needs a small projected context slice
-- you want the operator surface to show that delegated lineage clearly
+- the delegated role only needs a small scoped context slice
+- you want the reviewer trace surface to show that delegated lineage clearly
 
-Do not use this lane to build a broad autonomous multi-agent platform. Keep the contract narrow and explicit.
+Do not use this capability to build a broad autonomous multi-agent platform. Keep the contract narrow and explicit.
 
 ## Remaining adoption gap
 
-No remaining adopter-facing gap is required for the runtime-first bounded handoff lane in `v2.0 Relay` closeout. Richer notebook-style delegated forensics remain deferred follow-up work only if real operator confusion appears after the current `Scoria.get_run_detail/1` and `/scoria/workflows/:run_id` surfaces prove insufficient.
+No remaining adopter-facing gap is required for closeout of the runtime-first bounded handoff capability. Richer notebook-style delegated forensics remain deferred follow-up work only if real reviewer confusion appears after the current `Scoria.get_run_detail/1` and `/scoria/workflows/:run_id` surfaces prove insufficient.

@@ -11,46 +11,53 @@ AI ops for Phoenix apps.
 [![Elixir](https://img.shields.io/badge/Elixir-1.19%2B-4B275F.svg)](https://elixir-lang.org/)
 [![Phoenix](https://img.shields.io/badge/Phoenix-1.7%2B-FD4F00.svg)](https://www.phoenixframework.org/)
 
-Scoria is a batteries-included Phoenix library for production AI features. It records every run — prompt renders, model calls, tool calls, retrieval events, approvals, and eval scores — as structured, queryable traces. You get a LiveView operator UI, an eval flywheel, a prompt version registry, and a tool/MCP governance layer, all wired into Phoenix, Ecto, and OTP without a black-box dependency.
+Scoria is a batteries-included Phoenix library for production AI features. It records every run - prompt renders, model calls, tool calls, retrieval events, approvals, and eval scores - as structured, queryable traces. You get a LiveView reviewer UI, an eval flywheel, a prompt version registry, and a tool/MCP governance layer, all wired into Phoenix, Ecto, and OTP without a black-box dependency.
 
-Scoria is a Phoenix-native runtime with a narrow public surface — **start with the default runtime**, add lanes only when needed:
+Scoria is a Phoenix-native runtime with a narrow public surface - **start with the default runtime capability**, add capabilities only when needed:
 
-- **Default runtime** — durable runs, approvals, operator evidence
-- **Bounded handoff** — narrow same-run delegation, projected context, visible lineage
-- **Semantic fast path** — opt-in, tenant-partitioned reuse for explicitly safe read-only work
-- **Optional knowledge** — pgvector retrieval/grounding when chosen
-- **Remote connector** — MCP tool surfaces after default lane is green
-- **Upgrade-safe install** — `mix scoria.install` with plan/check/apply paths
+- **Default runtime** - durable runs, approvals, reviewer traces
+- **Bounded handoff** - narrow same-run delegation, scoped context, visible lineage
+- **Semantic cache** - opt-in, tenant-partitioned reuse for explicitly safe read-only work
+- **Optional knowledge base** - pgvector retrieval/grounding when chosen
+- **Remote connector** - MCP tool surfaces after the default runtime capability is green
+- **Upgrade-safe install** - `mix scoria.install` with plan/check/apply paths
 
-Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Use mix test.runtime_to_handoff as the bounded escalation proof lane when the same durable run needs narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
+Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Use `mix test.runtime_to_handoff` as the bounded escalation verification suite when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
 
-Optional lanes follow the scope doctrine SSOT in `.planning/PROJECT.md ## Constraints`: Scoria owns proof mechanisms such as retrieval filtering, eval gates, and dashboard seams while the host owns identity, policy values, and business truth.
+Optional capabilities follow the scope doctrine SSOT in `.planning/PROJECT.md ## Constraints`: Scoria owns proof mechanisms such as retrieval filtering, eval gates, and dashboard seams while the host owns identity, policy values, and business truth.
 
 ## Who This Is For
 
-Scoria is for Phoenix teams that want AI runtime governance, durable workflow state, operator-visible evidence, and executable verification without turning their app into a hosted agent platform.
+Scoria is for Phoenix teams that want AI runtime governance, durable workflow state, reviewer-visible traces, and executable verification without turning their app into a hosted agent platform.
 
 The main job-to-be-done is simple: give a Phoenix app one boring, inspectable way to start, resume, debug, and verify identity-aware AI work.
 
-## Choose Your Lane
+## Choose Your Capability
 
-Use the narrowest lane that solves your current app problem:
+Use the narrowest capability that solves your current app problem:
 
-- **Default runtime lane**: start here for identity-aware durable runs, approvals, and operator evidence.
-- **Bounded handoff lane**: add this only when one role needs to delegate a narrow slice of work to another role under the same durable run.
-- **Semantic fast-path lane**: add this when you want tenant-partitioned answer reuse for explicitly safe read-only work.
-- **Optional knowledge lane**: add this only when you are intentionally validating retrieval, citations, and grounding.
+- **Default runtime capability**: start here for identity-aware durable runs, approvals, and reviewer traces.
+- **Bounded handoff capability**: add this only when one role needs to delegate a narrow slice of work to another role under the same durable run.
+- **Semantic cache capability**: add this when you want tenant-partitioned answer reuse for explicitly safe read-only work.
+- **Optional knowledge base capability**: add this only when you are intentionally validating retrieval, citations, and grounding.
+- **Remote connector capability**: add this only when MCP tool surfaces are part of your product.
 
 Docs:
 
 - [Glossary](docs/glossary.md)
-- [Lane selection guide](docs/adoption_lanes.md)
+- [Capability guide](docs/adoption_lanes.md)
 - [Phoenix runtime example](docs/phoenix_runtime_example.md)
 - [Bounded handoffs](docs/bounded_handoffs.md)
-- [Semantic fast path](docs/semantic_fast_path.md)
-- [Operator verification](docs/operator_verification.md)
+- [Semantic cache](docs/semantic_fast_path.md)
+- [Reviewer verification](docs/operator_verification.md)
 - [Remote connector adoption](docs/connector_adoption.md)
 - [Support copilot gallery](docs/support_copilot_gallery.md) — clone repo for `examples/support_copilot`
+
+### 0.1.x compatibility aliases
+
+The current names are `ScoriaWeb.ReviewerSurface`, `Scoria.Observe.ReviewerBroadcast`, `Scoria.VerificationSuites`, `Scoria.SemanticCache.Profile`, `semantic_cache: [profile: MyApp.AI.AccountFaqCache]`, and `scoped_context:`.
+
+Legacy 0.1.x compatibility aliases remain accepted while docs move to final vocabulary: `ScoriaWeb.OperatorSurface`, `Scoria.Observe.OperatorBroadcast`, `Scoria.VerificationLanes`, `Scoria.SemanticLane`, `lane:`, `lane_key`, and `projected_context:`.
 
 ## Install
 
@@ -69,9 +76,9 @@ Tagged GitHub installs are for forks and pinned patches; prefer Hex for normal a
 
 **Next steps:** `mix deps.get` → `mix scoria.install` → `mix ecto.migrate` — then see [Verification](#verification) for `mix test.adoption`.
 
-That installs the default Phoenix lane by:
+That installs the default Phoenix capability by:
 
-- mounting the operator dashboard at `/scoria`
+- mounting the reviewer dashboard at `/scoria`
 - copying Scoria's core Ecto migrations into `priv/repo/migrations`
 - injecting baseline runtime defaults into `config/runtime.exs` or `config/config.exs`
 
@@ -134,9 +141,9 @@ If the run is waiting on approval, resume that exact run after the decision is r
   )
 ```
 
-The operator evidence page for that same run lives at `/scoria/workflows/:run_id`. Use it to inspect what happened in Scoria; keep your host app as the owner of user-facing business truth.
+The reviewer trace page for that same run lives at `/scoria/workflows/:run_id`. Use it to inspect what happened in Scoria; keep your host app as the owner of user-facing business truth.
 
-For the LiveView operator dashboard at `/scoria`, set session keys before mounting routes:
+For the LiveView reviewer dashboard at `/scoria`, set session keys before mounting routes:
 
 ```elixir
 conn
@@ -155,7 +162,7 @@ next_run.run_id != started.run_id
 
 ## Bounded Handoffs
 
-When the runtime-first lane is already in place and one role needs to delegate a narrow slice of work to another role, branch to the public handoff lane:
+When the default runtime capability is already in place and one role needs to delegate a narrow slice of work to another role, branch to the public handoff capability:
 
 ```elixir
 {:ok, started} =
@@ -163,7 +170,7 @@ When the runtime-first lane is already in place and one role needs to delegate a
     root_role_id: "planner",
     delegated_kind: "review",
     handoff_input: %{"brief" => "Review the draft answer"},
-    projected_context: %{"task" => "policy review", "draft_answer" => draft_answer},
+    scoped_context: %{"task" => "policy review", "draft_answer" => draft_answer},
     handlers: %{"review" => {MyApp.RuntimeHandlers, :review}}
   )
 
@@ -171,32 +178,32 @@ When the runtime-first lane is already in place and one role needs to delegate a
 delegated = detail.delegated_handoffs
 ```
 
-That records delegated lineage under one durable run and publishes one curated delegated evidence projection through `Scoria.get_run_detail/1`. The same run also exposes a `Delegated Evidence` section at `/scoria/workflows/:run_id`. The full guide lives in [`docs/bounded_handoffs.md`](docs/bounded_handoffs.md).
+That records delegated lineage under one durable run and publishes one curated delegated trace projection through `Scoria.get_run_detail/1`. The same run also exposes a `Delegated Trace` section at `/scoria/workflows/:run_id`. The full guide lives in [`docs/bounded_handoffs.md`](docs/bounded_handoffs.md).
 
-## Semantic Fast Path
+## Semantic Cache
 
-When the default runtime lane is already working and you want conservative answer reuse for explicitly safe read-only work, add a semantic lane instead of widening the core runtime contract:
+When the default runtime capability is already working and you want conservative answer reuse for explicitly safe read-only work, add a semantic cache profile instead of widening the core runtime contract:
 
 ```elixir
-defmodule MyApp.AI.AccountFaqLane do
-  use Scoria.SemanticLane,
-    lane_key: "account_faq",
+defmodule MyApp.AI.AccountFaqCache do
+  use Scoria.SemanticCache.Profile,
+    cache_key: "account_faq",
     default_scope: :tenant_shared,
     safe_read_only: true
 end
 
 {:ok, summary} =
   Scoria.start_run(identity,
-    semantic_cache: [lane: MyApp.AI.AccountFaqLane],
+    semantic_cache: [profile: MyApp.AI.AccountFaqCache],
     input: "what is scoria?"
   )
 ```
 
-This keeps reuse tenant-partitioned, compatibility-aware, and operator-visible. The semantic fast path stays opt-in, falls back to the normal runtime path on `bypass`, `miss`, `reject`, or stale outcomes, and exposes evidence at `/scoria/workflows/:run_id`. The full guide lives in [`docs/semantic_fast_path.md`](docs/semantic_fast_path.md).
+This keeps reuse tenant-partitioned, compatibility-aware, and reviewer-visible. The semantic cache stays opt-in, falls back to the normal runtime path on `bypass`, `miss`, `reject`, or stale outcomes, and exposes trace details at `/scoria/workflows/:run_id`. The existing guide path remains [`docs/semantic_fast_path.md`](docs/semantic_fast_path.md); the content now uses semantic cache vocabulary.
 
 ## Verification
 
-Default Phoenix lane:
+Default Phoenix verification suite:
 
 ```bash
 mix scoria.install
@@ -206,11 +213,11 @@ mix test.adoption
 
 Adoption closeout in CI exercises Scoria via a packaged tarball (`{:scoria, path: unpack_root}` from `mix hex.build --unpack`) — see `Scoria.HexConsumerContract` in the maintainer guide for tarball consumer topology.
 
-Then inspect `/scoria` and `/scoria/workflows/:run_id` for operator evidence from one real run in your app.
+Then inspect `/scoria` and `/scoria/workflows/:run_id` for reviewer trace details from one real run in your app.
 
-`mix test.adoption` is the canonical bounded verifier for the default lane. It carries the generated-host proof under a local proof-only timeout, so you do not need suite-wide timeout changes or a `--trace` variant to use it.
+`mix test.adoption` is the canonical bounded verifier for the default runtime capability. It carries the generated-host proof under a local proof-only timeout, so you do not need suite-wide timeout changes or a `--trace` variant to use it.
 
-Bounded runtime-to-handoff escalation proof lane:
+Bounded runtime-to-handoff escalation verification suite:
 
 ```bash
 mix test.runtime_to_handoff
@@ -218,32 +225,32 @@ mix test.runtime_to_handoff
 
 This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
-Optional knowledge lane:
+Optional knowledge base:
 
 ```bash
 mix scoria.pgvector.bootstrap
 mix test.knowledge
 ```
 
-Retrieval and citations in this lane are tenant-scoped; the host supplies tenant/actor identity, and missing tenant scope fails closed instead of broadening a query.
+Retrieval and citations in this capability are tenant-scoped; the host supplies tenant/actor identity, and missing tenant scope fails closed instead of broadening a query.
 
-The knowledge lane does not define first adoption. You do not need pgvector, knowledge tables, retrieval, grounding, semantic fast-path setup, or `mix test.knowledge` to prove the core runtime, identity, approval, and operator-evidence path.
+The optional knowledge base does not define first adoption. You do not need pgvector, knowledge tables, retrieval, grounding, semantic cache setup, or `mix test.knowledge` to prove the core runtime, identity, approval, and reviewer trace path.
 
-Optional remote connector lane:
+Optional remote connector capability:
 
 ```bash
 mix test.connector
 ```
 
-Use this after `mix test.adoption` when validating MCP connector registration and operator fleet evidence. See [`docs/connector_adoption.md`](docs/connector_adoption.md).
+Use this after `mix test.adoption` when validating MCP connector registration and reviewer fleet trace details. See [`docs/connector_adoption.md`](docs/connector_adoption.md).
 
-For the bounded semantic lane:
+For the bounded semantic cache verification suite:
 
 ```bash
 SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 ```
 
-Use that lane only when you are intentionally validating semantic fast-path behavior. The task prepares the retrieval-backed knowledge tables it needs as part of the proof lane, so you do not need to run the full optional knowledge verification first.
+Use that verification suite only when you are intentionally validating semantic cache behavior. The task prepares the retrieval-backed knowledge tables it needs as part of the proof, so you do not need to run the full optional knowledge base verification first.
 
 ### Support copilot gallery (local demo)
 
@@ -256,9 +263,9 @@ mix setup
 mix phx.server
 ```
 
-Open the gallery host chat at `http://localhost:4010/` and its gallery-local Scoria operator surface at `http://localhost:4010/scoria`.
+Open the gallery host chat at `http://localhost:4010/` and its gallery-local Scoria reviewer surface at `http://localhost:4010/scoria`.
 
-Run the advisory gallery verification lane from the repo root (not part of closeout order):
+Run the advisory gallery verification suite from the repo root (not part of closeout order):
 
 ```bash
 mix scoria.test.support_copilot
@@ -270,14 +277,14 @@ See [`docs/support_copilot_gallery.md`](docs/support_copilot_gallery.md).
 
 For one end-to-end controller-triggered adoption story, see [`docs/phoenix_runtime_example.md`](docs/phoenix_runtime_example.md). It follows the same public facade and `session_id`/`run_id` rules proven in the runtime integration suite.
 
-For the public delegation lane, see [`docs/bounded_handoffs.md`](docs/bounded_handoffs.md).
+For the public delegation capability, see [`docs/bounded_handoffs.md`](docs/bounded_handoffs.md).
 
 ## What Scoria Adds
 
 - OpenInference-style trace capture and redaction
 - durable workflows, handoffs, and recovery
 - pgvector-backed knowledge, citations, and grounding checks
-- a trace-first LiveView surface for operators
+- a trace-first LiveView surface for reviewers
 
 ## Status
 
@@ -286,8 +293,8 @@ Current release: `0.1.1` on [Hex](https://hex.pm/packages/scoria). See [CHANGELO
 ## For maintainers
 
 - [Maintainer guide](docs/MAINTAINERS.md) — parallel CI topology (`policy → build → { test, ratchet, knowledge, connector, full-suite[×4] } → verify-summary`), release operations, warning ratchet
-- [Operator verification](docs/operator_verification.md) — adopter verification ladder (also used as docs extra)
+- [Reviewer verification](docs/operator_verification.md) - adopter verification ladder (also used as docs extra)
 
-For broader repo-health context outside the canonical lane proofs, run `mix test` locally or see the maintainer guide.
+For broader repo-health context outside the canonical verification suites, run `mix test` locally or see the maintainer guide.
 
-`mix ci` is the single-command local merge gate — it reproduces the full CI lane set (deps-lock, format, compile WAE, all gating lanes) and exits non-zero on any failure.
+`mix ci` is the single-command local merge gate - it reproduces the full CI verification-suite set (deps-lock, format, compile WAE, all gating suites) and exits non-zero on any failure.

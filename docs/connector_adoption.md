@@ -2,11 +2,13 @@
 
 Scoria registers **remote MCP connectors** inside your Phoenix app. Scoria owns discovery, auth storage, tool policy, approvals, and audit evidence — not a hosted connector platform.
 
+See [Glossary](glossary.md) for Scoria terminology.
+
 ## When to use connectors
 
-Use remote connectors after the **default runtime lane** is green (`mix test.adoption`). Connectors add optional tool surfaces; they do not replace core runtime, identity, or approval contracts.
+Use remote connectors after the **default runtime capability** is green (`mix test.adoption`). Connectors add optional tool surfaces; they do not replace core runtime, identity, or approval contracts.
 
-Skip connectors on first adoption if you only need durable runs, operator evidence, and bounded handoff.
+Skip connectors on first adoption if you only need durable runs, reviewer traces, and bounded handoff.
 
 ## Embedded boundary
 
@@ -22,20 +24,20 @@ Scoria does **not** run connectors as a multi-tenant SaaS. Each connector invoca
 
 1. Complete `mix scoria.install` and `mix test.adoption` on a branch that matches production constraints.
 2. Register one connector through the Scoria dashboard or public API with the smallest grant set that proves the integration.
-3. Run one approved invocation and confirm operator evidence (health, scopes, approval lineage) in `/scoria`.
+3. Run one approved invocation and confirm reviewer trace details (health, scopes, approval lineage) in `/scoria`.
 4. Add host-side guards for write paths before widening grants.
 
 ## Verification
 
 - **Default:** `mix test.adoption` — no connector setup required.
-- **Connector proof:** `mix test.connector` — register → fleet list → operator drawer evidence using SupportJourney fixture identities (including the `billing` **Billing MCP** connector profile).
+- **Connector proof:** `mix test.connector` - register -> fleet list -> reviewer drawer trace details using SupportJourney fixture identities (including the `billing` **Billing MCP** connector profile).
 - **Optional knowledge:** `mix test.knowledge` — only when grounding/retrieval is in scope.
-- **Semantic fast-path:** `mix test.semantic_fast_path` — read-only cache lanes only; see [semantic_fast_path.md](semantic_fast_path.md).
+- **Semantic cache:** `mix test.semantic_fast_path` - read-only cache profiles only; see [semantic_fast_path.md](semantic_fast_path.md).
 
-Maintainer CI topology and lane ordering: [MAINTAINERS.md#ci-gate-map-maintainers](MAINTAINERS.md#ci-gate-map-maintainers).
+Maintainer CI topology and verification-suite ordering: [MAINTAINERS.md#ci-gate-map-maintainers](MAINTAINERS.md#ci-gate-map-maintainers).
 
 ## Further reading
 
-- Operator verification (approvals, evidence, lane boundaries): [operator_verification.md](operator_verification.md)
-- Adoption lane ordering: [adoption_lanes.md](adoption_lanes.md)
+- Reviewer verification (approvals, traces, capability boundaries): [operator_verification.md](operator_verification.md)
+- Capability ordering: [adoption_lanes.md](adoption_lanes.md)
 - Semantic troubleshooting (orthogonal to connectors): [semantic_fast_path.md](semantic_fast_path.md)

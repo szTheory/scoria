@@ -1,6 +1,6 @@
 # Phoenix Runtime Example
 
-This is the canonical Phoenix-hosted Scoria flow for the Keystone public runtime surface. It is derived from the existing runtime integration behavior in `test/scoria/runtime_integration_test.exs`, not from a separate sample app or a speculative architecture.
+This is the canonical Phoenix-hosted Scoria flow for the public runtime surface. It is derived from the existing runtime integration behavior in `test/scoria/runtime_integration_test.exs`, not from a separate sample app or a speculative architecture. See [Glossary](glossary.md) for terminology.
 
 Keep the canonical adoption order boring: `identity -> start -> inspect -> resume`.
 
@@ -11,7 +11,7 @@ Keep the canonical adoption order boring: `identity -> start -> inspect -> resum
 - persist `run_id` as the exact durable handle for one run
 - reuse `session_id` for continuity across turns
 - inspect progress with `Scoria.get_run/1` and `Scoria.list_runs_for_session/1`
-- link `/scoria/workflows/:run_id` as operator evidence for that same run
+- link `/scoria/workflows/:run_id` as the reviewer trace for that same run
 - resume a paused approval flow through `Scoria.resume_run/2`
 
 ## Core rule: `session_id` is not `run_id`
@@ -94,27 +94,27 @@ same_session_runs = Scoria.list_runs_for_session(session_id)
 
 Use `Scoria.get_run/1` when the host app needs the current state of one exact execution. Use `Scoria.list_runs_for_session/1` when you want to show a session timeline across multiple turns.
 
-## Operator evidence page
+## Reviewer trace page
 
-The operator page for one run is:
+The reviewer trace page for one run is:
 
 ```text
 /scoria/workflows/:run_id
 ```
 
-Link to it from your host app when an operator needs traceable evidence for the same durable run:
+Link to it from your host app when a reviewer needs the trace for the same durable run:
 
 ```elixir
 redirect(conn, to: ~p"/scoria/workflows/#{run_id}")
 ```
 
-Treat that page as operator evidence, not as the source of your product's business truth.
+Treat that page as a reviewer trace, not as the source of your product's business truth.
 
-## Bounded handoffs branch from the same runtime lane
+## Bounded handoffs branch from the same runtime capability
 
 If the core runtime path is already working and a draft needs a bounded review, branch from the same identity and `run_id` model instead of starting a second onboarding path.
-The host app owns identity, escalation policy, prompt or draft selection, and projected-context selection.
-Scoria owns durable run creation, projected-context validation, queued delegated child creation, and curated readback through Scoria.get_run_detail/1.
+The host app owns identity, escalation policy, prompt or draft selection, and scoped-context selection.
+Scoria owns durable run creation, scoped-context validation, queued delegated child creation, and curated readback through Scoria.get_run_detail/1.
 Use Scoria.start_handoff_run/3 only for that explicit bounded delegation branch.
 
 ```elixir
@@ -137,7 +137,7 @@ def create(conn, %{"draft_answer" => draft_answer}) do
         root_role_id: "planner",
         delegated_kind: "review",
         handoff_input: %{"brief" => "Review the draft answer for policy and accuracy"},
-        projected_context: %{
+        scoped_context: %{
           "task" => "policy-and-accuracy review",
           "draft_answer" => draft_answer
         },
@@ -162,7 +162,7 @@ defp needs_bounded_review?(draft_answer) do
 end
 ```
 
-Use `Scoria.get_run_detail/1` when the host app or support path needs the curated delegated evidence surface, and use `/scoria/workflows/:run_id` when an operator needs the same run's `Delegated Evidence` section.
+Use `Scoria.get_run_detail/1` when the host app or support path needs the curated delegated trace surface, and use `/scoria/workflows/:run_id` when a reviewer needs the same run's `Delegated Trace` section.
 
 session_id groups related host turns; run_id names one exact Scoria execution.
 
@@ -174,7 +174,7 @@ When this bounded delegation branch is wired, verify it with:
 mix test.runtime_to_handoff
 ```
 
-Keep `mix test.adoption` as the default-lane verifier; this lane is only the bounded runtime-to-handoff escalation proof.
+Keep `mix test.adoption` as the default runtime verification suite; this verification suite is only the bounded runtime-to-handoff escalation proof.
 
 This verifier follows the same run-detail path shown above: `Scoria.get_run_detail/1` returns `delegated_handoffs` for the run that appears on `/scoria/workflows/:run_id`.
 
@@ -230,6 +230,6 @@ After wiring the flow:
 - LiveView-first orchestration
 - background-job-first orchestration
 - direct workflow internals as the normal app entrypoint
-- pgvector or the knowledge lane just to prove the runtime path
+- pgvector or the optional knowledge base just to prove the runtime path
 
-Use the public `Scoria` facade first. Expand into advanced runtime or knowledge features only after this core lane is working.
+Use the public `Scoria` facade first. Expand into advanced runtime or knowledge features only after this core capability is working.

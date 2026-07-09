@@ -1,27 +1,27 @@
-# Operator Verification
+# Reviewer Verification
 
-This guide is the default Phoenix verification lane for Scoria's public runtime surface. The goal is simple: prove the core install, runtime, and operator-evidence path before you touch optional lanes.
+This guide is the default Phoenix verification suite for Scoria's public runtime surface. The goal is simple: prove the core install, runtime, and reviewer trace path before you touch optional capabilities. See [Glossary](glossary.md) for terminology.
 
-Start with the default runtime lane. It proves identity-aware durable runs, approvals, and operator evidence with mix test.adoption. Use mix test.runtime_to_handoff as the bounded escalation proof lane when the same durable run needs narrow same-run delegation, host-controlled projected context, and operator-visible delegated lineage.
+Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Use `mix test.runtime_to_handoff` as the bounded escalation verification suite when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
 
-Start here with `mix scoria.install`, `mix ecto.migrate`, and `mix test.adoption`; add optional lanes only when the default lane is stable in your host app.
+Start here with `mix scoria.install`, `mix ecto.migrate`, and `mix test.adoption`; add optional capabilities only when the default runtime capability is stable in your host app.
 
 ## What core success means
 
-You have proven the default lane when all of these are true:
+You have proven the default runtime capability when all of these are true:
 
 - `mix scoria.install` has wired the dashboard, copied core migrations, and set baseline runtime defaults
 - `mix ecto.migrate` and `mix test.adoption` pass for the host app
 - one real run starts through `Scoria.start_run/2`
 - that same run can be read back through `Scoria.get_run/1` or found via `list_runs_for_session/1`
-- `/scoria/workflows/:run_id` shows operator evidence for that exact run
+- `/scoria/workflows/:run_id` shows the reviewer trace for that exact run
 - `/scoria` is mounted behind host-authenticated dashboard scope, not public tenant params
 
 This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 ## Dashboard auth and scope proof
 
-The host app authenticates the operator and asserts dashboard tenant scope. Query params do not choose tenants for the dashboard. Authorization remains delegated to the host; Scoria does not introduce a role model.
+The host app authenticates the reviewer and asserts dashboard tenant scope. Query params do not choose tenants for the dashboard. Authorization remains delegated to the host; Scoria does not introduce a role model.
 
 Dashboard proof follows the scope doctrine: authorization remains delegated to the host while Scoria ships the seam and records trusted scope.
 
@@ -37,7 +37,7 @@ scope "/" do
 end
 ```
 
-To mount the dashboard with host-authenticated scope, have your resolver return tenant data only after the host has authorized the operator for that tenant:
+To mount the dashboard with host-authenticated scope, have your resolver return tenant data only after the host has authorized the reviewer for that tenant:
 
 ```elixir
 defmodule MyAppWeb.ScoriaDashboardScope do
@@ -60,7 +60,7 @@ end
 
 Verification steps:
 
-1. Open `/scoria` while authenticated as an operator for a known tenant.
+1. Open `/scoria` while authenticated as a reviewer for a known tenant.
 2. Confirm the dashboard renders only that tenant's runs, approvals, incidents, eval evidence, and prompt release evidence.
 3. Open `/scoria?tenant=another-tenant` with the same authenticated session.
 4. Confirm the tenant query hint does not change the asserted dashboard scope.
@@ -111,34 +111,34 @@ What this proves:
 - the dashboard routes mount at `/scoria`
 - the Scoria-owned core tables are available through copied host-app migrations
 - baseline runtime defaults are present
-- the app passes the bounded default-lane adoption verifier
+- the app passes the bounded default runtime verification suite
 
 Eval proof follows the scope doctrine: Scoria owns scorer execution, score latency, and release gates; the host owns prompts, business truth, policy values, and end-user semantics.
 
-Use `mix test.adoption` as the canonical default-lane verifier when you want one bounded proof that covers installer truth, the fresh-host install/migrate/route/runtime smoke, and the repo-local adoption guards without waiting for the whole suite. Maintainers can still use `mix test` as broader repo-health context.
+Use `mix test.adoption` as the canonical default runtime verification suite when you want one bounded proof that covers installer truth, the fresh-host install/migrate/route/runtime smoke, and the repo-local adoption guards without waiting for the whole suite. Maintainers can still use `mix test` as broader repo-health context.
 The bounded verifier carries the slow generated-host proof under a local proof-only timeout; support guidance should not widen that into a suite-wide timeout change or a `mix test.adoption --trace` contract.
 
 ### Tarball consumer proof and failure triage (maintainers)
 
 Merge-blocking `mix test.adoption` includes a generated Phoenix host that consumes Scoria via a `mix hex.build --unpack` tarball (`run_full_proof!/1` in `Scoria.TestSupport.HostAppProof.Runner`) — not a monorepo root `path:` dep. For fast local iteration on that proof alone, run `MIX_ENV=test mix test --only host_proof`.
 
-When the tarball overlay proof fails, inspect the structured triage raise (step, command, host paths, unpack context). Set `SCORIA_PRESERVE_HOST=1` to skip automatic host cleanup for disk inspection. A workspace failure snapshot is written to `tmp/scoria-host-proof-last-failure/` (with `MANIFEST.txt`) before re-raise; CI uploads artifact `scoria-host-proof-last-failure` when the adoption closeout lane fails.
+When the tarball overlay proof fails, inspect the structured triage raise (step, command, host paths, unpack context). Set `SCORIA_PRESERVE_HOST=1` to skip automatic host cleanup for disk inspection. A workspace failure snapshot is written to `tmp/scoria-host-proof-last-failure/` (with `MANIFEST.txt`) before re-raise; CI uploads artifact `scoria-host-proof-last-failure` when the adoption closeout verification suite fails.
 
-## Semantic fast-path troubleshooting lane
+## Semantic cache troubleshooting verification suite
 
-When you are validating the semantic fast path specifically, use the bounded semantic lane instead of the broad suite:
+When you are validating the semantic cache specifically, use the bounded semantic cache verification suite instead of the broad suite:
 
 ```bash
 SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 ```
 
-This is the canonical semantic fast-path troubleshooting lane. It proves:
+This is the canonical semantic cache troubleshooting verification suite. It proves:
 
 - tenant partitioning and semantic lookup behavior
 - explicit fallback visibility for `bypass`, `miss`, `reject`, and `hit`
-- operator evidence projection on `/scoria` and `/scoria/workflows/:run_id`
+- reviewer trace projection on `/scoria` and `/scoria/workflows/:run_id`
 - lifecycle truth for `active`, `stale`, `invalidated`, and `writeback_rejected`
-- retrieval-backed source fingerprint checks used by the semantic lane
+- retrieval-backed source fingerprint checks used by the semantic cache
 
 Use the semantic nouns exactly as rendered by the product:
 
@@ -168,7 +168,7 @@ identity =
   )
 ```
 
-Persist `started.run_id`. That `run_id` is the exact handle for readback, resume, and operator evidence.
+Persist `started.run_id`. That `run_id` is the exact handle for readback, resume, and reviewer trace inspection.
 
 ## Step 3: Read back the same run
 
@@ -187,16 +187,16 @@ Expected core proof:
 
 If the run pauses for approval, keep that same `run_id`. Approval resume is always exact-run resume.
 
-## Step 4: Open operator evidence
+## Step 4: Open reviewer trace
 
-Open the operator pages for the installed dashboard:
+Open the reviewer pages for the installed dashboard:
 
 ```text
 /scoria
 /scoria/workflows/:run_id
 ```
 
-The second page should show the same durable run you started from the host app. This is operator evidence for the run, not the system of record for your domain model.
+The second page should show the same durable run you started from the host app. This is the reviewer trace for the run, not the system of record for your domain model.
 
 ## Step 5: Resume an approval-paused run
 
@@ -211,43 +211,43 @@ If your verification run pauses for approval, resume it by exact `run_id`:
 
 The resumed run keeps the same `run_id`. A later turn in the same conversation should reuse the same `session_id` but create a fresh `run_id`.
 
-## Optional knowledge lane
+## Optional knowledge base
 
-Only after the default lane is proven should you expand into the knowledge-backed path:
+Only after the default runtime capability is proven should you expand into the knowledge-backed path:
 
 ```bash
 mix scoria.pgvector.bootstrap
 mix test.knowledge
 ```
 
-That lane is explicitly optional. It verifies pgvector-backed retrieval and grounding behavior after the core runtime and operator surface already work.
+That capability is explicitly optional. It verifies pgvector-backed retrieval and grounding behavior after the core runtime and reviewer surface already work.
 
 Knowledge proof follows the scope doctrine: Scoria owns retrieval filtering, citation validation, and persisted evidence; the host supplies tenant/actor identity.
 
-For maintainer proof, `mix test.knowledge --warnings-as-errors` verifies missing-tenant raises, cross-tenant retrieval exclusion, actor-scoped narrowing, and citation scope evidence. Knowledge schema changes use the separate `KnowledgeMigrationRepo` path, record versions in `schema_migrations_knowledge`, and live under `priv/repo/knowledge_migrations/` rather than the default host migration lane.
+For maintainer proof, `mix test.knowledge --warnings-as-errors` verifies missing-tenant raises, cross-tenant retrieval exclusion, actor-scoped narrowing, and citation scope evidence. Knowledge schema changes use the separate `KnowledgeMigrationRepo` path, record versions in `schema_migrations_knowledge`, and live under `priv/repo/knowledge_migrations/` rather than the default host migration path.
 
-## Maintainer release-preview lane
+## Maintainer release-preview verification suite
 
-When you are validating Scoria's publish-facing package and docs surface, use the bounded release-preview lane:
+When you are validating Scoria's publish-facing package and docs surface, use the bounded release-preview verification suite:
 
 ```bash
 mix scoria.release_preview
 ```
 
 This is the canonical maintainer proof for release packaging. It runs `mix docs` and checks an unpacked local Hex preview for the required runtime files, migrations, README, and adopter guides.
-CI should run this lane in `MIX_ENV=dev` because ExDoc stays a dev-only tool, but the maintainer-facing command contract remains plain `mix scoria.release_preview`.
+CI should run this verification suite in `MIX_ENV=dev` because ExDoc stays a dev-only tool, but the maintainer-facing command contract remains plain `mix scoria.release_preview`.
 
-Keep it distinct from the other named lanes:
+Keep it distinct from the other named verification suites:
 
 - `mix test.adoption` proves the canonical default runtime adoption boundary
 - `mix test.runtime_to_handoff` proves bounded runtime-to-handoff escalation through `Scoria.get_run_detail/1` and `delegated_handoffs`
-- `mix test.semantic_fast_path` proves the bounded semantic troubleshooting lane
-- `mix test.knowledge` proves the optional knowledge lane
+- `mix test.semantic_fast_path` proves the bounded semantic cache troubleshooting verification suite
+- `mix test.knowledge` proves the optional knowledge base
 - `mix scoria.test.support_copilot` proves the advisory support-copilot gallery (`examples/support_copilot`)
 
 ## Support copilot gallery (advisory)
 
-After the default lane is boring, explore the committed gallery for a realistic support-copilot domain with shared `Scoria.SupportJourney` fixtures. This starts the separate gallery app under `examples/support_copilot`, not the Scoria repo dashboard:
+After the default runtime capability is boring, explore the committed gallery for a realistic support-copilot domain with shared `Scoria.SupportJourney` fixtures. This starts the separate gallery app under `examples/support_copilot`, not the Scoria repo dashboard:
 
 ```bash
 cd examples/support_copilot
@@ -255,15 +255,15 @@ mix setup
 mix phx.server
 ```
 
-Open the gallery host chat at `http://localhost:4010/` and its gallery-local Scoria operator surface at `http://localhost:4010/scoria`.
+Open the gallery host chat at `http://localhost:4010/` and its gallery-local Scoria reviewer surface at `http://localhost:4010/scoria`.
 
-Maintainers run the advisory gallery lane:
+Maintainers run the advisory gallery verification suite:
 
 ```bash
 mix scoria.test.support_copilot
 ```
 
-This lane is **not** part of `VerificationLanes.closeout_order/0`. Merge-blocking adoption proof remains `mix test.adoption`. See [`support_copilot_gallery.md`](support_copilot_gallery.md).
+This verification suite is **not** part of `Scoria.VerificationSuites.closeout_order/0`. Merge-blocking adoption proof remains `mix test.adoption`. 0.1.x compatibility: `VerificationLanes.closeout_order/0` delegates to `Scoria.VerificationSuites.closeout_order/0`. See [`support_copilot_gallery.md`](support_copilot_gallery.md).
 
 ## Maintainer closeout
 
@@ -276,32 +276,32 @@ mix test.runtime_to_handoff
 ```
 
 Use `mix scoria.release_preview` as the canonical maintainer proof for docs-build and package-inventory truth before publish-facing changes merge.
-If you are wiring the lane into CI, run it under `MIX_ENV=dev` instead of presenting the job-wide test env as the supported closeout contract.
-Use `mix test.adoption` as the canonical default-lane verifier for the install, fresh-host install/migrate/route/runtime proof, docs, and migration-lane guards that make up the bounded acceptance harness.
-Use `mix test.runtime_to_handoff` as the canonical bounded escalation proof lane for runtime-to-handoff behavior and delegated evidence readback.
-Use `mix test.semantic_fast_path` only for the canonical semantic fast-path troubleshooting lane.
-Use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
-Use `mix test` as broader repo-health context when you want to classify failures outside the canonical proof lane.
+If you are wiring the verification suite into CI, run it under `MIX_ENV=dev` instead of presenting the job-wide test env as the supported closeout contract.
+Use `mix test.adoption` as the canonical default runtime verification suite for the install, fresh-host install/migrate/route/runtime proof, docs, and migration guards that make up the bounded acceptance harness.
+Use `mix test.runtime_to_handoff` as the canonical bounded escalation verification suite for runtime-to-handoff behavior and delegated trace readback.
+Use `mix test.semantic_fast_path` only for the canonical semantic cache troubleshooting verification suite.
+Use `mix test.knowledge` only when you are intentionally validating the optional knowledge base.
+Use `mix test` as broader repo-health context when you want to classify failures outside the canonical verification suite.
 Phase 45 closeout proof: `.planning/phases/45-correctness-sweep-fail-closed-proof-closeout/45-VERIFICATION.md` ties eval, knowledge, dashboard, and correctness-sweep repairs back to the scope doctrine SSOT.
 
 ## Warning baseline and inventory
 
-Maintainers enforce accepted warning debt expiry and capture classified inventory outside the adopter closeout lanes.
+Maintainers enforce accepted warning debt expiry and capture classified inventory outside the adopter closeout verification suites.
 
 - `mix scoria.warning_baseline.check` — fails when accepted rows in `.planning/WARNING-BASELINE.md` are expired or invalid
 - `mix scoria.warning_inventory` — capture-mode inventory of compiler warnings (no WAE)
 - `mix scoria.warning_inventory --write --scope full` — writes cluster-count JSON and human summary for Phase 67 ratchet ordering
 
-### WARN-05 canonical compile and lane-contract surfaces
+### WARN-05 canonical compile and verification-suite contract surfaces
 
-Maintainers verify compile WAE and canonical lane-contract tests remain warning-clean before cluster-fix work:
+Maintainers verify compile WAE and canonical verification-suite contract tests remain warning-clean before cluster-fix work:
 
 ```bash
 MIX_ENV=test mix compile --warnings-as-errors
 MIX_ENV=test mix test --warnings-as-errors test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs
 ```
 
-These are the canonical WARN-05 maintainer proof commands (p0 compile + p1 lane-contract WAE).
+These are the canonical WARN-05 maintainer proof commands (p0 compile + p1 verification-suite contract WAE).
 
 ### WARN-06 high-signal ratchet
 
@@ -321,12 +321,12 @@ Preflight: still run `rm -rf test/tmp/*` before inventory `--write` when you ski
 
 ### WARN-07 CI warning gates (full suite)
 
-CI preserves behavioral lane commands unchanged:
+CI preserves behavioral verification-suite commands unchanged:
 
-- `mix test.adoption` — default runtime lane (behavior)
-- `mix test.runtime_to_handoff` — escalation lane (behavior)
+- `mix test.adoption` - default runtime verification suite (behavior)
+- `mix test.runtime_to_handoff` - escalation verification suite (behavior)
 
-CI enforces compiler warnings across the full default test suite after closeout lanes:
+CI enforces compiler warnings across the full default test suite after closeout verification suites:
 
 ```bash
 mix test --warnings-as-errors
@@ -348,10 +348,10 @@ Local full-suite closeout uses pgvector Postgres on port 55432 (`SCORIA_DB_PORT=
 
 CI topology, release operations, warning ratchet commands, and installer contract proofs live in [`docs/MAINTAINERS.md`](MAINTAINERS.md#ci-gate-map-maintainers).
 
-**CI topology:** GitHub Actions runs parallel verify jobs after a shared build step: `policy → build → { test, ratchet, knowledge, connector, full-suite[×4] } → verify-summary`. The `verify-summary` fan-in aggregates all parallel lane results; any non-success fails the workflow. The branch-protection check target (`CI / ci-gate`) remains unchanged.
+**CI topology:** GitHub Actions runs parallel verify jobs after a shared build step: `policy -> build -> { test, ratchet, knowledge, connector, full-suite[x4] } -> verify-summary`. The `verify-summary` fan-in aggregates all parallel verification-suite results; any non-success fails the workflow. The branch-protection check target (`CI / ci-gate`) remains unchanged.
 
-Deep installer contract proofs (`mix scoria.test.install_contract`) and tarball consumer triage are documented in the maintainer guide — not part of the adopter closeout chain.
+Deep installer contract proofs (`mix scoria.test.install_contract`) and tarball consumer triage are documented in the maintainer guide - not part of the adopter closeout chain.
 
-Maintainer closeout starts with `mix scoria.release_preview` before the bounded test lanes — see the maintainer guide for the full parallel CI topology and job→command table.
+Maintainer closeout starts with `mix scoria.release_preview` before the bounded test verification suites - see the maintainer guide for the full parallel CI topology and job-to-command table.
 
-Run `mix ci` to reproduce the full merge gate locally (preamble: deps-lock, format, compile WAE; then all gating lanes from `Scoria.VerificationLanes`) before pushing.
+Run `mix ci` to reproduce the full merge gate locally (preamble: deps-lock, format, compile WAE; then all gating suites from `Scoria.VerificationSuites`) before pushing.

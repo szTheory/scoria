@@ -15,8 +15,10 @@ mix phx.server
 
 This starts the separate gallery app under `examples/support_copilot`, not the
 Scoria repo dashboard. Visit the gallery host chat at
-`http://localhost:4010/` and the gallery-local Scoria operator surface at
+`http://localhost:4010/` and the gallery-local Scoria reviewer surface at
 `http://localhost:4010/scoria`.
+
+See [Glossary](glossary.md) for Scoria terminology.
 
 ## Path dependency vs tarball consumer proof
 
@@ -29,9 +31,9 @@ Adopters evaluating from Hex should run `mix test.adoption` in their host app. C
 
 ## Persona
 
-**Support Ops Lead** at **Acme Corp** (`acme-corp` tenant) triages billing disputes, escalates refunds to a `billing_specialist` role, and inspects operator evidence in Scoria.
+**Support Ops Lead** at **Acme Corp** (`acme-corp` tenant) triages billing disputes, escalates refunds to a `billing_specialist` role, and inspects reviewer traces in Scoria.
 
-## Advisory verification lane
+## Advisory verification suite
 
 Maintainers and adopters exploring the gallery can run:
 
@@ -39,44 +41,44 @@ Maintainers and adopters exploring the gallery can run:
 mix scoria.test.support_copilot
 ```
 
-This lane is **advisory** — it is not part of `VerificationLanes.closeout_order/0`. Merge-blocking adoption proof remains `mix test.adoption`.
+This verification suite is **advisory** - it is not part of `Scoria.VerificationSuites.closeout_order/0`. Merge-blocking adoption proof remains `mix test.adoption`.
 
-Optional lane commands exercised by gallery journeys (run in the main repo, not inside the gallery app):
+Optional verification suite commands exercised by gallery journeys (run in the main repo, not inside the gallery app):
 
-- `mix test.semantic_fast_path` — semantic FAQ journey
-- `mix test.knowledge` — knowledge refund-policy journey
-- `mix test.connector` — billing connector register → fleet → drawer journey
+- `mix test.semantic_fast_path` - semantic FAQ journey
+- `mix test.knowledge` - knowledge refund-policy journey
+- `mix test.connector` - billing connector register -> fleet -> drawer journey
 
 ## Journey fixtures
 
 Shared identities, ticket data, and handler logic live in `Scoria.SupportJourney`, SupportJourney handlers, and `priv/fixtures/support_journey/`. The gallery, host-proof overlay, and this guide must stay aligned via source contract tests.
 
-### Default lane
+### Default capability
 
 1. Host starts a durable run with `Scoria.start_run/2` for session `support-session-42`.
 2. An approval step pauses with `waiting_for_approval` while a refund is reviewed.
-3. Operator approves and the host calls `Scoria.resume_run/2` until status is `completed`.
-4. Evidence is visible at `/scoria/workflows/:run_id`.
+3. Reviewer approves and the host calls `Scoria.resume_run/2` until status is `completed`.
+4. The reviewer trace is visible at `/scoria/workflows/:run_id`.
 
-### Handoff lane
+### Handoff capability
 
 1. Host escalates with `Scoria.start_handoff_run/3` to `billing_specialist` with `billing_review` delegated kind.
-2. Operator inspects delegated lineage via `Scoria.get_run_detail/1` on `/scoria/workflows/:run_id`.
+2. Reviewer inspects delegated lineage via `Scoria.get_run_detail/1` on `/scoria/workflows/:run_id`.
 
-### Semantic FAQ lane
+### Semantic FAQ capability
 
-1. Gallery starts a read-only semantic run with `SupportCopilot.SemanticLane`.
-2. Operator inspects semantic evidence on the workflow detail surface.
+1. Gallery starts a read-only semantic cache run with a support FAQ cache profile.
+2. Reviewer inspects semantic cache trace details on the workflow detail surface.
 
-### Knowledge lane
+### Knowledge base capability
 
 1. Gallery seeds `Acme refund policy` knowledge source from journey fixtures.
 2. Host runs a grounded answer step; evidence references the knowledge corpus.
 
-### Connector lane
+### Connector capability
 
 1. Gallery registers a `billing` connector for tenant `acme-corp`.
-2. Host runs a connector lookup step; operator fleet view lists the connector.
+2. Host runs a connector lookup step; reviewer fleet view lists the connector.
 
 ## Tools in the scenario
 
@@ -85,4 +87,4 @@ Shared identities, ticket data, and handler logic live in `Scoria.SupportJourney
 
 ## Shared handlers
 
-Overlay smokes and the gallery delegate to the shared SupportJourney handlers so approval, lookup, and lane handlers cannot drift between merge-blocking proof and the reference demo.
+Overlay smokes and the gallery delegate to the shared SupportJourney handlers so approval, lookup, and capability handlers cannot drift between merge-blocking proof and the reference demo.

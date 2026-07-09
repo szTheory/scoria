@@ -1,34 +1,36 @@
-# Semantic Fast Path
+# Semantic Cache
 
-This guide documents the tenant-scoped semantic fast path for Scoria.
+This guide documents the tenant-scoped semantic cache for Scoria. The file path remains `docs/semantic_fast_path.md` for Phase 46 link stability. See [Glossary](glossary.md) for terminology.
 
-Use it only after the default runtime lane already works in your Phoenix app. The semantic fast path is an optimization layer for explicitly safe read-only work, not a replacement runtime.
+Use it only after the default runtime capability already works in your Phoenix app. The semantic cache is an optimization layer for explicitly safe read-only work, not a replacement runtime.
 
-## What this lane is for
+## What this capability is for
 
-Choose the semantic fast path when you want:
+Choose the semantic cache when you want:
 
 - tenant-partitioned answer reuse
 - conservative compatibility checks before reuse
 - explicit fallback to the normal runtime path
-- operator-visible evidence for `bypass`, `miss`, `reject`, and `hit`
+- reviewer-visible trace details for `bypass`, `miss`, `reject`, and `hit`
 
 Do not treat this as provider prompt caching or invisible middleware. Scoria owns the semantic cache truth inside its embedded Phoenix boundary.
 
-## Safety rule: only explicitly safe read-only lanes
+## Safety rule: only explicitly safe read-only profiles
 
-The semantic fast path is opt-in and lane-based.
+The semantic cache is opt-in and profile-based.
 
-Define one lane for work that is safe to reuse:
+Define one profile for work that is safe to reuse:
 
 ```elixir
-defmodule MyApp.AI.AccountFaqLane do
-  use Scoria.SemanticLane,
-    lane_key: "account_faq",
+defmodule MyApp.AI.AccountFaqCache do
+  use Scoria.SemanticCache.Profile,
+    cache_key: "account_faq",
     default_scope: :tenant_shared,
     safe_read_only: true
 end
 ```
+
+`Scoria.SemanticLane`, `lane:`, and `lane_key` remain accepted as legacy 0.1.x compatibility aliases; new public examples should use `Scoria.SemanticCache.Profile`, `profile:`, and `cache_key:`.
 
 Two common scope shapes:
 
@@ -37,26 +39,26 @@ Two common scope shapes:
 
 Scoria refuses semantic reuse for write-side, approval-sensitive, or personalized-tool-backed flows unless they are explicitly classified as safe.
 
-## Starting a run with the semantic lane
+## Starting a run with the semantic cache profile
 
-Once the lane exists, attach it to a normal `Scoria.start_run/2` call:
+Once the profile exists, attach it to a normal `Scoria.start_run/2` call:
 
 ```elixir
 {:ok, summary} =
   Scoria.start_run(identity,
-    semantic_cache: [lane: MyApp.AI.AccountFaqLane],
+    semantic_cache: [profile: MyApp.AI.AccountFaqCache],
     input: "what is scoria?"
   )
 ```
 
-You are still using the same public runtime facade. The semantic fast path is a bounded addition to the normal runtime lane, not a second runtime surface.
+You are still using the same public runtime facade. The semantic cache is a bounded addition to the normal runtime capability, not a second runtime surface.
 
 ## What Scoria checks before reuse
 
 Scoria only reuses a durable entry when all of these still hold:
 
 - tenant partitioning
-- lane compatibility
+- profile compatibility
 - prompt compatibility
 - policy compatibility
 - source compatibility
@@ -66,7 +68,7 @@ The lookup stays exact-first and compatibility-aware. It does not widen into agg
 
 ## Runtime outcomes
 
-The semantic fast path reports four operator-facing lookup outcomes:
+The semantic cache reports four reviewer-facing lookup outcomes:
 
 - `hit`: Scoria reused a durable semantic entry
 - `bypass`: Scoria intentionally skipped the fast path and ran the normal runtime path
@@ -84,9 +86,9 @@ Semantic entries keep explicit lifecycle state:
 - `invalidated`
 - `writeback_rejected`
 
-That state is durable and operator-visible. It is not collapsed into a generic cache miss.
+That state is durable and reviewer-visible. It is not collapsed into a generic cache miss.
 
-## Operator evidence
+## Reviewer trace
 
 The same semantic run remains inspectable at:
 
@@ -94,25 +96,25 @@ The same semantic run remains inspectable at:
 /scoria/workflows/:run_id
 ```
 
-Scoria projects semantic provenance, compatibility, lifecycle state, and fallback reasoning into the existing runtime and workflow surfaces so operators can understand why a lookup hit, missed, bypassed, or was rejected.
+Scoria projects semantic cache provenance, compatibility, lifecycle state, and fallback reasoning into the existing runtime and workflow surfaces so reviewers can understand why a lookup hit, missed, bypassed, or was rejected.
 
 ## Verification
 
-Use the bounded semantic proof lane when validating this feature:
+Use the bounded semantic cache verification suite when validating this feature:
 
 ```bash
 SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 ```
 
-This is the canonical semantic fast-path troubleshooting lane. Use `mix test.adoption` for the broader public runtime adoption story, and use `mix test.knowledge` only when you are intentionally validating the optional knowledge lane.
+This is the canonical semantic cache troubleshooting verification suite. Use `mix test.adoption` for the broader public runtime adoption story, and use `mix test.knowledge` only when you are intentionally validating the optional knowledge base.
 
-## What this lane intentionally does not include
+## What this capability intentionally does not include
 
-The semantic fast path scope does not include:
+The semantic cache scope does not include:
 
 - external semantic cache backends
 - advanced ANN tuning or analytics controls
 - cross-tenant semantic reuse
 - automatic caching for write-side or approval-sensitive flows
 
-Keep this lane narrow, conservative, and operator-visible by default.
+Keep this capability narrow, conservative, and reviewer-visible by default.
