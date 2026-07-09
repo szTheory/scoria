@@ -29,6 +29,15 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - **The next Hex release (`0.1.3`, PR #12) is still HELD** until SEED-005 performs the stable docs/positioning cleanup and honest release cut. v3.4 intentionally did not publish a Hex release.
 - Scoria remains the reference implementation for the embedded Traefik + `*.localhost` stack; sibling-repo migration and proxy bake-offs remain out of scope.
 
+## Current Milestone: v3.5 Documentation & Release Readiness
+
+**Goal:** Make Scoria adoption-ready again after the v3.4 trust/security fixes by replacing jargon-first adopter docs with stable positioning, repairing release-blocking CI/browser drift, and cutting the honest `0.1.3` Hex release.
+
+**Target features:**
+- Plain-English README/front-door positioning, scope doctrine, persona boundaries, glossary, and AI-readable navigation from SEED-005.
+- ExDoc/docs structure that helps Phoenix adopters and LLM assistants find the right public API, guide, and verification suite without flat-sidebar ambiguity.
+- Release-readiness cleanup: current `0.1.3` PR blockers, planning-ledger drift, browser e2e failures, stale version references, and post-publish smoke proof.
+
 ## Latest Shipped Milestone: v3.4 Pre-1.0 Trust & Security Hardening
 
 **Goal:** Fix the three P0 correctness/security bugs live in shipped `0.1.2` — making eval fail CLOSED, knowledge retrieval tenant-isolated, and the dashboard auth boundary host-injectable — plus a correctness sweep, so Scoria's "trustworthy, governed, inspectable" promise holds before the next Hex release. (🔴 P0 · SEED-006.)
@@ -280,7 +289,13 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-No active milestone is open. v3.4 has completed and the next milestone should be started explicitly with `$gsd-new-milestone`; the leading queued item is SEED-005 / Backlog 999.2 for stable docs, positioning, and the release cut now unblocked by SEED-006.
+Current active milestone: **v3.5 Documentation & Release Readiness**.
+
+- [ ] **DOC-01:** A Phoenix adopter can understand Scoria in plain English before encountering coined internal vocabulary.
+- [ ] **DOC-02:** Adopter-facing docs define final terminology, scope doctrine, persona boundaries, and hosted-LLM-ops comparison without pre-writing feature-specific guides for unbuilt seeds.
+- [ ] **DOC-03:** ExDoc and guide navigation are grouped, version-aware, and warning-clean so docs are a reliable product surface.
+- [ ] **DOC-04:** LLM/agent navigation surfaces (`llms.txt` and/or `AGENTS.md`) point to the public facade, guide ladder, glossary, and verification suites.
+- [ ] **REL-01:** The `0.1.3` release is cut only after release-blocking CI/browser/planning drift is fixed and post-publish smoke proves the live package.
 
 **Deferred / next candidates:**
 - [ ] **SEED-004 (test-code determinism):** convert forced-serial `IntegrationCase` files to `async: true`, de-globalize per-module Phoenix test endpoints, and replace ~14 `Process.sleep` sites with the `eventually/2` helper — then raise partition count past 4 once the serial floor drops. (Higher product risk; touches 9+ test files. Leading candidate for the milestone after v3.2.)
@@ -336,6 +351,7 @@ _(Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verificatio
 ## Context
 
 - **Latest shipped:** v3.4 Pre-1.0 Trust & Security Hardening (SEED-006 P0 gate — eval fail-closed, knowledge tenant isolation, dashboard auth seam, correctness sweep, scope-doctrine proof) — archived 2026-07-09; audit `passed` (17/17).
+- **Active milestone:** v3.5 Documentation & Release Readiness promotes SEED-005 / Backlog 999.2 now that SEED-006 has shipped. Live release state on 2026-07-09: Hex remains at `0.1.2`; PR #12 for `0.1.3` is open but failing `verify / policy`, browser e2e, `verify-summary`, and `ci-gate`.
 - v3.3 Design System Stress Test (`/scoria` UI coherence foundation→proof — inventory + Component Lab, tightened primitives/tokens, JTBD operator flows, WCAG 2.2 AA + reduced-motion + 6-width proof, docs/screenshots/drift-guards, COPY-01 SSOT) — archived 2026-07-04; tag `v3.3` local. Audit `passed` (22/22).
 - v3.2 Drydock (Docker dev-DX hardening + maintenance release — 4799 default, router-derived banner, docs contract, `0.1.2` live) — archived 2026-06-19; tag `v3.2` pending.
 - v3.0 Control Room (dashboard design-system / IA / motion / proof) — archived 2026-06-14; tag `v3.0` local-only.
@@ -406,6 +422,7 @@ _(Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verificatio
 | v3.3 milestone audit surfaced a COPY-01 SSOT drift (orphaned `ScoriaWeb.Copy`/`DatasetCopy`); closed it via inserted Phase 41.1 rather than deferring | An unwired copy SSOT invites silent divergence; wiring it byte-stable with parity + literal-absence guards closed the only open audit tech-debt item before close | ✓ Good — shipped 41.1; COPY-01 SSOT closed, re-verified against live code |
 | v3.4 (SEED-006) is **fix + prove only** — no Hex publish; the honest `0.1.3` release cut is deferred to SEED-005 (999.2) | The seed's stated order is *SEED-006 → SEED-005 Phase E → publish*; separating the fixes from the release keeps the security milestone focused and lets the docs milestone own the clean-spot/release work | ✓ Good — v3.4 completed without publishing; `0.1.3` PR #12 stays held for SEED-005 |
 | v3.4 fixes fail CLOSED and isolate by tenant by **mirroring proven in-repo patterns** (eval reuses `Knowledge.Grounding`+`Eval.Score`; knowledge mirrors `SemanticCache.Lookup.base_query`'s mandatory-tenant raise; dashboard ships an `on_mount:` seam, authz delegated) rather than inventing new machinery | The safe scoping + scoring patterns already exist and are contract-guarded elsewhere; reusing them minimizes blast radius and keeps the P4 "delegate authz, ship the seam" doctrine intact | ✓ Good — implemented and verified in v3.4 |
+| v3.5 promotes SEED-005 before any new feature seed | SEED-006 removed the release gate, but the front door and release train are still blocked: Hex is still `0.1.2`, PR #12 is failing deterministic policy/e2e checks, and the README/ExDoc surface still exposes too much lane-era jargon before plain-English positioning. | — Pending — current milestone |
 
 ## Milestone History
 
@@ -501,4 +518,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-09 after completing v3.4 Pre-1.0 Trust & Security Hardening.*
+*Last updated: 2026-07-09 after starting v3.5 Documentation & Release Readiness.*

@@ -1,38 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.4
-milestone_name: Pre-1.0 Trust & Security Hardening
-current_phase: 4
-status: Awaiting next milestone
-stopped_at: v3.4 archived
-last_updated: "2026-07-09T19:07:36.149Z"
+milestone: v3.5
+milestone_name: Documentation & Release Readiness
+status: planning
+last_updated: "2026-07-09T19:44:32.868Z"
 last_activity: 2026-07-09
-last_activity_desc: Milestone v3.4 completed and archived
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 24
-  completed_plans: 24
-  percent: 100
-current_phase_name: Correctness sweep + fail-closed proof & closeout
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-07-09 after v3.4 milestone completion)
+See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Planning next milestone
+**Current focus:** v3.5 Documentation & Release Readiness
 
 ## Current Position
 
-Phase: Milestone v3.4 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-09 — Milestone v3.4 completed and archived
+Status: Defining requirements
+Last activity: 2026-07-09 — Milestone v3.5 started
 
 ## Performance Metrics
 
