@@ -4,6 +4,7 @@ defmodule ScoriaWeb.Components.IncidentEvidenceComponentTest do
   import Phoenix.LiveViewTest
 
   alias ScoriaWeb.IncidentEvidenceComponent
+  alias ScoriaWeb.RemoteInvocationEvidenceComponent
 
   @palette_regex ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
 
@@ -25,13 +26,35 @@ defmodule ScoriaWeb.Components.IncidentEvidenceComponentTest do
     refute source =~ @palette_regex
   end
 
-  test "renders incident evidence through the incident detail adapter" do
+  test "renders remote invocation trace at the top-level run inspection boundary" do
+    html =
+      render_component(&RemoteInvocationEvidenceComponent.render/1,
+        evidence: %{approvals: [%{tool_name: "summarizer", status: "approved", id: "approval-1"}]}
+      )
+
+    assert html =~ ~s(id="remote-invocation-notebook")
+    assert html =~ "Remote invocation trace"
+    assert html =~ "Remote trace notebook"
+    refute html =~ "Remote invocation evidence"
+    refute html =~ "Remote evidence notebook"
+  end
+
+  test "renders incident trace through the incident detail adapter" do
     html = render_component(&IncidentEvidenceComponent.render/1, evidence: evidence())
 
     assert html =~ ~s(id="incident-evidence-notebook")
     assert html =~ "scoria-incident-detail"
-    assert html =~ "Trace-first incident evidence"
+    assert html =~ "Incident trace"
+    assert html =~ "Trace-first incident review"
+    refute html =~ "Trace-first incident evidence"
     refute html =~ "scoria-notebook__tab"
+  end
+
+  test "uses reviewer persona copy for incident facts" do
+    html = render_component(&IncidentEvidenceComponent.render/1, evidence: evidence())
+
+    assert html =~ "Reviewer-facing incident facts"
+    refute html =~ "Operator-facing incident facts"
   end
 
   test "preserves triage, budget, incident, breaker, and relay evidence sections" do
@@ -40,7 +63,7 @@ defmodule ScoriaWeb.Components.IncidentEvidenceComponentTest do
     assert html =~ "Triage summary"
     assert html =~ "Budget evidence"
     assert html =~ "Reservation actuals"
-    assert html =~ "Incident notebook"
+    assert html =~ "Incident evidence"
     assert html =~ "Breaker evidence"
     assert html =~ "Audit and delivery"
   end
