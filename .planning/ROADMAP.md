@@ -47,7 +47,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 46-04-PLAN.md — Private run-inspection trace adapter rename
-- [ ] 46-05-PLAN.md — Remote invocation and incident trace/evidence copy boundary
+- [x] 46-05-PLAN.md — Remote invocation and incident trace/evidence copy boundary
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -135,7 +135,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 46. Terminology and public vocabulary migration | v3.5 | 4/8 | In Progress|  |
+| 46. Terminology and public vocabulary migration | v3.5 | 5/8 | In Progress|  |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 0/0 | Not started | — |
 | 48. ExDoc and guide ladder restructure | v3.5 | 0/0 | Not started | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
