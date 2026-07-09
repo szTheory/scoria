@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
-current_phase: 46
-current_phase_name: Terminology and public vocabulary migration
-status: executing
-stopped_at: Phase 46 context gathered
-last_updated: "2026-07-09T22:53:08.960Z"
+current_phase: 47
+current_phase_name: README first-screen positioning and scope doctrine
+status: planning
+stopped_at: Phase 47 ready to plan
+last_updated: "2026-07-09T23:00:21.737Z"
 last_activity: 2026-07-09
-last_activity_desc: Phase 46 execution started
+last_activity_desc: Phase 46 complete, transitioned to Phase 47
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 8
-  completed_plans: 7
-  percent: 0
+  completed_plans: 8
+  percent: 20
 ---
 
 # Project State
@@ -25,14 +25,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 46 — Terminology and public vocabulary migration
+**Current focus:** Phase 47 — README first-screen positioning and scope doctrine
 
 ## Current Position
 
-Phase: 46 (Terminology and public vocabulary migration) — EXECUTING
-Plan: 8 of 8
-Status: Ready to execute
-Last activity: 2026-07-09 — Phase 46 execution started
+Phase: 47 — README first-screen positioning and scope doctrine
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-09 — Phase 46 complete, transitioned to Phase 47
 
 ## Performance Metrics
 
@@ -218,6 +218,7 @@ None at milestone start.
 | Phase 46 P05 | 2 min | 1 tasks | 3 files |
 | Phase 46 P06 | 4 min | 2 tasks | 11 files |
 | Phase 46 P07 | 14 min | 1 tasks | 14 files |
+| Phase 46 P08 | 6 min | 1 tasks | 3 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 

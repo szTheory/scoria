@@ -21,7 +21,7 @@
 
 **Boundary:** Stable adopter docs and release readiness only. Feature-specific docs for trace foundation, lethal-trifecta governance, eval depth, retrieval depth, and privacy/feedback stay with their owning future seeds.
 
-- [ ] **Phase 46: Terminology and public vocabulary migration** — final sense-aware rename map, glossary, code-name cleanup, and upgrade note.
+- [x] **Phase 46: Terminology and public vocabulary migration** — final sense-aware rename map, glossary, code-name cleanup, and upgrade note. (completed 2026-07-09)
 - [ ] **Phase 47: README first-screen positioning and scope doctrine** — plain-English front door, persona/not-ours framing, owns-vs-delegates table, and hosted LLM-ops comparison.
 - [ ] **Phase 48: ExDoc and guide ladder restructure** — grouped modules/extras, version-aware docs metadata, stable guide tree, and public moduledoc alignment.
 - [ ] **Phase 49: AI-accessible docs and docs verification gate** — curated `llms.txt`/`AGENTS.md`, guide index for coding agents, and warning-clean docs command.
@@ -35,7 +35,7 @@
 
 **Requirements:** TERM-01, TERM-02, TERM-03, TERM-04
 
-**Plans:** 8 plans
+**Plans:** 8/8 plans complete
 
 Plans:
 **Wave 1**
@@ -59,7 +59,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 46-08-PLAN.md — README/CHANGELOG upgrade notes and focused phase verification
+- [x] 46-08-PLAN.md — README/CHANGELOG upgrade notes and focused phase verification
 
 **Success Criteria:**
 
@@ -135,7 +135,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 46. Terminology and public vocabulary migration | v3.5 | 7/8 | In Progress|  |
+| 46. Terminology and public vocabulary migration | v3.5 | 8/8 | Complete    | 2026-07-09 |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 0/0 | Not started | — |
 | 48. ExDoc and guide ladder restructure | v3.5 | 0/0 | Not started | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
