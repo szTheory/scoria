@@ -5,8 +5,8 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
 
   import ScoriaWeb.UI, only: [evidence_rows: 1, panel: 1]
 
-  alias ScoriaWeb.ReplayEvidenceNotebookComponent
-  alias ScoriaWeb.SemanticEvidenceNotebookComponent
+  alias ScoriaWeb.ReplayTraceNotebookComponent
+  alias ScoriaWeb.SemanticCacheTraceNotebookComponent
 
   attr(:step, :map, default: nil)
   attr(:checkpoint, :map, default: nil)
@@ -23,7 +23,7 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="scoria-eyebrow">Step detail</p>
-            <h2>Replay evidence</h2>
+            <h2>Replay trace</h2>
             <.evidence_rows rows={[{"Role", @step.role_id}, {"kind", @step.kind}]} />
           </div>
 
@@ -48,7 +48,7 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
           <%= promotion_helper_copy(@selected_source_variant, @promotion_context) %>
         </p>
 
-        <ReplayEvidenceNotebookComponent.render
+        <ReplayTraceNotebookComponent.render
           step={@step}
           checkpoint={@checkpoint}
           comparison={@comparison}
@@ -56,10 +56,10 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
           selected_comparison_entry={@selected_comparison_entry}
         />
 
-        <SemanticEvidenceNotebookComponent.render semantic_evidence={@semantic_evidence} />
+        <SemanticCacheTraceNotebookComponent.render semantic_evidence={@semantic_evidence} />
       <% else %>
         <p>Select a step to inspect checkpoint metadata and failure reasons.</p>
-        <SemanticEvidenceNotebookComponent.render semantic_evidence={@semantic_evidence} />
+        <SemanticCacheTraceNotebookComponent.render semantic_evidence={@semantic_evidence} />
       <% end %>
     </.panel>
     """
@@ -79,7 +79,7 @@ defmodule ScoriaWeb.WorkflowDetailPanelComponent do
   defp promotion_helper_copy(source_variant, promotion_context) do
     case promotion_disabled?(promotion_context) do
       true ->
-        "#{variant_label(source_variant)} cannot be promoted until Scoria resolves a frozen promotion snapshot for the selected evidence."
+        "#{variant_label(source_variant)} cannot be promoted until Scoria resolves a frozen promotion snapshot for the selected trace."
 
       false ->
         "#{variant_label(source_variant)} is active for this draft-dataset promotion."

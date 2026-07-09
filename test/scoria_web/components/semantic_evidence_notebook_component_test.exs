@@ -32,7 +32,9 @@ defmodule ScoriaWeb.SemanticEvidenceNotebookComponentTest do
     assert semantic_source =~ "Advanced raw evidence"
     assert semantic_source =~ "raw_evidence"
 
-    wrapper_source = File.read!("lib/scoria_web/components/semantic_evidence_notebook_component.ex")
+    wrapper_source =
+      File.read!("lib/scoria_web/components/semantic_evidence_notebook_component.ex")
+
     assert wrapper_source =~ "0.1.x compatibility"
     assert wrapper_source =~ "SemanticCacheTraceNotebookComponent"
   end

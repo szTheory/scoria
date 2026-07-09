@@ -412,7 +412,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     assert length(Regex.scan(~r/id="delegated-trace"/, html)) == 1
     assert html =~ "planner"
     assert html =~ "critic"
-    assert html =~ "View full context"
+    assert html =~ "View full scoped context"
     assert html =~ "handoff input"
     assert html =~ "scoped context"
     assert html =~ "policy"
@@ -457,10 +457,10 @@ defmodule ScoriaWeb.WorkflowLiveTest do
     {:ok, empty_view, empty_html} = live(conn, "/scoria/workflows/#{empty_run.id}")
     {:ok, pending_view, pending_html} = live(conn, "/scoria/workflows/#{pending_run.id}")
 
-    assert empty_html =~ "No Delegated Handoffs Recorded"
+    assert empty_html =~ "No Delegated Traces Recorded"
 
     assert empty_html =~
-             "This run stayed on the default runtime lane. No bounded handoff is required for first adoption; use Scoria.start_handoff_run/3 only when a same-run delegation needs narrow projected context."
+             "This run stayed on the default runtime path. No bounded handoff is required for first adoption; use Scoria.start_handoff_run/3 only when a same-run delegation needs narrow scoped context."
 
     assert empty_html =~ "Timeline"
 
@@ -550,7 +550,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
-    assert html =~ "semantic evidence notebook"
+    assert html =~ "semantic cache trace notebook"
     assert html =~ "Compatibility"
     assert html =~ "Provenance"
     assert html =~ "Lifecycle"
@@ -612,7 +612,7 @@ defmodule ScoriaWeb.WorkflowLiveTest do
 
     {:ok, view, html} = live(conn, "/scoria/workflows/#{run.id}")
 
-    assert html =~ "semantic evidence notebook"
+    assert html =~ "semantic cache trace notebook"
     assert html =~ "Normal runtime path executed"
     assert html =~ "invalidated"
     assert html =~ "prompt_version_mismatch"

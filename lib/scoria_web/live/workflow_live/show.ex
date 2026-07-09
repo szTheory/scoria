@@ -21,7 +21,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
   alias ScoriaWeb.ReviewerSurface
 
   alias ScoriaWeb.{
-    DelegatedEvidenceComponent,
+    DelegatedTraceComponent,
     MemoryNotebookComponent,
     RemoteInvocationEvidenceComponent,
     WorkflowDetailPanelComponent
@@ -242,7 +242,7 @@ defmodule ScoriaWeb.WorkflowLive.Show do
           />
         </div>
 
-        <DelegatedEvidenceComponent.render delegated_handoffs={@delegated_handoffs} />
+        <DelegatedTraceComponent.render delegated_handoffs={@delegated_handoffs} />
 
         <.async_result :let={memories} assign={@compacted_memories}>
           <:loading><.skeleton rows={3} class="mt-6" /></:loading>
