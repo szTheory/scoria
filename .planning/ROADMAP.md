@@ -40,7 +40,7 @@
 Plans:
 **Wave 1**
 
-- [ ] 46-01-PLAN.md — Public verification suite/reviewer broadcast aliases, call-site migration, and early storage guard
+- [x] 46-01-PLAN.md — Public verification suite/reviewer broadcast aliases, call-site migration, and early storage guard
 - [ ] 46-02-PLAN.md — Reviewer surface and LiveView alias migration
 - [ ] 46-03-PLAN.md — Semantic cache profile and scoped-context runtime aliases
 
@@ -62,6 +62,7 @@ Plans:
 - [ ] 46-08-PLAN.md — README/CHANGELOG upgrade notes and focused phase verification
 
 **Success Criteria:**
+
 1. A committed glossary maps final Scoria terms to industry equivalents and defines `run`, reviewer/operator, trace, evidence, capability, verification suite, scoped context, semantic cache, knowledge base, grounding, and bounded handoff.
 2. Adopter-facing docs and user-visible copy apply the final terminology strategy, including reviewer for the persona and trace for run-inspection surface sense.
 3. RAG/citation use of evidence remains intact; no schema migration or global `evidence_refs` rename is introduced.
@@ -77,6 +78,7 @@ Plans:
 **Requirements:** POS-01, POS-02, POS-03, POS-04
 
 **Success Criteria:**
+
 1. README opens with a plain-English paragraph before coined vocabulary, using the SEED-005 wording as the baseline.
 2. README and stable docs state the n=1 default lens, CORE/ADJACENT/NOT-OURS persona boundaries, and the reviewer/operator role clearly.
 3. An adopter-facing owns-vs-delegates table makes the P1–P6 scope doctrine concrete.
@@ -92,6 +94,7 @@ Plans:
 **Requirements:** DOCS-01, DOCS-02, DOCS-03
 
 **Success Criteria:**
+
 1. `mix.exs` docs config groups modules by domain area and extras by adopter/maintainer guide ladder.
 2. Source/ref/doc links handle dev versions without pointing to missing tag URLs, and brand logo/favicon metadata is wired where supported.
 3. Stable guides are organized around getting started, golden path, JTBD/user flows, troubleshooting, hosted LLM-ops comparison, and cheatsheet content.
@@ -106,6 +109,7 @@ Plans:
 **Requirements:** DOCS-04, AI-01, AI-02
 
 **Success Criteria:**
+
 1. A curated root `llms.txt` and/or `AGENTS.md` points to the public facade, guide ladder, glossary, capabilities, and verification suites.
 2. The AI-accessibility surface distinguishes curated source docs from generated ExDoc artifacts.
 3. The docs verification command runs warning-clean locally and is wired into the appropriate CI/policy path or documented release gate.
@@ -120,6 +124,7 @@ Plans:
 **Requirements:** REL-01, REL-02, REL-03, REL-04
 
 **Success Criteria:**
+
 1. The current policy failure is fixed: `ROADMAP.md` keeps the archived `v2.15 Connector Adoption Lane` breadcrumb required by `CiPolicyContractTest`.
 2. Browser e2e failures observed on PR #12 are fixed or legitimately descoped with guard updates: IA orientation, release-workbench modal focus, and theme-toggle visibility/clickability.
 3. README, maintainer docs, CHANGELOG, release automation, and package metadata agree on live `0.1.2` baseline and `0.1.3` target.
@@ -130,7 +135,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 46. Terminology and public vocabulary migration | v3.5 | 0/0 | Not started | — |
+| 46. Terminology and public vocabulary migration | v3.5 | 1/8 | In Progress|  |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 0/0 | Not started | — |
 | 48. ExDoc and guide ladder restructure | v3.5 | 0/0 | Not started | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |

@@ -17,9 +17,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### Terminology
 
 - [ ] **TERM-01**: A Phoenix adopter can learn final canonical terms from a glossary that maps Scoria terms to industry equivalents.
-- [ ] **TERM-02**: Adopter-facing docs use the final terminology strategy: reviewer for the persona, trace for run-inspection surface sense, capabilities for adoption scope, verification suite for `mix test.*` proof commands, scoped context, semantic cache, and optional knowledge base.
+- [x] **TERM-02**: Adopter-facing docs use the final terminology strategy: reviewer for the persona, trace for run-inspection surface sense, capabilities for adoption scope, verification suite for `mix test.*` proof commands, scoped context, semantic cache, and optional knowledge base.
 - [ ] **TERM-03**: Adopter-facing docs preserve correct RAG/citation use of evidence while removing leaked internal milestone code names and stale lane/count/version wording.
-- [ ] **TERM-04**: Public README and CHANGELOG include a pre-1.0 upgrade note for terminology changes that affect documented names, modules, or user-visible copy.
+- [x] **TERM-04**: Public README and CHANGELOG include a pre-1.0 upgrade note for terminology changes that affect documented names, modules, or user-visible copy.
 
 ### Documentation
 
@@ -80,9 +80,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | POS-03 | Phase 47 | Pending |
 | POS-04 | Phase 47 | Pending |
 | TERM-01 | Phase 46 | Pending |
-| TERM-02 | Phase 46 | Pending |
+| TERM-02 | Phase 46 | Complete |
 | TERM-03 | Phase 46 | Pending |
-| TERM-04 | Phase 46 | Pending |
+| TERM-04 | Phase 46 | Complete |
 | DOCS-01 | Phase 48 | Pending |
 | DOCS-02 | Phase 48 | Pending |
 | DOCS-03 | Phase 48 | Pending |
@@ -95,6 +95,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REL-04 | Phase 50 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 18 total
 - Mapped to phases: 18
 - Unmapped: 0
