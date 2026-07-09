@@ -79,4 +79,13 @@ defmodule Scoria.HexConsumerContractTest do
              to: "0.1.1"
            }
   end
+
+  test "packaged docs expose the glossary to Hex consumers" do
+    project = Mix.Project.config()
+    readme = File.read!("README.md")
+
+    assert "docs/glossary.md" in project[:docs][:extras]
+    assert "docs/glossary.md" in project[:package][:files]
+    assert readme =~ "[Glossary](docs/glossary.md)"
+  end
 end

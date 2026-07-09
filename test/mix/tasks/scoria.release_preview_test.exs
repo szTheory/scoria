@@ -11,6 +11,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
       "lib/scoria.ex",
       "priv/repo/migrations/20260511000100_create_workflow_tables.exs",
       "priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs",
+      "docs/glossary.md",
       "docs/adoption_lanes.md",
       "docs/phoenix_runtime_example.md",
       "docs/bounded_handoffs.md",
@@ -28,6 +29,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
     assert "lib/scoria.ex" in expected_required_paths
     assert "priv/repo/migrations/20260511000100_create_workflow_tables.exs" in expected_required_paths
     assert "priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs" in expected_required_paths
+    assert "docs/glossary.md" in expected_required_paths
     assert "docs/adoption_lanes.md" in expected_required_paths
     assert "docs/operator_verification.md" in expected_required_paths
     refute "test/scoria/adoption_surface_test.exs" in expected_required_paths
