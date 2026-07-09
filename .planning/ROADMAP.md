@@ -41,7 +41,7 @@ Plans:
 **Wave 1**
 
 - [x] 46-01-PLAN.md — Public verification suite/reviewer broadcast aliases, call-site migration, and early storage guard
-- [ ] 46-02-PLAN.md — Reviewer surface and LiveView alias migration
+- [x] 46-02-PLAN.md — Reviewer surface and LiveView alias migration
 - [ ] 46-03-PLAN.md — Semantic cache profile and scoped-context runtime aliases
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -135,7 +135,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 46. Terminology and public vocabulary migration | v3.5 | 1/8 | In Progress|  |
+| 46. Terminology and public vocabulary migration | v3.5 | 2/8 | In Progress|  |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 0/0 | Not started | — |
 | 48. ExDoc and guide ladder restructure | v3.5 | 0/0 | Not started | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
