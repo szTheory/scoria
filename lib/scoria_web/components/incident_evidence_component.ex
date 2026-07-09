@@ -12,9 +12,9 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
       aria-labelledby="incident-evidence-title"
     >
       <header class="scoria-incident-detail__header">
-        <p class="scoria-eyebrow">Incident evidence</p>
+        <p class="scoria-eyebrow">Incident trace</p>
         <h2 id="incident-evidence-title" class="scoria-incident-detail__title">
-          Trace-first incident evidence
+          Trace-first incident review
         </h2>
         <p class="scoria-incident-detail__description">
           Start with the selected run state, then inspect the proof behind the route, budget, breaker, and relay signals.
@@ -58,8 +58,8 @@ defmodule ScoriaWeb.IncidentEvidenceComponent do
         </.evidence_section>
 
         <.evidence_section
-          title="Incident notebook"
-          description="Operator-facing incident facts before raw transport and persistence details."
+          title="Incident evidence"
+          description="Reviewer-facing incident facts before raw transport and persistence details."
         >
           <div class="scoria-incident-evidence-stack scoria-incident-evidence-stack--compact">
             <.incident_section :for={incident <- @evidence.incidents} incident={incident} />

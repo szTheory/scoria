@@ -13,8 +13,8 @@ defmodule ScoriaWeb.RemoteInvocationEvidenceComponent do
     ~H"""
     <.notebook
       id="remote-invocation-notebook"
-      title="Remote invocation evidence"
-      eyebrow="Remote evidence notebook"
+      title="Remote invocation trace"
+      eyebrow="Remote trace notebook"
       selected_tab={@selected_tab}
       on_tab_change={@on_tab_change}
       empty={@approvals == []}
