@@ -1,36 +1,14 @@
-defmodule Scoria.Observe.OperatorBroadcastTest do
+defmodule Scoria.Observe.ReviewerBroadcastTest do
   use ExUnit.Case, async: false
 
-  alias Scoria.Observe.OperatorBroadcast
   alias Scoria.Observe.ReviewerBroadcast
 
-  test "legacy operator broadcast module delegates to reviewer broadcast" do
-    source = File.read!("lib/scoria/observe/operator_broadcast.ex")
-
-    assert source =~ "Scoria.Observe.ReviewerBroadcast"
-
-    for function <- [
-          "tenant_topic",
-          "broadcast",
-          "span_stopped",
-          "span_delta",
-          "hitl_request",
-          "approval_decided",
-          "reset_trace_seen!"
-        ] do
-      assert source =~ "defdelegate #{function}"
-    end
-
-    assert OperatorBroadcast.tenant_topic("tenant-a") ==
-             ReviewerBroadcast.tenant_topic("tenant-a")
-  end
-
   setup do
-    OperatorBroadcast.reset_trace_seen!()
+    ReviewerBroadcast.reset_trace_seen!()
     tenant_id = "tenant-#{System.unique_integer([:positive])}"
-    Phoenix.PubSub.subscribe(Scoria.PubSub, OperatorBroadcast.tenant_topic(tenant_id))
+    Phoenix.PubSub.subscribe(Scoria.PubSub, ReviewerBroadcast.tenant_topic(tenant_id))
 
-    on_exit(fn -> OperatorBroadcast.reset_trace_seen!() end)
+    on_exit(fn -> ReviewerBroadcast.reset_trace_seen!() end)
 
     %{tenant_id: tenant_id}
   end
@@ -53,7 +31,7 @@ defmodule Scoria.Observe.OperatorBroadcastTest do
     trace_id = Ecto.UUID.generate()
     metadata = base_metadata(tenant_id, trace_id)
 
-    assert :ok = OperatorBroadcast.span_stopped(metadata)
+    assert :ok = ReviewerBroadcast.span_stopped(metadata)
 
     assert_receive {:trace_opened, header}
     assert header.id == trace_id
@@ -67,11 +45,11 @@ defmodule Scoria.Observe.OperatorBroadcastTest do
   test "second span for same trace emits only trace_span", %{tenant_id: tenant_id} do
     trace_id = Ecto.UUID.generate()
 
-    assert :ok = OperatorBroadcast.span_stopped(base_metadata(tenant_id, trace_id, name: "first"))
+    assert :ok = ReviewerBroadcast.span_stopped(base_metadata(tenant_id, trace_id, name: "first"))
     drain_messages()
 
     assert :ok =
-             OperatorBroadcast.span_stopped(base_metadata(tenant_id, trace_id, name: "second"))
+             ReviewerBroadcast.span_stopped(base_metadata(tenant_id, trace_id, name: "second"))
 
     refute_receive {:trace_opened, _}, 10
     assert_receive {:trace_span, ^trace_id, span_view}
@@ -82,7 +60,7 @@ defmodule Scoria.Observe.OperatorBroadcastTest do
     trace_id = Ecto.UUID.generate()
 
     assert :dropped =
-             OperatorBroadcast.span_stopped(%{
+             ReviewerBroadcast.span_stopped(%{
                trace_id: trace_id,
                name: "orphan_span"
              })
@@ -95,7 +73,7 @@ defmodule Scoria.Observe.OperatorBroadcastTest do
     span_id = Ecto.UUID.generate()
 
     assert :ok =
-             OperatorBroadcast.span_delta(%{
+             ReviewerBroadcast.span_delta(%{
                tenant_id: tenant_id,
                trace_id: trace_id,
                span_id: span_id,
@@ -108,7 +86,7 @@ defmodule Scoria.Observe.OperatorBroadcastTest do
 
   test "span_delta drops when tenant_id missing" do
     assert :dropped =
-             OperatorBroadcast.span_delta(%{
+             ReviewerBroadcast.span_delta(%{
                trace_id: Ecto.UUID.generate(),
                span_id: Ecto.UUID.generate(),
                chunk: "token"
@@ -120,7 +98,7 @@ defmodule Scoria.Observe.OperatorBroadcastTest do
   test "hitl_request broadcasts projection to tenant topic", %{tenant_id: tenant_id} do
     projection = %{id: Ecto.UUID.generate(), tool_name: "publish"}
 
-    assert :ok = OperatorBroadcast.hitl_request(tenant_id, projection)
+    assert :ok = ReviewerBroadcast.hitl_request(tenant_id, projection)
 
     assert_receive {:hitl_request, ^projection}
   end
@@ -128,19 +106,29 @@ defmodule Scoria.Observe.OperatorBroadcastTest do
   test "approval_decided broadcasts to tenant topic", %{tenant_id: tenant_id} do
     approval_id = Ecto.UUID.generate()
 
-    assert :ok = OperatorBroadcast.approval_decided(tenant_id, approval_id, "approved")
+    assert :ok = ReviewerBroadcast.approval_decided(tenant_id, approval_id, "approved")
 
     assert_receive {:approval_decided, ^approval_id, "approved"}
   end
 
   test "hitl_request drops when tenant_id missing" do
-    assert :dropped = OperatorBroadcast.hitl_request(nil, %{id: "x"})
+    assert :dropped = ReviewerBroadcast.hitl_request(nil, %{id: "x"})
     refute_receive _, 10
   end
 
   test "approval_decided drops when tenant_id missing" do
-    assert :dropped = OperatorBroadcast.approval_decided(nil, Ecto.UUID.generate(), "approved")
+    assert :dropped = ReviewerBroadcast.approval_decided(nil, Ecto.UUID.generate(), "approved")
     refute_receive _, 10
+  end
+
+  test "runtime call sites use reviewer broadcast directly" do
+    workflows_source = File.read!("lib/scoria/workflows.ex")
+    telemetry_source = File.read!("lib/scoria/observe/telemetry.ex")
+
+    assert workflows_source =~ "ReviewerBroadcast"
+    assert telemetry_source =~ "ReviewerBroadcast"
+    refute workflows_source =~ "OperatorBroadcast"
+    refute telemetry_source =~ "OperatorBroadcast"
   end
 
   defp drain_messages do
