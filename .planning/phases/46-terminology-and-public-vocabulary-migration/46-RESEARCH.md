@@ -573,22 +573,19 @@ Project facts were checked against repository files, local probes, or the local 
 |---|-------|---------|---------------|
 | A1 | The research should be treated as fresh until 2026-08-08 unless Phase 46 code changes begin earlier. [ASSUMED] | Metadata | Planner may rely on stale inventory if repository vocabulary changes before planning starts. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should legacy wrapper modules be hidden or documented with a short legacy note?**  
    What we know: D-01 allows `@moduledoc false` or explicit legacy docs on wrappers [VERIFIED: .planning/phases/46-terminology-and-public-vocabulary-migration/46-CONTEXT.md].  
-   What is unclear: The exact ExDoc discoverability balance is left to implementation discretion [VERIFIED: .planning/phases/46-terminology-and-public-vocabulary-migration/46-CONTEXT.md].  
-   Recommendation: Default wrappers to `@moduledoc false` when final modules are fully documented; use a short legacy note only where hiding the wrapper would make upgrade discovery harder [CITED: https://elixir.hexdocs.pm/1.18.1/Module.html].
+   RESOLVED: Default wrappers to `@moduledoc false` when final modules are fully documented; use a short legacy note only where hiding the wrapper would make upgrade discovery harder [CITED: https://elixir.hexdocs.pm/1.18.1/Module.html]. Revised plans keep final modules discoverable and allow explicit legacy notes only where compatibility docs need a breadcrumb.
 
 2. **Should `docs/semantic_fast_path.md` be renamed now or only retitled internally?**  
    What we know: Public vocabulary must say semantic cache, and Phase 48 owns folder/guide ladder reshuffles [VERIFIED: .planning/phases/46-terminology-and-public-vocabulary-migration/46-CONTEXT.md].  
-   What is unclear: Whether a filename rename creates link churn that belongs in Phase 46 or Phase 48 [VERIFIED: codebase grep].  
-   Recommendation: Prefer content/title/link updates in Phase 46 and only rename the file if all inbound links and package tests are updated in the same task [VERIFIED: mix.exs] [VERIFIED: codebase grep].
+   RESOLVED: Do not rename `docs/semantic_fast_path.md` in Phase 46. Revise its title, headings, and examples to semantic cache vocabulary while preserving the current file path until a later docs IA phase explicitly updates redirects, links, package surfaces, and ExDoc grouping together [VERIFIED: mix.exs] [VERIFIED: codebase grep].
 
 3. **Should historical changelog sections be rewritten?**  
    What we know: D-04 requires a new Unreleased note and Phase 50 owns final release-section placement [VERIFIED: .planning/phases/46-terminology-and-public-vocabulary-migration/46-CONTEXT.md].  
-   What is unclear: Whether older historical entries should retain old names as history [VERIFIED: CHANGELOG.md].  
-   Recommendation: Do not rewrite historical entries unless they are current upgrade guidance; put current terminology in the new Unreleased note and README upgrade note [CITED: https://keepachangelog.com/en/1.1.0/].
+   RESOLVED: Historical changelog sections retain the terminology that was accurate at the time. The new top `[Unreleased]` section explains the final vocabulary, compatibility aliases, unchanged evidence storage, and no-migration posture for current main-branch changes [CITED: https://keepachangelog.com/en/1.1.0/].
 
 ## Environment Availability
 
