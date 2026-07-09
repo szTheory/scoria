@@ -3,7 +3,8 @@ defmodule Scoria.Runtime.Params do
   Normalizes public runtime inputs into explicit start and resume contracts.
   """
 
-  alias Scoria.{Identity, Runtime.Defaults, SemanticLane}
+  alias Scoria.{Identity, Runtime.Defaults}
+  alias Scoria.SemanticCache.Profile, as: SemanticProfile
 
   @dispatch_keys ~w(dispatch handlers timeout budget_context breaker_context)a
   def start(identity, opts \\ []) do
@@ -50,7 +51,7 @@ defmodule Scoria.Runtime.Params do
          {:ok, handoff_input} <-
            required_map(opts, runtime, :handoff_input, :invalid_handoff_input),
          {:ok, projected_context} <-
-           required_map(opts, runtime, :projected_context, :invalid_projected_context),
+           bounded_context(opts, runtime),
          :ok <- validate_projected_context(projected_context) do
       workflow_attrs = %{
         root_role_id: root_role_id,
@@ -216,10 +217,26 @@ defmodule Scoria.Runtime.Params do
         {:ok, nil}
 
       semantic_cache ->
-        semantic_cache
-        |> normalize_map()
-        |> canonical_value(:lane)
-        |> SemanticLane.describe()
+        semantic_cache_config =
+          semantic_cache
+          |> normalize_map()
+
+        semantic_cache_config
+        |> semantic_cache_profile()
+        |> SemanticProfile.describe()
+    end
+  end
+
+  defp semantic_cache_profile(semantic_cache_config) do
+    canonical_value(semantic_cache_config, :profile) ||
+      canonical_value(semantic_cache_config, :lane)
+  end
+
+  defp bounded_context(opts, runtime) do
+    case value(opts, runtime, :scoped_context) do
+      value when is_map(value) -> {:ok, Map.new(value)}
+      nil -> required_map(opts, runtime, :projected_context, :invalid_projected_context)
+      _ -> {:error, :invalid_projected_context}
     end
   end
 

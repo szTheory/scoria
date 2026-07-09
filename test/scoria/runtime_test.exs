@@ -97,7 +97,11 @@ defmodule Scoria.RuntimeTest do
   test "get_run_detail returns an empty delegated collection for non-handoff runs" do
     {:ok, summary} =
       Runtime.start_run(
-        %{actor_id: "actor-empty-delegated", tenant_id: "tenant-empty-delegated", session_id: "session-empty-delegated"},
+        %{
+          actor_id: "actor-empty-delegated",
+          tenant_id: "tenant-empty-delegated",
+          session_id: "session-empty-delegated"
+        },
         root_role_id: "executor"
       )
 
