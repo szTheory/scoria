@@ -11,6 +11,30 @@ Published Hex releases use `[0.x.y]` version headings in this file. Internal rep
 milestone labels (such as `v2.x`) track delivery tranches — they are **not** a second
 install axis and do not map to Hex versions.
 
+## [Unreleased]
+
+### Changed
+
+#### Pre-1.0 terminology migration
+
+These notes describe unreleased main-branch changes. Hex release remains `0.1.2` until Phase 50 cuts the next release.
+
+Historical sections below may retain old terminology as history. Current adopter-facing
+docs use final vocabulary.
+
+| Previous wording | Final wording | Status |
+|------------------|---------------|--------|
+| operator persona | reviewer | New docs and dashboard copy use reviewer; `ScoriaWeb.OperatorSurface` remains a legacy alias for `ScoriaWeb.ReviewerSurface`. |
+| surface-sense evidence | trace | Run inspection surfaces use trace; RAG/citation evidence remains evidence. |
+| verification lane | verification suite | `Scoria.VerificationLanes` remains a legacy alias for `Scoria.VerificationSuites`. |
+| projected context | scoped context | `projected_context:` remains accepted as a legacy alias for `scoped_context:`. |
+| semantic fast path | semantic cache | `Scoria.SemanticLane`, `lane:`, and `lane_key` remain accepted as legacy aliases for `Scoria.SemanticCache.Profile`, `profile:`, and `cache_key:`. |
+| optional knowledge | optional knowledge base | Docs now name the optional retrieval capability as a knowledge base. |
+
+RAG/citation evidence and `evidence_refs` stay unchanged. There is no database migration
+for this terminology migration, and legacy aliases remain accepted during the 0.1.x
+compatibility window.
+
 ## [0.1.2](https://github.com/szTheory/scoria/compare/v0.1.1...v0.1.2) (2026-06-19)
 
 
@@ -143,7 +167,7 @@ install axis and do not map to Hex versions.
 * **dev:** use the standard DB pool in dev (off the test Sandbox) ([3249c6e](https://github.com/szTheory/scoria/commit/3249c6e1b07f84a06765b917c47b1f8c36349f31))
 * **ui:** drawer/modal scrim no longer intercepts panel clicks ([b77970b](https://github.com/szTheory/scoria/commit/b77970b64fcd4aa40a1a24ce8de27ed54a5d6ed8))
 
-## [Unreleased]
+## Historical main-branch notes
 
 ### Added
 
@@ -329,7 +353,7 @@ install axis and do not map to Hex versions.
 * **phase-39:** close post-review replay promotion gaps ([118b9f5](https://github.com/szTheory/scoria/commit/118b9f57cf09775ed81157bc3815c4ff18c84271))
 * **ui:** add assign_async for trace metadata lazy loading ([52f0d6f](https://github.com/szTheory/scoria/commit/52f0d6ff562b6c558cf05d4728cc48baa5b8ef5b))
 
-## [Unreleased]
+## Historical main-branch notes before 0.1.0
 
 ## [0.1.0]
 

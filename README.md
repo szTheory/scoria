@@ -84,6 +84,20 @@ That installs the default Phoenix capability by:
 
 The `/scoria` dashboard ships its own precompiled assets (brand-token CSS, a LiveSocket client bundle, and self-hosted fonts), so it renders fully styled and interactive with **no host Tailwind, npm, or asset-pipeline work required**. The installer does not touch your asset config regardless of which pipeline your host app uses.
 
+### Pre-1.0 terminology migration
+
+These docs now use unreleased main-branch terminology that will ship in the next release.
+Hex release remains `0.1.2` until Phase 50 cuts that release.
+
+The current names are reviewer, trace, verification suite, scoped context, semantic cache,
+and optional knowledge base; legacy aliases remain accepted during the 0.1.x compatibility
+window, including `ScoriaWeb.OperatorSurface`, `Scoria.Observe.OperatorBroadcast`,
+`Scoria.VerificationLanes`, `Scoria.SemanticLane`, `lane:`, `lane_key`, and
+`projected_context:`.
+
+RAG/citation evidence and `evidence_refs` stay unchanged, and there is no database migration
+for this terminology migration.
+
 ### Upgrading or re-running install
 
 When upgrading Scoria or re-running install on an existing host app:
