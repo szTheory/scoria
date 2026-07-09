@@ -57,7 +57,7 @@ defmodule Scoria.VerificationLanesTest do
 
   test "default and runtime-to-handoff lanes share the same optional setup exclusions" do
     expected_sentence =
-      "This lane does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup."
+      "This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup."
 
     assert VerificationLanes.boundary_sentence(:adoption) == expected_sentence
     assert VerificationLanes.boundary_sentence(:runtime_to_handoff) == expected_sentence
@@ -72,7 +72,10 @@ defmodule Scoria.VerificationLanesTest do
 
   test "support copilot gallery lane stays advisory outside closeout order" do
     refute :support_copilot_gallery in VerificationLanes.closeout_order()
-    assert VerificationLanes.command(:support_copilot_gallery) == "mix scoria.test.support_copilot"
+
+    assert VerificationLanes.command(:support_copilot_gallery) ==
+             "mix scoria.test.support_copilot"
+
     assert VerificationLanes.prerequisites(:support_copilot_gallery) == ["mix test.adoption"]
   end
 

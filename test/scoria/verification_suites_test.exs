@@ -60,7 +60,10 @@ defmodule Scoria.VerificationSuitesTest do
 
   test "support copilot gallery suite stays advisory outside closeout order" do
     refute :support_copilot_gallery in VerificationSuites.closeout_order()
-    assert VerificationSuites.command(:support_copilot_gallery) == "mix scoria.test.support_copilot"
+
+    assert VerificationSuites.command(:support_copilot_gallery) ==
+             "mix scoria.test.support_copilot"
+
     assert VerificationSuites.prerequisites(:support_copilot_gallery) == ["mix test.adoption"]
   end
 end
