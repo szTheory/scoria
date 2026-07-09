@@ -1,7 +1,7 @@
 defmodule Scoria.Observe.Telemetry do
   alias Scoria.Observe.Buffer
-  alias Scoria.Observe.OperatorBroadcast
   alias Scoria.Observe.Redactor
+  alias Scoria.Observe.ReviewerBroadcast
 
   @events [
     [:scoria, :observe, :span, :stop],
@@ -34,14 +34,14 @@ defmodule Scoria.Observe.Telemetry do
       |> Redactor.redact()
       |> scrub_delta_chunk()
 
-    OperatorBroadcast.span_delta(redacted)
+    ReviewerBroadcast.span_delta(redacted)
   end
 
   def handle_event([:scoria, :observe, :span, _type], _measurements, metadata, %{
         buffer_name: buffer_name
       }) do
     redacted = Redactor.redact(metadata)
-    OperatorBroadcast.span_stopped(redacted)
+    ReviewerBroadcast.span_stopped(redacted)
     Buffer.cast_span(buffer_span(redacted), buffer_name)
   end
 
