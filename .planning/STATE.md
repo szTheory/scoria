@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness
 status: planning
-last_updated: "2026-07-09T19:55:00.000Z"
-last_activity: 2026-07-09
-last_activity_desc: Roadmap created for milestone v3.5
+stopped_at: Phase 46 context gathered
+last_updated: "2026-07-09T20:25:20.171Z"
+last_activity: 2026-07-09 — Roadmap created for milestone v3.5 (phases 46-50)
 progress:
   total_phases: 5
   completed_phases: 0
@@ -231,9 +231,9 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-09T19:07:36Z
-Stopped at: v3.4 archived
-Resume file: .planning/milestones/v3.4-MILESTONE-AUDIT.md
+Last session: 2026-07-09T20:25:20.167Z
+Stopped at: Phase 46 context gathered
+Resume file: .planning/phases/46-terminology-and-public-vocabulary-migration/46-CONTEXT.md
 
 ## Operator Next Steps
 
