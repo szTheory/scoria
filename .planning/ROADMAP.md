@@ -35,6 +35,15 @@
 
 **Requirements:** TERM-01, TERM-02, TERM-03, TERM-04
 
+**Plans:** 5 plans
+
+Plans:
+- [ ] 46-01-PLAN.md — Public verification suite and reviewer broadcast aliases
+- [ ] 46-02-PLAN.md — Reviewer surface, semantic cache profile, and scoped context aliases
+- [ ] 46-03-PLAN.md — Private run-inspection trace adapter rename and copy boundary
+- [ ] 46-04-PLAN.md — Glossary creation and package/docs exposure
+- [ ] 46-05-PLAN.md — README/guides, upgrade notes, terminology guards, and focused verification
+
 **Success Criteria:**
 1. A committed glossary maps final Scoria terms to industry equivalents and defines `run`, reviewer/operator, trace, evidence, capability, verification suite, scoped context, semantic cache, knowledge base, grounding, and bounded handoff.
 2. Adopter-facing docs and user-visible copy apply the final terminology strategy, including reviewer for the persona and trace for run-inspection surface sense.
