@@ -2,6 +2,18 @@ defmodule Scoria.VerificationLanesTest do
   use ExUnit.Case, async: true
 
   alias Scoria.VerificationLanes
+  alias Scoria.VerificationSuites
+
+  test "legacy lane module delegates to verification suites" do
+    source = File.read!("lib/scoria/verification_lanes.ex")
+
+    assert source =~ "Scoria.VerificationSuites"
+    refute source =~ "@lanes"
+
+    assert VerificationLanes.all() == VerificationSuites.all()
+    assert VerificationLanes.command(:adoption) == VerificationSuites.command(:adoption)
+    assert VerificationLanes.closeout_chain() == VerificationSuites.closeout_chain()
+  end
 
   test "lane contract defines command, env, prerequisites, and exclusions for every lane" do
     lane_ids = VerificationLanes.ids()
