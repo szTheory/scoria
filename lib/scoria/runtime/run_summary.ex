@@ -1,6 +1,20 @@
 defmodule Scoria.Runtime.RunSummary do
   @moduledoc """
-  Stable public summary DTO for lifecycle, polling, and resume flows.
+  `Scoria.Runtime.RunSummary` is the compact public DTO returned by run
+  lifecycle and polling APIs.
+
+  Use this struct when a host app needs to store or display the current state of
+  one durable Scoria run without loading every step, event, approval, or handoff
+  record. It is returned by `Scoria.start_run/2`, `Scoria.resume_run/2`,
+  `Scoria.get_run/1`, and `Scoria.list_runs_for_session/1`.
+
+  `run_id` identifies one exact Scoria execution. `session_id` remains the
+  host-owned continuity key that can group multiple runs in the same
+  conversation or workflow thread.
+
+  For the first-run lifecycle, see `guides/golden-path.md`. For the host-owned
+  boundary around identity, policy, and business records, see
+  `guides/ownership-boundary.md`.
   """
 
   alias Scoria.Workflows.Run

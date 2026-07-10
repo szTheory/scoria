@@ -22,3 +22,25 @@ Out-of-scope failures observed:
 - `guides/scoria-vs-external-llm-ops.md`
 - `guides/maintainers.md`
 - `test/scoria/terminology_contract_test.exs`
+
+## 48-08 broad adoption-surface verification
+
+During 48-08 closeout, the plan-level command
+`MIX_ENV=test mix test test/scoria/adoption_surface_test.exs test/scoria_test.exs test/scoria/identity_doctest_test.exs`
+still failed outside the 48-08 file set.
+
+Out-of-scope failures observed:
+
+- Later-plan D-17 public moduledoc contracts still fail for modules outside the 48-08 file set, such as `ScoriaWeb.DashboardScope` / `Scoria.Connectors.Auth` guide-link coverage depending on map iteration order.
+- The previously logged Start Here / capability guide fragment failures remain for `guides/golden-path.md`, `guides/jtbd-and-user-flows.md`, and `guides/capabilities/bounded-handoffs.md`.
+
+48-08-specific checks passed for:
+
+- `lib/scoria.ex`
+- `lib/scoria/identity.ex`
+- `lib/scoria/runtime.ex`
+- `lib/scoria/runtime/run_summary.ex`
+- `lib/scoria/runtime/run_detail.ex`
+- `lib/scoria/prompt_policy.ex`
+- `test/scoria_test.exs`
+- `test/scoria/identity_doctest_test.exs`

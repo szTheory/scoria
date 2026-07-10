@@ -1,6 +1,20 @@
 defmodule Scoria.Runtime.RunDetail do
   @moduledoc """
-  Curated public detail DTO for advanced run inspection.
+  `Scoria.Runtime.RunDetail` is the expanded public DTO for inspecting one
+  durable Scoria run.
+
+  Use this struct when a reviewer or host workflow needs curated readback of
+  steps, checkpoints, events, approvals, bounded handoffs, semantic cache
+  evidence, replay comparison, and provenance. It is returned by
+  `Scoria.get_run_detail/1` and `Scoria.get_run_detail!/1`.
+
+  `summary.run_id` is the exact execution being inspected. If the host app needs
+  to group related turns, use `summary.session_id`; do not use `session_id` as a
+  resume handle.
+
+  For the inspect/resume flow, see `guides/golden-path.md`. For reviewer proof
+  and troubleshooting paths, see `guides/reviewer-verification.md` and
+  `guides/troubleshooting.md`.
   """
 
   alias Scoria.Observe.Approval

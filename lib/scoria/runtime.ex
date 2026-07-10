@@ -1,6 +1,7 @@
 defmodule Scoria.Runtime do
   @moduledoc """
-  Advanced runtime lifecycle and inspection APIs behind the `Scoria` facade.
+  `Scoria.Runtime` exposes the durable run lifecycle behind the top-level
+  `Scoria` facade.
 
   Most host apps should call `Scoria` directly. This module exists for the
   deeper lifecycle layer once you already have canonical identity and want the
@@ -9,6 +10,15 @@ defmodule Scoria.Runtime do
   The same identity contract still applies here: `session_id` groups continuity
   across related turns, while `run_id` identifies one exact durable run for
   inspection or resume.
+
+  Use this module when building framework adapters, tests, or advanced runtime
+  integrations that need direct access to start/resume/read APIs. The default
+  runtime path does not require semantic cache, optional knowledge base,
+  connector, or MCP setup.
+
+  For the copyable first-run sequence, see `guides/golden-path.md`. For the
+  default runtime capability and optional expansion points, see
+  `guides/capabilities/default-runtime.md`.
   """
 
   import Ecto.Query, warn: false

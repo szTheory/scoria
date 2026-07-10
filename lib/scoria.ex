@@ -1,8 +1,9 @@
 defmodule Scoria do
   @moduledoc """
-  Public facade for Phoenix-hosted Scoria runtime integration.
+  Scoria is the public facade for starting, inspecting, and resuming AI work
+  inside a Phoenix app.
 
-  Start here when wiring Scoria into an application. The happy path is:
+  Start here when wiring Scoria into an application. The normal path is:
 
   1. Normalize request or session context with `identity/1`
   2. Start a durable run with `start_run/2`
@@ -13,8 +14,15 @@ defmodule Scoria do
   `run_id` is Scoria's exact durable handle for one run. Reuse a `session_id`
   across turns, but resume only by `run_id`.
 
-  For edge normalization details, see `Scoria.Identity`. For deeper lifecycle
-  APIs behind this facade, see `Scoria.Runtime`.
+  Use this facade from controllers, LiveViews, jobs, or service modules when
+  the host app already owns identity, authorization, policy values, prompts,
+  and business meaning. Scoria records the durable execution trace and returns
+  public `Scoria.Runtime.RunSummary` / `Scoria.Runtime.RunDetail` data.
+
+  For the first-run walkthrough, see `guides/getting-started.md` and
+  `guides/golden-path.md`. For the ownership split, see `Scoria.Identity` and
+  `guides/ownership-boundary.md`. For lower-level lifecycle APIs behind this
+  facade, see `Scoria.Runtime`.
 
   ## Examples
 

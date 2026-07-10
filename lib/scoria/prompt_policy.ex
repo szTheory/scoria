@@ -1,14 +1,22 @@
 defmodule Scoria.PromptPolicy do
   @moduledoc """
-  Canonical public prompt-policy noun for runtime defaults and governance.
+  `Scoria.PromptPolicy` normalizes host-owned prompt policy values for runtime
+  defaults and governance.
 
   Reach for this after the core `Scoria` runtime path is working. Prompt policy
-  is where a host app projects provider/model defaults, grounding
-  requirements, tool allowance, and approval expectations into a run's runtime
-  metadata.
+  is where a host app projects provider/model defaults, grounding requirements,
+  tool allowance, and approval expectations into a run's runtime metadata.
 
-  In other words: start with identity and run lifecycle first, then use prompt
-  policy to make governance and default composition explicit.
+  Scoria can record and enforce the resulting governance posture, but the host
+  app owns policy values, prompt selection, risk interpretation, tenant scope,
+  and the business decision to allow or block work.
+
+  Use this module for normalized policy data passed into runtime options; do not
+  treat it as host authorization or a product policy admin system.
+
+  For the host-owned policy boundary, see `guides/ownership-boundary.md`. For
+  where prompt policy appears in default runtime wiring, see
+  `guides/capabilities/default-runtime.md`.
   """
 
   @enforce_keys [:metadata]

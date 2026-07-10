@@ -1,6 +1,7 @@
 defmodule Scoria.Identity do
   @moduledoc """
-  Canonical runtime identity envelope and Phoenix-edge adapters.
+  `Scoria.Identity` is the host-owned identity envelope passed into Scoria's
+  runtime boundary.
 
   Use this module where request assigns, session values, or mount params cross
   into Scoria's runtime boundary. It normalizes those host-owned inputs into the
@@ -9,10 +10,16 @@ defmodule Scoria.Identity do
   `actor_id` and `tenant_id` identify who is acting and for whom. `session_id`
   is the host-owned continuity key that groups related turns. It is not a
   substitute for Scoria's durable `run_id`, which identifies one exact run for
-  resume and operator evidence.
+  resume and reviewer evidence.
 
   `from_conn_assigns/1`, `from_session/1`, and `from_mount/1` exist so Phoenix
   apps can normalize edge state before they call the public runtime facade.
+  Scoria does not authenticate actors or choose tenant membership here; the host
+  app owns those decisions before it calls this module.
+
+  For first-run identity wiring, see `guides/getting-started.md`. For the
+  broader host-owned scope and policy boundary, see
+  `guides/ownership-boundary.md`.
 
   ## Examples
 
