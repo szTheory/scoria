@@ -113,7 +113,7 @@ defmodule Scoria.HexConsumerContract do
   def hex_dep_snippet, do: "{:scoria, \"~> 0.1\", hex: :scoria}"
 
   @doc """
-  Adopter doc surfaces for executable drift guards — README and adoption lanes only.
+  Adopter doc surfaces for executable drift guards — README and canonical guides only.
 
   Maintainer gate-map topology lives in `ci_policy_contract_test`, not here (D-96, D-98).
   """
@@ -126,13 +126,25 @@ defmodule Scoria.HexConsumerContract do
         "mix hex.build --unpack",
         "{:scoria, path: unpack_root}",
         "Scoria.HexConsumerContract",
-        "docs/operator_verification.md"
+        "guides/reviewer-verification.md"
       ],
-      "docs/adoption_lanes.md" => [
+      "guides/golden-path.md" => [
         adoption_cmd,
         "mix hex.build --unpack",
         "packaged tarball",
-        "operator_verification.md"
+        "guides/reviewer-verification.md"
+      ],
+      "guides/jtbd-and-user-flows.md" => [
+        "default runtime capability",
+        "bounded handoff capability",
+        "semantic cache capability",
+        "optional knowledge base capability"
+      ],
+      "guides/reviewer-verification.md" => [
+        adoption_cmd,
+        "mix scoria.install",
+        "mix ecto.migrate",
+        "canonical default runtime verification suite"
       ]
     }
   end

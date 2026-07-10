@@ -34,7 +34,12 @@ defmodule Scoria.AdopterDocContract do
     "Current release: `0.1.1`"
   ]
 
-  @comparison_guide_path "docs/scoria_vs_external_llm_ops.md"
+  @golden_path_guide_path "guides/golden-path.md"
+  @jtbd_and_user_flows_guide_path "guides/jtbd-and-user-flows.md"
+  @ownership_boundary_guide_path "guides/ownership-boundary.md"
+  @reviewer_verification_guide_path "guides/reviewer-verification.md"
+  @comparison_guide_path "guides/scoria-vs-external-llm-ops.md"
+  @glossary_guide_path "guides/reference/glossary.md"
   @comparison_guide_title "Scoria vs external LLM-ops platforms"
 
   @comparison_required_peer_names [
@@ -144,9 +149,34 @@ defmodule Scoria.AdopterDocContract do
   def readme_stale_version_refutes, do: @readme_stale_version_refutes
 
   @doc """
+  Stable DOCS-03 golden path guide path.
+  """
+  def golden_path_guide_path, do: @golden_path_guide_path
+
+  @doc """
+  Stable DOCS-03 jobs-to-be-done and user flows guide path.
+  """
+  def jtbd_and_user_flows_guide_path, do: @jtbd_and_user_flows_guide_path
+
+  @doc """
+  Stable DOCS-03 ownership boundary guide path.
+  """
+  def ownership_boundary_guide_path, do: @ownership_boundary_guide_path
+
+  @doc """
+  Stable DOCS-03 reviewer verification guide path.
+  """
+  def reviewer_verification_guide_path, do: @reviewer_verification_guide_path
+
+  @doc """
   Stable POS-04 external LLM-ops comparison guide path.
   """
   def comparison_guide_path, do: @comparison_guide_path
+
+  @doc """
+  Stable DOCS-03 glossary guide path.
+  """
+  def glossary_guide_path, do: @glossary_guide_path
 
   @doc """
   Exact title for the stable POS-04 comparison guide.

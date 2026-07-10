@@ -16,15 +16,17 @@ defmodule Scoria.AdoptionSurfaceTest do
   end
 
   @readme "README.md"
-  @lane_guide "docs/adoption_lanes.md"
-  @phoenix_example "docs/phoenix_runtime_example.md"
-  @handoff_guide "docs/bounded_handoffs.md"
-  @gap_ledger "docs/bounded_handoffs.md"
-  @semantic_guide "docs/semantic_fast_path.md"
-  @operator_guide "docs/operator_verification.md"
+  @lane_guide AdopterDocContract.golden_path_guide_path()
+  @jtbd_guide AdopterDocContract.jtbd_and_user_flows_guide_path()
+  @ownership_guide AdopterDocContract.ownership_boundary_guide_path()
+  @phoenix_example "guides/capabilities/default-runtime.md"
+  @handoff_guide "guides/capabilities/bounded-handoffs.md"
+  @gap_ledger "guides/capabilities/bounded-handoffs.md"
+  @semantic_guide "guides/capabilities/semantic-cache.md"
+  @operator_guide AdopterDocContract.reviewer_verification_guide_path()
   @comparison_guide AdopterDocContract.comparison_guide_path()
-  @maintainer_guide "docs/MAINTAINERS.md"
-  @glossary "docs/glossary.md"
+  @maintainer_guide "guides/maintainers.md"
+  @glossary AdopterDocContract.glossary_guide_path()
   @scoria_doctest "test/scoria_test.exs"
   @identity_doctest "test/scoria/identity_doctest_test.exs"
   @release_preview_command VerificationSuites.command(:release_preview)
@@ -69,9 +71,16 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "suite-wide timeout changes"
     assert content =~ "broader repo-health context"
     assert content =~ "Optional knowledge base"
-    assert content =~ "docs/adoption_lanes.md"
-    assert content =~ "docs/semantic_fast_path.md"
-    assert content =~ "docs/glossary.md"
+    assert content =~ @lane_guide
+    assert content =~ @jtbd_guide
+    assert content =~ @ownership_guide
+    assert content =~ @phoenix_example
+    assert content =~ @handoff_guide
+    assert content =~ @semantic_guide
+    assert content =~ @operator_guide
+    assert content =~ "guides/capabilities/connectors-and-mcp.md"
+    assert content =~ "guides/capabilities/support-copilot-gallery.md"
+    assert content =~ @glossary
     refute content =~ "mix scoria.test.knowledge"
     refute content =~ "Scoria is shipped through `v1.9 Crucible`"
     assert File.read!(@scoria_doctest) =~ "doctest Scoria"
@@ -141,7 +150,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "## Where external platforms may be stronger"
     assert content =~ "## Peer deployment posture and sources"
     assert content =~ "## Not current Scoria claims"
-    assert content =~ "docs/glossary.md"
+    assert content =~ @glossary
 
     for peer_name <- AdopterDocContract.comparison_required_peer_names() do
       assert content =~ peer_name,
@@ -462,7 +471,7 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert operator_guide =~ "Check vs apply drift detection"
     assert operator_guide =~ "Live host surfaces only"
 
-    assert lane_guide =~ "operator_verification.md"
+    assert lane_guide =~ @operator_guide
     assert lane_guide =~ "Check vs apply"
     assert lane_guide =~ "--check"
   end

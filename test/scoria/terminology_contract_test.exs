@@ -9,14 +9,21 @@ defmodule Scoria.TerminologyContractTest do
   @scoria_facade "lib/scoria.ex"
   @stable_adopter_docs [
     "README.md",
-    "docs/adoption_lanes.md",
-    "docs/scoria_vs_external_llm_ops.md",
-    "docs/bounded_handoffs.md",
-    "docs/phoenix_runtime_example.md",
-    "docs/semantic_fast_path.md",
-    "docs/operator_verification.md",
-    "docs/connector_adoption.md",
-    "docs/support_copilot_gallery.md"
+    "guides/getting-started.md",
+    "guides/golden-path.md",
+    "guides/jtbd-and-user-flows.md",
+    "guides/ownership-boundary.md",
+    "guides/capabilities/default-runtime.md",
+    "guides/capabilities/bounded-handoffs.md",
+    "guides/capabilities/semantic-cache.md",
+    "guides/capabilities/connectors-and-mcp.md",
+    "guides/capabilities/support-copilot-gallery.md",
+    "guides/reviewer-verification.md",
+    "guides/troubleshooting.md",
+    "guides/scoria-vs-external-llm-ops.md",
+    "guides/cheatsheet.cheatmd",
+    "guides/reference/glossary.md",
+    "guides/maintainers.md"
   ]
   @preferred_public_examples [
     "ScoriaWeb.ReviewerSurface",
