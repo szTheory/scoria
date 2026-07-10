@@ -2,15 +2,17 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
+current_phase: 48
+current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-09-PLAN.md
-last_updated: "2026-07-10T20:03:16.463Z"
+stopped_at: Completed 48-11-PLAN.md
+last_updated: "2026-07-10T20:11:38.969Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 19
+  completed_plans: 20
   percent: 40
 ---
 
@@ -27,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 9 of 15
+Plan: 10 of 15
 Status: Ready to execute
 Last activity: 2026-07-10
 
@@ -195,6 +197,8 @@ Recent decisions affecting current work:
 - [Phase 48-09]: Kept capability/integration public moduledoc work documentation-only; no runtime behavior, schema, package, guide-body, or ExDoc config changes. — Plan 48-09 is a public docs polish task and the threat model accepts no dependency or runtime changes.
 - [Phase 48-09]: Used canonical guide paths directly in capability moduledocs instead of old docs/*.md compatibility paths. — Phase 48 guide ladder decisions make guides/ the canonical public surface while docs/*.md remains compatibility-only.
 - [Phase 48-09]: Treated broad adoption-surface verification as partial because remaining guide/DashboardScope failures are known later-plan items outside the 48-09 file set. — Scope boundary requires logging out-of-scope failures instead of widening this task into guide or dashboard module files.
+- [Phase 48-11]: Old start, reference, runtime, and comparison source paths are compatibility bridges only; canonical public guide truth stays under guides/. — Plan 48-11 preserves copied docs/*.md links without duplicating canonical guide content or surfacing compatibility stubs as ExDoc sources.
+- [Phase 48-11]: Compatibility pages use current guide names and paths first, with old names retained only to explain copied 0.1.x source links. — This preserves Phase 48 D-04 vocabulary while keeping old public source links useful.
 
 ### Resolved And Deferred Work
 
@@ -251,6 +255,7 @@ None at milestone start.
 | Phase 48 P06 | 4m 52s | 1 tasks | 1 files |
 | Phase 48 P08 | 5m 10s | 1 tasks | 7 files |
 | Phase 48 P09 | 5 min | 1 tasks | 9 files |
+| Phase 48 P11 | 4 min | 1 tasks | 5 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -274,8 +279,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T20:03:16.356Z
-Stopped at: Completed 48-09-PLAN.md
+Last session: 2026-07-10T20:11:38.963Z
+Stopped at: Completed 48-11-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
