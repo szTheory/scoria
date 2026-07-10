@@ -19,7 +19,7 @@ Scoria is for Phoenix teams where one engineer may need to ship prompts, inspect
 - **Adjacent:** security, privacy/legal, Trust and Safety, domain experts, PMs, and support teams consume hooks, docs, exported proof, or review outputs, but are not the first dedicated Scoria surface.
 - **Not Scoria's surface:** end users of host AI flows, host product designers, finance or executive dashboards, general data warehouses, and host auth or policy administration.
 
-Use [the ownership table below](#what-scoria-owns-vs-what-your-app-owns) to check the boundary before you add a capability. For peer-tradeoff framing, see the [Scoria vs external LLM-ops platforms](docs/scoria_vs_external_llm_ops.md) guide.
+Use [the ownership table below](#what-scoria-owns-vs-what-your-app-owns) to check the boundary before you add a capability. For peer-tradeoff framing, see the [Scoria vs external LLM-ops platforms](guides/scoria-vs-external-llm-ops.md) guide.
 
 ## Who This Is For
 
@@ -59,14 +59,14 @@ Start with the default runtime capability. It proves identity-aware durable runs
 
 Docs:
 
-- [Glossary](docs/glossary.md)
-- [Capability guide](docs/adoption_lanes.md)
-- [Phoenix runtime example](docs/phoenix_runtime_example.md)
-- [Bounded handoffs](docs/bounded_handoffs.md)
-- [Semantic cache](docs/semantic_fast_path.md)
-- [Reviewer verification](docs/operator_verification.md)
-- [Remote connector adoption](docs/connector_adoption.md)
-- [Support copilot gallery](docs/support_copilot_gallery.md) — clone repo for `examples/support_copilot`
+Capability guide ladder:
+
+- **Start Here:** [Getting Started](guides/getting-started.md), [Golden Path](guides/golden-path.md), [JTBD and User Flows](guides/jtbd-and-user-flows.md), [Ownership Boundary](guides/ownership-boundary.md), [Cheatsheet](guides/cheatsheet.cheatmd)
+- **Capabilities:** [Default Runtime](guides/capabilities/default-runtime.md), [Bounded Handoffs](guides/capabilities/bounded-handoffs.md), [Semantic Cache](guides/capabilities/semantic-cache.md), [Connectors and MCP](guides/capabilities/connectors-and-mcp.md), [Support Copilot Gallery](guides/capabilities/support-copilot-gallery.md)
+- **Operate & Verify:** [Reviewer Verification](guides/reviewer-verification.md), [Troubleshooting](guides/troubleshooting.md)
+- **Compare & Decide:** [Scoria vs external LLM-ops platforms](guides/scoria-vs-external-llm-ops.md)
+- **Reference:** [Glossary](guides/reference/glossary.md)
+- **Maintainers:** [Maintainers](guides/maintainers.md)
 
 ### 0.1.x compatibility aliases
 
@@ -126,7 +126,7 @@ When upgrading Scoria or re-running install on an existing host app:
 - `manual_review` entries never receive silent overwrites.
 - Apply blocks if managed files drift between check and apply — re-run preview and check before applying.
 
-See [Installer verification modes (upgrade-safe)](docs/operator_verification.md#installer-verification-modes-upgrade-safe) for `SCORIA_CHECK_RESULT`, exit codes, and drift detection details.
+See [Installer verification modes (upgrade-safe)](guides/reviewer-verification.md#installer-verification-modes-upgrade-safe) for `SCORIA_CHECK_RESULT`, exit codes, and drift detection details.
 
 ## Quickstart
 
@@ -207,7 +207,7 @@ When the default runtime capability is already in place and one role needs to de
 delegated = detail.delegated_handoffs
 ```
 
-That records delegated lineage under one durable run and publishes one curated delegated trace projection through `Scoria.get_run_detail/1`. The same run also exposes a `Delegated Trace` section at `/scoria/workflows/:run_id`. The full guide lives in [`docs/bounded_handoffs.md`](docs/bounded_handoffs.md).
+That records delegated lineage under one durable run and publishes one curated delegated trace projection through `Scoria.get_run_detail/1`. The same run also exposes a `Delegated Trace` section at `/scoria/workflows/:run_id`. The full guide lives in [Bounded Handoffs](guides/capabilities/bounded-handoffs.md).
 
 ## Semantic Cache
 
@@ -228,7 +228,7 @@ end
   )
 ```
 
-This keeps reuse tenant-partitioned, compatibility-aware, and reviewer-visible. The semantic cache stays opt-in, falls back to the normal runtime path on `bypass`, `miss`, `reject`, or stale outcomes, and exposes trace details at `/scoria/workflows/:run_id`. The existing guide path remains [`docs/semantic_fast_path.md`](docs/semantic_fast_path.md); the content now uses semantic cache vocabulary.
+This keeps reuse tenant-partitioned, compatibility-aware, and reviewer-visible. The semantic cache stays opt-in, falls back to the normal runtime path on `bypass`, `miss`, `reject`, or stale outcomes, and exposes trace details at `/scoria/workflows/:run_id`. The full guide lives in [Semantic Cache](guides/capabilities/semantic-cache.md).
 
 ## Verification
 
@@ -252,7 +252,7 @@ Bounded runtime-to-handoff escalation verification suite:
 mix test.runtime_to_handoff
 ```
 
-This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
+This verification suite does not require semantic cache setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup. Compatibility note for 0.1.x readers: This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 Optional knowledge base:
 
@@ -271,7 +271,7 @@ Optional remote connector capability:
 mix test.connector
 ```
 
-Use this after `mix test.adoption` when validating MCP connector registration and reviewer fleet trace details. See [`docs/connector_adoption.md`](docs/connector_adoption.md).
+Use this after `mix test.adoption` when validating MCP connector registration and reviewer fleet trace details. See [Connectors and MCP](guides/capabilities/connectors-and-mcp.md).
 
 For the bounded semantic cache verification suite:
 
@@ -300,13 +300,13 @@ Run the advisory gallery verification suite from the repo root (not part of clos
 mix scoria.test.support_copilot
 ```
 
-See [`docs/support_copilot_gallery.md`](docs/support_copilot_gallery.md).
+See [Support Copilot Gallery](guides/capabilities/support-copilot-gallery.md).
 
 ## Phoenix Example
 
-For one end-to-end controller-triggered adoption story, see [`docs/phoenix_runtime_example.md`](docs/phoenix_runtime_example.md). It follows the same public facade and `session_id`/`run_id` rules proven in the runtime integration suite.
+For one end-to-end controller-triggered adoption story, see [Golden Path](guides/golden-path.md) and [Default Runtime](guides/capabilities/default-runtime.md). They follow the same public facade and `session_id`/`run_id` rules proven in the runtime integration suite.
 
-For the public delegation capability, see [`docs/bounded_handoffs.md`](docs/bounded_handoffs.md).
+For the public delegation capability, see [Bounded Handoffs](guides/capabilities/bounded-handoffs.md).
 
 ## What Scoria Adds
 
@@ -321,8 +321,8 @@ Current release: `0.1.2` on [Hex](https://hex.pm/packages/scoria). The next rele
 
 ## For maintainers
 
-- [Maintainer guide](docs/MAINTAINERS.md) — parallel CI topology (`policy → build → { test, ratchet, knowledge, connector, full-suite[×4] } → verify-summary`), release operations, warning ratchet
-- [Reviewer verification](docs/operator_verification.md) - adopter verification ladder (also used as docs extra)
+- [Maintainers](guides/maintainers.md) — parallel CI topology (`policy → build → { test, ratchet, knowledge, connector, full-suite[×4] } → verify-summary`), release operations, warning ratchet
+- [Reviewer Verification](guides/reviewer-verification.md) - adopter verification ladder (also used as docs extra)
 
 For broader repo-health context outside the canonical verification suites, run `mix test` locally or see the maintainer guide.
 
