@@ -120,7 +120,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 docs and module docs)*
 
-- [ ] 48-07-PLAN.md — ExDoc docs config, module groups, redirects, dynamic source refs, package files, and release-preview paths
+- [x] 48-07-PLAN.md — ExDoc docs config, module groups, redirects, dynamic source refs, package files, and release-preview paths
 
 **Wave 5** *(blocked on Wave 4 config)*
 
@@ -170,7 +170,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 46. Terminology and public vocabulary migration | v3.5 | 8/8 | Complete    | 2026-07-09 |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
-| 48. ExDoc and guide ladder restructure | v3.5 | 13/15 | In Progress|  |
+| 48. ExDoc and guide ladder restructure | v3.5 | 14/15 | In Progress|  |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 0/0 | Not started | — |
 

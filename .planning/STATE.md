@@ -5,14 +5,14 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-15-PLAN.md
-last_updated: "2026-07-10T22:24:11.216Z"
+stopped_at: Completed 48-07-PLAN.md
+last_updated: "2026-07-10T22:41:13.496Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 24
+  completed_plans: 25
   percent: 40
 ---
 
@@ -29,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 14 of 15
+Plan: 15 of 15
 Status: Ready to execute
 Last activity: 2026-07-10
 
@@ -210,6 +210,9 @@ Recent decisions affecting current work:
 - [Phase 48-14]: The plan did not touch dev-only docs or ExDoc/package configuration.
 - [Phase 48]: [Phase 48-15]: Old reviewer verification and maintainer docs paths are compatibility stubs only; canonical guide bodies stay under guides/.
 - [Phase 48]: [Phase 48-15]: Operator verification wording appears only as compatibility context; current public guide name is Reviewer Verification.
+- [Phase 48-07]: ExDoc source links now default to main unless SCORIA_DOCS_SOURCE_REF is set or HEAD is exactly tagged as v0.1.2.
+- [Phase 48-07]: Public ExDoc modules are filtered through a positive allowlist matching the Phase 48 public reference surface and compatibility aliases.
+- [Phase 48-07]: Old docs/*.md paths remain packaged compatibility stubs but are excluded from ExDoc extras.
 
 ### Resolved And Deferred Work
 
@@ -271,6 +274,7 @@ None at milestone start.
 | Phase 48 P13 | 28 min | 1 tasks | 8 files |
 | Phase 48 P14 | 2m 7s | 1 tasks | 4 files |
 | Phase 48 P15 | 1m 12s | 1 tasks | 2 files |
+| Phase 48 P07 | 9m 15s | 3 tasks | 2 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -294,10 +298,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T22:24:11.211Z
-Stopped at: Completed 48-15-PLAN.md
+Last session: 2026-07-10T22:41:13.492Z
+Stopped at: Completed 48-07-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
 
-- Continue Phase 48 with 48-07-PLAN.md.
+- Continue Phase 48 with 48-10-PLAN.md.
