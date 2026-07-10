@@ -93,7 +93,7 @@ Plans:
 
 **Requirements:** DOCS-01, DOCS-02, DOCS-03
 
-**Plans:** 10 plans
+**Plans:** 13 plans
 
 Plans:
 **Wave 1**
@@ -109,9 +109,12 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 guides)*
 
-- [ ] 48-06-PLAN.md — README canonical guide links and old docs compatibility stubs
-- [ ] 48-08-PLAN.md — Public moduledocs for start/runtime/dashboard/reviewer entry points
-- [ ] 48-09-PLAN.md — Public moduledocs for capability, SRE, and compatibility alias modules
+- [ ] 48-06-PLAN.md — README canonical guide links
+- [ ] 48-11-PLAN.md — Old docs compatibility stubs for copied source links
+- [ ] 48-08-PLAN.md — Public moduledocs for start/install/runtime facade entry points
+- [ ] 48-12-PLAN.md — Public moduledocs for router, dashboard scope, reviewer surface, broadcast, and verification suites
+- [ ] 48-09-PLAN.md — Public moduledocs for capability and integration modules
+- [ ] 48-13-PLAN.md — Public moduledocs for SRE/governance and compatibility alias modules
 
 **Wave 4** *(blocked on Wave 3 docs and module docs)*
 
