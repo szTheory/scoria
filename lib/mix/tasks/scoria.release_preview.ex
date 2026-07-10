@@ -41,9 +41,16 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     "brandbook/favicon.svg"
   ]
   @release_preview_output_dir Path.join(["tmp", "scoria-release-preview"])
+  @generated_docs_output_dir "doc"
 
   def required_package_paths, do: @required_package_paths
   def release_preview_output_dir, do: @release_preview_output_dir
+  def generated_docs_output_dir, do: @generated_docs_output_dir
+
+  def clean_generated_docs_output!(output_dir \\ generated_docs_output_dir()) do
+    File.rm_rf!(output_dir)
+    :ok
+  end
 
   @impl Mix.Task
   def run(_args) do
@@ -53,6 +60,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     File.rm_rf!(output_dir)
 
     Mix.shell().info("==> Building publish-facing docs")
+    clean_generated_docs_output!()
     Mix.Task.reenable("docs")
     Mix.Task.run("docs")
 

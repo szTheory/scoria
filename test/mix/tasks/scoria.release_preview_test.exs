@@ -64,6 +64,8 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
     assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :run, 1)
     assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :required_package_paths, 0)
     assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :release_preview_output_dir, 0)
+    assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :generated_docs_output_dir, 0)
+    assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :clean_generated_docs_output!, 1)
     assert Mix.Task.get("scoria.release_preview")
 
     required_paths = Mix.Tasks.Scoria.ReleasePreview.required_package_paths()
@@ -71,6 +73,8 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
 
     assert Mix.Tasks.Scoria.ReleasePreview.release_preview_output_dir() ==
              "tmp/scoria-release-preview"
+
+    assert Mix.Tasks.Scoria.ReleasePreview.generated_docs_output_dir() == "doc"
 
     assert "CHANGELOG.md" in required_paths
     assert "lib/scoria.ex" in required_paths
@@ -88,5 +92,27 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
     end
 
     refute "test/scoria/adoption_surface_test.exs" in required_paths
+  end
+
+  test "generated docs cleanup removes stale ExDoc fingerprint assets before rebuilding" do
+    output_dir =
+      Path.join([
+        System.tmp_dir!(),
+        "scoria-release-preview-doc-cleanup-#{System.unique_integer([:positive])}"
+      ])
+
+    stale_search_index = Path.join([output_dir, "dist", "search_data-STALE.js"])
+    File.mkdir_p!(Path.dirname(stale_search_index))
+    File.write!(stale_search_index, "docs/semantic_fast_path.md")
+
+    try do
+      assert File.regular?(stale_search_index)
+
+      assert :ok = Mix.Tasks.Scoria.ReleasePreview.clean_generated_docs_output!(output_dir)
+
+      refute File.exists?(output_dir)
+    after
+      File.rm_rf!(output_dir)
+    end
   end
 end
