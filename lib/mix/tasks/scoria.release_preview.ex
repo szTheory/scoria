@@ -10,6 +10,21 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     "lib/scoria.ex",
     "priv/repo/migrations/20260511000100_create_workflow_tables.exs",
     "priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs",
+    "guides/getting-started.md",
+    "guides/golden-path.md",
+    "guides/jtbd-and-user-flows.md",
+    "guides/ownership-boundary.md",
+    "guides/capabilities/default-runtime.md",
+    "guides/capabilities/bounded-handoffs.md",
+    "guides/capabilities/semantic-cache.md",
+    "guides/capabilities/connectors-and-mcp.md",
+    "guides/capabilities/support-copilot-gallery.md",
+    "guides/reviewer-verification.md",
+    "guides/troubleshooting.md",
+    "guides/scoria-vs-external-llm-ops.md",
+    "guides/cheatsheet.cheatmd",
+    "guides/reference/glossary.md",
+    "guides/maintainers.md",
     "docs/glossary.md",
     "docs/adoption_lanes.md",
     "docs/scoria_vs_external_llm_ops.md",
@@ -19,7 +34,11 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     "docs/operator_verification.md",
     "docs/connector_adoption.md",
     "docs/support_copilot_gallery.md",
-    "docs/MAINTAINERS.md"
+    "docs/MAINTAINERS.md",
+    "brandbook/logo-primary.svg",
+    "brandbook/logo-primary-light.svg",
+    "brandbook/logo-mark.svg",
+    "brandbook/favicon.svg"
   ]
   @release_preview_output_dir Path.join(["tmp", "scoria-release-preview"])
 
