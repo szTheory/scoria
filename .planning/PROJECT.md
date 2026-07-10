@@ -38,6 +38,8 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ExDoc/docs structure that helps Phoenix adopters and LLM assistants find the right public API, guide, and verification suite without flat-sidebar ambiguity.
 - Release-readiness cleanup: current `0.1.3` PR blockers, planning-ledger drift, browser e2e failures, stale version references, and post-publish smoke proof.
 
+**Phase 47 complete (2026-07-10):** README now opens with embedded-Phoenix positioning before capability vocabulary, includes n=1 reviewer/persona and Core/Adjacent/Not-Scoria boundaries, publishes the owns-vs-delegates table, and ships the packaged `docs/scoria_vs_external_llm_ops.md` comparison guide. Focused docs/package/release-preview contracts and code review passed; broader `mix ci` still has unrelated repository-format and runtime integration debt tracked for release readiness.
+
 ## Latest Shipped Milestone: v3.4 Pre-1.0 Trust & Security Hardening
 
 **Goal:** Fix the three P0 correctness/security bugs live in shipped `0.1.2` — making eval fail CLOSED, knowledge retrieval tenant-isolated, and the dashboard auth boundary host-injectable — plus a correctness sweep, so Scoria's "trustworthy, governed, inspectable" promise holds before the next Hex release. (🔴 P0 · SEED-006.)
@@ -518,4 +520,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-09 after starting v3.5 Documentation & Release Readiness.*
+*Last updated: 2026-07-10 after completing Phase 47 README first-screen positioning and scope doctrine.*
