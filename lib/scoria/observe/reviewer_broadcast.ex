@@ -1,14 +1,20 @@
 defmodule Scoria.Observe.ReviewerBroadcast do
   @moduledoc """
-  Tenant-scoped PubSub fan-out for reviewer dashboard live events.
+  Tenant-scoped PubSub fan-out for reviewer dashboard trace events.
 
-  Publishes incremental trace deltas to `scoria:runs:{tenant_id}`. Tracks seen
-  `trace_id` values per BEAM node in ETS (`:scoria_observe_reviewer_broadcast_trace_seen`)
-  so `{:trace_opened, _}` is emitted only on the first span stop for a trace on
-  this node.
+  Use this module when runtime telemetry needs to reach `/scoria` reviewer
+  pages without crossing tenant boundaries. It publishes trace headers, trace
+  spans, streaming trace deltas, HITL approval requests, and approval decisions
+  to `scoria:runs:{tenant_id}`.
 
-  Missing `tenant_id` drops broadcast (fail closed) with a debug log - no global
+  Tracks seen `trace_id` values per BEAM node in ETS
+  (`:scoria_observe_reviewer_broadcast_trace_seen`) so `{:trace_opened, _}` is
+  emitted only on the first span stop for a trace on this node. Missing
+  `tenant_id` drops broadcast fail-closed with a debug log; there is no global
   topic fallback.
+
+  See `guides/reviewer-verification.md` for reviewer trace verification and
+  `guides/ownership-boundary.md` for the host-owned tenant-scope boundary.
   """
 
   require Logger

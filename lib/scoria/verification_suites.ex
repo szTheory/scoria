@@ -1,10 +1,22 @@
 defmodule Scoria.VerificationSuites do
   @moduledoc """
-  Canonical verification suite contract for adopter-facing and maintainer-facing proofs.
+  Canonical verification suite contracts for adopter-facing and maintainer-facing proof.
 
-  Each verification suite maps one command contract to its environment,
-  prerequisites, and explicit exclusions so docs, tests, and CI can share one
-  source of truth.
+  Use this module when docs, tests, CI, or release tooling need the public proof
+  command for a Scoria capability. Each verification suite maps one command
+  contract to its environment, prerequisites, and explicit exclusions so
+  maintainers and adopters can verify the same boundary.
+
+  The release preview verification suite is `mix scoria.release_preview`; it
+  proves publish-facing docs and package inventory. The default runtime
+  verification suite is `mix test.adoption`; optional suites cover bounded
+  handoffs, semantic-cache compatibility, optional knowledge, remote connectors,
+  and the support-copilot gallery.
+
+  Treat these commands as adopter-facing verification contracts, not internal CI
+  trivia. See `guides/reviewer-verification.md` for the proof order and reviewer
+  workflow, and `guides/ownership-boundary.md` for what the host Phoenix app
+  still owns.
   """
 
   @no_optional_setup_exclusions [

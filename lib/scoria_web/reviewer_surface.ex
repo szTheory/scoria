@@ -1,13 +1,20 @@
 defmodule ScoriaWeb.ReviewerSurface do
   @moduledoc """
-  Read model shared by reviewer dashboard pages (Live Ops, Approvals,
-  Connectors, Incidents).
+  Tenant-scoped read model for reviewer dashboard pages.
 
-  The reviewer surface keeps dashboard reads tenant-qualified through
-  `ScoriaWeb.DashboardScope` assigns. Route params and query values may select
-  runs, traces, incidents, and connectors, but they never establish tenant
-  authority. Functions are pure reads: they take a tenant/trace/run scope and
-  return plain maps ready for rendering.
+  Use this module when a Scoria dashboard page needs reviewer-ready maps for
+  live runs, approvals, review candidates, connectors, incidents, and trace
+  evidence. The caller supplies the tenant scope that `ScoriaWeb.DashboardScope`
+  already resolved from the host-authenticated dashboard boundary.
+
+  Route params and query values may select runs, traces, incidents, review
+  candidates, and connectors after mount, but they never establish tenant
+  authority. Functions are pure reads: they take a tenant, trace, or run scope
+  and return plain maps ready for rendering.
+
+  Read `guides/reviewer-verification.md` for dashboard proof workflows and
+  `guides/ownership-boundary.md` for the host-owned authentication and tenant
+  membership boundary.
   """
   import Ecto.Query, warn: false
 
