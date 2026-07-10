@@ -5,14 +5,14 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-13-PLAN.md
-last_updated: "2026-07-10T22:08:28.101Z"
+stopped_at: Completed 48-14-PLAN.md
+last_updated: "2026-07-10T22:17:06.887Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 22
+  completed_plans: 23
   percent: 40
 ---
 
@@ -29,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 12 of 15
+Plan: 13 of 15
 Status: Ready to execute
 Last activity: 2026-07-10
 
@@ -205,6 +205,9 @@ Recent decisions affecting current work:
 - [Phase 48]: [Phase 48-13]: Kept SRE and compatibility alias polishing documentation-only; no SRE runtime behavior, sink behavior, wrapper delegation, package config, guide body, or runtime deprecation attributes changed.
 - [Phase 48]: [Phase 48-13]: Compatibility alias moduledocs retain exact legacy-wrapper wording for ExDoc contracts while naming final replacement modules and glossary migration notes.
 - [Phase 48]: [Phase 48-13]: Broad adoption-surface guide-fragment failures remain out of scope for this plan and are logged in Phase 48 deferred-items.md.
+- [Phase 48-14]: Old capability docs paths are compatibility pages only; canonical guide bodies stay under guides/capabilities/.
+- [Phase 48-14]: Each compatibility page names the current guide first and mentions old names only as 0.1.x compatibility context.
+- [Phase 48-14]: The plan did not touch dev-only docs or ExDoc/package configuration.
 
 ### Resolved And Deferred Work
 
@@ -264,6 +267,7 @@ None at milestone start.
 | Phase 48 P11 | 4 min | 1 tasks | 5 files |
 | Phase 48 P12 | 3m 05s | 2 tasks | 6 files |
 | Phase 48 P13 | 28 min | 1 tasks | 8 files |
+| Phase 48 P14 | 2m 7s | 1 tasks | 4 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -287,8 +291,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T22:08:28.095Z
-Stopped at: Completed 48-13-PLAN.md
+Last session: 2026-07-10T22:17:06.768Z
+Stopped at: Completed 48-14-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
