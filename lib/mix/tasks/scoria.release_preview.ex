@@ -6,6 +6,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     "README.md",
     "LICENSE",
     "mix.exs",
+    "CHANGELOG.md",
     "lib/scoria.ex",
     "priv/repo/migrations/20260511000100_create_workflow_tables.exs",
     "priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs",

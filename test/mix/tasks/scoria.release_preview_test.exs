@@ -8,6 +8,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
       "README.md",
       "LICENSE",
       "mix.exs",
+      "CHANGELOG.md",
       "lib/scoria.ex",
       "priv/repo/migrations/20260511000100_create_workflow_tables.exs",
       "priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs",
@@ -33,6 +34,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
     assert Mix.Tasks.Scoria.ReleasePreview.release_preview_output_dir() ==
              "tmp/scoria-release-preview"
 
+    assert "CHANGELOG.md" in expected_required_paths
     assert "lib/scoria.ex" in expected_required_paths
 
     assert "priv/repo/migrations/20260511000100_create_workflow_tables.exs" in expected_required_paths
