@@ -15,7 +15,10 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     "docs/phoenix_runtime_example.md",
     "docs/bounded_handoffs.md",
     "docs/semantic_fast_path.md",
-    "docs/operator_verification.md"
+    "docs/operator_verification.md",
+    "docs/connector_adoption.md",
+    "docs/support_copilot_gallery.md",
+    "docs/MAINTAINERS.md"
   ]
   @release_preview_output_dir Path.join(["tmp", "scoria-release-preview"])
 

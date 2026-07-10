@@ -19,7 +19,7 @@ Scoria is for Phoenix teams where one engineer may need to ship prompts, inspect
 - **Adjacent:** security, privacy/legal, Trust and Safety, domain experts, PMs, and support teams consume hooks, docs, exported proof, or review outputs, but are not the first dedicated Scoria surface.
 - **Not Scoria's surface:** end users of host AI flows, host product designers, finance or executive dashboards, general data warehouses, and host auth or policy administration.
 
-Use [the ownership table below](#what-scoria-owns-vs-what-your-app-owns) to check the boundary before you add a capability. For peer-tradeoff framing, see the planned [Scoria vs external LLM-ops platforms](docs/scoria_vs_external_llm_ops.md) guide.
+Use [the ownership table below](#what-scoria-owns-vs-what-your-app-owns) to check the boundary before you add a capability. For peer-tradeoff framing, see the [Scoria vs external LLM-ops platforms](docs/scoria_vs_external_llm_ops.md) guide.
 
 ## Who This Is For
 

@@ -17,7 +17,10 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
       "docs/phoenix_runtime_example.md",
       "docs/bounded_handoffs.md",
       "docs/semantic_fast_path.md",
-      "docs/operator_verification.md"
+      "docs/operator_verification.md",
+      "docs/connector_adoption.md",
+      "docs/support_copilot_gallery.md",
+      "docs/MAINTAINERS.md"
     ]
 
     assert Code.ensure_loaded?(Mix.Tasks.Scoria.ReleasePreview)
@@ -40,6 +43,9 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
     assert "docs/adoption_lanes.md" in expected_required_paths
     assert "docs/scoria_vs_external_llm_ops.md" in expected_required_paths
     assert "docs/operator_verification.md" in expected_required_paths
+    assert "docs/connector_adoption.md" in expected_required_paths
+    assert "docs/support_copilot_gallery.md" in expected_required_paths
+    assert "docs/MAINTAINERS.md" in expected_required_paths
     refute "test/scoria/adoption_surface_test.exs" in expected_required_paths
   end
 end
