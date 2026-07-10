@@ -5,15 +5,15 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-01-PLAN.md
-last_updated: "2026-07-10T18:40:32.085Z"
-last_activity: 2026-07-10 -- Completed 48-01-PLAN.md
+stopped_at: Completed 48-02-PLAN.md
+last_updated: "2026-07-10T18:50:45.128Z"
+last_activity: 2026-07-10 -- Completed 48-02-PLAN.md
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 12
-  percent: 46
+  completed_plans: 13
+  percent: 50
 ---
 
 # Project State
@@ -29,9 +29,9 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 2 of 15
+Plan: 3 of 15
 Status: Ready to execute
-Last activity: 2026-07-10 -- Completed 48-01-PLAN.md
+Last activity: 2026-07-10 -- Completed 48-02-PLAN.md
 
 ## Performance Metrics
 
@@ -178,6 +178,9 @@ Recent decisions affecting current work:
 - [Phase 47]: Phase 47-03 comparison guide uses source-linked external LLM-ops posture and separates current Scoria claims from deferred feature seeds. — The guide must help adopters compare current Scoria against external LLM-ops platforms without implying deferred capabilities are already shipped.
 - [Phase 48]: Wave 1 intentionally stops at RED package/ExDoc/release-preview contracts; later Phase 48 plans own guide/config implementation.
 - [Phase 48]: Old docs/*.md paths are package compatibility stubs only; canonical docs contracts now point at guides/ paths and required brand assets.
+- [Phase 48-02]: Plan 48-02 intentionally remains RED; canonical guide files, README links, and D-17 module guide links are implemented by later Phase 48 plans.
+- [Phase 48-02]: Stable adopter-doc contracts now treat old docs/*.md paths as compatibility-only; canonical public truth points at guides/ paths.
+- [Phase 48-02]: Public moduledoc tests use Code.fetch_docs/1 to verify compiled docs without adding doctest expectations for runtime, dashboard, DB, or LiveView examples.
 
 ### Resolved And Deferred Work
 
@@ -227,6 +230,7 @@ None at milestone start.
 | Phase 47 P02 | 5 min | 2 tasks | 3 files |
 | Phase 47 P03 | 10m 33s | 3 tasks | 9 files |
 | Phase 48 P01 | 5 min | 2 tasks | 2 files |
+| Phase 48 P02 | 5m 29s | 2 tasks | 6 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -250,10 +254,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T18:40:27.833Z
-Stopped at: Completed 48-01-PLAN.md
+Last session: 2026-07-10T18:50:45.125Z
+Stopped at: Completed 48-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
 
-- Continue Phase 48 with 48-02-PLAN.md.
+- Continue Phase 48 with 48-03-PLAN.md.
