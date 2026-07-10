@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
 status: planning
-stopped_at: Phase 47 context gathered
-last_updated: "2026-07-10T01:56:03.364Z"
+stopped_at: Phase 47 UI-SPEC approved
+last_updated: "2026-07-10T02:34:17.627Z"
 last_activity: 2026-07-09 — Phase 46 complete, transitioned to Phase 47
 progress:
   total_phases: 5
@@ -239,9 +239,9 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T01:56:03.360Z
-Stopped at: Phase 47 context gathered
-Resume file: .planning/phases/47-readme-first-screen-positioning-and-scope-doctrine/47-CONTEXT.md
+Last session: 2026-07-10T02:34:17.622Z
+Stopped at: Phase 47 UI-SPEC approved
+Resume file: .planning/phases/47-readme-first-screen-positioning-and-scope-doctrine/47-UI-SPEC.md
 
 ## Operator Next Steps
 
