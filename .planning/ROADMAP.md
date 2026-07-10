@@ -22,7 +22,7 @@
 **Boundary:** Stable adopter docs and release readiness only. Feature-specific docs for trace foundation, lethal-trifecta governance, eval depth, retrieval depth, and privacy/feedback stay with their owning future seeds.
 
 - [x] **Phase 46: Terminology and public vocabulary migration** — final sense-aware rename map, glossary, code-name cleanup, and upgrade note. (completed 2026-07-09)
-- [ ] **Phase 47: README first-screen positioning and scope doctrine** — plain-English front door, persona/not-ours framing, owns-vs-delegates table, and hosted LLM-ops comparison.
+- [x] **Phase 47: README first-screen positioning and scope doctrine** — plain-English front door, persona/not-ours framing, owns-vs-delegates table, and hosted LLM-ops comparison. (completed 2026-07-10)
 - [ ] **Phase 48: ExDoc and guide ladder restructure** — grouped modules/extras, version-aware docs metadata, stable guide tree, and public moduledoc alignment.
 - [ ] **Phase 49: AI-accessible docs and docs verification gate** — curated `llms.txt`/`AGENTS.md`, guide index for coding agents, and warning-clean docs command.
 - [ ] **Phase 50: Release readiness and `0.1.3` cut** — policy/e2e release blockers, stale version refs, green release PR, Hex publish, and post-publish smoke.
@@ -136,7 +136,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 46. Terminology and public vocabulary migration | v3.5 | 8/8 | Complete    | 2026-07-09 |
-| 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete   | 2026-07-10 |
+| 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
 | 48. ExDoc and guide ladder restructure | v3.5 | 0/0 | Not started | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 0/0 | Not started | — |
