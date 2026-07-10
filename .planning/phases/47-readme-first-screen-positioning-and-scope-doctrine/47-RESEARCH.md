@@ -556,17 +556,15 @@ All claims in this research were verified against repository files, local comman
 |---|-------|---------|---------------|
 | - | None | - | - |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 47 touch maintainer `0.1.1` release-command examples?**
    - What we know: README stale `0.1.1` is explicitly in scope; maintainer release-command drift may be handled only if it directly blocks POS-01/POS-04 clarity [VERIFIED: `47-CONTEXT.md`] [VERIFIED: `docs/MAINTAINERS.md`].
-   - What's unclear: Whether the planner should include maintainer doc cleanup now or leave all non-README release reconciliation to Phase 50 [VERIFIED: `.planning/ROADMAP.md`].
-   - Recommendation: Keep Phase 47 to README/adopter comparison unless a test requires `docs/MAINTAINERS.md`; otherwise leave maintainer release commands for Phase 50 [VERIFIED: `47-CONTEXT.md`].
+   - RESOLVED: Keep Phase 47 to README/adopter comparison unless README/adopter docs contracts require `docs/MAINTAINERS.md`; otherwise leave maintainer `0.1.1` release-command cleanup to Phase 50 [VERIFIED: `47-CONTEXT.md`] [VERIFIED: `.planning/ROADMAP.md`].
 
 2. **Exact comparison filename**
    - What we know: Context suggests `docs/llm_ops_comparison.md` or `docs/scoria_vs_external_llm_ops.md` [VERIFIED: `47-CONTEXT.md`].
-   - What's unclear: No existing guide file owns this surface [VERIFIED: `find docs -maxdepth 1`].
-   - Recommendation: Use `docs/scoria_vs_external_llm_ops.md` because it is explicit, stable, and avoids "hosted-only" shorthand [VERIFIED: `47-CONTEXT.md`].
+   - RESOLVED: Use `docs/scoria_vs_external_llm_ops.md` because it is explicit, stable, and avoids "hosted-only" shorthand [VERIFIED: `47-CONTEXT.md`] [VERIFIED: `find docs -maxdepth 1`].
 
 ## Environment Availability
 

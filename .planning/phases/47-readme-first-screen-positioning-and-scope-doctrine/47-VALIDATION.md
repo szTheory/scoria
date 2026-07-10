@@ -51,7 +51,7 @@ created: 2026-07-10
 - [ ] Stabilize the existing focused failure in `test/scoria/scope_doctrine_contract_test.exs` by aligning the contract and README scope language.
 - [ ] Add first-screen order assertions for POS-01 in `test/scoria/adoption_surface_test.exs` or a new narrow README positioning test.
 - [ ] Add stale `0.1.1` README refutes and current install-fallback assertions through existing contract helpers.
-- [ ] Add package/docs list assertions if the phase creates `docs/scoria_vs_external_llm_ops.md`.
+- [ ] POS-04 package/docs list assertions are intentionally not Wave 0: Plan 03 Task 1 adds those RED assertions before Plan 03 Task 2 creates and wires `docs/scoria_vs_external_llm_ops.md`.
 
 ---
 
@@ -67,7 +67,7 @@ created: 2026-07-10
 
 - [ ] All tasks have automated verify commands or Wave 0 dependencies.
 - [ ] Sampling continuity: no 3 consecutive tasks without automated docs-contract verification.
-- [ ] Wave 0 covers all missing references from research.
+- [ ] Wave 0 covers POS-01 through POS-03 missing references from research; Plan 03 Task 1 covers POS-04 package/docs RED assertions before guide creation.
 - [ ] No watch-mode flags.
 - [ ] Feedback latency under 10 seconds for focused docs-contract checks.
 - [ ] `nyquist_compliant: true` set in frontmatter after plans assign concrete task IDs and Wave 0 is complete.
