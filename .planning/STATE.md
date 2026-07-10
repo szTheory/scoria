@@ -2,16 +2,18 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
+current_phase: 47
+current_phase_name: readme-first-screen-positioning-and-scope-doctrine
 status: executing
-stopped_at: Completed 47-02-PLAN.md
-last_updated: "2026-07-10T13:37:00.422Z"
+stopped_at: Completed 47-03-PLAN.md
+last_updated: "2026-07-10T13:51:54.446Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 11
-  completed_plans: 10
-  percent: 20
+  completed_plans: 11
+  percent: 40
 ---
 
 # Project State
@@ -27,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 47 (readme-first-screen-positioning-and-scope-doctrine) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-10
 
@@ -173,6 +175,7 @@ Recent decisions affecting current work:
 - [Phase 47-02]: README now leads with embedded Phoenix positioning before capability and verification-suite vocabulary. — POS-01 front-door comprehension depends on product category before coined vocabulary.
 - [Phase 47-02]: Public scope table uses adopter-readable ownership rows instead of P1-P6 public labels. — POS-03 needs host-owned responsibilities to be concrete for Phoenix adopters.
 - [Phase 47-02]: README links to the Phase 47-03 comparison guide without creating or packaging that guide in 47-02. — The plan explicitly reserves comparison-guide creation and package-surface wiring for 47-03.
+- [Phase 47]: Phase 47-03 comparison guide uses source-linked external LLM-ops posture and separates current Scoria claims from deferred feature seeds. — The guide must help adopters compare current Scoria against external LLM-ops platforms without implying deferred capabilities are already shipped.
 
 ### Resolved And Deferred Work
 
@@ -220,6 +223,7 @@ None at milestone start.
 | Phase 46 P07 | 14 min | 1 tasks | 14 files |
 | Phase 46 P08 | 6 min | 1 tasks | 3 files |
 | Phase 47 P02 | 5 min | 2 tasks | 3 files |
+| Phase 47 P03 | 10m 33s | 3 tasks | 9 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -243,8 +247,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T13:36:34.837Z
-Stopped at: Completed 47-02-PLAN.md
+Last session: 2026-07-10T13:51:54.441Z
+Stopped at: Completed 47-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
