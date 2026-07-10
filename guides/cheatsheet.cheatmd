@@ -1,0 +1,132 @@
+# Cheatsheet
+
+Compact Scoria guide surface for Phoenix adopters. Start with [Getting Started](guides/getting-started.md), keep [Golden Path](guides/golden-path.md) nearby, and use the [Glossary](guides/reference/glossary.md) for final vocabulary.
+
+## Install
+
+```elixir
+{:scoria, "~> 0.1", hex: :scoria}
+```
+
+```bash
+mix deps.get
+mix scoria.install
+mix ecto.migrate
+```
+
+Upgrade-safe check modes:
+
+```bash
+mix scoria.install --dry-run
+mix scoria.install --check
+```
+
+## Dashboard Mount
+
+```elixir
+scope "/" do
+  pipe_through [:browser, :require_authenticated_user]
+
+  scoria_dashboard "/scoria",
+    on_mount: [{MyAppWeb.UserAuth, :require_authenticated}],
+    scope_resolver: MyAppWeb.ScoriaDashboardScope
+end
+```
+
+Host app owns authentication, authorization, tenant membership, role values, and policy values. Query params do not choose tenants for the dashboard.
+
+## First Run
+
+```elixir
+identity =
+  Scoria.identity(%{
+    actor_id: current_user.id,
+    tenant_id: current_account.id,
+    session_id: get_session(conn, :assistant_session_id)
+  })
+
+{:ok, started} =
+  Scoria.start_run(identity,
+    root_role_id: "executor",
+    initial_step: %{sequence: 1, kind: "approval", role_id: "executor", status: "queued"},
+    handlers: %{"approval" => {MyApp.RuntimeHandlers, :wait_for_approval}}
+  )
+
+{:ok, summary} = Scoria.get_run(started.run_id)
+
+{:ok, resumed} =
+  Scoria.resume_run(started.run_id,
+    handlers: %{"approval" => {MyApp.RuntimeHandlers, :succeed}}
+  )
+```
+
+Rule: `session_id` groups host turns; `run_id` names one exact Scoria execution.
+
+## Verification Suites
+
+```bash
+mix test.adoption
+mix test.runtime_to_handoff
+SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
+mix test.knowledge
+mix test.connector
+mix scoria.release_preview
+```
+
+Use `mix test.adoption` first. Use `mix scoria.release_preview` for maintainer package and docs preview proof.
+
+## Semantic Cache Profile
+
+```elixir
+defmodule MyApp.AI.AccountFaqCache do
+  use Scoria.SemanticCache.Profile,
+    cache_key: "account_faq",
+    default_scope: :tenant_shared,
+    safe_read_only: true
+end
+
+{:ok, summary} =
+  Scoria.start_run(identity,
+    semantic_cache: [profile: MyApp.AI.AccountFaqCache],
+    input: "what is scoria?"
+  )
+```
+
+Semantic cache is optional and is not the same thing as a knowledge base.
+
+## Bounded Handoff
+
+```elixir
+{:ok, handoff_run} =
+  Scoria.start_handoff_run(identity, "critic",
+    root_role_id: "planner",
+    delegated_kind: "review",
+    handoff_input: %{"brief" => "Review the draft answer"},
+    scoped_context: %{"task" => "policy review", "draft_answer" => draft_answer},
+    handlers: %{"review" => {MyApp.RuntimeHandlers, :review}}
+  )
+
+{:ok, detail} = Scoria.get_run_detail(handoff_run.run_id)
+delegated = detail.delegated_handoffs
+```
+
+Keep scoped context narrow and host-controlled.
+
+## Connector And MCP
+
+Use the remote connector capability after the default runtime capability is proven:
+
+```bash
+mix test.connector
+```
+
+Scoria owns connector registration, grants, health state, trace evidence, and approval pauses. Your app owns tool credentials, product authority, and side-effect policy.
+
+## Troubleshooting Links
+
+- [Reviewer Verification](guides/reviewer-verification.md)
+- [Ownership Boundary](guides/ownership-boundary.md)
+- [Default Runtime](guides/capabilities/default-runtime.md)
+- [Semantic Cache](guides/capabilities/semantic-cache.md)
+- [Connectors and MCP](guides/capabilities/connectors-and-mcp.md)
+- [Troubleshooting](guides/troubleshooting.md)
