@@ -5,15 +5,15 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-05-PLAN.md
-last_updated: "2026-07-10T19:29:27.266Z"
+stopped_at: Completed 48-06-PLAN.md
+last_updated: "2026-07-10T19:39:48.095Z"
 last_activity: 2026-07-10
-last_activity_desc: Completed 48-05-PLAN.md
+last_activity_desc: Completed 48-06-PLAN.md
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 16
+  completed_plans: 17
   percent: 40
 ---
 
@@ -30,9 +30,9 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 6 of 15
+Plan: 7 of 15
 Status: Ready to execute
-Last activity: 2026-07-10 -- Completed 48-05-PLAN.md
+Last activity: 2026-07-10 -- Completed 48-06-PLAN.md
 
 ## Performance Metrics
 
@@ -191,6 +191,8 @@ Recent decisions affecting current work:
 - [Phase 48]: Reviewer verification is the canonical public name; operator verification remains compatibility wording only.
 - [Phase 48]: Comparison guide preserves Phase 47 safe current claims, named peer source links, ceded strengths, and explicit not-current claims.
 - [Phase 48]: Maintainer-only CI, release, warning, installer, and dev-tool commands stay in guides/maintainers.md rather than README or first-run adopter docs.
+- [Phase 48]: README Docs navigation is grouped by the canonical Phase 48 guide ladder and now points at guides/... paths instead of old flat docs/*.md current navigation.
+- [Phase 48]: README keeps current public guide names first while preserving old semantic-fast-path wording only as an explicit 0.1.x compatibility note for existing docs contracts.
 
 ### Resolved And Deferred Work
 
@@ -244,6 +246,7 @@ None at milestone start.
 | Phase 48 P03 | 5m 41s | 2 tasks | 5 files |
 | Phase 48 P04 | 7m 19s | 2 tasks | 6 files |
 | Phase 48 P05 | 8 min | 2 tasks | 5 files |
+| Phase 48 P06 | 4m 52s | 1 tasks | 1 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -267,10 +270,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T19:29:27.262Z
-Stopped at: Completed 48-05-PLAN.md
+Last session: 2026-07-10T19:39:48.091Z
+Stopped at: Completed 48-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
 
-- Continue Phase 48 with 48-06-PLAN.md.
+- Continue Phase 48 with 48-07-PLAN.md.
