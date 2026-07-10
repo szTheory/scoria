@@ -1,7 +1,7 @@
 defmodule Scoria.GlossaryContractTest do
   use ExUnit.Case, async: true
 
-  @glossary "docs/glossary.md"
+  @glossary "guides/reference/glossary.md"
 
   @required_headings [
     "# Glossary",

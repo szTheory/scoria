@@ -3,6 +3,7 @@ defmodule Scoria.ScopeDoctrineContractTest do
 
   @project ".planning/PROJECT.md"
   @readme "README.md"
+  @ownership_boundary "guides/ownership-boundary.md"
   @adoption_lanes "docs/adoption_lanes.md"
   @operator_verification "docs/operator_verification.md"
   @scope_table_title "What Scoria owns vs what your app owns"
@@ -101,27 +102,27 @@ defmodule Scoria.ScopeDoctrineContractTest do
   end
 
   test "public docs expose adopter-readable owns-vs-delegates table" do
-    {path, table_section} = public_scope_table_source!()
+    for {path, table_section} <- public_scope_table_sources!() do
+      assert table_section =~ @scope_table_title
 
-    assert table_section =~ @scope_table_title
+      for header <- @scope_table_headers do
+        assert table_section =~ header,
+               "expected #{path} scope table to contain header #{inspect(header)}"
+      end
 
-    for header <- @scope_table_headers do
-      assert table_section =~ header,
-             "expected #{path} scope table to contain header #{inspect(header)}"
+      for row <- @scope_table_rows do
+        assert table_section =~ row,
+               "expected #{path} scope table to contain boundary row #{inspect(row)}"
+      end
+
+      for responsibility <- @host_owned_responsibilities do
+        assert String.downcase(table_section) =~ responsibility,
+               "expected #{path} scope table to assign #{inspect(responsibility)} to the host app"
+      end
+
+      refute Regex.match?(~r/(^|\|)\s*P[1-6]\b/m, table_section),
+             "expected #{path} scope table to use adopter-readable row labels, not P1-P6 labels"
     end
-
-    for row <- @scope_table_rows do
-      assert table_section =~ row,
-             "expected #{path} scope table to contain boundary row #{inspect(row)}"
-    end
-
-    for responsibility <- @host_owned_responsibilities do
-      assert String.downcase(table_section) =~ responsibility,
-             "expected #{path} scope table to assign #{inspect(responsibility)} to the host app"
-    end
-
-    refute Regex.match?(~r/(^|\|)\s*P[1-6]\b/m, table_section),
-           "expected #{path} scope table to use adopter-readable row labels, not P1-P6 labels"
   end
 
   test "phase 45 repaired code paths reject fake measurement leftovers" do
@@ -145,16 +146,17 @@ defmodule Scoria.ScopeDoctrineContractTest do
     refute Regex.match?(~r/duration_ms:\s*0\b/, eval_sources)
   end
 
-  defp public_scope_table_source! do
-    [@readme, @adoption_lanes, @operator_verification]
-    |> Enum.find_value(fn path ->
+  defp public_scope_table_sources! do
+    [@readme, @ownership_boundary]
+    |> Enum.map(fn path ->
       content = File.read!(path)
 
       if String.contains?(content, @scope_table_title) do
         {path, section_from_title(content)}
+      else
+        flunk("expected #{path} to contain #{@scope_table_title} table")
       end
-    end) ||
-      flunk("expected README or stable adopter docs to contain #{@scope_table_title} table")
+    end)
   end
 
   defp section_from_title(content) do

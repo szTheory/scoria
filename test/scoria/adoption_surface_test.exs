@@ -37,6 +37,87 @@ defmodule Scoria.AdoptionSurfaceTest do
   @connector_lane_command VerificationSuites.command(:connector)
   @default_boundary_sentence VerificationSuites.boundary_sentence(:adoption)
   @closeout_chain VerificationSuites.closeout_chain()
+  @prioritized_public_modules [
+    Scoria,
+    Scoria.Identity,
+    Scoria.Runtime,
+    Scoria.PromptPolicy,
+    ScoriaWeb.Router,
+    ScoriaWeb.DashboardScope,
+    ScoriaWeb.ReviewerSurface,
+    Scoria.Observe.ReviewerBroadcast,
+    Scoria.VerificationSuites,
+    Scoria.SemanticCache.Profile,
+    Scoria.SemanticCache,
+    Scoria.Knowledge,
+    Scoria.Connectors,
+    Scoria.Connectors.Auth,
+    Scoria.MCP.Tool,
+    Scoria.Req.Steps,
+    Scoria.Eval,
+    Scoria.PromptRegistry,
+    Scoria.SRE,
+    Scoria.SRE.AlertSink,
+    Scoria.SRE.AuditSink
+  ]
+  @compatibility_public_modules [
+    Scoria.SemanticLane,
+    Scoria.VerificationLanes,
+    ScoriaWeb.OperatorSurface,
+    Scoria.Observe.OperatorBroadcast
+  ]
+  @internal_modules_refuted [
+    Scoria.AdopterDocContract,
+    Scoria.HexConsumerContract,
+    Scoria.SupportJourney,
+    Scoria.UICritique,
+    Scoria.WarningInventory,
+    Scoria.Workflows.Reconciler,
+    ScoriaWeb.ApprovalsLive.Index
+  ]
+  @public_module_doc_contracts %{
+    Scoria => ["guides/getting-started.md", "run_id", "session_id"],
+    Scoria.Identity => ["guides/getting-started.md", "host-owned", "session_id"],
+    Scoria.Runtime => ["guides/capabilities/default-runtime.md", "durable run", "run_id"],
+    Scoria.PromptPolicy => ["guides/ownership-boundary.md", "host", "policy"],
+    ScoriaWeb.Router => ["guides/getting-started.md", "scoria_dashboard", "host"],
+    ScoriaWeb.DashboardScope => [
+      "guides/ownership-boundary.md",
+      "host-authenticated",
+      "Query params do not choose tenants"
+    ],
+    ScoriaWeb.ReviewerSurface => ["guides/reviewer-verification.md", "reviewer"],
+    Scoria.Observe.ReviewerBroadcast => ["guides/reviewer-verification.md", "reviewer"],
+    Scoria.VerificationSuites => ["guides/reviewer-verification.md", "verification suite"],
+    Scoria.SemanticCache.Profile => [
+      "guides/capabilities/semantic-cache.md",
+      "semantic cache"
+    ],
+    Scoria.SemanticCache => ["guides/capabilities/semantic-cache.md", "semantic cache"],
+    Scoria.Knowledge => ["guides/capabilities/default-runtime.md", "optional knowledge base"],
+    Scoria.Connectors => ["guides/capabilities/connectors-and-mcp.md", "remote connector"],
+    Scoria.Connectors.Auth => ["guides/capabilities/connectors-and-mcp.md", "host"],
+    Scoria.MCP.Tool => ["guides/capabilities/connectors-and-mcp.md", "MCP"],
+    Scoria.Req.Steps => ["guides/capabilities/default-runtime.md", "Req"],
+    Scoria.Eval => ["guides/reviewer-verification.md", "eval"],
+    Scoria.PromptRegistry => ["guides/ownership-boundary.md", "prompt"],
+    Scoria.SRE => ["guides/ownership-boundary.md", "governance"],
+    Scoria.SRE.AlertSink => ["guides/ownership-boundary.md", "alert"],
+    Scoria.SRE.AuditSink => ["guides/ownership-boundary.md", "audit"]
+  }
+  @compatibility_module_sources %{
+    Scoria.SemanticLane => "lib/scoria/semantic_lane.ex",
+    Scoria.VerificationLanes => "lib/scoria/verification_lanes.ex",
+    ScoriaWeb.OperatorSurface => "lib/scoria_web/operator_surface.ex",
+    Scoria.Observe.OperatorBroadcast => "lib/scoria/observe/operator_broadcast.ex"
+  }
+  @backend_guts_opening_refutes [
+    "ecto schema",
+    "database table",
+    "background worker",
+    "internal adapter",
+    "implementation detail"
+  ]
 
   test "README documents the shipped capability model and canonical verification suites" do
     content = File.read!(@readme)
@@ -531,20 +612,87 @@ defmodule Scoria.AdoptionSurfaceTest do
     refute maintainer_guide =~ "they list all records globally"
   end
 
-  test "public modules expose compiled moduledocs on current Elixir" do
-    for mod <- [Scoria, Scoria.Runtime, Scoria.Identity, Scoria.PromptPolicy] do
-      assert {:docs_v1, _, :elixir, _, moduledoc, _, _} = Code.fetch_docs(mod)
+  test "D-17 public modules expose compiled non-empty moduledocs" do
+    for mod <- @prioritized_public_modules do
+      assert module_doc_text(mod) != "", "#{inspect(mod)} is missing moduledoc"
+    end
+  end
 
-      assert moduledoc not in [nil, :none], "#{inspect(mod)} is missing moduledoc"
+  test "D-17 public moduledocs link to canonical guides or final vocabulary" do
+    for {mod, required_fragments} <- @public_module_doc_contracts do
+      text = module_doc_text(mod)
 
-      moduledoc_text =
-        case moduledoc do
-          %{"en" => text} -> text
-          text when is_binary(text) -> text
-        end
+      for fragment <- required_fragments do
+        assert text =~ fragment,
+               "expected #{inspect(mod)} moduledoc to contain #{inspect(fragment)}"
+      end
+    end
+  end
 
-      assert is_binary(moduledoc_text)
-      assert String.trim(moduledoc_text) != ""
+  test "public entrypoint moduledocs do not lead with backend guts" do
+    for mod <- @prioritized_public_modules do
+      opening =
+        mod
+        |> module_doc_text()
+        |> String.trim()
+        |> String.split("\n\n", parts: 2)
+        |> hd()
+        |> String.downcase()
+
+      for refute <- @backend_guts_opening_refutes do
+        refute opening =~ refute,
+               "expected #{inspect(mod)} opening paragraph not to lead with #{inspect(refute)}"
+      end
+    end
+  end
+
+  test "D-14 true internals are absent from the public moduledoc contract set" do
+    public_set = @prioritized_public_modules ++ @compatibility_public_modules
+
+    for mod <- @internal_modules_refuted do
+      refute mod in public_set,
+             "expected #{inspect(mod)} to stay out of the public moduledoc contract set"
+    end
+  end
+
+  test "D-15 compatibility aliases are documented separately without runtime deprecation warnings" do
+    for mod <- @compatibility_public_modules do
+      text = module_doc_text(mod)
+
+      assert text =~ "Legacy 0.1.x compatibility wrapper",
+             "expected #{inspect(mod)} to be documented as a compatibility wrapper"
+
+      source = File.read!(Map.fetch!(@compatibility_module_sources, mod))
+      refute source =~ "@deprecated", "expected #{inspect(mod)} not to emit runtime deprecations"
+    end
+  end
+
+  test "D-19 doctest-only contracts stay limited to pure examples" do
+    doctest_sources =
+      [@scoria_doctest, @identity_doctest]
+      |> Enum.map(&File.read!/1)
+      |> Enum.join("\n")
+
+    for mod <- [
+          Scoria.Runtime,
+          ScoriaWeb.Router,
+          ScoriaWeb.DashboardScope,
+          ScoriaWeb.ReviewerSurface,
+          Scoria.Eval,
+          Scoria.Knowledge
+        ] do
+      refute doctest_sources =~ "doctest #{inspect(mod)}"
+    end
+  end
+
+  defp module_doc_text(mod) do
+    assert {:docs_v1, _, :elixir, _, moduledoc, _, _} = Code.fetch_docs(mod)
+
+    assert moduledoc not in [nil, :none], "#{inspect(mod)} is missing moduledoc"
+
+    case moduledoc do
+      %{"en" => text} -> String.trim(text)
+      text when is_binary(text) -> String.trim(text)
     end
   end
 
