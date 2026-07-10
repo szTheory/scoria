@@ -5,8 +5,8 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-07-PLAN.md
-last_updated: "2026-07-10T22:48:50.489Z"
+stopped_at: Blocked in 48-10-PLAN.md Task 2 generated-doc search-index assertion
+last_updated: "2026-07-10T22:59:22.934Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 5
@@ -227,6 +227,7 @@ Recent decisions affecting current work:
 None at milestone start.
 
 - Phase 48 Plan 10 blocked: focused contract suite failed because docs/adoption_lanes.md compatibility stub no longer carries scope-doctrine fragments expected by test/scoria/scope_doctrine_contract_test.exs.
+- Phase 48 Plan 10 blocked: Task 2 generated-doc assertion found docs/semantic_fast_path.md and docs/docker_dev_dx.md in doc/dist/search_data-CA6DA77B.js.
 
 ### Roadmap Evolution
 
@@ -300,8 +301,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T22:49:30Z
-Stopped at: Blocked in 48-10-PLAN.md Task 1 focused Phase 48 contract suite
+Last session: 2026-07-10T22:58:57.483Z
+Stopped at: Blocked in 48-10-PLAN.md Task 2 generated-doc search-index assertion
 Resume file: .planning/phases/48-exdoc-and-guide-ladder-restructure/48-10-SUMMARY.md
 
 ## Operator Next Steps
