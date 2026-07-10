@@ -137,26 +137,177 @@ defmodule Scoria.MixProject do
 
   defp docs do
     [
-      main: "readme",
+      main: "getting-started",
       source_url: @source_url,
       source_ref: docs_source_ref(),
-      extras: [
+      homepage_url: @hexdocs_url,
+      extra_section: "Guides",
+      formatters: ["html", "markdown"],
+      logo: "brandbook/logo-mark.svg",
+      favicon: "brandbook/favicon.svg",
+      extras: docs_extras(),
+      groups_for_extras: docs_extra_groups(),
+      groups_for_modules: docs_module_groups(),
+      filter_modules: &docs_public_module?/2,
+      redirects: docs_redirects()
+    ]
+  end
+
+  defp docs_extras do
+    [
+      "README.md",
+      "CHANGELOG.md",
+      "LICENSE",
+      "guides/getting-started.md",
+      "guides/golden-path.md",
+      "guides/jtbd-and-user-flows.md",
+      "guides/ownership-boundary.md",
+      "guides/capabilities/default-runtime.md",
+      "guides/capabilities/bounded-handoffs.md",
+      "guides/capabilities/semantic-cache.md",
+      "guides/capabilities/connectors-and-mcp.md",
+      "guides/capabilities/support-copilot-gallery.md",
+      "guides/reviewer-verification.md",
+      "guides/troubleshooting.md",
+      "guides/scoria-vs-external-llm-ops.md",
+      "guides/cheatsheet.cheatmd",
+      "guides/reference/glossary.md",
+      "guides/maintainers.md"
+    ]
+  end
+
+  defp docs_extra_groups do
+    [
+      "Start Here": [
         "README.md",
-        "LICENSE",
+        "guides/getting-started.md",
+        "guides/golden-path.md",
+        "guides/jtbd-and-user-flows.md",
+        "guides/ownership-boundary.md",
+        "guides/cheatsheet.cheatmd"
+      ],
+      Capabilities: [
+        "guides/capabilities/default-runtime.md",
+        "guides/capabilities/bounded-handoffs.md",
+        "guides/capabilities/semantic-cache.md",
+        "guides/capabilities/connectors-and-mcp.md",
+        "guides/capabilities/support-copilot-gallery.md"
+      ],
+      "Operate & Verify": [
+        "guides/reviewer-verification.md",
+        "guides/troubleshooting.md"
+      ],
+      "Compare & Decide": [
+        "guides/scoria-vs-external-llm-ops.md"
+      ],
+      Reference: [
+        "guides/reference/glossary.md"
+      ],
+      Maintainers: [
+        "guides/maintainers.md",
         "CHANGELOG.md",
-        "docs/glossary.md",
-        "docs/adoption_lanes.md",
-        "docs/scoria_vs_external_llm_ops.md",
-        "docs/phoenix_runtime_example.md",
-        "docs/bounded_handoffs.md",
-        "docs/semantic_fast_path.md",
-        "docs/operator_verification.md",
-        "docs/connector_adoption.md",
-        "docs/support_copilot_gallery.md",
-        "docs/MAINTAINERS.md"
+        "LICENSE"
       ]
     ]
   end
+
+  defp docs_module_groups do
+    [
+      "Start Here": [
+        Scoria,
+        Scoria.Identity
+      ],
+      "Install & Verify": [
+        ScoriaWeb.Router,
+        Scoria.VerificationSuites
+      ],
+      "Runtime & Workflows": [
+        Scoria.Runtime,
+        Scoria.Runtime.RunSummary,
+        Scoria.Runtime.RunDetail,
+        Scoria.PromptPolicy
+      ],
+      "Reviewer Dashboard": [
+        ScoriaWeb.DashboardScope,
+        ScoriaWeb.ReviewerSurface,
+        Scoria.Observe.ReviewerBroadcast
+      ],
+      "Eval & Release Proof": [
+        Scoria.Eval,
+        Scoria.PromptRegistry
+      ],
+      "Knowledge & Semantic Cache": [
+        Scoria.Knowledge,
+        Scoria.SemanticCache,
+        Scoria.SemanticCache.Profile
+      ],
+      "Connectors & MCP": [
+        Scoria.Connectors,
+        Scoria.Connectors.Auth,
+        Scoria.MCP.Tool,
+        Scoria.Req.Steps
+      ],
+      "Governance, Observe & SRE": [
+        Scoria.SRE,
+        Scoria.SRE.AlertSink,
+        Scoria.SRE.AuditSink
+      ],
+      "Compatibility Aliases": [
+        Scoria.SemanticLane,
+        Scoria.VerificationLanes,
+        ScoriaWeb.OperatorSurface,
+        Scoria.Observe.OperatorBroadcast
+      ]
+    ]
+  end
+
+  defp docs_redirects do
+    %{
+      "adoption_lanes" => "jtbd-and-user-flows",
+      "phoenix_runtime_example" => "golden-path",
+      "bounded_handoffs" => "bounded-handoffs",
+      "semantic_fast_path" => "semantic-cache",
+      "operator_verification" => "reviewer-verification",
+      "connector_adoption" => "connectors-and-mcp",
+      "support_copilot_gallery" => "support-copilot-gallery",
+      "scoria_vs_external_llm_ops" => "scoria-vs-external-llm-ops",
+      "MAINTAINERS" => "maintainers"
+    }
+  end
+
+  defp docs_public_modules do
+    MapSet.new([
+      Scoria,
+      Scoria.Identity,
+      Scoria.Runtime,
+      Scoria.Runtime.RunSummary,
+      Scoria.Runtime.RunDetail,
+      Scoria.PromptPolicy,
+      ScoriaWeb.Router,
+      ScoriaWeb.DashboardScope,
+      ScoriaWeb.ReviewerSurface,
+      Scoria.Observe.ReviewerBroadcast,
+      Scoria.VerificationSuites,
+      Scoria.SemanticCache.Profile,
+      Scoria.SemanticCache,
+      Scoria.Knowledge,
+      Scoria.Connectors,
+      Scoria.Connectors.Auth,
+      Scoria.MCP.Tool,
+      Scoria.Req.Steps,
+      Scoria.Eval,
+      Scoria.PromptRegistry,
+      Scoria.SRE,
+      Scoria.SRE.AlertSink,
+      Scoria.SRE.AuditSink,
+      Scoria.SemanticLane,
+      Scoria.VerificationLanes,
+      ScoriaWeb.OperatorSurface,
+      Scoria.Observe.OperatorBroadcast
+    ])
+  end
+
+  defp docs_public_module?(module, _metadata), do: MapSet.member?(docs_public_modules(), module)
 
   defp package do
     [
@@ -186,6 +337,21 @@ defmodule Scoria.MixProject do
         "CHANGELOG.md",
         "README.md",
         "LICENSE",
+        "guides/getting-started.md",
+        "guides/golden-path.md",
+        "guides/jtbd-and-user-flows.md",
+        "guides/ownership-boundary.md",
+        "guides/capabilities/default-runtime.md",
+        "guides/capabilities/bounded-handoffs.md",
+        "guides/capabilities/semantic-cache.md",
+        "guides/capabilities/connectors-and-mcp.md",
+        "guides/capabilities/support-copilot-gallery.md",
+        "guides/reviewer-verification.md",
+        "guides/troubleshooting.md",
+        "guides/scoria-vs-external-llm-ops.md",
+        "guides/cheatsheet.cheatmd",
+        "guides/reference/glossary.md",
+        "guides/maintainers.md",
         "docs/glossary.md",
         "docs/adoption_lanes.md",
         "docs/scoria_vs_external_llm_ops.md",
@@ -195,7 +361,11 @@ defmodule Scoria.MixProject do
         "docs/operator_verification.md",
         "docs/connector_adoption.md",
         "docs/support_copilot_gallery.md",
-        "docs/MAINTAINERS.md"
+        "docs/MAINTAINERS.md",
+        "brandbook/logo-primary.svg",
+        "brandbook/logo-primary-light.svg",
+        "brandbook/logo-mark.svg",
+        "brandbook/favicon.svg"
       ],
       licenses: ["MIT"],
       links: %{
