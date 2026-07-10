@@ -5,10 +5,10 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: ExDoc and guide ladder restructure
 status: executing
-stopped_at: Completed 47-03-PLAN.md
-last_updated: "2026-07-10T14:21:01.142Z"
+stopped_at: Phase 48 context gathered
+last_updated: "2026-07-10T16:00:50.321Z"
 last_activity: 2026-07-10
-last_activity_desc: Phase 47 complete, transitioned to Phase 48
+last_activity_desc: Phase 48 context gathered
 progress:
   total_phases: 5
   completed_phases: 2
@@ -25,14 +25,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 47 — readme-first-screen-positioning-and-scope-doctrine
+**Current focus:** Phase 48 - ExDoc and guide ladder restructure
 
 ## Current Position
 
 Phase: 48 — ExDoc and guide ladder restructure
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-07-10 — Phase 47 complete, transitioned to Phase 48
+Last activity: 2026-07-10 - Phase 48 context gathered
 
 ## Performance Metrics
 
@@ -248,10 +248,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T13:51:54.441Z
-Stopped at: Completed 47-03-PLAN.md
-Resume file: None
+Last session: 2026-07-10T16:00:50.312Z
+Stopped at: Phase 48 context gathered
+Resume file: .planning/phases/48-exdoc-and-guide-ladder-restructure/48-CONTEXT.md
 
 ## Operator Next Steps
 
-- Start Phase 46 with /gsd-discuss-phase 46 or /gsd-plan-phase 46
+- Start Phase 48 planning with /gsd-plan-phase 48
