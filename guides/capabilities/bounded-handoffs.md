@@ -4,7 +4,7 @@ Bounded handoffs are the narrow public delegation capability for Scoria. Use the
 
 Use this guide with [Default Runtime](guides/capabilities/default-runtime.md), [Golden Path](guides/golden-path.md), and the [glossary](guides/reference/glossary.md).
 
-Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Add bounded handoffs only when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
+Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Add bounded handoffs only when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage. The default runtime path is `identity -> start -> inspect -> resume`.
 
 ## What this capability does
 
@@ -129,6 +129,8 @@ mix test.runtime_to_handoff
 ```
 
 The verifier exercises the same delegated readback path in this guide: inspect `Scoria.get_run_detail/1`, confirm `delegated_handoffs`, and cross-check `/scoria/workflows/:run_id`.
+
+This is one canonical verification suite for the bounded handoff capability; do not replace it with raw workflow-table assertions.
 
 ## When to use this
 

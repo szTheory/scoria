@@ -2,6 +2,8 @@
 
 Reviewer verification proves that Scoria is installed, scoped, inspectable, and ready for optional capability work. Start with the default runtime verification suite before adding semantic cache, knowledge, connector, or support-copilot gallery proof.
 
+Start with the default runtime capability: run `mix test.adoption`, then use `mix test.runtime_to_handoff` only when you intentionally add bounded handoffs. This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
+
 Use this guide with [Getting Started](guides/getting-started.md), [Default Runtime](guides/capabilities/default-runtime.md), [Ownership Boundary](guides/ownership-boundary.md), [Troubleshooting](guides/troubleshooting.md), and the [Glossary](guides/reference/glossary.md).
 
 Compatibility note: older copied links and 0.1.x text may say `docs/operator_verification.md` or operator verification. New public docs should say reviewer verification. Use `operator` only for explicit SRE/on-call job sense or historical compatibility notes.
@@ -24,9 +26,9 @@ In current public vocabulary, that means the default runtime proof does not requ
 
 ## Dashboard auth and tenant scope proof
 
-The host authenticates the reviewer and asserts tenant scope before Scoria renders tenant-owned dashboard evidence. Scoria supplies the dashboard seam and records trusted scope; the host app owns authentication, authorization, tenant membership, role values, policy values, and business truth.
+The host authenticates the reviewer and asserts tenant scope before Scoria renders tenant-owned dashboard evidence. The host app authenticates the reviewer and asserts dashboard tenant scope. Query params do not choose tenants for the dashboard. Scoria supplies the dashboard seam and records trusted scope; the host app owns authentication, authorization, tenant membership, role values, policy values, and business truth. Authorization remains delegated to the host; Scoria does not introduce a role model.
 
-Mount the dashboard behind your Phoenix auth and membership checks:
+Mount the dashboard behind your Phoenix auth and membership checks; in short, mount the dashboard with host-authenticated scope:
 
 ```elixir
 scope "/" do
@@ -64,7 +66,7 @@ Verify the boundary:
 1. Open `/scoria` while authenticated as a reviewer for a known tenant.
 2. Confirm the dashboard renders only that tenant's runs, approvals, incidents, eval evidence, and prompt release evidence.
 3. Open `/scoria?tenant=another-tenant` with the same authenticated session.
-4. Confirm the tenant query hint does not change the asserted tenant scope.
+4. Confirm the tenant query hint does not change the asserted tenant scope; tenant query hint does not change the asserted dashboard scope.
 5. Remove or reject the resolver scope and confirm Scoria fails closed with generic browser-facing copy: `This Scoria dashboard is not available for this session.`
 
 The bare `scoria_dashboard "/scoria"` form still compiles for compatibility with generated/dev/example mounts. Prefer the explicit `on_mount:` plus `scope_resolver:` shape in authenticated host apps.

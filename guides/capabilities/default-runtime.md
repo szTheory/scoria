@@ -25,6 +25,13 @@ Core APIs:
 - `Scoria.resume_run/2`
 - `Scoria.list_runs_for_session/1`
 
+When you later add bounded handoffs, the same public readback path exposes delegated lineage:
+
+```elixir
+{:ok, detail} = Scoria.get_run_detail(run_id)
+delegated = detail.delegated_handoffs
+```
+
 ## Host-authenticated dashboard scope
 
 The host app authenticates the reviewer and asserts dashboard tenant scope. Scoria records and reads that scope; query params do not choose tenants.

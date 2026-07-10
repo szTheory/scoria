@@ -60,6 +60,8 @@ For the exact ownership split, see [Ownership Boundary](guides/ownership-boundar
 
 Use bounded handoffs only when a role needs to delegate a narrow slice of work to another role under the same durable run.
 
+That bounded handoff capability starts after the default runtime capability is already green; it is not the first adoption surface. The semantic cache capability is the later safe-read-only reuse step, and the optional knowledge base capability is a retrieval/citation layer, not a prerequisite for the default runtime.
+
 The host app owns:
 
 - which facts may enter `scoped_context`

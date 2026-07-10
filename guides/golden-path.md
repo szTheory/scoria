@@ -4,6 +4,20 @@ The first Scoria adoption path is intentionally boring: `identity -> start -> in
 
 Use this guide after [Getting Started](guides/getting-started.md) when you want one copyable Phoenix flow that proves the default runtime capability before optional features. Terminology lives in the [Glossary](guides/reference/glossary.md), and the ownership split lives in [Ownership Boundary](guides/ownership-boundary.md).
 
+Start with the default runtime capability. This is the baseline proof before bounded handoffs, semantic cache, optional knowledge, or remote connectors.
+
+## Capability Ladder
+
+Default runtime capability comes first: `identity -> start -> inspect -> resume` with `mix test.adoption`.
+Bounded handoff capability follows only when same-run delegation is needed; use `Scoria.start_handoff_run/3` and prove it with `mix test.runtime_to_handoff`.
+Semantic cache capability follows only for safe read-only reuse; define it with `use Scoria.SemanticCache.Profile`, wire it as `semantic_cache: [profile: MyApp.AI.AccountFaqCache]`, and prove it with `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path`.
+Optional knowledge base capability is for retrieval, citations, and grounding; prove it with `mix test.knowledge`.
+Remote connector capability is for MCP registration and reviewer-visible trace evidence; prove it with `mix test.connector`.
+
+Compatibility note: old links may still mention `connector_adoption.md` while copied docs move toward [Connectors and MCP](guides/capabilities/connectors-and-mcp.md). The embedded-boundary framing stays the same: host apps own business meaning and Scoria owns durable runtime evidence. This capability is explicitly optional.
+
+Start narrow. Expand only when the current capability already feels boring.
+
 ## The Path
 
 1. Build one host-owned `Scoria.Identity`.
@@ -26,6 +40,14 @@ The default runtime does not require:
 - direct workflow internals as the normal app entrypoint
 
 Start here even if you plan to add those capabilities later.
+
+For the next capability, add bounded handoffs only after this path is green. The runtime-to-handoff proof is:
+
+```bash
+mix test.runtime_to_handoff
+```
+
+The default boundary still applies: This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 ## Step 1: Build Identity
 
@@ -92,6 +114,8 @@ Open the reviewer trace for the same execution:
 
 Treat the dashboard as a reviewer trace, not as your product's system of record. Your Phoenix app owns the customer, ticket, account, order, prompt intent, success definition, expected output, and business meaning.
 
+Authorization remains delegated to the host; Scoria does not introduce a role model. If the host-authenticated scope resolver rejects a session, the dashboard fails closed with: This Scoria dashboard is not available for this session.
+
 ## Step 4: Resume A Paused Run
 
 If a run pauses for approval, resume that exact `run_id`:
@@ -128,6 +152,10 @@ end
 
 The runtime identity you pass to `Scoria.start_run/2` should use the same trusted `tenant_id` that your dashboard scope resolver returns, or live trace and approval updates will not line up in the reviewer UI.
 
+The bare `scoria_dashboard "/scoria"` form still compiles for generated/dev/example mounts through the session-backed default resolver. Authenticated host apps should prefer explicit `on_mount:` and `scope_resolver:` wiring.
+
+For install verification, use Check vs apply guardrails: run `mix scoria.install --dry-run`, then `mix scoria.install --check`, and only apply when `--check` reports the expected host surface state.
+
 ## Verification
 
 Run the default runtime verification suite after install and migrations:
@@ -139,6 +167,8 @@ mix test.adoption
 ```
 
 Adoption closeout exercises a packaged tarball from `mix hex.build --unpack`; it does not rely only on a monorepo path dependency. The maintainer details live in [Reviewer Verification](reviewer-verification.md).
+
+The reviewer verification guide is packaged at [Reviewer Verification](guides/reviewer-verification.md).
 
 ## Where To Go Next
 
