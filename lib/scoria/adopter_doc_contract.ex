@@ -21,6 +21,19 @@ defmodule Scoria.AdopterDocContract do
     "mix scoria.install --dry-run"
   ]
 
+  @embedded_phoenix_intro_marker "Scoria is an Elixir/Phoenix library you add to an existing Phoenix app to run AI/LLM work durably and inspectably."
+
+  @readme_first_screen_precedes_markers [
+    "Choose Your Capability",
+    "Default runtime capability",
+    "verification suite"
+  ]
+
+  @readme_stale_version_refutes [
+    "tag: \"v0.1.1\"",
+    "Current release: `0.1.1`"
+  ]
+
   @milestone_banner_refutes [
     "Scoria is shipped through",
     "shipped through `v"
@@ -48,6 +61,21 @@ defmodule Scoria.AdopterDocContract do
   Exact upgrade-safe install command markers for README Install guidance.
   """
   def upgrade_safe_install_markers, do: @upgrade_safe_install_markers
+
+  @doc """
+  Plain-English README intro marker that must precede capability vocabulary.
+  """
+  def embedded_phoenix_intro_marker, do: @embedded_phoenix_intro_marker
+
+  @doc """
+  README markers that must appear only after the embedded Phoenix intro.
+  """
+  def readme_first_screen_precedes_markers, do: @readme_first_screen_precedes_markers
+
+  @doc """
+  README-scoped stale release and fallback examples that must not reappear.
+  """
+  def readme_stale_version_refutes, do: @readme_stale_version_refutes
 
   @doc """
   Milestone banner phrases README must not contain.

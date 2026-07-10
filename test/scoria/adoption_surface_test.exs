@@ -99,6 +99,38 @@ defmodule Scoria.AdoptionSurfaceTest do
     end
   end
 
+  test "README explains embedded Phoenix positioning before capabilities and verification suites" do
+    content = File.read!(@readme)
+
+    intro_index = index_of!(content, AdopterDocContract.embedded_phoenix_intro_marker())
+
+    for marker <- AdopterDocContract.readme_first_screen_precedes_markers() do
+      assert intro_index < index_of!(content, marker),
+             "expected README intro to appear before #{inspect(marker)}"
+    end
+  end
+
+  test "README documents roles-not-headcount persona and surface boundaries" do
+    content = File.read!(@readme)
+
+    assert content =~
+             "Scoria is for Phoenix teams where one engineer may need to ship prompts, inspect runs, approve risky tool calls, run evals, and debug incidents without adopting a separate hosted control plane."
+
+    assert content =~ "Core:"
+    assert content =~ "Adjacent:"
+    assert content =~ "Not Scoria's surface:"
+    assert content =~ "reviewer is a role"
+  end
+
+  test "README does not contain stale 0.1.1 release or GitHub fallback guidance" do
+    content = File.read!(@readme)
+
+    for refute <- AdopterDocContract.readme_stale_version_refutes() do
+      refute content =~ refute,
+             "expected README not to contain stale release guidance #{inspect(refute)}"
+    end
+  end
+
   test "glossary documents the final public vocabulary and evidence boundary" do
     content = File.read!(@glossary)
 
@@ -144,7 +176,9 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "embedded-boundary framing"
     refute content =~ "mix scoria.test.knowledge"
     assert content =~ "This capability is explicitly optional."
-    assert content =~ "Start narrow. Expand only when the current capability already feels boring."
+
+    assert content =~
+             "Start narrow. Expand only when the current capability already feels boring."
   end
 
   test "phase 54 docs keep default-first capability wording with canonical runtime-to-handoff proof guidance" do
@@ -431,6 +465,13 @@ defmodule Scoria.AdoptionSurfaceTest do
 
       assert is_binary(moduledoc_text)
       assert String.trim(moduledoc_text) != ""
+    end
+  end
+
+  defp index_of!(content, marker) do
+    case :binary.match(content, marker) do
+      {index, _length} -> index
+      :nomatch -> flunk("expected content to contain #{inspect(marker)}")
     end
   end
 end
