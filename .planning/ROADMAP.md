@@ -93,6 +93,34 @@ Plans:
 
 **Requirements:** DOCS-01, DOCS-02, DOCS-03
 
+**Plans:** 10 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 48-01-PLAN.md — RED ExDoc/package/release-preview contracts for guide groups, source metadata, redirects, and package assets
+- [ ] 48-02-PLAN.md — RED canonical guide, stable-doc, glossary, scope, and public moduledoc contracts
+
+**Wave 2** *(blocked on Wave 1 contracts)*
+
+- [ ] 48-03-PLAN.md — Start Here guide ladder: Getting Started, Golden Path, JTBD, ownership boundary, and cheatsheet
+- [ ] 48-04-PLAN.md — Capability and reference guides: default runtime, handoffs, semantic cache, connectors/MCP, support gallery, and glossary
+- [ ] 48-05-PLAN.md — Operate/verify, troubleshooting, comparison, and maintainer guides
+
+**Wave 3** *(blocked on Wave 2 guides)*
+
+- [ ] 48-06-PLAN.md — README canonical guide links and old docs compatibility stubs
+- [ ] 48-08-PLAN.md — Public moduledocs for start/runtime/dashboard/reviewer entry points
+- [ ] 48-09-PLAN.md — Public moduledocs for capability, SRE, and compatibility alias modules
+
+**Wave 4** *(blocked on Wave 3 docs and module docs)*
+
+- [ ] 48-07-PLAN.md — ExDoc docs config, module groups, redirects, dynamic source refs, package files, and release-preview paths
+
+**Wave 5** *(blocked on Wave 4 config)*
+
+- [ ] 48-10-PLAN.md — Focused contract suite, release preview, generated docs inspection, and validation closeout
+
 **Success Criteria:**
 
 1. `mix.exs` docs config groups modules by domain area and extras by adopter/maintainer guide ladder.
@@ -137,7 +165,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 46. Terminology and public vocabulary migration | v3.5 | 8/8 | Complete    | 2026-07-09 |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
-| 48. ExDoc and guide ladder restructure | v3.5 | 0/0 | Not started | — |
+| 48. ExDoc and guide ladder restructure | v3.5 | 0/10 | Not started | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 0/0 | Not started | — |
 
