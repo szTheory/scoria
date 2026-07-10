@@ -104,7 +104,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 contracts)*
 
 - [x] 48-03-PLAN.md — Start Here guide ladder: Getting Started, Golden Path, JTBD, ownership boundary, and cheatsheet
-- [ ] 48-04-PLAN.md — Capability and reference guides: default runtime, handoffs, semantic cache, connectors/MCP, support gallery, and glossary
+- [x] 48-04-PLAN.md — Capability and reference guides: default runtime, handoffs, semantic cache, connectors/MCP, support gallery, and glossary
 - [ ] 48-05-PLAN.md — Operate/verify, troubleshooting, comparison, and maintainer guides
 
 **Wave 3** *(blocked on Wave 2 guides)*
@@ -170,7 +170,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 46. Terminology and public vocabulary migration | v3.5 | 8/8 | Complete    | 2026-07-09 |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
-| 48. ExDoc and guide ladder restructure | v3.5 | 3/15 | In Progress | — |
+| 48. ExDoc and guide ladder restructure | v3.5 | 4/15 | In Progress | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 0/0 | Not started | — |
 

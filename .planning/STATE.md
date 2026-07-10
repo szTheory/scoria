@@ -5,15 +5,16 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-03-PLAN.md
-last_updated: "2026-07-10T19:02:26.950Z"
-last_activity: 2026-07-10 -- Completed 48-03-PLAN.md
+stopped_at: Completed 48-04-PLAN.md
+last_updated: "2026-07-10T19:16:05.194Z"
+last_activity: 2026-07-10
+last_activity_desc: Completed 48-04-PLAN.md
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 14
-  percent: 54
+  completed_plans: 15
+  percent: 40
 ---
 
 # Project State
@@ -29,9 +30,9 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 4 of 15
+Plan: 5 of 15
 Status: Ready to execute
-Last activity: 2026-07-10 -- Completed 48-03-PLAN.md
+Last activity: 2026-07-10 -- Completed 48-04-PLAN.md
 
 ## Performance Metrics
 
@@ -184,6 +185,9 @@ Recent decisions affecting current work:
 - [Phase 48-03]: Start Here guides link to canonical guides/... paths even where later Phase 48 plans still own the target guide bodies.
 - [Phase 48-03]: The first-run guide ladder keeps the default runtime capability before optional semantic cache, knowledge, or connector setup.
 - [Phase 48-03]: The ownership-boundary guide carries the same public owns-vs-delegates table shape as README so scope doctrine stays executable.
+- [Phase 48-04]: Capability guides keep the default runtime first and frame knowledge, semantic cache, and connectors as optional expansions.
+- [Phase 48-04]: The semantic cache guide explicitly says it is not a knowledge base and treats lane_key only as stored 0.1.x compatibility vocabulary.
+- [Phase 48-04]: The canonical glossary preserves evidence_refs and compatibility aliases without introducing trace_refs storage vocabulary.
 
 ### Resolved And Deferred Work
 
@@ -235,6 +239,7 @@ None at milestone start.
 | Phase 48 P01 | 5 min | 2 tasks | 2 files |
 | Phase 48 P02 | 5m 29s | 2 tasks | 6 files |
 | Phase 48 P03 | 5m 41s | 2 tasks | 5 files |
+| Phase 48 P04 | 7m 19s | 2 tasks | 6 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -258,10 +263,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T19:02:15.202Z
-Stopped at: Completed 48-03-PLAN.md
+Last session: 2026-07-10T19:15:00.758Z
+Stopped at: Completed 48-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
 
-- Continue Phase 48 with 48-03-PLAN.md.
+- Continue Phase 48 with 48-05-PLAN.md.
