@@ -5,14 +5,14 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-14-PLAN.md
-last_updated: "2026-07-10T22:17:06.887Z"
+stopped_at: Completed 48-15-PLAN.md
+last_updated: "2026-07-10T22:24:11.216Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 23
+  completed_plans: 24
   percent: 40
 ---
 
@@ -29,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 13 of 15
+Plan: 14 of 15
 Status: Ready to execute
 Last activity: 2026-07-10
 
@@ -208,6 +208,8 @@ Recent decisions affecting current work:
 - [Phase 48-14]: Old capability docs paths are compatibility pages only; canonical guide bodies stay under guides/capabilities/.
 - [Phase 48-14]: Each compatibility page names the current guide first and mentions old names only as 0.1.x compatibility context.
 - [Phase 48-14]: The plan did not touch dev-only docs or ExDoc/package configuration.
+- [Phase 48]: [Phase 48-15]: Old reviewer verification and maintainer docs paths are compatibility stubs only; canonical guide bodies stay under guides/.
+- [Phase 48]: [Phase 48-15]: Operator verification wording appears only as compatibility context; current public guide name is Reviewer Verification.
 
 ### Resolved And Deferred Work
 
@@ -268,6 +270,7 @@ None at milestone start.
 | Phase 48 P12 | 3m 05s | 2 tasks | 6 files |
 | Phase 48 P13 | 28 min | 1 tasks | 8 files |
 | Phase 48 P14 | 2m 7s | 1 tasks | 4 files |
+| Phase 48 P15 | 1m 12s | 1 tasks | 2 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -291,8 +294,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T22:17:06.768Z
-Stopped at: Completed 48-14-PLAN.md
+Last session: 2026-07-10T22:24:11.211Z
+Stopped at: Completed 48-15-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
