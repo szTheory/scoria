@@ -4,6 +4,8 @@ This guide is the default Phoenix verification suite for Scoria's public runtime
 
 Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Use `mix test.runtime_to_handoff` as the bounded escalation verification suite when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
 
+Use the README table [What Scoria owns vs what your app owns](../README.md#what-scoria-owns-vs-what-your-app-owns) when checking the verification boundary. Reviewer is the public Scoria role; operator remains an SRE/on-call job sense or legacy alias in the [Glossary](glossary.md). Your Phoenix app owns authentication, authorization, tenant membership, role values, policy values, thresholds, escalation rules, and business truth before Scoria reads scope or evaluates proof.
+
 Start here with `mix scoria.install`, `mix ecto.migrate`, and `mix test.adoption`; add optional capabilities only when the default runtime capability is stable in your host app.
 
 ## What core success means

@@ -19,13 +19,30 @@ Scoria is for Phoenix teams where one engineer may need to ship prompts, inspect
 - **Adjacent:** security, privacy/legal, Trust and Safety, domain experts, PMs, and support teams consume hooks, docs, exported proof, or review outputs, but are not the first dedicated Scoria surface.
 - **Not Scoria's surface:** end users of host AI flows, host product designers, finance or executive dashboards, general data warehouses, and host auth or policy administration.
 
-Use [What Scoria owns vs what your app owns](#what-scoria-owns-vs-what-your-app-owns) to check the boundary before you add a capability. For peer-tradeoff framing, see the planned [Scoria vs external LLM-ops platforms](docs/scoria_vs_external_llm_ops.md) guide.
+Use [the ownership table below](#what-scoria-owns-vs-what-your-app-owns) to check the boundary before you add a capability. For peer-tradeoff framing, see the planned [Scoria vs external LLM-ops platforms](docs/scoria_vs_external_llm_ops.md) guide.
 
 ## Who This Is For
 
 Scoria is for Phoenix teams that want AI runtime governance, durable workflow state, reviewer-visible traces, and executable verification without turning their app into a hosted agent platform.
 
 The main job-to-be-done is simple: give a Phoenix app one boring, inspectable way to start, resume, debug, and verify identity-aware AI work.
+
+## What Scoria owns vs what your app owns
+
+This table translates the scope doctrine SSOT in `.planning/PROJECT.md ## Constraints` into public adoption boundaries.
+
+| Boundary | Scoria owns | Your Phoenix app owns | Why this boundary exists | Example / verification |
+|----------|-------------|-----------------------|--------------------------|------------------------|
+| Run records and traces | Durable run records, trace projection, exact `run_id` readback, and reviewer inspection. | Ticket, order, customer, domain truth, and host IDs. | Scoria records execution without becoming your business database. | `Scoria.get_run/1` and `/scoria/workflows/:run_id`. |
+| Reviewer dashboard scope | `/scoria`, the dashboard scope seam, trusted scope reads, and generic fail-closed copy. | Authentication, authorization, tenant membership, and role values. | Scoria can inspect only the tenant scope your app has already trusted. | `scoria_dashboard "/scoria", on_mount: ..., scope_resolver: ...`. |
+| Governance gates | Approval, budget, breaker, eval-gate, and tool-policy mechanisms. | Thresholds, policy values, escalation rules, and business risk interpretation. | Scoria supplies gates; your app decides what risk means. | Approval pauses, budget checks, breaker evidence, and eval gates. |
+| Eval and release proof | Scorer execution, persisted score evidence, fail-closed verdict posture, and verification-suite commands. | Prompts, product success definitions, expected outputs, and release intent. | Scoria proves the check ran; your app defines useful output. | `mix test.adoption`, eval runs, and release gates. |
+| Knowledge retrieval and grounding | Tenant-scoped retrieval filtering, citation validation, grounding checks, and persisted evidence. | Tenant/actor identity, corpus, business meaning, metadata semantics, and end-user answer surface. | Retrieval proof is only safe inside host-owned meaning and identity. | `mix test.knowledge` and citation scope evidence. |
+| Bounded handoff scoped context | Same-run handoff records, scoped-context validation, queued delegation, and delegated lineage readback. | Which facts may be passed and which role should receive them. | Delegation stays narrow instead of copying broad runtime state. | `Scoria.start_handoff_run/3` and `Scoria.get_run_detail/1`. |
+| Remote connectors and tools | Registration, grants, health state, trace evidence, and approval pauses. | Which tools exist, what credentials mean, and whether a side effect is allowed. | Tool governance can pause work, but product authority stays with the host. | `mix test.connector` and connector trace details. |
+| Phoenix/BEAM infrastructure | Library defaults, Ecto migrations, Telemetry/PubSub/Oban-friendly integration points, and dashboard assets. | Deployment topology, repo config, secrets, app supervision, and non-Scoria UI. | Scoria fits into Phoenix instead of replacing the host application. | `mix scoria.install`, migrations, and host supervision. |
+
+Longer guide sections keep the same split: Scoria records, gates, surfaces, and reconstructs AI work; your Phoenix app owns identity, policy values, business truth, and end-user surfaces.
 
 ## Choose Your Capability
 

@@ -5,6 +5,8 @@ Scoria is easiest to adopt when you treat it as a layered Phoenix runtime, not a
 Start with the narrowest capability that solves your current problem. Expand only when the previous capability already feels boring in your host app. See [Glossary](glossary.md) for the final terminology map.
 Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Use `mix test.runtime_to_handoff` as the bounded escalation verification suite when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
 
+For the ownership boundary behind each capability, see [What Scoria owns vs what your app owns](../README.md#what-scoria-owns-vs-what-your-app-owns) in the README. Scoria is for Phoenix teams where one engineer may need to wear the AI/product, platform, SRE, prompt, eval, and reviewer hats without adopting a separate hosted control plane.
+
 ## Capability Set
 
 ### 1. Default runtime capability
