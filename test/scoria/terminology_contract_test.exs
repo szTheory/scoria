@@ -10,6 +10,7 @@ defmodule Scoria.TerminologyContractTest do
   @stable_adopter_docs [
     "README.md",
     "docs/adoption_lanes.md",
+    "docs/scoria_vs_external_llm_ops.md",
     "docs/bounded_handoffs.md",
     "docs/phoenix_runtime_example.md",
     "docs/semantic_fast_path.md",
@@ -103,7 +104,9 @@ defmodule Scoria.TerminologyContractTest do
     refute corpus =~ "operator-visible"
     refute corpus =~ "Delegated Evidence"
     assert corpus =~ "RAG/citation evidence" or corpus =~ "citation and grounding evidence"
-    assert corpus =~ "audit evidence" or corpus =~ "Budget evidence" or corpus =~ "policy evidence"
+
+    assert corpus =~ "audit evidence" or corpus =~ "Budget evidence" or
+             corpus =~ "policy evidence"
   end
 
   test "legacy aliases are framed as explicit 0.1.x compatibility notes" do

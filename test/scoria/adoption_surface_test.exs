@@ -22,6 +22,7 @@ defmodule Scoria.AdoptionSurfaceTest do
   @gap_ledger "docs/bounded_handoffs.md"
   @semantic_guide "docs/semantic_fast_path.md"
   @operator_guide "docs/operator_verification.md"
+  @comparison_guide AdopterDocContract.comparison_guide_path()
   @maintainer_guide "docs/MAINTAINERS.md"
   @glossary "docs/glossary.md"
   @scoria_doctest "test/scoria_test.exs"
@@ -120,6 +121,76 @@ defmodule Scoria.AdoptionSurfaceTest do
     assert content =~ "Adjacent:"
     assert content =~ "Not Scoria's surface:"
     assert content =~ "reviewer is a role"
+  end
+
+  test "README links to the stable external LLM-ops comparison guide" do
+    content = File.read!(@readme)
+
+    assert content =~ "Scoria vs external LLM-ops platforms"
+    assert content =~ @comparison_guide
+  end
+
+  test "comparison guide documents safe current claims, peer posture, ceded strengths, and deferred seeds" do
+    assert File.regular?(@comparison_guide),
+           "expected #{@comparison_guide} to exist as the stable POS-04 guide"
+
+    content = File.read!(@comparison_guide)
+
+    assert content =~ "# #{AdopterDocContract.comparison_guide_title()}"
+    assert content =~ "## What Scoria currently owns"
+    assert content =~ "## Where external platforms may be stronger"
+    assert content =~ "## Peer deployment posture and sources"
+    assert content =~ "## Not current Scoria claims"
+    assert content =~ "docs/glossary.md"
+
+    for peer_name <- AdopterDocContract.comparison_required_peer_names() do
+      assert content =~ peer_name,
+             "expected comparison guide to name #{inspect(peer_name)}"
+    end
+
+    for source_link <- AdopterDocContract.comparison_peer_source_links() do
+      assert content =~ source_link,
+             "expected comparison guide to source-link #{inspect(source_link)}"
+    end
+
+    current_section =
+      section_between!(
+        content,
+        "## What Scoria currently owns",
+        "## What your Phoenix app still owns"
+      )
+
+    for current_claim <- AdopterDocContract.comparison_safe_current_claims() do
+      assert current_section =~ current_claim,
+             "expected current-Scoria section to contain #{inspect(current_claim)}"
+    end
+
+    for forbidden_claim <- AdopterDocContract.comparison_forbidden_current_claims() do
+      refute current_section =~ forbidden_claim,
+             "expected current-Scoria section not to claim #{inspect(forbidden_claim)}"
+    end
+
+    ceded_section =
+      section_between!(
+        content,
+        "## Where external platforms may be stronger",
+        "## Peer deployment posture and sources"
+      )
+
+    for ceded_strength <- AdopterDocContract.comparison_ceded_strengths() do
+      assert ceded_section =~ ceded_strength,
+             "expected ceded-strength section to contain #{inspect(ceded_strength)}"
+    end
+
+    deferred_section = section_after!(content, "## Not current Scoria claims")
+
+    for deferred_claim <- AdopterDocContract.comparison_deferred_not_current_claims() do
+      assert deferred_section =~ deferred_claim,
+             "expected deferred section to contain #{inspect(deferred_claim)}"
+    end
+
+    refute content =~ "hosted-only"
+    refute content =~ "all peers are SaaS"
   end
 
   test "README does not contain stale 0.1.1 release or GitHub fallback guidance" do
@@ -473,5 +544,20 @@ defmodule Scoria.AdoptionSurfaceTest do
       {index, _length} -> index
       :nomatch -> flunk("expected content to contain #{inspect(marker)}")
     end
+  end
+
+  defp section_between!(content, start_marker, end_marker) do
+    start_index = index_of!(content, start_marker)
+    end_index = index_of!(content, end_marker)
+
+    assert start_index < end_index,
+           "expected #{inspect(start_marker)} to appear before #{inspect(end_marker)}"
+
+    binary_part(content, start_index, end_index - start_index)
+  end
+
+  defp section_after!(content, start_marker) do
+    start_index = index_of!(content, start_marker)
+    binary_part(content, start_index, byte_size(content) - start_index)
   end
 end
