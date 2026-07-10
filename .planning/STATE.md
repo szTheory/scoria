@@ -5,15 +5,15 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-02-PLAN.md
-last_updated: "2026-07-10T18:50:45.128Z"
-last_activity: 2026-07-10 -- Completed 48-02-PLAN.md
+stopped_at: Completed 48-03-PLAN.md
+last_updated: "2026-07-10T19:02:26.950Z"
+last_activity: 2026-07-10 -- Completed 48-03-PLAN.md
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 13
-  percent: 50
+  completed_plans: 14
+  percent: 54
 ---
 
 # Project State
@@ -29,9 +29,9 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 3 of 15
+Plan: 4 of 15
 Status: Ready to execute
-Last activity: 2026-07-10 -- Completed 48-02-PLAN.md
+Last activity: 2026-07-10 -- Completed 48-03-PLAN.md
 
 ## Performance Metrics
 
@@ -181,6 +181,9 @@ Recent decisions affecting current work:
 - [Phase 48-02]: Plan 48-02 intentionally remains RED; canonical guide files, README links, and D-17 module guide links are implemented by later Phase 48 plans.
 - [Phase 48-02]: Stable adopter-doc contracts now treat old docs/*.md paths as compatibility-only; canonical public truth points at guides/ paths.
 - [Phase 48-02]: Public moduledoc tests use Code.fetch_docs/1 to verify compiled docs without adding doctest expectations for runtime, dashboard, DB, or LiveView examples.
+- [Phase 48-03]: Start Here guides link to canonical guides/... paths even where later Phase 48 plans still own the target guide bodies.
+- [Phase 48-03]: The first-run guide ladder keeps the default runtime capability before optional semantic cache, knowledge, or connector setup.
+- [Phase 48-03]: The ownership-boundary guide carries the same public owns-vs-delegates table shape as README so scope doctrine stays executable.
 
 ### Resolved And Deferred Work
 
@@ -231,6 +234,7 @@ None at milestone start.
 | Phase 47 P03 | 10m 33s | 3 tasks | 9 files |
 | Phase 48 P01 | 5 min | 2 tasks | 2 files |
 | Phase 48 P02 | 5m 29s | 2 tasks | 6 files |
+| Phase 48 P03 | 5m 41s | 2 tasks | 5 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -254,8 +258,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T18:50:45.125Z
-Stopped at: Completed 48-02-PLAN.md
+Last session: 2026-07-10T19:02:15.202Z
+Stopped at: Completed 48-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
