@@ -5,14 +5,14 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-12-PLAN.md
-last_updated: "2026-07-10T20:20:27.991Z"
+stopped_at: Completed 48-13-PLAN.md
+last_updated: "2026-07-10T22:08:28.101Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 21
+  completed_plans: 22
   percent: 40
 ---
 
@@ -29,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 11 of 15
+Plan: 12 of 15
 Status: Ready to execute
 Last activity: 2026-07-10
 
@@ -202,6 +202,9 @@ Recent decisions affecting current work:
 - [Phase 48]: Dashboard/reviewer/verification-suite public moduledocs now use canonical guides links and state host-authenticated dashboard scope; query params are UI hints, not tenant authority.
 - [Phase 48]: Plan 48-12 stayed documentation-only with no router, DashboardScope, PubSub, verification-suite data, package, or guide-body behavior changes.
 - [Phase 48]: Broad adoption-surface guide-fragment and SRE.AlertSink failures remain deferred outside the 48-12 file set.
+- [Phase 48]: [Phase 48-13]: Kept SRE and compatibility alias polishing documentation-only; no SRE runtime behavior, sink behavior, wrapper delegation, package config, guide body, or runtime deprecation attributes changed.
+- [Phase 48]: [Phase 48-13]: Compatibility alias moduledocs retain exact legacy-wrapper wording for ExDoc contracts while naming final replacement modules and glossary migration notes.
+- [Phase 48]: [Phase 48-13]: Broad adoption-surface guide-fragment failures remain out of scope for this plan and are logged in Phase 48 deferred-items.md.
 
 ### Resolved And Deferred Work
 
@@ -260,6 +263,7 @@ None at milestone start.
 | Phase 48 P09 | 5 min | 1 tasks | 9 files |
 | Phase 48 P11 | 4 min | 1 tasks | 5 files |
 | Phase 48 P12 | 3m 05s | 2 tasks | 6 files |
+| Phase 48 P13 | 28 min | 1 tasks | 8 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -283,8 +287,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T20:20:27.986Z
-Stopped at: Completed 48-12-PLAN.md
+Last session: 2026-07-10T22:08:28.095Z
+Stopped at: Completed 48-13-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
