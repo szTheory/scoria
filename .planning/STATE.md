@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
 status: executing
-stopped_at: Phase 47 UI-SPEC approved
-last_updated: "2026-07-10T03:04:33.716Z"
-last_activity: 2026-07-10 -- Phase 47 planning complete
+stopped_at: Completed 47-02-PLAN.md
+last_updated: "2026-07-10T13:37:00.422Z"
+last_activity: 2026-07-10
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 10
   percent: 20
 ---
 
@@ -22,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 47 — README first-screen positioning and scope doctrine
+**Current focus:** Phase 47 — readme-first-screen-positioning-and-scope-doctrine
 
 ## Current Position
 
-Phase: 47 — README first-screen positioning and scope doctrine
-Plan: Not started
+Phase: 47 (readme-first-screen-positioning-and-scope-doctrine) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-07-10 -- Phase 47 planning complete
+Last activity: 2026-07-10
 
 ## Performance Metrics
 
@@ -170,6 +170,9 @@ Recent decisions affecting current work:
 - [Phase 44-06]: Plan path test/scoria_web/live/prompt_live/index_test.exs maps to current test/scoria_web/live/prompt_live_test.exs.
 - [Phase 44]: 44-02: Home, Connectors, and Incidents now consume ScoriaWeb.DashboardScope tenant assigns before tenant-owned reads or PubSub subscriptions.
 - [Phase 44]: 44-02: OrchestratorLive review_candidate_id deep links use Scoria.Eval.get_review_candidate_for_tenant/2 so URL object IDs cannot cross tenant scope.
+- [Phase 47-02]: README now leads with embedded Phoenix positioning before capability and verification-suite vocabulary. — POS-01 front-door comprehension depends on product category before coined vocabulary.
+- [Phase 47-02]: Public scope table uses adopter-readable ownership rows instead of P1-P6 public labels. — POS-03 needs host-owned responsibilities to be concrete for Phoenix adopters.
+- [Phase 47-02]: README links to the Phase 47-03 comparison guide without creating or packaging that guide in 47-02. — The plan explicitly reserves comparison-guide creation and package-surface wiring for 47-03.
 
 ### Resolved And Deferred Work
 
@@ -216,6 +219,7 @@ None at milestone start.
 | Phase 46 P06 | 4 min | 2 tasks | 11 files |
 | Phase 46 P07 | 14 min | 1 tasks | 14 files |
 | Phase 46 P08 | 6 min | 1 tasks | 3 files |
+| Phase 47 P02 | 5 min | 2 tasks | 3 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -239,9 +243,9 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T02:34:17.622Z
-Stopped at: Phase 47 UI-SPEC approved
-Resume file: .planning/phases/47-readme-first-screen-positioning-and-scope-doctrine/47-UI-SPEC.md
+Last session: 2026-07-10T13:36:34.837Z
+Stopped at: Completed 47-02-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 

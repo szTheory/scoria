@@ -9,9 +9,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Positioning
 
-- [ ] **POS-01**: A Phoenix adopter can read the README first screen and understand that Scoria is an embedded Phoenix library for durable, inspectable AI/LLM work before encountering capability or verification-suite vocabulary.
-- [ ] **POS-02**: A Phoenix adopter can identify who Scoria is for, who it is not for, and how the n=1 reviewer/operator persona maps to the product surface.
-- [ ] **POS-03**: A Phoenix adopter can see what Scoria owns versus what the host app owns through a concrete scope-doctrine table.
+- [x] **POS-01**: A Phoenix adopter can read the README first screen and understand that Scoria is an embedded Phoenix library for durable, inspectable AI/LLM work before encountering capability or verification-suite vocabulary.
+- [x] **POS-02**: A Phoenix adopter can identify who Scoria is for, who it is not for, and how the n=1 reviewer/operator persona maps to the product surface.
+- [x] **POS-03**: A Phoenix adopter can see what Scoria owns versus what the host app owns through a concrete scope-doctrine table.
 - [ ] **POS-04**: A Phoenix adopter can compare Scoria to hosted LLM-ops tools using honest tradeoffs: embedded governance, zero required egress, in-path gates, and ceded warehouse/cross-language strengths.
 
 ### Terminology
@@ -75,9 +75,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| POS-01 | Phase 47 | Pending |
-| POS-02 | Phase 47 | Pending |
-| POS-03 | Phase 47 | Pending |
+| POS-01 | Phase 47 | Complete |
+| POS-02 | Phase 47 | Complete |
+| POS-03 | Phase 47 | Complete |
 | POS-04 | Phase 47 | Pending |
 | TERM-01 | Phase 46 | Complete |
 | TERM-02 | Phase 46 | Complete |
