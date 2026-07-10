@@ -462,22 +462,16 @@ end
 |---|-------|---------|---------------|
 | — | No `[ASSUMED]` claims are used in this research. [VERIFIED: manual source-tag review] | All | None from assumptions; remaining risks are implementation choices and stale future package docs. [VERIFIED: manual source-tag review] |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Exact generated target IDs for redirects**  
-   - What we know: ExDoc redirects use extensionless IDs and the destination may include anchors. [CITED: https://hexdocs.pm/ex_doc/ExDoc.html]  
-   - What's unclear: The final target IDs depend on whether the planner uses file basenames or per-extra `filename:` overrides. [CITED: https://hexdocs.pm/ex_doc/ExDoc.html]  
-   - Recommendation: Generate or reason from the final `extras` filenames, then lock redirects in a contract test before moving content. [VERIFIED: 48-CONTEXT.md]
+1. **RESOLVED: Exact generated target IDs for redirects**  
+   - Decision: Use extensionless basename IDs derived from the canonical guide filenames, with no per-extra `filename:` overrides planned for redirect targets. Plan 07 locks this map in `docs_redirects/0`: `adoption_lanes` -> `jtbd-and-user-flows`, `phoenix_runtime_example` -> `golden-path`, `bounded_handoffs` -> `bounded-handoffs`, `semantic_fast_path` -> `semantic-cache`, `operator_verification` -> `reviewer-verification`, `connector_adoption` -> `connectors-and-mcp`, `support_copilot_gallery` -> `support-copilot-gallery`, `scoria_vs_external_llm_ops` -> `scoria-vs-external-llm-ops`, and `MAINTAINERS` -> `maintainers`. Plan 01 locks RED redirect coverage before moving content. [VERIFIED: 48-CONTEXT.md] [VERIFIED: 48-01-PLAN.md] [VERIFIED: 48-07-PLAN.md]
 
-2. **How aggressive `filter_modules` should be on first pass**  
-   - What we know: Phase 48 D-14 says to hide/filter implementation details aggressively. [VERIFIED: 48-CONTEXT.md]  
-   - What's unclear: Some returned structs may need minimal public docs if public functions expose them. [VERIFIED: 48-CONTEXT.md]  
-   - Recommendation: Start from the D-17 public-entry list, add visible data structs required by those APIs, and keep the rest hidden or filtered. [VERIFIED: 48-CONTEXT.md]
+2. **RESOLVED: How aggressive `filter_modules` should be on first pass**  
+   - Decision: Use a positive public-module allowlist in `mix.exs` through `docs_public_modules/0` and `docs_public_module?/2`. The visible set starts from D-13 and D-17, adds runtime summary/detail DTOs needed by public APIs, and keeps D-15 compatibility wrappers visible in a dedicated Compatibility Aliases group. Implementation details named by D-14 stay hidden or filtered. Plans 02, 07, 08, and 09 create the contracts, ExDoc config, and public moduledoc updates for that allowlist. [VERIFIED: 48-CONTEXT.md] [VERIFIED: 48-02-PLAN.md] [VERIFIED: 48-07-PLAN.md] [VERIFIED: 48-08-PLAN.md] [VERIFIED: 48-09-PLAN.md]
 
-3. **Whether docs warning-as-error can be added now**  
-   - What we know: ExDoc supports `--warnings-as-errors`, and Phase 48 defers broad WAE unless it does not become a warning cleanup project. [CITED: https://hexdocs.pm/ex_doc/Mix.Tasks.Docs.html] [VERIFIED: 48-CONTEXT.md]  
-   - What's unclear: The current full `mix docs --warnings-as-errors` status was not run during research to avoid mutating generated docs beyond the research scope. [VERIFIED: command log]  
-   - Recommendation: Planner should make WAE optional behind a focused checkpoint after migration and release-preview are green. [VERIFIED: 48-CONTEXT.md]
+3. **RESOLVED: Whether docs warning-as-error can be added now**  
+   - Decision: Phase 48 does not add a broad `mix docs --warnings-as-errors` CI or phase gate. D-22 and Plan 10 set the Phase 48 gate to the focused docs/package contract suite, `mix scoria.release_preview`, and generated docs assertions. The broader warning-clean docs command remains owned by Phase 49's DOCS-04 requirement and Phase 50 release hardening. [VERIFIED: 48-CONTEXT.md] [VERIFIED: 48-10-PLAN.md] [VERIFIED: .planning/REQUIREMENTS.md]
 
 ## Environment Availability
 
