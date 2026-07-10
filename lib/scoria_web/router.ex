@@ -1,7 +1,29 @@
 defmodule ScoriaWeb.Router do
   @moduledoc """
-  Provides the scoria_dashboard macro to mount the Scoria LiveView dashboard
-  in a host Phoenix application.
+  Mounts Scoria's reviewer dashboard inside a host Phoenix router.
+
+  Use `scoria_dashboard/2` after the host app has already chosen the browser
+  pipeline and authentication gates for reviewers. Scoria provides the LiveView
+  routes, dashboard assets, and scope hook; the host app still owns
+  authentication, authorization, tenant membership, and role policy.
+
+  In authenticated apps, prefer the explicit mount shape:
+
+      scope "/" do
+        pipe_through [:browser, :require_authenticated_user]
+
+        scoria_dashboard "/scoria",
+          on_mount: [{MyAppWeb.UserAuth, :require_authenticated}],
+          scope_resolver: MyAppWeb.ScoriaDashboardScope
+      end
+
+  `on_mount:` hooks run before Scoria's dashboard scope hook, so host auth can
+  place trusted reviewer, tenant, and actor data on the socket. `scope_resolver:`
+  then converts that host-authenticated scope into the dashboard assigns used by
+  Scoria pages.
+
+  Start with `guides/getting-started.md`, then review the host/application
+  boundary in `guides/ownership-boundary.md`.
   """
 
   defmacro scoria_mcp(path, opts \\ []) do

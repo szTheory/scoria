@@ -1,10 +1,39 @@
 defmodule ScoriaWeb.DashboardScope do
   @moduledoc """
-  Host-asserted tenant scope for the embedded Scoria dashboard.
+  Host-authenticated tenant scope for the embedded Scoria dashboard.
 
-  The dashboard scope is resolved at the LiveView mount boundary. Host apps own
-  authentication and authorization; Scoria normalizes the resulting tenant data
-  and fails closed when no tenant is asserted.
+  Use this module when a mounted `/scoria` dashboard needs trusted tenant and
+  actor values from the host Phoenix app. Host apps own authentication,
+  authorization, tenant membership, role values, and policy decisions. Scoria
+  normalizes the resulting scope, assigns it to dashboard LiveViews, and fails
+  closed when no trusted tenant scope is asserted.
+
+  Query params do not choose tenants. Public params and route values may be
+  useful UI hints for selecting a run, trace, incident, or connector after mount,
+  but tenant authority must come from the host-authenticated scope.
+
+      defmodule MyAppWeb.ScoriaDashboardScope do
+        @behaviour ScoriaWeb.DashboardScope.Resolver
+
+        @impl true
+        def resolve(_params, _session, socket) do
+          account = socket.assigns.current_account
+          user = socket.assigns.current_user
+
+          {:ok,
+           %{
+             tenant_id: account.id,
+             actor_id: user.id,
+             display_tenant: account.name
+           }}
+        end
+      end
+
+  The default resolver reads normalized scope keys from socket assigns and
+  session data; it ignores query params as tenant authority.
+
+  See `guides/ownership-boundary.md` for the full Scoria-vs-host responsibility
+  table and `guides/getting-started.md` for the dashboard mount sequence.
   """
 
   import Phoenix.Component, only: [assign: 3]
