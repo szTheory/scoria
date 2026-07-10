@@ -11,6 +11,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     "priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs",
     "docs/glossary.md",
     "docs/adoption_lanes.md",
+    "docs/scoria_vs_external_llm_ops.md",
     "docs/phoenix_runtime_example.md",
     "docs/bounded_handoffs.md",
     "docs/semantic_fast_path.md",
@@ -33,6 +34,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     Mix.Task.run("docs")
 
     Mix.shell().info("==> Building unpacked Hex preview")
+
     {output, status} =
       System.cmd("mix", ["hex.build", "--unpack", "--output", output_dir],
         cd: File.cwd!(),
