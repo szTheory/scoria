@@ -2,6 +2,9 @@ defmodule Scoria.MixProject do
   use Mix.Project
 
   @version "0.1.2"
+  @source_url "https://github.com/szTheory/scoria"
+  @hexdocs_url "https://hexdocs.pm/scoria"
+  @release_docs_url "#{@hexdocs_url}/#{@version}"
 
   def project do
     [
@@ -15,8 +18,8 @@ defmodule Scoria.MixProject do
       aliases: aliases(),
       docs: docs(),
       package: package(),
-      source_url: "https://github.com/szTheory/scoria",
-      homepage_url: "https://hexdocs.pm/scoria",
+      source_url: @source_url,
+      homepage_url: @hexdocs_url,
       test_load_filters: [
         fn path ->
           String.ends_with?(path, "_test.exs") and not excluded_test_path?(path)
@@ -120,10 +123,23 @@ defmodule Scoria.MixProject do
     "Phoenix-native AI ops: LLM traces, evals, prompt versions, replay, tool governance, and MCP workflows. Ecto-backed, LiveView-included."
   end
 
+  def docs_source_ref do
+    release_ref = "v#{@version}"
+
+    case System.get_env("SCORIA_DOCS_SOURCE_REF") do
+      ref when is_binary(ref) and ref != "" ->
+        ref
+
+      _ ->
+        if git_exact_ref?(release_ref), do: release_ref, else: "main"
+    end
+  end
+
   defp docs do
     [
       main: "readme",
-      source_ref: "v#{@version}",
+      source_url: @source_url,
+      source_ref: docs_source_ref(),
       extras: [
         "README.md",
         "LICENSE",
@@ -183,11 +199,21 @@ defmodule Scoria.MixProject do
       ],
       licenses: ["MIT"],
       links: %{
-        "GitHub" => "https://github.com/szTheory/scoria",
-        "Documentation" => "https://hexdocs.pm/scoria",
+        "GitHub" => @source_url,
+        "Documentation" => @hexdocs_url,
+        "Release Docs" => @release_docs_url,
         "Changelog" => "https://hex.pm/packages/scoria/changelog"
       },
       tags: ~w(elixir phoenix ai llm mcp observability liveview workflows approvals)
     ]
+  end
+
+  defp git_exact_ref?(ref) do
+    case System.cmd("git", ["tag", "--points-at", "HEAD"], stderr_to_stdout: true) do
+      {tags, 0} -> ref in String.split(tags)
+      _ -> false
+    end
+  rescue
+    _ -> false
   end
 end
