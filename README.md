@@ -11,20 +11,15 @@ AI ops for Phoenix apps.
 [![Elixir](https://img.shields.io/badge/Elixir-1.19%2B-4B275F.svg)](https://elixir-lang.org/)
 [![Phoenix](https://img.shields.io/badge/Phoenix-1.7%2B-FD4F00.svg)](https://www.phoenixframework.org/)
 
-Scoria is a batteries-included Phoenix library for production AI features. It records every run - prompt renders, model calls, tool calls, retrieval events, approvals, and eval scores - as structured, queryable traces. You get a LiveView reviewer UI, an eval flywheel, a prompt version registry, and a tool/MCP governance layer, all wired into Phoenix, Ecto, and OTP without a black-box dependency.
+Scoria is an Elixir/Phoenix library you add to an existing Phoenix app to run AI/LLM work durably and inspectably. Every run - one execution such as a prompt render, model call, tool call, retrieval, approval, or eval score - is recorded as a queryable Postgres/Ecto trace. A mounted LiveView dashboard at `/scoria` lets a human reviewer inspect, debug, approve, and resume that work. Scoria runs inside your app's BEAM and database boundary; it is not a hosted SaaS agent platform.
 
-Scoria is a Phoenix-native runtime with a narrow public surface - **start with the default runtime capability**, add capabilities only when needed:
+Scoria is for Phoenix teams where one engineer may need to ship prompts, inspect runs, approve risky tool calls, run evals, and debug incidents without adopting a separate hosted control plane. The reviewer is a role one engineer may wear, not a department.
 
-- **Default runtime** - durable runs, approvals, reviewer traces
-- **Bounded handoff** - narrow same-run delegation, scoped context, visible lineage
-- **Semantic cache** - opt-in, tenant-partitioned reuse for explicitly safe read-only work
-- **Optional knowledge base** - pgvector retrieval/grounding when chosen
-- **Remote connector** - MCP tool surfaces after the default runtime capability is green
-- **Upgrade-safe install** - `mix scoria.install` with plan/check/apply paths
+- **Core:** Phoenix AI/product engineers, backend/platform engineers, SRE/devops hats, reviewers/approvers, prompt writers, eval checkers, and MCP/workflow configurators.
+- **Adjacent:** security, privacy/legal, Trust and Safety, domain experts, PMs, and support teams consume hooks, docs, exported proof, or review outputs, but are not the first dedicated Scoria surface.
+- **Not Scoria's surface:** end users of host AI flows, host product designers, finance or executive dashboards, general data warehouses, and host auth or policy administration.
 
-Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Use `mix test.runtime_to_handoff` as the bounded escalation verification suite when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
-
-Optional capabilities follow the scope doctrine SSOT in `.planning/PROJECT.md ## Constraints`: Scoria owns proof mechanisms such as retrieval filtering, eval gates, and dashboard seams while the host owns identity, policy values, and business truth.
+Use [What Scoria owns vs what your app owns](#what-scoria-owns-vs-what-your-app-owns) to check the boundary before you add a capability. For peer-tradeoff framing, see the planned [Scoria vs external LLM-ops platforms](docs/scoria_vs_external_llm_ops.md) guide.
 
 ## Who This Is For
 
@@ -41,6 +36,9 @@ Use the narrowest capability that solves your current app problem:
 - **Semantic cache capability**: add this when you want tenant-partitioned answer reuse for explicitly safe read-only work.
 - **Optional knowledge base capability**: add this only when you are intentionally validating retrieval, citations, and grounding.
 - **Remote connector capability**: add this only when MCP tool surfaces are part of your product.
+- **Upgrade-safe install**: use the plan, check, and apply modes when adopting or upgrading Scoria in an existing Phoenix app.
+
+Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Use `mix test.runtime_to_handoff` as the bounded escalation verification suite when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
 
 Docs:
 
@@ -67,7 +65,7 @@ Add Scoria from Hex, then mount the dashboard and run the installer:
 def deps do
   [
     {:scoria, "~> 0.1", hex: :scoria}
-    # Fork or pinned patch only: {:scoria, github: "szTheory/scoria", tag: "v0.1.1"}
+    # Fork or pinned patch only: {:scoria, github: "szTheory/scoria", tag: "v0.1.2"}
   ]
 end
 ```
@@ -295,14 +293,14 @@ For the public delegation capability, see [`docs/bounded_handoffs.md`](docs/boun
 
 ## What Scoria Adds
 
-- OpenInference-style trace capture and redaction
+- reviewer-visible trace capture and redaction inside your Phoenix app
 - durable workflows, handoffs, and recovery
 - pgvector-backed knowledge, citations, and grounding checks
 - a trace-first LiveView surface for reviewers
 
 ## Status
 
-Current release: `0.1.1` on [Hex](https://hex.pm/packages/scoria). See [CHANGELOG.md](CHANGELOG.md).
+Current release: `0.1.2` on [Hex](https://hex.pm/packages/scoria). The next release cut is `0.1.3` and belongs to Phase 50. See [CHANGELOG.md](CHANGELOG.md).
 
 ## For maintainers
 
