@@ -2,8 +2,14 @@ defmodule Scoria.Observe.OperatorBroadcast do
   @moduledoc """
   Legacy 0.1.x compatibility wrapper for `Scoria.Observe.ReviewerBroadcast`.
 
-  Use `Scoria.Observe.ReviewerBroadcast` for final reviewer trace broadcast
-  vocabulary.
+  0.1.x compatibility migration note: new code should use
+  `Scoria.Observe.ReviewerBroadcast` for tenant-scoped reviewer trace PubSub
+  events. This module keeps the old operator broadcast name as a delegating
+  alias for copied 0.1.x integrations while public docs and dashboard copy move
+  to reviewer vocabulary.
+
+  The wrapper does not add runtime deprecation warnings. See
+  `guides/reference/glossary.md` for the compatibility alias map.
   """
 
   alias Scoria.Observe.ReviewerBroadcast

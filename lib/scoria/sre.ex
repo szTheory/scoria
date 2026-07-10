@@ -1,10 +1,20 @@
 defmodule Scoria.SRE do
   @moduledoc """
-  Public Phase 7 context boundary for runtime governance, alerts, incidents,
-  and audit export.
+  Operational governance boundary for Scoria-owned budget, alert, incident,
+  and audit evidence.
 
-  Later Seismograph plans can fill in persistence and runtime enforcement behind
-  these entrypoints without widening the rest of the codebase's call sites.
+  Use this context when a Phoenix host needs durable evidence that can appear in
+  reviewer traces: budget reservations, breaker trips, alert events, incidents,
+  and audit outbox events. Scoria records the operational facts and keeps them
+  available to the reviewer dashboard; the host app still owns severity meaning,
+  escalation policy, pager or ticket routing, tenant membership, and business
+  remediation.
+
+  SRE records are support material for the adopter verification suite rather
+  than a replacement for the host's incident process. Read
+  `guides/ownership-boundary.md` for the governance split, then use
+  `guides/reviewer-verification.md` to prove the default runtime and reviewer
+  trace before wiring optional sinks or on-call workflows.
   """
 
   import Ecto.Query, warn: false

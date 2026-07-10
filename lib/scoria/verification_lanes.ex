@@ -2,7 +2,14 @@ defmodule Scoria.VerificationLanes do
   @moduledoc """
   Legacy 0.1.x compatibility wrapper for `Scoria.VerificationSuites`.
 
-  Use `Scoria.VerificationSuites` for final public proof-command vocabulary.
+  0.1.x compatibility migration note: new code and docs should use
+  `Scoria.VerificationSuites` and the verification suite vocabulary for adopter
+  proof commands. This module delegates the old lane-shaped API to the final
+  module so existing callers can migrate without a runtime warning.
+
+  Keep this wrapper only for copied 0.1.x code or tests that still name
+  verification lanes. See `guides/reference/glossary.md` for the compatibility
+  alias map.
   """
 
   alias Scoria.VerificationSuites

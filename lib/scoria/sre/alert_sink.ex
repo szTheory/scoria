@@ -1,9 +1,22 @@
 defmodule Scoria.SRE.AlertSink do
   @moduledoc """
-  Behavior for optional alert delivery sinks.
+  Behaviour for host-owned alert and incident delivery integrations.
 
-  Sinks receive severity-shaped envelopes so later plans can route incidents and
-  notifications without hard vendor coupling.
+  Implement this behaviour when Scoria should hand alert or incident envelopes
+  to your paging, chat, ticketing, or incident-management system. Scoria shapes
+  the envelope and keeps reviewer-visible evidence; the host app owns routing,
+  escalation rules, credentials, acknowledgement policy, and the business
+  meaning of each severity.
+
+  Configure a sink in the host app when you are ready to connect operations
+  tooling:
+
+      config :scoria, :sre_alert_sink, MyApp.ScoriaAlertSink
+
+  Keep the default no-op sink while proving the default runtime verification
+  suite. See `guides/ownership-boundary.md` for the host-owned operations
+  boundary and `guides/reviewer-verification.md` for the reviewer verification
+  flow before adding optional SRE delivery.
   """
 
   @type envelope :: map()

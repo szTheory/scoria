@@ -96,3 +96,32 @@ Out-of-scope failures observed:
 - `lib/scoria_web/reviewer_surface.ex`
 - `lib/scoria/observe/reviewer_broadcast.ex`
 - `lib/scoria/verification_suites.ex`
+
+## 48-13 broad adoption-surface verification
+
+During 48-13 closeout, the plan-level command
+`MIX_ENV=test mix test test/scoria/adoption_surface_test.exs test/scoria/terminology_contract_test.exs`
+still failed outside the 48-13 file set.
+
+Out-of-scope failures observed:
+
+- `guides/golden-path.md` is still missing existing contract fragments such as
+  `guides/reviewer-verification.md`, `Start with the default runtime capability`,
+  `Default runtime capability`, and `Authorization remains delegated to the host; Scoria does not introduce a role model.`
+- `guides/jtbd-and-user-flows.md` is still missing a `bounded handoff capability`
+  fragment expected by `HexConsumerContract`.
+- `guides/capabilities/bounded-handoffs.md` is still missing an
+  `identity -> start -> inspect -> resume` fragment.
+
+48-13-specific checks passed for:
+
+- `lib/scoria/sre.ex`
+- `lib/scoria/sre/alert_sink.ex`
+- `lib/scoria/sre/audit_sink.ex`
+- `lib/scoria/semantic_lane.ex`
+- `lib/scoria/verification_lanes.ex`
+- `lib/scoria_web/operator_surface.ex`
+- `lib/scoria/observe/operator_broadcast.ex`
+- targeted compiled moduledoc contract lines `test/scoria/adoption_surface_test.exs:621`
+  and `test/scoria/adoption_surface_test.exs:658`
+- `test/scoria/terminology_contract_test.exs`

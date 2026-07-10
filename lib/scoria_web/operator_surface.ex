@@ -2,8 +2,15 @@ defmodule ScoriaWeb.OperatorSurface do
   @moduledoc """
   Legacy 0.1.x compatibility wrapper for `ScoriaWeb.ReviewerSurface`.
 
-  Use `ScoriaWeb.ReviewerSurface` for final reviewer dashboard read-model
-  vocabulary.
+  0.1.x compatibility migration note: new dashboard-facing code should use
+  `ScoriaWeb.ReviewerSurface`, which names the human dashboard user as the
+  reviewer and keeps tenant authority with the host-authenticated dashboard
+  scope. This module delegates the old operator surface API so copied 0.1.x
+  integrations keep working while they rename.
+
+  The wrapper does not add runtime deprecation warnings. See
+  `guides/reference/glossary.md` for the operator-to-reviewer compatibility
+  mapping and `guides/reviewer-verification.md` for the verification flow.
   """
 
   alias ScoriaWeb.ReviewerSurface
