@@ -98,7 +98,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 48-01-PLAN.md — RED ExDoc/package/release-preview contracts for guide groups, source metadata, redirects, and package assets
+- [x] 48-01-PLAN.md — RED ExDoc/package/release-preview contracts for guide groups, source metadata, redirects, and package assets
 - [ ] 48-02-PLAN.md — RED canonical guide, stable-doc, glossary, scope, and public moduledoc contracts
 
 **Wave 2** *(blocked on Wave 1 contracts)*
@@ -170,7 +170,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 46. Terminology and public vocabulary migration | v3.5 | 8/8 | Complete    | 2026-07-09 |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
-| 48. ExDoc and guide ladder restructure | v3.5 | 0/10 | Not started | — |
+| 48. ExDoc and guide ladder restructure | v3.5 | 1/15 | In Progress | — |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 0/0 | Not started | — |
 
