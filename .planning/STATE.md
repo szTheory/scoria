@@ -5,14 +5,14 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 48
 current_phase_name: exdoc-and-guide-ladder-restructure
 status: executing
-stopped_at: Completed 48-11-PLAN.md
-last_updated: "2026-07-10T20:11:38.969Z"
+stopped_at: Completed 48-12-PLAN.md
+last_updated: "2026-07-10T20:20:27.991Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 20
+  completed_plans: 21
   percent: 40
 ---
 
@@ -29,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 10 of 15
+Plan: 11 of 15
 Status: Ready to execute
 Last activity: 2026-07-10
 
@@ -199,6 +199,9 @@ Recent decisions affecting current work:
 - [Phase 48-09]: Treated broad adoption-surface verification as partial because remaining guide/DashboardScope failures are known later-plan items outside the 48-09 file set. — Scope boundary requires logging out-of-scope failures instead of widening this task into guide or dashboard module files.
 - [Phase 48-11]: Old start, reference, runtime, and comparison source paths are compatibility bridges only; canonical public guide truth stays under guides/. — Plan 48-11 preserves copied docs/*.md links without duplicating canonical guide content or surfacing compatibility stubs as ExDoc sources.
 - [Phase 48-11]: Compatibility pages use current guide names and paths first, with old names retained only to explain copied 0.1.x source links. — This preserves Phase 48 D-04 vocabulary while keeping old public source links useful.
+- [Phase 48]: Dashboard/reviewer/verification-suite public moduledocs now use canonical guides links and state host-authenticated dashboard scope; query params are UI hints, not tenant authority.
+- [Phase 48]: Plan 48-12 stayed documentation-only with no router, DashboardScope, PubSub, verification-suite data, package, or guide-body behavior changes.
+- [Phase 48]: Broad adoption-surface guide-fragment and SRE.AlertSink failures remain deferred outside the 48-12 file set.
 
 ### Resolved And Deferred Work
 
@@ -256,6 +259,7 @@ None at milestone start.
 | Phase 48 P08 | 5m 10s | 1 tasks | 7 files |
 | Phase 48 P09 | 5 min | 1 tasks | 9 files |
 | Phase 48 P11 | 4 min | 1 tasks | 5 files |
+| Phase 48 P12 | 3m 05s | 2 tasks | 6 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -279,8 +283,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T20:11:38.963Z
-Stopped at: Completed 48-11-PLAN.md
+Last session: 2026-07-10T20:20:27.986Z
+Stopped at: Completed 48-12-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

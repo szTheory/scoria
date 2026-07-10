@@ -114,7 +114,7 @@ Plans:
 - [ ] 48-14-PLAN.md — Old capability docs compatibility stubs for copied source links
 - [ ] 48-15-PLAN.md — Old reviewer verification and maintainer docs compatibility stubs for copied source links
 - [x] 48-08-PLAN.md — Public moduledocs for start/install/runtime facade entry points
-- [ ] 48-12-PLAN.md — Public moduledocs for router, dashboard scope, reviewer surface, broadcast, and verification suites
+- [x] 48-12-PLAN.md — Public moduledocs for router, dashboard scope, reviewer surface, broadcast, and verification suites
 - [x] 48-09-PLAN.md — Public moduledocs for capability and integration modules
 - [ ] 48-13-PLAN.md — Public moduledocs for SRE/governance and compatibility alias modules
 
@@ -170,7 +170,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 46. Terminology and public vocabulary migration | v3.5 | 8/8 | Complete    | 2026-07-09 |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
-| 48. ExDoc and guide ladder restructure | v3.5 | 9/15 | In Progress|  |
+| 48. ExDoc and guide ladder restructure | v3.5 | 10/15 | In Progress|  |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 0/0 | Not started | — |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 0/0 | Not started | — |
 
