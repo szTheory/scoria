@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
 status: executing
-stopped_at: Completed 48-08-PLAN.md
-last_updated: "2026-07-10T19:49:57.290Z"
+stopped_at: Completed 48-09-PLAN.md
+last_updated: "2026-07-10T20:03:16.463Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 26
-  completed_plans: 18
+  completed_plans: 19
   percent: 40
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 8 of 15
+Plan: 9 of 15
 Status: Ready to execute
 Last activity: 2026-07-10
 
@@ -192,6 +192,9 @@ Recent decisions affecting current work:
 - [Phase 48]: README keeps current public guide names first while preserving old semantic-fast-path wording only as an explicit 0.1.x compatibility note for existing docs contracts.
 - [Phase 48-08]: Kept runtime and DTO examples as prose/non-doctest documentation; only the existing pure facade and identity doctests remain executable doctest surfaces.
 - [Phase 48-08]: Logged broad adoption-surface failures outside the 48-08 file set to deferred-items.md instead of widening this plan into later public-moduledoc and guide-fragment work.
+- [Phase 48-09]: Kept capability/integration public moduledoc work documentation-only; no runtime behavior, schema, package, guide-body, or ExDoc config changes. — Plan 48-09 is a public docs polish task and the threat model accepts no dependency or runtime changes.
+- [Phase 48-09]: Used canonical guide paths directly in capability moduledocs instead of old docs/*.md compatibility paths. — Phase 48 guide ladder decisions make guides/ the canonical public surface while docs/*.md remains compatibility-only.
+- [Phase 48-09]: Treated broad adoption-surface verification as partial because remaining guide/DashboardScope failures are known later-plan items outside the 48-09 file set. — Scope boundary requires logging out-of-scope failures instead of widening this task into guide or dashboard module files.
 
 ### Resolved And Deferred Work
 
@@ -247,6 +250,7 @@ None at milestone start.
 | Phase 48 P05 | 8 min | 2 tasks | 5 files |
 | Phase 48 P06 | 4m 52s | 1 tasks | 1 files |
 | Phase 48 P08 | 5m 10s | 1 tasks | 7 files |
+| Phase 48 P09 | 5 min | 1 tasks | 9 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -270,8 +274,8 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T19:49:57.287Z
-Stopped at: Completed 48-08-PLAN.md
+Last session: 2026-07-10T20:03:16.356Z
+Stopped at: Completed 48-09-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
