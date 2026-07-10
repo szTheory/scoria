@@ -1,6 +1,16 @@
 defmodule Scoria.PromptRegistry do
   @moduledoc """
-  The PromptRegistry context for managing prompt templates and their lifecycle.
+  `Scoria.PromptRegistry` stores prompt template versions so prompt changes can
+  be reviewed, activated, and tied to eval and release evidence.
+
+  Use it when prompt text should have durable version lineage instead of living
+  only in application code or provider dashboards. The host app owns prompt
+  intent, policy values, release criteria, and business meaning. Scoria owns
+  template version records, lifecycle transitions, token estimates, and the
+  reviewer evidence needed to connect prompt changes to eval results.
+
+  See `guides/ownership-boundary.md` for the prompt ownership split and
+  `guides/reviewer-verification.md` for reviewer verification suite guidance.
   """
 
   import Ecto.Query, warn: false

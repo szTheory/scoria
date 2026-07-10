@@ -1,6 +1,20 @@
 defmodule Scoria.Connectors do
   @moduledoc """
-  Thin connector read-model helpers for the embedded operator surface.
+  `Scoria.Connectors` exposes remote connector records and reviewer-facing
+  fleet details for the embedded Phoenix boundary.
+
+  Use remote connector support only after the default runtime capability is
+  working. Connectors add MCP tool surfaces, grants, health state, approvals,
+  and audit evidence; they do not replace Scoria's core runtime, identity,
+  trace, approval, or verification suite contracts.
+
+  The host app owns routing, session, tenant identity, business-specific
+  allowlists, and whether a tool should be available to a workflow. Scoria owns
+  connector records, grant state, capability snapshots, health/read models, and
+  reviewer evidence.
+
+  See `guides/capabilities/connectors-and-mcp.md` for the remote connector
+  adoption path.
   """
 
   import Ecto.Query, warn: false

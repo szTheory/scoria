@@ -1,6 +1,18 @@
 defmodule Scoria.SemanticCache do
   @moduledoc """
-  Durable semantic-cache context for persisted reusable answers and lifecycle events.
+  `Scoria.SemanticCache` is the public context for tenant-scoped semantic cache
+  lookup, admission, reuse evidence, and invalidation.
+
+  Use it only for explicitly safe read-only work after the default runtime path
+  is green. The host app owns identity, tenant scope, policy values, and the
+  decision that a profile is safe to reuse; Scoria owns compatibility checks,
+  lifecycle state, and reviewer trace evidence for `hit`, `miss`, `bypass`, and
+  `reject` outcomes.
+
+  See `guides/capabilities/semantic-cache.md` for setup, profile vocabulary,
+  verification, and troubleshooting. Semantic cache is not a knowledge base:
+  it reuses compatible answers, while the optional knowledge base owns
+  retrieval, citations, and grounding.
   """
 
   import Ecto.Query, warn: false

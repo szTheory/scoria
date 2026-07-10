@@ -1,9 +1,21 @@
 defmodule Scoria.SemanticCache.Profile do
   @moduledoc """
-  Public semantic cache profile contract for explicit cache admission.
+  `Scoria.SemanticCache.Profile` defines an opt-in semantic cache profile for
+  safe read-only answer reuse.
 
-  Profiles keep the durable storage contract unchanged: the public `cache_key:`
-  option is stored and projected as `lane_key` for 0.1.x compatibility.
+  Use a profile after the default runtime capability is already working and the
+  host app can name a narrow class of work that is safe to reuse. The host owns
+  that safety decision; Scoria records the profile, compatibility checks, and
+  reviewer-visible cache outcome.
+
+  See `guides/capabilities/semantic-cache.md` for the full capability guide.
+  Semantic cache is not a knowledge base: it reuses compatible answers for safe
+  read-only work, while the optional knowledge base owns retrieval, citations,
+  and grounding.
+
+  New public setup should use `cache_key:`, `profile:`, and
+  `Scoria.SemanticCache.Profile`. The stored `lane_key` and the
+  `Scoria.SemanticLane` wrapper remain 0.1.x compatibility vocabulary.
   """
 
   @type scope_kind :: :tenant_shared | :actor_scoped

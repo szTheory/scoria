@@ -1,6 +1,16 @@
 defmodule Scoria.Eval do
   @moduledoc """
-  The Eval context for managing datasets, evaluation specs, and runs.
+  `Scoria.Eval` manages eval datasets, specs, runs, score evidence, campaigns,
+  and reviewer queue candidates for release proof.
+
+  Use this module when a Phoenix app needs fail-closed eval evidence around
+  prompts, model outputs, online scoring candidates, or dataset promotion. The
+  host app owns expected behavior, business truth, prompt meaning, and release
+  policy values. Scoria records immutable eval specs, run lineage, score
+  evidence, review candidates, and approval lineage that reviewers can inspect.
+
+  See `guides/reviewer-verification.md` for verification suite ordering and
+  `guides/ownership-boundary.md` for the host-owned policy boundary.
   """
 
   import Ecto.Query, warn: false

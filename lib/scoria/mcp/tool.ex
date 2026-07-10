@@ -1,6 +1,16 @@
 defmodule Scoria.MCP.Tool do
   @moduledoc """
-  Behaviour for defining an MCP tool.
+  `Scoria.MCP.Tool` is the behaviour for host-defined MCP tools that Scoria can
+  register, validate, invoke, and show to reviewers.
+
+  Implement this behaviour when a remote connector exposes a tool that should
+  participate in Scoria's connector policy, approval, and audit flow. The host
+  owns the tool's business meaning, argument contract, implementation, and
+  authorization policy. Scoria owns the MCP metadata shape, invocation evidence,
+  and reviewer trace projection.
+
+  See `guides/capabilities/connectors-and-mcp.md` for the connector and MCP
+  capability guide.
   """
 
   @doc "Name of the tool"

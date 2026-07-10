@@ -1,6 +1,21 @@
 defmodule Scoria.Knowledge do
   @moduledoc """
-  Durable knowledge context for corpus ingestion, retrieval, citations, and grounding.
+  `Scoria.Knowledge` is the optional knowledge base capability for retrieval,
+  citations, and grounding inside a Phoenix app.
+
+  Start with the default runtime first; the default runtime does not require
+  knowledge setup, pgvector bootstrap, retrieval, or grounding. Add this module
+  when your product intentionally needs host-selected source content to support
+  answers and reviewer-visible evidence.
+
+  The host app owns the corpus, tenant membership, source truth, and product
+  meaning of retrieved material. Scoria owns tenant-scoped ingestion,
+  retrieval-run evidence, citations, and deterministic grounding checks inside
+  the embedded boundary.
+
+  See `guides/capabilities/default-runtime.md` for the default-first adoption
+  path and `guides/reviewer-verification.md` for the optional knowledge base
+  verification suite.
   """
 
   import Ecto.Query, warn: false

@@ -1,7 +1,16 @@
 defmodule Scoria.Req.Steps do
   @moduledoc """
-  Provides the `attach/2` function to add Scoria's resiliency and model routing
-  steps to a Req pipeline.
+  `Scoria.Req.Steps` attaches Scoria's model resiliency steps to a `Req`
+  request pipeline.
+
+  Use it from host-owned provider clients or ReqLLM integration code when you
+  want Scoria's circuit-breaker and fallback evidence around outbound model
+  calls. The host app still owns provider choice, credentials, prompt policy
+  values, and business-specific retry posture; Scoria contributes inspectable
+  request/response/error steps that fit the default runtime trace.
+
+  See `guides/capabilities/default-runtime.md` for the first runtime capability
+  and `guides/reviewer-verification.md` for verification suite guidance.
   """
 
   alias Scoria.Req.Steps.CircuitBreaker

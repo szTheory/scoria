@@ -1,6 +1,17 @@
 defmodule Scoria.Connectors.Auth do
   @moduledoc """
-  Browser redirect auth flow handling for remote connectors.
+  `Scoria.Connectors.Auth` coordinates host-owned connector authorization with
+  Scoria's connector records, grants, approvals, and audit evidence.
+
+  Use this module when a remote connector needs an authorization start,
+  callback completion, auth-failure evidence, or scope-escalation approval. The
+  host app owns the authenticated subject, tenant membership, redirect route,
+  OAuth app configuration, and business decision to grant scopes. Scoria records
+  the connector grant and projects failures or escalations into reviewer trace
+  evidence.
+
+  See `guides/capabilities/connectors-and-mcp.md` for connector/MCP setup and
+  verification guidance.
   """
 
   import Ecto.Query, warn: false
