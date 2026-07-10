@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
-current_phase: 48
-current_phase_name: exdoc-and-guide-ladder-restructure
-status: executing
-stopped_at: Blocked in 48-10-PLAN.md Task 2 generated-doc search-index assertion
-last_updated: "2026-07-10T22:59:22.934Z"
+current_phase: 49
+current_phase_name: ai-accessible-docs-and-docs-verification-gate
+status: ready_to_plan
+stopped_at: Phase 48 complete (15/15) — ready to discuss Phase 49
+last_updated: 2026-07-10T23:12:44.848Z
 last_activity: 2026-07-10
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 26
-  completed_plans: 25
-  percent: 40
+  completed_plans: 26
+  percent: 60
 ---
 
 # Project State
@@ -24,13 +24,13 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 48 — exdoc-and-guide-ladder-restructure
+**Current focus:** Phase 49 — ai accessible docs and docs verification gate
 
 ## Current Position
 
-Phase: 48 (exdoc-and-guide-ladder-restructure) — EXECUTING
-Plan: 15 of 15
-Status: Ready to execute
+Phase: 49
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-07-10
 
 ## Performance Metrics
@@ -224,10 +224,10 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None at milestone start.
+None active.
 
-- Phase 48 Plan 10 blocked: focused contract suite failed because docs/adoption_lanes.md compatibility stub no longer carries scope-doctrine fragments expected by test/scoria/scope_doctrine_contract_test.exs.
-- Phase 48 Plan 10 blocked: Task 2 generated-doc assertion found docs/semantic_fast_path.md and docs/docker_dev_dx.md in doc/dist/search_data-CA6DA77B.js.
+- Phase 48 Plan 10 scope-doctrine issue resolved by restoring compatibility-stub fragments expected by `test/scoria/scope_doctrine_contract_test.exs`.
+- Phase 48 Plan 10 generated-doc issue resolved by cleaning generated ExDoc output before release preview rebuilds `doc/`.
 
 ### Roadmap Evolution
 
@@ -301,10 +301,10 @@ None at milestone start.
 
 ## Session Continuity
 
-Last session: 2026-07-10T22:58:57.483Z
-Stopped at: Blocked in 48-10-PLAN.md Task 2 generated-doc search-index assertion
-Resume file: .planning/phases/48-exdoc-and-guide-ladder-restructure/48-10-SUMMARY.md
+Last session: 2026-07-10T23:09:30.668Z
+Stopped at: Phase 48 complete (15/15); ready to plan Phase 49.
+Resume file: .planning/STATE.md
 
 ## Operator Next Steps
 
-- Continue Phase 48 with 48-10-PLAN.md.
+- Discuss or plan Phase 49: AI-accessible docs and docs verification gate.
