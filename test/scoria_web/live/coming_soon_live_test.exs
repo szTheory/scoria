@@ -43,7 +43,8 @@ defmodule ScoriaWeb.ComingSoonLiveTest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.ComingSoonLiveTest.Endpoint,
-      secret_key_base: "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/zK6N2e7jW1",
+      secret_key_base:
+        "uR22+c0W1x9N6yT1c8/p/k7j6K/E1lXz+J2M9/z/K6N2e7jW1M9/zK6N2e7jW1ComingSoonExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "112345678"],
       debug_errors: true
@@ -109,7 +110,10 @@ defmodule ScoriaWeb.ComingSoonLiveTest do
 
   defp test_conn do
     build_conn()
-    |> Plug.Test.init_test_session(%{})
+    |> Plug.Test.init_test_session(%{
+      "tenant_id" => "tenant-coming-soon",
+      "actor_id" => "coming-soon-operator"
+    })
     |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.ComingSoonLiveTest.Endpoint)
   end
 end

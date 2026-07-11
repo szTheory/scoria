@@ -51,7 +51,8 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
 
   setup_all do
     Application.put_env(:scoria, ScoriaWeb.OrchestratorLiveSRETest.Endpoint,
-      secret_key_base: "JcQF3J7M1pW1B3vA8L9tX2mE0sQ7nF4uP5kR6yH8zN1cD4bV9mT2wL6aS8qP3eY",
+      secret_key_base:
+        "JcQF3J7M1pW1B3vA8L9tX2mE0sQ7nF4uP5kR6yH8zN1cD4bV9mT2wL6aS8qP3eYOrchestratorSreExtraKeyMaterial0123456789",
       pubsub_server: Scoria.PubSub,
       live_view: [signing_salt: "998877665"],
       debug_errors: true
@@ -143,7 +144,10 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
 
     conn =
       build_conn()
-      |> Plug.Test.init_test_session(%{})
+      |> Plug.Test.init_test_session(%{
+        "tenant_id" => "tenant-sre",
+        "actor_id" => "sre-operator"
+      })
       |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")
@@ -195,7 +199,10 @@ defmodule ScoriaWeb.OrchestratorLiveSRETest do
 
     conn =
       build_conn()
-      |> Plug.Test.init_test_session(%{})
+      |> Plug.Test.init_test_session(%{
+        "tenant_id" => "tenant-sre",
+        "actor_id" => "sre-operator"
+      })
       |> Plug.Conn.put_private(:phoenix_endpoint, @endpoint)
 
     {:ok, view, _html} = live(conn, "/scoria")

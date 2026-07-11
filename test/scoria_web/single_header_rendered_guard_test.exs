@@ -173,7 +173,10 @@ defmodule ScoriaWeb.SingleHeaderRenderedGuardTest do
 
   defp test_conn do
     Phoenix.ConnTest.build_conn()
-    |> Plug.Test.init_test_session(%{})
+    |> Plug.Test.init_test_session(%{
+      "tenant_id" => "tenant-single-header-guard",
+      "actor_id" => "single-header-guard-operator"
+    })
     |> Plug.Conn.put_private(:phoenix_endpoint, ScoriaWeb.SingleHeaderRenderedGuardTest.Endpoint)
   end
 

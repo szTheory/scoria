@@ -142,7 +142,7 @@ defmodule ScoriaWeb.DashboardScope do
         {:cont, assign_scope(socket, scope)}
 
       {:error, reason} when reason in [:unauthorized, :missing_scope] ->
-        {:halt, put_unavailable_flash(socket)}
+        {:halt, socket |> put_unavailable_flash() |> redirect(to: "/")}
 
       {:redirect, to} when is_binary(to) ->
         {:halt, redirect(socket, to: to)}
