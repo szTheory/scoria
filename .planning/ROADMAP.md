@@ -167,18 +167,31 @@ Plans:
 
 **Requirements:** REL-01, REL-02, REL-03, REL-04
 
-**Plans:** 4 plans
+**Plans:** 11 plans (50-01..04 original; 50-05..11 gap closure for CI verify-lane debt exposed by the release push)
 
 Plans:
-**Wave 1**
+**Wave 1** *(original — complete)*
 
 - [x] 50-01-PLAN.md — REL-01: repoint docs-contract constants to canonical guides/ and restore dropped maintainer content (policy lane green)
 - [x] 50-02-PLAN.md — REL-02: fix dev_seed.exs arity-3 tenant-scoped call sites + theme-toggle visible-locator (e2e lane green)
 - [x] 50-03-PLAN.md — REL-03: version/docs-truth polish (stale docs/ comments, 0.1.1 example, HexDocs subdomain URL)
 
-**Wave 2** *(blocked on Wave 1 completion)*
+**Wave 2** *(original — blocked pending gap closure)*
 
 - [ ] 50-04-PLAN.md — REL-04: gate on ci-gate green, release-please publish 0.1.3, post-publish smoke proof (maintainer checkpoints)
+
+**Gap closure — Wave 1** *(REL-04 CI verify-lane debt, parallel; ~30 failures across Buckets A–G)*
+
+- [ ] 50-05-PLAN.md — Bucket G: DashboardScope mount-halt regression (14 failures, 1 root cause) — fail-closed redirect + seed scope in shared test conns
+- [ ] 50-06-PLAN.md — Bucket A: docs-source alignment — repoint example-source + SupportJourney doc surfaces to canonical guides/ SSOT (7 cases)
+- [ ] 50-07-PLAN.md — Bucket C: runtime/LiveView seeded-run + rendered contracts (tenant-scoped run lookup, notebook primitives, incident evidence)
+- [ ] 50-08-PLAN.md — Bucket D: UI/dev-lab contracts — repoint docs/MAINTAINERS.md reads to guides/maintainers.md + guard #7 inventory-ID reference
+- [ ] 50-09-PLAN.md — Bucket E: SupportCopilot nested-gallery journeys (knowledge-lane grounding, producer→approvals)
+- [ ] 50-10-PLAN.md — Buckets B+F: package-surface subdomain SSOT + warning-inventory verify-first
+
+**Gap closure — Wave 2** *(release re-entry; depends on 50-05..10)*
+
+- [ ] 50-11-PLAN.md — Full-suite + connector green → push → refresh PR #12 → confirm ci-gate green → hand off to 50-04 maintainer checkpoint
 
 **Success Criteria:**
 
@@ -196,7 +209,7 @@ Plans:
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
 | 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete    | 2026-07-10 |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete    | 2026-07-11 |
-| 50. Release readiness and `0.1.3` cut | v3.5 | 3/4 | In Progress|  |
+| 50. Release readiness and `0.1.3` cut | v3.5 | 3/11 | In Progress|  |
 
 ## Archived Milestones
 
