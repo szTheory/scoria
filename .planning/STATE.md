@@ -2,10 +2,13 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
+current_phase: 50
+current_phase_name: release-readiness-and-0-1-3-cut
 status: executing
-stopped_at: Completed 50-05-PLAN.md
-last_updated: "2026-07-11T14:07:38.118Z"
-last_activity: 2026-07-11 -- Phase 50 execution started
+stopped_at: Completed 50-06-PLAN.md
+last_updated: "2026-07-11T14:20:53.773Z"
+last_activity: 2026-07-11
+last_activity_desc: Phase 50 execution started
 progress:
   total_phases: 5
   completed_phases: 4
@@ -27,7 +30,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 50 (release-readiness-and-0-1-3-cut) — EXECUTING
-Plan: 2 of 11
+Plan: 3 of 11
 Status: Ready to execute
 Last activity: 2026-07-11 -- Phase 50 execution started
 Resume file: None
@@ -220,6 +223,7 @@ Recent decisions affecting current work:
 - [Phase 50-01-followup]: RESOLVED D-50-DEF-01 — prefixed the three inline `mix <task>` spans in guides/maintainers.md with `$ ` so ExDoc skips the filtered-module autolink; asserted substrings preserved (no CiPolicyContractTest change), release_preview exits 0 (commit c809241c)
 - [Phase ?]: [Phase 50-05]: DashboardScope missing/unauthorized fail-closed branch now redirects to root '/' instead of bare-halting, closing the LiveView 1.1.30 raise_halt_without_redirect! regression while preserving D-18 fail-closed contract
 - [Phase 50-06]: Applied CONFIRM-FRAGMENT-PRESENT gate literally: repointed handoff_example_source_test.exs and semantic_fast_path_example_source_test.exs to guides/capabilities/{bounded-handoffs,semantic-cache}.md (full fragment match); left phoenix_example_source_test.exs and all 4 lib/scoria/support_journey.ex adopter_doc_surfaces/0 entries untouched since Phase 46/48 genuinely renamed/reworded/dropped their asserted fragments (not just relocated them) -- forcing either a guides/ content restore or a fragment-list edit would violate this plan's explicit prohibition, so flagged as a Rule 4 decision instead
+- [Phase 50-06]: User decision (checkpoint): re-align docs-source fixtures to canonical guides/ (guides/ untouched); update fixture wording/paths to current terminology; drop fragments whose concept Phase 46/48 genuinely removed. Restructured AdoptionExample.doc_fragments/0 into phoenix_doc_surfaces/0 (per-guide fragment groups across golden-path.md, default-runtime.md, bounded-handoffs.md, cheatsheet.cheatmd). Repointed all 4 SupportJourney.adopter_doc_surfaces/0 entries to guides/, merging operator_doc_fragments/0 into the gallery guide key since Phase 48 moved that content there rather than to reviewer-verification.md. All 7 Bucket-A cases now green.
 
 ### Resolved And Deferred Work
 
@@ -237,7 +241,6 @@ active.
 - Phase 48 Plan 10 generated-doc issue resolved by cleaning generated ExDoc output before release preview rebuilds `doc/`.
 - RESOLVED 2026-07-11 (plan-01 follow-up `c809241c`): release_preview / mix docs --warnings-as-errors was RED on main from guides/maintainers.md:43,57,58 referencing filtered maintainer Mix tasks (plan-01 regression 25ad5233). Fixed by prefixing the three inline spans with `$ ` so ExDoc no longer autolinks them; asserted substrings preserved, no test changed. release_preview exits 0. See deferred-items.md D-50-DEF-01.
 - 50-04 Task 1 route-back: REL-01/02/03 fixes (entire v3.5 milestone, 162 commits) are on LOCAL main only; origin/main is at 2b0fa962 (end of v3.4) and PR #12 head 620d7144 was built by Release Please on that stale base, so PR #12 policy+e2e stay RED with the original pre-fix run IDs (29043718187/29043715702). Maintainer must push local main to origin/main so Release Please refreshes PR #12 with the fixes and re-runs CI. Local release_preview + mix docs --warnings-as-errors are GREEN on 2e38ac16.
-- 50-06 partial: repointed handoff/semantic docs-source tests to guides/ SSOT (2/7 Bucket-A cases fixed, commit e9fe82f5). phoenix_example_source_test.exs and all four lib/scoria/support_journey.ex adopter_doc_surfaces/0 entries (5/7 cases) are blocked -- CONFIRM-FRAGMENT-PRESENT gate found 6+ fragments genuinely renamed/reworded/dropped by Phase 46/48 (e.g. VerificationLanes->VerificationSuites rename, support_copilot_gallery.md->support-copilot-gallery.md slug rename, dropped needs_bounded_review? helper, session_id/run_id wording changes). Forcing a fix would restore stale terminology or weaken assertions, both explicitly prohibited. See 50-06-SUMMARY.md Blockers section for full fragment-level diagnosis and decision options.
 
 ### Roadmap Evolution
 
@@ -295,6 +298,7 @@ active.
 | Phase 50 P03 | 15min | 2 tasks | 6 files |
 | Phase 50 P05 | 25min | 1 tasks | 4 files |
 | Phase 50 P06 | 45min | 1 of 2 tasks | 2 files |
+| Phase 50 P06 | 35min | 2 tasks | 3 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -318,8 +322,8 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-11T14:07:38.114Z
-Stopped at: Completed 50-05-PLAN.md
+Last session: 2026-07-11T14:20:53.768Z
+Stopped at: Completed 50-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
