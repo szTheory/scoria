@@ -58,8 +58,51 @@ The `*_example_source_test.exs` / `support_journey_source_test.exs` tests read o
 ### Bucket F — warning inventory
 - `test/scoria/warning_inventory/capture_parity_test.exs:53` — WarningInventory.CaptureParityTest "optimized compile-only capture catches high-signal unclassified warning (injected)"
 
-### Not yet enumerated (pull during gap planning)
-The `full-suite (1–4)` partitions total ~30 failures and `connector` adds 5; the buckets above are the default-lane subset. Gap planning should pull `gh run view 29137880790 --job <id> --log-failed` for full-suite/connector partitions to enumerate any failures outside the default lane (likely additional SupportCopilot/connector and tagged-suite cases).
+### Full-suite / connector enumeration — COMPLETED (run 29137880790)
+
+Pulled `gh run view 29137880790 --job <id> --log-failed` for every failing partition
+(`test`, `full-suite 1–4`, `connector`). Per-partition top-level failures:
+`fs1=1, fs2=4, fs3=17, fs4=8` → **30 unique full-suite failures**; `connector`'s 5–7 are
+re-runs of the same tests under the connector tag (SupportJourney×4, OrchestratorProducer,
+JourneyTest, SupportCopilotGallery) — **no additional unique tests**. `test` lane's 4 are the
+Bucket A example-source tests (overlap fs2/fs4).
+
+**Key finding — the default-lane subset (Buckets A–F above) missed ~15 failures, and 14 of
+them collapse to ONE root cause.** New Bucket G below.
+
+#### Bucket G — DashboardScope mount-halt regression (14 failures, 1 root cause) ⚠ NEW
+Every one of these fails identically:
+`** (ArgumentError) the hook {ScoriaWeb.DashboardScope, :default} for lifecycle event :mount
+attempted to halt without redirecting.`
+Root cause located: `lib/scoria_web/dashboard_scope.ex:144-145` — on `{:error, :unauthorized |
+:missing_scope}`, `on_mount/4` returns `{:halt, put_unavailable_flash(socket)}` (a bare halt,
+no redirect). Phoenix LiveView **1.1.30** (bumped in the v3.5 milestone) now hard-raises
+`raise_halt_without_redirect!/1` on a mount hook that halts without redirecting. The tests
+assert the pages render (`{:ok, _view, html} = live(...)`), so under the test conn the
+`:default` resolver is returning `:missing_scope` (a required `@scope_keys` value is absent from
+`test_conn()`/session) and then crashing on the bare halt. **One coherent fix** (repair the
+`:default` scope resolution and/or the bare-halt branch + supply scope in the shared test conn)
+turns all 14 green. Affected:
+- `test/scoria_web/single_header_rendered_guard_test.exs:144` × 9 routes — SingleHeaderRenderedGuardTest for `/scoria`, `/scoria/datasets`, `/scoria/workflows`, `/scoria/approvals`, `/scoria/reviews`, `/scoria/connectors`, `/scoria/prompts`, `/scoria/eval_specs`, `/scoria/incidents`
+- `test/scoria_web/live/orchestrator_live_sre_test.exs:82,192` × 2 — OrchestratorLiveSRETest (`live(conn, "/scoria")` trace-badge contracts)
+- `test/scoria_web/live/coming_soon_live_test.exs:60,89,101` × 3 — ComingSoonLiveTest (allowlisted stubs `:60`, cost-ledger future-tense copy `:89`, unknown-stub-slug echo `:101`). NOTE: default-lane inventory only saw `:60`; the other two share the same DashboardScope crash.
+
+#### Bucket C additions (seeded-run "Workflow run not found" cluster) ⚠ NEW
+Two integration tests render the mobile-topbar title "Workflow run not found" instead of the
+seeded run — a tenant-scoped seeded-run lookup mismatch (adjacent to REL-02's arity-3 tenant
+seeding). Likely one shared fixture/seed fix:
+- `test/scoria/runtime_integration_test.exs:159` — RuntimeIntegrationTest (already in default-lane Bucket C)
+- `test/scoria/workflows/integration_test.exs:148` — Scoria.WorkflowsIntegrationTest "operator-visible LiveView state matches the durable recovery path" (`assert render(view) =~ "waiting_for_approval"`) — NEW
+- `test/scoria_web/live/incidents_live_test.exs:219` — IncidentsLiveTest "incident detail route renders evidence" (`assert html =~ "Trace-first incident evidence"` — stale/relocated copy) — NEW
+
+#### Bucket B — exact assertion
+- `test/scoria/package_surface_test.exs:79,84` — `assert project[:homepage_url] == "https://hexdocs.pm/scoria"` but actual is `"https://scoria.hexdocs.pm"`. The HexDocs **subdomain** migration (REL-03 `@hexdocs_url`) updated `mix.exs` but not this "one publish surface" assertion. Fix: align the test to the subdomain SSOT (confirm subdomain is the intended canonical surface before editing).
+
+#### Bucket F — reconcile against CI
+- `test/scoria/warning_inventory/capture_parity_test.exs:53` was in the local `mix test` repro but did **NOT** fail in any partition of run 29137880790. Treat as verify-first: reproduce against the release head before spending effort; it may be local-env-only and require no change.
+
+**Revised total:** ~30 full-suite failures, but only ~11 distinct root-cause clusters once
+Bucket G collapses 14→1 and Bucket C's seeded-run cluster collapses 3→1.
 
 ## What is DONE and must not be redone
 - REL-01 (policy lane) — `guides/maintainers.md` docs-contract constants + restored content; D-50-DEF-01 (ExDoc filtered-module docs gate) also fixed. Green.
