@@ -10,12 +10,67 @@
 - ✅ **v3.3 Design System Stress Test** — Phases 36–41.1, `/scoria` UI coherence foundation→proof (shipped 2026-07-04)
 - ✅ **v3.4 Pre-1.0 Trust & Security Hardening** — Phases 42–45, SEED-006 P0 trust/security gate (shipped 2026-07-09)
 - ✅ **v3.5 Documentation & Release Readiness** — Phases 46–50, SEED-005 stable docs + honest `0.1.3` release (shipped 2026-07-11)
+- 🚧 **v3.6 Trace Foundation** — Phases 51–54, SEED-007 OTel-GenAI/OpenInference trace interop (in progress)
 
 ## Phases
 
-_No active milestone — planning the next feature seed from `## Backlog` (SEED-007 Trace Foundation / 999.3 is the sequenced next candidate). All shipped milestones are collapsed under **Archived Milestones** below; full per-phase detail lives in `.planning/milestones/`._
+**Phase Numbering:** Continues from the previous milestone (v3.5 ended at Phase 50). No decimal insertions in this milestone yet.
+
+- [ ] **Phase 51: Foundation Fix + Key Convention + Span-Kind Taxonomy** - Trace-upsert FK fix, shared span_kind whitelist, version-pinned semconv module, `gen_ai.*` model-config capture via ReqLLM's attribute builder, correct span_kind + `openinference.span.kind`, legacy-key compat decision.
+- [ ] **Phase 52: RETRIEVER Span + Host-Declared Attributes** - `RETRIEVER` span dual-written alongside `ai_retrieval_runs`, retrieval config fields with a span↔table consistency guard, reserved host-declared attribute keys, context-pack composition on the `PROMPT` span.
+- [ ] **Phase 53: Structured Child Spans + `ai_span_events`** - `tool`/`prompt`/`retrieval`/`guardrail` as real child spans with parent linkage, `ai_span_events` wired via `emit_event/1` through the shared redaction path, `prompt_rendered`/`guardrail_triggered` emitted from real call sites, PII/cardinality guard.
+- [ ] **Phase 54: Docs Accuracy + Conformance Check** - Honest "OpenInference-compatible" claim with contract-list updates in the same change, plus a falsifiable conformance check.
+
+## Phase Details
+
+### Phase 51: Foundation Fix + Key Convention + Span-Kind Taxonomy
+**Goal**: Every span Scoria emits actually persists to Postgres, carries the current OTel-GenAI model-config attributes, and reports a correct, canonically-sourced `span_kind` — closing the pre-existing silent FK gap that has been swallowing every span insert.
+**Depends on**: Nothing (first phase; gates the milestone — nothing downstream persists until this lands)
+**Requirements**: FOUND-01, FOUND-02, FOUND-03, SPAN-01, SPAN-02, COMPAT-01
+**Success Criteria** (what must be TRUE):
+  1. A span emitted through the real adapter path (ReqLLM or Jido) persists as a row in `ai_spans` with a matching `ai_traces` row present (no FK violation, no silently-swallowed `rescue`) — verifiable against a real Postgres, not a test that hand-inserts the trace first.
+  2. A persisted LLM span carries `gen_ai.request.model`, `.temperature`, `.top_p`, `.max_tokens`, `.seed`, and `gen_ai.usage.*` together (all four model-config params present on the same span, sourced via `ReqLLM.OpenTelemetry.Attributes`) — never a partial subset.
+  3. Every span's `span_kind` column is drawn from one shared whitelist module consumed by both `WorkflowTreeComponent` and `TraceTreeComponent` (no independently-hardcoded lists), and carries a mirrored `openinference.span.kind` attribute, with `mcp` actions translating to `"TOOL"`.
+  4. Every `gen_ai.*`/`openinference.*` key string used anywhere in the codebase traces back to one version-pinned mapping module (e.g. `Scoria.Observe.Semconv`), not inline string literals at multiple call sites.
+  5. Adopters querying already-persisted legacy keys (`llm.model_name`, `llm.token_count`, `req.url`) against their own Postgres get an explicit, CHANGELOG-documented behavior (dual-emit or clean-replacement) rather than a silent break.
+**Plans**: TBD
+
+### Phase 52: RETRIEVER Span + Host-Declared Attributes
+**Goal**: Retrieval calls are visible in the trace tree as a linked `RETRIEVER` span without displacing `ai_retrieval_runs` as the system-of-record, and hosts can declare feature/route/archetype/intent plus context-pack composition without Scoria ever inferring them.
+**Depends on**: Phase 51 (reuses the fixed span-emission/trace-upsert path)
+**Requirements**: RETR-01, RETR-02, ATTR-01, ATTR-02
+**Success Criteria** (what must be TRUE):
+  1. Calling `Knowledge.retrieve/2` produces both a persisted `ai_retrieval_runs` row (unchanged system-of-record) and a linked `RETRIEVER` span in `ai_spans` sharing the same `trace_id`/`span_id`, reusing the already-computed latency — a join between the two never comes up empty for a successful retrieval call.
+  2. `embedding_model`, `index_version`, and `reranker` appear as convention keys on both the `RETRIEVER` span's attributes and `ai_retrieval_runs.metadata`, sourced from one shared value origin, with a consistency guard that would catch the two diverging.
+  3. A host-supplied `feature`/`route`/`archetype`/`intent` value passed into a run flows through to persisted span attributes unmodified — Scoria never derives or overwrites these values from its own logic.
+  4. A `PROMPT` span's attributes carry which chunk IDs, which memory IDs, and the per-source token split that composed the assembled prompt, alongside `gen_ai.usage.input_tokens` — IDs and counts only, never the raw chunk/memory text.
+**Plans**: TBD
+
+### Phase 53: Structured Child Spans + `ai_span_events`
+**Goal**: Tool, prompt, retrieval, and guardrail steps show up as real duration-bearing child spans in the trace tree, and the three reserved point-events can be emitted through a redaction-safe, allow-listed event path — closing the "everything is a flat LLM/INTERNAL span" gap.
+**Depends on**: Phase 51 (ordered flush discipline: traces → spans → events; shared whitelist already exists)
+**Requirements**: EVENT-01, EVENT-02, EVENT-03, SEC-01
+**Success Criteria** (what must be TRUE):
+  1. A `tool`, `prompt`, `retrieval`, or `guardrail` step appears in the trace tree as its own child span with a `parent_id` linking it to the originating span — not folded into the parent's attributes and not modeled as an event.
+  2. Calling the public `emit_event/1` for an allow-listed name (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`) produces a persisted `ai_span_events` row whose attributes passed through the identical `Redactor.redact/1` call site spans use — a deny-listed key inside an event's attributes comes back `[REDACTED]`, proven by an integration test.
+  3. Calling `emit_event/1` with a name outside the 3-item allow-list is rejected/logged, not silently persisted — the vocabulary cannot silently grow.
+  4. `prompt_rendered` and `guardrail_triggered` are actually emitted from real runtime/workflow call sites during normal operation (not just reachable via a direct API call in a test) — `user_feedback_received` stays reserved-only, not emitted, in this milestone.
+  5. No new attribute or event payload carries raw prompt/completion text; payload sizes are bounded at write time, and a regression test would fail if an unbounded free-text value were introduced.
+**Plans**: TBD
+
+### Phase 54: Docs Accuracy + Conformance Check
+**Goal**: The adopter-facing "OpenInference-compatible" claim is both allowed by the codebase's own doc-contract guards and backed by an executable check that would fail if it stopped being true.
+**Depends on**: Phase 51 (the underlying convention must actually exist before the claim is made)
+**Requirements**: DOCS-01, DOCS-02
+**Success Criteria** (what must be TRUE):
+  1. README (and any other adopter-facing surface) states the version-pinned "OpenInference-compatible" claim, and `adopter_doc_contract.ex`/`ai_doc_contract.ex`'s banned-phrase lists were updated in the same change — `mix test` passes on both contract files with the new claim string present and the old "not a current claim" string intentionally replaced.
+  2. A Mix task or ExUnit test exists that asserts every span emitted by the two adapters uses only allow-listed convention key names and a `span_kind` value drawn from the shared whitelist — running it against a real emitted span set fails if an unlisted key or kind appears.
+**Plans**: TBD
 
 ## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 51 → 52 → 53 → 54
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -24,6 +79,10 @@ _No active milestone — planning the next feature seed from `## Backlog` (SEED-
 | 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete | 2026-07-10 |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete | 2026-07-11 |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
+| 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 0/TBD | Not started | - |
+| 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 0/TBD | Not started | - |
+| 53. Structured Child Spans + ai_span_events | v3.6 | 0/TBD | Not started | - |
+| 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
 ## Archived Milestones
 
@@ -134,7 +193,7 @@ honest `0.1.3` release) shipped in v3.5, so the next milestone is a feature seed
 1. **SEED-007 (999.3) — Trace Foundation (OTel-GenAI / OpenInference interop)**  (foundational — everything downstream reads spans)
    Semconv as a naming convention over the existing attrs map (not a schema rewrite) + span_kind +
    model config + structured spans/events + RETRIEVER span + host-declared attribute convention +
-   README claim fix. → see `SEED-007`.
+   README claim fix. **In progress as v3.6 Trace Foundation (Phases 51-54).** → see `SEED-007`.
 
 2. **SEED-010 (999.4) — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR]**
    Content trust tiers + spotlighting + tool-declared trifecta classification + confluence

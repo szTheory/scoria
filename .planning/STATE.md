@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
 status: planning
-last_updated: "2026-07-11T19:35:12.670Z"
+last_updated: "2026-07-11T20:15:00.000Z"
 last_activity: 2026-07-11
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Planning next milestone — SEED-007 Trace Foundation (ROADMAP `## Backlog` 999.3) is the sequenced next candidate.
+**Current focus:** v3.6 Trace Foundation — ROADMAP.md created (Phases 51-54); Phase 51 (Foundation Fix + Key Convention + Span-Kind Taxonomy) ready to plan.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-07-11 — Milestone v3.6 started
+Phase: 51 of 54 (Foundation Fix + Key Convention + Span-Kind Taxonomy)
+Plan: — (not yet planned)
+Status: Roadmap created — ready to plan Phase 51
+Last activity: 2026-07-11 — v3.6 ROADMAP.md created (Phases 51-54, 16/16 requirements mapped, 0 orphans)
 
 ## Performance Metrics
 
@@ -254,6 +254,7 @@ active.
 - v3.4 completed and reconciled (2026-07-09): Phases 42–45, 24/24 plans, 17/17 requirements, audit `passed`; SEED-006 archived and removed from the forward backlog.
 - v3.5 roadmap created (2026-07-09): Phases 46-50 promote SEED-005 from the backlog for terminology, README/scope doctrine, ExDoc/guide ladder, AI-accessible docs, and the clean `0.1.3` release cut. 18/18 requirements mapped.
 - Phase 41.1 inserted after Phase 41: Wire orphaned ScoriaWeb.Copy/DatasetCopy into dataset page (COPY-01 SSOT) — surfaced by v3.3 milestone audit (URGENT)
+- v3.6 roadmap created (2026-07-11): Phases 51-54 promote SEED-007 from the backlog — 51 foundation fix + key convention + span-kind taxonomy (FOUND-01..03, SPAN-01..02, COMPAT-01), 52 RETRIEVER span + host-declared attributes (RETR-01..02, ATTR-01..02), 53 structured child spans + ai_span_events (EVENT-01..03, SEC-01), 54 docs accuracy + conformance check (DOCS-01..02). 16/16 requirements mapped; Phase 53 flagged for phase-level research (no existing point-event call sites; async-FK design for user_feedback_received deferred to SEED-011).
 
 ## Deferred Items
 
@@ -266,7 +267,7 @@ active.
 | Release | Publish 0.1.1 → superseded by 0.1.2 in Phase 35 | Absorbed into REL-01 | v3.2 REL |
 | Trust/security P0 | SEED-006: eval fail-open, knowledge cross-tenant leak, dashboard auth bypass — completed by v3.4 (Phases 42–45) | Completed | 2026-07-09 v3.4 close |
 | Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt | Active in v3.5 | 2026-07-09 v3.5 start |
-| Observability | SEED-007: OTel-GenAI/OpenInference trace foundation | Deferred | 2026-07-03 audit |
+| Observability | SEED-007: OTel-GenAI/OpenInference trace foundation — active in v3.6 (Phases 51-54) | Active | 2026-07-11 v3.6 start |
 | Eval depth | SEED-008: real scorers, judge calibration, regression comparison | Deferred | 2026-07-03 audit |
 | RAG depth | SEED-009: precision/NDCG/abstention/staleness + faithfulness/rerank hooks | Deferred | 2026-07-03 audit |
 | Agent security | SEED-010: lethal-trifecta governance (⭐ flagship differentiator) | Deferred | 2026-07-03 audit |
@@ -339,4 +340,4 @@ Resume file: None
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 51 with /gsd-plan-phase 51
