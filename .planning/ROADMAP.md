@@ -191,7 +191,7 @@ Plans:
 
 **Gap closure — Wave 2** *(release re-entry; depends on 50-05..10)*
 
-- [ ] 50-11-PLAN.md — Full-suite + connector green → push → refresh PR #12 → confirm ci-gate green → hand off to 50-04 maintainer checkpoint
+- [x] 50-11-PLAN.md — Full-suite + connector green → push → refresh PR #12 → confirm ci-gate green → hand off to 50-04 maintainer checkpoint
 
 **Success Criteria:**
 
@@ -209,7 +209,7 @@ Plans:
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
 | 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete    | 2026-07-10 |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete    | 2026-07-11 |
-| 50. Release readiness and `0.1.3` cut | v3.5 | 9/11 | In Progress|  |
+| 50. Release readiness and `0.1.3` cut | v3.5 | 10/11 | In Progress|  |
 
 ## Archived Milestones
 
