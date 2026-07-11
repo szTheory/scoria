@@ -161,6 +161,29 @@ defmodule Scoria.PackageSurfaceTest do
     assert_module_group_contains(groups, "Connectors & MCP", Scoria.Connectors)
   end
 
+  test "docs warning cleanup skips command literals without adding private contract modules" do
+    docs = Mix.Project.config()[:docs]
+    skip_code_autolink_to = docs[:skip_code_autolink_to]
+
+    assert is_function(skip_code_autolink_to, 1)
+    assert skip_code_autolink_to.("mix test.adoption")
+    assert skip_code_autolink_to.("mix scoria.release_preview")
+    assert skip_code_autolink_to.("MIX_ENV=dev mix docs --warnings-as-errors")
+    assert skip_code_autolink_to.("Scoria.AdopterDocContract.comparison_guide_path/0")
+    assert skip_code_autolink_to.("Scoria.SupportJourney")
+    refute skip_code_autolink_to.("Scoria")
+
+    public_modules =
+      docs[:groups_for_modules]
+      |> Keyword.values()
+      |> List.flatten()
+
+    refute Scoria.AiDocContract in public_modules
+    refute Scoria.AdopterDocContract in public_modules
+    refute Scoria.HexConsumerContract in public_modules
+    refute Scoria.SupportJourney in public_modules
+  end
+
   test "docs redirects preserve old generated HexDocs page ids" do
     redirects = Mix.Project.config()[:docs][:redirects]
 
