@@ -26,7 +26,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **DOCS-01**: A Phoenix adopter can navigate ExDoc through grouped modules and grouped extras instead of one flat sidebar.
 - [x] **DOCS-02**: ExDoc source links, release docs links, logo/favicon metadata, and markdown/html formatter settings are version-aware and do not point `-dev` docs at missing tag URLs.
 - [x] **DOCS-03**: Stable adopter guides are organized into a clear guide ladder covering getting started, golden path, user flows/JTBD, troubleshooting, hosted-LLM-ops comparison, and a cheatsheet.
-- [ ] **DOCS-04**: Public moduledocs and guide links are warning-clean under the milestone's docs verification command.
+- [x] **DOCS-04**: Public moduledocs and guide links are warning-clean under the milestone's docs verification command.
 
 ### AI Accessibility
 
@@ -86,7 +86,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-01 | Phase 48 | Complete |
 | DOCS-02 | Phase 48 | Complete |
 | DOCS-03 | Phase 48 | Complete |
-| DOCS-04 | Phase 49 | Pending |
+| DOCS-04 | Phase 49 | Complete |
 | AI-01 | Phase 49 | Complete |
 | AI-02 | Phase 49 | Complete |
 | REL-01 | Phase 50 | Pending |
