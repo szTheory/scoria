@@ -84,8 +84,9 @@ defmodule Scoria.HexConsumerContractTest do
     project = Mix.Project.config()
     readme = File.read!("README.md")
 
-    assert "docs/glossary.md" in project[:docs][:extras]
+    assert "guides/reference/glossary.md" in project[:docs][:extras]
+    assert "guides/reference/glossary.md" in project[:package][:files]
     assert "docs/glossary.md" in project[:package][:files]
-    assert readme =~ "[Glossary](docs/glossary.md)"
+    assert readme =~ "[Glossary](guides/reference/glossary.md)"
   end
 end
