@@ -3,8 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
 status: planning
-last_updated: "2026-07-11T20:15:00.000Z"
-last_activity: 2026-07-11
+stopped_at: Phase 51 context gathered
+last_updated: "2026-07-11T21:56:54.222Z"
+last_activity: 2026-07-11 — v3.6 ROADMAP.md created (Phases 51-54, 16/16 requirements mapped, 0 orphans)
 progress:
   total_phases: 4
   completed_phases: 0
@@ -334,9 +335,9 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-11T18:19:16.665Z
-Stopped at: Phase 50 complete + 0.1.3 released to Hex (REL-04 satisfied); v3.5 milestone 100% complete
-Resume file: None
+Last session: 2026-07-11T21:56:54.218Z
+Stopped at: Phase 51 context gathered
+Resume file: .planning/phases/51-foundation-fix-key-convention-span-kind-taxonomy/51-CONTEXT.md
 
 ## Operator Next Steps
 
