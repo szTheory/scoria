@@ -1,6 +1,10 @@
 defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
   use ExUnit.Case, async: true
 
+  alias Scoria.AiDocContract
+
+  @packaged_ai_docs AiDocContract.packaged_ai_doc_paths()
+  @repo_only_ai_docs AiDocContract.repo_only_ai_doc_paths()
   @canonical_guides [
     "guides/getting-started.md",
     "guides/golden-path.md",
@@ -52,6 +56,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
   ]
   @expected_required_paths Enum.concat([
                              @base_required_paths,
+                             @packaged_ai_docs,
                              @canonical_guides,
                              @compatibility_stub_paths,
                              @docs_brand_assets
@@ -83,15 +88,23 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
 
     assert "priv/repo/knowledge_migrations/20260511000300_create_knowledge_tables.exs" in required_paths
 
-    for path <- @canonical_guides ++ @compatibility_stub_paths ++ @docs_brand_assets do
+    for path <- @packaged_ai_docs ++ @canonical_guides ++ @compatibility_stub_paths ++ @docs_brand_assets do
       assert path in @expected_required_paths
     end
 
-    for path <- @dev_only_docs do
+    for path <- @repo_only_ai_docs ++ @dev_only_docs do
       refute path in required_paths
     end
 
     refute "test/scoria/adoption_surface_test.exs" in required_paths
+  end
+
+  test "release preview intentionally requires shared AI docs but excludes the Gemini bridge" do
+    required_paths = Mix.Tasks.Scoria.ReleasePreview.required_package_paths()
+
+    assert AiDocContract.root_llms_path() in required_paths
+    assert AiDocContract.root_agents_path() in required_paths
+    refute AiDocContract.gemini_bridge_path() in required_paths
   end
 
   test "generated docs cleanup removes stale ExDoc fingerprint assets before rebuilding" do

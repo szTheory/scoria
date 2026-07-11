@@ -1,8 +1,11 @@
 defmodule Scoria.PackageSurfaceTest do
   use ExUnit.Case, async: true
 
+  alias Scoria.AiDocContract
   alias Scoria.HexConsumerContract
 
+  @packaged_ai_docs AiDocContract.packaged_ai_doc_paths()
+  @repo_only_ai_docs AiDocContract.repo_only_ai_doc_paths()
   @canonical_guides [
     "guides/getting-started.md",
     "guides/golden-path.md",
@@ -56,6 +59,7 @@ defmodule Scoria.PackageSurfaceTest do
   ]
   @required_package_paths Enum.concat([
                             @base_required_package_paths,
+                            @packaged_ai_docs,
                             @canonical_guides,
                             @compatibility_stub_paths,
                             @docs_brand_assets
@@ -167,13 +171,21 @@ defmodule Scoria.PackageSurfaceTest do
   test "package files include guides, compatibility stubs, and docs brand assets" do
     package_files = Mix.Project.config()[:package][:files]
 
-    for path <- @canonical_guides ++ @compatibility_stub_paths ++ @docs_brand_assets do
+    for path <- @packaged_ai_docs ++ @canonical_guides ++ @compatibility_stub_paths ++ @docs_brand_assets do
       assert path in package_files, "expected #{path} in package files"
     end
 
-    for path <- @dev_only_docs do
-      refute path in package_files, "expected dev-only doc #{path} to stay out of package files"
+    for path <- @repo_only_ai_docs ++ @dev_only_docs do
+      refute path in package_files, "expected repo/dev-only doc #{path} to stay out of package files"
     end
+  end
+
+  test "package files intentionally ship shared AI docs but exclude the Gemini bridge" do
+    package_files = Mix.Project.config()[:package][:files]
+
+    assert AiDocContract.root_llms_path() in package_files
+    assert AiDocContract.root_agents_path() in package_files
+    refute AiDocContract.gemini_bridge_path() in package_files
   end
 
   test "Hex-primary install with optional GitHub fallback" do
