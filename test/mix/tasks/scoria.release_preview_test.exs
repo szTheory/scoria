@@ -70,6 +70,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
     assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :required_package_paths, 0)
     assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :release_preview_output_dir, 0)
     assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :generated_docs_output_dir, 0)
+    assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :docs_task_args, 0)
     assert function_exported?(Mix.Tasks.Scoria.ReleasePreview, :clean_generated_docs_output!, 1)
     assert Mix.Task.get("scoria.release_preview")
 
@@ -97,6 +98,29 @@ defmodule Mix.Tasks.Scoria.ReleasePreviewTest do
     end
 
     refute "test/scoria/adoption_surface_test.exs" in required_paths
+  end
+
+  test "release preview runs ExDoc with warnings as errors" do
+    assert Mix.Tasks.Scoria.ReleasePreview.docs_task_args() == ["--warnings-as-errors"]
+
+    source = File.read!("lib/mix/tasks/scoria.release_preview.ex")
+    assert source =~ ~s|Mix.Task.run("docs", docs_task_args())|
+    refute source =~ ~s|Mix.Task.run("docs")|
+  end
+
+  test "maintainer docs document raw docs WAE as diagnostic only" do
+    maintainer_docs = File.read!("guides/maintainers.md")
+    troubleshooting_docs = File.read!("guides/troubleshooting.md")
+    reviewer_docs = File.read!("guides/reviewer-verification.md")
+    ci_verify = File.read!(".github/workflows/ci-verify.yml")
+
+    assert maintainer_docs =~ "MIX_ENV=dev mix docs --warnings-as-errors"
+    assert troubleshooting_docs =~ "MIX_ENV=dev mix docs --warnings-as-errors"
+    assert reviewer_docs =~ "warnings-as-errors"
+    assert reviewer_docs =~ "MIX_ENV=dev mix docs --warnings-as-errors"
+
+    assert ci_verify =~ "MIX_ENV=dev mix scoria.release_preview"
+    refute ci_verify =~ "mix docs --warnings-as-errors"
   end
 
   test "release preview intentionally requires shared AI docs but excludes the Gemini bridge" do
