@@ -35,7 +35,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Release
 
-- [ ] **REL-01**: The release train no longer fails on planning-ledger drift; the roadmap includes archived milestone breadcrumbs required by the policy contract, including v2.15 Connector Adoption Lane.
+- [x] **REL-01**: The release train no longer fails on planning-ledger drift; the roadmap includes archived milestone breadcrumbs required by the policy contract, including v2.15 Connector Adoption Lane.
 - [ ] **REL-02**: The release train no longer fails on current browser e2e regressions from PR #12, including hidden theme-toggle clicks, modal focus checks, and orientation walkthrough failures.
 - [ ] **REL-03**: Version references in README, maintainer docs, release notes, and release automation reflect the live `0.1.2` baseline and the `0.1.3` release target without stale `0.1.1` guidance.
 - [ ] **REL-04**: The `0.1.3` release PR reaches green `ci-gate`, publishes to Hex, and passes post-publish smoke for fresh install plus live-lineage upgrade.
@@ -89,7 +89,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-04 | Phase 49 | Complete |
 | AI-01 | Phase 49 | Complete |
 | AI-02 | Phase 49 | Complete |
-| REL-01 | Phase 50 | Pending |
+| REL-01 | Phase 50 | Complete |
 | REL-02 | Phase 50 | Pending |
 | REL-03 | Phase 50 | Pending |
 | REL-04 | Phase 50 | Pending |

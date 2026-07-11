@@ -2,17 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
-current_phase: 50
-status: ready_to_plan
-stopped_at: Phase 50 context gathered — ready to plan
-last_updated: "2026-07-11T01:55:27.695Z"
+status: executing
+stopped_at: Completed 50-01-PLAN.md
+last_updated: "2026-07-11T02:42:57.924Z"
 last_activity: 2026-07-11
-last_activity_desc: Phase 50 planning complete
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 28
-  completed_plans: 28
+  total_plans: 32
+  completed_plans: 29
   percent: 80
 ---
 
@@ -24,15 +22,15 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 50 — release readiness and `0.1.3` cut
+**Current focus:** Phase 50 — release-readiness-and-0-1-3-cut
 
 ## Current Position
 
-Phase: 50
-Plan: Not started
-Status: Context gathered; ready to plan
-Last activity: 2026-07-11 — Phase 50 planning complete
-Resume file: `.planning/phases/50-release-readiness-and-0-1-3-cut/50-CONTEXT.md`
+Phase: 50 (release-readiness-and-0-1-3-cut) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-07-11
+Resume file: None
 
 ## Performance Metrics
 
@@ -214,6 +212,7 @@ Recent decisions affecting current work:
 - [Phase 48-07]: ExDoc source links now default to main unless SCORIA_DOCS_SOURCE_REF is set or HEAD is exactly tagged as v0.1.2.
 - [Phase 48-07]: Public ExDoc modules are filtered through a positive allowlist matching the Phase 48 public reference surface and compatibility aliases.
 - [Phase 48-07]: Old docs/*.md paths remain packaged compatibility stubs but are excluded from ExDoc extras.
+- [Phase 50]: REL-01 was docs-contract drift, not a missing breadcrumb — repointed @maintainer_docs/@operator_docs to guides/maintainers.md and restored dropped maintainer content (Hex release secrets, CI gate map topology, Version namespaces, PR vs release proof depth) without weakening any assertion.
 
 ### Resolved And Deferred Work
 
@@ -281,6 +280,7 @@ None active.
 | Phase 48 P07 | 9m 15s | 3 tasks | 2 files |
 | Phase 49 P01 | 4 min | 2 tasks | 5 files |
 | Phase 49 P02 | 9 min | 3 tasks | 22 files |
+| Phase 50 P01 | 8min | 2 tasks | 2 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -304,8 +304,8 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-07-11T00:50:59.558Z
-Stopped at: Completed 49-02-PLAN.md
+Last session: 2026-07-11T02:42:57.921Z
+Stopped at: Completed 50-01-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
