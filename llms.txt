@@ -1,0 +1,65 @@
+# Scoria
+
+Scoria is an Elixir/Phoenix library you add to an existing Phoenix app to run AI/LLM work durably and inspectably. It records runs and reviewer-visible traces inside the host app boundary, while the host Phoenix app owns identity, authorization, policy values, business truth, and end-user surfaces.
+
+Use this file as the compact public source map for humans and AI-assisted readers. It links to repository source docs and source files. README.md and guides/ are canonical source docs. docs/*.md files are compatibility stubs. doc/ output, including doc/llms.txt, is generated. Edit source docs and tests, not generated doc/ output.
+
+## Start Here
+
+- [README.md](README.md) - Human front door, capability ladder, install path, and ownership boundary.
+- [guides/getting-started.md](guides/getting-started.md) - Shortest path from Phoenix app to one visible Scoria run.
+- [guides/golden-path.md](guides/golden-path.md) - Copyable `identity -> start -> inspect -> resume` default runtime flow.
+- [guides/jtbd-and-user-flows.md](guides/jtbd-and-user-flows.md) - Jobs to be done, capability order, reviewer flow, and verification suites.
+- [guides/ownership-boundary.md](guides/ownership-boundary.md) - What Scoria owns versus what the host Phoenix app owns.
+- [guides/cheatsheet.cheatmd](guides/cheatsheet.cheatmd) - Compact install, mount, first-run, verification, and troubleshooting reference.
+- [guides/reference/glossary.md](guides/reference/glossary.md) - Vocabulary source for reviewer, trace, capability, verification suite, scoped context, and semantic cache.
+
+## Public API
+
+- [lib/scoria.ex](lib/scoria.ex) - Main facade for identity, run start, readback, handoff, and resume.
+- [lib/scoria/identity.ex](lib/scoria/identity.ex) - Host-owned identity normalization.
+- [lib/scoria/runtime.ex](lib/scoria/runtime.ex) - Durable runtime entry points and behavior.
+- [lib/scoria/verification_suites.ex](lib/scoria/verification_suites.ex) - Scoria.VerificationSuites command contracts.
+- [lib/scoria_web/reviewer_surface.ex](lib/scoria_web/reviewer_surface.ex) - Reviewer-facing dashboard read surface.
+- [lib/scoria/observe/reviewer_broadcast.ex](lib/scoria/observe/reviewer_broadcast.ex) - Reviewer trace broadcast surface.
+- [lib/scoria/semantic_cache/profile.ex](lib/scoria/semantic_cache/profile.ex) - Semantic cache profile behavior.
+- [lib/scoria/semantic_cache.ex](lib/scoria/semantic_cache.ex) - Semantic cache facade and lifecycle.
+- [lib/scoria/knowledge.ex](lib/scoria/knowledge.ex) - Optional knowledge base entry point.
+- [lib/scoria/connectors.ex](lib/scoria/connectors.ex) - Remote connector records and fleet behavior.
+- [lib/scoria/connectors/auth.ex](lib/scoria/connectors/auth.ex) - Host-owned connector authorization handoff.
+- [lib/scoria/mcp/tool.ex](lib/scoria/mcp/tool.ex) - MCP tool metadata and invocation shape.
+- [lib/scoria/eval.ex](lib/scoria/eval.ex) - Eval and reviewer verification surface.
+
+## Capability Guides
+
+- [guides/capabilities/default-runtime.md](guides/capabilities/default-runtime.md) - Default runtime capability; start here.
+- [guides/capabilities/bounded-handoffs.md](guides/capabilities/bounded-handoffs.md) - Same-run delegation with host-controlled scoped context.
+- [guides/capabilities/semantic-cache.md](guides/capabilities/semantic-cache.md) - Tenant-partitioned reuse for explicitly safe read-only work.
+- [guides/capabilities/connectors-and-mcp.md](guides/capabilities/connectors-and-mcp.md) - Remote connector and MCP tool governance.
+- [guides/capabilities/support-copilot-gallery.md](guides/capabilities/support-copilot-gallery.md) - Repository-local support scenario and advisory gallery proof.
+- [guides/scoria-vs-external-llm-ops.md](guides/scoria-vs-external-llm-ops.md) - Comparison against external LLM-ops platforms with current Scoria claims and ceded strengths.
+
+## Verify
+
+- [guides/reviewer-verification.md](guides/reviewer-verification.md) - Verification suite order, reviewer proof, release preview proof, and optional capability proof.
+- [guides/troubleshooting.md](guides/troubleshooting.md) - Smallest proof for common install, dashboard, runtime, semantic cache, knowledge, and release-preview failures.
+- [guides/maintainers.md](guides/maintainers.md) - Maintainer CI, release preview, docs maintenance, and release recovery.
+- [test/scoria/adoption_surface_test.exs](test/scoria/adoption_surface_test.exs) - Public docs and module docs contract.
+- [test/scoria/terminology_contract_test.exs](test/scoria/terminology_contract_test.exs) - Public vocabulary and stale wording guard.
+- `mix test.adoption` - Default runtime verification suite.
+- `mix test.runtime_to_handoff` - Bounded handoff verification suite.
+- `mix scoria.release_preview` - Maintainer package and docs preview verification suite.
+- `MIX_ENV=dev mix docs --warnings-as-errors` - Maintainer diagnostic for docs warnings.
+
+## Source vs Generated
+
+README.md and guides/ are canonical source docs. docs/*.md files are compatibility stubs. doc/ output, including doc/llms.txt, is generated. Edit source docs and tests, not generated doc/ output.
+
+Generated markdown is useful for local inspection after `mix docs`, but root `llms.txt` points to source paths so the edit target stays unambiguous. Keep public docs adopter- and job-focused: run, trace, reviewer, capability, verification suite, scoped context, semantic cache, and optional knowledge base.
+
+## Optional and Derived References
+
+- `doc/llms.txt` - Derived ExDoc markdown index generated by `mix docs`; inspect only after generation.
+- `doc/index.html` - Derived ExDoc HTML output generated by `mix docs`.
+- `docs/*.md` - Compatibility source stubs for copied 0.1.x paths; current guide truth stays under guides/.
+- `brandbook/logo-mark.svg` and `brandbook/favicon.svg` - Packaged docs brand assets referenced by ExDoc configuration.
