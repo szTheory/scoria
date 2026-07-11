@@ -16,16 +16,28 @@ From a 2026-07-03 AI-eval posture audit (6-agent adjudication vs LangSmith/Langf
 Braintrust/Inspect/OTel). Cadence: **P0 → docs → features** (each feature milestone interleaves its
 own feature docs + a release).
 
-| # | Seed | Milestone | Priority | Depends on |
-|---|------|-----------|----------|------------|
-| v3.5 active | [SEED-005](SEED-005-documentation-overhaul.md) | Documentation & Positioning (stable docs) + release cut | High (adoption bottleneck) | 006 (release gate, shipped) |
-| 999.3 | [SEED-007](SEED-007-trace-foundation-otel-openinference.md) | Trace Foundation (OTel/OpenInference) | High (foundational) | 006 |
-| 999.4 | [SEED-010](SEED-010-lethal-trifecta-governance.md) | Lethal-Trifecta Governance | ⭐ **Flagship** | 006, 007 |
-| 999.5 | [SEED-008](SEED-008-trustworthy-eval-depth.md) | Trustworthy Eval Depth | Medium | 006, 007 |
-| 999.6 | [SEED-009](SEED-009-retrieval-eval-depth-and-seams.md) | Retrieval Eval Depth & Seams | Medium | 006 |
-| 999.7 | [SEED-011](SEED-011-privacy-and-feedback-governance.md) | Privacy & Feedback Governance | Medium | — |
-| 999.8 | [SEED-012](SEED-012-architecture-archetype-awareness.md) | Architecture-Archetype Awareness (Rule-8 lens) | Medium (small capstone) | 007, 008 |
-| 999.9 | [SEED-013](SEED-013-operator-ia-pivot.md) | Operator IA Pivot (Control-Room v2) | High (dashboard coherence) | — (shell); composes 005/007/008/010/011/012 |
+**Execution order (2026-07-11 refinement): 007 → 010 → 008 → 012 → {009, 011} → 013.** The `Seed` /
+`999.x` IDs are stable cross-refs, not the execution rank — the table below is sorted in execution order.
+
+| Order | Seed (999.x) | Milestone | Priority | Depends on |
+|-------|------|-----------|----------|------------|
+| v3.5 shipped | [SEED-005](SEED-005-documentation-overhaul.md) (active tag) | Documentation & Positioning (stable docs) + release cut | High (adoption bottleneck) | 006 (release gate, shipped) |
+| 1 | [SEED-007](SEED-007-trace-foundation-otel-openinference.md) (999.3) | Trace Foundation (OTel/OpenInference) | High (foundational — everything reads spans) | 006 ✓ |
+| 2 | [SEED-010](SEED-010-lethal-trifecta-governance.md) (999.4) | Lethal-Trifecta Governance | ⭐ **Flagship** | 006 ✓, 007 (taint substrate) |
+| 3 | [SEED-008](SEED-008-trustworthy-eval-depth.md) (999.5) | Trustworthy Eval Depth | Medium | 006 ✓, 007 |
+| 4 | [SEED-012](SEED-012-architecture-archetype-awareness.md) (999.8) | Architecture-Archetype Awareness (Rule-8 lens) | Medium (small capstone — **pulled forward**) | 007, 008 |
+| 5 | [SEED-009](SEED-009-retrieval-eval-depth-and-seams.md) (999.6) | Retrieval Eval Depth & Seams | Medium (independent track) | 006 ✓ |
+| 6 | [SEED-011](SEED-011-privacy-and-feedback-governance.md) (999.7) | Privacy & Feedback Governance | Medium (independent track) | — |
+| 7 | [SEED-013](SEED-013-operator-ia-pivot.md) (999.9) | Operator IA Pivot (Control-Room v2) — **split: early shell + late feature screens** | High (dashboard coherence) | — (shell); composes 005/007/008/010/011/012 |
+
+**2026-07-11 sequencing refinement (why the order changed):** a dependency+dividend re-analysis kept
+007 → 010 → 008 first, then (1) **pulled SEED-012 forward to right after 008** — it's a pure dividend of
+007's attribute convention + 008's confusion-matrix, cheapest while that machinery is warm; and (2)
+**split SEED-013** into an early cross-cutting shell (nav re-group + unified Queue + scope contract +
+progressive-disclosure/receipts law — buildable today, `depends_on: []`) and late feature-specific
+screens (Run Workbench canvas, story-spine, Govern/Privacy/Quality/Cockpit) that ride their backends, so
+feature seeds build *into* the north-star frame instead of re-slotting later. Full rationale +
+dividend map live in `ROADMAP.md ## Backlog` (the durable, context-clear-proof recall surface).
 
 **Dependency graph (text):**
 ```
@@ -38,10 +50,17 @@ SEED-006 (P0, release gate) ── shipped in v3.4; unblocks everything
    ├── SEED-009 (retrieval depth)
    └── SEED-011 (privacy & feedback)
 
-SEED-013 (operator IA pivot / Control-Room v2) ── structural shell buildable on today's backend
-   (depends_on: none); the umbrella that 005/007/008/010/011/012 each fold a UI slice into.
-   Sequence after 006 (P0), alongside/after 005 (vocab).
+SEED-013 (operator IA pivot / Control-Room v2) ── SPLIT (2026-07-11):
+   (a) early cross-cutting SHELL — nav re-group + unified Queue + scope contract + progressive-
+       disclosure/receipts law — buildable on today's backend (depends_on: none);
+   (b) late feature SCREENS (Run Workbench canvas, story-spine, Govern/Privacy/Quality/Cockpit)
+       that ride 007/008/009/010/011/012 as those land.
+   The umbrella that 005/007/008/010/011/012 each fold a UI slice into. Sequence shell early
+   (after 006, alongside/after shipped 005); screens follow their backends.
 ```
+> Note: the tree above shows **dependencies**, not execution order. Execution order (per the
+> 2026-07-11 refinement) is **007 → 010 → 008 → 012 → {009, 011} → 013** — SEED-012 runs immediately
+> after SEED-008 (dividend), and SEED-013's shell may run early. See `ROADMAP.md ## Backlog`.
 
 **Source memo for the 2026-07-03 AI-architecture-patterns ingest:** `.planning/research/ai-architectural-patterns.md`
 — the 14-pattern field guide the 005/007/008/009/010/011/012 "AI-Architecture-Patterns cross-ref" sections

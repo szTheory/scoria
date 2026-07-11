@@ -99,55 +99,82 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 ### Planned milestone order
 
-Sequenced (dependency + priority). Order was set by a 2026-07-03 AI-eval posture audit
-(6-agent adjudication vs LangSmith/Langfuse/Phoenix/Ragas/Braintrust/Inspect/OTel). Cadence
-decision: **P0 fixes → docs/positioning → feature milestones**, each feature milestone
-interleaving its own feature docs + a release as it lands. SEED-006 (P0 trust/security) shipped
-in v3.4 and SEED-005 (docs/positioning + honest `0.1.3` release) shipped in v3.5, so the next
-milestone is a feature seed starting at 999.3 → SEED-007.
+**Execution order (do top-to-bottom): SEED-007 → SEED-010 → SEED-008 → SEED-012 → {SEED-009, SEED-011} → SEED-013.**
+The `999.x` tags are stable seed IDs (cross-referenced from PROJECT.md/STATE.md), **not** the execution
+rank — read the numbered list below for order.
 
-1. **999.3 → SEED-007 — Trace Foundation (OTel-GenAI / OpenInference interop)**  (foundational for eval attribution)
+Provenance: the base order was set by a 2026-07-03 AI-eval posture audit (6-agent adjudication vs
+LangSmith/Langfuse/Phoenix/Ragas/Braintrust/Inspect/OTel). Cadence decision: **P0 fixes →
+docs/positioning → feature milestones**, each feature milestone interleaving its own feature docs + a
+release as it lands. SEED-006 (P0 trust/security) shipped in v3.4 and SEED-005 (docs/positioning +
+honest `0.1.3` release) shipped in v3.5, so the next milestone is a feature seed → SEED-007.
+
+> **Sequencing refinement (2026-07-11) — recorded so it is not re-derived after a context clear.**
+> A dependency+dividend re-analysis (all seeds' hard prereqs and what each *emits* for the ones after
+> it) kept 007 → 010 → 008 first, then made two deliberate changes vs the original 2026-07-03 list:
+> 1. **Pulled SEED-012 forward to right after SEED-008** (was stranded last-but-one). 012 is a pure
+>    dividend of 007's attribute convention + 008's confusion-matrix/archetype slot — cheapest to build
+>    while that machinery is still warm, not months later behind 009/011.
+> 2. **Split SEED-013** into (a) an **early cross-cutting shell** — nav re-group, unified Queue,
+>    persistent scope contract, progressive-disclosure/receipts law — which is buildable on **today's**
+>    backend (`depends_on: []`), and (b) **late feature-specific screens** (Run Workbench evidence
+>    canvas, story-spine, Govern/Privacy/Quality/Cockpit content) that ride their backends. Landing the
+>    shell early means 010/008/009/011 build their screens *into* the north-star frame and plug their
+>    human-work items into one Queue, instead of building into the old IA and re-slotting later (rework).
+>    Whether to actually land the 013 shell early vs keep 013 as one closing capstone is a maintainer
+>    call at that point — both are recorded; the dividend case favors early.
+>
+> **Dividend map (why this order):** 007 emits `span_kind`/`gen_ai.*`/model-config/RETRIEVER-span +
+> host-declared `feature`/`route`/`archetype`/`intent` attrs → consumed by 008 (scorers read spans),
+> 010 (taint substrate), 012 (archetype attr), and every 013 screen. 008 emits the confusion-matrix +
+> typed archetype slot → 012 reuses both wholesale. 009 and 011 depend only on shipped 006 (independent
+> tracks; order between them is priority, not dependency). 013 depends on nothing structurally but
+> composes every feature seed's UI slice.
+
+1. **SEED-007 (999.3) — Trace Foundation (OTel-GenAI / OpenInference interop)**  (foundational — everything downstream reads spans)
    Semconv as a naming convention over the existing attrs map (not a schema rewrite) + span_kind +
-   model config + structured spans/events + RETRIEVER span + README claim fix. → see `SEED-007`.
+   model config + structured spans/events + RETRIEVER span + host-declared attribute convention +
+   README claim fix. → see `SEED-007`.
 
-2. **999.4 → SEED-010 — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR]**
+2. **SEED-010 (999.4) — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR]**
    Content trust tiers + spotlighting + tool-declared trifecta classification + confluence
    escalation policy (Meta Rule-of-Two) + moderation/output hooks + SECURITY-BOUNDARY.md. No peer
-   ships this as a runtime seam; Scoria is 2/3 built. Sequence early (after 006 + 007). → see `SEED-010`.
+   ships this as a runtime seam; Scoria is 2/3 built. Needs 007's taint substrate — build while trace
+   work is fresh; highest external/positioning payoff. → see `SEED-010`.
 
-3. **999.5 → SEED-008 — Trustworthy Eval Depth**  (after 006 + 007)
+3. **SEED-008 (999.5) — Trustworthy Eval Depth**  (after 007 — scorers are meaningless over attribution-less traces)
    Real scorer library + regression-comparison engine + judge calibration (the unique join Scoria
-   already captures but discards) + versioned rubric + typed risk/intent taxonomy slots. → see `SEED-008`.
+   already captures but discards) + versioned rubric + typed risk/intent taxonomy slots. Emits the
+   confusion-matrix + archetype slot that 012 reuses. → see `SEED-008`.
 
-4. **999.6 → SEED-009 — Retrieval Eval Depth & Seams**  (after 006)
+4. **SEED-012 (999.8) — Architecture-Archetype Awareness (Rule-8 lens)**  (small capstone; PULLED FORWARD — do immediately after 008)
+   Host-declared `archetype`/`route` on runs (Scoria records/segments, never infers) + a
+   segment-by-attribute dashboard facet (per-archetype/per-route cost/latency/scores) + per-archetype
+   Rule-8 eval presets + Router observability (routing accuracy via the SEED-008 confusion-matrix reuse).
+   A thin composition over the SEED-007 attribute convention + SEED-008 eval machinery — not new infra;
+   cheapest while that machinery is warm. From the 2026-07-03 AI-architecture-patterns ingest (memo:
+   `.planning/research/ai-architectural-patterns.md`, which validated ~85% of Scoria as-built). → see `SEED-012`.
+
+5. **SEED-009 (999.6) — Retrieval Eval Depth & Seams**  (independent track — needs only shipped 006; benefits from 007's RETRIEVER span)
    precision@k/NDCG/abstention/staleness (model-free, Scoria-owned) + faithfulness/rerank as
    host-supplied hooks (no model in-lib) + tiny gold set. → see `SEED-009`.
 
-5. **999.7 → SEED-011 — Privacy & Feedback Governance**
+6. **SEED-011 (999.7) — Privacy & Feedback Governance**  (independent track — depends on nothing; order vs 009 is a priority call)
    Trace/memory retention/TTL/purge + right-to-erasure (Scoria owns the tables → owns deletion) +
    PII masking contract + regex pack + human-feedback capture → flywheel + memory forget/expire.
    Unblocks the currently-unserved privacy/legal/compliance persona. → see `SEED-011`.
 
-6. **999.8 → SEED-012 — Architecture-Archetype Awareness (Rule-8 lens)**  (small capstone; after 007 + 008)
-   Host-declared `archetype`/`route` on runs (Scoria records/segments, never infers) + a
-   segment-by-attribute dashboard facet (per-archetype/per-route cost/latency/scores) + per-archetype
-   Rule-8 eval presets + Router observability (routing accuracy via the SEED-008 confusion-matrix reuse).
-   A thin composition over the SEED-007 attribute convention + SEED-008 eval machinery — not new infra.
-   From the 2026-07-03 AI-architecture-patterns ingest (memo: `.planning/research/ai-architectural-patterns.md`,
-   which validated ~85% of Scoria as-built). → see `SEED-012`.
-
-7. **999.9 → SEED-013 — Operator IA Pivot (Control-Room v2)**  (dashboard coherence; sequence after 006, alongside/after 005)
-   The **structural** operator-UI pivot buildable on today's backend: a tighter nav re-group
+7. **SEED-013 (999.9) — Operator IA Pivot (Control-Room v2)**  (SPLIT — see refinement note above)
+   **(a) Early cross-cutting shell** (buildable on today's backend, `depends_on: []`): tighter nav re-group
    (Home · Queue · Features · Runs · Quality · Govern · [Data & Privacy] · [Audit]), a **unified Queue**
    (one ranked human-work inbox over existing approvals+incidents+reviews), a persistent scope contract
-   (Tenant/Feature/Time/Live, cross-tenant loud), a 3-pane **Run Workbench**, the progressive-disclosure
-   law + receipts + "create policy rule from this," a **Feature Cockpit shell** (host-declared feature
-   attribute), and the "story-spine-with-vesicles" trace viz. It is the umbrella the feature-specific
-   screens fold into: Govern/blast-radius rides `SEED-010`, Data & Privacy rides `SEED-011`, Quality depth
-   rides `SEED-008`/`SEED-009`, Feature Cockpit content rides `SEED-012`. From the 2026-07-03 operator-UI
-   storyboard ingest (**UI source-of-record: `.planning/research/operator-ui-north-star.md`**, which
-   doctrine-filtered a blank-slate/maximalist storyboard down to this one structural seed + annotations —
-   ~40% of its ideas already ship). → see `SEED-013`.
+   (Tenant/Feature/Time/Live, cross-tenant loud), and the progressive-disclosure law + receipts +
+   "create policy rule from this." Landing this early lets each feature seed build into the frame + plug
+   into one Queue. **(b) Late feature-specific screens** that ride their backends: 3-pane **Run Workbench**
+   evidence canvas + "story-spine-with-vesicles" trace viz (SEED-007), Govern/blast-radius (SEED-010),
+   Data & Privacy (SEED-011), Quality depth (SEED-008/009), **Feature Cockpit** content (SEED-012). From
+   the 2026-07-03 operator-UI storyboard ingest (**UI source-of-record:
+   `.planning/research/operator-ui-north-star.md`**, ~40% of its ideas already ship). → see `SEED-013`.
 
 ### Carried-forward deferred work (pre-audit)
 
