@@ -1,11 +1,13 @@
 ---
 gsd_state_version: 1.0
 milestone: v3.5
-milestone_name: Documentation & Release Readiness — ACTIVE
-status: milestone_complete
-stopped_at: Milestone complete (Phase 50 was final phase)
-last_updated: 2026-07-11T18:19:16.665Z
+milestone_name: Documentation & Release Readiness — SHIPPED
+current_phase: 5
+status: Awaiting next milestone
+stopped_at: Phase 50 complete + 0.1.3 released to Hex (REL-04 satisfied); v3.5 milestone 100% complete
+last_updated: "2026-07-11T19:05:07.048Z"
 last_activity: 2026-07-11
+last_activity_desc: Milestone v3.5 completed and archived
 progress:
   total_phases: 5
   completed_phases: 5
@@ -18,24 +20,24 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
+See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Milestone complete
+**Current focus:** Planning next milestone — SEED-007 Trace Foundation (ROADMAP `## Backlog` 999.3) is the sequenced next candidate.
 
 ## Current Position
 
-Phase: 50
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-07-11
-Resume file: None
+Phase: Milestone v3.5 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-11 — Milestone v3.5 completed and archived
 
 ## Performance Metrics
 
 - **Release cut (D-04 closeout, 2026-07-11):** `0.1.3` LIVE on Hex — PR #12 squash-merged (`b904c22a`), tag `v0.1.3`, published + post-publish registry attest **green** in Release Please run `29162646314` (https://github.com/szTheory/scoria/actions/runs/29162646314). `curl https://hex.pm/api/packages/scoria/releases/0.1.3` → HTTP 200 (has_docs, full requirements). Post-publish smoke proved fresh install + `0.1.0 → 0.1.3` lineage upgrade. REL-04 satisfied; v3.5 milestone 100% complete.
-- **Latest Shipped:** `v3.4 Pre-1.0 Trust & Security Hardening` (2026-07-09) — 24 plans, 4 phases, 61 tasks. Audit `passed` (17/17 requirements, 4/4 phases); archived in `.planning/milestones/v3.4-*`.
+- **Latest Shipped:** `v3.5 Documentation & Release Readiness` (2026-07-11) — 39 plans, 5 phases, 66 tasks. Audit `passed` (18/18 requirements, 5/5 phases, 5/5 seams) after inline closure of release-train branch drift + a Phase 46 verification-doc gap; Hex `0.1.3` LIVE (tag `v0.1.3`, post-publish attest green); archived in `.planning/milestones/v3.5-*`.
+- **Previous Shipped:** `v3.4 Pre-1.0 Trust & Security Hardening` (2026-07-09) — 24 plans, 4 phases, 61 tasks. Audit `passed` (17/17 requirements, 4/4 phases); archived in `.planning/milestones/v3.4-*`.
 - **Previous Shipped:** `v3.3 Design System Stress Test` (2026-07-04) — 30 plans, 7 phases, 74 tasks. Audit `passed` (22/22 requirements, 6/6 seams); tag `v3.3` local.
 - **Previous Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
 - **Phase 42 P01:** 6 min — 3 tasks, 7 files, verification 14 tests green.
@@ -340,4 +342,4 @@ Resume file: None
 
 ## Operator Next Steps
 
-- `/gsd-complete-milestone v3.5` — archive the completed milestone and prepare for the next.
+- Start the next milestone with /gsd-new-milestone

@@ -1,5 +1,52 @@
 # Milestones
 
+## v3.5 Documentation & Release Readiness (Shipped: 2026-07-11)
+
+**Phases completed:** 5 phases, 39 plans, 66 tasks
+
+**Key accomplishments:**
+
+- Verification suite and reviewer broadcast aliases now lead with final vocabulary while legacy 0.1.x names continue to work.
+- The dashboard read model now leads with reviewer vocabulary while the 0.1.x operator module name remains compatible.
+- Semantic cache and bounded handoff inputs now expose final vocabulary while preserving legacy aliases and stored keys.
+- Workflow run-inspection UI now uses trace vocabulary while preserving legacy private component module names.
+- Remote invocation and incident top-level copy now uses trace and reviewer language while support proof sections keep evidence vocabulary.
+- The final terminology glossary now exists and is exposed through README, ExDoc, Hex package metadata, release preview, and Hex consumer contracts.
+- README and stable adopter guides now use the final public vocabulary while preserving explicit 0.1.x compatibility notes.
+- README and CHANGELOG now explain the pre-1.0 terminology migration without implying a schema migration or a new Hex release.
+- Executable README and scope-doctrine RED contracts now pin the missing first-screen positioning, persona boundaries, stale-version cleanup, and owns-vs-delegates table before docs copy changes.
+- README now opens with embedded Phoenix positioning, n=1 reviewer role boundaries, live 0.1.2 release truth, and a public owns-vs-delegates table locked by docs contracts.
+- RED ExUnit contracts now pin the Phase 48 HexDocs, package, redirect, guide-ladder, and release-preview inventory before implementation changes land.
+- Stable-doc, glossary, ownership-boundary, and public moduledoc contracts now point at the Phase 48 canonical guide ladder before the guides and moduledocs are green.
+- Start Here guide ladder with Getting Started, Golden Path, JTBD/user flows, ownership boundary, and cheatsheet content for the new canonical `guides/` surface.
+- Canonical capability guide bodies now cover default runtime, handoffs, semantic cache, connectors/MCP, support-copilot gallery, and the final vocabulary glossary.
+- Canonical Operate & Verify, Troubleshooting, external LLM-ops comparison, and Maintainer guide bodies now exist under `guides/` with Phase 46/47 vocabulary preserved.
+- README navigation now points at the canonical Phase 48 guide ladder while keeping the README as the GitHub/package front door.
+- ExDoc now opens on the canonical guide ladder with grouped public modules, dynamic source refs, redirects, brand assets, and release-preview package coverage.
+- Public facade, identity, runtime lifecycle, runtime DTO, and prompt-policy moduledocs now read as adopter-facing entry pages with canonical guide links and ID-boundary guidance.
+- Capability and integration public moduledocs now point to canonical guides and frame optional semantic cache, knowledge, connector, eval, and prompt surfaces through Scoria's ownership boundary.
+- Phase 48 validation is complete. Focused contracts, release preview, generated-doc assertions, and compile warnings-as-errors all pass.
+- Old copied docs source paths now land on thin compatibility pages that point to the canonical Phase 48 guide ladder.
+- Dashboard, reviewer trace, and verification-suite public moduledocs now teach the host-authenticated scope boundary and link to canonical Phase 48 guides.
+- SRE and legacy compatibility alias public moduledocs now use reviewer, verification-suite, ownership-boundary, and final replacement-module vocabulary.
+- Old capability docs source paths now resolve to thin compatibility pages that point at the canonical `guides/capabilities/` guide ladder.
+- Old reviewer verification and maintainer source links now land on thin compatibility pages that point to the canonical guides ladder.
+- Root AI-readable docs now give humans and coding agents one source-oriented map, one repo-agent operating contract, and a small tested contract module that keeps those files aligned.
+- Root AI docs now ship deliberately, ExDoc source docs are warning-clean, and release preview is the canonical warning-failing docs/package gate.
+- Repointed CiPolicyContractTest docs constants to canonical `guides/maintainers.md` and restored the genuinely-dropped maintainer content (Hex release secrets, CI gate map topology, Version namespaces, PR-vs-release proof depth), turning the 7 red policy-lane tests green without weakening a single assertion.
+- Fixed the two stale arity-2 `start_release_workflow` dev-seed call sites to the Phase 44-06 tenant-scoped arity-3 contract and hardened four theme-toggle Playwright locators with `.filter({ visible: true })`, turning the full e2e CI lane green (165 passed, 3 pre-existing skips).
+- Repointed four release-automation header comments to guides/maintainers.md, refreshed the post-publish-smoke example to 0.1.3, and moved @hexdocs_url to the per-package HexDocs subdomain form — while surfacing a pre-existing plan-01 docs-gate regression that blocks the 0.1.3 release preview.
+- Cut the 0.1.3 release: squash-merged the green PR #12, Release Please tagged `v0.1.3` and published to Hex, and the canonical post-publish registry attest passed — REL-04 satisfied, milestone v3.5 complete.
+- DashboardScope.on_mount/4 now redirects instead of bare-halting on missing/unauthorized scope, closing all 14 LiveView 1.1.30 `raise_halt_without_redirect!` failures.
+- All 7 Bucket-A docs-source cases now pass: repointed phoenix/handoff/semantic-cache example-source tests and all 4 SupportJourney adopter-doc surfaces to the canonical guides/ SSOT, applying the user's decision to update fixture wording/paths to current canonical text and drop fragments whose concept Phase 46/48 genuinely removed, while leaving guides/ itself untouched.
+- Repaired 4 REL-04 CI verify-lane failures by fixing a tenant_id seed/scope mismatch in two runtime integration tests and repointing two rendered-contract assertions (delegated-notebook primitives, incident-evidence heading) to their relocated/reworded canonical source — zero assertions deleted or loosened.
+- Repointed 3 stale-path CI failures (2 in ui_component_test.exs, 1 in dev_lab_boundary_test.exs) to their current canonical sources without weakening any assertion.
+- Fixed a missing tenant_id in the nested gallery app's knowledge seeding (root cause of the journey_test:110 crash) and repointed two vocabulary-drifted assertions in orchestrator_producer_test:31 to the current D-19/D-20/D-25 approval-copy rendered text — closing all 3 Bucket-E CI failures.
+- Aligned package_surface_test's one-publish-surface assertion to the REL-03 HexDocs subdomain SSOT (https://scoria.hexdocs.pm) and confirmed capture_parity_test:53 is a local-env-only artifact that passes clean on the release head.
+- 1. [Rule 1 - Bug] Fixed ExDoc `--warnings-as-errors` regression: broken markdown link to a dev-only, non-extras doc
+
+---
+
 ## v3.4 Pre-1.0 Trust & Security Hardening (Shipped: 2026-07-09)
 
 **Phases completed:** 4 phases, 24 plans, 61 tasks
