@@ -4,7 +4,7 @@ Scoria registers remote MCP connectors inside your Phoenix app. Scoria owns conn
 
 Use this guide with [Default Runtime](guides/capabilities/default-runtime.md), [Reviewer Verification](guides/reviewer-verification.md), [Support Copilot Gallery](guides/capabilities/support-copilot-gallery.md), and the [glossary](guides/reference/glossary.md).
 
-Connectors are optional. Use remote connectors after the default runtime capability is green with `mix test.adoption`. They add tool surfaces; they do not replace core runtime, identity, reviewer trace, approval, or verification suite contracts.
+Connectors are optional. Use remote connectors after the default runtime capability is green with `$ mix test.adoption`. They add tool surfaces; they do not replace core runtime, identity, reviewer trace, approval, or verification suite contracts.
 
 ## When to use connectors
 
@@ -40,16 +40,16 @@ Keep tool grants narrow at first. Prove one read path before widening to write p
 
 ## Recommended path
 
-1. Complete `mix scoria.install` and `mix test.adoption` on a branch that matches production constraints.
+1. Complete `$ mix scoria.install` and `$ mix test.adoption` on a branch that matches production constraints.
 2. Register one connector through the Scoria dashboard or public API with the smallest grant set that proves the integration.
 3. Run one approved invocation and confirm reviewer trace details: health, scopes, approval lineage, and audit evidence.
 4. Add host-side guards for write paths before widening grants.
 
 ## Verification
 
-- Default runtime verification suite: `mix test.adoption` - no connector setup required.
-- Connector verification suite: `mix test.connector` - register -> fleet list -> reviewer drawer trace details using SupportJourney fixture identities, including the `billing` Billing MCP connector profile.
-- Optional knowledge base verification suite: `mix test.knowledge` - only when grounding and retrieval are in scope.
+- Default runtime verification suite: `$ mix test.adoption` - no connector setup required.
+- Connector verification suite: `$ mix test.connector` - register -> fleet list -> reviewer drawer trace details using SupportJourney fixture identities, including the `billing` Billing MCP connector profile.
+- Optional knowledge base verification suite: `$ mix test.knowledge` - only when grounding and retrieval are in scope.
 - Semantic cache verification suite: `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path` - read-only cache profiles only.
 
 Maintainer CI topology and verification-suite ordering live in [Reviewer Verification](guides/reviewer-verification.md).

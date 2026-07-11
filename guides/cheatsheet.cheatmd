@@ -73,7 +73,7 @@ mix test.connector
 mix scoria.release_preview
 ```
 
-Use `mix test.adoption` first. Use `mix scoria.release_preview` for maintainer package and docs preview proof.
+Use `$ mix test.adoption` first. Use `$ mix scoria.release_preview` for maintainer package and docs preview proof.
 
 ## Semantic Cache Profile
 

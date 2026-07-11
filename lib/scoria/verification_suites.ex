@@ -7,9 +7,9 @@ defmodule Scoria.VerificationSuites do
   contract to its environment, prerequisites, and explicit exclusions so
   maintainers and adopters can verify the same boundary.
 
-  The release preview verification suite is `mix scoria.release_preview`; it
+  The release preview verification suite is `$ mix scoria.release_preview`; it
   proves publish-facing docs and package inventory. The default runtime
-  verification suite is `mix test.adoption`; optional suites cover bounded
+  verification suite is `$ mix test.adoption`; optional suites cover bounded
   handoffs, semantic-cache compatibility, optional knowledge, remote connectors,
   and the support-copilot gallery.
 

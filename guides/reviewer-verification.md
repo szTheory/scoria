@@ -2,7 +2,7 @@
 
 Reviewer verification proves that Scoria is installed, scoped, inspectable, and ready for optional capability work. Start with the default runtime verification suite before adding semantic cache, knowledge, connector, or support-copilot gallery proof.
 
-Start with the default runtime capability: run `mix test.adoption`, then use `mix test.runtime_to_handoff` only when you intentionally add bounded handoffs. This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
+Start with the default runtime capability: run `$ mix test.adoption`, then use `$ mix test.runtime_to_handoff` only when you intentionally add bounded handoffs. This verification suite does not require semantic fast-path setup, knowledge/pgvector bootstrap, retrieval setup, or hosted onboarding setup.
 
 Use this guide with [Getting Started](guides/getting-started.md), [Default Runtime](guides/capabilities/default-runtime.md), [Ownership Boundary](guides/ownership-boundary.md), [Troubleshooting](guides/troubleshooting.md), and the [Glossary](guides/reference/glossary.md).
 
@@ -12,9 +12,9 @@ Compatibility note: older copied links and 0.1.x text may say `docs/operator_ver
 
 You have proven the default runtime capability when all of these are true:
 
-- `mix scoria.install` has wired the dashboard, copied core migrations, and set baseline runtime defaults.
-- `mix ecto.migrate` has applied the host app's Scoria migrations.
-- `mix test.adoption` passes for the host app.
+- `$ mix scoria.install` has wired the dashboard, copied core migrations, and set baseline runtime defaults.
+- `$ mix ecto.migrate` has applied the host app's Scoria migrations.
+- `$ mix test.adoption` passes for the host app.
 - one real run starts through `Scoria.start_run/2`.
 - that same run can be read back through `Scoria.get_run/1` or found through `Scoria.list_runs_for_session/1`.
 - `/scoria/workflows/:run_id` shows the reviewer trace for that exact run.
@@ -126,7 +126,7 @@ What this proves:
 - the host app can start and inspect one default runtime run.
 - adopter docs and migration guards match the packaged surface.
 
-`mix test.adoption` is the canonical default runtime verification suite. It includes the fresh-host install/migrate/route/runtime smoke, the generated-host package proof, and adoption docs/migration guards. The bounded verifier carries the slow generated-host proof under a local proof-only timeout; support guidance should not widen that into a suite-wide timeout change or a `mix test.adoption --trace` contract.
+`$ mix test.adoption` is the canonical default runtime verification suite. It includes the fresh-host install/migrate/route/runtime smoke, the generated-host package proof, and adoption docs/migration guards. The bounded verifier carries the slow generated-host proof under a local proof-only timeout; support guidance should not widen that into a suite-wide timeout change or a `$ mix test.adoption --trace` contract.
 
 ## Prove one real runtime flow
 
@@ -187,13 +187,13 @@ Add optional capabilities only after the default runtime is boring:
 
 | Capability | Command | Use when |
 |------------|---------|----------|
-| Bounded handoffs | `mix test.runtime_to_handoff` | same-run delegated work needs `scoped_context` and reviewer-visible lineage |
+| Bounded handoffs | `$ mix test.runtime_to_handoff` | same-run delegated work needs `scoped_context` and reviewer-visible lineage |
 | Semantic cache | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path` | safe read-only reuse needs tenant partitioning and compatibility proof |
-| Optional knowledge base | `mix scoria.pgvector.bootstrap` then `mix test.knowledge` | retrieval, citations, and grounding are part of the product |
-| Remote connectors | `mix test.connector` | durable MCP connector records and reviewer fleet trace details matter |
-| Support-copilot gallery | `mix scoria.test.support_copilot` | maintainers want the advisory repository-local gallery proof |
+| Optional knowledge base | `$ mix scoria.pgvector.bootstrap` then `$ mix test.knowledge` | retrieval, citations, and grounding are part of the product |
+| Remote connectors | `$ mix test.connector` | durable MCP connector records and reviewer fleet trace details matter |
+| Support-copilot gallery | `$ mix scoria.test.support_copilot` | maintainers want the advisory repository-local gallery proof |
 
-The support-copilot gallery is advisory. Merge-blocking adoption proof remains `mix test.adoption`.
+The support-copilot gallery is advisory. Merge-blocking adoption proof remains `$ mix test.adoption`.
 
 Semantic cache proof uses the product's reviewer-facing outcome vocabulary:
 
@@ -211,15 +211,15 @@ Maintainers validate publish-facing docs and package inventory with:
 mix scoria.release_preview
 ```
 
-This verification suite runs docs generation and checks an unpacked local Hex preview for required runtime files, migrations, README, canonical guides, compatibility stubs, and docs brand assets. CI should run this verification suite in `MIX_ENV=dev` because ExDoc stays a dev-only tool, but keep the maintainer-facing command contract plain: `mix scoria.release_preview`.
+This verification suite runs docs generation and checks an unpacked local Hex preview for required runtime files, migrations, README, canonical guides, compatibility stubs, and docs brand assets. CI should run this verification suite in `MIX_ENV=dev` because ExDoc stays a dev-only tool, but keep the maintainer-facing command contract plain: `$ mix scoria.release_preview`.
 
 Keep release preview distinct from behavioral proof:
 
-- `mix scoria.release_preview` proves docs-build and package-inventory truth.
-- `mix test.adoption` proves the default runtime adoption boundary.
-- `mix test.runtime_to_handoff` proves bounded same-run escalation and delegated trace readback.
-- `mix test.semantic_fast_path` proves the canonical semantic cache troubleshooting verification suite.
-- `mix test.knowledge` proves optional knowledge base behavior.
+- `$ mix scoria.release_preview` proves docs-build and package-inventory truth.
+- `$ mix test.adoption` proves the default runtime adoption boundary.
+- `$ mix test.runtime_to_handoff` proves bounded same-run escalation and delegated trace readback.
+- `$ mix test.semantic_fast_path` proves the canonical semantic cache troubleshooting verification suite.
+- `$ mix test.knowledge` proves optional knowledge base behavior.
 
 ## Maintainer closeout chain
 
@@ -231,4 +231,4 @@ mix test.adoption
 mix test.runtime_to_handoff
 ```
 
-Use the broader `mix test` or `mix ci` commands as broader repo-health context when classifying failures outside the canonical verification suites. Maintainer-only CI topology, release automation, warning ratchet, and dev-only component-lab commands live in [Maintainers](guides/maintainers.md).
+Use the broader `$ mix test` or `$ mix ci` commands as broader repo-health context when classifying failures outside the canonical verification suites. Maintainer-only CI topology, release automation, warning ratchet, and dev-only component-lab commands live in [Maintainers](guides/maintainers.md).

@@ -60,7 +60,7 @@ An adoption surface that can be added after the default runtime is working.
 A proof command contract that verifies an adoption or maintainer surface.
 
 - Industry equivalent: test suite, conformance suite, or release gate.
-- Use for commands such as `mix test.adoption`, `mix test.runtime_to_handoff`, and `mix scoria.release_preview`.
+- Use for commands such as `$ mix test.adoption`, `$ mix test.runtime_to_handoff`, and `$ mix scoria.release_preview`.
 - Do not call these proof commands verification lanes in new adopter-facing docs.
 - Related APIs/docs: `Scoria.VerificationSuites`, reviewer verification guide.
 

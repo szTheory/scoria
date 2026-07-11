@@ -4,7 +4,7 @@ Bounded handoffs are the narrow public delegation capability for Scoria. Use the
 
 Use this guide with [Default Runtime](guides/capabilities/default-runtime.md), [Golden Path](guides/golden-path.md), and the [glossary](guides/reference/glossary.md).
 
-Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Add bounded handoffs only when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage. The default runtime path is `identity -> start -> inspect -> resume`.
+Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `$ mix test.adoption`. Add bounded handoffs only when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage. The default runtime path is `identity -> start -> inspect -> resume`.
 
 ## What this capability does
 
@@ -122,7 +122,7 @@ The workflow page keeps the topology-first tree and selected-step rail, and incl
 
 ## Runtime-to-handoff verifier
 
-After the default runtime capability is proven with `mix test.adoption`, use this bounded escalation verification suite:
+After the default runtime capability is proven with `$ mix test.adoption`, use this bounded escalation verification suite:
 
 ```bash
 mix test.runtime_to_handoff

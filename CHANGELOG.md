@@ -186,13 +186,13 @@ compatibility window.
   Incidents (`/scoria/incidents` — tenant SRE triage with trace-first evidence).
 - `?tenant=` view parameter on Live Ops and `priv/repo/dev_seed.exs` (gallery) to populate
   every dashboard screen with realistic data.
-- `mix scoria.assets.build` to (re)generate the shipped dashboard asset bundle.
+- `$ mix scoria.assets.build` to (re)generate the shipped dashboard asset bundle.
 - First-run empty states on the Prompt Registry (`/scoria/prompts`) and Eval Workbench
   (`/scoria/eval_specs`) tables, consistent with the Runs and Incidents pages.
 
 ### Changed
 
-- `mix scoria.install` no longer probes or edits the host app's Tailwind config. Because the
+- `$ mix scoria.install` no longer probes or edits the host app's Tailwind config. Because the
   dashboard ships self-contained assets, install is now router mount + Ecto migrations +
   runtime config only — there is no Tailwind install surface and no host asset work.
 
@@ -215,7 +215,7 @@ compatibility window.
 - Gallery producer-path orchestrator smoke on `/scoria`
 - `docs/MAINTAINERS.md` for CI topology and release operations
 - `docs/connector_adoption.md` in Hex package and docs extras
-- Named remote connector adoption lane (`mix test.connector`) with SupportJourney billing fixture proof
+- Named remote connector adoption lane (`$ mix test.connector`) with SupportJourney billing fixture proof
 
 ### Changed
 
@@ -366,17 +366,17 @@ milestone names as product releases.
 
 - **Default runtime** — identity-aware durable runs, approvals, and operator evidence via
   `Scoria.start_run/2`, `Scoria.resume_run/2`, and `/scoria` inspection surfaces; prove with
-  `mix scoria.test.adoption`.
+  `$ mix scoria.test.adoption`.
 - **Bounded handoff** — narrow same-run delegation with projected context and visible lineage
-  through `Scoria.start_handoff_run/3`; prove with `mix scoria.test.runtime_to_handoff`.
+  through `Scoria.start_handoff_run/3`; prove with `$ mix scoria.test.runtime_to_handoff`.
 - **Semantic fast path** — tenant-scoped reuse for explicitly safe read-only lanes via
-  `Scoria.SemanticLane`; prove with `mix scoria.test.semantic_fast_path`.
+  `Scoria.SemanticLane`; prove with `$ mix scoria.test.semantic_fast_path`.
 - **Optional knowledge** — pgvector-backed retrieval when chosen; prove with
-  `mix scoria.test.knowledge`.
-- **Upgrade-safe install** — planner/check/apply paths via `mix scoria.install --dry-run`,
-  `mix scoria.install --check`, and `mix scoria.install`.
+  `$ mix scoria.test.knowledge`.
+- **Upgrade-safe install** — planner/check/apply paths via `$ mix scoria.install --dry-run`,
+  `$ mix scoria.install --check`, and `$ mix scoria.install`.
 - **Maintainer CI trust** — warning baseline and ratchet enforcement, policy→test topology
-  guarded by contract tests, and local parity via `mix scoria.test.ci_trust` (maintainer-only;
+  guarded by contract tests, and local parity via `$ mix scoria.test.ci_trust` (maintainer-only;
   not an adopter integration requirement).
 
 ### Roadmap traceability

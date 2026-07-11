@@ -149,6 +149,7 @@ defmodule Scoria.MixProject do
       groups_for_extras: docs_extra_groups(),
       groups_for_modules: docs_module_groups(),
       filter_modules: &docs_public_module?/2,
+      skip_code_autolink_to: &docs_skip_code_autolink_to?/1,
       redirects: docs_redirects()
     ]
   end
@@ -308,6 +309,29 @@ defmodule Scoria.MixProject do
   end
 
   defp docs_public_module?(module, _metadata), do: MapSet.member?(docs_public_modules(), module)
+
+  defp docs_skip_code_autolink_to?(term) when is_binary(term) do
+    String.starts_with?(term, [
+      "mix ",
+      "MIX_ENV=",
+      "SCORIA_DB_PORT=",
+      "SCORIA_DB_PASSWORD=",
+      "SCORIA_CHECK_RESULT"
+    ]) or term in docs_code_autolink_skips()
+  end
+
+  defp docs_skip_code_autolink_to?(_term), do: false
+
+  defp docs_code_autolink_skips do
+    [
+      "Scoria.AdopterDocContract.comparison_guide_path/0",
+      "Scoria.HexConsumerContract",
+      "Scoria.SupportJourney",
+      "Scoria.VerificationSuites.closeout_order/0",
+      "ScoriaWeb.DashboardScope.Resolver",
+      "ScoriaWeb.UI"
+    ]
+  end
 
   defp package do
     [

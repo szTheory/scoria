@@ -13,7 +13,7 @@ Start by identifying which verification suite is failing. Do not jump to optiona
 | resume opens the wrong execution | confused `session_id` with `run_id` | persist and resume the exact `started.run_id` |
 | semantic reuse never hits | unsafe profile, compatibility mismatch, or stale lifecycle | run semantic cache verification and inspect `bypass`/`miss`/`reject` |
 | knowledge proof fails but default runtime passes | optional knowledge base setup is incomplete | bootstrap pgvector and run only the knowledge suite |
-| `mix scoria.release_preview` fails | docs or package inventory drift | inspect the reported missing package path or docs build warning |
+| `$ mix scoria.release_preview` fails | docs or package inventory drift | inspect the reported missing package path or docs build warning |
 
 ## `session_id` versus `run_id`
 
@@ -128,10 +128,10 @@ If release preview fails:
 
 1. Read the reported missing or unexpected path.
 2. Check whether the path is a canonical `guides/` file, an old `docs/*.md` compatibility stub, a required brand asset, or a runtime/migration package file.
-3. Run `mix docs` only if the failure is in docs generation.
+3. Run `$ mix docs` only if the failure is in docs generation.
 4. Keep dev-only docs such as design-system, Docker dev DX, UAT automation, and component-lab material out of adopter HexDocs unless a plan explicitly packages them.
 
-`mix scoria.release_preview` is a maintainer verification suite. It is not a substitute for `mix test.adoption` or `mix test.runtime_to_handoff`.
+`$ mix scoria.release_preview` is a maintainer verification suite. It is not a substitute for `$ mix test.adoption` or `$ mix test.runtime_to_handoff`.
 
 ## Installer check and apply drift
 
@@ -156,12 +156,12 @@ If `--check` reports drift or manual review:
 
 | You changed | Run |
 |-------------|-----|
-| install, dashboard mount, or default runtime docs | `mix test.adoption` |
-| bounded handoff behavior or docs | `mix test.runtime_to_handoff` |
-| semantic cache profile behavior | `mix test.semantic_fast_path` |
-| optional knowledge base behavior | `mix test.knowledge` |
-| connector/MCP behavior | `mix test.connector` |
-| canonical guides, ExDoc extras, package files, or release docs | `mix scoria.release_preview` |
-| broad repo health before pushing | `mix ci` |
+| install, dashboard mount, or default runtime docs | `$ mix test.adoption` |
+| bounded handoff behavior or docs | `$ mix test.runtime_to_handoff` |
+| semantic cache profile behavior | `$ mix test.semantic_fast_path` |
+| optional knowledge base behavior | `$ mix test.knowledge` |
+| connector/MCP behavior | `$ mix test.connector` |
+| canonical guides, ExDoc extras, package files, or release docs | `$ mix scoria.release_preview` |
+| broad repo health before pushing | `$ mix ci` |
 
 Keep failures local to the relevant capability first. Broad suites are useful for classification after the smallest verification suite explains the failure.

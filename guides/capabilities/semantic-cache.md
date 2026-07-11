@@ -110,7 +110,7 @@ Use the bounded semantic cache verification suite when validating this feature:
 SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path
 ```
 
-This is the canonical semantic cache troubleshooting verification suite. Use `mix test.adoption` for the broader public runtime adoption story, and use `mix test.knowledge` only when you are intentionally validating the optional knowledge base.
+This is the canonical semantic cache troubleshooting verification suite. Use `$ mix test.adoption` for the broader public runtime adoption story, and use `$ mix test.knowledge` only when you are intentionally validating the optional knowledge base.
 
 ## What this capability intentionally does not include
 

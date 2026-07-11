@@ -40,7 +40,7 @@ Use this when you need:
 - durable `run_id` readback
 - approval pauses
 - reviewer trace pages at `/scoria/workflows/:run_id`
-- `mix test.adoption` as the default runtime verification suite
+- `$ mix test.adoption` as the default runtime verification suite
 
 This flow does not require semantic cache, optional knowledge base, connector setup, or pgvector bootstrap.
 
@@ -84,13 +84,13 @@ Use one verification suite per capability:
 
 | Capability | Verification suite | Use when |
 |------------|--------------------|----------|
-| Default runtime capability | `mix test.adoption` | First adoption and core runtime proof. |
-| Bounded handoff capability | `mix test.runtime_to_handoff` | Narrow same-run delegation is wired. |
+| Default runtime capability | `$ mix test.adoption` | First adoption and core runtime proof. |
+| Bounded handoff capability | `$ mix test.runtime_to_handoff` | Narrow same-run delegation is wired. |
 | Semantic cache capability | `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path` | Safe read-only reuse is intentionally enabled. |
-| Optional knowledge base capability | `mix test.knowledge` | Retrieval, citations, and grounding are part of your product. |
-| Remote connector capability | `mix test.connector` | MCP connector registration and trace proof are part of your product. |
+| Optional knowledge base capability | `$ mix test.knowledge` | Retrieval, citations, and grounding are part of your product. |
+| Remote connector capability | `$ mix test.connector` | MCP connector registration and trace proof are part of your product. |
 
-Maintainer packaging proof is `mix scoria.release_preview`; see [Reviewer Verification](guides/reviewer-verification.md).
+Maintainer packaging proof is `$ mix scoria.release_preview`; see [Reviewer Verification](guides/reviewer-verification.md).
 
 ## What To Read Next
 

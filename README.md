@@ -36,11 +36,11 @@ This table translates the scope doctrine SSOT in `.planning/PROJECT.md ## Constr
 | Run records and traces | Durable run records, trace projection, exact `run_id` readback, and reviewer inspection. | Ticket, order, customer, domain truth, and host IDs. | Scoria records execution without becoming your business database. | `Scoria.get_run/1` and `/scoria/workflows/:run_id`. |
 | Reviewer dashboard scope | `/scoria`, the dashboard scope seam, trusted scope reads, and generic fail-closed copy. | Authentication, authorization, tenant membership, and role values. | Scoria can inspect only the tenant scope your app has already trusted. | `scoria_dashboard "/scoria", on_mount: ..., scope_resolver: ...`. |
 | Governance gates | Approval, budget, breaker, eval-gate, and tool-policy mechanisms. | Thresholds, policy values, escalation rules, and business risk interpretation. | Scoria supplies gates; your app decides what risk means. | Approval pauses, budget checks, breaker evidence, and eval gates. |
-| Eval and release proof | Scorer execution, persisted score evidence, fail-closed verdict posture, and verification-suite commands. | Prompts, product success definitions, expected outputs, and release intent. | Scoria proves the check ran; your app defines useful output. | `mix test.adoption`, eval runs, and release gates. |
-| Knowledge retrieval and grounding | Tenant-scoped retrieval filtering, citation validation, grounding checks, and persisted evidence. | Tenant/actor identity, corpus, business meaning, metadata semantics, and end-user answer surface. | Retrieval proof is only safe inside host-owned meaning and identity. | `mix test.knowledge` and citation scope evidence. |
+| Eval and release proof | Scorer execution, persisted score evidence, fail-closed verdict posture, and verification-suite commands. | Prompts, product success definitions, expected outputs, and release intent. | Scoria proves the check ran; your app defines useful output. | `$ mix test.adoption`, eval runs, and release gates. |
+| Knowledge retrieval and grounding | Tenant-scoped retrieval filtering, citation validation, grounding checks, and persisted evidence. | Tenant/actor identity, corpus, business meaning, metadata semantics, and end-user answer surface. | Retrieval proof is only safe inside host-owned meaning and identity. | `$ mix test.knowledge` and citation scope evidence. |
 | Bounded handoff scoped context | Same-run handoff records, scoped-context validation, queued delegation, and delegated lineage readback. | Which facts may be passed and which role should receive them. | Delegation stays narrow instead of copying broad runtime state. | `Scoria.start_handoff_run/3` and `Scoria.get_run_detail/1`. |
-| Remote connectors and tools | Registration, grants, health state, trace evidence, and approval pauses. | Which tools exist, what credentials mean, and whether a side effect is allowed. | Tool governance can pause work, but product authority stays with the host. | `mix test.connector` and connector trace details. |
-| Phoenix/BEAM infrastructure | Library defaults, Ecto migrations, Telemetry/PubSub/Oban-friendly integration points, and dashboard assets. | Deployment topology, repo config, secrets, app supervision, and non-Scoria UI. | Scoria fits into Phoenix instead of replacing the host application. | `mix scoria.install`, migrations, and host supervision. |
+| Remote connectors and tools | Registration, grants, health state, trace evidence, and approval pauses. | Which tools exist, what credentials mean, and whether a side effect is allowed. | Tool governance can pause work, but product authority stays with the host. | `$ mix test.connector` and connector trace details. |
+| Phoenix/BEAM infrastructure | Library defaults, Ecto migrations, Telemetry/PubSub/Oban-friendly integration points, and dashboard assets. | Deployment topology, repo config, secrets, app supervision, and non-Scoria UI. | Scoria fits into Phoenix instead of replacing the host application. | `$ mix scoria.install`, migrations, and host supervision. |
 
 Longer guide sections keep the same split: Scoria records, gates, surfaces, and reconstructs AI work; your Phoenix app owns identity, policy values, business truth, and end-user surfaces.
 
@@ -55,7 +55,7 @@ Use the narrowest capability that solves your current app problem:
 - **Remote connector capability**: add this only when MCP tool surfaces are part of your product.
 - **Upgrade-safe install**: use the plan, check, and apply modes when adopting or upgrading Scoria in an existing Phoenix app.
 
-Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`. Use `mix test.runtime_to_handoff` as the bounded escalation verification suite when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
+Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `$ mix test.adoption`. Use `$ mix test.runtime_to_handoff` as the bounded escalation verification suite when the same durable run needs narrow same-run delegation, host-controlled scoped context, and reviewer-visible delegated lineage.
 
 Docs:
 
@@ -89,7 +89,7 @@ end
 
 Tagged GitHub installs are for forks and pinned patches; prefer Hex for normal adoption.
 
-**Next steps:** `mix deps.get` → `mix scoria.install` → `mix ecto.migrate` — then see [Verification](#verification) for `mix test.adoption`.
+**Next steps:** `$ mix deps.get` → `$ mix scoria.install` → `$ mix ecto.migrate` — then see [Verification](#verification) for `$ mix test.adoption`.
 
 That installs the default Phoenix capability by:
 
@@ -117,10 +117,10 @@ for this terminology migration.
 
 When upgrading Scoria or re-running install on an existing host app:
 
-1. Run `mix scoria.install --dry-run` to preview planned changes without writes.
-2. Run `mix scoria.install --check` to verify current state without writes.
+1. Run `$ mix scoria.install --dry-run` to preview planned changes without writes.
+2. Run `$ mix scoria.install --check` to verify current state without writes.
 3. Remediate any `manual_review` entries using the printed remediation steps.
-4. Run `mix scoria.install` to apply planner-classified changes.
+4. Run `$ mix scoria.install` to apply planner-classified changes.
 
 - `--dry-run` and `--check` are no-write modes — they never modify host files.
 - `manual_review` entries never receive silent overwrites.
@@ -240,11 +240,11 @@ mix ecto.migrate
 mix test.adoption
 ```
 
-Adoption closeout in CI exercises Scoria via a packaged tarball (`{:scoria, path: unpack_root}` from `mix hex.build --unpack`) — see `Scoria.HexConsumerContract` in the maintainer guide for tarball consumer topology.
+Adoption closeout in CI exercises Scoria via a packaged tarball (`{:scoria, path: unpack_root}` from `$ mix hex.build --unpack`) — see `Scoria.HexConsumerContract` in the maintainer guide for tarball consumer topology.
 
 Then inspect `/scoria` and `/scoria/workflows/:run_id` for reviewer trace details from one real run in your app.
 
-`mix test.adoption` is the canonical bounded verifier for the default runtime capability. It carries the generated-host proof under a local proof-only timeout, so you do not need suite-wide timeout changes or a `--trace` variant to use it.
+`$ mix test.adoption` is the canonical bounded verifier for the default runtime capability. It carries the generated-host proof under a local proof-only timeout, so you do not need suite-wide timeout changes or a `--trace` variant to use it.
 
 Bounded runtime-to-handoff escalation verification suite:
 
@@ -263,7 +263,7 @@ mix test.knowledge
 
 Retrieval and citations in this capability are tenant-scoped; the host supplies tenant/actor identity, and missing tenant scope fails closed instead of broadening a query.
 
-The optional knowledge base does not define first adoption. You do not need pgvector, knowledge tables, retrieval, grounding, semantic cache setup, or `mix test.knowledge` to prove the core runtime, identity, approval, and reviewer trace path.
+The optional knowledge base does not define first adoption. You do not need pgvector, knowledge tables, retrieval, grounding, semantic cache setup, or `$ mix test.knowledge` to prove the core runtime, identity, approval, and reviewer trace path.
 
 Optional remote connector capability:
 
@@ -271,7 +271,7 @@ Optional remote connector capability:
 mix test.connector
 ```
 
-Use this after `mix test.adoption` when validating MCP connector registration and reviewer fleet trace details. See [Connectors and MCP](guides/capabilities/connectors-and-mcp.md).
+Use this after `$ mix test.adoption` when validating MCP connector registration and reviewer fleet trace details. See [Connectors and MCP](guides/capabilities/connectors-and-mcp.md).
 
 For the bounded semantic cache verification suite:
 
@@ -324,6 +324,6 @@ Current release: `0.1.2` on [Hex](https://hex.pm/packages/scoria). The next rele
 - [Maintainers](guides/maintainers.md) — parallel CI topology (`policy → build → { test, ratchet, knowledge, connector, full-suite[×4] } → verify-summary`), release operations, warning ratchet
 - [Reviewer Verification](guides/reviewer-verification.md) - adopter verification ladder (also used as docs extra)
 
-For broader repo-health context outside the canonical verification suites, run `mix test` locally or see the maintainer guide.
+For broader repo-health context outside the canonical verification suites, run `$ mix test` locally or see the maintainer guide.
 
-`mix ci` is the single-command local merge gate - it reproduces the full CI verification-suite set (deps-lock, format, compile WAE, all gating suites) and exits non-zero on any failure.
+`$ mix ci` is the single-command local merge gate - it reproduces the full CI verification-suite set (deps-lock, format, compile WAE, all gating suites) and exits non-zero on any failure.

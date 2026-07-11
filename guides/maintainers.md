@@ -16,18 +16,18 @@ The `ci-gate` umbrella job in `.github/workflows/ci.yml` fails if the reusable v
 
 Policy job:
 
-1. `mix scoria.warning_baseline.check`
-2. `mix scoria.warning_inventory.check_baseline`
-3. `mix compile --warnings-as-errors`
-4. `mix test --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
+1. `$ mix scoria.warning_baseline.check`
+2. `$ mix scoria.warning_inventory.check_baseline`
+3. `$ mix compile --warnings-as-errors`
+4. `$ mix test --warnings-as-errors test/scoria/ci_policy_contract_test.exs test/scoria/verification_lanes_test.exs test/scoria/adoption_surface_test.exs`
 
 Test job:
 
 1. `MIX_ENV=dev mix scoria.release_preview`
-2. `mix ecto.create` and `mix ecto.migrate`
-3. `mix test.adoption`
-4. `mix test.runtime_to_handoff`
-5. `mix test.semantic_fast_path --warnings-as-errors`
+2. `$ mix ecto.create` and `$ mix ecto.migrate`
+3. `$ mix test.adoption`
+4. `$ mix test.runtime_to_handoff`
+5. `$ mix test.semantic_fast_path --warnings-as-errors`
 
 Parallel jobs:
 
@@ -73,7 +73,7 @@ Keep this packaging boundary:
 
 ## Local merge gate
 
-`mix ci` reproduces the merge gate locally and exits non-zero on any failure.
+`$ mix ci` reproduces the merge gate locally and exits non-zero on any failure.
 
 It runs deps-lock checks, formatting, compile warnings-as-errors, pgvector preflight, and all gating verification suites from `Scoria.VerificationSuites`, plus optional knowledge, semantic cache, and connector proof unless `--skip-optional` is used.
 
@@ -81,7 +81,7 @@ It runs deps-lock checks, formatting, compile warnings-as-errors, pgvector prefl
 mix ci
 ```
 
-`mix ci --skip-optional` is partial proof only. It prints skipped lanes and exits non-zero so it cannot be mistaken for a clean merge gate.
+`$ mix ci --skip-optional` is partial proof only. It prints skipped lanes and exits non-zero so it cannot be mistaken for a clean merge gate.
 
 ## Installer contract proofs
 
@@ -116,8 +116,8 @@ Routine patch release flow:
 4. Let release-branch CI pass.
 5. Let Release PR Auto-Merge merge the Release PR and dispatch follow-up CI/Release Please.
 6. Let Release Please tag and publish to Hex after tag SHA `ci-gate` succeeds.
-7. Let post-publish registry attest run `mix scoria.post_publish_smoke`.
-8. Verify `mix hex.info scoria` lists the new version.
+7. Let post-publish registry attest run `$ mix scoria.post_publish_smoke`.
+8. Verify `$ mix hex.info scoria` lists the new version.
 
 Manual Hex publish recovery is only for cases where Release Please or Hex publish did not complete:
 
@@ -143,11 +143,11 @@ MIX_ENV=test mix scoria.warning_ratchet.test --warnings-as-errors
 
 The ratchet capture is compile-only and maintainer-focused. Behavioral verification suites remain:
 
-- `mix test.adoption`
-- `mix test.runtime_to_handoff`
-- `mix test.semantic_fast_path`
-- `mix test.knowledge`
-- `mix test.connector`
+- `$ mix test.adoption`
+- `$ mix test.runtime_to_handoff`
+- `$ mix test.semantic_fast_path`
+- `$ mix test.knowledge`
+- `$ mix test.connector`
 
 ## Phase 44 dashboard scope proof
 

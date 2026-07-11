@@ -4,7 +4,7 @@ The support-copilot gallery is repository-local example material that demonstrat
 
 Use this guide with [Connectors and MCP](guides/capabilities/connectors-and-mcp.md), [Default Runtime](guides/capabilities/default-runtime.md), and the [glossary](guides/reference/glossary.md).
 
-The gallery is the human-clickable companion to the merge-blocking generated-host adoption proof. Adopters evaluating from Hex should run `mix test.adoption` in their own host app. Clone the repository when you want the full interactive gallery.
+The gallery is the human-clickable companion to the merge-blocking generated-host adoption proof. Adopters evaluating from Hex should run `$ mix test.adoption` in their own host app. Clone the repository when you want the full interactive gallery.
 
 ## Clone the repository
 
@@ -34,7 +34,7 @@ http://localhost:4010/scoria
 | Surface | Dependency shape | Purpose |
 |---------|------------------|---------|
 | Gallery (`examples/support_copilot`) | `path: dependency` (`{:scoria, path: "../.."}`) | Human-clickable demo and advisory LiveView journey tests |
-| Merge-blocking adoption (`mix test.adoption`) | Hex-shaped tarball from `mix hex.build --unpack` | Proves packaged artifact installs in a generated Phoenix host |
+| Merge-blocking adoption (`$ mix test.adoption`) | Hex-shaped tarball from `$ mix hex.build --unpack` | Proves packaged artifact installs in a generated Phoenix host |
 
 The gallery uses a path dependency because it is repository-local example material. The merge-blocking adoption verification suite uses a Hex-shaped tarball because it proves the packaged artifact.
 
@@ -50,13 +50,13 @@ Maintainers and adopters exploring the gallery can run:
 mix scoria.test.support_copilot
 ```
 
-This verification suite is advisory. It is not part of `Scoria.VerificationSuites.closeout_order/0`. Merge-blocking adoption proof remains `mix test.adoption`.
+This verification suite is advisory. It is not part of `Scoria.VerificationSuites.closeout_order/0`. Merge-blocking adoption proof remains `$ mix test.adoption`.
 
 Optional verification suite commands exercised by gallery journeys run in the main repo, not inside the gallery app:
 
-- `mix test.semantic_fast_path` - semantic FAQ journey
-- `mix test.knowledge` - knowledge refund-policy journey
-- `mix test.connector` - billing connector register -> fleet -> drawer journey
+- `$ mix test.semantic_fast_path` - semantic FAQ journey
+- `$ mix test.knowledge` - knowledge refund-policy journey
+- `$ mix test.connector` - billing connector register -> fleet -> drawer journey
 
 ## Journey fixtures
 

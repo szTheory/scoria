@@ -8,11 +8,11 @@ Start with the default runtime capability. This is the baseline proof before bou
 
 ## Capability Ladder
 
-Default runtime capability comes first: `identity -> start -> inspect -> resume` with `mix test.adoption`.
-Bounded handoff capability follows only when same-run delegation is needed; use `Scoria.start_handoff_run/3` and prove it with `mix test.runtime_to_handoff`.
+Default runtime capability comes first: `identity -> start -> inspect -> resume` with `$ mix test.adoption`.
+Bounded handoff capability follows only when same-run delegation is needed; use `Scoria.start_handoff_run/3` and prove it with `$ mix test.runtime_to_handoff`.
 Semantic cache capability follows only for safe read-only reuse; define it with `use Scoria.SemanticCache.Profile`, wire it as `semantic_cache: [profile: MyApp.AI.AccountFaqCache]`, and prove it with `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path`.
-Optional knowledge base capability is for retrieval, citations, and grounding; prove it with `mix test.knowledge`.
-Remote connector capability is for MCP registration and reviewer-visible trace evidence; prove it with `mix test.connector`.
+Optional knowledge base capability is for retrieval, citations, and grounding; prove it with `$ mix test.knowledge`.
+Remote connector capability is for MCP registration and reviewer-visible trace evidence; prove it with `$ mix test.connector`.
 
 Compatibility note: old links may still mention `connector_adoption.md` while copied docs move toward [Connectors and MCP](guides/capabilities/connectors-and-mcp.md). The embedded-boundary framing stays the same: host apps own business meaning and Scoria owns durable runtime evidence. This capability is explicitly optional.
 
@@ -154,7 +154,7 @@ The runtime identity you pass to `Scoria.start_run/2` should use the same truste
 
 The bare `scoria_dashboard "/scoria"` form still compiles for generated/dev/example mounts through the session-backed default resolver. Authenticated host apps should prefer explicit `on_mount:` and `scope_resolver:` wiring.
 
-For install verification, use Check vs apply guardrails: run `mix scoria.install --dry-run`, then `mix scoria.install --check`, and only apply when `--check` reports the expected host surface state.
+For install verification, use Check vs apply guardrails: run `$ mix scoria.install --dry-run`, then `$ mix scoria.install --check`, and only apply when `--check` reports the expected host surface state.
 
 ## Verification
 
@@ -166,7 +166,7 @@ mix ecto.migrate
 mix test.adoption
 ```
 
-Adoption closeout exercises a packaged tarball from `mix hex.build --unpack`; it does not rely only on a monorepo path dependency. The maintainer details live in [Reviewer Verification](reviewer-verification.md).
+Adoption closeout exercises a packaged tarball from `$ mix hex.build --unpack`; it does not rely only on a monorepo path dependency. The maintainer details live in [Reviewer Verification](reviewer-verification.md).
 
 The reviewer verification guide is packaged at [Reviewer Verification](guides/reviewer-verification.md).
 

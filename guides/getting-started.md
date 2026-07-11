@@ -6,7 +6,7 @@ Use this guide when you want the shortest path from a Phoenix app to one visible
 
 ## What You Install
 
-Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `mix test.adoption`.
+Start with the default runtime capability. It proves identity-aware durable runs, approvals, and reviewer traces with `$ mix test.adoption`.
 
 Optional capabilities come later:
 

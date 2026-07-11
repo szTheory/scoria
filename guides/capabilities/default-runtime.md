@@ -58,7 +58,7 @@ conn
 |> put_session("actor_id", conn.assigns.current_user.id)
 ```
 
-`mix scoria.install` does not inject auth hooks, authorization policy, role values, or session keys. Those are host-owned nouns. Scoria owns the dashboard scope seam and trusted scope record.
+`$ mix scoria.install` does not inject auth hooks, authorization policy, role values, or session keys. Those are host-owned nouns. Scoria owns the dashboard scope seam and trusted scope record.
 
 ## Start a run
 
@@ -168,13 +168,13 @@ mix ecto.migrate
 mix test.adoption
 ```
 
-`mix test.adoption` does not require semantic cache setup, optional knowledge base setup, connector setup, pgvector bootstrap, retrieval setup, or a hosted control plane.
+`$ mix test.adoption` does not require semantic cache setup, optional knowledge base setup, connector setup, pgvector bootstrap, retrieval setup, or a hosted control plane.
 
 After the default runtime is proven, use capability-specific verification suites only for the capability you intentionally add:
 
-- `mix test.runtime_to_handoff` for bounded runtime-to-handoff escalation
+- `$ mix test.runtime_to_handoff` for bounded runtime-to-handoff escalation
 - `SCORIA_DB_PORT=55432 SCORIA_DB_PASSWORD=postgres MIX_ENV=test mix test.semantic_fast_path` for semantic cache behavior
-- `mix test.knowledge` for optional knowledge base behavior
-- `mix test.connector` for remote connector behavior
+- `$ mix test.knowledge` for optional knowledge base behavior
+- `$ mix test.connector` for remote connector behavior
 
 Start narrow. Expand only when the current capability already feels boring.
