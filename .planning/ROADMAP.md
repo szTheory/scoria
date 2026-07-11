@@ -25,7 +25,7 @@
 - [x] **Phase 47: README first-screen positioning and scope doctrine** — plain-English front door, persona/not-ours framing, owns-vs-delegates table, and hosted LLM-ops comparison. (completed 2026-07-10)
 - [x] **Phase 48: ExDoc and guide ladder restructure** — grouped modules/extras, version-aware docs metadata, stable guide tree, and public moduledoc alignment. (completed 2026-07-10)
 - [ ] **Phase 49: AI-accessible docs and docs verification gate** — curated `llms.txt`/`AGENTS.md`, guide index for coding agents, and warning-clean docs command.
-- [ ] **Phase 50: Release readiness and `0.1.3` cut** — policy/e2e release blockers, stale version refs, green release PR, Hex publish, and post-publish smoke.
+- [x] **Phase 50: Release readiness and `0.1.3` cut** — policy/e2e release blockers, stale version refs, green release PR, Hex publish, and post-publish smoke.
 
 ### Phase 46: Terminology and public vocabulary migration
 
@@ -209,7 +209,7 @@ Plans:
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
 | 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete    | 2026-07-10 |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete    | 2026-07-11 |
-| 50. Release readiness and `0.1.3` cut | v3.5 | 10/11 | In Progress|  |
+| 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete    | 2026-07-11 |
 
 ## Archived Milestones
 

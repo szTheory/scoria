@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
-status: executing
-stopped_at: Completed 50-08-PLAN.md
-last_updated: "2026-07-11T16:11:12.926Z"
+status: milestone_complete
+stopped_at: Milestone complete (Phase 50 was final phase)
+last_updated: 2026-07-11T18:19:16.665Z
 last_activity: 2026-07-11
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 39
-  completed_plans: 38
-  percent: 80
+  completed_plans: 39
+  percent: 100
 ---
 
 # Project State
@@ -22,18 +22,19 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 50 — release-readiness-and-0-1-3-cut
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Phase: 50 (release-readiness-and-0-1-3-cut) — EXECUTING
-Plan: 8 of 11
-Status: Ready to execute
+Phase: 50
+Plan: Not started
+Status: Milestone complete
 Last activity: 2026-07-11
 Resume file: None
 
 ## Performance Metrics
 
+- **Release cut (D-04 closeout, 2026-07-11):** `0.1.3` LIVE on Hex — PR #12 squash-merged (`b904c22a`), tag `v0.1.3`, published + post-publish registry attest **green** in Release Please run `29162646314` (https://github.com/szTheory/scoria/actions/runs/29162646314). `curl https://hex.pm/api/packages/scoria/releases/0.1.3` → HTTP 200 (has_docs, full requirements). Post-publish smoke proved fresh install + `0.1.0 → 0.1.3` lineage upgrade. REL-04 satisfied; v3.5 milestone 100% complete.
 - **Latest Shipped:** `v3.4 Pre-1.0 Trust & Security Hardening` (2026-07-09) — 24 plans, 4 phases, 61 tasks. Audit `passed` (17/17 requirements, 4/4 phases); archived in `.planning/milestones/v3.4-*`.
 - **Previous Shipped:** `v3.3 Design System Stress Test` (2026-07-04) — 30 plans, 7 phases, 74 tasks. Audit `passed` (22/22 requirements, 6/6 seams); tag `v3.3` local.
 - **Previous Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
@@ -246,7 +247,7 @@ active.
 - Phase 48 Plan 10 scope-doctrine issue resolved by restoring compatibility-stub fragments expected by `test/scoria/scope_doctrine_contract_test.exs`.
 - Phase 48 Plan 10 generated-doc issue resolved by cleaning generated ExDoc output before release preview rebuilds `doc/`.
 - RESOLVED 2026-07-11 (plan-01 follow-up `c809241c`): release_preview / mix docs --warnings-as-errors was RED on main from guides/maintainers.md:43,57,58 referencing filtered maintainer Mix tasks (plan-01 regression 25ad5233). Fixed by prefixing the three inline spans with `$ ` so ExDoc no longer autolinks them; asserted substrings preserved, no test changed. release_preview exits 0. See deferred-items.md D-50-DEF-01.
-- 50-04 Task 1 route-back: REL-01/02/03 fixes (entire v3.5 milestone, 162 commits) are on LOCAL main only; origin/main is at 2b0fa962 (end of v3.4) and PR #12 head 620d7144 was built by Release Please on that stale base, so PR #12 policy+e2e stay RED with the original pre-fix run IDs (29043718187/29043715702). Maintainer must push local main to origin/main so Release Please refreshes PR #12 with the fixes and re-runs CI. Local release_preview + mix docs --warnings-as-errors are GREEN on 2e38ac16.
+- RESOLVED 2026-07-11 (50-04 release cut): the v3.5 fixes + gap-closure train (50-05..50-11) were pushed to origin/main; Release Please refreshed PR #12 to green `ci-gate` (CLEAN/MERGEABLE, head be87badd), the maintainer squash-merged it (`b904c22a`), and `0.1.3` published to Hex with a green post-publish attest (run 29162646314). No open release blockers remain.
 
 ### Roadmap Evolution
 
@@ -333,10 +334,10 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-11T15:47:40.332Z
-Stopped at: Completed 50-08-PLAN.md
+Last session: 2026-07-11T18:19:16.665Z
+Stopped at: Phase 50 complete + 0.1.3 released to Hex (REL-04 satisfied); v3.5 milestone 100% complete
 Resume file: None
 
 ## Operator Next Steps
 
-- Discuss or plan Phase 49: AI-accessible docs and docs verification gate.
+- `/gsd-complete-milestone v3.5` — archive the completed milestone and prepare for the next.

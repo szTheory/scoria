@@ -1,14 +1,14 @@
 ---
-status: partial
+status: complete
 phase: 50-release-readiness-and-0-1-3-cut
 source: [50-01-SUMMARY.md, 50-02-SUMMARY.md, 50-03-SUMMARY.md, 50-05-SUMMARY.md, 50-06-SUMMARY.md, 50-07-SUMMARY.md, 50-08-SUMMARY.md, 50-09-SUMMARY.md, 50-10-SUMMARY.md, 50-11-SUMMARY.md]
 started: 2026-07-11T16:39:51Z
-updated: 2026-07-11T16:41:00Z
+updated: 2026-07-11T18:16:30Z
 ---
 
 ## Current Test
 
-[testing paused — 1 item outstanding: REL-04 release cut is gated on maintainer merge/publish (50-04 Task 2/3)]
+[testing complete]
 
 ## Tests
 
@@ -73,18 +73,18 @@ source: automated
 
 ### 12. 0.1.3 release cut & post-publish smoke (REL-04 final leg)
 expected: Maintainer merges PR #12 → Release Please tags v0.1.3 + publishes to Hex → `curl .../releases/0.1.3` returns 200 → `mix scoria.post_publish_smoke` proves fresh install + live-lineage upgrade.
-result: blocked
-blocked_by: release-build
-reason: "PR #12 is green (ci-gate CLEAN, MERGEABLE) but unmerged; Hex returns 404 for 0.1.3. The merge → tag → publish → post-publish-smoke is a maintainer/release-authority action owned by 50-04 Task 2/3, not a code defect. Verified live 2026-07-11: hex.pm lists only 0.1.2/0.1.0."
+result: pass
+source: automated
+reason: "Cut this session (2026-07-11). PR #12 squash-merged (merge commit b904c22a) → Release Please tagged v0.1.3 + published GitHub Release → 'Publish to Hex.pm' job success → hex.pm lists 0.1.3 (HTTP 200, has_docs, full requirements) → 'Post-publish registry attest' job SUCCESS (Release Please run 29162646314, completed/success). Live-verified: Hex 200 at 18:10:55Z, attest green at 18:16Z."
 
 ## Summary
 
 total: 12
-passed: 11
+passed: 12
 issues: 0
 pending: 0
 skipped: 0
-blocked: 1
+blocked: 0
 
 ## Gaps
 
