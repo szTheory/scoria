@@ -81,7 +81,7 @@ defmodule Scoria.PackageSurfaceTest do
     docs = project[:docs]
 
     assert project[:source_url] == "https://github.com/szTheory/scoria"
-    assert project[:homepage_url] == "https://hexdocs.pm/scoria"
+    assert project[:homepage_url] == "https://scoria.hexdocs.pm"
     assert docs[:main] == "getting-started"
     assert docs[:source_url] == "https://github.com/szTheory/scoria"
     assert docs[:source_ref] == "main"
