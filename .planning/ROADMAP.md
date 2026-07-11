@@ -174,7 +174,7 @@ Plans:
 
 - [x] 50-01-PLAN.md — REL-01: repoint docs-contract constants to canonical guides/ and restore dropped maintainer content (policy lane green)
 - [x] 50-02-PLAN.md — REL-02: fix dev_seed.exs arity-3 tenant-scoped call sites + theme-toggle visible-locator (e2e lane green)
-- [ ] 50-03-PLAN.md — REL-03: version/docs-truth polish (stale docs/ comments, 0.1.1 example, HexDocs subdomain URL)
+- [x] 50-03-PLAN.md — REL-03: version/docs-truth polish (stale docs/ comments, 0.1.1 example, HexDocs subdomain URL)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -196,7 +196,7 @@ Plans:
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
 | 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete    | 2026-07-10 |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete    | 2026-07-11 |
-| 50. Release readiness and `0.1.3` cut | v3.5 | 2/4 | In Progress|  |
+| 50. Release readiness and `0.1.3` cut | v3.5 | 3/4 | In Progress|  |
 
 ## Archived Milestones
 

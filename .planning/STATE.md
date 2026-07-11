@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
 status: executing
-stopped_at: Completed 50-01-PLAN.md
-last_updated: "2026-07-11T02:51:02.710Z"
+stopped_at: Completed 50-03-PLAN.md
+last_updated: "2026-07-11T03:03:42.973Z"
 last_activity: 2026-07-11
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 32
-  completed_plans: 30
+  completed_plans: 31
   percent: 80
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 50 (release-readiness-and-0-1-3-cut) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-07-11
 Resume file: None
@@ -215,6 +215,8 @@ Recent decisions affecting current work:
 - [Phase 50]: REL-01 was docs-contract drift, not a missing breadcrumb — repointed @maintainer_docs/@operator_docs to guides/maintainers.md and restored dropped maintainer content (Hex release secrets, CI gate map topology, Version namespaces, PR vs release proof depth) without weakening any assertion.
 - [Phase ?]: 50-02: dev_seed.exs calls start_release_workflow/3 with the real bound tenant_id (Phase 44-06 contract), never a hardcoded default — preserves tenant scope while restoring block (f)/(g) seed evidence
 - [Phase ?]: 50-02: Playwright dual desktop/mobile selectors use .filter({ visible: true }).first() so they bind by visibility not DOM order — fixed all 4 theme-toggle sites in phase16_parity.spec.mjs
+- [Phase 50-03]: @hexdocs_url moved to per-package subdomain form https://scoria.hexdocs.pm (D-14); main @version stays 0.1.2 (D-12); 4 workflow header comments repointed to guides/maintainers.md
+- [Phase 50-03]: release_preview WAE docs gate is RED from plan-01 guides/maintainers.md filtered-module references (D-50-DEF-01) — out of plan-03 scope, blocks plan 50-04
 
 ### Resolved And Deferred Work
 
@@ -226,10 +228,11 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None active.
+active.
 
 - Phase 48 Plan 10 scope-doctrine issue resolved by restoring compatibility-stub fragments expected by `test/scoria/scope_doctrine_contract_test.exs`.
 - Phase 48 Plan 10 generated-doc issue resolved by cleaning generated ExDoc output before release preview rebuilds `doc/`.
+- release_preview / mix docs --warnings-as-errors RED on main: guides/maintainers.md:43,57,58 reference filtered maintainer Mix tasks (plan-01 regression 25ad5233). Blocks plan 50-04 must-have #1. See deferred-items.md D-50-DEF-01.
 
 ### Roadmap Evolution
 
@@ -284,6 +287,7 @@ None active.
 | Phase 49 P02 | 9 min | 3 tasks | 22 files |
 | Phase 50 P01 | 8min | 2 tasks | 2 files |
 | Phase 50 P02 | 9min | 2 tasks | 2 files |
+| Phase 50 P03 | 15min | 2 tasks | 6 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -307,8 +311,8 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-07-11T02:50:33.773Z
-Stopped at: Completed 50-01-PLAN.md
+Last session: 2026-07-11T03:03:42.969Z
+Stopped at: Completed 50-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
