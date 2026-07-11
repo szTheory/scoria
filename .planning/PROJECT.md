@@ -38,7 +38,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 - ExDoc/docs structure that helps Phoenix adopters and LLM assistants find the right public API, guide, and verification suite without flat-sidebar ambiguity.
 - Release-readiness cleanup: current `0.1.3` PR blockers, planning-ledger drift, browser e2e failures, stale version references, and post-publish smoke proof.
 
-**Phase 47 complete (2026-07-10):** README now opens with embedded-Phoenix positioning before capability vocabulary, includes n=1 reviewer/persona and Core/Adjacent/Not-Scoria boundaries, publishes the owns-vs-delegates table, and ships the packaged `docs/scoria_vs_external_llm_ops.md` comparison guide. Focused docs/package/release-preview contracts and code review passed; broader `mix ci` still has unrelated repository-format and runtime integration debt tracked for release readiness.
+**Phases 47-49 complete (2026-07-11):** README now opens with embedded-Phoenix positioning before capability vocabulary, includes n=1 reviewer/persona and Core/Adjacent/Not-Scoria boundaries, publishes the owns-vs-delegates table, and ships the comparison guide. HexDocs now opens on the grouped guide ladder and curated public module surface, root `llms.txt`/`AGENTS.md` docs exist for AI-assisted readers, and release preview now runs ExDoc with warnings-as-errors while packaging `llms.txt` and `AGENTS.md` and keeping `GEMINI.md` repo-only. Focused docs/package/release-preview contracts pass; Phase 50 owns release readiness and the honest `0.1.3` cut.
 
 ## Latest Shipped Milestone: v3.4 Pre-1.0 Trust & Security Hardening
 
@@ -520,4 +520,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-10 after completing Phase 47 README first-screen positioning and scope doctrine.*
+*Last updated: 2026-07-11 after completing Phase 49 AI-accessible docs and docs verification gate.*
