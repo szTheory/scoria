@@ -956,7 +956,8 @@ try do
     )
 
   if is_nil(existing_release_approval) do
-    {:ok, _release_result} = PromptRelease.start_release_workflow(draft_template.id, "operator-1")
+    {:ok, _release_result} =
+      PromptRelease.start_release_workflow(draft_template.id, "operator-1", tenant_id: tenant_id)
     IO.puts("  ✓ prompt release workflow started for draft: #{draft_template.id}")
   else
     IO.puts("  ✓ prompt release workflow — already seeded")
@@ -1044,7 +1045,7 @@ try do
           })
 
         {:ok, draft} = PromptRegistry.transition_status(v2, "draft")
-        {:ok, _} = PromptRelease.start_release_workflow(draft.id, "operator-1")
+        {:ok, _} = PromptRelease.start_release_workflow(draft.id, "operator-1", tenant_id: tenant_id)
         draft
 
       existing ->
