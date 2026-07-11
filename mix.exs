@@ -3,7 +3,7 @@ defmodule Scoria.MixProject do
 
   @version "0.1.2"
   @source_url "https://github.com/szTheory/scoria"
-  @hexdocs_url "https://hexdocs.pm/scoria"
+  @hexdocs_url "https://scoria.hexdocs.pm"
   @release_docs_url "#{@hexdocs_url}/#{@version}"
 
   def project do
