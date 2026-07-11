@@ -182,7 +182,7 @@ Plans:
 
 **Gap closure — Wave 1** *(REL-04 CI verify-lane debt, parallel; ~30 failures across Buckets A–G)*
 
-- [ ] 50-05-PLAN.md — Bucket G: DashboardScope mount-halt regression (14 failures, 1 root cause) — fail-closed redirect + seed scope in shared test conns
+- [x] 50-05-PLAN.md — Bucket G: DashboardScope mount-halt regression (14 failures, 1 root cause) — fail-closed redirect + seed scope in shared test conns
 - [ ] 50-06-PLAN.md — Bucket A: docs-source alignment — repoint example-source + SupportJourney doc surfaces to canonical guides/ SSOT (7 cases)
 - [ ] 50-07-PLAN.md — Bucket C: runtime/LiveView seeded-run + rendered contracts (tenant-scoped run lookup, notebook primitives, incident evidence)
 - [ ] 50-08-PLAN.md — Bucket D: UI/dev-lab contracts — repoint docs/MAINTAINERS.md reads to guides/maintainers.md + guard #7 inventory-ID reference
@@ -209,7 +209,7 @@ Plans:
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
 | 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete    | 2026-07-10 |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete    | 2026-07-11 |
-| 50. Release readiness and `0.1.3` cut | v3.5 | 3/11 | In Progress|  |
+| 50. Release readiness and `0.1.3` cut | v3.5 | 4/11 | In Progress|  |
 
 ## Archived Milestones
 

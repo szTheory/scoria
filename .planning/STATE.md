@@ -5,15 +5,15 @@ milestone_name: Documentation & Release Readiness — ACTIVE
 current_phase: 50
 current_phase_name: release-readiness-and-0-1-3-cut
 status: executing
-stopped_at: Completed 50-03-PLAN.md
-last_updated: "2026-07-11T04:05:50.675Z"
+stopped_at: Completed 50-05-PLAN.md
+last_updated: "2026-07-11T13:51:56.382Z"
 last_activity: 2026-07-11
-last_activity_desc: Phase 50 planning complete
+last_activity_desc: Phase 50 execution started
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 32
-  completed_plans: 31
+  total_plans: 39
+  completed_plans: 32
   percent: 80
 ---
 
@@ -30,9 +30,9 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 50 (release-readiness-and-0-1-3-cut) — EXECUTING
-Plan: 4 of 4
+Plan: 2 of 11
 Status: Ready to execute
-Last activity: 2026-07-11 — Phase 50 planning complete
+Last activity: 2026-07-11 -- Phase 50 execution started
 Resume file: None
 
 ## Performance Metrics
@@ -221,6 +221,7 @@ Recent decisions affecting current work:
 - [Phase 50-03]: @hexdocs_url moved to per-package subdomain form https://scoria.hexdocs.pm (D-14); main @version stays 0.1.2 (D-12); 4 workflow header comments repointed to guides/maintainers.md
 - [Phase 50-03]: release_preview WAE docs gate is RED from plan-01 guides/maintainers.md filtered-module references (D-50-DEF-01) — out of plan-03 scope, blocks plan 50-04
 - [Phase 50-01-followup]: RESOLVED D-50-DEF-01 — prefixed the three inline `mix <task>` spans in guides/maintainers.md with `$ ` so ExDoc skips the filtered-module autolink; asserted substrings preserved (no CiPolicyContractTest change), release_preview exits 0 (commit c809241c)
+- [Phase ?]: [Phase 50-05]: DashboardScope missing/unauthorized fail-closed branch now redirects to root '/' instead of bare-halting, closing the LiveView 1.1.30 raise_halt_without_redirect! regression while preserving D-18 fail-closed contract
 
 ### Resolved And Deferred Work
 
@@ -293,6 +294,7 @@ active.
 | Phase 50 P01 | 8min | 2 tasks | 2 files |
 | Phase 50 P02 | 9min | 2 tasks | 2 files |
 | Phase 50 P03 | 15min | 2 tasks | 6 files |
+| Phase 50 P05 | 25min | 1 tasks | 4 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -316,8 +318,8 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-11T03:03:42.969Z
-Stopped at: Completed 50-03-PLAN.md
+Last session: 2026-07-11T13:51:56.377Z
+Stopped at: Completed 50-05-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
