@@ -189,7 +189,7 @@ MIX_ENV=test mix test test/scoria_web/router_test.exs test/scoria_web/dashboard_
 
 ## Design-system component conventions
 
-For the maintainer conventions doc pairing every named design-system convention with its enforcing drift guard, see [Design system conventions](docs/design_system.md) (dev-only; not shipped to Hex).
+For the maintainer conventions doc pairing every named design-system convention with its enforcing drift guard, see `docs/design_system.md` (dev-only; not shipped to Hex, so it is not part of this generated doc set and is referenced by path only, not as a doc link).
 
 CSS selectors should stay component-oriented: prefer block classes, BEM modifiers, and inherited token variables over long structural selectors. A modifier-to-element selector is acceptable when that relationship is the component contract (`.scoria-table-shell--has-summary .scoria-table__viewport`), but avoid reaching through unrelated components such as panel -> table -> filter controls. For shared surface variants, add a `ScoriaWeb.UI` option such as `flush={true}` and let the component emit the modifier class.
 
