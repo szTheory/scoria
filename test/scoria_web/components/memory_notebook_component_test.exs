@@ -8,9 +8,14 @@ defmodule ScoriaWeb.MemoryNotebookComponentTest do
   @palette_regex ~r/\b(stone|rose|sky|emerald|amber|blue|gray|slate|zinc|neutral|red|green|yellow|purple|pink|indigo|teal|cyan|lime|orange|violet|fuchsia)-\d/
 
   test "retrieval, delegated, and memory adapters use shared notebook primitives" do
+    # `delegated_evidence_component.ex` is a Phase 48 legacy 0.1.x compatibility
+    # wrapper that delegates rendering to `ScoriaWeb.DelegatedTraceComponent`
+    # (see lib/scoria_web/components/delegated_evidence_component.ex moduledoc).
+    # The shared-notebook-primitive contract now lives in the relocated
+    # canonical module, not the wrapper.
     adapter_paths = [
       "lib/scoria_web/components/citation_evidence_component.ex",
-      "lib/scoria_web/components/delegated_evidence_component.ex",
+      "lib/scoria_web/components/delegated_trace_component.ex",
       "lib/scoria_web/components/memory_notebook_component.ex"
     ]
 
@@ -22,7 +27,7 @@ defmodule ScoriaWeb.MemoryNotebookComponentTest do
       refute source =~ @palette_regex
     end
 
-    delegated_source = File.read!("lib/scoria_web/components/delegated_evidence_component.ex")
+    delegated_source = File.read!("lib/scoria_web/components/delegated_trace_component.ex")
     assert delegated_source =~ "delegated_status_label"
   end
 

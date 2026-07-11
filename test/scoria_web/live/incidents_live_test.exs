@@ -125,7 +125,7 @@ defmodule ScoriaWeb.IncidentsLiveTest do
     assert html =~ "Fast burn budget incident"
     assert html =~ ~s(href="/scoria/incidents/#{newer.id}")
     assert html =~ ~s(href="/scoria/incidents/#{older.id}")
-    refute html =~ "Trace-first incident evidence"
+    refute html =~ "Trace-first incident review"
 
     assert [] =
              html
@@ -237,7 +237,7 @@ defmodule ScoriaWeb.IncidentsLiveTest do
 
     {:ok, _view, html} = live(session_conn(), "/scoria/incidents/#{review.id}")
     assert html =~ "trace-review"
-    assert html =~ "Trace-first incident evidence"
+    assert html =~ "Trace-first incident review"
     assert html =~ "CI baseline dip on helpfulness"
   end
 
