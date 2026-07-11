@@ -4,13 +4,13 @@ milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
 status: executing
 stopped_at: Completed 50-01-PLAN.md
-last_updated: "2026-07-11T02:42:57.924Z"
+last_updated: "2026-07-11T02:51:02.710Z"
 last_activity: 2026-07-11
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 32
-  completed_plans: 29
+  completed_plans: 30
   percent: 80
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 50 (release-readiness-and-0-1-3-cut) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-07-11
 Resume file: None
@@ -213,6 +213,8 @@ Recent decisions affecting current work:
 - [Phase 48-07]: Public ExDoc modules are filtered through a positive allowlist matching the Phase 48 public reference surface and compatibility aliases.
 - [Phase 48-07]: Old docs/*.md paths remain packaged compatibility stubs but are excluded from ExDoc extras.
 - [Phase 50]: REL-01 was docs-contract drift, not a missing breadcrumb — repointed @maintainer_docs/@operator_docs to guides/maintainers.md and restored dropped maintainer content (Hex release secrets, CI gate map topology, Version namespaces, PR vs release proof depth) without weakening any assertion.
+- [Phase ?]: 50-02: dev_seed.exs calls start_release_workflow/3 with the real bound tenant_id (Phase 44-06 contract), never a hardcoded default — preserves tenant scope while restoring block (f)/(g) seed evidence
+- [Phase ?]: 50-02: Playwright dual desktop/mobile selectors use .filter({ visible: true }).first() so they bind by visibility not DOM order — fixed all 4 theme-toggle sites in phase16_parity.spec.mjs
 
 ### Resolved And Deferred Work
 
@@ -281,6 +283,7 @@ None active.
 | Phase 49 P01 | 4 min | 2 tasks | 5 files |
 | Phase 49 P02 | 9 min | 3 tasks | 22 files |
 | Phase 50 P01 | 8min | 2 tasks | 2 files |
+| Phase 50 P02 | 9min | 2 tasks | 2 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -304,7 +307,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-07-11T02:42:57.921Z
+Last session: 2026-07-11T02:50:33.773Z
 Stopped at: Completed 50-01-PLAN.md
 Resume file: None
 
