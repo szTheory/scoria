@@ -128,7 +128,7 @@ If release preview fails:
 
 1. Read the reported missing or unexpected path.
 2. Check whether the path is a canonical `guides/` file, an old `docs/*.md` compatibility stub, a required brand asset, or a runtime/migration package file.
-3. Run `$ mix docs` only if the failure is in docs generation.
+3. Run `MIX_ENV=dev mix docs --warnings-as-errors` only if the failure is in docs generation.
 4. Keep dev-only docs such as design-system, Docker dev DX, UAT automation, and component-lab material out of adopter HexDocs unless a plan explicitly packages them.
 
 `$ mix scoria.release_preview` is a maintainer verification suite. It is not a substitute for `$ mix test.adoption` or `$ mix test.runtime_to_handoff`.

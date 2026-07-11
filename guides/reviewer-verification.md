@@ -211,7 +211,7 @@ Maintainers validate publish-facing docs and package inventory with:
 mix scoria.release_preview
 ```
 
-This verification suite runs docs generation and checks an unpacked local Hex preview for required runtime files, migrations, README, canonical guides, compatibility stubs, and docs brand assets. CI should run this verification suite in `MIX_ENV=dev` because ExDoc stays a dev-only tool, but keep the maintainer-facing command contract plain: `$ mix scoria.release_preview`.
+This verification suite runs docs generation with warnings-as-errors and checks an unpacked local Hex preview for required runtime files, migrations, README, canonical guides, compatibility stubs, and docs brand assets. CI should run this verification suite in `MIX_ENV=dev` because ExDoc stays a dev-only tool, but keep the maintainer-facing command contract plain: `$ mix scoria.release_preview`. Use `MIX_ENV=dev mix docs --warnings-as-errors` only as a diagnostic shortcut for raw docs warnings, not as a separate CI policy step.
 
 Keep release preview distinct from behavioral proof:
 

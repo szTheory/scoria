@@ -48,6 +48,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
   def required_package_paths, do: @required_package_paths
   def release_preview_output_dir, do: @release_preview_output_dir
   def generated_docs_output_dir, do: @generated_docs_output_dir
+  def docs_task_args, do: ["--warnings-as-errors"]
 
   def clean_generated_docs_output!(output_dir \\ generated_docs_output_dir()) do
     File.rm_rf!(output_dir)
@@ -64,7 +65,7 @@ defmodule Mix.Tasks.Scoria.ReleasePreview do
     Mix.shell().info("==> Building publish-facing docs")
     clean_generated_docs_output!()
     Mix.Task.reenable("docs")
-    Mix.Task.run("docs")
+    Mix.Task.run("docs", docs_task_args())
 
     Mix.shell().info("==> Building unpacked Hex preview")
 

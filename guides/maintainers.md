@@ -48,7 +48,7 @@ Run release preview before publish-facing docs, package, or ExDoc changes merge:
 mix scoria.release_preview
 ```
 
-This command builds docs and checks an unpacked local Hex preview for required runtime files, migrations, README, canonical guides, compatibility stubs, and docs brand assets. In CI, run the same verification suite as:
+This command builds docs with warnings-as-errors and checks an unpacked local Hex preview for required runtime files, migrations, README, canonical guides, compatibility stubs, and docs brand assets. In CI, run the same verification suite as:
 
 ```bash
 MIX_ENV=dev mix scoria.release_preview
@@ -59,10 +59,10 @@ ExDoc is a dev-only dependency, so `MIX_ENV=dev` is the CI environment for relea
 For direct docs inspection:
 
 ```bash
-MIX_ENV=dev mix docs
+MIX_ENV=dev mix docs --warnings-as-errors
 ```
 
-Rendered docs live in `doc/`, which is gitignored. Inspect `doc/index.html`, grouped guide extras, grouped public modules, logo/favicon rendering, redirects, and generated Markdown output when changing ExDoc configuration.
+Use the direct docs command as a diagnostic shortcut when release preview reports an ExDoc warning. Release preview remains the canonical package and docs proof. Rendered docs live in `doc/`, which is gitignored. Inspect `doc/index.html`, grouped guide extras, grouped public modules, logo/favicon rendering, redirects, and generated Markdown output when changing ExDoc configuration.
 
 Keep this packaging boundary:
 
