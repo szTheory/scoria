@@ -8,7 +8,7 @@ permissions:
 
 # Reusable CI SSOT: policy → build → { test, ratchet, knowledge, connector, full-suite } → verify-summary.
 # Consumed by ci.yml, release-please verify, and hex-publish recovery workflows.
-# Maintainer narrative: docs/MAINTAINERS.md — CI gate map + flake policy.
+# Maintainer narrative: guides/maintainers.md — CI gate map + flake policy.
 # Executable order SSOT: Scoria.VerificationLanes + test/scoria/ci_policy_contract_test.exs.
 
 jobs:

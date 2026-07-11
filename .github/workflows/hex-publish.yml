@@ -1,6 +1,6 @@
 # Manual recovery when publish-hex failed/skipped after a tag exists.
 # Default path: Release Please merge → publish-hex in release-please.yml.
-# Maintainer guide: docs/operator_verification.md#hex-release--recovery-maintainers
+# Maintainer guide: guides/maintainers.md#hex-release--recovery-maintainers
 # Run with: gh workflow run hex-publish.yml -f tag=v0.1.0 -f release_version=0.1.0
 
 name: Hex publish (manual recovery)

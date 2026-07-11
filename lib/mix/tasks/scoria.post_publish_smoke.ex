@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Scoria.PostPublishSmoke do
   ## Examples
 
       SCORIA_REGISTRY_VERSION=0.1.0 mix scoria.post_publish_smoke
-      SCORIA_REGISTRY_VERSION=0.1.1 mix scoria.post_publish_smoke
+      SCORIA_REGISTRY_VERSION=0.1.3 mix scoria.post_publish_smoke
   """
 
   use Mix.Task

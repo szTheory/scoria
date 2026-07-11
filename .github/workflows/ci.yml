@@ -15,7 +15,7 @@ permissions:
 
 # PR and release-please branch CI entrypoint — executable jobs live in ci-verify.yml.
 # Parallel topology: policy → build → { test, ratchet, knowledge, connector, full-suite } → verify-summary.
-# Maintainer narrative: docs/MAINTAINERS.md — CI gate map + flake policy.
+# Maintainer narrative: guides/maintainers.md — CI gate map + flake policy.
 # Release-please branches and workflow_dispatch reuse the same verify bar as main.
 # Lane order SSOT: Scoria.VerificationLanes + test/scoria/ci_policy_contract_test.exs.
 

@@ -1,6 +1,6 @@
 # Release Please opens/updates a Release PR from conventional commits on main.
 # When merged, it creates the GitHub Release + v* tag; verify runs the same bar as PR CI.
-# Maintainer guide: docs/operator_verification.md#hex-release--recovery-maintainers
+# Maintainer guide: guides/maintainers.md#hex-release--recovery-maintainers
 
 name: Release Please
 
