@@ -1,7 +1,7 @@
 defmodule Scoria.MixProject do
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.1.3"
   @source_url "https://github.com/szTheory/scoria"
   @hexdocs_url "https://scoria.hexdocs.pm"
   @release_docs_url "#{@hexdocs_url}/#{@version}"
