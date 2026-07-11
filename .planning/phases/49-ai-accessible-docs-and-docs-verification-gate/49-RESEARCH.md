@@ -427,19 +427,19 @@ Source: generated `doc/llms.txt` and Phase 49 contract rule. [VERIFIED: doc/llms
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| - | No `[ASSUMED]` factual claims are used in this research. | All | No user confirmation is needed for factual claims; one planning choice remains open for whether to package `GEMINI.md`. |
+| - | No `[ASSUMED]` factual claims are used in this research. | All | No user confirmation is needed for factual claims; the planning choices below are resolved. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should root `GEMINI.md` ship in Hex?**
    - What we know: Phase 49 recommends shipping `llms.txt` and `AGENTS.md`; it leaves `GEMINI.md` packaging to planner judgment. [VERIFIED: 49-CONTEXT.md]
-   - What's unclear: Whether Hex consumers benefit from a Gemini-only bridge inside a dependency tarball. [VERIFIED: 49-CONTEXT.md]
-   - Recommendation: Keep `GEMINI.md` root-level in git and repo-agent oriented; package it only if the plan explicitly says Hex consumers should receive Gemini-specific bridge instructions. [VERIFIED: 49-CONTEXT.md]
+   - RESOLVED: `llms.txt` and `AGENTS.md` ship in the Hex package and release-preview inventory; `GEMINI.md` remains repo-only as a vendor bridge for contributors and is explicitly excluded from package inventory. [VERIFIED: 49-01-PLAN.md] [VERIFIED: 49-02-PLAN.md]
+   - Plan outcome: Plan 01 encodes this in `Scoria.AiDocContract.packaged_ai_doc_paths/0` and `repo_only_ai_doc_paths/0`; Plan 02 adds package and release-preview tests that assert `GEMINI.md` is excluded. [VERIFIED: 49-01-PLAN.md] [VERIFIED: 49-02-PLAN.md]
 
 2. **Should warning cleanup be mostly config or prose?**
    - What we know: ExDoc supports `skip_code_autolink_to`, and the current 107 warnings are mostly literal Mix command strings plus a few private helper/module references. [CITED: https://hexdocs.pm/ex_doc/ExDoc.html] [VERIFIED: `/tmp/scoria-phase49-docs-wae.log`]
-   - What's unclear: Whether maintainers prefer command literals to remain backticked everywhere or accept prose/code-fence wording changes in some guides. [VERIFIED: current docs scan]
-   - Recommendation: Use targeted `skip_code_autolink_to` for command strings and intentional hidden helpers, then use prose changes only where the warning reveals an unnecessary internal reference. [CITED: https://hexdocs.pm/ex_doc/ExDoc.html] [VERIFIED: 49-CONTEXT.md]
+   - RESOLVED: warning cleanup starts with targeted `skip_code_autolink_to` for command literals and intentional hidden helper references; prose fixes are reserved for remaining non-command warnings after the targeted skip is in place. [CITED: https://hexdocs.pm/ex_doc/ExDoc.html] [VERIFIED: 49-02-PLAN.md]
+   - Plan outcome: Plan 02 Task 2 wires `skip_code_autolink_to` in `mix.exs`, keeps `docs_public_modules/0` curated, and permits source-doc wording changes only if the WAE command still reports non-command prose problems. [VERIFIED: 49-02-PLAN.md]
 
 ## Environment Availability
 
