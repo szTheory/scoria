@@ -182,7 +182,7 @@ Plans:
 | 46. Terminology and public vocabulary migration | v3.5 | 8/8 | Complete    | 2026-07-09 |
 | 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
 | 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete    | 2026-07-10 |
-| 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete   | 2026-07-11 |
+| 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete    | 2026-07-11 |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 0/0 | Not started | — |
 
 ## Archived Milestones
