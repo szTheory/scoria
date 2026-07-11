@@ -3,7 +3,7 @@ defmodule Scoria.HandoffExampleSourceTest do
 
   alias Scoria.TestSupport.AdoptionExample
 
-  @handoff_guide "docs/bounded_handoffs.md"
+  @handoff_guide "guides/capabilities/bounded-handoffs.md"
 
   test "bounded handoff guide stays aligned with the checked adoption fragments" do
     content = File.read!(@handoff_guide)

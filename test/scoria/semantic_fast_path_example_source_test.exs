@@ -1,7 +1,7 @@
 defmodule Scoria.SemanticFastPathExampleSourceTest do
   use ExUnit.Case, async: true
 
-  @semantic_guide "docs/semantic_fast_path.md"
+  @semantic_guide "guides/capabilities/semantic-cache.md"
 
   test "semantic cache guide stays aligned with the shipped public profile" do
     content = File.read!(@semantic_guide)
