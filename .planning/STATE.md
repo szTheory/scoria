@@ -2,9 +2,11 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Documentation & Release Readiness — ACTIVE
+current_phase: 50
+current_phase_name: release-readiness-and-0-1-3-cut
 status: executing
 stopped_at: Completed 50-03-PLAN.md
-last_updated: "2026-07-11T03:03:42.973Z"
+last_updated: "2026-07-11T03:17:29.014Z"
 last_activity: 2026-07-11
 progress:
   total_phases: 5
@@ -229,11 +231,12 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None active.
+active.
 
 - Phase 48 Plan 10 scope-doctrine issue resolved by restoring compatibility-stub fragments expected by `test/scoria/scope_doctrine_contract_test.exs`.
 - Phase 48 Plan 10 generated-doc issue resolved by cleaning generated ExDoc output before release preview rebuilds `doc/`.
 - RESOLVED 2026-07-11 (plan-01 follow-up `c809241c`): release_preview / mix docs --warnings-as-errors was RED on main from guides/maintainers.md:43,57,58 referencing filtered maintainer Mix tasks (plan-01 regression 25ad5233). Fixed by prefixing the three inline spans with `$ ` so ExDoc no longer autolinks them; asserted substrings preserved, no test changed. release_preview exits 0. See deferred-items.md D-50-DEF-01.
+- 50-04 Task 1 route-back: REL-01/02/03 fixes (entire v3.5 milestone, 162 commits) are on LOCAL main only; origin/main is at 2b0fa962 (end of v3.4) and PR #12 head 620d7144 was built by Release Please on that stale base, so PR #12 policy+e2e stay RED with the original pre-fix run IDs (29043718187/29043715702). Maintainer must push local main to origin/main so Release Please refreshes PR #12 with the fixes and re-runs CI. Local release_preview + mix docs --warnings-as-errors are GREEN on 2e38ac16.
 
 ### Roadmap Evolution
 
