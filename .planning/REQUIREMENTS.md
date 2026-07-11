@@ -30,8 +30,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### AI Accessibility
 
-- [ ] **AI-01**: An LLM or coding agent can use a curated root `llms.txt` and/or `AGENTS.md` to find Scoria's public facade, guide ladder, glossary, capabilities, and verification suites.
-- [ ] **AI-02**: The AI-accessibility surface distinguishes curated source docs from generated ExDoc artifacts and avoids stale or internal planning-only vocabulary.
+- [x] **AI-01**: An LLM or coding agent can use a curated root `llms.txt` and/or `AGENTS.md` to find Scoria's public facade, guide ladder, glossary, capabilities, and verification suites.
+- [x] **AI-02**: The AI-accessibility surface distinguishes curated source docs from generated ExDoc artifacts and avoids stale or internal planning-only vocabulary.
 
 ### Release
 
@@ -87,8 +87,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-02 | Phase 48 | Complete |
 | DOCS-03 | Phase 48 | Complete |
 | DOCS-04 | Phase 49 | Pending |
-| AI-01 | Phase 49 | Pending |
-| AI-02 | Phase 49 | Pending |
+| AI-01 | Phase 49 | Complete |
+| AI-02 | Phase 49 | Complete |
 | REL-01 | Phase 50 | Pending |
 | REL-02 | Phase 50 | Pending |
 | REL-03 | Phase 50 | Pending |
