@@ -40,7 +40,7 @@ Parallel verify jobs:
 
 **Local parity.** Use `SCORIA_DB_PORT=55432` for local parity. CI binds Postgres below the Linux ephemeral range; local dev/test retains 55432.
 
-**Ratchet is maintainer-only.** The `ratchet` lane runs `mix scoria.warning_ratchet.test` and never blocks adopter closeout; only maintainers move the accepted warning baseline.
+**Ratchet is maintainer-only.** The `ratchet` lane runs `$ mix scoria.warning_ratchet.test` and never blocks adopter closeout; only maintainers move the accepted warning baseline.
 
 When CI fails, run the matching maintainer command next: each parallel job above maps to exactly one local command, so reproduce the red job's command locally before pushing again instead of re-running CI to guess.
 
@@ -54,8 +54,8 @@ Two proof depths guard the release train. PR CI proves the working tree; the rel
 
 | Depth | Runs on | What it proves |
 |-------|---------|----------------|
-| PR proof | every PR and `main` | `mix test.adoption` runs the adoption suite against in-repo source, including a `content-revision upgrade` check on the seeded prompt registry. |
-| Tarball consumer full overlay | `publish-hex` job and `post-publish-smoke.yml` | `mix scoria.post_publish_smoke` unpacks the published Hex tarball into `scoria-0.1.0-unpack`, overlays it on a throwaway consumer app, and runs a semver upgrade proof. |
+| PR proof | every PR and `main` | `$ mix test.adoption` runs the adoption suite against in-repo source, including a `content-revision upgrade` check on the seeded prompt registry. |
+| Tarball consumer full overlay | `publish-hex` job and `post-publish-smoke.yml` | `$ mix scoria.post_publish_smoke` unpacks the published Hex tarball into `scoria-0.1.0-unpack`, overlays it on a throwaway consumer app, and runs a semver upgrade proof. |
 
 The overlay compares three tarballs: the `HEAD tarball` built from the release SHA, the `baseline exact previous` release pulled from Hex, and the `target just-published` version. A green overlay means the exact bytes published to Hex install and upgrade cleanly — not merely that the working tree does.
 
