@@ -12,7 +12,7 @@ GitHub Actions runs parallel verify jobs:
 policy -> build -> { test, ratchet, knowledge, connector, full-suite[x4] } -> verify-summary
 ```
 
-The `ci-gate` umbrella job in `.github/workflows/ci.yml` fails if the reusable verify workflow fails. Branch protection and release automation require `CI / ci-gate`. Executable jobs live in `.github/workflows/ci-verify.yml`; `.github/workflows/ci.yml` is the PR entrypoint.
+The `ci-gate` umbrella job in `.github/workflows/ci.yml` fails if the reusable verify workflow fails. Branch protection and release automation require `CI / ci-gate`. Executable jobs live in `.github/workflows/ci-verify.yml`; `.github/workflows/ci.yml` is the PR entrypoint. The `build` job declares `needs: policy`; the parallel verify jobs declare `needs: build` and fan into `verify-summary`.
 
 Policy job:
 
@@ -29,7 +29,7 @@ Test job:
 4. `$ mix test.runtime_to_handoff`
 5. `$ mix test.semantic_fast_path --warnings-as-errors`
 
-Parallel jobs:
+Parallel verify jobs:
 
 | Job | Local command |
 |-----|---------------|
@@ -38,7 +38,26 @@ Parallel jobs:
 | `connector` | `SCORIA_DB_PORT=55432 mix test.connector --warnings-as-errors` |
 | `full-suite (k/4)` | `SCORIA_DB_PORT=55432 MIX_TEST_PARTITION=k mix test --warnings-as-errors --partitions 4` |
 
-Use `SCORIA_DB_PORT=55432` for local parity. CI binds Postgres below the Linux ephemeral range; local dev/test retains 55432.
+**Local parity.** Use `SCORIA_DB_PORT=55432` for local parity. CI binds Postgres below the Linux ephemeral range; local dev/test retains 55432.
+
+**Ratchet is maintainer-only.** The `ratchet` lane runs `mix scoria.warning_ratchet.test` and never blocks adopter closeout; only maintainers move the accepted warning baseline.
+
+When CI fails, run the matching maintainer command next: each parallel job above maps to exactly one local command, so reproduce the red job's command locally before pushing again instead of re-running CI to guess.
+
+**Version namespaces**
+
+Release proofs are versioned by milestone. Historical proofs live under their own namespaces — for example the archived `v2.x` adoption and connector proofs recorded in `.planning/milestones/` — while the active release train targets the current `0.1.x` Hex line.
+
+**PR vs release proof depth**
+
+Two proof depths guard the release train. PR CI proves the working tree; the release and publish chain proves the actual published tarball against the live registry.
+
+| Depth | Runs on | What it proves |
+|-------|---------|----------------|
+| PR proof | every PR and `main` | `mix test.adoption` runs the adoption suite against in-repo source, including a `content-revision upgrade` check on the seeded prompt registry. |
+| Tarball consumer full overlay | `publish-hex` job and `post-publish-smoke.yml` | `mix scoria.post_publish_smoke` unpacks the published Hex tarball into `scoria-0.1.0-unpack`, overlays it on a throwaway consumer app, and runs a semver upgrade proof. |
+
+The overlay compares three tarballs: the `HEAD tarball` built from the release SHA, the `baseline exact previous` release pulled from Hex, and the `target just-published` version. A green overlay means the exact bytes published to Hex install and upgrade cleanly — not merely that the working tree does.
 
 ## Release preview and docs maintenance
 
@@ -106,7 +125,14 @@ SCORIA_CHECK_RESULT status=<compliant|drift|manual_review|error> exit_code=<0|1|
 
 Use installer contract proof when changing planner classification, manifest behavior, no-write modes, or generated file mutation logic.
 
-## Hex release and recovery
+## Hex release & recovery {: #hex-release--recovery-maintainers}
+
+**Normal patch release (fully automated).** Once `main` is green the release train needs no manual merge: Release Please opens the Release PR on a `release-please--branches--main` branch, release-branch CI runs, Release PR Auto-Merge merges it, and Release Please tags and publishes to Hex.
+
+Two GitHub Actions secrets drive this automation:
+
+- `RELEASE_PLEASE_TOKEN` — a fine-grained token that lets Release Please open and update the Release PR and dispatch the follow-up CI and Release Please runs.
+- `HEX_API_KEY` — the Hex publish key consumed by the `publish-hex` job and by `hex-publish.yml` recovery.
 
 Routine patch release flow:
 
