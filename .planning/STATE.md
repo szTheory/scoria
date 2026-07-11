@@ -1,19 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.5
-milestone_name: Documentation & Release Readiness — SHIPPED
-current_phase: 5
-status: Awaiting next milestone
-stopped_at: Phase 50 complete + 0.1.3 released to Hex (REL-04 satisfied); v3.5 milestone 100% complete
-last_updated: "2026-07-11T19:05:07.048Z"
+milestone: v3.6
+milestone_name: Trace Foundation
+status: planning
+last_updated: "2026-07-11T19:35:12.670Z"
 last_activity: 2026-07-11
-last_activity_desc: Milestone v3.5 completed and archived
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 39
-  completed_plans: 39
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -28,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 
 ## Current Position
 
-Phase: Milestone v3.5 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-11 — Milestone v3.5 completed and archived
+Status: Defining requirements
+Last activity: 2026-07-11 — Milestone v3.6 started
 
 ## Performance Metrics
 

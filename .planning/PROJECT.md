@@ -12,6 +12,20 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 **Persona is roles-not-headcount (n=1 default).** Scoria's CORE roles — AI/product engineer, software architect, backend/platform, SRE/devops, reviewer/approver/operator, prompt-writer, eval-checker (full list in `SEED-005` persona strategy) — are *hats one person wears*, not separate people. The design default is the **smallest-viable team (n=1)**: every `/scoria` surface must be operable by one SWE with **no dedicated ML/platform/Trust-&-Safety team**. It **degrades gracefully to a few** — so n=1 is the default *lens*, not an invariant (e.g. `SEED-008` builds a multi-reviewer inter-rater agreement model, and `SEED-011` serves an ADJACENT privacy/legal persona). This sharpens P3 into a falsifiable test: *can one person operate every surface unaided?*
 
+## Current Milestone: v3.6 Trace Foundation
+
+**Goal:** Finish the trace schema Scoria already half-designed — make spans structured and portable so eval, regression detection, and every downstream seed can attribute a quality delta to a prompt version, retrieval config, or model change instead of reading a flat `attributes` blob. (SEED-007 · 999.3 — foundational; 008/010/012 and every 013 screen read this substrate.)
+
+**Target features:**
+- **OTel-GenAI / OpenInference key convention** — name the existing `attributes` map keys conventionally (`gen_ai.request.*`, `gen_ai.usage.*`, `openinference.span.kind`) and populate `span_kind` correctly (the 2 adapters emit only `"LLM"`/`"INTERNAL"`; the UI already expects 8 kinds). Convention over the map — **not** typed columns, **not** a schema rewrite.
+- **Model-config capture on LLM spans** — temp / top_p / seed / max_tokens (captured nowhere today; replay is silently broken without it), threaded from ReqLLM request opts into the span.
+- **Structured span/event emission** — emit `tool`/`prompt`/`retrieval`/`guardrail` as proper child spans keyed by `span_kind`; resurrect the dead `ai_span_events` table minimally for true point-events only (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`).
+- **Retrieval as a linked span + config fields** — emit a `RETRIEVER` span (`ai_retrieval_runs` already has `trace_id`/`span_id`) + `embedding_model`/`index_version`/`reranker`; keep `ai_retrieval_runs` as system-of-record (dual-write, don't collapse).
+- **Host-declared attribute convention** — `feature`/`route`/`archetype`/`intent` + context-pack/token-split keys added to the conventional set (host declares, Scoria never infers) — the substrate 012/013 read.
+- **README accuracy fix** — soften the "OpenInference-style trace capture" overclaim now → "OpenInference-compatible" once the convention lands.
+
+**Key context:** Scope doctrine P5/P6 — semconv is a *naming convention*; portability is a hook at the edges (host exports to its own Langfuse/Datadog/OTel backend), Scoria does **not** become an analytics warehouse. `ai_retrieval_runs` stays richer-than-a-span system-of-record. Feature-specific "OpenInference-compatible" trace docs ship as a doc-delta inside this milestone. Requirements are being defined — see `.planning/REQUIREMENTS.md`.
+
 ## Current State
 
 **Shipped version:** `v3.5 Documentation & Release Readiness` (2026-07-11) — Hex `0.1.3` LIVE
@@ -296,15 +310,16 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-**Planning next milestone.** SEED-005 (docs/positioning + honest `0.1.3` release) shipped in v3.5; the SEED-006 P0 trust/security gate shipped in v3.4. Both adoption-blocking gates are now closed, so the next milestone is a feature seed from the ordered backlog (`ROADMAP.md ## Backlog`).
+**v3.6 Trace Foundation (SEED-007 · 999.3) is the scoped milestone** — requirements being defined (see `.planning/REQUIREMENTS.md`). Both adoption-blocking gates are closed (SEED-006 P0 trust/security in v3.4; SEED-005 docs/positioning + honest `0.1.3` release in v3.5), so the roadmap is now feature seeds from the ordered backlog. Trace foundation is first because scorers/eval-attribution/regression all read spans — 008/010/012 and every 013 screen consume this substrate.
 
-**Next candidates (sequenced by the 2026-07-03 eval-posture audit):**
-- [ ] **SEED-007 — Trace Foundation (999.3):** OTel-GenAI / OpenInference interop as a naming convention over the existing attrs map (not a schema rewrite) + span_kind + model config + structured spans/events + RETRIEVER span + README claim fix. Foundational for eval attribution; sequenced next.
-- [ ] **SEED-010 — Lethal-Trifecta Governance (999.4) ⭐ flagship:** content trust tiers + spotlighting + tool-declared trifecta classification + confluence-escalation policy + moderation/output hooks. No peer ships this as a runtime seam; Scoria is 2/3 built.
-- [ ] **SEED-004 (test-code determinism):** convert forced-serial `IntegrationCase` files to `async: true`, de-globalize per-module Phoenix test endpoints, replace ~14 `Process.sleep` sites with `eventually/2`, then raise partition count past 4. Carried-forward cleanup candidate (higher product risk; touches 9+ test files).
-- [ ] **DOCKER-01 cross-repo convergence:** migrate sibling repos (rulestead/parapet/etc.) onto the shared Traefik + unpublished-DB standard. (Stays in the `docker-dx-fleet-hardening` todo.)
+**After this milestone (execution order — see `ROADMAP.md ## Backlog`, refined 2026-07-11):**
+- [ ] **SEED-010 — Lethal-Trifecta Governance (999.4) ⭐ flagship:** content trust tiers + spotlighting + tool-declared trifecta classification + confluence-escalation policy + moderation/output hooks. Needs 007's taint substrate. No peer ships this as a runtime seam; Scoria is 2/3 built.
+- [ ] **SEED-008 — Trustworthy Eval Depth (999.5):** real scorer library + regression-comparison + judge calibration + versioned rubric. Needs 007. Emits the confusion-matrix/archetype slot 012 reuses.
+- [ ] **SEED-012 — Architecture-Archetype Awareness (999.8) — pulled forward** to run immediately after 008 (pure dividend of 007 attrs + 008 machinery).
+- [ ] **SEED-009 / SEED-011 (999.6 / 999.7):** independent tracks (retrieval depth; privacy & feedback) — order between them is a priority call.
+- [ ] **SEED-013 — Operator IA Pivot (999.9) — split:** early cross-cutting shell (buildable today) + late feature screens that ride their backends.
 
-_(Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verification-doc gaps for Phases 13 & 14 remain optional.)_
+_(Carried-forward: SEED-004 test-code determinism; FLEET-01/02 cross-repo convergence. Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verification-doc gaps for Phases 13 & 14 remain optional.)_
 
 ### Out of Scope
 
@@ -430,6 +445,8 @@ _(Post-ship cleanup todo `ci-policy-job-cache-key-mislabel` and v3.0 verificatio
 | v3.5 keeps `evidence_refs` RAG/citation storage and does the terminology migration as docs + user-visible copy only (no schema migration, no global rename) | The RAG/citation `evidence` sense is correct and load-bearing; a storage rename would be a breaking migration for adopters over a pre-1.0 vocabulary cleanup | ✓ Good — shipped v3.5; `trace_refs` blocked by contract test, `evidence_refs` preserved |
 | v3.5 release cut goes through release-please + `0.1.3`, not a hand-published tag; `mix scoria.release_preview` is the canonical warnings-as-errors docs/package gate | Keeps the release train reproducible and the docs/package surface drift-guarded rather than trusting a one-off manual publish | ✓ Good — shipped v3.5; PR #12 → `v0.1.3` → Hex + post-publish attest green |
 | v3.5 milestone audit found local `main` had diverged from `origin/main` (missing the `0.1.3` release commit) and Phase 46 lacked a VERIFICATION.md; both closed inline before close rather than deferred | Tagging/archiving a milestone against a branch that predates the release it celebrates would be dishonest; the gaps were mechanically cheap (conflict-free rebase; gsd-verifier corroborated by 19 passing guard tests), so closing beat documenting as debt | ✓ Good — reconciled + verified at v3.5 close; audit `passed` 18/18 |
+| Next milestone is v3.6 Trace Foundation (SEED-007), first feature seed after both adoption gates closed | Scorers, eval attribution, and regression detection all read spans, but the trace store is a thin generic 3-table shape (attrs blob, dead `ai_span_events`, only 2 adapters, no model config); it's the foundational substrate 008/010/012/013 consume. Adopt semconv as a naming convention over the existing map (not typed columns / not a schema rewrite) to keep it pre-1.0-migration-free | — Pending — v3.6 scoped 2026-07-11; requirements being defined |
+| Seed execution order refined 2026-07-11 (dividend re-analysis): 007 → 010 → 008 → 012 → {009, 011} → 013; pulled 012 forward after 008; split 013 into early shell + late screens | The 2026-07-03 audit set the base order; a dependency+dividend pass found 012 is cheapest immediately after 008 (reuses its confusion-matrix warm) and 013's cross-cutting shell has no backend dep (build early so feature seeds slot into the frame, avoiding re-slot rework). Recorded in `ROADMAP.md ## Backlog` so it survives context clears | — Pending — recorded in backlog + seeds/README |
 
 ## Milestone History
 
@@ -527,4 +544,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-11 after v3.5 Documentation & Release Readiness milestone (Hex `0.1.3` live).*
+*Last updated: 2026-07-11 — v3.6 Trace Foundation (SEED-007) scoped; requirements being defined.*
