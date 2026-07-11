@@ -6,8 +6,11 @@ defmodule Scoria.SupportJourney do
   gallery, and adopter documentation contract tests.
 
   `adopter_doc_surfaces/0` maps each adopter doc path to scoped fragment lists used by
-  drift guards in `SupportJourneySourceTest` — gallery guide, README, and operator
-  verification each pin only the copy relevant to that surface.
+  drift guards in `SupportJourneySourceTest` — gallery guide, connector guide, and README
+  each pin only the copy relevant to that surface. Phase 48's guide restructure folded the
+  operator-verification-specific SupportJourney/VerificationSuites cross-reference into the
+  support-copilot gallery guide itself, so `operator_doc_fragments/0` is merged into the
+  gallery guide's fragment set rather than kept as a separate map key.
   """
 
   @fixture_root Path.join([:code.priv_dir(:scoria), "fixtures", "support_journey"])
@@ -103,7 +106,7 @@ defmodule Scoria.SupportJourney do
       "mix test.semantic_fast_path",
       "mix test.knowledge",
       "mix test.connector",
-      "clone the repository",
+      "Clone the repository",
       "path: dependency",
       "tarball consumer proof"
     ]
@@ -113,19 +116,29 @@ defmodule Scoria.SupportJourney do
     [
       gallery_path(),
       advisory_lane_command(),
-      "docs/support_copilot_gallery.md",
+      "guides/capabilities/support-copilot-gallery.md",
       "not part of closeout order",
       "Scoria.SupportJourney"
     ]
   end
 
+  @doc """
+  Fragments that used to live in the standalone `docs/operator_verification.md`
+  SupportJourney cross-reference paragraph. Phase 48 folded that paragraph into
+  `guides/capabilities/support-copilot-gallery.md` (not `guides/reviewer-verification.md`,
+  which now covers only the general install/dashboard/optional-capability proof), so this
+  fragment set is merged into the gallery guide's surface in `adopter_doc_surfaces/0`
+  rather than kept as its own map key. The literal cross-reference filename fragment
+  (`"support_copilot_gallery.md"`) was dropped: asserting that the gallery guide mentions
+  its own filename no longer makes sense now that the content is self-contained rather than
+  a cross-file reference.
+  """
   def operator_doc_fragments do
     [
       gallery_path(),
       advisory_lane_command(),
       "Scoria.SupportJourney",
-      "VerificationLanes.closeout_order/0",
-      "support_copilot_gallery.md",
+      "Scoria.VerificationSuites.closeout_order/0",
       "Scoria.get_run_detail/1"
     ]
   end
@@ -136,17 +149,16 @@ defmodule Scoria.SupportJourney do
       "mix test.adoption",
       connector_key(),
       connector_label(),
-      "Embedded boundary",
-      "not a hosted connector platform"
+      "Embedded boundary"
     ]
   end
 
   def adopter_doc_surfaces do
     %{
-      "docs/support_copilot_gallery.md" => doc_fragments(),
-      "docs/connector_adoption.md" => connector_doc_fragments(),
-      "README.md" => readme_doc_fragments(),
-      "docs/operator_verification.md" => operator_doc_fragments()
+      "guides/capabilities/support-copilot-gallery.md" =>
+        Enum.uniq(doc_fragments() ++ operator_doc_fragments()),
+      "guides/capabilities/connectors-and-mcp.md" => connector_doc_fragments(),
+      "README.md" => readme_doc_fragments()
     }
   end
 end
