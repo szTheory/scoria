@@ -6,13 +6,13 @@ current_phase: 50
 current_phase_name: release-readiness-and-0-1-3-cut
 status: executing
 stopped_at: Completed 50-08-PLAN.md
-last_updated: "2026-07-11T14:54:17.967Z"
+last_updated: "2026-07-11T14:58:36.998Z"
 last_activity: 2026-07-11
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 39
-  completed_plans: 36
+  completed_plans: 37
   percent: 80
 ---
 
@@ -29,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
 ## Current Position
 
 Phase: 50 (release-readiness-and-0-1-3-cut) — EXECUTING
-Plan: 6 of 11
+Plan: 7 of 11
 Status: Ready to execute
 Last activity: 2026-07-11
 Resume file: None
@@ -229,6 +229,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 50-08: restored dropped guides/maintainers.md Design-system component conventions content (BEM/CSS-selector rule, canonical compact scan density rule)
 - [Phase ?]: 50-08: repointed dev_lab_boundary guard #7's canonical inventory read to the archived .planning/milestones/v3.3-phases/36-baseline-and-inventory/36-inventory.json path
 - [Phase 50]: REL-04 Bucket E: knowledge-lane grounding fixed via tenant-scoped Knowledge.ingest_source (D-08); approvals-page proof repointed to current D-19/D-20/D-25 approval-copy rendered text ('Pending approval queue', 'Issue refund for {ticket_id}') without weakening the producer->approval assertion.
+- [Phase ?]: package_surface_test :79 homepage_url assertion updated to https://scoria.hexdocs.pm to track mix.exs @hexdocs_url (REL-03/D-14); one-publish-surface invariant preserved
+- [Phase ?]: capture_parity_test.exs left unchanged - verify-first reproduction on the release head passed, confirming Bucket F was a local-env-only artifact, not a real contract break
 
 ### Resolved And Deferred Work
 
@@ -307,6 +309,7 @@ active.
 | Phase 50 P07 | 10min | 2 tasks | 4 files |
 | Phase 50 P08 | 20min | 2 tasks | 4 files |
 | Phase 50 P09 | 25min | 1 tasks | 2 files |
+| Phase 50 P10 | 10min | 2 tasks | 1 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -330,7 +333,7 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-11T14:53:27.848Z
+Last session: 2026-07-11T14:58:36.993Z
 Stopped at: Completed 50-08-PLAN.md
 Resume file: None
 
