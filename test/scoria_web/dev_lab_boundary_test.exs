@@ -160,7 +160,7 @@ defmodule ScoriaWeb.DevLabBoundaryTest do
 
   test "guard #7: every canonical PRIM-*/GROUP-* inventory ID is referenced under dev/lab/** (D-08/D-32)" do
     inventory =
-      ".planning/phases/36-baseline-and-inventory/36-inventory.json"
+      ".planning/milestones/v3.3-phases/36-baseline-and-inventory/36-inventory.json"
       |> File.read!()
       |> Jason.decode!()
 
