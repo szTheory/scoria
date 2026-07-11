@@ -2,6 +2,39 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v3.5 — Documentation & Release Readiness
+
+**Shipped:** 2026-07-11
+**Phases:** 5 (46–50) | **Plans:** 39 | **Tasks:** 66
+
+### What Was Built
+SEED-005's docs/positioning gate and the honest `0.1.3` release: final glossary-backed terminology across the adopter surface (leaked code names removed, `evidence_refs` preserved), a plain-English README front door (n=1 reviewer persona, CORE/ADJACENT/NOT-OURS, owns-vs-delegates scope table, hosted-LLM-ops comparison), a grouped version-aware ExDoc guide ladder with aligned public moduledocs, curated `llms.txt`/`AGENTS.md` AI navigation plus `mix scoria.release_preview` as the warnings-as-errors docs/package gate, and the `0.1.3` Hex publish with post-publish registry attest.
+
+### What Worked
+- **RED-contract-first for docs.** Phase 48 Wave 1 pinned ExDoc/package/release-preview/guide-ladder contracts before writing a single guide, so the large restructure landed against executable expectations instead of vibes.
+- **Compatibility stubs preserved copied source links.** Moving canonical truth to `guides/` while leaving old `docs/*.md` as thin stubs kept externally-copied source links alive through a vocabulary migration.
+- **release-please + `release_preview` as the reproducible release path.** The `0.1.3` cut went through the same automated PR → merge → publish → post-publish-attest chain as `0.1.2`, not a hand-published tag.
+- **The milestone audit again caught real drift before close.** As in v3.4, the audit surfaced genuine gaps a green test suite would not: a Phase 46 missing `VERIFICATION.md` and a local↔origin branch divergence that meant local `main` never contained the release commit.
+
+### What Was Inefficient
+- **The v3.4 verification-lag lesson recurred.** Phase 46 shipped functionally complete but without a `VERIFICATION.md` — the exact anti-pattern v3.4's retro flagged. The lesson was recorded but not enforced, so it repeated.
+- **A large reactive gap-closure train (50-05..50-11).** The release push exposed ~30 CI verify-lane failures across Buckets A–G, because the 46–49 terminology/guide renames rippled into source-fixture and rendered-contract tests that weren't run until release CI. Phase 50 nearly tripled from 4 planned plans to 11.
+- **Local `main` diverged from `origin/main`.** The release-please merge (`b904c22a`) landed on the remote while local accumulated planning-only commits, so the local branch memorialized a release it didn't contain — caught only at milestone-audit time.
+
+### Patterns Established
+- **Release-train reconciliation check at close:** before tagging/archiving a release milestone, assert the local default branch actually contains the release commit (`git merge-base --is-ancestor origin/main main`). Never tag a milestone against a branch that predates its release.
+- **Rename milestones must budget a full verify-lane sweep inside the phase.** Docs/terminology renames are code changes for test purposes — they break source-fixture and rendered-contract assertions. Run the full suite + e2e as part of the renaming phase, not at the release push.
+- **Compatibility stubs for relocated docs** keep copied/external source links valid across a canonical-path migration.
+
+### Key Lessons
+- Enforce a `VERIFICATION.md`-exists gate at *phase* close, not milestone close — the v3.4 lesson recurred verbatim in Phase 46 because it lived only in prose, not in a gate.
+- When release-please merges the release PR on the remote, reconcile the local branch immediately; don't let planning-doc commits pile up on a diverged local `main`.
+- Sequence the verify-lane sweep into terminology/rename phases; deferring it to the release turned one release plan into a 7-plan reactive bucket train.
+
+### Cost Observations
+- Opus-heavy for the audit + closeout; per-plan execution and the gap-closure train spread across multiple sessions.
+- Notable: the reactive gap-closure train (50-05..11, +7 plans) was the milestone's dominant avoidable cost — a direct consequence of not running the full verify lane during the rename phases. Milestone close itself was cheap once the two audit gaps (branch reconcile + Phase 46 verify) were closed inline.
+
 ## Milestone: v3.4 — Pre-1.0 Trust & Security Hardening
 
 **Shipped:** 2026-07-09
@@ -470,6 +503,8 @@ An infra/docs-only CI overhaul (SEED-003) that cut PR CI critical path from ~77 
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v3.5 | multiple | 5 | Docs/positioning + honest `0.1.3` release; audit caught a local↔origin branch divergence (local `main` lacked the release commit) + a Phase 46 verification gap, both closed inline; deferring the verify-lane sweep past the rename phases produced a 7-plan reactive gap-closure train (50-05..11) |
+| v3.4 | multiple | 4 | SEED-006 P0 trust/security, fix-and-prove with no Hex publish; audit caught missing Phase 43/44 VERIFICATION artifacts before close |
 | v3.0 | not tracked | 7 | First large UI/IA/DX milestone; build-failing DS-06 design-system drift guard; closed `gaps_found` with documented Known Gaps (verification-doc partials, 0 unsatisfied) |
 | v2.15 | 1 | 4 | Named connector adoption lane with PR CI WAE; 07.1 retroactive VERIFICATION closeout |
 | v2.11 | 2 | 2 | Producer-path orchestrator live wiring + 01.1 hardening after audit |
@@ -480,6 +515,8 @@ An infra/docs-only CI overhaul (SEED-003) that cut PR CI critical path from ~77 
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v3.5 | terminology/glossary/changelog contract suites + `release_preview` warnings-as-errors docs gate + full `mix scoria.ui.e2e` 165/0 + policy lane 58/0 | requirement audit 18/18 satisfied, 0 partial (after inline Phase 46 verify) | `llms.txt` + `AGENTS.md` curated AI-navigation |
+| v3.4 | focused eval/knowledge/dashboard-auth + scope-doctrine contract green at closeout | requirement audit 17/17 satisfied | none |
 | v3.0 | DS-06 drift guard (raw-palette zero) + 22/22 Playwright light/dark parity smoke + `ui_component_test` | requirement audit 18/28 satisfied, 10 partial (verification-doc/proof), 0 unsatisfied | none |
 | v2.5 | adoption lane (77 tests) + installer contract suites + `verification_lanes_test` green at closeout | requirement audit 6/6 (`INST-03`–`INST-08`) | none |
 | v2.4 | canonical closeout chain green (`release_preview`, `test.adoption`, `test.runtime_to_handoff`) plus contract suites | requirement audit 10/10 | none |
@@ -490,7 +527,9 @@ An infra/docs-only CI overhaul (SEED-003) that cut PR CI critical path from ~77 
 1. Canonical lane naming plus drift tests is the fastest way to keep support truth honest.
 2. Closeout is safer when archive artifacts are normalized immediately rather than treated as immutable snapshots.
 3. Build-failing drift guards (DS-06 raw-palette) make a quality win permanent — preferred over one-time cleanups.
-4. The "implementation ships ahead of VERIFICATION.md" gap recurs across milestone types (v2.15, v2.16, v3.0) — run `/gsd:verify-work` per phase before close, or the milestone audit becomes the only verification pass.
+4. The "implementation ships ahead of VERIFICATION.md" gap recurs across milestone types (v2.15, v2.16, v3.0, v3.4 Phase 43/44, v3.5 Phase 46) — it now recurs *despite* being a written lesson, so it needs a hard `VERIFICATION.md`-exists gate at phase close, not just prose guidance.
+5. Release milestones must reconcile the local default branch with the remote before tagging/archiving: when release-please merges the release PR on the remote, local can silently diverge and memorialize a release it doesn't contain (v3.5). Assert `git merge-base --is-ancestor origin/main main` at close.
+6. Terminology/guide renames are code changes for test purposes: they break source-fixture and rendered-contract assertions. Run the full verify lane inside the rename phase, or the release push becomes a reactive bug-fix train (v3.5: 50-05..11).
 
 ---
 
