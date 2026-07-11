@@ -103,4 +103,82 @@ defmodule Scoria.AiDocContractTest do
       assert fragment in forbidden, "expected forbidden AI-doc fragment #{inspect(fragment)}"
     end
   end
+
+  test "AI-01/D-01 root llms.txt exposes the required public source map" do
+    content = File.read!(AiDocContract.root_llms_path())
+
+    assert content =~ "# Scoria"
+
+    for heading <- AiDocContract.required_llms_headings() do
+      assert content =~ heading, "expected llms.txt to include heading #{inspect(heading)}"
+    end
+
+    for path <- AiDocContract.required_llms_paths() do
+      assert content =~ path, "expected llms.txt to link or name #{inspect(path)}"
+    end
+
+    assert content =~ "Scoria.VerificationSuites"
+    assert content =~ "mix test.adoption"
+    assert content =~ "mix test.runtime_to_handoff"
+    assert content =~ "mix scoria.release_preview"
+    assert content =~ "verification suite"
+    assert content =~ "semantic cache"
+    assert content =~ "scoped context"
+  end
+
+  test "AI-01/D-03 AGENTS.md exposes repo-agent operating sections and commands" do
+    content = File.read!(AiDocContract.root_agents_path())
+
+    for section <- AiDocContract.required_agent_sections() do
+      assert content =~ section, "expected AGENTS.md to include section #{inspect(section)}"
+    end
+
+    for fragment <- AiDocContract.source_truth_fragments() do
+      assert content =~ fragment,
+             "expected AGENTS.md to include source/generated fragment #{inspect(fragment)}"
+    end
+
+    assert content =~ "mix deps.get"
+    assert content =~ "mix test.adoption"
+    assert content =~ "mix scoria.release_preview"
+    assert content =~ "MIX_ENV=dev mix docs --warnings-as-errors"
+    assert content =~ "Scoria"
+    assert content =~ "Scoria.VerificationSuites"
+    assert content =~ "Scoria.AdopterDocContract"
+    assert content =~ "Scoria.AiDocContract"
+    assert content =~ "Ash"
+  end
+
+  test "AI-02/D-06 through D-10 root AI docs keep source/generated and public/internal boundaries" do
+    for path <- [
+          AiDocContract.root_llms_path(),
+          AiDocContract.root_agents_path(),
+          AiDocContract.gemini_bridge_path()
+        ] do
+      content = File.read!(path)
+
+      for forbidden <- AiDocContract.forbidden_ai_doc_fragments() do
+        refute content =~ forbidden, "expected #{path} not to contain #{inspect(forbidden)}"
+      end
+    end
+
+    for path <- [AiDocContract.root_llms_path(), AiDocContract.root_agents_path()] do
+      content = File.read!(path)
+
+      for fragment <- AiDocContract.source_truth_fragments() do
+        assert content =~ fragment,
+               "expected #{path} to include source/generated fragment #{inspect(fragment)}"
+      end
+    end
+  end
+
+  test "AI-01/D-04 and D-05 GEMINI.md stays a tiny bridge, not a second full agent doc" do
+    content = File.read!(AiDocContract.gemini_bridge_path())
+
+    assert content =~ "Ash"
+    assert content =~ "AGENTS.md"
+    assert content =~ "shared agent instructions"
+    refute File.exists?("CLAUDE.md")
+    refute File.exists?("CODEX.md")
+  end
 end
