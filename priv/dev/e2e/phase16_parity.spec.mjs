@@ -511,7 +511,7 @@ test.describe('Phase 16 — MOTION-04: theme-toggle smoke', () => {
 
     // Use the desktop or mobile theme toggle; prefer desktop at 1280px default viewport.
     const toggleSelector = '#scoria-theme-toggle, #scoria-theme-toggle-mobile';
-    const toggle = page.locator(toggleSelector).first();
+    const toggle = page.locator(toggleSelector).filter({ visible: true }).first();
     await toggle.click();
 
     // Theme attribute must flip
@@ -530,7 +530,10 @@ test.describe('Phase 16 — MOTION-04: theme-toggle smoke', () => {
     const root = page.locator('.scoria-root');
     const initialTheme = await root.evaluate((el) => el.getAttribute('data-theme') ?? 'dark');
 
-    const toggle = page.locator('#scoria-theme-toggle, #scoria-theme-toggle-mobile').first();
+    const toggle = page
+      .locator('#scoria-theme-toggle, #scoria-theme-toggle-mobile')
+      .filter({ visible: true })
+      .first();
     await toggle.click();
 
     const newTheme = await root.evaluate((el) => el.getAttribute('data-theme') ?? 'dark');
@@ -559,7 +562,10 @@ test.describe('Phase 16 — MOTION-04: theme-toggle smoke', () => {
       });
       const root = page.locator('.scoria-root');
       const initialTheme = await root.evaluate((el) => el.getAttribute('data-theme') ?? 'dark');
-      const toggle = page.locator('#scoria-theme-toggle, #scoria-theme-toggle-mobile').first();
+      const toggle = page
+      .locator('#scoria-theme-toggle, #scoria-theme-toggle-mobile')
+      .filter({ visible: true })
+      .first();
       await toggle.click();
       const newTheme = await root.evaluate((el) => el.getAttribute('data-theme') ?? 'dark');
       expect(newTheme).not.toBe(initialTheme);
@@ -572,7 +578,10 @@ test.describe('Phase 16 — MOTION-04: theme-toggle smoke', () => {
     const root = page.locator('.scoria-root');
     const initialTheme = await root.evaluate((el) => el.getAttribute('data-theme') ?? 'dark');
 
-    const toggle = page.locator('#scoria-theme-toggle, #scoria-theme-toggle-mobile').first();
+    const toggle = page
+      .locator('#scoria-theme-toggle, #scoria-theme-toggle-mobile')
+      .filter({ visible: true })
+      .first();
     await toggle.click();
 
     const newTheme = await root.evaluate((el) => el.getAttribute('data-theme') ?? 'dark');
