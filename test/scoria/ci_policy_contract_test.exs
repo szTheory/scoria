@@ -8,8 +8,8 @@ defmodule Scoria.CiPolicyContractTest do
   @post_publish_smoke ".github/workflows/post-publish-smoke.yml"
   @compose_file "compose.yml"
   @dockerignore ".dockerignore"
-  @maintainer_docs "docs/MAINTAINERS.md"
-  @operator_docs "docs/operator_verification.md"
+  @maintainer_docs "guides/maintainers.md"
+  @operator_docs "guides/maintainers.md"
   @playwright_package "priv/dev/package.json"
   @ephemeral_range_min 32_768
   @baseline_check "mix scoria.warning_baseline.check"
@@ -508,7 +508,7 @@ defmodule Scoria.CiPolicyContractTest do
     assert maintainer_docs =~ "HEX_API_KEY"
     assert maintainer_docs =~ "hex-publish.yml"
     assert maintainer_docs =~ "release-please--"
-    assert readme =~ "docs/MAINTAINERS.md"
+    assert readme =~ "guides/maintainers.md"
   end
 
   test "CI-03 documents CI gate map for maintainers" do
@@ -639,7 +639,7 @@ defmodule Scoria.CiPolicyContractTest do
     readme = File.read!("README.md")
 
     assert readme =~ "For maintainers"
-    assert readme =~ "docs/MAINTAINERS.md"
+    assert readme =~ "guides/maintainers.md"
     assert readme =~ "CI topology"
     refute String.match?(readme, ~r/Maintainer guide.*\n.*Maintainer guide/s)
   end
