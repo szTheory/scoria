@@ -6,6 +6,7 @@ defmodule SupportCopilot.Knowledge do
 
   def ensure_refund_policy_source! do
     case Knowledge.ingest_source(%{
+           tenant_id: SupportJourney.tenant_id(),
            kind: "doc",
            title: SupportJourney.knowledge_source_title(),
            uri: "file:///support-copilot/refund-policy.md",

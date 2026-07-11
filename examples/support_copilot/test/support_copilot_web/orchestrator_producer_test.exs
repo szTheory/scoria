@@ -55,11 +55,11 @@ defmodule SupportCopilotWeb.OrchestratorProducerTest do
     {:ok, view, html} = live(operator_conn, "/scoria/approvals")
 
     assert html =~ "Approvals"
-    assert html =~ "Approval inbox"
+    assert html =~ "Pending approval queue"
 
     eventually(fn ->
       rendered = render(view)
-      rendered =~ SupportJourney.refund_approval_tool() or rendered =~ "waiting_for_approval"
+      rendered =~ "Issue refund for #{SupportJourney.ticket_fixture()["id"]}"
     end)
 
     run = Workflows.get_run_tree!(started.run_id)
