@@ -170,9 +170,14 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 50-01-PLAN.md — REL-01: repoint docs-contract constants to canonical guides/ and restore dropped maintainer content (policy lane green)
 - [ ] 50-02-PLAN.md — REL-02: fix dev_seed.exs arity-3 tenant-scoped call sites + theme-toggle visible-locator (e2e lane green)
 - [ ] 50-03-PLAN.md — REL-03: version/docs-truth polish (stale docs/ comments, 0.1.1 example, HexDocs subdomain URL)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 50-04-PLAN.md — REL-04: gate on ci-gate green, release-please publish 0.1.3, post-publish smoke proof (maintainer checkpoints)
 
 **Success Criteria:**

@@ -41,39 +41,39 @@ The consolidated recommendation is to make a narrow, evidence-first release hard
 
 ### Release Strategy
 
-- D-01: Use the normal Release Please path. Forward-fix `main`, let Release Please refresh PR #12, and keep PR #12 as the release vehicle unless it becomes unusably stale.
-- D-02: Use manual `hex-publish.yml` only after a `v0.1.3` tag exists and Hex lacks `0.1.3`. Fully manual publish is an emergency recovery path, not the happy path.
-- D-03: Keep `CI / ci-gate` as the required aggregate release gate. Do not change branch-protection topology to bypass known failures.
-- D-04: Treat release completion as unproven until Hex lists `0.1.3` and post-publish smoke proves both fresh install and live-lineage upgrade. Capture the workflow/run URL or ID in closeout state.
+- **D-01:** Use the normal Release Please path. Forward-fix `main`, let Release Please refresh PR #12, and keep PR #12 as the release vehicle unless it becomes unusably stale.
+- **D-02:** Use manual `hex-publish.yml` only after a `v0.1.3` tag exists and Hex lacks `0.1.3`. Fully manual publish is an emergency recovery path, not the happy path.
+- **D-03:** Keep `CI / ci-gate` as the required aggregate release gate. Do not change branch-protection topology to bypass known failures.
+- **D-04:** Treat release completion as unproven until Hex lists `0.1.3` and post-publish smoke proves both fresh install and live-lineage upgrade. Capture the workflow/run URL or ID in closeout state.
 
 ### Policy And Planning Ledger
 
-- D-05: Keep the strict `CiPolicyContractTest` breadcrumb requirement for `v2.15 Connector Adoption Lane`. Do not loosen this into a generic archived-milestone check.
-- D-06: Repair the durable `ROADMAP.md` breadcrumb path and ensure the release branch picks it up. Do not regenerate or rewrite unrelated planning ledgers unless a focused check reveals additional drift.
+- **D-05:** Keep the strict `CiPolicyContractTest` breadcrumb requirement for `v2.15 Connector Adoption Lane`. Do not loosen this into a generic archived-milestone check.
+- **D-06:** Repair the durable `ROADMAP.md` breadcrumb path and ensure the release branch picks it up. Do not regenerate or rewrite unrelated planning ledgers unless a focused check reveals additional drift.
 
 ### Browser E2E And UI Truth
 
-- D-07: Do not downgrade, skip, or blanket-descoped browser e2e. These failures represent user-visible release proof and should stay meaningful.
-- D-08: Heal deterministic dev seed/idempotency/tenant-scoped evidence for IA trace stream, incident run path, eval prompt-release link, and pending `prompt_release` approval.
-- D-09: Harden the theme-toggle test around the visible/actionable control, preferably using a role, data attribute, or viewport-scoped locator. Avoid `force: true`; use lower-level dispatch only when verifying an overlay or z-order contract.
-- D-10: Change product UI only if valid seeded evidence still lacks the expected user-facing verbs. Preserve approval semantics and release gates.
-- D-11: If the root cause is shared-fixture interference, isolate or serialize only the narrow specs that mutate the same seeded entities. Do not slow the entire suite first.
+- **D-07:** Do not downgrade, skip, or blanket-descoped browser e2e. These failures represent user-visible release proof and should stay meaningful.
+- **D-08:** Heal deterministic dev seed/idempotency/tenant-scoped evidence for IA trace stream, incident run path, eval prompt-release link, and pending `prompt_release` approval.
+- **D-09:** Harden the theme-toggle test around the visible/actionable control, preferably using a role, data attribute, or viewport-scoped locator. Avoid `force: true`; use lower-level dispatch only when verifying an overlay or z-order contract.
+- **D-10:** Change product UI only if valid seeded evidence still lacks the expected user-facing verbs. Preserve approval semantics and release gates.
+- **D-11:** If the root cause is shared-fixture interference, isolate or serialize only the narrow specs that mutate the same seeded entities. Do not slow the entire suite first.
 
 ### Version, Docs, And Package Truth
 
-- D-12: Before the release PR merges, `main` remains live baseline `0.1.2`; Release Please owns the `0.1.3` version bump, manifest update, and changelog entry on the release branch.
-- D-13: Public and release-facing docs should describe `0.1.2` as live and `0.1.3` as target. Remove stale `0.1.1` guidance from README, guides, workflow comments, and release helper copy except in historical changelog entries.
-- D-14: Check package metadata and docs URLs against Hex's 2026 HexDocs URL changes. Treat this as release metadata correctness, not a new docs restructure.
-- D-15: Keep generated `doc/` output as an inspection artifact. Edit README, guides, Mix tasks, release config, and tests instead.
-- D-16: If docs-contract tests still read `docs/MAINTAINERS.md` or `docs/operator_verification.md` as canonical source, update the contracts to the canonical `guides/` paths or assert compatibility-stub behavior. Do not copy full guide content back into `docs/` stubs to satisfy old expectations.
+- **D-12:** Before the release PR merges, `main` remains live baseline `0.1.2`; Release Please owns the `0.1.3` version bump, manifest update, and changelog entry on the release branch.
+- **D-13:** Public and release-facing docs should describe `0.1.2` as live and `0.1.3` as target. Remove stale `0.1.1` guidance from README, guides, workflow comments, and release helper copy except in historical changelog entries.
+- **D-14:** Check package metadata and docs URLs against Hex's 2026 HexDocs URL changes. Treat this as release metadata correctness, not a new docs restructure.
+- **D-15:** Keep generated `doc/` output as an inspection artifact. Edit README, guides, Mix tasks, release config, and tests instead.
+- **D-16:** If docs-contract tests still read `docs/MAINTAINERS.md` or `docs/operator_verification.md` as canonical source, update the contracts to the canonical `guides/` paths or assert compatibility-stub behavior. Do not copy full guide content back into `docs/` stubs to satisfy old expectations.
 
 ### DX, Architecture, And Brand
 
-- D-17: Keep the maintainer path boring and copy-pasteable: focused verification commands, explicit evidence, and a documented recovery path.
-- D-18: Preserve Scoria's Phoenix-native boundary: host app owns auth, tenants, role values, prompts, business truth, product UI, and provider calls; Scoria records runs, traces, evidence, approval, evals, connector activity, semantic cache decisions, and optional knowledge proof.
-- D-19: Keep release and UI language operator-grade: calm, exact, and evidence-based. Avoid backend topology as the first reader path unless it is part of the public contract.
-- D-20: Use current vocabulary consistently: run, trace, reviewer, capability, verification suite, scoped context, semantic cache, optional knowledge base, evidence, and grounding.
-- D-21: Favor official and ecosystem-idiomatic primitives: Mix tasks for maintainer workflows, Ecto changesets/queries for release evidence, LiveViewTest for server-rendered interaction contracts, Playwright user-facing locators for e2e, Release Please for version/changelog/tag orchestration, and Hex workflows for publish proof.
+- **D-17:** Keep the maintainer path boring and copy-pasteable: focused verification commands, explicit evidence, and a documented recovery path.
+- **D-18:** Preserve Scoria's Phoenix-native boundary: host app owns auth, tenants, role values, prompts, business truth, product UI, and provider calls; Scoria records runs, traces, evidence, approval, evals, connector activity, semantic cache decisions, and optional knowledge proof.
+- **D-19:** Keep release and UI language operator-grade: calm, exact, and evidence-based. Avoid backend topology as the first reader path unless it is part of the public contract.
+- **D-20:** Use current vocabulary consistently: run, trace, reviewer, capability, verification suite, scoped context, semantic cache, optional knowledge base, evidence, and grounding.
+- **D-21:** Favor official and ecosystem-idiomatic primitives: Mix tasks for maintainer workflows, Ecto changesets/queries for release evidence, LiveViewTest for server-rendered interaction contracts, Playwright user-facing locators for e2e, Release Please for version/changelog/tag orchestration, and Hex workflows for publish proof.
 
 ## Claude's Discretion
 

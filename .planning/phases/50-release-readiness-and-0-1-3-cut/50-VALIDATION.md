@@ -1,9 +1,9 @@
 ---
 phase: 50
 slug: release-readiness-and-0-1-3-cut
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-10
 ---
 
@@ -64,11 +64,11 @@ created: 2026-07-10
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (none — existing infra covers all)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s (focused lane)
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (none — existing infra covers all)
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s (focused lane)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-07-10 (plan-checker cross-verified per-task verify commands against live repo state)
