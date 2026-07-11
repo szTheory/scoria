@@ -187,6 +187,14 @@ Focused proof:
 MIX_ENV=test mix test test/scoria_web/router_test.exs test/scoria_web/dashboard_scope_test.exs test/scoria_web/dashboard_scope_source_guard_test.exs test/scoria/adoption_surface_test.exs test/scoria_web/live/dashboard_auth_home_connectors_incidents_test.exs test/scoria_web/live/dashboard_auth_approvals_test.exs test/scoria_web/live/dashboard_auth_workflows_test.exs test/scoria_web/live/dashboard_auth_quality_data_test.exs test/scoria_web/live/dashboard_auth_prompts_test.exs --warnings-as-errors
 ```
 
+## Design-system component conventions
+
+For the maintainer conventions doc pairing every named design-system convention with its enforcing drift guard, see [Design system conventions](docs/design_system.md) (dev-only; not shipped to Hex).
+
+CSS selectors should stay component-oriented: prefer block classes, BEM modifiers, and inherited token variables over long structural selectors. A modifier-to-element selector is acceptable when that relationship is the component contract (`.scoria-table-shell--has-summary .scoria-table__viewport`), but avoid reaching through unrelated components such as panel -> table -> filter controls. For shared surface variants, add a `ScoriaWeb.UI` option such as `flush={true}` and let the component emit the modifier class.
+
+Tables use one canonical compact scan density. Do not add user-facing compact/default/comfortable toggles; they add decision overhead without changing the operator job. If a table needs a different rhythm, solve it as a distinct component or documented surface variant instead of page-local row-density state.
+
 ## Dev-only inspection surfaces
 
 The Component Lab, design-system guide, Docker dev DX guide, UAT automation docs, screenshot harness, and contact-sheet generator are maintainer development tools. They are useful for local inspection but should not become adopter HexDocs surface area without an explicit plan.

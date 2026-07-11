@@ -26,14 +26,14 @@ implying one exists.
 variables and block-scoped selectors over long structural chains reaching
 through unrelated components.
 **SSOT:** `assets/css/04-components.css` (class vocabulary); the convention
-itself is documented in `docs/MAINTAINERS.md`'s "Design-system component
-catalog" section (`:262-273`).
+itself is documented in `guides/maintainers.md`'s "Design-system component
+conventions" section.
 **Guard:** No test asserts BEM structure directly — this is convention, guarded
 only for palette leakage via the zero-tolerance raw-class ratchet:
 `mix test test/scoria_web/ds06_drift_guard_test.exs`.
 **Example:** `.scoria-table-shell--has-summary .scoria-table__viewport` — a
 modifier-to-element selector accepted because that relationship *is* the
-component's contract, per `docs/MAINTAINERS.md`.
+component's contract, per `guides/maintainers.md`.
 
 ## Tokens
 

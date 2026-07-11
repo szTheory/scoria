@@ -285,7 +285,7 @@ defmodule ScoriaWeb.UIComponentTest do
 
     test "flush panel gutters use component variables instead of deep structural selectors" do
       css_source = File.read!("assets/css/04-components.css")
-      docs_source = File.read!("docs/MAINTAINERS.md")
+      docs_source = File.read!("guides/maintainers.md")
 
       assert css_source =~ "--scoria-panel-header-padding-inline"
       assert css_source =~ "--scoria-table-control-padding-inline"
@@ -1289,7 +1289,7 @@ defmodule ScoriaWeb.UIComponentTest do
     test "table source and CSS keep density out of the public API" do
       ui_source = File.read!("lib/scoria_web/ui.ex")
       css_source = File.read!("assets/css/04-components.css")
-      docs_source = File.read!("docs/MAINTAINERS.md")
+      docs_source = File.read!("guides/maintainers.md")
 
       refute ui_source =~ "on_density_change"
       refute ui_source =~ "density_class"
