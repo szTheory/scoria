@@ -337,6 +337,8 @@ defmodule Scoria.MixProject do
         "CHANGELOG.md",
         "README.md",
         "LICENSE",
+        "llms.txt",
+        "AGENTS.md",
         "guides/getting-started.md",
         "guides/golden-path.md",
         "guides/jtbd-and-user-flows.md",
