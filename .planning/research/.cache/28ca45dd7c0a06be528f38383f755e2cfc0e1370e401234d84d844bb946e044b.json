@@ -1,0 +1,1 @@
+{"content":"OpenTelemetry trace documentation describes traces as causally related span collections with IDs, hierarchy, attributes, and events. Phase 46 can use trace for the execution story of a run but should avoid claiming export substrate work.","source":"web","provider":"jina","confidence":"MEDIUM","fetched_at":"2026-07-09T20:46:22.337Z","ttl":86400000,"kind":"web"}

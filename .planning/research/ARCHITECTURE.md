@@ -1,509 +1,186 @@
-# Architecture Research
+# Architecture Research: v3.6 Trace Foundation (SEED-007)
 
-**Domain:** Elixir/Phoenix Hex library — Docker dev-DX hardening + maintenance release pipeline
-**Milestone:** v3.2 Drydock
-**Researched:** 2026-06-17
-**Confidence:** HIGH (all assertions derived from direct file reads; no training-data speculation)
+**Domain:** internal integration architecture — OTel-GenAI / OpenInference key convention over Scoria's existing embedded trace subsystem
+**Researched:** 2026-07-11
+**Confidence:** HIGH (grounded directly in the real source tree — `lib/scoria/observe/**`, `lib/scoria/repo/{span,span_event,trace}.ex`, `lib/scoria/knowledge.ex`, migrations, tests, and the `req_llm` dependency source at the locked version `1.13.0`)
+
+This is not a greenfield "what does the ecosystem look like" survey — SEED-007 finishes a subsystem Scoria already half-built. Every claim below is traced to a real file/line so the roadmapper can plan phases against ground truth, not the seed's paraphrase of it.
+
+## System Overview — Current State (as-built)
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│  EMITTERS (2 adapters, telemetry-attached)                                │
+│  lib/scoria/observe/adapters/req_llm.ex   — [:req_llm, :request, :stop]   │
+│  lib/scoria/observe/adapters/jido.ex      — [:jido, :action, :stop]       │
+│  span_kind hardcoded: "LLM" / "INTERNAL"  (not lowercase, not in UI's set)│
+└──────────────────────────┬──────────────────────────────────────────────┘
+                            │ :telemetry.execute([:scoria,:observe,:span,:stop], %{}, span_map)
+                            ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│  Scoria.Observe.Telemetry (lib/scoria/observe/telemetry.ex)               │
+│  attaches [:scoria,:observe,:span,:stop] + [...,:span,:delta]             │
+│  → Redactor.redact/1 (key-exact-match deny-list scrub)                    │
+│  → ReviewerBroadcast.span_stopped/1 (live PubSub, tenant-scoped)          │
+│  → Buffer.cast_span(Map.take(redacted, @span_buffer_fields))              │
+│     @span_buffer_fields = id trace_id parent_id name span_kind            │
+│                           status_code start_time end_time attributes      │
+└──────────────────────────┬──────────────────────────────────────────────┘
+                            │ GenServer.cast
+                            ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│  Scoria.Observe.Buffer (lib/scoria/observe/buffer.ex)                     │
+│  in-memory list, flush every 5s OR at 1000 spans                          │
+│  flush_spans/1 → Repo.insert_all(Scoria.Repo.Span, entries)  [SPANS ONLY] │
+│  NO event buffering path exists. NO trace-row upsert exists.              │
+└──────────────────────────┬──────────────────────────────────────────────┘
+                            ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│  Postgres: ai_traces ← ai_spans ← ai_span_events (FK chain, all 3 tables  │
+│  ALREADY EXIST — migration 20260510015813 created all three together)    │
+│  ai_spans.trace_id  references ai_traces(id), null: false                 │
+│  ai_span_events.span_id references ai_spans(id), null: false              │
+└───────────────────────────────────────────────────────────────────────────┘
+
+  Parallel, currently disconnected system-of-record:
+  ai_retrieval_runs (lib/scoria/knowledge/retrieval_run.ex) — has trace_id/
+  span_id columns, populated by callers, but Knowledge.retrieve/2
+  (lib/scoria/knowledge.ex:215-257) never calls into Observe at all.
+
+  ai_approvals (lib/scoria/observe/approval.ex) — same shape of problem:
+  a rich system-of-record HITL/guardrail table with a `trace_id` column and
+  no telemetry emission wired to it. Relevant precedent for item 3's
+  guardrail_triggered event (see "Dual-Write Pattern" below).
+```
+
+### Correction to the seed's framing
+
+`ai_span_events` is **not a dead schema at the DB/Ecto level** — it is a fully migrated table (`priv/repo/migrations/20260510015813_create_ai_observability_tables.exs`) with a working `Scoria.Repo.SpanEvent` schema+changeset (`lib/scoria/repo/span_event.ex`), a `has_many(:events, ...)` already declared on `Scoria.Repo.Span` (`lib/scoria/repo/span.ex:16`), and a passing standalone unit test (`test/scoria/repo/span_event_test.exs`) that proves `Repo.insert(SpanEvent.changeset(...))` works. What's actually dead is the **ingestion path**: no `:telemetry` event channel, no `Telemetry.handle_event/4` clause, and no `Buffer` capacity ever produces an event row outside a test that hand-builds one. "Resurrection" is 100% application-layer wiring — zero migration work.
+
+### Pre-existing gap this milestone inherits (flag for phase 0 / phase 1)
+
+**No production code path inserts a row into `ai_traces`.** Grep-confirmed: the only places that construct `%Scoria.Repo.Trace{}` are `test/scoria/observe/buffer_test.exs` and `test/scoria/repo/span_event_test.exs` (both manually pre-insert a `Trace` before inserting a `Span`). `Buffer.flush_spans/1` (`lib/scoria/observe/buffer.ex:64-81`) calls `Repo.insert_all(Scoria.Repo.Span, entries)` directly against spans whose `trace_id` is either passed in from metadata or `Ecto.UUID.generate()`'d fresh by an adapter (`req_llm.ex:31`, `jido.ex:27`) — in both cases nothing ever creates the matching `ai_traces` row. Because `ai_spans.trace_id` is `null: false, references(:ai_traces)`, this insert should be rejected by Postgres FK enforcement in real (non-test) usage; the `rescue` in `flush_spans/1` (`buffer.ex:75-80`) swallows the error and only logs it. **This means span persistence may already be silently broken for any span whose trace_id isn't already backed by a Trace row created some other way.** This is upstream of SEED-007 proper, but every deliverable in this milestone (convention keys, RETRIEVER span, span_events) writes through this same path and will be equally silently dropped if unaddressed. Recommend treating "trace upsert on write" as a load-bearing prerequisite of Phase 1, not a separate ticket — see Build Order below.
+
+## Component Responsibilities
+
+| Component | File | Today | Change needed |
+|-----------|------|-------|----------------|
+| ReqLLM adapter | `lib/scoria/observe/adapters/req_llm.ex` | Reads `metadata[:model]`, `measurements[:total_tokens]`, `metadata[:url]`; hardcodes `span_kind: "LLM"` | **MODIFY**: merge `ReqLLM.OpenTelemetry.Attributes.start/1` + `.terminal/1` output (already ships in the locked `req_llm 1.13.0` dep) into `attributes`; set `span_kind` from `metadata[:operation]` not a literal; drop the non-standard `req.url`/`llm.*` keys once `gen_ai.*` covers them |
+| Jido adapter | `lib/scoria/observe/adapters/jido.ex` | Hardcodes `span_kind: "INTERNAL"` — not in either UI allow-list, silently normalizes to `"agent"` | **MODIFY**: map `action_name`/action taxonomy to a real span kind (`tool` is the likely default; needs a planning decision, not fabricated here) |
+| `Scoria.Observe.Telemetry` | `lib/scoria/observe/telemetry.ex` | 2 event clauses: `:stop` (spans) and `:delta` (streaming chunks) | **MODIFY**: add a 3rd clause for point-events (`[:scoria, :observe, :event, :emit]`) running the same `Redactor.redact/1` pass; add public `emit_event/1` mirroring the existing `emit_span_delta/1` doc-comment pattern (line 20-26) |
+| `Scoria.Observe.Buffer` | `lib/scoria/observe/buffer.ex` | Single `spans` list, single `flush_spans/1` | **MODIFY**: add a second `events` list + `cast_event/2` + folded into the same flush cycle; add a trace-upsert step ordered *before* span insert in the same flush; span insert must be ordered before event insert (event FK depends on span existing) |
+| `Scoria.Repo.SpanEvent` | `lib/scoria/repo/span_event.ex` | Complete schema, unused in production | **NO CHANGE** to schema/changeset — wire the ingestion path around it |
+| `Scoria.Knowledge.retrieve/2` | `lib/scoria/knowledge.ex:215-257` | Accepts `opts[:trace_id]`/`opts[:span_id]`, writes them onto `ai_retrieval_runs`, never touches Observe | **MODIFY**: after (or wrapping) `create_retrieval_run/1`, `:telemetry.execute([:scoria, :observe, :span, :stop], ...)` with `span_kind: "retriever"` using the *same* trace_id/span_id/latency already computed for the row |
+| `Scoria.Knowledge.RetrievalRun` | `lib/scoria/knowledge/retrieval_run.ex` | Has `trace_id`, `span_id`, `metadata` (jsonb, unused convention surface) | **MODIFY**: no migration needed — `embedding_model`/`index_version`/`reranker` fit as conventional keys inside the existing `metadata` map, mirroring the same convention-over-columns discipline the milestone locks for spans (see Redaction & Data Model sections) |
+| `Scoria.Observe.Approval` | `lib/scoria/observe/approval.ex` | Rich HITL/guardrail system-of-record (`ai_approvals`), has `trace_id`, no span/event emission | **REFERENCE ONLY this milestone** (not in SEED-007's explicit scope) but is the natural future call site for `guardrail_triggered` — flag as the seam SEED-008 or a SEED-007 follow-up phase will use |
+| `ScoriaWeb.WorkflowTreeComponent` | `lib/scoria_web/components/workflow_tree_component.ex:38` | Hardcodes an 8-kind allow-list `~w(llm tool prompt mcp retriever guardrail eval agent)` | **NO CHANGE required for this milestone**, but flagged: this list and TraceTreeComponent's list have already drifted (see next row) — both should eventually read one canonical source |
+| `ScoriaWeb.TraceTreeComponent` | `lib/scoria_web/components/trace_tree_component.ex:86-93` | Hardcodes a **9**-kind allow-list `~w(agent llm prompt tool mcp retriever guardrail eval error)` (adds `error`, which OpenInference doesn't treat as a span kind) — unmatched kinds silently fall back to `"agent"` | **NO CHANGE required for this milestone** (adapters just need to emit values *inside* this existing allow-list); worth a one-line note in the phase plan that `"error"` is a status, not a kind, and the two lists disagree |
+
+## Data Model — Convention, Not Columns
+
+`ai_traces`, `ai_spans`, `ai_span_events` keep their current shape (`attributes: :map` jsonb on trace/span, `attributes: :map` jsonb on event). SEED-007 does **not** add typed columns to any of these three tables. All 5 "what to build" items are key-naming work inside the existing jsonb maps:
+
+| Convention key | Where written | Confirmed source of the value |
+|---|---|---|
+| `gen_ai.provider.name`, `gen_ai.operation.name`, `gen_ai.request.model` | `req_llm.ex` adapter, on span start | `ReqLLM.OpenTelemetry.Attributes.start/1` — already computes this exact map from `[:req_llm, :request, :stop]` metadata (see below) |
+| `gen_ai.request.temperature`, `.top_p`, `.top_k`, `.max_tokens`, `.seed`, `.frequency_penalty`, `.presence_penalty`, `.stop_sequences` | `req_llm.ex` adapter | `metadata[:request_options]` — built by `ReqLLM.Telemetry.RequestOptions.extract/2` in the dep, already 1:1 OTel-shaped (its own moduledoc says so) |
+| `gen_ai.usage.input_tokens`, `.output_tokens`, `.cache_read.input_tokens`, `.cost` | `req_llm.ex` adapter | `ReqLLM.OpenTelemetry.Attributes.terminal/1`, from `metadata[:usage]` |
+| `openinference.span.kind` | every adapter, mirrored from the top-level `span_kind` column | New — adapters must set both the DB column (for the UI's existing badge/rail rendering) and the attribute (for portability/export) |
+| `feature`, `route`, `archetype`, `intent` (host-declared) | wherever the host calls into the runtime/prompt/LLM path — **Scoria never infers these**, it only reserves the key names and passes through whatever the host puts in `opts`/metadata | No current call site threads these; this is new plumbing through whatever request-context map already flows adapter-ward (`metadata[:tenant_id]`/`metadata[:workflow_run_id]` is the existing precedent for "caller-supplied identity fields make it into `attributes`") |
+| context-pack / token-split composition (chunk IDs, memory IDs, token counts — **not raw text**) | wherever context assembly happens ahead of the LLM call (no dedicated module found; likely added inside the prompt-render step being built for item 3) | New |
+| `embedding_model`, `index_version`, `reranker` | `Knowledge.retrieve/2`, written into **both** the RETRIEVER span's `attributes` and `ai_retrieval_runs.metadata` | New — recommend the map, not new columns, on `RetrievalRun` too, for consistency; see Component table above |
+
+### `ReqLLM.OpenTelemetry.Attributes` — do not re-derive this by hand
+
+This is the single most consequential finding for scoping items 1 and 2. The locked `req_llm` dependency (`~> 1.13`, `1.13.0` in `mix.lock`) already ships `ReqLLM.OpenTelemetry.Attributes.start/1` and `.terminal/1` (`deps/req_llm/lib/req_llm/open_telemetry/attributes.ex`), which builds the *exact* `gen_ai.*` binary-keyed attribute map (provider, operation, request params, usage, response id/model, finish reasons, embeddings dims) straight from the same `[:req_llm, :request, :stop]` metadata Scoria's adapter already receives. The adapter's job shrinks to: call both functions, merge their output into `attributes`, keep the existing `tenant_id`/`workflow_run_id` keys alongside them. This eliminates hand-naming ~15 keys and any risk of Scoria's convention drifting from the upstream library's — they'll be byte-identical to what ReqLLM's own OTel bridge (`ReqLLM.OpenTelemetry`) would emit if a host wired real OTel instead.
+
+## Integration Points (answering the 5 numbered questions)
+
+### 1. Where conventional keys get written / where `span_kind` gets set
+
+Write path is exactly as the seed described, confirmed end-to-end: **adapter → `:telemetry.execute([:scoria,:observe,:span,:stop])` → `Telemetry.handle_event/4` → `Redactor.redact/1` → `Buffer.cast_span/2` (in-memory) → periodic `Repo.insert_all(Scoria.Repo.Span, entries)`**. `Telemetry.handle_event/4` is a *pass-through* for `span_kind` and all `attributes` keys — it does no naming, mapping, or classification of its own; it only redacts and routes. That means **all convention-key and `span_kind` work belongs at the adapter layer**, not in `telemetry.ex`. Concretely: `req_llm.ex:26-38` and `jido.ex:24-36` are the only two places `span_kind:` gets set today, and both are literals. Fix both to compute the value from real metadata (`operation`/`action_name`) instead of a hardcoded string, and mirror the same value into `attributes["openinference.span.kind"]` at the same call site. `Buffer` and `Telemetry` need **zero changes** for this item — they already forward whatever `attributes`/`span_kind` the adapter hands them straight to `ai_spans.attributes` jsonb.
+
+### 2. RETRIEVER span dual-write seam, keeping `ai_retrieval_runs` as system-of-record
+
+The single call site is `Scoria.Knowledge.retrieve/2` (`lib/scoria/knowledge.ex:215-257`). It already:
+- accepts `opts[:trace_id]` / `opts[:span_id]` from the caller (confirmed by `test/scoria/knowledge/retrieval_test.exs:49-65` — the plumbing genuinely is "just unemitted," as the seed claims),
+- computes `latency_ms` via `System.monotonic_time(:millisecond)` bracketing (`knowledge.ex:222` / `:252`),
+- calls `create_retrieval_run/1` (`knowledge.ex:137-151`) which persists the rich row (query text, backend, retriever module, top_k, filters, status, latency) — this is genuinely richer than a generic span and should stay the system-of-record exactly as the seed argues (grounding scores and typed `RetrievalResult` rows hang off `RetrievalRun`, not off any span).
+
+**Minimal wiring**: inside `retrieve/2`, once `{:ok, run}` comes back from `create_retrieval_run/1` (and again once `append_retrieval_results/2` succeeds, if end/status needs the result count), call `:telemetry.execute([:scoria, :observe, :span, :stop], %{}, span_map)` with `span_kind: "retriever"`, `trace_id: opts[:trace_id]`, using `run.id` as `parent_id`/correlation if useful, and attributes carrying `embedding_model`/`index_version`/`reranker` + `result_count` + `retriever` (mirroring, not duplicating, the columns already on `run`). This is a **generic-visibility span for the trace tree UI**; `ai_retrieval_runs` stays the place eval/grounding code actually queries for detail. No new table, no collapse — literally "the same event, two representations, one call site." Same pattern generalizes cleanly to `Scoria.Observe.Approval` (`ai_approvals`) for a future `guardrail`-kind span, though that's out of this milestone's explicit scope (SEED-007 lists only `guardrail_triggered` as a *point-event*, not a span — see item 3).
+
+### 3. Resurrecting `ai_span_events` minimally
+
+Schema/migration state: **already fully present** (see "Correction to the seed's framing" above) — this is pure application wiring, no `mix ecto.gen.migration` needed. What's missing:
+
+- A telemetry event name for point-events, distinct from the span lifecycle events `Telemetry` already attaches (`[:scoria, :observe, :span, :stop]` / `:delta`). Recommend `[:scoria, :observe, :event, :emit]` — a single fire-and-forget event, no start/stop pairing needed since these are instantaneous by definition (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`).
+- A new `Telemetry.handle_event/4` clause for it, running `Redactor.redact/1` on the event's `attributes` exactly like spans do, then routing to `Buffer`.
+- A public `Scoria.Observe.Telemetry.emit_event/1` (mirrors the `emit_span_delta/1` docstring convention at `telemetry.ex:20-26`, which explicitly tells future integrations "must use this... not raw `:telemetry.execute`").
+- `Buffer` needs a second list (`events`) and a `cast_event/2`, flushed in the **same** flush cycle as spans but **strictly after** the span insert completes — `ai_span_events.span_id` is `null: false` and FK-references `ai_spans`, so an event for a span still sitting unflushed in the buffer's `spans` list would itself hit the same class of FK failure already lurking in the trace-upsert gap. Recommend wrapping "insert missing traces → insert spans → insert events" as one ordered sequence (ideally one `Ecto.Multi`/transaction) in the flush callback, rather than three independent `insert_all` calls with silent per-call rescue.
+- **New call sites**, not existing ones. Unlike the RETRIEVER span (which slots into an existing function), none of `prompt_rendered`, `guardrail_triggered`, `user_feedback_received` have a home today — there is no dedicated prompt-render module (`prompt_version`/`prompt_ref` are workflow-runtime fields set in `lib/scoria/workflows/runtime.ex`, not an instrumentation point) and no guardrail module (`lib/scoria/observe/approval.ex` is the closest existing concept, an HITL/tool-approval system-of-record, not a "guardrail" per se). Flag this to the roadmapper explicitly: item 3 requires *adding* instrumentation calls into runtime/workflow code paths that don't currently call into Observe at all, which is materially different effort than items 1/2 (which are "wire up what already flows").
+
+### 4. Redaction interplay
+
+`Scoria.Observe.Redactor.redact/1` (`lib/scoria/observe/redactor.ex`) does an **exact key match** against a deny-list (default `~w(password api_key token secret)` as both atoms and strings, extensible via `config :scoria, Scoria.Observe.Redactor, deny_list: [...]` or a full `{mod, fun, args}` override), recursing through maps/lists, replacing matched values with `"[REDACTED]"`. It is not a substring or pattern matcher on keys — `do_redact/2` uses `MapSet.member?(deny_list, k)` on the whole key, so `"gen_ai.usage.output_tokens"` or any other compound dotted key is safe by construction; it can never accidentally collide with the `token` deny-entry. This means:
+
+- All new conventional keys (`gen_ai.request.*`, `gen_ai.usage.*`, `openinference.span.kind`, `feature`/`route`/`archetype`/`intent`, context-pack composition keys, `embedding_model`/`index_version`/`reranker`) pass through the existing redactor **unchanged, with zero redactor code changes required** — none of them are PII by shape (model names, numeric params, categorical labels, counts, opaque IDs).
+- The real risk isn't the key names, it's **what gets put under them**. Two guardrails worth calling out to whoever plans item 3 specifically: (a) `intent`/`route`/`feature`/`archetype` are host-declared *categorical labels* by design (P2 doctrine — Scoria never infers, host declares) — nothing in the redactor stops a host from putting a raw customer identifier into `intent`'s string value, since the redactor is key-based, not value-pattern-based. That's an adoption-docs concern, not a code fix. (b) context-pack composition should capture chunk IDs / memory IDs / token counts (opaque, safe), **not** raw chunk text — if raw text is captured anywhere, it needs to route through `Redactor.scrub_text/1` (the free-text `key=value` regex scrubber already used for streaming chunks, see `telemetry.ex:54-58`'s `scrub_delta_chunk/1`), not just `redact/1`.
+- `prompt_rendered` deserves the most scrutiny: if its `attributes` end up carrying the actual rendered prompt string (which may contain interpolated user content), `redact/1` alone won't scrub free text inside a string value — it only redacts values whose *key* is on the deny-list. Recommend the event capture prompt **composition metadata** (template/version id, token count, chunk/memory ids used) rather than the rendered text itself, consistent with the milestone's own P5/P6 doctrine ("reconstructable in the host's own DB," not a content warehouse) — this avoids the redaction question entirely rather than trying to solve free-text PII scrubbing inside a jsonb event payload.
+- Recommend one new regression test as part of whichever phase lands the convention keys: assert `gen_ai.*` / `openinference.span.kind` / host-declared keys survive `Redactor.redact/1` unredacted (locks the "safe by construction" claim above against future deny-list changes).
+
+### 5. New vs modified components, and suggested build order
+
+**New:**
+- `Telemetry` event-ingest clause + `emit_event/1` public API (point-events)
+- `Buffer` event-list + `cast_event/2` + ordered flush (traces → spans → events)
+- Trace-upsert-on-flush logic (closes the pre-existing FK gap; not itself an OTel/OpenInference deliverable, but blocking)
+- RETRIEVER span emission call inside `Knowledge.retrieve/2`
+- New instrumentation call sites for `prompt_rendered` / `guardrail_triggered` / `user_feedback_received` wherever those actually happen in runtime/workflow code (none exist yet — needs to be located/created as part of planning, not assumed)
+
+**Modified:**
+- `req_llm.ex` adapter — convention keys via `ReqLLM.OpenTelemetry.Attributes`, real `span_kind`
+- `jido.ex` adapter — real `span_kind` instead of `"INTERNAL"`
+- `Scoria.Knowledge.RetrievalRun` — no migration; `metadata` map gains conventional keys
+- README.md:272 — "OpenInference-style" → "redaction + OTel-shaped spans" now, "OpenInference-compatible" once item 1 ships (can happen any time convention lands, independent of items 2-4)
+
+**Unchanged (confirmed, not just assumed):**
+- `ai_traces` / `ai_spans` / `ai_span_events` table shapes — zero migrations for this milestone
+- `Scoria.Repo.SpanEvent` schema/changeset
+- `ScoriaWeb.WorkflowTreeComponent` / `TraceTreeComponent` span-kind allow-lists (adapters just need to emit values already inside them)
+
+**Suggested build order (dependency-driven, mappable to phases):**
+
+1. **Foundation fix + key convention + span_kind (Phase 1).** Fix the trace-upsert gap in `Buffer` (or wherever the flush lands — this must exist before *anything* else in this milestone can be proven end-to-end against a real Postgres). In the same phase: wire `ReqLLM.OpenTelemetry.Attributes.start/1`/`.terminal/1` into `req_llm.ex`, fix both adapters' `span_kind`, add `openinference.span.kind` mirroring. This is the highest-leverage phase — it's mostly "call an existing function" plus fixing the one correctness bug blocking everything downstream.
+2. **Model config on LLM spans (folds into Phase 1 or immediately after).** Once `ReqLLM.OpenTelemetry.Attributes` is wired, model config (temp/top_p/seed/max_tokens) arrives for free via `.start/1`'s `request_options` merge — there may be little-to-no separate work here beyond confirming it. Worth explicitly verifying with a test rather than assuming.
+3. **RETRIEVER span + config fields (Phase 2).** Depends on (1) because it reuses the same span-emission path/trace-upsert fix. Single call site (`Knowledge.retrieve/2`), well-bounded.
+4. **Host-declared attribute convention (`feature`/`route`/`archetype`/`intent` + context-pack keys) (Phase 2 or 3, can run parallel to RETRIEVER work).** Independent of RETRIEVER; depends only on (1)'s span-write path being solid. Needs a decision on which existing metadata-threading point (tenant_id/workflow_run_id precedent) these ride alongside.
+5. **Structured child spans + `ai_span_events` resurrection (Phase 3, last).** Depends on (1) for the ordering discipline (spans-before-events in flush) and requires *new* instrumentation call sites that don't exist yet (prompt-render, guardrail-trigger, feedback-capture) — this is genuinely the highest-effort, most open-ended item and should be scoped/discussed carefully rather than estimated as "just wire the dead schema."
+6. **README accuracy fix — can ship any time**, but sequence the *second* edit ("OpenInference-compatible") after (1) actually lands so the claim is true when made, not before.
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern: re-deriving `gen_ai.*` attribute names by hand
+**What people would do:** hand-write a mapping from ReqLLM's telemetry metadata to `gen_ai.*` keys inside `req_llm.ex`.
+**Why it's wrong:** `ReqLLM.OpenTelemetry.Attributes` already does this, is already a dependency, and is guaranteed to match what ReqLLM's own real OTel bridge emits. A hand-rolled mapping would drift and duplicate ~100 lines of already-correct code.
+**Instead:** call `ReqLLM.OpenTelemetry.Attributes.start/1` and `.terminal/1`, merge into `attributes`.
+
+### Anti-Pattern: typed columns for `embedding_model`/`index_version`/`reranker`
+**What people would do:** a migration adding 3 new columns to `ai_retrieval_runs`.
+**Why it's wrong:** breaks the milestone's own locked discipline (convention over columns) for no benefit — `RetrievalRun.metadata` is already a jsonb map sitting unused for exactly this purpose.
+**Instead:** conventional keys inside `metadata`, mirrored into the RETRIEVER span's `attributes`.
+
+### Anti-Pattern: forcing the full span-kind vocabulary into `ai_span_events`
+**What the seed itself already correctly warns against (§ "What to build" item 3):** don't force `tool`/`prompt`/`retrieval`/`guardrail` into events — those are span kinds (they have duration, children, status). Only true instantaneous point-events (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`) belong in `ai_span_events`.
+
+## Sources
+
+- Direct source inspection: `lib/scoria/observe/telemetry.ex`, `buffer.ex`, `redactor.ex`, `trace_projection.ex`, `reviewer_broadcast.ex`, `adapters/req_llm.ex`, `adapters/jido.ex`; `lib/scoria/repo/{span,span_event,trace}.ex`; `lib/scoria/knowledge.ex`, `lib/scoria/knowledge/retrieval_run.ex`; `lib/scoria/observe/approval.ex`; `lib/scoria_web/components/{workflow_tree_component,trace_tree_component}.ex`; `priv/repo/migrations/20260510015813_create_ai_observability_tables.exs`, `20260523000300_expand_ai_scores_and_create_online_score_candidates.exs`; test files `test/scoria/observe/buffer_test.exs`, `test/scoria/repo/span_event_test.exs`, `test/scoria/knowledge/retrieval_test.exs`. Confidence: HIGH (primary source, not inferred).
+- `deps/req_llm/lib/req_llm/telemetry.ex`, `deps/req_llm/lib/req_llm/telemetry/request_options.ex`, `deps/req_llm/lib/req_llm/open_telemetry/attributes.ex` — locked at `req_llm 1.13.0` per `mix.lock`. Confidence: HIGH (primary source, live in the dependency tree this project already builds against).
+- `.planning/seeds/SEED-007-trace-foundation-otel-openinference.md` — milestone intent, scope doctrine (P5/P6), and disagreements-with-memo record.
+- `.planning/PROJECT.md` — current milestone framing ("Convention-over-columns (LOCKED)", dual-write directive).
+- [OpenTelemetry Gen AI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/) — confirms `gen_ai.request.temperature`, `gen_ai.request.model`, `gen_ai.usage.input_tokens` etc. are the real upstream convention (matches what `ReqLLM.OpenTelemetry.Attributes` already emits). Confidence: HIGH (official spec).
+- [OpenInference semantic conventions](https://arize-ai.github.io/openinference/spec/semantic_conventions.html) — confirms `openinference.span.kind` is required on every span and enumerates the 10 canonical kinds (`LLM, EMBEDDING, RETRIEVER, RERANKER, TOOL, CHAIN, AGENT, GUARDRAIL, EVALUATOR, PROMPT`) — used to sanity-check Scoria's UI-side 8/9-kind lists (workflow_tree vs trace_tree) which have already drifted from each other and from this canonical set (notably `"error"` isn't an OpenInference span kind). Confidence: HIGH (official spec).
 
 ---
-
-## System Overview
-
-The v3.2 work touches three interlocking planes. Understanding their boundaries up front prevents cross-plane contamination (the most common footgun in this class of work).
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  PLANE A — Docker / Compose / Makefile / Traefik  (dev-only)        │
-│                                                                     │
-│  ┌──────────┐   ┌───────────┐   ┌────────────────┐  ┌──────────┐  │
-│  │ Makefile │   │compose.yml│   │ Dockerfile.dev  │  │Traefik   │  │
-│  │(identity)│──▶│(web + db  │──▶│(layer order,    │  │compose   │  │
-│  │          │   │ + shots)  │   │ BuildKit cache) │  │(shared,  │  │
-│  └────┬─────┘   └─────┬─────┘   └────────────────┘  │ proxy    │  │
-│       │               │                               │ network) │  │
-│  BRANCH → INSTANCE   web → proxy network ────────────▶└──────────┘  │
-│       │                                                             │
-│  ┌────▼───────────────────────────────────────────────────────┐    │
-│  │  docker/dev-entrypoint.sh  (DB setup, banner, phx.server)  │    │
-│  └────────────────────────────────────────────────────────────┘    │
-├─────────────────────────────────────────────────────────────────────┤
-│  PLANE B — Elixir dev host harness  (dev/ + config/dev.exs)        │
-│                                                                     │
-│  ┌────────────────┐   ┌──────────────┐   ┌─────────────────────┐  │
-│  │ ScoriaWeb.     │   │ ScoriaWeb.   │   │ ScoriaWeb.          │  │
-│  │ DevEndpoint    │──▶│ DevRouter    │──▶│ DevAssetWatcher     │  │
-│  │ (Bandit,       │   │(scoria_dash- │   │(css/js hot-rebuild) │  │
-│  │  PORT env)     │   │ board/scoria)│   └─────────────────────┘  │
-│  └────────────────┘   └──────────────┘                            │
-│       ▲ started via :dev_children (config/dev.exs)                 │
-│       │ never in package.files → never shipped to Hex              │
-├─────────────────────────────────────────────────────────────────────┤
-│  PLANE C — Release / CI pipeline  (.github/workflows/)              │
-│                                                                     │
-│  ┌──────────────────┐   ┌──────────────┐   ┌────────────────────┐ │
-│  │ release-please   │──▶│ ci-verify    │──▶│ hex-publish         │ │
-│  │ .yml             │   │ .yml (reuse- │   │ (in release-please │ │
-│  │ (PR → tag →      │   │  able SSOT)  │   │  .yml, gated by    │ │
-│  │  release)        │   └──────────────┘   │  gate-ci-green)    │ │
-│  └──────────────────┘                      └──────────┬─────────┘ │
-│                                                        │            │
-│  ┌─────────────────────────────────────────────────────▼──────┐    │
-│  │  post-publish-smoke.yml  (registry attest, workflow_call)   │    │
-│  └────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-These planes share no runtime code. Changes in Plane A never touch Plane C and vice versa. The risk of v3.2 is drift between them at the *documentation and verification-copy* level — that is the primary integration surface to guard.
-
----
-
-## Stream A: Docker dev-DX hardening
-
-### Current component inventory (verified from file reads)
-
-| File | Role | Status |
-|------|------|--------|
-| `Makefile` | Identity derivation (BRANCH → INSTANCE → COMPOSE_PROJECT_NAME/SCORIA_HOST); targets: proxy/up/up-d/down/logs/url/open/dev/seed/reseed/shots/critique/shots-native | **Exists — modify** |
-| `compose.yml` | web + db (unpublished pgvector) + profile-gated shots/critique; no `container_name:`, no top-level `name:`, interpolated Traefik labels | **Exists — minor modify** |
-| `Dockerfile.dev` | Layer-ordered BuildKit dev image; pinned to `.tool-versions` (Elixir 1.19.5-OTP-27.3.2 on debian-bookworm-20260518-slim) | **Exists — minor modify** |
-| `docker/traefik/compose.yml` | Long-lived shared proxy; `name: dev_proxy`; Traefik v3.7.1 on `proxy` external network | **Exists — no change** |
-| `docker/dev-entrypoint.sh` | DB setup (idempotent), URL/route banner, launches the native Phoenix server | **Exists — modify** |
-| `dev/dev_endpoint.ex` | `ScoriaWeb.DevEndpoint` — Bandit, PORT env, live_reload opt-in via `SCORIA_DEV_LIVE_RELOAD` | **Exists — no change** |
-| `dev/dev_router.ex` | Mounts `scoria_dashboard "/scoria"`, `put_demo_tenant` plug | **Exists — no change** |
-| `dev/asset_watcher.ex` | `ScoriaWeb.DevAssetWatcher` — css/js rebuild on assets/ change | **Exists — no change** |
-| `config/dev.exs` | DevEndpoint config (PORT from env, `0.0.0.0`, ≥64-char secret_key_base); `dev_children` hook; `FILE_SYSTEM_BACKEND` gate | **Exists — no change** |
-| `.env.example` | Documents COMPOSE_PROJECT_NAME, SCORIA_HOST (bare-compose path) and ANTHROPIC_API_KEY | **Exists — modify** |
-| `dev/pgvector-compose.yml` | Native-host DB only; publishes `127.0.0.1:55432:5432`; no `container_name:` | **Exists — no change** |
-| `.dockerignore` | Excludes `_build/`, `deps/`, `.git/`, `priv/static/scoria/`, `.env`, and dev-only dirs | **Exists — no change** |
-| `docs/docker_dev_dx.md` | Portable fleet standard and adoption guide | **Exists — significant modify** |
-
-### Integration point 1 — PORT default in `make dev`
-
-**Current state:** `make dev` launches the native Phoenix server with live reload. The `DevEndpoint` reads `PORT` from env, defaulting to `4000` (in `config/dev.exs`). No PORT override existed in the old Makefile target.
-
-**Integration:** Add `PORT=4799` (or any non-4000 free port) to the `dev` target in `Makefile`. The change is one line:
-
-```make
-dev:
-	SCORIA_DEV_LIVE_RELOAD=1 PORT=4799 [native Phoenix server command]
-```
-
-**Why 4799:** Scoria's library index in szTheory's ecosystem; memorable, distant from 4000 so the fleet has clear headroom, below 8080/3000/6379 collision zones. Any value 4001–4999 outside known fleet ports works. The exact value is a product decision, not an architectural constraint.
-
-**Tradeoffs:**
-- Pro: Zero-config collision avoidance; baked into the SSOT target; the shots-native target needs a matching update or a `PORT` variable.
-- Con: If an adopter's host app happens to bind 4799 this still collides — but that is far rarer than 4000. The Docker path (`make up`) has no PORT issue at all (ephemeral loopback + Traefik).
-- The `shots-native` target in the Makefile must match whatever PORT is chosen, or be parameterized as `$(PORT)`.
-
-**What is new vs modified:** `Makefile` (modified — `dev` target and `shots-native` target).
-
-### Integration point 2 — `make nuke`/clean target + stale-instance hygiene
-
-**Current state:** No nuke/clean target exists. The `down` target stops the current instance stack. There is no documented or automated path to destroy stale instances (e.g., the pre-branch-scoped `scoria_demo` project that was verified still routing `scoria.localhost`).
-
-**Integration:** Add a `nuke` target to `Makefile`. The target operates on the *current* instance (scoped by `COMPOSE_PROJECT_NAME`) by default and offers an `ALL=1` escape hatch for full fleet prune. Pattern:
-
-```make
-## nuke: destroy this instance — stop containers, remove volumes, remove image
-nuke:
-	docker compose down --volumes --rmi local
-	@echo "Instance $(COMPOSE_PROJECT_NAME) nuked. Volumes and local image removed."
-
-## nuke-all: prune all stopped scoria-* containers, dangling volumes, orphan networks (fleet hygiene)
-nuke-all:
-	docker compose down --volumes --rmi local 2>/dev/null || true
-	docker container prune -f --filter "label=com.docker.compose.project=$(COMPOSE_PROJECT_NAME)" 2>/dev/null || true
-	@echo "Run 'docker system prune' manually for full fleet cleanup."
-```
-
-**Why two targets not one:** A `nuke` that silently destroys volumes from other branches is an unusually high blast radius for a Makefile target. The principle of least surprise says the default target is instance-scoped; the fleet-wide case is opt-in and explicitly named `nuke-all`.
-
-**Doc surface:** `docs/docker_dev_dx.md` gains a "Stale instance hygiene" subsection covering:
-1. Per-instance `make nuke` (removes this branch's DB volume and local image).
-2. Finding orphan instances: `docker ps -a --filter label=com.docker.compose.project` scoped to `scoria-*`.
-3. The pre-branch-scoped `scoria_demo` teardown one-liner: `INSTANCE=scoria docker compose down --volumes`.
-4. Full fleet prune for a clean slate: `docker system prune -f`.
-
-**What is new vs modified:** `Makefile` (modified — new targets), `docs/docker_dev_dx.md` (modified).
-
-### Integration point 3 — Banner route-list
-
-**Current state:** `docker/dev-entrypoint.sh` already prints a route list (9 paths under "Screens:") alongside the instance URL, seed instructions, and screenshot harness commands. The banner is reasonably complete.
-
-**Gap:** The banner uses a static `http://${HOST}/scoria` URL. The `HOST` variable captures `PHX_HOST` or falls back to `scoria.localhost` — correct for the Docker path but wrong for `make dev` (native), where the URL is `localhost:<PORT>/scoria`. The `make dev` native path never runs the entrypoint script at all — it launches the native Phoenix server directly via the Makefile.
-
-**Integration:** Two sub-changes:
-
-1. **Entrypoint banner** (`docker/dev-entrypoint.sh`): Expand the banner to include the ephemeral fallback URL explicitly (currently it says "run `make url`") — print it inline by calling `docker compose port web 4000` or just directing to `make url`. The current banner is already good; the main v3.2 work is confirming it includes the right routes after any screen additions. Add a "Native dev server" note clarifying that `make dev` uses PORT 4799 (or whatever is chosen) so readers don't search for `4000`.
-
-2. **Native `make dev` banner:** Currently `make dev` prints nothing — the server just starts. Add a brief startup note to the `dev` target:
-
-```make
-dev:
-	@echo "Starting native dev server at http://localhost:4799/scoria (live-reload on)"
-	SCORIA_DEV_LIVE_RELOAD=1 PORT=4799 [native Phoenix server command]
-```
-
-**What is new vs modified:** `docker/dev-entrypoint.sh` (minor modify), `Makefile` (modified — dev target comment/echo).
-
-### Integration point 4 — Dockerfile layer-caching guarantee
-
-**Current state (verified from Dockerfile.dev):**
-
-The existing layer order is already correct:
-1. Base image + apt (BuildKit cache mount for `/var/cache/apt` and `/var/lib/apt/lists`)
-2. `mix local.hex` + `mix local.rebar`
-3. `ENV MIX_ENV=dev`
-4. **`COPY mix.exs mix.lock ./`** + `mix deps.get` (BuildKit cache mount for `/root/.hex`)
-5. **`COPY config config`** + `mix deps.compile` (BuildKit cache mounts for `/root/.hex` and `/root/.cache/rebar3`)
-6. **`COPY lib lib / dev dev / priv priv`** + `mix compile`
-7. `COPY docker/dev-entrypoint.sh`
-
-A CSS/HEEx edit in `lib/` or `priv/` only invalidates layer 6 (`mix compile` — the app compile). It does NOT invalidate the dep-fetch layer (4) or the dep-compile layer (5). This is the correct architecture.
-
-**Gap/footgun to document:** `priv/static/scoria/` is excluded from the Docker build context via `.dockerignore` — correctly, because the assets are rebuilt in-container by `mix scoria.assets.build`. However, if someone adds a file to `config/` (layer 5), it invalidates dep.compile. If someone adds a new dep to `mix.exs`, it invalidates layers 4 and 5. Neither is a bug — it is the correct cache invalidation semantics. The doc should state this explicitly so maintainers don't panic when they see a dep-compile on a `mix.exs` change.
-
-**What layer ordering guarantees and what breaks it:**
-
-| Change type | Layers invalidated | Expected behavior |
-|-------------|-------------------|-------------------|
-| Edit `lib/**/*.ex` or `lib/**/*.heex` | Layer 6 only (app compile) | Fast rebuild |
-| Edit `priv/**` (non-static) | Layer 6 only | Fast rebuild |
-| Edit `assets/**` | Nothing (assets rebuilt in-container via watcher) | Zero rebuild |
-| Edit `config/**` | Layers 5–6 (dep.compile + app compile) | Moderate rebuild |
-| Edit `mix.lock` | Layers 4–6 (dep.get + dep.compile + app compile) | Full dep rebuild |
-| Edit `mix.exs` | Layers 4–6 | Full dep rebuild |
-
-**Recommendation:** The Dockerfile layer order is already sound. The only v3.2 work is a short "Layer caching" subsection in `docs/docker_dev_dx.md` explaining this table. No Dockerfile changes are architecturally required.
-
-**Caveat:** There is one subtle issue. The `EXPOSE 4000` directive is declarative/documentation only in Docker — it does not publish the port and does not conflict with Traefik. It is correct as-is.
-
-**What is new vs modified:** `docs/docker_dev_dx.md` (modified — new "Layer caching" section). No `Dockerfile.dev` change required.
-
-### Integration point 5 — Secrets pattern (1Password CLI / direnv)
-
-**Current state (verified from `.env.example`):**
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-The comment says "gitignored, untracked — not in git history." The `.env` file is correctly excluded from the Docker build context via `.dockerignore`. The `critique` service in `compose.yml` reads `ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}` from the environment. The only consumer of the key is the critique service (never the main web service).
-
-**The actual risks:**
-
-1. Plaintext key in `.env` on disk (rotated-but-still-present risk, Mac malware/screenshots).
-2. Developer accidentally commits `.env` (gitignore mitigates but doesn't eliminate).
-3. Key passed into the `critique` container via compose environment (unavoidable without secret mounts).
-
-**Recommended architecture — direnv + 1Password CLI:**
-
-The idiomatic pattern for this class of project (solo maintainer, Mac-first, Docker Compose, no Kubernetes) is:
-
-```
-.envrc  (gitignored, sourced automatically by direnv)
-  └──▶ op run / op read (1Password CLI) → injects ANTHROPIC_API_KEY into shell env
-         └──▶ compose inherits from shell env (no .env file for secrets)
-```
-
-Concretely, `.envrc` contains:
-```bash
-export ANTHROPIC_API_KEY=$(op read "op://Personal/Anthropic API Key/credential" 2>/dev/null || echo "")
-```
-
-And `direnv allow` is run once. After that, `cd`ing into the repo automatically injects the key from the vault. The `.env` file becomes purely for non-secret compose tuning (COMPOSE_PROJECT_NAME / SCORIA_HOST overrides for bare-compose users).
-
-**Integration with compose:** `compose.yml` already reads `${ANTHROPIC_API_KEY:-}` from environment. If direnv injects it into the shell, `docker compose` inherits it automatically — no compose change needed.
-
-**File boundary changes:**
-
-| File | Change |
-|------|--------|
-| `.envrc` | NEW — direnv hook; gitignored |
-| `.gitignore` | Modified — add `.envrc` (if not already present) |
-| `.env.example` | Modified — remove or comment out `ANTHROPIC_API_KEY=sk-ant-...`, replace with direnv/1Password note |
-| `docs/docker_dev_dx.md` | Modified — new "Secrets" section |
-
-**What is new vs modified:**
-- `.envrc` is NEW.
-- `.env.example` is modified (remove plaintext key stub).
-- `docs/docker_dev_dx.md` is modified.
-
-**Tradeoffs:**
-- Pro: Key never touches disk as plaintext; direnv is widely understood in the Elixir/Mac ecosystem; integrates with existing compose env-var pattern without any compose changes.
-- Con: Requires `direnv` + `op` CLI setup (one-time; well-documented). If 1Password is unavailable, fall back to manually `export ANTHROPIC_API_KEY=...` in the shell before running critique — no regression from current state.
-- The `op` CLI must be authenticated (`op signin`) before `direnv` sources the `.envrc`. Add a "First time" note to docs.
-
-**Important:** Rotate the real key that appears in `.env` before shipping this milestone. The architecture change makes future rotation unnecessary because the key is never stored on disk, but the already-exposed key must be rotated now.
-
-### Integration point 6 — Verification copy drift
-
-**Current state (verified from file reads):**
-
-The bug: GSD plan/agent prose, README sections, and `operator_verification.md` told verifiers to use the raw Phoenix command and old fixed localhost dashboard URL. This is wrong in two ways:
-1. `localhost:4000` is fleet-owned; the real Docker path is `http://scoria-<branch>.localhost/scoria`.
-2. The correct dev command is `make up` (Docker) or `make dev` (native, port 4799 after the fix).
-
-The `docker/dev-entrypoint.sh` banner already prints the correct URL. The Makefile already has the correct targets. The gap is that prose docs and agent verification templates are stale.
-
-**Sources of verification copy (identified from codebase):**
-
-1. `docs/docker_dev_dx.md` — the canonical standard; currently correct (uses `make up`, `*.localhost` URLs).
-2. `docs/operator_verification.md` — needs audit; likely has `localhost:4000` references.
-3. `docs/MAINTAINERS.md` — needs audit; has CI topology doc; likely references dev server.
-4. GSD `.planning/` artifacts (phase plans, agent prose in phase files) — these are historical; updating them is lower value than guarding the canonical sources.
-5. README — has install/adoption instructions; dev harness section needs audit.
-6. Any `priv/dev/e2e/` spec that hardcodes the server URL — CI already boots with `PORT: 4000` in the `e2e` job (ci.yml line 53), so the e2e lane is correct for CI. Native e2e needs `PORT=4799` when run locally with `make dev`.
-
-**Architecture for drift-resistance (consistent with Scoria's executable-drift-guard tradition):**
-
-The pattern Scoria already uses: define a canonical SSOT module/function, then write a contract test that asserts the correct string appears in the doc/copy file. Examples: `VerificationLanes.closeout_order/0`, `ci_policy_contract_test.exs`, `adoption_surface_test.exs`, `AdopterDocContract`.
-
-Apply the same pattern here:
-
-```
-SSOT: Makefile dev target (PORT=4799) + docker/dev-entrypoint.sh (*.localhost URL)
-      ↓ (guarded by)
-DocDriftGuard test (new or extend existing contract test):
-  - assert "make up" appears in docs/docker_dev_dx.md
-  - assert "make dev" appears in docs/docker_dev_dx.md  
-  - assert "localhost:4000" does NOT appear outside of legacy/note context in docs/docker_dev_dx.md
-  - assert "4799" appears in docs/docker_dev_dx.md (or whichever port is chosen)
-  - assert docs/docker_dev_dx.md references the *.localhost pattern
-```
-
-This is a lightweight ExUnit test (no DB, `--no-start`, runs in policy lane or standalone). It fails loudly when doc copy drifts from the canonical commands.
-
-**What is new vs modified:**
-- `docs/docker_dev_dx.md` — modified (already correct for make up; add native dev path and port).
-- `docs/operator_verification.md` — modified (correct localhost:4000 references).
-- `docs/MAINTAINERS.md` — audit + modify where needed.
-- `test/scoria/docker_dx_doc_contract_test.exs` — NEW contract test.
-- GSD `.planning/` phase files — lower priority; correct as encountered.
-
----
-
-## Stream A: `docs/docker_dev_dx.md` as portable fleet standard — IA architecture
-
-The doc already exists and has a solid skeleton. The v3.2 work is hardening it into a complete portable standard with persona/JTBD framing and digestible chunks.
-
-**Proposed information architecture:**
-
-```
-docs/docker_dev_dx.md
-│
-├── # Docker dev DX — multi-instance, no port conflicts
-│     [one-paragraph pitch: why this exists, who it's for]
-│
-├── ## TL;DR  [already exists — keep; add PORT for native path]
-│     make proxy / make up / make url / make open / make dev
-│
-├── ## The model (and why)  [already exists — keep; minor expand]
-│     Three rules (proxy by name, no published DB, ephemeral loopback)
-│
-├── ## Running multiple instances  [already exists — keep]
-│     COMPOSE_PROJECT_NAME derivation, footguns
-│
-├── ## Native dev server (make dev)  [NEW SECTION]
-│     When to use (CSS/HEEx iteration, live reload), PORT=4799,
-│     port collision avoidance rationale, what live reload requires
-│
-├── ## No rebuild on source/style edits  [already exists — expand]
-│     Layer caching table (CSS edit → zero rebuild, mix.exs → full dep rebuild)
-│
-├── ## Stale instance hygiene  [NEW SECTION]
-│     make nuke, finding orphan instances, pre-branch-scoped teardown one-liner
-│
-├── ## Secrets pattern  [NEW SECTION]
-│     direnv + 1Password CLI integration, .envrc example,
-│     fallback (manual export), first-time setup
-│
-├── ## Adopting this in another repo  [already exists — keep]
-│     Step-by-step fleet adoption checklist, proxy network convergence footgun
-│
-├── ## Safari / curl-by-hostname  [already exists — keep]
-│     dnsmasq optional step
-│
-└── ## Files  [already exists — keep; add .envrc]
-      File inventory table
-```
-
-**JTBD framing for sections:**
-
-| Reader persona | Their job to be done | Entry section |
-|---------------|---------------------|---------------|
-| Returning maintainer | "Start the dashboard for a CSS tweak" | TL;DR |
-| Returning maintainer | "Why is my rebuild so slow?" | No rebuild on source/style edits |
-| New contributor | "How do I run this for the first time?" | TL;DR → The model |
-| Fleet maintainer | "Adopt this for rulestead/parapet" | Adopting this in another repo |
-| Anyone | "Old scoria_demo container is routing wrong" | Stale instance hygiene |
-| Anyone | "I need the LLM critique pass" | Secrets pattern |
-
----
-
-## Stream B: Maintenance release pipeline
-
-### Current component inventory (verified from file reads)
-
-| File | Role | Status |
-|------|------|--------|
-| `.github/workflows/release-please.yml` | Release PR lifecycle; creates GitHub release + tag; chains verify → gate-ci-green → publish-hex → post-publish-attest | **Exists — no change** |
-| `.github/workflows/ci-verify.yml` | Reusable CI SSOT: policy → build → {test, ratchet, knowledge, connector, full-suite} → verify-summary | **Exists — no change** |
-| `.github/workflows/ci.yml` | PR/main entrypoint: calls ci-verify + runs e2e lane; `ci-gate` fan-in (needs verify + e2e) | **Exists — no change** |
-| `.github/workflows/hex-publish.yml` | Manual recovery path: workflow_dispatch with tag + release_version inputs; gate-ci-green → verify → publish → post-publish-attest | **Exists — no change** |
-| `.github/workflows/post-publish-smoke.yml` | Reusable registry attest: Hex index poll → fresh install → `mix scoria.post_publish_smoke`; called by release-please + hex-publish | **Exists — no change** |
-| `.release-please-manifest.json` | Version manifest consumed by release-please-action | **Exists — no change** |
-| `release-please-config.json` | Release Please config (release type, changelog sections) | **Exists — not read; assumed correct** |
-
-### The merge flow for open PR #3
-
-Based on the verified workflow files, the exact sequence when the release-please PR (#3) is merged to `main` on green CI:
-
-```
-1. Push to main (PR merge)
-   └──▶ release-please.yml triggers (push: branches: [main])
-        └──▶ release-please job: detect-already-tagged-release-pr
-             (COMMIT_MESSAGE matches "Merge pull request #3")
-             └──▶ expected_tag = "v$(jq .release-please-manifest.json)" = "v0.1.1"
-                  └──▶ gh release view v0.1.1 → does not exist → should_run=true
-                  └──▶ Run Release Please action → creates GitHub release + tag v0.1.1
-                       outputs: release_created=true, tag_name=v0.1.1, version=0.1.1, sha=<commit sha>
-
-2. verify job (needs: release-please, if release_created == 'true')
-   └──▶ calls ci-verify.yml (full policy → build → parallel lanes → verify-summary)
-
-3. gate-ci-green job (needs: [release-please, verify], if release_created == 'true')
-   └──▶ polls ci.yml runs on the release sha for `ci-gate` success
-        └──▶ if no run found by attempt 3: dispatches ci.yml on tag ref
-        └──▶ waits up to 40×30s = 20 min
-
-4. publish-hex job (needs: [release-please, verify, gate-ci-green])
-   └──▶ checkout at tag v0.1.1
-   └──▶ erlef/setup-beam from .tool-versions
-   └──▶ verify @version "0.1.1" in mix.exs
-   └──▶ idempotency check: mix hex.info scoria 0.1.1 → skip if already published
-   └──▶ mix hex.publish --dry-run --yes (HEX_API_KEY secret)
-   └──▶ mix hex.publish --yes
-   └──▶ poll Hex API for up to 36×10s = 6 min
-
-5. post-publish-attest job (needs: [release-please, publish-hex])
-   └──▶ calls post-publish-smoke.yml with version=0.1.1, skip_index_wait=true
-        └──▶ mix scoria.post_publish_smoke (fresh install smoke + upgrade leg if version > 0.1.0)
-```
-
-**Integration points for the maintainer action (merge PR #3):**
-
-The only pre-condition is `ci-gate` passing on the release PR branch (`release-please--branches--main`). The `bootstrap-release-pr-ci` job in release-please.yml already handles dispatching `ci.yml` on the release PR branch if `RELEASE_PLEASE_TOKEN` was used to update it. If the PR is already green (as implied by "merge when CI green"), the merge is the only action required.
-
-**Recovery path:** If `publish-hex` fails after the tag exists, run:
-```bash
-gh workflow run hex-publish.yml -f tag=v0.1.1 -f release_version=0.1.1
-```
-This is documented in `hex-publish.yml`'s header comment and in `docs/operator_verification.md`.
-
-**No architectural changes needed** for the maintenance release — the pipeline is complete and correct.
-
----
-
-## Build / dependency order for v3.2 work
-
-Sequencing based on integration dependencies:
-
-```
-1. PORT decision (Makefile dev target)
-      ↓ (unblocks)
-2. Banner update (make dev echo + dev-entrypoint.sh clarification)
-      ↓ (unblocks)
-3. make nuke target (Makefile)
-      ↓
-4. Dockerfile layer audit + doc (docs/docker_dev_dx.md — Layer caching section)
-      ↓
-5. Secrets architecture (.envrc + .env.example + key rotation)
-      ↓ (unblocks)
-6. docs/docker_dev_dx.md full rewrite (all sections assembled)
-      ↓ (unblocks)
-7. Verification copy correction (operator_verification.md, MAINTAINERS.md, README)
-      ↓ (unblocks)
-8. DocDriftGuard contract test (docker_dx_doc_contract_test.exs)
-      ↓
-9. Merge release-please PR #3 → automated pipeline handles the rest
-```
-
-Steps 1–8 are independent of step 9. Steps 1–5 can proceed in parallel within the same session; they only gate steps 6–8.
-
----
-
-## Anti-patterns to avoid
-
-### Anti-pattern 1: Fixed PORT in compose.yml
-
-**What people do:** Set `ports: - "4799:4000"` in compose.yml to match the native dev PORT.
-**Why it's wrong:** The compose Docker path already uses an ephemeral loopback fallback (`127.0.0.1::4000`) + Traefik. A fixed port in compose.yml recreates the very collision problem the architecture was designed to eliminate. The PORT=4799 fix belongs only in `make dev` (native path).
-**Do this instead:** Leave compose.yml ports as-is. Native dev uses `PORT=4799`; Docker uses ephemeral + Traefik.
-
-### Anti-pattern 2: Committing secrets to `.envrc`
-
-**What people do:** Put the actual API key value in `.envrc` after adding it to `.gitignore`.
-**Why it's wrong:** `.gitignore` is a hint not a guarantee; pre-commit hooks, `git add -p` accidents, and IDE auto-stage can bypass it. The key is still on disk in plaintext.
-**Do this instead:** `.envrc` contains only the `op read` invocation. The key never exists on disk.
-
-### Anti-pattern 3: Top-level `name:` in compose.yml
-
-**What people do:** Add `name: scoria` to compose.yml to make the project name predictable.
-**Why it's wrong:** A top-level `name:` overrides `COMPOSE_PROJECT_NAME` — the multi-instance isolation mechanism breaks immediately. Two branches would both use the same project name, collide on container names, and share volumes.
-**Do this instead:** No `name:`. COMPOSE_PROJECT_NAME from the Makefile (or env) wins.
-
-### Anti-pattern 4: Hardcoding `localhost:4000` in verification copy
-
-**What people do:** Write raw Phoenix fixed-port dashboard instructions in docs/plans/README.
-**Why it's wrong:** The fleet owns 4000 (it's the default for every Phoenix app in the szTheory ecosystem). The actual URLs are instance-scoped `*.localhost` routes. Stale copy causes verifiers to check the wrong URL, see a 404 or another app's UI, and mark verification as failed or — worse — accidentally pass it against a stale instance.
-**Do this instead:** `make up` → `http://scoria-<branch>.localhost/scoria`, or `make dev` → `http://localhost:4799/scoria`. Document in the drift guard.
-
-### Anti-pattern 5: Updating docs/docker_dev_dx.md without updating the contract test
-
-**What people do:** Edit the doc to add a new command, forget to update the guard test.
-**Why it's wrong:** The guard test becomes stale. It may assert the old command string and silently pass even though the doc has drifted in the other direction.
-**Do this instead:** The contract test asserts the positive (correct command present) AND the negative (wrong command absent). Both sides of the assertion must be updated together. A PR touching `docs/docker_dev_dx.md` should always touch `test/scoria/docker_dx_doc_contract_test.exs`.
-
-### Anti-pattern 6: Putting `make nuke` before a confirmation prompt
-
-**What people do:** In an effort to be "safe", add a `read -p "Are you sure?"` prompt to `nuke`.
-**Why it's wrong:** Interactive prompts break `make` in CI and non-TTY shells. They also train users to click through rather than read carefully.
-**Do this instead:** Make the target name explicit enough that the intent is unambiguous (`nuke` is already strong). Document what it destroys in the `## help` comment and in docs. Trust the user.
-
----
-
-## Integration points summary
-
-| Point | Files changed | New vs modified | Gated by |
-|-------|--------------|-----------------|----------|
-| PORT default in `make dev` | `Makefile` | Modified | Nothing |
-| Native banner | `Makefile` (dev target echo), `docker/dev-entrypoint.sh` | Modified | PORT decision |
-| `make nuke` / `make nuke-all` | `Makefile` | Modified | Nothing |
-| Layer caching doc | `docs/docker_dev_dx.md` | Modified section | Dockerfile audit (no code change) |
-| Secrets pattern | `.envrc` (new), `.gitignore` (modified), `.env.example` (modified) | New + modified | Nothing |
-| docs/docker_dev_dx.md rewrite | `docs/docker_dev_dx.md` | Modified | All above |
-| Verification copy correction | `docs/operator_verification.md`, `docs/MAINTAINERS.md`, `README.md` | Modified | docs/docker_dev_dx.md final |
-| DocDriftGuard contract test | `test/scoria/docker_dx_doc_contract_test.exs` | New | Verification copy correct |
-| Maintenance release | No code changes needed — merge PR #3 | N/A | `ci-gate` green on release PR |
-
----
-
-## Drift-resistance: architecture for the contract test
-
-The test belongs in the `policy` lane (no DB, no app start, runs fast) alongside `ci_policy_contract_test.exs`. It should:
-
-1. Read `docs/docker_dev_dx.md` as a string.
-2. Assert presence of: `"make up"`, `"make dev"`, `"*.localhost"`, `"4799"` (or chosen port), `"make nuke"`, `"direnv"` or `"1Password"`, `"ANTHROPIC_API_KEY"`.
-3. Assert absence of: `"localhost:4000"` (except in legacy/note context — may need a regex exclusion for the existing `shots-native` entry which legitimately references 4000 for its current Playwright target).
-4. Read `docs/operator_verification.md` and assert absence of the raw Phoenix command as a dev-start instruction (it is valid as a concept reference but not as "the command to run").
-
-This follows the exact pattern of `adoption_surface_test.exs` (`AdopterDocContract`) — read a file, assert strings — with the same no-DB, `--no-start` execution model.
-
-The guard is lightweight, catches the most common class of drift (stale copy), and fits naturally in the existing CI policy lane without any topology changes to `ci-verify.yml` or `ci.yml`.
-
----
-
-*Architecture research for: v3.2 Drydock — Docker dev-DX hardening + maintenance release*
-*Researched: 2026-06-17*
-*Confidence: HIGH — all assertions derived from direct file reads*
+*Architecture research for: Scoria v3.6 Trace Foundation (SEED-007)*
+*Researched: 2026-07-11*

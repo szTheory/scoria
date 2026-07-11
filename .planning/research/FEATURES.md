@@ -1,414 +1,179 @@
-# Feature Research — v3.2 Drydock
+# Feature Research
 
-**Domain:** Hands-off multi-lib Phoenix/Elixir local dev DX + maintenance release hygiene
-**Researched:** 2026-06-17
-**Confidence:** HIGH (all claims grounded in existing Scoria code + cross-ecosystem lessons from Sail, Tilt, Vite, Laravel, Rails, just/foreman, overmind)
+**Domain:** AI trace/observability schema interoperability (OTel-GenAI / OpenInference) for an embedded Phoenix AI-governance library
+**Researched:** 2026-07-11
+**Confidence:** HIGH on taxonomy/attribute facts (cross-checked against OTel and OpenInference official docs + a real Elixir hex package); MEDIUM on forward-looking claims (context-pack composition — the finding itself is "no peer has standardized this yet," which is inherently more inferential)
 
----
+## Scope Note
 
-## Context: What Already Exists (Do Not Rebuild)
-
-Scoria already ships a solid foundation. Every feature below is scoped to the **gaps** visible in the code audit (Makefile, docker/dev-entrypoint.sh, docs/docker_dev_dx.md, docker-dx-fleet-hardening.md).
-
-Existing and locked:
-- Traefik + `*.localhost` shared proxy (external `proxy` network)
-- Branch-derived `INSTANCE`/`COMPOSE_PROJECT_NAME`/`SCORIA_HOST` → multi-instance isolation
-- DB/Redis unpublished (eliminates `:5432` collision class)
-- Ephemeral loopback `127.0.0.1::4000` fallback
-- Named volumes for deps/_build/.hex/.mix (no NIF clash between host + Linux)
-- BuildKit `--mount=type=cache` for apt + Hex/rebar caches
-- `FILE_SYSTEM_BACKEND=fs_poll` for macOS VM file event gap
-- `DevAssetWatcher` + live_reload for css/js hot-reload in Docker
-- `make proxy/up/up-d/down/logs/seed/reseed/url/open/dev/shots/critique`
-- Launch banner with instance name, Traefik URL, screen list, shots/critique commands
-- `docs/docker_dev_dx.md` as portable fleet template
-
----
+This research answers SEED-007 (v3.6 Trace Foundation): reconciling Scoria's existing 8-value span-kind UI vocabulary (`llm tool prompt mcp retriever guardrail eval agent`, `lib/scoria_web/components/workflow_tree_component.ex:38`) against OTel-GenAI/OpenInference peer conventions, validating the spans-vs-events emission split, and categorizing model-config/retrieval/context-pack/host-tag capture as table stakes, differentiators, or anti-features. Two corrections to the seed's own framing surfaced during research — see Span-Kind Mapping.
 
 ## Feature Landscape
 
 ### Table Stakes (Users Expect These)
 
-| Feature | Why Expected | Complexity | Depends On | Notes |
-|---------|--------------|------------|------------|-------|
-| **Non-colliding `make dev` PORT default** | `make dev` previously launched the native Phoenix server on the default `:4000`. On a multi-lib Mac, `:4000` is always claimed by something else. Any toolchain that ships a native-mode dev command must not collide on the most-used port in the ecosystem. Laravel Sail and most Rails tooling bake in a non-default port for exactly this. | LOW | Existing `dev:` target | Bake `PORT=4799` (or any non-4000 port) into the `dev:` Makefile target. `4799` is outside the macOS ephemeral range (49152–65535) and the common 4001-4010 range other tools use. Document it once in the target comment. |
-| **`make nuke` stale-instance cleanup** | Stale compose projects accumulate and shadow new branch URLs (confirmed: old `scoria_demo` project answering `scoria.localhost`). Every serious Docker-based DX has a "full reset" escape hatch — `docker system prune`, `sail destroy`, `tilt down --delete-namespaces`. Users expect to recover in one command when things go wrong. | LOW | Existing `down`/`reseed` targets | `make nuke` = `docker compose down -v --remove-orphans` (removes this instance's volumes + networks) followed by optional `docker builder prune --filter label=com.docker.compose.project=$(COMPOSE_PROJECT_NAME)`. Separate from full-machine Docker nuke. Document as instance-scoped (non-destructive to other running instances). |
-| **Stale instance discovery + hygiene doc** | A fleet maintainer loses track of running named instances. There is no visible inventory. Rails dev has `bin/rails server` which refuses to start if PID exists; foreman shows all processes. Without discovery, stale Traefik routing is invisible. | LOW | docs/docker_dev_dx.md | A `make ps` (or `make fleet`) target: `docker ps --filter label=com.docker.compose.project --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"`. Plus a short "hygiene" section in the doc: list → stop → nuke cycle. |
-| **Copy-pasteable key-route list in launch banner** | The current banner prints `/scoria` + a handful of screens. But the maintainer also needs to reach nested routes (prompts/:id/release, the Traefik dashboard at :8080, the fallback `make url` port). Today the banner omits the fallback URL and the Traefik admin URL, which are the two things you need when something breaks. Vite and Tilt both print the full set of reachable URLs at startup. Developers should never have to grep for a URL after `make up`. | LOW | docker/dev-entrypoint.sh | Add three sections to the banner: (1) PRIMARY URLs (full Traefik + fallback — print both, with the fallback populated at startup rather than telling users to run `make url`), (2) KEY ROUTES (copy-paste-ready relative paths, grouped by function), (3) OPS COMMANDS (seed, reseed, shots, critique). See microcopy spec below. |
-| **Correct verification copy** | Every GSD plan, agent prompt, and phase checkpoint previously pointed at the old fixed localhost dashboard URL. This is wrong: `:4000` is fleet-owned, and the real entry is `make up`/`make dev` -> `<instance>.localhost/scoria` or `http://localhost:4799/scoria`. Wrong verification copy causes silent failures where an agent validates the wrong URL and reports a pass. | LOW | docs/docker_dev_dx.md, banner | Audit and update: (a) all fixed-port localhost references in `.planning/` and `docs/`, (b) the MAINTAINERS.md operator verification section, (c) the banner itself, (d) any GSD phase script snippets. Correct form: `make up` -> `http://scoria-<branch>.localhost/scoria`. |
-| **Dockerfile layer-order audit (no dep-refetch on style edit)** | Users paying attention to DX expect that a CSS or HEEx-only edit never triggers `mix deps.get` or a full recompile. This is the #1 Docker DX footgun for Elixir: copying all source before `mix deps.get` defeats BuildKit caching entirely. The named volumes already protect runtime recompile, but the BUILD path (used by `make up --build`) needs layer order verification. | MEDIUM | Dockerfile.dev | Verified pattern: COPY mix.exs mix.lock ./ → RUN mix deps.get → COPY lib/ config/ priv/ ... Do NOT COPY . . before deps.get. Any change to non-manifest source files (lib/, assets/, priv/) must land in layers AFTER the deps layer. Document the invariant in a comment in Dockerfile.dev. |
-| **Secrets pattern: rotate `.env` key + flag plaintext risk** | `.env` holds what appears to be a real `ANTHROPIC_API_KEY` in plaintext. Even gitignored files are visible in process lists, shell history, and Docker build context if not excluded. A maintainer running multiple OSS repos expects at minimum: (a) confirmation the key is rotated, (b) a clear ".env.example" showing the shape without values, (c) an opt-in path to 1Password CLI / direnv for secret injection. Scoria's brand voice is "operator-grade"; shipping with a plaintext secret visible to anyone who runs `env` in the container is inconsistent with that. | LOW–MEDIUM | .env, docker/dev-entrypoint.sh | Immediate: Rotate the key. Doc: add `.env.example` (checked in) + `.env` (gitignored). Opt-in pattern: `op run -- make up` via 1Password CLI; or `direnv` + `.envrc` (also gitignored) with `export ANTHROPIC_API_KEY=$(op read "op://...")`. Document both options in the fleet secrets section of docs/docker_dev_dx.md without mandating either (solo maintainer may not have 1Password). |
-| **Post-publish registry semver upgrade smoke** | After merging the release-please PR and publishing 0.1.1, the maintainer needs proof that the live Hex package installs correctly at the new version before closing the milestone. Scoria already ships `mix scoria.post_publish_smoke` for this purpose (implemented in v2.10). The table-stakes requirement is that this task is wired into the release workflow and the post-publish step is documented. | LOW | Existing `mix scoria.post_publish_smoke` | Run `mix scoria.post_publish_smoke` after `mix hex.publish`. Confirm the workflow step exists in `.github/workflows/hex-publish.yml` (or equivalent). Document the manual trigger path in MAINTAINERS.md for the case where CI skips it. |
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Correct span-kind enum on every span, not a free-text/2-value string | Every peer (OpenInference's 10-value `openinference.span.kind`; OTel's `gen_ai.operation.name` = `chat`/`embeddings`/`execute_tool`/`invoke_agent`) treats span-kind as the primary trace-tree organizing attribute. Scoria's own dashboard UI already assumes an 8-value enum but the 2 live adapters emit only `"LLM"`/`"INTERNAL"`. | LOW | This is "finish the half-built thing," not new design — see PITFALLS-adjacent framing in SEED-007. |
+| `gen_ai.request.*` model-config attributes on every LLM span (`temperature`, `top_p`, `max_tokens`, `seed` at minimum) | The literal OTel-official attribute names, and table stakes for Scoria's own replay/recovery claim — replay without model params is silently wrong. | LOW | Params already sit in ReqLLM request opts; only wiring is missing. A real Elixir hex package (`opentelemetry_semantic_conventions` v1.27.0, `opentelemetry-semantic-conventions.hexdocs.pm/gen-ai.html`) already defines these as constants — worth depending on directly or mirroring key-for-key. |
+| `gen_ai.usage.input_tokens`/`output_tokens` + `gen_ai.response.model`/`id`/`finish_reasons` on LLM spans | Cost/latency attribution is the #1 reason teams adopt any trace tooling. | LOW | Currently only a non-conventional `"llm.token_count"` total is captured (`lib/scoria/observe/adapters/req_llm.ex:18`) — no input/output split. |
+| `openinference.span.kind` portability attribute written alongside Scoria's own `span_kind` column | This is the literal "your traces aren't locked into Scoria" claim — any OTel/OpenInference-reading backend (Langfuse, Arize Phoenix, Datadog) must be able to render the trace with zero translation layer on the reader's side. | LOW | Must be an *exact-string match* to the OpenInference enum (uppercase `LLM`/`TOOL`/etc.), which differs from Scoria's own lowercase UI vocabulary — requires a small translation table at write time (see Span-Kind Mapping). |
+| Tool/retrieval/guardrail/prompt-render emitted as real child **spans** with `parent_id` linkage, not point events | Every peer (OTel `execute_tool`; OpenInference `TOOL`/`RETRIEVER`/`PROMPT`/`GUARDRAIL`) models these as spans because they have duration and can independently fail/error. | MEDIUM | New emission call sites needed in both adapters plus guardrail/prompt-render code paths. Validated below in Spans vs Events. |
+| Host-declared tag/metadata attributes for later segmentation | Langfuse's `tags`/`metadata`/`propagate_attributes()`, LangSmith, and every serious trace backend give hosts a supported way to stamp spans/traces with app-level dimensions; without it operators can't answer "which feature/route is expensive, slow, or wrong." | LOW | Scoria just needs to reserve + document the key names; the host writes the values. |
+| `RETRIEVER` span linked via `trace_id`/`span_id` surfacing query/`top_k`/backend | RAG is now a default pattern; every RAG-aware trace tool treats retrieval as a first-class traced step, not an opaque sub-call inside the LLM span. | LOW | `ai_retrieval_runs` already has `trace_id`/`span_id` columns (`lib/scoria/knowledge/retrieval_run.ex:16-17`) — plumbing exists, unemitted. |
+| Point-event vocabulary for content-bearing / instantaneous signals, separate from structural spans (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`) | OTel's own GenAI spec puts full prompt/completion **content** on events (via the Logs API signal), not span attributes — specifically because it's opt-in and PII-sensitive, and because these moments have no meaningful duration. | LOW-MEDIUM | Resurrects `ai_span_events` (`lib/scoria/repo/span_event.ex`, currently dead — belongs_to a span, `name`/`time`/`attributes`). Functionally equivalent to OTel's Logs-signal approach but stays inside the same table family (matches scope doctrine P5: reconstructable in the host's own DB). |
 
-### Differentiators (Competitive Advantage for the Maintainer Persona)
+### Differentiators (Competitive Advantage)
 
-| Feature | Value Proposition | Complexity | Depends On | Notes |
-|---------|-------------------|------------|------------|-------|
-| **Self-documenting `make help` as default goal** | Running `make` with no arguments currently runs `proxy` (first target). Best-in-class dev tooling (Vite, `just`, modern Makefiles) makes the default goal a formatted help screen — so a first-time contributor (or the maintainer returning after a month) immediately sees every command with a one-line description. The `##` comment pattern (parse with awk) keeps docs co-located with targets. `just --list` behavior is widely praised as the gold standard; Makefile can replicate it cheaply. | LOW | Existing Makefile | Add a `help:` target using the `##` comment awk pattern. Set `.DEFAULT_GOAL := help`. Each target already has `## comment` — the awk is a 3-line addition. Output should look like a formatted table with `proxy`, `up`, `dev`, `nuke` etc. This is zero maintenance because the docs are the target comments. |
-| **`make fleet` — live instance inventory** | Running many OSS libs at once means forgetting which instances are up. A `make fleet` that shows all scoria-prefixed compose projects (names, URLs, status) gives the maintainer a dashboard over their running fleet without leaving the terminal. Tilt's `tilt status` does this; overmind does for process groups. Cross-ecosystem lesson: tools that show state reduce "why is my port taken?" debugging time by 90%. | LOW | Docker CLI | `docker ps --filter "name=scoria-"` or `docker compose ls --filter name=scoria`. Optional: parse `SCORIA_HOST` labels from container env and print the Traefik URL for each. |
-| **Banner: populated fallback URL at boot (not "run make url")** | The current banner says "run `make url` for the ephemeral 127.0.0.1 port". But at entrypoint time the PORT is known from the `PORT` env var. Printing the actual resolved port in the banner (rather than deferring to `make url`) means developers never have to run a second command to get the fallback. Vite and Phoenix both print resolved URLs at startup. | LOW | docker/dev-entrypoint.sh | Inside the entrypoint, interpolate `http://127.0.0.1:${PORT:-4000}/scoria` directly into the banner. Document that `make url` resolves the exact ephemeral mapping from the host side (the two values are equivalent but `make url` is more precise). |
-| **`docs/docker_dev_dx.md` reader-empathy restructure** | The current doc is technically accurate but front-loads the model explanation before the gameplan. Rails Guides and Laravel Sail docs both lead with a "quick start in 60 seconds" block, then explain why. A maintainer returning after a month wants: (1) do I need to run `make proxy` again? (2) what's my URL? (3) how do I nuke a stale instance? — before any model explanation. The current doc answers these but buries them in prose. | LOW | docs/docker_dev_dx.md | Structural rewrite: (1) Persona/JTBD box at top, (2) Gameplan summary (3 bullet prerequisites + 2 commands), (3) Quick reference table (target → what it does → when to use), (4) The model (already excellent), (5) Multi-instance deep-dive, (6) Caching guarantees (with the Dockerfile layer invariant), (7) Fleet secrets pattern, (8) Hygiene / stale instances, (9) Adopting in another repo. Keep existing prose (it is good) — restructure, don't rewrite from scratch. |
-| **`.env.example` as checked-in shape document** | A `.env.example` checked into the repo gives three wins: (a) new contributors immediately know what vars are required, (b) CI can warn if `.env` is missing a required var, (c) it documents which vars are secrets (and thus should come from 1Password/direnv) vs which are config (can be plain values). This pattern is universal across Laravel/Rails/Node toolchains. Currently there is no `.env.example` in Scoria. | LOW | .env | Create `.env.example` with all vars present but secrets set to `REPLACE_ME` or `op://Scoria Dev/...`. Annotate each line with a comment. Leave `.env` gitignored. |
-| **Release-please PR merge checklist in MAINTAINERS.md** | The existing post-publish smoke is already wired (v2.10). The differentiator is a copy-pasteable runbook: (1) CI green on release-please PR? → merge, (2) Wait for hex-publish workflow, (3) Run `mix scoria.post_publish_smoke`, (4) Verify hex.pm badge shows new version. This reduces cognitive load for a solo maintainer doing a release after weeks of feature work. Cross-ecosystem lesson from release-please's own docs: the PR merge step is the only human action; everything else should be automated. | LOW | MAINTAINERS.md, existing workflows | Add a "Cutting a release" section to MAINTAINERS.md with 4 numbered steps. No new tooling needed. |
-| **Verified CSS/HEEx-only edit does NOT rebuild image** | The existing named-volume + bind-mount strategy means runtime recompile is already fast, but the `make up --build` path (used after pulling changes) needs an explicit cache-hit guarantee documented and verifiable. Cross-ecosystem lesson from Vite: the DX story is only complete when you can TELL THE USER what is and isn't cache-invalidating. Scoria should add a one-line comment block to Dockerfile.dev documenting the layer invariant. | MEDIUM | Dockerfile.dev | Document in Dockerfile.dev: "Layer order invariant: mix.exs/mix.lock in layer N; source files in layer N+1+. Do not COPY source before mix deps.get." The audit itself is the MEDIUM-complexity part; the documentation is trivial once the audit is done. |
-| **Fleet secrets standardization via `.env.op` + `op run`** | For a maintainer running 8+ OSS repos, managing per-project `.env` files with real secrets is a single-key-rotation nightmare. The 1Password `op run -- make up` pattern (`.env.op` with `op://Vault/Item/field` references, never touched by plain `env`) gives: Touch ID injection, zero plaintext on disk, one secret rotation propagates everywhere. Direnv + `.envrc` is the simpler fallback for users who don't have 1Password. The key point for docs: present BOTH patterns, make them opt-in, and document that the plain `.env` path is still valid for local dev if you rotate regularly. | MEDIUM | docs/docker_dev_dx.md, .env | Add a "Secrets" section to the doc. Provide `.env.op.example`. Document `op run -- make up`. Add a one-sentence note in the banner if `ANTHROPIC_API_KEY` is missing: "ANTHROPIC_API_KEY not set — screenshots work but critique requires it." |
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| `embedding_model` / `index_version` / `reranker` fields on the `RETRIEVER` span (not separate spans) | This is exactly the "attribute a quality delta to a retrieval config" claim the whole milestone exists for. `index_version` in particular has **no OpenInference/OTel equivalent** — peers don't version their knowledge base in-span. | LOW | Field-on-span, not a new span kind — matches the convention-over-columns discipline. |
+| Context-pack / token-budget composition capture — which chunks + which memories + the token split that actually entered the assembled prompt, alongside `gen_ai.usage.input_tokens` | Multiple independent industry sources describe this as an unsolved, manually-instrumented gap: *"did retrieval miss the evidence, or did prompt assembly drop it?"* No current OTel or OpenInference attribute answers this. Being early here is the differentiator, and it is the single highest-leverage attribute for this milestone's actual stated goal. | LOW | Convention-key-only, riding the existing `PROMPT` span's attributes map — no new primitive. Keep scope narrow: chunk IDs + per-source token counts, not full chunk text (already covered by `ai_retrieval_runs`/`evidence_refs`). |
+| Host-declared `archetype`/`intent` as reserved, *documented* keys (vs. Langfuse's fully generic open metadata bag) | Scoria ships an opinionated, pre-named taxonomy rather than an open bag — this becomes the stable join key SEED-012 (per-route analytics) and SEED-013 (scope bar) read with **zero new primitive**. A generic bag doesn't buy that cross-seed leverage. | LOW | Host declares; Scoria never infers (see Anti-Features). |
+| `RETRIEVER` span dual-written alongside the richer `ai_retrieval_runs` system-of-record | Gives portability (any OTel/OpenInference backend sees a real `RETRIEVER` span) without losing typed grounding-score/result detail no generic attributes-map span could hold. | LOW-MEDIUM | Write to both; no migration, no collapse. |
 
-### Anti-Features (Do Not Build)
+### Anti-Features (Commonly Requested, Often Problematic)
 
-| Anti-Feature | Why Requested | Why Problematic | Alternative |
-|--------------|---------------|-----------------|-------------|
-| **Migrate `make` to `just`** | `just` has better ergonomics (no .PHONY, spaces OK, `just --list`). Many blog posts declare Makefile dead. | Makefile already exists and works. Introducing `just` requires every contributor and every sibling-repo adopter to install a new binary. The szTheory DNA is "zero-config onboarding" — adding a build prerequisite contradicts it. The benefit is cosmetic. | Add `make help` as the default goal with the `##` awk pattern. This gives `just --list` behavior from the existing tool. |
-| **Caddy or nginx-proxy as Traefik replacement** | Caddy has simpler config; nginx-proxy is older but widely known. Some tutorials recommend them for local dev. | Traefik + `*.localhost` is shipped and verified live across two instances. A bake-off is explicitly out of scope per the milestone constraint. Switching would invalidate the existing docs and every adopter template. | Stay on Traefik. Document Caddy as an alternative only in the cross-repo adoption note if a sibling repo strongly prefers it — out of v3.2 scope. |
-| **dnsmasq / /etc/hosts as the default path** | `*.localhost` does not work in Safari or in `curl` without headers. Some want full wildcard DNS for all browsers. | dnsmasq setup requires `sudo`, daemon management, and `/etc/resolver/` file manipulation. It is a significant system-level footgun if misconfigured. Most dev work happens in Chrome/Chromium where `*.localhost` works natively. | Keep dnsmasq as the optional path already documented. Don't make it the default. Print a Safari note in the docs (already present). |
-| **Auto-assign PORT via shell subcommand in Makefile** | Truly conflict-free port for `make dev` native mode, zero configuration needed. | Shell calls in Makefile variable assignment run at parse time, are slow, and break in unexpected ways across make versions. The complexity is not worth it for a port that is used only in native mode (`make dev`), which already has the Docker fallback. | Bake in a fixed non-4000 default (4799). It will not collide with 4000 or the macOS ephemeral range. Document that `PORT=XXXX make dev` overrides it. |
-| **Commit `.env` to git "for convenience"** | Onboarding friction — a new contributor has to copy `.env.example` manually. | Plaintext secrets in git history are unrecoverable without a full rewrite. This is a hard security anti-pattern regardless of audience. | `.env.example` checked in + clear one-line setup instruction in the README or Quick Start section of the doc. |
-| **`make dev` that boots Docker (not native)** | Consistency — one command for Docker and native alike. | `make dev` is explicitly the native host server path. Conflating Docker and native paths under one target causes confusion about which asset watcher is running. The split is intentional: `make up` = Docker, `make dev` = native. | Keep the split. Document it clearly: `make dev` = native livereload; `make up` = Dockerized harness. |
-| **Single-banner "everything" approach** | More information is better; the banner is the one place all context lives. | A 60-line banner is worse than a 20-line banner. Cognitive overload defeats the purpose. Best-in-class banners (Vite, Phoenix itself) show ONE thing clearly: "Your app is at X." | Keep the banner focused: 3 sections max (URLs, key routes, ops commands). Full route reference lives in the doc, not the banner. |
-| **Sibling-repo migration (rulestead/parapet/etc.) in this milestone** | Completing the fleet standard across all repos while the doc is being improved. | Out of scope per PROJECT.md decision. Migrating sibling repos is a separate initiative (docker-dx-fleet-hardening todo). Doing it now dilutes focus and risks introducing cross-repo regressions inside the v3.2 window. | Document the "Adopting in another repo" section in docs/docker_dev_dx.md as the portable standard. Sibling migration stays in the cross-repo todo. |
-| **HTTPS locally (mkcert + self-signed cert)** | Some APIs require HTTPS even locally. | Non-trivial setup (mkcert, Traefik TLS config, browser trust stores). The `*.localhost` domain is treated as secure-context in Chrome without HTTPS. Real HTTPS need is rare for a dashboard dev harness. | Document mkcert as a future option. Do not implement it in v3.2. |
-| **Automated multi-instance fleet health check in CI** | "Is the fleet healthy?" as a CI gate. | CI should not be aware of local Docker state. Fleet health is a runtime/local concern, not a merge gate. A CI job that talks to local Docker would require a self-hosted runner and is a massive DX regression. | `make fleet` for local inspection only. CI gate stays on unit tests + existing lane contracts. |
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|------------------|-------------|
+| Auto-inferred `archetype`/`intent`/`feature` classifier | "Scoria could just detect what kind of request this is" | Violates Scoria's own scope doctrine (P1 business-truth / P2 opinion) — Scoria doesn't get to assert what a request *means*, only record what the host declares. An inferred label baked into governance evidence is a guess presented as fact. | Host declares via the reserved attribute keys; Scoria documents the convention and stays silent (no key) if the host doesn't set it. |
+| Typed columns per `gen_ai`/`openinference` attribute (a schema rewrite) | Type safety, indexable queries | Rigid columns invite migration churn pre-1.0 and lock Scoria to today's exact attribute set — which upstream itself still marks **Experimental** and has already renamed once (`gen_ai.system` → `gen_ai.provider.name`). | Conventional key names on the existing jsonb `attributes` map (LOCKED discipline per SEED-007). |
+| Forcing every span kind through `ai_span_events` instead of real child spans | "Just log events, simpler than a span tree" | Loses duration/error/parent-child structure every peer (OTel `execute_tool`; OpenInference `TOOL`/`RETRIEVER`/`PROMPT`/`GUARDRAIL`) treats as span-shaped — would be a strictly worse trace model than every reference implementation. | Structural steps are spans; only true instantaneous/content-bearing signals are events (see Spans vs Events verdict). |
+| Collapsing `ai_retrieval_runs` into a generic span and dropping the table | "One trace model, less code" | Loses typed grounding scores and typed retrieval results a generic attributes-map span can't hold without becoming its own mini-schema; breaks the existing system-of-record other subsystems already read. | Dual-write: span for visibility/portability, table for detail — already the seed's decision, reconfirmed by this research. |
+| A metrics/analytics warehouse inside Scoria (cost dashboards, alerting, time-series rollups, cross-trace aggregation) | "We already have the spans, may as well chart them" | Violates scope doctrine P6 — Scoria is BEAM-native/embedded, not a hosted analytics platform. Every peer that does this (Langfuse, Arize, Datadog) is a *separate hosted product*, not a library. | Emit OTel-shaped/OpenInference-tagged spans; let the host export to its own backend for warehousing — the literal "hook at the edges" framing in the seed. |
+| Always-on, unredacted full prompt/completion text on every LLM/PROMPT span **attribute** | "More debugging detail is always better" | OTel's own spec deliberately keeps full content OFF span attributes and ON opt-in Logs-API events, specifically for PII/proprietary-data risk. Scoria already has a `Redactor` in the observe pipeline (`lib/scoria/observe/redactor.ex`) — content-bearing point-events must route through it, not bypass it. | `prompt_rendered` event carries content, gated through existing redaction; span attributes stay metadata-only (template id, token counts, status). |
+| A literal `CHAIN` span kind mirroring OpenInference 1:1 | "Peer parity — match their full enum" | OpenInference needs `CHAIN` because it has no native workflow/run concept. Scoria already has `ai_traces` + a durable workflow-run model playing the same "glue/start" role — a `CHAIN` kind would be redundant with no distinct UI or attribution use. | Leave it out; document the non-gap explicitly so it isn't "discovered missing" in a later audit. |
+| A separate `EMBEDDING` or `RERANKER` span kind in this milestone | "Closer 1:1 OpenInference parity" | Scope-creep against SEED-007's own "medium-large, not a rewrite" estimate. Neither embedding calls (today folded inside semantic cache / retrieval) nor reranking are yet operator-visible pain points needing independent latency/failure attribution. | Keep `embedding_model`/`reranker` as fields on the `RETRIEVER` span now (already the seed's plan); promote to standalone kinds only if a real attribution need for those specific steps appears later. |
 
----
+## Span-Kind Mapping (Scoria ↔ Peers)
+
+| Scoria `span_kind` | Peer equivalent | Clean match? | Notes |
+|---|---|---|---|
+| `llm` | OpenInference `LLM` / OTel `gen_ai.operation.name=chat` | Clean | Direct 1:1. |
+| `tool` | OpenInference `TOOL` / OTel `execute_tool` | Clean | Direct 1:1. |
+| `prompt` | OpenInference `PROMPT` ("a span that represents the rendering of a prompt template") | Clean — **not Scoria-specific** | **Correction to the seed:** SEED-007 frames `prompt` as one of two Scoria-specific kinds. OpenInference has had an explicit `PROMPT` kind in its spec all along — this maps cleanly, no divergence to document. |
+| `mcp` | No direct OpenInference kind. OTel has a *separate* MCP semantic-conventions track (`mcp.method.name`, `mcp.session.id`, `mcp.protocol.version`) layered on top of what is otherwise a `TOOL`-shaped span. | Hybrid | **Correction to the seed:** `mcp` is not purely invented by Scoria either — OTel has real MCP semconv, just not as an `openinference.span.kind` value. Recommendation: keep `mcp` as Scoria's own `span_kind` (defensible — a remote connector call crosses a real trust/auth boundary distinct from a local tool call, which is the whole point of the Switchyard connector subsystem), but when writing the `openinference.span.kind` portability attribute, map `mcp` → `"TOOL"` and add `mcp.method.name`/`mcp.session.id`/`mcp.protocol.version` as attributes for full peer conformance. |
+| `retriever` | OpenInference `RETRIEVER` | Clean | Direct 1:1. |
+| `guardrail` | OpenInference `GUARDRAIL` | Clean | Direct 1:1. |
+| `eval` | OpenInference `EVALUATOR` | Clean (name differs) | Same concept; keep `eval` as Scoria's internal short name, use `"EVALUATOR"` for the `openinference.span.kind` portability value. |
+| `agent` | OpenInference `AGENT` / OTel `invoke_agent` | Clean | Direct 1:1. |
+| *(none)* | OpenInference `EMBEDDING` | Missing — deferred | Not built this milestone. Embedding calls stay implicit inside the `RETRIEVER` span's `embedding_model` field. Candidate future 9th kind only if semantic-cache embed steps need independent tracing. |
+| *(none)* | OpenInference `CHAIN` | Missing — **intentional non-gap** | Scoria's `ai_traces`/workflow-run model already plays this role. Do not add (see Anti-Features). |
+| *(none)* | OpenInference `RERANKER` | Missing — deferred | Reranker stays a field on the `RETRIEVER` span per the seed's plan. Candidate future 9th kind only if reranking latency becomes its own attribution target. |
+
+**Net result:** 7 of Scoria's 8 kinds (`llm`, `tool`, `prompt`, `retriever`, `guardrail`, `eval`, `agent`) map cleanly 1:1 onto peer conventions. 1 (`mcp`) is a legitimate hybrid — Scoria keeps it as a top-level UI/attribution kind but must translate to `TOOL` + `mcp.*` attributes for portability. Of the 10 OpenInference kinds, Scoria is missing 3: `EMBEDDING` and `RERANKER` are reasonable v3.6 scope deferrals (field-not-span for now), `CHAIN` is an intentional non-gap because Scoria's workflow/trace model already fills that role.
+
+## Spans vs Events — Validated
+
+**Verdict: the seed's decision is correct.** OTel's own GenAI spec draws the same line Scoria proposes, just via a different mechanism: structural steps with duration and failure modes go on **spans** (`chat`, `execute_tool`, `invoke_agent` are real OTel spans; OpenInference's `TOOL`/`RETRIEVER`/`PROMPT`/`GUARDRAIL` are span kinds, not events) — this validates emitting `tool`/`prompt`/`retrieval`/`guardrail` as child spans. Full prompt/completion **content**, by contrast, is deliberately kept off span attributes and instead emitted via OTel's Logs-API events signal, specifically because content is opt-in and PII/proprietary-data-sensitive and has no duration of its own — this validates resurrecting `ai_span_events` narrowly for content-bearing/instantaneous signals only (`prompt_rendered`, `guardrail_triggered`) rather than forcing the whole kind vocabulary through it.
+
+One nuance worth flagging to the roadmap (not a peer-precedent question, an implementation risk): `prompt_rendered` and `guardrail_triggered` fire inline during their parent span's execution, so they have a natural `span_id` at insert time. `user_feedback_received` is the odd one out — feedback often arrives asynchronously, after the span/trace it references may be long closed. `Scoria.Repo.SpanEvent`'s `belongs_to :span` FK must still resolve at insert time even when feedback lands minutes or hours later. Small design note for planning, not a blocker.
+
+## Context-Pack / Token-Budget Composition — Table Stakes vs Differentiator
+
+**Categorized as Differentiator, not table stakes.** Neither the OTel GenAI attribute registry nor the OpenInference spec has a standardized context-pack/composition attribute as of this research. Every RAG-observability discussion found treats "which chunks/memories actually entered the assembled prompt, and what was the token split" as a real, common, and currently *manually instrumented* pain point — it is the direct answer to "did retrieval miss the evidence, or did prompt-assembly drop it?" Recommend building it (it's the highest-leverage single attribute for this milestone's stated goal of attributing a quality delta to what the model actually saw), but categorize it as a differentiator so the roadmap doesn't treat it as launch-blocking if time-constrained. Keep scope to convention keys on the existing `PROMPT` span (chunk IDs + per-source token counts) — not full chunk text, which `ai_retrieval_runs`/`evidence_refs` already own.
+
+## Host-Declared Attribute Convention — Table Stakes vs Differentiator
+
+**Split verdict.** The *capability* — letting a host stamp spans/traces with app-level dimensions for later segmentation — is unambiguous table stakes; Langfuse (`tags` + `metadata` + `propagate_attributes()`), LangSmith, and every serious trace backend supports it, and without it operators cannot answer "which feature/route is expensive, slow, or wrong." Scoria's specific choice to pre-name 4 reserved keys (`feature`/`route`/`archetype`/`intent`) rather than expose an open bag is the differentiator — it turns the convention into a stable, discoverable, cross-seed contract (SEED-012 per-route analytics, SEED-013 scope bar) instead of an ad hoc key namespace every host reinvents. The hard boundary either way: Scoria documents and reserves the keys; it must never populate them itself (see Anti-Features — auto-inferred classifier).
 
 ## Feature Dependencies
 
 ```
-make help (default goal)
-    └──requires──> Makefile ## comment annotations (already present, just need awk target)
+span_kind taxonomy fix (8-value enum + openinference.span.kind mapping)
+    └──requires (blocks)──> structured span emission (tool/prompt/retrieval/guardrail as child spans)
+                                └──requires──> ai_span_events resurrection (point-events need a stable parent span_id)
 
-make nuke (instance cleanup)
-    └──requires──> COMPOSE_PROJECT_NAME derived correctly (already exists)
-    └──enhances──> stale instance hygiene doc section
+ai_retrieval_runs (already has trace_id/span_id)
+    └──enables──> RETRIEVER span emission (linking only; no migration for the link)
+                     └──requires (new fields)──> embedding_model / index_version / reranker migration on ai_retrieval_runs
 
-make fleet (inventory)
-    └──requires──> docker ps + compose ls (Docker CLI, always present)
-    └──enhances──> stale instance hygiene doc section
+structured PROMPT span existing
+    └──requires (foundation for)──> context-pack / token-budget composition keys (rides the PROMPT span's attributes map)
 
-Banner populated fallback URL
-    └──requires──> PORT env var available in entrypoint (already set)
-    └──requires──> docker/dev-entrypoint.sh modification
+host-declared feature/route/archetype/intent
+    (no dependency on anything else in this milestone — pure documentation + reserved-key convention, can ship first/independently)
 
-.env.example (checked-in shape doc)
-    └──required-before──> fleet secrets section in docs
-
-Fleet secrets (op run / direnv)
-    └──requires──> .env.example committed
-    └──requires──> docs/docker_dev_dx.md secrets section written
-
-Dockerfile layer invariant documented
-    └──requires──> Dockerfile.dev audit (verify COPY order is correct)
-    └──enhances──> docs/docker_dev_dx.md caching guarantee section
-
-docs/docker_dev_dx.md restructure
-    └──requires──> All above features implemented (so the doc reflects final state)
-    └──requires──> make nuke target exists (hygiene section can reference it)
-    └──requires──> .env.example committed (secrets section can reference it)
-
-Correct verification copy
-    └──requires──> Banner updated (knows the real URL pattern)
-    └──requires──> docs/docker_dev_dx.md restructure complete
-
-make dev PORT=4799 default
-    └──conflicts_with──> any hardcoded raw-Phoenix fixed-port verification copy
-                         (verification copy update must happen in the same pass)
-
-Release-please merge + post-publish smoke
-    └──requires──> CI green on release-please PR
-    └──requires──> mix scoria.post_publish_smoke exists (already shipped v2.10)
-    └──requires──> MAINTAINERS.md release runbook section
+README accuracy fix ("OpenInference-compatible")
+    └──depends on──> span_kind taxonomy fix actually landing (can't claim compatibility before span_kind values match the enum)
 ```
 
----
+### Dependency Notes
 
-## MVP Definition (v3.2 Drydock Scope)
+- **Structured span emission requires the span-kind taxonomy fix first:** there's no stable "kind" to attach a child span to until the 8-value convention (plus the `openinference.span.kind` translation table) is in place.
+- **`ai_span_events` resurrection is a hard prerequisite for the point-event vocabulary**, not optional plumbing — the dead schema (`lib/scoria/repo/span_event.ex`) has no migration currently applied/used; this must land before `prompt_rendered`/`guardrail_triggered`/`user_feedback_received` emission code exists.
+- **`ai_retrieval_runs` needs no new migration for `trace_id`/`span_id` linkage** (already present) but does need one for the 3 new fields (`embedding_model`/`index_version`/`reranker`) — small, additive, no collapse of the table.
+- **Context-pack capture rides the `PROMPT` span**, so it is sequenced after structured span emission, not parallel to it.
+- **Host-declared attributes have zero technical dependency** on the rest of the milestone and are the safest first-landed piece — pure naming/documentation.
 
-### Must Ship (v3.2)
+## MVP Definition
 
-These are the concrete gaps from the backlog. Nothing here is new invention — all are hygiene and polish on an already-shipped foundation.
+Framed as "must ship this milestone" vs. "safe to defer," since SEED-007 is a single scoped milestone, not a multi-release roadmap.
 
-- [x] `make dev` default PORT to 4799 (one line in Makefile) — eliminates the `:4000` collision
-- [x] Local key exposure closeout completed via no-Git-exposure attestation; no local-only key rotation claimed or required
-- [x] `.env.example` committed (plaintext shape, secrets as `REPLACE_ME`)
-- [x] `make nuke` target (instance-scoped `compose down -v --remove-orphans`) — escape hatch for stale instances
-- [x] `make fleet` target — live inventory of running scoria-* compose projects
-- [x] `make help` as `.DEFAULT_GOAL` with `##` awk self-documentation — zero friction discoverability
-- [x] Banner update: add populated fallback URL, Traefik admin URL (:8080), cleaner key-route grouping
-- [x] Correct all raw-Phoenix fixed-port verification copy in `.planning/` and `docs/`
-- [x] Dockerfile.dev layer order verified + invariant documented in a comment block
-- [x] `docs/docker_dev_dx.md` restructure: persona/JTBD box → gameplan → quick-ref table → model → caching → secrets → hygiene → adopter guide
-- [x] Fleet secrets section in doc: `.env` (rotate), `.env.op` (op run), `.envrc` (direnv) — three tiers, all opt-in
-- [ ] Maintenance release: merge release-please PR #3 on green CI → post-publish smoke → close
-- [ ] MAINTAINERS.md: add 4-step release runbook
+### Launch With (v3.6)
 
-### Defer After v3.2
+- [ ] `span_kind` taxonomy fix (8-value convention, both adapters stop emitting `"LLM"`/`"INTERNAL"` only) + `openinference.span.kind` portability attribute with the `mcp`→`TOOL` translation
+- [ ] `gen_ai.request.*` (temperature/top_p/max_tokens/seed) + `gen_ai.usage.*`/`gen_ai.response.*` on LLM spans
+- [ ] `tool`/`prompt`/`retrieval`/`guardrail` emitted as real child spans
+- [ ] `ai_span_events` resurrected, scoped to exactly 3 point-events (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`)
+- [ ] `RETRIEVER` span emission + `embedding_model`/`index_version`/`reranker` fields, `ai_retrieval_runs` kept as system-of-record
+- [ ] Host-declared `feature`/`route`/`archetype`/`intent` reserved keys, documented
+- [ ] README accuracy fix ("OpenInference-style" → "OpenInference-compatible")
 
-- [ ] `make nuke-all` (fleet-wide cleanup) — useful but rare; `make nuke` + `docker system prune` covers 99% of cases
-- [ ] `make build-dry` (cache-hit verification run) — Dockerfile comment is sufficient for now
-- [ ] Sibling-repo migration — explicit out-of-scope per PROJECT.md
-- [ ] HTTPS locally (mkcert) — not needed for Chrome-based dev harness
-- [ ] dnsmasq as default path — optional path already documented, leave it
+### Add After Validation (v3.6 stretch / fast-follow)
 
----
+- [ ] Context-pack / token-budget composition keys — differentiator-tier, not launch-blocking; first candidate to slip if the milestone runs long
+
+### Future Consideration (v3.7+)
+
+- [ ] `EMBEDDING` span kind — only if semantic-cache embed steps need independent tracing
+- [ ] `RERANKER` span kind — only if reranking latency becomes its own attribution target
+- [ ] Track upstream `gen_ai.system` → `gen_ai.provider.name` rename (OTel GenAI semconv is still Experimental-stability; expect further churn before it stabilizes)
 
 ## Feature Prioritization Matrix
 
-| Feature | Maintainer Value | Implementation Cost | Priority |
-|---------|-----------------|---------------------|----------|
-| `make dev` PORT=4799 default | HIGH (eliminates daily collision) | LOW (one line) | P1 |
-| Rotate ANTHROPIC_API_KEY | HIGH (security) | LOW | P1 |
-| `.env.example` | HIGH (shapes expectations) | LOW | P1 |
-| `make nuke` target | HIGH (escape hatch) | LOW | P1 |
-| `make help` default goal | HIGH (discoverability) | LOW | P1 |
-| Banner: populated fallback URL + grouping | HIGH (stops "where's my app?") | LOW | P1 |
-| Correct verification copy | HIGH (stops false-pass agent runs) | LOW | P1 |
-| Maintenance release (merge PR #3) | HIGH (0.1.1 on hex.pm) | LOW (procedural) | P1 |
-| Dockerfile layer audit + comment | MEDIUM (confidence, not blocker) | MEDIUM (verify + document) | P2 |
-| `docs/docker_dev_dx.md` restructure | MEDIUM (reader empathy) | MEDIUM (restructure, not rewrite) | P2 |
-| Fleet secrets doc (op run / direnv) | MEDIUM (fleet hygiene) | LOW | P2 |
-| `make fleet` target | MEDIUM (fleet visibility) | LOW | P2 |
-| MAINTAINERS.md release runbook | MEDIUM (future-self docs) | LOW | P2 |
-| `make nuke-all` | LOW (rare edge case) | LOW | P3 |
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| `span_kind` taxonomy fix + `openinference.span.kind` | HIGH | LOW | P1 |
+| `gen_ai.request.*`/`usage.*` model-config capture | HIGH | LOW | P1 |
+| Structured tool/prompt/retrieval/guardrail child spans | HIGH | MEDIUM | P1 |
+| `ai_span_events` resurrection (3 point-events) | MEDIUM | LOW-MEDIUM | P1 |
+| `RETRIEVER` span + embedding_model/index_version/reranker | HIGH | LOW | P1 |
+| Host-declared feature/route/archetype/intent | MEDIUM | LOW | P1 |
+| README accuracy fix | LOW (trust-adjacent) | LOW | P1 |
+| Context-pack / token-budget composition | HIGH (for eval attribution) | LOW | P2 |
+| `EMBEDDING` span kind | LOW (no current pain signal) | MEDIUM | P3 |
+| `RERANKER` span kind | LOW (no current pain signal) | LOW-MEDIUM | P3 |
 
----
+**Priority key:**
+- P1: Must have for this milestone (SEED-007 scope)
+- P2: Should have, add if time allows within this milestone
+- P3: Future milestone, only if a concrete operator need appears
 
-## Operator-Surface Specifications (Concrete and Microcopy-Level)
+## Competitor Feature Analysis
 
-### Banner: Recommended Structure
-
-The banner lives in `docker/dev-entrypoint.sh`. The current banner is structurally sound but has three gaps: (1) the fallback URL is deferred to `make url` rather than printed inline, (2) there is no Traefik admin link, (3) the screen list is a flat dump rather than grouped by operator workflow.
-
-**Recommended banner structure (25 lines, 3 sections):**
-
-```
-────────────────────────────────────────────────────────────────────
-  Scoria — dev harness ready   (instance: ${INSTANCE})
-────────────────────────────────────────────────────────────────────
-
-  URLs
-    Dashboard:   http://${HOST}/scoria
-    Fallback:    http://127.0.0.1:${PORT:-4000}/scoria   (if Traefik is down)
-    Proxy UI:    http://localhost:8080
-
-  Key routes
-    /scoria                          Status Home
-    /scoria/approvals                Approvals
-    /scoria/workflows                Workflows
-    /scoria/reviews                  Review Queue
-    /scoria/prompts                  Prompt Registry
-    /scoria/prompts/:id/release      Release Workbench
-    /scoria/connectors               Connectors
-
-  Ops
-    make seed          re-run seed (no downtime)
-    make reseed        clean slate (drops DB volume)
-    make shots         screenshots  (no API key needed)
-    make critique      screenshots + LLM critique
-
-────────────────────────────────────────────────────────────────────
-```
-
-**Microcopy principles applied:**
-
-- "dev harness ready" not "is up." "Ready" implies deps fetched and DB migrated, which is what just happened. "Is up" implies the process started — that's a weaker claim.
-- Fallback note "(if Traefik is down)" is parenthetical — it reduces anxiety without implying Traefik is fragile.
-- "Proxy UI" not "Traefik dashboard" — the user's mental model is "proxy," not the product name.
-- Routes are grouped by operator workflow, not alphabetically. The scan pattern is: first check status, then approve/review, then configure.
-- Ops section uses imperative verbs (`make seed`, not `run make seed`) — reads as a command palette.
-- No intro sentence before the box. Open with the box. Every sentence before the first separator is wasted vertical space in a terminal.
-
-### `make help` Output (Recommended)
-
-The awk pattern reads `## comment` from each target. Target output:
-
-```
-Usage:  make <target>
-
-  proxy        start the shared Traefik proxy (once per machine)
-  up           build + run this instance (foreground)
-  up-d         build + run detached, then print URLs
-  down         stop this instance
-  dev          native server with live reload (PORT=4799 by default)
-
-  seed         re-run seed against running instance (no downtime)
-  reseed       drop this instance's DB + rebuild
-  nuke         stop + remove this instance's volumes (clean slate)
-  fleet        show all running scoria-* compose instances
-
-  url          print this instance's URL + ephemeral fallback
-  open         open this instance in the browser (macOS)
-  logs         tail the web container
-
-  shots        capture screenshots (no API key)
-  critique     screenshots + LLM critique (needs ANTHROPIC_API_KEY)
-  help         show this help
-```
-
-**Microcopy principles:**
-
-- Grouped by lifecycle order: start → operate → inspect → harness. Users read top to bottom.
-- `dev` shows the default PORT inline — documents the override without a separate section.
-- `nuke` is described physically ("stop + remove volumes"), not emotionally ("destroy").
-- No target description longer than one line. If it needs a paragraph, it goes in the doc.
-
-### `docs/docker_dev_dx.md` Recommended Structure
-
-**Current structure (reader-empathy audit):**
-
-The current doc leads with `TL;DR` (good) then immediately dives into "The model (and why)" — which is a great section but wrong placement for a returning maintainer who just wants to know what command to run. The JTBD is implicit (never stated). The caching guarantees, secrets pattern, and hygiene flow are absent.
-
-**Recommended restructured outline:**
-
-```
-# Docker dev DX — multi-instance, no port conflicts
-
-> You run many Elixir/Phoenix OSS lib demos at once on one Mac. This is the standard that
-> makes that hands-off: one Traefik proxy, branch-derived URLs, no published ports, no
-> port juggling, no stale containers shadowing your routes.
-
-## Quick Start (60 seconds)
-
-Prerequisites: Docker Desktop running, `make proxy` run once (one-time, machine-wide).
-
-    make up    # → http://scoria-<branch>.localhost/scoria
-    make dev   # → http://127.0.0.1:4799/scoria  (native, live reload)
-
-## Command Reference
-
-| Target         | What it does                            | When to use              |
-|---------------|------------------------------------------|--------------------------|
-| make proxy    | Start Traefik (once per machine)         | After Docker restarts    |
-| make up       | Build + start this instance (foreground) | Normal dev               |
-| make up-d     | Build + start detached, print URLs       | Background work          |
-| make down     | Stop this instance                       | Done for the day         |
-| make dev      | Native server, live reload, PORT=4799    | CSS/JS iteration         |
-| make nuke     | Stop + remove this instance's volumes    | Stale state, full reset  |
-| make fleet    | Show all running scoria-* instances      | Multi-instance audit     |
-| make url      | Print URLs for this instance             | When banner scrolled     |
-| make open     | Open in browser (macOS)                  | Quick access             |
-| make seed     | Re-run seed (no downtime)                | Refresh demo data        |
-| make reseed   | Clean slate (drops DB)                   | Full reset               |
-
-## The Model (and Why)
-
-[existing prose — keep as-is; already excellent]
-
-## Multi-Instance Isolation
-
-[existing prose — keep, minor edits]
-
-## Caching Guarantees
-
-[new section]
-
-A css/HEEx-only edit does NOT trigger dep refetch or full recompile. Here's why:
-
-- Source is bind-mounted. Editing code inside the running container is instant.
-- deps, _build, ~/.hex, ~/.mix are named volumes. They shadow the bind mount and
-  survive `make up --build`. No dep refetch on source edit.
-- Dockerfile layer order: mix.exs + mix.lock are copied before RUN mix deps.get.
-  A source-only edit lands in a later layer. Only mix.lock changes bust the dep cache.
-- BuildKit cache mounts for apt and Hex/rebar persist across full rebuilds.
-
-What WILL bust the cache:
-- Changing mix.lock (correct — deps changed)
-- Changing mix.exs (correct — dep manifest changed)
-- Editing Dockerfile.dev itself
-
-## Secrets
-
-[new section — three tiers, all opt-in]
-
-### Tier 1 — Local .env (fastest, rotate periodically)
-Copy .env.example → .env and fill in real values.
-Rotate ANTHROPIC_API_KEY when needed at anthropic.com/console.
-
-### Tier 2 — 1Password CLI (recommended for fleet maintainers with 1Password)
-op run -- make up
-Uses .env.op with op:// references. Secrets are injected in memory at process start
-and never touch disk as plaintext.
-
-### Tier 3 — direnv (simpler CLI automation)
-.envrc (gitignored):
-  export ANTHROPIC_API_KEY=$(op read "op://Scoria Dev/ANTHROPIC_API_KEY/credential")
-cd into the project directory → vars load automatically.
-
-## Stale Instance Hygiene
-
-[new section]
-
-Problem: an old compose project (e.g. scoria_demo) can shadow your branch-scoped URL in
-Traefik, causing confusing 404s or routing to a stale DB.
-
-Diagnosis:
-  make fleet               # list all running scoria-* instances
-  docker compose ls        # list all compose projects on the machine
-
-Fix (this instance):
-  make nuke                # stop + remove THIS instance's volumes + networks
-
-Fix (a specific stale project by name):
-  docker compose -p scoria-demo down -v
-
-Nuclear (full machine reset — removes ALL containers, images, volumes):
-  docker system prune -af --volumes
-
-## Adopting in Another Repo
-
-[existing prose — keep, minor edits for the new targets (nuke, fleet)]
-
-## Files
-
-[existing table — keep]
-```
-
-**Reader-empathy principles (szTheory DNA applied):**
-
-- **Batteries-included defaults, gameplan at top.** A maintainer returning after a month should be able to start in 30 seconds without reading past the Quick Start section. The TL;DR in the current doc is close to this but buries the prerequisites.
-- **Principle of least surprise.** Every command in the Quick Start works with zero extra setup beyond "Docker Desktop installed, `make proxy` run once." No hidden prerequisites.
-- **Digestible chunks.** Each section has one job-to-be-done. "The Model" explains why; "Command Reference" says what; "Caching Guarantees" reduces anxiety about editing. Don't mix.
-- **Persona box at top.** One paragraph naming who this is for makes every section's tradeoff immediately legible — especially for sibling-repo adopters who reach this doc cold.
-- **Grounded, not aspirational (brand voice match).** "Here is what happens when you run this command" rather than "Experience the joy of seamless multi-service DX."
-- **Copy-pasteable everything.** Every command in the doc is runnable verbatim. No `<YOUR_INSTANCE_NAME>` placeholders in the Quick Start.
-
----
-
-## Cross-Ecosystem Lessons Applied
-
-| Pattern | Source | Applied In Scoria v3.2 |
-|---------|--------|------------------------|
-| Print ALL reachable URLs at startup | Vite, Phoenix native server | Banner: add Traefik admin + populated fallback |
-| Default goal = help screen | `just --list`, modern Makefiles (marmelab pattern) | `make help` as `.DEFAULT_GOAL` |
-| Self-documenting targets via `##` | marmelab self-documented Makefile pattern (2016, widely adopted) | Existing `## comments` + awk parser |
-| Gameplan-first documentation | Laravel Sail docs, Rails Guides | docs/docker_dev_dx.md restructure |
-| Persona/JTBD framing at doc top | Rails' "Getting Started" guide | Persona box at top of doc |
-| Fixed non-default port for native mode | Laravel Sail (80 in Docker, project-specific fallback) | PORT=4799 in `make dev` |
-| `.env.example` as onboarding shape document | Every Rails/Node/Laravel project | `.env.example` committed |
-| Secret injection via CLI tool | 1Password `op run`, AWS Vault | `op run -- make up` pattern in docs |
-| Instance-scoped nuke target | DataHub `nuke:` pattern, `docker compose down -v` | `make nuke` |
-| Fleet inventory command | Tilt `tilt status`, overmind | `make fleet` |
-| Deps before source in Dockerfile | Docker best practices universally | Dockerfile.dev audit + comment block |
-| Post-publish smoke gate | release-please CI pattern, existing `mix scoria.post_publish_smoke` | MAINTAINERS.md release runbook |
-
----
+| Feature | OpenInference (Arize Phoenix) | Langfuse / LangSmith (OTel-native) | Scoria's Approach |
+|---------|-------------------------------|-------------------------------------|--------------------|
+| Span-kind taxonomy | 10-value enum (`LLM`/`CHAIN`/`RETRIEVER`/`EMBEDDING`/`TOOL`/`RERANKER`/`AGENT`/`GUARDRAIL`/`EVALUATOR`/`PROMPT`) as a span attribute | Uses OTel spans directly + own UI-level grouping | 8-value enum on a real `span_kind` column, mapped down to the OpenInference attribute value for portability |
+| Content capture | Not explicitly separated from spans in OpenInference's own spec | OTel GenAI puts content on opt-in Logs-API events | Content-bearing point-events via resurrected `ai_span_events`, gated through existing `Redactor` |
+| Host tagging for segmentation | Generic `metadata`/`tag.tags` | Explicit `tags` + `metadata` + `propagate_attributes()` | Reserved, pre-named `feature`/`route`/`archetype`/`intent` keys — narrower but more discoverable/joinable |
+| Retrieval detail | `retrieval.documents` (id/content/score/metadata) on the `RETRIEVER` span itself | Similar generic document-list attributes | Kept in typed `ai_retrieval_runs` table (grounding scores, typed results); `RETRIEVER` span is a portability projection, not the source of record |
+| Context-pack composition | Not standardized | Not standardized (ad hoc per-team instrumentation described in RAG-observability write-ups) | Convention-key addition on the `PROMPT` span — a genuine differentiator, no peer has this |
+| Analytics/warehousing | Yes — Arize is itself a hosted analytics platform | Yes — both are hosted SaaS platforms | Explicitly NOT built — scope doctrine P6 keeps this a hook-at-the-edges export, not a Scoria feature |
 
 ## Sources
 
-- Makefile (current): `/Users/jon/projects/scoria/Makefile`
-- Launch banner (current): `/Users/jon/projects/scoria/docker/dev-entrypoint.sh`
-- Docker DX doc (current): `/Users/jon/projects/scoria/docs/docker_dev_dx.md`
-- Backlog: `/Users/jon/projects/scoria/.planning/todos/pending/docker-dx-fleet-hardening.md`
-- Project context: `/Users/jon/projects/scoria/.planning/PROJECT.md`
-- szTheory DNA: `/Users/jon/projects/scoria/prompts/sztheory-elixir-dna.md`
-- Brand book: `/Users/jon/projects/scoria/brandbook/brand-book.md`
-- [Self-Documented Makefile — marmelab](https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html) — HIGH confidence
-- [Automating Elixir Releases with Release Please — Elixir School](https://elixirschool.com/blog/managing-releases-with-release-please) — HIGH confidence
-- [1Password CLI — load secrets into environment](https://developer.1password.com/docs/cli/secrets-environment-variables/) — HIGH confidence
-- [Docker Build Cache Optimization — Docker Docs](https://docs.docker.com/build/cache/optimize/) — HIGH confidence
-- [Load secrets automatically with 1Password and direnv — DEV Community](https://dev.to/agonza05/load-secrets-automatically-with-1password-and-direnv-pn0) — MEDIUM confidence
-- [Preventing Port Conflicts in Docker Compose with Dynamic Ports](https://www.markcallen.com/preventing-port-conflicts-in-docker-compose-with-dynamic-ports/) — MEDIUM confidence (validates ephemeral + proxy approach over fixed ports)
-- [just vs Makefile ergonomics — glinteco](https://glinteco.com/en/post/comparing-makefile-and-just-which-one-should-you-choose/) — MEDIUM confidence (validates staying on Make with help target)
+- [OpenInference Semantic Conventions (spec)](https://arize-ai.github.io/openinference/spec/semantic_conventions.html) — HIGH confidence, official spec, primary source for the full span-kind enumeration (including `PROMPT`) and per-kind descriptions
+- [openinference/spec/semantic_conventions.md (GitHub source)](https://github.com/Arize-ai/openinference/blob/main/spec/semantic_conventions.md) — HIGH confidence, official source doc, primary source for RETRIEVER/TOOL/EMBEDDING attribute names and session/user/metadata tagging conventions
+- [OpenInference Specification index](https://arize-ai.github.io/openinference/spec/) — HIGH confidence, official spec
+- [OpenTelemetry Gen AI attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/) — HIGH confidence, official OTel docs, source for `gen_ai.request.*`/`usage.*`/`response.*`/`operation.name` attribute names (Experimental stability, moved to a dedicated genai-semconv repo)
+- [OpenTelemetry GenAI Semantic Conventions Elixir hex package docs](https://opentelemetry-semantic-conventions.hexdocs.pm/gen-ai.html) — HIGH confidence, real published Hex package (`opentelemetry_semantic_conventions` v1.27.0), confirms exact attribute names/types/examples and that an Elixir-native dependency already exists for this convention
+- [OpenTelemetry: Inside the LLM Call — GenAI Observability with OpenTelemetry](https://opentelemetry.io/blog/2026/genai-observability/) — HIGH confidence, official OTel blog, source for the events-vs-spans content-capture model (`invoke_agent`/`chat`/`execute_tool` span tree; content on opt-in Logs-API events)
+- [OpenTelemetry semantic conventions for MCP](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) and [MCP attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/mcp/) — HIGH confidence, official OTel docs, source for `mcp.method.name`/`mcp.session.id`/`mcp.protocol.version` and the finding that MCP is a semconv layer on TOOL-shaped spans, not its own OpenInference kind
+- [Langfuse: Metadata](https://langfuse.com/docs/observability/features/metadata) and [Langfuse: Tags](https://langfuse.com/docs/observability/features/tags) — HIGH confidence, official vendor docs, source for the host-tagging/segmentation table-stakes finding
+- Corroborating secondary sources (MEDIUM confidence, used only to cross-check patterns already confirmed by official docs above, not as sole basis for any claim): techbytes.app OTel GenAI Agent SemConv Cheat Sheet, greptime.com OTel GenAI blog, oneuptime.com GenAI prompt/completion capture post, multiple RAG-observability write-ups (72technologies, dev.to, ragaboutit) on context-window/token-budget instrumentation gaps
+- Local codebase: `lib/scoria_web/components/workflow_tree_component.ex`, `lib/scoria/knowledge/retrieval_run.ex`, `lib/scoria/repo/span.ex`, `lib/scoria/repo/span_event.ex`, `lib/scoria/observe/adapters/req_llm.ex`, `.planning/seeds/SEED-007-trace-foundation-otel-openinference.md`
 
 ---
-
-*Feature research for: v3.2 Drydock — Docker dev-DX hardening + maintenance release*
-*Researched: 2026-06-17*
+*Feature research for: OTel-GenAI / OpenInference trace interop (SEED-007, v3.6 Trace Foundation)*
+*Researched: 2026-07-11*

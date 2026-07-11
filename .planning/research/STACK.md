@@ -1,524 +1,272 @@
-# Stack Research — v3.2 Drydock
+# Stack Research: v3.6 Trace Foundation (SEED-007 — OTel-GenAI / OpenInference Interop)
 
-**Milestone:** v3.2 Drydock
-**Domain:** DevX/DevOps + release hygiene for a solo-maintainer Phoenix-native Hex library
-**Researched:** 2026-06-17
-**Confidence:** HIGH (all concrete mechanisms verified against live source files; tool behavior
-verified against official docs and community practice)
+**Domain:** Elixir/Phoenix embedded AI observability — trace/span attribute naming convention
+**Researched:** 2026-07-11
+**Confidence:** HIGH (source-code-verified against the vendored `deps/req_llm` checkout at the exact
+locked version, cross-checked against the live OTel GenAI and OpenInference specification repos)
 
----
+## Executive verdict
 
-## What This Stack Document Covers
+**No new runtime dependency is needed.** Scoria's peer `req_llm ~> 1.13` (locked at `1.13.0`) already
+ships a dependency-free `gen_ai.*` attribute builder (`ReqLLM.OpenTelemetry.Attributes`) that produces
+exactly the OTel-GenAI-conventional key names Scoria needs, sourced from telemetry metadata ReqLLM
+*already* populates on every request — including `temperature`/`top_p`/`seed`/`max_tokens`, which
+Scoria's adapter currently drops on the floor. Wiring SEED-007's naming convention is almost entirely
+a matter of *reading data ReqLLM already computes*, not adding new machinery. `openinference.span.kind`
+has no Elixir library at all (OpenInference publishes JS/Python/Rust packages only) — it is a bare
+string literal Scoria writes itself, confirming the seed's "convention, not dependency" thesis for that
+half too.
 
-Five concrete mechanism decisions for the gaps in v3.2 Drydock:
+## Recommended Stack
 
-- **(A1) PORT default** — bake a non-4000 default into `make dev` without colliding the fleet
-- **(A2) Dockerfile layer-caching** — guarantee a CSS/HEEx-only edit triggers no dep refetch
-- **(A3) Fleet secrets pattern** — replace plaintext `.env` `ANTHROPIC_API_KEY` with a
-  vault-backed, zero-plaintext-on-disk approach
-- **(A4) `make nuke`/clean + stale-instance hygiene** — define the compose down/prune flow
-- **(B) Maintenance release** — merge the open release-please PR (PR #3, `0.1.2`), Hex publish
-  flow, and post-publish registry smoke
+### Core Technologies (already present — zero new deps)
 
----
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| `req_llm` | `~> 1.13` (locked `1.13.0`, current Hex latest `1.17.1`) | LLM peer; already declared in `mix.exs` | Ships `ReqLLM.OpenTelemetry.Attributes` (dependency-free `gen_ai.*` map builder) and `ReqLLM.Telemetry.RequestOptions` (normalizes caller opts into an OTel-attribute-shaped map) as of **`v1.12.0`** (2026-05-22), refined in `v1.13.0` (2026-05-28, "Otel sub-span allocation to parent spans"). The version Scoria already pins has this. Verified: `deps/req_llm/lib/req_llm/open_telemetry/attributes.ex`, `deps/req_llm/lib/req_llm/telemetry/request_options.ex`, `deps/req_llm/CHANGELOG.md` lines 37–54. |
+| OTel-GenAI semantic-convention key names (as strings) | spec repo `open-telemetry/semantic-conventions-genai`, schema `1.37.0` (the URL ReqLLM's own tracer/meter constructs pin) | Naming convention for `gen_ai.request.*` / `gen_ai.usage.*` / `gen_ai.response.*` keys inside Scoria's existing `attributes` jsonb map | No package to install — these are plain string map keys. **Every `gen_ai.*` attribute in the current spec is tagged `Development` (not Stable)** as of this research (confirmed directly on the live `gen-ai-attributes.md` registry page, 2026). That instability is *exactly why* the seed's "convention over columns" call is correct: a typed-column migration against a namespace OTel itself hasn't stabilized would be premature; a string key just gets bumped if/when OTel renames something. |
+| OpenInference span-kind taxonomy (as a string) | spec: `Arize-ai/openinference` `spec/semantic_conventions.md` | Naming convention for `openinference.span.kind` values on Scoria spans | No Elixir client exists or is needed — OpenInference ships only JS/Python/Rust instrumentation packages. The **value enum** is the useful artifact, not a library: `LLM, CHAIN, TOOL, RETRIEVER, RERANKER, EMBEDDING, AGENT, GUARDRAIL, EVALUATOR, PROMPT` (10 values, verified against the canonical spec doc on GitHub). |
 
-## (A1) PORT Default for `make dev`
+### Supporting Libraries — none required in Scoria's runtime
 
-### Current State
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `opentelemetry` / `opentelemetry_api` (Erlang/Elixir OTel SDK) | n/a | Actually **exporting** spans to a real OTel collector/backend (Datadog, Langfuse, Honeycomb, etc.) | **Host-side only, opt-in, never inside Scoria.** ReqLLM's own `ReqLLM.OpenTelemetry.attach/2` bridge needs this SDK present to call `:otel_tracer`/`:otel_span`, and it degrades gracefully (`{:error, :opentelemetry_unavailable}`) when absent — proving the SDK is designed as an *optional host add-on*, not a hard peer. Scoria's job (per P5/P6 doctrine) is to make its `attributes` jsonb map "OTel-shaped" so a host that *does* add this SDK can trivially forward it; Scoria itself must never require it to boot. |
+| `opentelemetry_semantic_conventions` (Hex, `hexdocs.pm/opentelemetry_semantic_conventions`) | n/a | Compile-time Elixir constants (`@gen_ai_request_model "gen_ai.request.model"` etc.) for a *host* writing its own OTel exporter code | Not needed by Scoria — Scoria writes plain binary map keys directly into jsonb; there's no compile-time attribute macro use case inside the library itself. Mention this package in host-facing docs only, as an option for hosts who want compiler-checked attribute names in their own export glue. |
 
-`config/dev.exs` line 33:
+### What NOT to add
+
+| Avoid | Why | Use Instead |
+|-------|-----|--------------|
+| Typed columns for `gen_ai.request.temperature`/`top_p`/`seed`/etc. | The whole `gen_ai.*` namespace is `Development`-status upstream (unstable, still being renamed/extended) — a pre-1.0 schema migration against a moving target invites the exact churn SEED-007 is designed to avoid | Conventional string keys inside the existing `attributes` jsonb column on `ai_spans`/`ai_traces` |
+| `opentelemetry` / `opentelemetry_api` / any OTel exporter as a **runtime dependency of the `scoria` package itself** | Turns an embedded BEAM-native library into something that assumes/requires an OTel SDK/collector at boot — violates P5 (zero required egress) and P6 (not a metrics warehouse) | Keep OTel interop as a "hook at the edges": Scoria writes OTel-shaped keys into its own Ecto-owned jsonb; a host that wants live OTel export adds the SDK itself and reads Scoria's spans to forward them (or attaches ReqLLM's own bridge separately, which is designed for exactly this) |
+| `gen_ai.system` | Renamed. Confirmed absent from the current `gen-ai-attributes.md` registry; fully superseded by `gen_ai.provider.name`. ReqLLM's `Attributes.start/1` already emits `"gen_ai.provider.name"`, never the old name. | `gen_ai.provider.name` |
+| `gen_ai.usage.prompt_tokens` / `gen_ai.usage.completion_tokens` | Renamed (older instrumentation-era names). Confirmed absent from the current registry — not even listed as deprecated aliases, i.e. fully retired. | `gen_ai.usage.input_tokens` / `gen_ai.usage.output_tokens` — exactly what ReqLLM's `Attributes.terminal/1` already emits |
+| Forcing every span kind (`tool`/`prompt`/`retrieval`/`guardrail`) into `ai_span_events` | The seed explicitly rejects this — peers (OTel-GenAI, OpenInference) model these as span *kinds*, not point-events. Doing otherwise is "a worse model than every peer." | Resurrect `ai_span_events` **minimally**, for true point-events only (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`); everything else is a proper child span keyed by `span_kind` |
+| Collapsing `ai_retrieval_runs` into a generic span | It is richer than a span (grounding scores, typed results) and is explicitly the seed's system-of-record | Dual-write: emit a linked `RETRIEVER` span for visibility, keep `ai_retrieval_runs` for detail |
+
+## Question 1 — Current OTel GenAI attribute names, verified against the live spec (2026)
+
+Source of truth: `open-telemetry/semantic-conventions-genai` (the GenAI conventions moved out of the
+main `open-telemetry/semantic-conventions` repo; the old `opentelemetry.io/docs/specs/semconv/gen-ai/`
+pages are now redirect stubs — confirmed by fetching them directly and getting only a "this page has
+moved" notice). Fetched the live registry (`gen-ai-attributes.md`) directly:
+
+| Attribute | Current name | Stability (as fetched, 2026) | Historical note |
+|---|---|---|---|
+| Model requested | `gen_ai.request.model` | Development | unchanged |
+| Sampling temp | `gen_ai.request.temperature` | Development | unchanged |
+| Nucleus sampling | `gen_ai.request.top_p` | Development | unchanged (also `gen_ai.request.top_k` exists) |
+| Max output tokens | `gen_ai.request.max_tokens` | Development | unchanged |
+| Determinism seed | `gen_ai.request.seed` | Development | unchanged |
+| Input tokens | `gen_ai.usage.input_tokens` | Development | **renamed from `gen_ai.usage.prompt_tokens`** — old name is gone from the registry entirely (not even listed as a deprecated alias) |
+| Output tokens | `gen_ai.usage.output_tokens` | Development | **renamed from `gen_ai.usage.completion_tokens`** — same, fully retired |
+| Provider/vendor | `gen_ai.provider.name` | Development | **renamed from `gen_ai.system`** — `gen_ai.system` no longer appears in the current registry |
+| Operation type | `gen_ai.operation.name` | Development | unchanged (values: `"chat"`, `"embeddings"`, `"generate_content"`, etc.) |
+| Response model actually used | `gen_ai.response.model` | Development | unchanged |
+| Response id | `gen_ai.response.id` | Development | unchanged |
+| Stop reason(s) | `gen_ai.response.finish_reasons` | Development | unchanged |
+
+**Critical framing for the roadmap:** the OTel GenAI semantic conventions have **not been marked
+Stable as of this research** — OTel's own transition-plan language says stabilization has no public
+timeline. This is independent confirmation (from the standard itself, not just the seed's internal
+argument) that adopting these as **typed columns** would be premature; adopting them as **conventional
+string keys** costs nothing if/when a future OTel release renames something again (exactly what already
+happened once, with `prompt_tokens`→`input_tokens` and `system`→`provider.name`).
+
+Full current attribute surface (all `Development` status) also includes things Scoria doesn't need yet
+but should keep in mind for later seeds: `gen_ai.input.messages` / `gen_ai.output.messages` (content
+capture, off by default), `gen_ai.conversation.id`, `gen_ai.tool.*` (tool-call spans), `gen_ai.retrieval.*`
+(`top_k`, `documents`, `query.text` — directly relevant to SEED-007 item 4, the RETRIEVER span),
+`gen_ai.agent.name`, `gen_ai.prompt.name`/`.version` (directly relevant to SEED-007's "prompt version"
+attribution goal).
+
+Sources: [Gen AI attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/)
+(redirect notice, confirms relocation), live fetch of the GenAI repo's `gen-ai-attributes.md` (via
+`raw.githubusercontent.com/open-telemetry/semantic-conventions-genai/main/docs/gen-ai/gen-ai-attributes.md`,
+returned the full table with per-attribute `Development` badges quoted above),
+[open-telemetry/semantic-conventions-genai](https://github.com/open-telemetry/semantic-conventions-genai),
+[OpenTelemetry for Generative AI blog](https://opentelemetry.io/blog/2024/otel-generative-ai/). Confidence: HIGH
+(primary spec source, directly fetched, cross-checked against ReqLLM's own vendored implementation which
+independently arrived at the identical current names).
+
+## Question 2 — OpenInference span-kind taxonomy, reconciled against OTel-GenAI
+
+Source: `Arize-ai/openinference` `spec/semantic_conventions.md` (canonical; fetched directly from GitHub).
+
+`openinference.span.kind` is a **required** attribute on every OpenInference span. Full current enum
+(10 values):
+
+```
+LLM        — a call to a language model (chat/completion)
+CHAIN      — a starting point / link between application steps (general orchestration span)
+TOOL       — an external tool/function invocation
+RETRIEVER  — a data retrieval operation (vector store, DB, search)
+RERANKER   — a document-reranking operation
+EMBEDDING  — a call to an embedding model/service
+AGENT      — a reasoning block encompassing LLM + tool calls
+GUARDRAIL  — jailbreak protection / content-filtering
+EVALUATOR  — an output-evaluation function
+PROMPT     — rendering of a prompt template
+```
+
+**Reconciliation with OTel-GenAI (why both conventions, not one):** OTel-GenAI has no equivalent
+taxonomy attribute. OTel's own `SpanKind` enum (`INTERNAL`/`CLIENT`/`SERVER`/`PRODUCER`/`CONSUMER`) is a
+low-level transport-role concept (confirmed in ReqLLM's own `OTelAdapter.start_span/3`, which hardcodes
+`kind: :client` for every GenAI span regardless of what it represents) — it cannot distinguish an LLM
+call from a retrieval call from a guardrail check. OpenInference's `openinference.span.kind` is exactly
+the taxonomy layer OTel-GenAI is missing. **They are complementary, not competing:** use OTel-GenAI
+`gen_ai.*` keys for the scalar request/response/usage facts on a span, and OpenInference's
+`openinference.span.kind` string for what *kind* of span it is. This is precisely what SEED-007 already
+proposes.
+
+**Match against Scoria's existing UI vocabulary** (`lib/scoria_web/components/workflow_tree_component.ex:38`):
+`llm tool prompt mcp retriever guardrail eval agent` — 6 of 8 map directly onto OpenInference values
+(`LLM`, `TOOL`, `PROMPT`, `RETRIEVER`, `GUARDRAIL`→`GUARDRAIL`, `eval`→`EVALUATOR`, `agent`→`AGENT`).
+`mcp` has no OpenInference equivalent — treat it as a Scoria-specific extension value layered on top of
+the OpenInference enum (a remote-connector invocation is a `TOOL`-shaped operation with extra
+connector-scope attributes; keeping `mcp` as Scoria's own `span_kind` value rather than forcing it into
+`TOOL` preserves the distinction the dashboard already draws). `CHAIN`, `RERANKER`, `EMBEDDING` exist in
+OpenInference but have no current Scoria UI slot — not required by this seed's scope, note as a gap for
+future span-kind coverage if embeddings/reranking get their own adapters.
+
+Sources: [OpenInference semantic_conventions.md](https://github.com/Arize-ai/openinference/blob/main/spec/semantic_conventions.md)
+(directly fetched, full span-kind enum + attribute table quoted above),
+[Arize Phoenix OpenInference docs](https://arize.com/docs/phoenix/tracing/concepts-tracing/otel-openinference/semantic-conventions),
+[OpenInference spec index](https://arize-ai.github.io/openinference/spec/). Confidence: HIGH (primary
+spec source, directly fetched).
+
+## Question 3 — Does Scoria need a new Elixir OTel dependency?
+
+**No.** Verdict backed by reading the actual vendored source, not just docs:
+
+1. **Attribute naming needs zero dependency.** `ReqLLM.OpenTelemetry.Attributes` (in
+   `deps/req_llm/lib/req_llm/open_telemetry/attributes.ex`) is explicitly documented as
+   "Shared between the live bridge... and the dependency-free mapper" and its source contains **no**
+   calls into `:otel_tracer`/`:otel_span`/any OTel SDK module — it is pure `Map`-building code that
+   takes ReqLLM's own telemetry metadata and returns a plain `%{"gen_ai.request.model" => ..., ...}`
+   map. Scoria's adapter can call `ReqLLM.OpenTelemetry.Attributes.start/1` and `.terminal/1` directly —
+   `req_llm` is already a declared peer dependency, so this costs literally nothing new.
+
+2. **Full OTel SDK (`opentelemetry`/`opentelemetry_api`) is exclusively for export.**
+   `ReqLLM.OpenTelemetry.OTelAdapter.available?/0` (same file, `open_telemetry.ex`) checks for
+   `:otel_tracer_provider`, `:otel_tracer`, `:otel_span` at runtime via `Code.ensure_loaded?/1` and
+   `function_exported?/3`, and `ReqLLM.OpenTelemetry.attach/2` returns
+   `{:error, :opentelemetry_unavailable}` when the SDK isn't present — i.e. ReqLLM itself treats the OTel
+   SDK as **optional, host-attached, checked at runtime**, never a hard dependency. This is the exact
+   shape SEED-007 wants Scoria to mirror: naming convention lives in the library, span export is a host
+   decision.
+
+3. **`opentelemetry_semantic_conventions` (Hex)** is a convenience package of compile-time attribute-name
+   constants for people hand-writing OTel exporter code. Scoria doesn't hand-write exporter code — it
+   writes into its own jsonb `attributes` map — so there's no compile-time-macro use case inside the
+   library. It is worth a documentation *mention* for hosts building their own OTel forwarder, not an
+   addition to `mix.exs`.
+
+**Conclusion:** SEED-007 ships with `mix.exs` **unchanged**. No `{:opentelemetry, ...}`,
+`{:opentelemetry_api, ...}`, or `{:opentelemetry_semantic_conventions, ...}` line is added.
+
+## Question 4 — Exact ReqLLM v1.13 request-opts shape (where temp/top_p/seed/max_tokens live)
+
+Caller-facing opts (what a Scoria consumer of `ReqLLM.generate_text/3` etc. passes, e.g. today's
+hardcoded `req_llm_module.generate_text(model_spec, messages, max_tokens: 2048)` in `lib/scoria/ui_critique.ex:92`)
+are **plain top-level keyword-list options**: `:temperature`, `:top_p`, `:top_k`, `:max_tokens`,
+`:frequency_penalty`, `:presence_penalty`, `:stop` (or `:stop_sequences`), `:seed`, `:n`,
+`:encoding_format`, `:service_tier`, plus an escape-hatch `:provider_options` keyword for
+provider-specific extras.
+
+**They are already normalized for Scoria, no re-parsing needed.** Every call into ReqLLM's generation
+path builds a telemetry context via `ReqLLM.Telemetry.new_context/3`
+(`deps/req_llm/lib/req_llm/telemetry.ex:138`), which unconditionally runs:
+
 ```elixir
-http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT", "4000"))]
+request_options: ReqLLM.Telemetry.RequestOptions.extract(mode, opts),
 ```
 
-`Makefile` line 61 previously launched the native Phoenix server with live reload but no `PORT`
-assignment.
+`RequestOptions.extract/2` (`deps/req_llm/lib/req_llm/telemetry/request_options.ex`) turns the raw
+keyword opts into a compact atom-keyed map — **this happens on every request regardless of whether any
+OTel bridge is attached**, purely as part of ReqLLM's own telemetry context:
 
-The old `dev` target passed no `PORT`, so the native harness bound `:4000`. Since every other Phoenix
-lib demo on the same Mac also wants `:4000`, the maintainer must remember to pass `PORT=4799 make
-dev` or the bind fails with "address already in use".
-
-### Recommendation: Static Non-4000 Default Baked into the Makefile Target
-
-**Mechanism:** Add `PORT ?= 4799` near the top of the Makefile (in the per-instance identity
-block), then pass it explicitly in the `dev` target:
-
-```make
-PORT ?= 4799
-
-## dev: native host server with live browser reload (for CSS/JS iteration;
-##      the asset watcher rebuilds the bundle, live reload refreshes the page)
-##      Binds PORT (default 4799) to avoid clashing with other lib demos on :4000.
-dev:
-  PORT=$(PORT) SCORIA_DEV_LIVE_RELOAD=1 [native Phoenix server command]
+```elixir
+%{
+  temperature: opts[:temperature],
+  top_p: opts[:top_p],
+  top_k: opts[:top_k],
+  max_tokens: opts[:max_tokens],
+  frequency_penalty: opts[:frequency_penalty],
+  presence_penalty: opts[:presence_penalty],
+  stop_sequences: normalize_string_list(opts[:stop] || opts[:stop_sequences]),
+  seed: opts[:seed],
+  n: normalize_choice_count(opts[:n]),
+  stream?: mode == :stream,
+  encoding_formats: normalize_string_list(opts[:encoding_format]),
+  conversation_id: telemetry_conversation_id(opts),
+  service_tier: opts[:service_tier] || provider_opts[:service_tier]
+}
+# nil values dropped
 ```
 
-**Why not a free-port auto-picker?**
-
-An auto-picker (`python3 -c "import socket; ..."` or a `lsof` loop) has two footguns:
-1. The discovered port is not stable across invocations — you get a different URL every `make dev`,
-   breaking the Playwright harness (`make shots-native`) if its URL is not parameterized.
-2. It introduces shell scripting brittleness into a Makefile that is otherwise plain and portable.
-
-The brand voice is "least surprise". A stable port you can bookmark is better DX than a random one
-you have to discover with `make url` every session.
-
-**Why 4799?**
-
-- Far enough from 4000 to be immediately distinctive
-- Below the ephemeral range (32768–60999 on Linux) so it can never collide with Docker's
-  ephemeral host-port assignment
-- Short enough that `http://localhost:4799/scoria` fits on one line in the terminal
-- Not used by any common local service (4800 is used by some SaaS trial servers; 4799 is clear)
-
-**Integration notes:**
-
-- The `shots-native` Makefile target should use the same `PORT` variable:
-  `mix scoria.ui.shots --url http://localhost:$(PORT)/scoria`
-- `dev/dev_endpoint.ex` module doc should reference `http://localhost:4799/scoria`
-- The `config/dev.exs` fallback (`System.get_env("PORT", "4000")`) can stay as-is; the Makefile
-  injects the right value. No config change needed.
-
-**Do NOT add:**
-
-- Auto-port discovery shell scripting in the Makefile
-- Changes to `config/dev.exs` fallback value (that would break the Docker path)
-- A separate `config/dev.local.exs` override just for port (unnecessary indirection)
-
----
-
-## (A2) Dockerfile Layer-Caching Guarantee
-
-### Current State
-
-`Dockerfile.dev` already has the correct three-layer ordering:
-
-```
-Layer 1: COPY mix.exs mix.lock ./   +  mix deps.get     (invalidated by lock changes)
-Layer 2: COPY config config         +  mix deps.compile  (invalidated by config changes)
-Layer 3: COPY lib dev priv          +  mix compile       (invalidated by source changes)
-```
-
-Named volumes in `compose.yml` shadow the bind mount for `deps`, `_build`, `hex`, `mix`.
-BuildKit cache mounts accelerate apt + Hex package downloads.
-
-### Is the Guarantee Real?
-
-**Yes, with one important nuance.** For day-to-day dev work (the fully-dockerized `make up`
-path), a CSS or HEEx file edit:
-
-1. Lands in the bind-mounted `/app` inside the container
-2. Is picked up by the polling watcher (`FILE_SYSTEM_BACKEND=fs_poll`, 500ms interval)
-3. Triggers `ScoriaWeb.DevAssetWatcher` or Phoenix code reloader
-4. Does NOT trigger `docker compose up --build` unless the maintainer explicitly requests a
-   rebuild
-
-The Dockerfile layer ordering only matters for cold image rebuilds (`docker compose up --build`).
-During live dev, the image is not rebuilt — the bind mount sees changes directly.
-
-For `docker compose up --build` after a CSS/HEEx-only edit, the named volumes already hold
-`deps` and `_build`. The build re-runs:
-
-- Layer 1: cache HIT (mix.exs + mix.lock unchanged)
-- Layer 2: cache HIT (config unchanged)
-- Layer 3: cache MISS (lib/priv changed) → runs `mix compile`
-- Named volume `build` is NOT wiped by a rebuild (volumes persist across `docker compose up --build`)
-
-The net result: **no dep refetch, no full dep recompile — just incremental app recompile**.
-This is already correct. No changes needed.
-
-**One real footgun to document:** `mix compile` inside the container compiles into the named
-`build` volume, but if a maintainer also has a macOS `_build` dir from native Phoenix runs, those
-are separate (different BEAM artefacts). The `.dockerignore` correctly excludes host `_build`
-and `deps` from the build context, preventing NIF crashes. This is already handled.
-
-### What the Audit Should Verify (no code change, empirical proof)
-
-To prove the guarantee empirically, add a one-time verification note to `docs/docker_dev_dx.md`:
-
-```
-Caching verification (run once to convince yourself):
-  time docker compose up --build          # first build: ~90s
-  # edit one line in lib/scoria_web/components/ui.ex
-  time docker compose up --build          # rebuild: Layer 1+2 cache hit, ~15s
-```
-
-The cache HIT messages in BuildKit output (`CACHED`) confirm layers 1 and 2 are skipped.
-
-**Do NOT add:**
-
-- A `--no-cache` flag anywhere in the Makefile (defeats caching entirely)
-- Separate build stages for CSS vs Elixir (the CSS pipeline runs via DevAssetWatcher at
-  runtime, not at image build time — adding a build stage adds complexity with no benefit)
-- A `mix phx.digest` step in Dockerfile.dev (that is production only)
-
----
-
-## (A3) Fleet Secrets Pattern
-
-### The Problem
-
-`.env.example` (gitignored companion `.env`) holds:
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-This is plaintext on disk. The `critique` Docker service receives it via `ANTHROPIC_API_KEY:
-${ANTHROPIC_API_KEY:-}`. The `make dev` path reads it via shell or manual export. The actual
-`.env` is gitignored but the key has been in a real-looking value and should be rotated.
-
-### Recommendation: direnv + `op run` via `.envrc` (1Password CLI)
-
-**Mechanism:**
-
-1. Install `direnv` (`brew install direnv`) and hook it into the shell (`eval "$(direnv hook
-   zsh)"` in `~/.zshrc`).
-2. Keep `.env.example` in the repo — but change its format to hold `op://` references instead
-   of literal secrets, and rename the example to `.env.op.example` (safe to commit, documents
-   required secrets structure without values).
-3. The maintainer creates `.envrc` (gitignored) in the project root:
-   ```bash
-   # .envrc — loaded by direnv on `cd` into the project; never committed
-   # Requires: brew install direnv; eval "$(direnv hook zsh)" in ~/.zshrc
-   # Requires: 1Password CLI (brew install 1password-cli); `op signin` once
-   use_env() {
-     local key="$1" ref="$2"
-     export "$key"="$(op read "$ref" 2>/dev/null || echo "")"
-   }
-   use_env ANTHROPIC_API_KEY "op://Personal/Scoria Dev/anthropic_api_key"
-   ```
-   Or, using the single `op run` batch pattern (faster — one CLI invocation):
-   ```bash
-   # .envrc
-   # op:// references in .env.op are resolved in batch; vars land in the shell.
-   direnv_load op run --env-file .env.op --no-masking -- direnv dump
-   ```
-4. `.env.op` (gitignored, contains references only — safe to optionally commit once references
-   are confirmed non-sensitive):
-   ```
-   ANTHROPIC_API_KEY=op://Personal/Scoria Dev/anthropic_api_key
-   ```
-5. `.envrc.example` (committed — onboarding template):
-   ```bash
-   # Copy to .envrc, fill in your 1Password vault paths, then `direnv allow`.
-   # Requires: brew install direnv && eval "$(direnv hook zsh)"
-   # Requires: brew install 1password-cli && op signin
-   direnv_load op run --env-file .env.op --no-masking -- direnv dump
-   ```
-6. `.env.op.example` (committed — documents required secret names, safe because values are op://
-   references):
-   ```
-   # Copy to .env.op and update the op:// paths to match your 1Password vault.
-   ANTHROPIC_API_KEY=op://Personal/Scoria Dev/anthropic_api_key
-   ```
-
-**For the Docker `critique` service:** The Docker path reads from `ANTHROPIC_API_KEY`
-(already in compose.yml as `${ANTHROPIC_API_KEY:-}`). With direnv active, the shell that runs
-`docker compose` inherits the exported var. No Docker change needed.
-
-**For CI:** The GitHub Actions secret `ANTHROPIC_API_KEY` is already the right pattern — secrets
-are injected by the runner, never in `.env`. The CI path is unaffected.
-
-**Why direnv + op over the alternatives:**
-
-| Option | Verdict | Why |
-|--------|---------|-----|
-| **direnv + `op run`** | Recommended | Auto-loads on `cd`; zero plaintext; well-known pattern; no daemon; works with any shell command including `make dev` and `docker compose` |
-| 1Password Environments (named pipe .env) | Good alternative | Tighter integration; works even without direnv; but newer/less-documented than `op run` |
-| sops | Overkill | Designed for team key-management at scale; single-maintainer overhead is high; no auto-inject on `cd` |
-| git-crypt | Wrong tool | Encrypts committed files; `.env` is gitignored so git-crypt adds nothing; adds key-exchange complexity |
-| doppler | Overkill | Another SaaS with an account; unnecessary for a solo maintainer who already owns 1Password |
-| Plain `.env` | Current state; stop | Plaintext on disk; key leaked to any process that can read it; git-ignorable but still risky on shared machines |
-
-**Session management:** `op run` requires the 1Password desktop app to be unlocked (or `op
-signin` in CLI-only mode). The 10-minute session auto-refreshes on use. For a solo maintainer
-who has 1Password open all day, there is no friction.
-
-**Performance note:** The `op run` + `direnv` integration fires only on the first `cd` into
-the directory (and on `.envrc` changes). Subsequent shell commands in the same session inherit
-the vars from the process environment — no re-invocation.
-
-**Onboarding microcopy for `docs/docker_dev_dx.md`:**
-
-```
-## Secrets (ANTHROPIC_API_KEY)
-
-The critique harness needs ANTHROPIC_API_KEY. Get it from 1Password and keep it off disk:
-
-  brew install direnv 1password-cli
-  echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc  # or bash/fish equivalent
-  source ~/.zshrc
-
-  cp .env.op.example .env.op         # fill in your op:// vault path
-  cp .envrc.example .envrc           # ready to use as-is
-  direnv allow .                     # approve; loads on every `cd` hereafter
-
-  make critique   # ANTHROPIC_API_KEY is in the environment automatically
-```
-
-**Do NOT add:**
-
-- sops, git-crypt, or Doppler — too heavy for one maintainer and one API key
-- A committed `.env` with literal secrets (even "fake" ones invite accidents)
-- A requirement for a running 1Password Connect server (overkill; `op run` uses the desktop app)
-- direnv `.env` auto-loading (direnv's `dotenv` standard lib loads `.env` as plaintext — that
-  defeats the purpose; use `op run` instead)
-
----
-
-## (A4) `make nuke` / Clean + Stale-Instance Hygiene
-
-### The Problem
-
-The `docker-dx-fleet-hardening` todo identifies a stale `scoria_demo` compose project that
-answered `scoria.localhost` before branch-scoping was introduced. There is no `nuke` target.
-The fleet can accumulate stale stopped containers, old named volumes, and orphan networks.
-
-### Recommendation: Two-tier cleanup — `make clean` (safe) and `make nuke` (destructive)
-
-**Mechanism:**
-
-```make
-## clean: stop this instance and remove its containers + orphans (keeps named volumes)
-clean:
-	docker compose down --remove-orphans
-	@echo "Containers removed. Named volumes (pgdata, deps, build, hex, mix) kept."
-	@echo "To also wipe the DB and build cache: make nuke"
-
-## nuke: full teardown — containers + volumes for THIS instance (data will be lost)
-nuke:
-	@echo "This will delete all data for instance: $(COMPOSE_PROJECT_NAME)"
-	@echo "Press Ctrl-C to cancel, Enter to continue..."
-	@read _confirm
-	docker compose down --volumes --remove-orphans
-	@echo "Instance $(COMPOSE_PROJECT_NAME) wiped."
-	@echo "If you have stale instances from old branch names, list them with:"
-	@echo "  docker compose ls"
-	@echo "Then clean each with:  COMPOSE_PROJECT_NAME=<name> docker compose down --volumes"
-```
-
-**Why two tiers?**
-
-- `clean` is the everyday target: stop and remove containers without touching the named volumes
-  (`deps`, `build`, `hex`, `mix`). This is safe to run before switching branches — the next
-  `make up` reuses cached build artifacts.
-- `nuke` is the blast-radius target: wipe everything including named volumes. Used when
-  dependencies change and the build cache is suspect, or to free disk space. Requires a
-  confirmation prompt to prevent accidental data loss.
-
-**Stale `scoria_demo` instance cleanup instruction:**
-
-Document in `docs/docker_dev_dx.md` (no code change needed):
-
-```
-## Cleaning up stale instances
-
-Before branch-scoping (commit cf9494d), Scoria used a fixed project name `scoria`.
-If you still have that stale project running:
-
-  docker compose ls                   # lists all projects; look for `scoria` or `scoria_demo`
-  COMPOSE_PROJECT_NAME=scoria docker compose down --volumes
-  COMPOSE_PROJECT_NAME=scoria_demo docker compose down --volumes
-
-After that, only branch-scoped projects remain:  scoria-main, scoria-feat-xyz, etc.
-```
-
-**Fleet-level prune (periodic hygiene, not a Makefile target):**
-
-Document the one-liner but don't automate it — `docker system prune` can surprise people:
-
-```
-# Remove ALL stopped containers, unused networks, and dangling images (not volumes):
-docker system prune -f
-
-# Also wipe unused named volumes (careful — this affects ALL projects, not just Scoria):
-docker volume prune -f
-```
-
-**Why NOT a single `make nuke` with `docker system prune`?**
-
-`docker system prune` operates on the entire Docker daemon — it would wipe volumes and images
-from sibling repos (rulestead, parapet, etc.) running on the same machine. The per-project
-`docker compose down --volumes` is the correct scope.
-
-**Do NOT add:**
-
-- `docker system prune` in any Makefile target (wrong scope for a per-project nuke)
-- Auto-confirmation (`--force` / `-f`) on the destructive `nuke` target (a pause protects real data)
-- A `make prune` fleet-wide target (fleet hygiene is a manual one-liner, not a Makefile concern)
-
----
-
-## (B) Maintenance Release — PR #3, version 0.1.2
-
-### Current State
-
-- Release-please PR #3 (`chore(main): release 0.1.2`) is open and labeled `autorelease: pending`
-- `.release-please-manifest.json` has `"." : "0.1.1"` (post-v3.1 commits accumulated a large
-  feature diff; release-please computed the next tag as `0.1.2`, not `0.1.1`)
-- PR body shows the full CHANGELOG for `0.1.2` — it is the correct PR to merge
-- The `release-please.yml` workflow gates Hex publish behind `ci-gate` (the required check
-  from `ci.yml`), then runs the `post-publish-attest` smoke via `post-publish-smoke.yml`
-
-### The Release Flow (no code change required for the happy path)
-
-```
-1.  Verify CI is green on the release-please--branches--main branch
-2.  Merge PR #3 via the GitHub UI (or `gh pr merge 3 --squash`)
-3.  release-please.yml fires on the push to main:
-      → detects the merged release PR
-      → creates GitHub release + tag v0.1.2
-      → triggers the `verify` job (ci-verify.yml) against the tagged SHA
-      → waits for `ci-gate` to be green on that SHA
-      → runs `publish-hex` job: mix hex.publish --yes
-      → waits for Hex.pm to index the package (polls /api/packages/scoria/releases/0.1.2)
-      → runs `post-publish-attest` via post-publish-smoke.yml
-4.  Post-publish smoke: fresh Phoenix host fetches scoria 0.1.2 from registry,
-    runs install/migrate/overlay subset, proves live install.
-```
-
-### One Existing Footgun to Fix Before Merging
-
-`post-publish-smoke.yml` still binds Postgres on port `55432:5432` (lines 52/62). The v3.1
-FLAKE-01 fix (`27-01`) corrected `ci.yml` and `ci-verify.yml` to use `5432:5432` to avoid the
-ephemeral-range collision on GitHub-hosted runners, but `post-publish-smoke.yml` was not
-updated. The CI policy contract guard does not cover `post-publish-smoke.yml` (it is not in
-`ci.yml` or `ci-verify.yml`).
-
-Fix before or alongside the release merge:
-
-```yaml
-# post-publish-smoke.yml, services.postgres.ports
-ports:
-  - 5432:5432        # was 55432:5432 — ephemeral-range collision risk
-```
-And:
-```yaml
-# post-publish-smoke.yml, env block
-SCORIA_DB_PORT: 5432  # was 55432
-```
-
-This is a pre-merge hygiene fix. The port guard in `ci_policy_contract_test.exs` should be
-extended to also cover `post-publish-smoke.yml` as a follow-on hardening step.
-
-### Post-Publish Registry Smoke — What It Proves
-
-`mix scoria.post_publish_smoke` (already wired in `post-publish-smoke.yml`) runs:
-- Fresh `phx.new` host generation
-- `mix deps.get` fetching scoria 0.1.2 from Hex registry
-- `mix scoria.install`
-- `mix ecto.create` + `mix ecto.migrate`
-- Route overlay smoke (proves `/scoria` is mounted)
-- Runtime lane smoke (proves `Scoria.start_run/2`)
-- If `version > "0.1.0"`: upgrade smoke (`--dry-run` / `--check` / apply / migrate from
-  previous fixture to current)
-
-This is a HIGH-confidence signal: if the post-publish smoke passes, the package is genuinely
-installable from the public registry.
-
-### Tools / Versions Involved
-
-| Tool | Version | Purpose | Confidence |
-|------|---------|---------|------------|
-| `googleapis/release-please-action` | v5 (wired in `.github/workflows/release-please.yml`) | PR management + GitHub Release creation | HIGH — already shipping |
-| `erlef/setup-beam` | v1 with `.tool-versions` strict | Elixir 1.19.5-otp-27 in CI | HIGH — locked in `.tool-versions` |
-| `mix hex.publish --yes` | Hex 2.2.x (the hex tool version shipped with Elixir 1.19.5) | Publishes to registry | HIGH |
-| `release-type: elixir` | release-please understands `mix.exs @version` | Bumps version in mix.exs + CHANGELOG | HIGH |
-
-**Do NOT add:**
-
-- A separate `expublish` or `hex_release` Mix task — the existing `release-please.yml` +
-  `hex-publish.yml` + `post-publish-smoke.yml` is the complete, working, already-proven stack
-- A manual `mix hex.publish` step outside of CI — the dry-run → publish → index-wait →
-  attest sequence in CI is the idempotent, recovery-safe path
-- A Dialyzer gate in the publish flow — Dialyzer is not in the current CI topology (deferred
-  per project decisions); do not add it as a blocker here
-
----
-
-## Recommended Versions / Tools Summary
-
-| Technology | Version | Status | Role in v3.2 |
-|------------|---------|--------|--------------|
-| Elixir | 1.19.5-otp-27 | Already pinned in `.tool-versions` | No change |
-| `hexpm/elixir` base image | `1.19.5-erlang-27.3.2-debian-bookworm-20260518-slim` | Already pinned in Dockerfile.dev | No change |
-| Traefik | v3.7.1 (already pinned in `docker/traefik/compose.yml`) | Already running | No change |
-| `pgvector/pgvector:pg16` | pg16 | Already pinned in compose.yml + dev/pgvector-compose.yml | No change |
-| `googleapis/release-please-action` | v5 | Already wired | No change |
-| `direnv` | latest stable via `brew install direnv` (2.35.x as of mid-2026) | New addition (secrets pattern) | Install once per machine |
-| `1password-cli` | latest stable via `brew install 1password-cli` (op 2.x) | New addition (secrets pattern) | Install once per machine |
-| `PORT` static default | 4799 | New addition (Makefile) | Single-line change |
-
----
+This map is threaded onto **both** `[:req_llm, :request, :start]` **and** `[:req_llm, :request, :stop]`
+telemetry metadata as `metadata[:request_options]` (confirmed: `telemetry.ex:159` sets it in the shared
+context at construction, `telemetry.ex:494` re-threads `context.request_options` into the terminal/stop
+metadata builder — same map, both events).
+
+**Concretely, for the adapter fix (`lib/scoria/observe/adapters/req_llm.ex`):** the current adapter only
+attaches to `[:req_llm, :request, :stop]` and reads `metadata[:model]`/`measurements[:total_tokens]`. It
+already receives `metadata[:request_options]` on that same event today and simply isn't reading it. The
+two implementation options, both zero-dependency:
+
+- **Minimal:** read `metadata[:request_options][:temperature]` etc. directly and hand-map the ~6 keys
+  Scoria cares about (`temperature`, `top_p`, `seed`, `max_tokens`) onto `"gen_ai.request.*"` string keys
+  in the existing `attributes` map.
+- **Recommended — reuse ReqLLM's own builder:** call
+  `ReqLLM.OpenTelemetry.Attributes.start(metadata)` and `ReqLLM.OpenTelemetry.Attributes.terminal(metadata)`
+  from inside the existing `:stop` handler and `Map.merge/2` the results into the span's `attributes` map.
+  Both functions only read fields already present in `:stop` metadata (`:operation`, `:model`,
+  `:request_options`, `:reasoning`, `:server`, `:finish_reason`, `:usage`, `:response_payload`) — there is
+  no need to also attach a `:start` handler or manage cross-event state (ReqLLM's own live bridge needs an
+  ETS table to correlate `:start`→`:stop`; Scoria's adapter doesn't, because it only emits on `:stop` and
+  both attribute-builder functions are metadata-only, not event-order-dependent). This single call gets
+  Scoria the full current `gen_ai.request.*` / `gen_ai.usage.*` / `gen_ai.response.*` set for free,
+  automatically staying in sync with future ReqLLM/OTel renames instead of Scoria hand-maintaining its own
+  parallel key list.
+
+Sources: `deps/req_llm/lib/req_llm/telemetry.ex` (lines 138–175, 490–500 — vendored source, read directly
+at the exact locked version `1.13.0`), `deps/req_llm/lib/req_llm/telemetry/request_options.ex` (full file,
+read directly), `deps/req_llm/lib/req_llm/open_telemetry/attributes.ex` (full file, read directly),
+`lib/scoria/ui_critique.ex:92` (the hardcoded `max_tokens: 2048` breadcrumb named in the seed, confirmed
+still present and still the only place in Scoria's own code that sets a generation opt today). Confidence:
+HIGH — first-party, exact-version source read, not documentation.
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| PORT selection | Static 4799 default in Makefile | Free-port auto-picker (lsof/python socket) | Unstable URL per session; breaks shots-native; shell scripting fragility |
-| PORT selection | Static 4799 default in Makefile | Change `config/dev.exs` fallback to 4799 | Breaks the Docker path (which needs 4000 internally; PORT=4000 is set inside the container by the compose environment) |
-| Secrets | direnv + `op run --env-file` | 1Password Environments (named pipe) | Great alternative; slightly more complex initial setup; `op run` pattern is more portable and better-documented for CLI workflows |
-| Secrets | direnv + `op run --env-file` | sops | Multi-person key management overhead; single maintainer doesn't need it |
-| Secrets | direnv + `op run --env-file` | doppler | Another SaaS account; cost; `op run` reuses existing 1Password subscription |
-| Stale cleanup | Per-project `compose down --volumes` | `docker system prune` | Wrong scope; nukes other projects on the same machine |
-| Release | Merge PR #3 → automated publish | Manual `mix hex.publish` | Bypasses CI gate and post-publish smoke; manual path exists in `hex-publish.yml` as recovery only |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|--------------------------|
+| Conventional string keys in the existing `attributes` jsonb map | Typed Ecto columns for `temperature`/`top_p`/`seed`/`max_tokens`/etc. | Only once the OTel-GenAI namespace is marked Stable (not the case as of this research) *and* Scoria is querying/filtering on these fields at a volume where jsonb GIN-index scans become the bottleneck — not true today at Scoria's scale |
+| Reuse ReqLLM's `ReqLLM.OpenTelemetry.Attributes.start/1` + `.terminal/1` | Hand-roll a parallel `gen_ai.*` key-mapping module inside Scoria | Only if Scoria ever needs attribute names ReqLLM's builder doesn't cover (e.g. a provider Scoria talks to outside ReqLLM) — not the case today; ReqLLM is Scoria's only LLM peer |
+| `openinference.span.kind` as a bare string, no library | Full OpenInference OTel Python/JS instrumentation SDKs | N/A — those SDKs don't exist for Elixir; not an option regardless |
+| Keep `ai_retrieval_runs` as system-of-record, dual-write a linked `RETRIEVER` span | Collapse retrieval detail entirely into generic spans (the hosted-SaaS-lens memo's original suggestion) | Only if Scoria drops its typed grounding-score/citation model — explicitly rejected by the seed |
 
----
+## Version Compatibility
 
-## What NOT to Add
-
-| Avoid | Why |
-|-------|-----|
-| Auto-port discovery in Makefile | Unstable URLs; shell scripting that breaks on non-Mac platforms |
-| sops, git-crypt, Doppler | All overkill for a single maintainer with one API key; adds key-management overhead without benefit |
-| `docker system prune` as a Makefile target | Wrong blast radius; would nuke other projects |
-| A new `--no-cache` make target | Would defeat all BuildKit caching; defeats the purpose of the caching audit |
-| Separate Dockerfile build stages for CSS vs Elixir | CSS is a runtime concern (DevAssetWatcher); build stages add complexity without benefit in a dev image |
-| Adding Dialyzer to the Hex publish gate | Not in the current CI topology; out of scope for v3.2 |
-| direnv `dotenv` stdlib (auto-loading `.env`) | Loads plaintext files — defeats the point of the secrets pattern |
-| Committed `.env` with `op://` references | Tempting shortcut but muddies `.gitignore` hygiene; `.env.op` with the references is the clean pattern |
-
----
-
-## Integration Points with Existing Impl
-
-| Gap | Touch Point | What Changes |
-|-----|------------|--------------|
-| PORT default | `Makefile` line 61 (`dev` target) | Add `PORT ?= 4799`; pass `PORT=$(PORT)` |
-| PORT default | `Makefile` line 74 (`shots-native`) | Update URL to `localhost:$(PORT)/scoria` |
-| PORT default | `dev/dev_endpoint.ex` line 8 | Update comment from `localhost:4000` to `localhost:4799 (default)` |
-| Dockerfile caching | `Dockerfile.dev` | Already correct; add empirical verification comment only |
-| Secrets pattern | `.gitignore` | Add `.envrc` and `.env.op` (new files, gitignored) |
-| Secrets pattern | New: `.envrc.example` | Committed onboarding template |
-| Secrets pattern | New: `.env.op.example` | Committed op:// reference template |
-| Secrets pattern | `docs/docker_dev_dx.md` | Add "Secrets" section with setup microcopy |
-| Stale hygiene | `Makefile` | Add `clean` and `nuke` targets |
-| Stale hygiene | `docs/docker_dev_dx.md` | Add stale-instance cleanup section |
-| Release | `.github/workflows/post-publish-smoke.yml` | Fix `55432:5432` → `5432:5432` before or with merge |
-| Release | PR #3 on GitHub | Merge when CI green |
-
----
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| `req_llm 1.13.0` (locked) | `gen_ai.*` semconv naming (schema `1.37.0`, verified in `OTelAdapter`'s `@otel_schema_url`) | Already compatible — no bump needed. Checked CHANGELOG.md `v1.13.0`→`v1.17.1` (current Hex latest) for any further OTel/gen_ai/telemetry/span changes: **none found** — the semconv-naming feature set is unchanged from `1.13.0` through the current `1.17.1`. A `mix deps.update req_llm` is safe/optional hygiene, not required for SEED-007. |
+| Scoria `attributes` jsonb map (on `ai_traces`/`ai_spans`) | `gen_ai.*` string keys, `openinference.span.kind` string value | No schema migration — this is a value-shape convention only, confirmed compatible with the existing column type |
+| `ai_retrieval_runs.trace_id`/`span_id` | Linked `RETRIEVER` span emission | Columns already exist per the seed's breadcrumb (`lib/scoria/knowledge/retrieval_run.ex`) — unverified by this research pass (out of scope for the STACK question set; confirm in the phase plan) |
 
 ## Sources
 
-- Live source files read: `Makefile`, `compose.yml`, `Dockerfile.dev`, `config/dev.exs`,
-  `dev/dev_endpoint.ex`, `dev/pgvector-compose.yml`, `docker/dev-entrypoint.sh`,
-  `.env.example`, `release-please-config.json`, `.release-please-manifest.json`,
-  `.github/workflows/release-please.yml`, `.github/workflows/hex-publish.yml`,
-  `.github/workflows/post-publish-smoke.yml`, `.planning/todos/pending/docker-dx-fleet-hardening.md`
-- 1Password CLI `op run` docs: https://www.1password.dev/cli/reference/commands/run/
-- direnv official site: https://direnv.net/
-- direnv + 1Password integration patterns: https://perrotta.dev/2025/03/1password-cli--direnv-integration/
-- Docker Compose pruning: https://docs.docker.com/engine/manage-resources/pruning/
-- Hex publish docs: https://hex.pm/docs/publish
-- Release Please Elixir guide: https://elixirschool.com/blog/managing-releases-with-release-please
-- Elixir Forum: secrets management discussion confirming direnv + 1Password as community consensus:
-  https://elixirforum.com/t/how-you-manage-configuration-of-secrets-in-elixir-projects/67815
-- GitHub: PR #3 inspected directly (`gh pr view 3`)
-- Dockerfile caching strategy verified against community practice:
-  https://fnlog.dev/wanderer/elixir-bit-caching-docker-dependencies/
+- [OpenTelemetry Gen AI attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/) — confirms docs relocated to `semantic-conventions-genai` repo; MEDIUM (redirect stub, not itself authoritative content)
+- `raw.githubusercontent.com/open-telemetry/semantic-conventions-genai/main/docs/gen-ai/gen-ai-attributes.md` — live-fetched full attribute registry with per-attribute stability badges (all `Development`); HIGH (primary spec source, directly fetched 2026-07-11)
+- [open-telemetry/semantic-conventions-genai](https://github.com/open-telemetry/semantic-conventions-genai) — GenAI conventions repo (spans, metrics, events, MCP, provider-specific conventions); HIGH
+- [OpenTelemetry for Generative AI (blog)](https://opentelemetry.io/blog/2024/otel-generative-ai/) — background/history; MEDIUM
+- [Arize-ai/openinference spec/semantic_conventions.md](https://github.com/Arize-ai/openinference/blob/main/spec/semantic_conventions.md) — live-fetched full span-kind enum + attribute table; HIGH (primary spec source, directly fetched 2026-07-11)
+- [Arize Phoenix OpenInference docs](https://arize.com/docs/phoenix/tracing/concepts-tracing/otel-openinference/semantic-conventions) — corroborating; MEDIUM
+- `deps/req_llm/lib/req_llm/open_telemetry/attributes.ex`, `deps/req_llm/lib/req_llm/open_telemetry.ex`, `deps/req_llm/lib/req_llm/open_telemetry/sem_conv.ex`, `deps/req_llm/lib/req_llm/telemetry.ex`, `deps/req_llm/lib/req_llm/telemetry/request_options.ex`, `deps/req_llm/CHANGELOG.md` — vendored first-party source at the exact locked version `1.13.0`, read directly; HIGH
+- `hex.pm/packages/req_llm/versions` — confirmed current Hex latest `1.17.1` (2026-07-06) vs. locked `1.13.0`; MEDIUM (web-fetched listing)
+- `lib/scoria/observe/adapters/req_llm.ex`, `lib/scoria/ui_critique.ex`, `.planning/seeds/SEED-007-trace-foundation-otel-openinference.md`, `.planning/PROJECT.md` — Scoria's own current source/spec; HIGH
 
 ---
-
-*Stack research for: v3.2 Drydock — Docker dev-DX fleet hardening + maintenance release*
-*Researched: 2026-06-17*
+*Stack research for: SEED-007 Trace Foundation — v3.6 milestone*
+*Researched: 2026-07-11*
