@@ -84,6 +84,8 @@ Each task was committed atomically:
 1. **Task 1: Repoint docs-contract constants and fix stale README link assertions** - `51461be5` (test)
 2. **Task 2: Restore genuinely-dropped canonical maintainer content into guides/maintainers.md** - `25ad5233` (docs)
 
+**Follow-up (D-50-DEF-01):** `c809241c` (fix) - unbreak docs release-preview WAE gate by `$ `-prefixing three inline `mix <task>` spans so ExDoc skips the filtered-module autolink; no assertion changed.
+
 **Plan metadata:** committed separately (docs: complete plan)
 
 ## Files Created/Modified
@@ -97,7 +99,23 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - plan executed exactly as written. Both tasks landed with no auto-fixes, blocking issues, or architectural changes required.
+None during original execution - both tasks landed with no auto-fixes, blocking issues, or architectural changes required.
+
+### Post-execution follow-up (D-50-DEF-01)
+
+**1. [Rule 1 - Bug] Restored content broke the docs release-preview WAE gate**
+- **Found during:** plan 50-03 verification (surfaced as cross-plan blocker D-50-DEF-01); fixed as a 50-01 follow-up.
+- **Issue:** Three inline-code spans added in Task 2 (`mix scoria.warning_ratchet.test` L43, `mix test.adoption` L57, `mix scoria.post_publish_smoke` L58) begin with `mix `, so ExDoc autolinked them to real `Mix.Tasks.*` modules that are filtered from published docs — `MIX_ENV=dev mix scoria.release_preview` failed under `--warnings-as-errors` with "reference to a filtered module".
+- **Fix:** Prefixed the three spans with `$ ` (the shell-prompt convention already used safely in this same file, e.g. L119's `$ mix scoria.post_publish_smoke`). ExDoc only autolinks spans that *start* with `mix `, so a leading `$ ` disables the autolink. The `mix.exs`/`skip_code_autolink_to` route does NOT gate this warning (separate ExDoc code path) and was not used.
+- **Assertion impact:** None. The asserted substrings (`mix scoria.warning_ratchet.test`, `mix test.adoption`, `mix scoria.post_publish_smoke`) remain byte-present, and `=~` is a substring match — no `CiPolicyContractTest` assertion changed.
+- **Files modified:** guides/maintainers.md
+- **Verification:** `MIX_ENV=dev mix scoria.release_preview` exits 0 with 0 warnings; `MIX_ENV=test mix test --no-start --warnings-as-errors test/scoria/ci_policy_contract_test.exs` stays green (58 tests, 0 failures).
+- **Committed in:** `c809241c` (fix)
+
+---
+
+**Total deviations:** 1 follow-up fix (Rule 1 bug — docs-gate regression from the Task 2 restoration).
+**Impact on plan:** Fix was required for REL-04 (plan 50-04 depends on a clean release preview). No scope creep; only the three inline spans changed.
 
 ## Issues Encountered
 None. The `section_after/2` test helper truncates a section at the first `### ` heading; the restoration deliberately used `**bold**` subsection markers (not `### ` headings) so the CI-gate-map section and its PR-vs-release subsection remain within the helper's slice — matching the guide's existing heading structure (no `### ` headings anywhere in the file).

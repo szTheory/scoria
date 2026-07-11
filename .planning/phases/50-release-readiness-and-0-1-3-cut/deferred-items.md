@@ -3,7 +3,20 @@
 Out-of-scope discoveries logged during plan execution. Not fixed in-place per the
 executor scope boundary (only auto-fix issues directly caused by the current task's changes).
 
-## D-50-DEF-01 — `mix scoria.release_preview` docs WAE gate is RED (release blocker for plan 04)
+## D-50-DEF-01 — `mix scoria.release_preview` docs WAE gate is RED (release blocker for plan 04) — RESOLVED
+
+- **Status:** RESOLVED 2026-07-11 in plan-01 follow-up commit `c809241c`.
+- **Resolution:** ExDoc only autolinks inline-code spans that *begin* with `mix `. The three
+  offending spans in `guides/maintainers.md` (L43/L57/L58) were prefixed with `$ ` — the
+  shell-prompt convention already used safely elsewhere in the same file (e.g. L119's
+  `$ mix scoria.post_publish_smoke`, which never warned). The span then starts with `$ `, so
+  ExDoc skips the task autolink, while the asserted substrings (`mix scoria.warning_ratchet.test`,
+  `mix test.adoption`, `mix scoria.post_publish_smoke`) remain byte-present — so no
+  `CiPolicyContractTest` assertion changed. The `mix.exs`/`skip_code_autolink_to` route was NOT
+  used (confirmed a separate ExDoc code path, per the analysis below).
+- **Verification after fix:** `MIX_ENV=dev mix scoria.release_preview` exits 0 with 0 warnings;
+  `MIX_ENV=test mix test --no-start --warnings-as-errors test/scoria/ci_policy_contract_test.exs`
+  stays green (58 tests, 0 failures). Plan 50-04 must-have truth #1 is unblocked.
 
 - **Discovered during:** plan 50-03, Task 2 verification (`MIX_ENV=dev mix scoria.release_preview`).
 - **Symptom:** `mix docs` (invoked by `scoria.release_preview`) fails under `--warnings-as-errors` with 3 identical warnings:

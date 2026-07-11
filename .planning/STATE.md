@@ -217,6 +217,7 @@ Recent decisions affecting current work:
 - [Phase ?]: 50-02: Playwright dual desktop/mobile selectors use .filter({ visible: true }).first() so they bind by visibility not DOM order — fixed all 4 theme-toggle sites in phase16_parity.spec.mjs
 - [Phase 50-03]: @hexdocs_url moved to per-package subdomain form https://scoria.hexdocs.pm (D-14); main @version stays 0.1.2 (D-12); 4 workflow header comments repointed to guides/maintainers.md
 - [Phase 50-03]: release_preview WAE docs gate is RED from plan-01 guides/maintainers.md filtered-module references (D-50-DEF-01) — out of plan-03 scope, blocks plan 50-04
+- [Phase 50-01-followup]: RESOLVED D-50-DEF-01 — prefixed the three inline `mix <task>` spans in guides/maintainers.md with `$ ` so ExDoc skips the filtered-module autolink; asserted substrings preserved (no CiPolicyContractTest change), release_preview exits 0 (commit c809241c)
 
 ### Resolved And Deferred Work
 
@@ -228,11 +229,11 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-active.
+None active.
 
 - Phase 48 Plan 10 scope-doctrine issue resolved by restoring compatibility-stub fragments expected by `test/scoria/scope_doctrine_contract_test.exs`.
 - Phase 48 Plan 10 generated-doc issue resolved by cleaning generated ExDoc output before release preview rebuilds `doc/`.
-- release_preview / mix docs --warnings-as-errors RED on main: guides/maintainers.md:43,57,58 reference filtered maintainer Mix tasks (plan-01 regression 25ad5233). Blocks plan 50-04 must-have #1. See deferred-items.md D-50-DEF-01.
+- RESOLVED 2026-07-11 (plan-01 follow-up `c809241c`): release_preview / mix docs --warnings-as-errors was RED on main from guides/maintainers.md:43,57,58 referencing filtered maintainer Mix tasks (plan-01 regression 25ad5233). Fixed by prefixing the three inline spans with `$ ` so ExDoc no longer autolinks them; asserted substrings preserved, no test changed. release_preview exits 0. See deferred-items.md D-50-DEF-01.
 
 ### Roadmap Evolution
 
