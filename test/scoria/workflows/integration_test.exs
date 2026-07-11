@@ -146,7 +146,8 @@ defmodule Scoria.WorkflowsIntegrationTest do
   end
 
   test "operator-visible LiveView state matches the durable recovery path" do
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+    {:ok, run} =
+      Workflows.create_run(%{root_role_id: "executor", tenant_id: "tenant-integration"})
 
     {:ok, step} =
       Workflows.create_step(run.id, %{

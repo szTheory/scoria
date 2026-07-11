@@ -169,7 +169,7 @@ defmodule Scoria.RuntimeIntegrationTest do
       build_conn()
       |> Plug.Test.init_test_session(%{
         "actor_id" => "operator-integration",
-        "tenant_id" => "tenant-integration"
+        "tenant_id" => "live-tenant"
       })
       |> Plug.Conn.put_private(:phoenix_endpoint, Scoria.RuntimeIntegrationTest.Endpoint)
 
