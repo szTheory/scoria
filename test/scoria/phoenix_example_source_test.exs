@@ -3,13 +3,14 @@ defmodule Scoria.PhoenixExampleSourceTest do
 
   alias Scoria.TestSupport.AdoptionExample
 
-  @phoenix_example "docs/phoenix_runtime_example.md"
+  for {path, fragments} <- AdoptionExample.phoenix_doc_surfaces() do
+    test "#{path} stays aligned with the checked adoption example source" do
+      content = File.read!(unquote(path))
 
-  test "Phoenix guide stays aligned with the checked adoption example source" do
-    content = File.read!(@phoenix_example)
-
-    for fragment <- AdoptionExample.doc_fragments() do
-      assert content =~ fragment
+      for fragment <- unquote(Macro.escape(fragments)) do
+        assert content =~ fragment,
+               "expected #{unquote(path)} to contain fragment #{inspect(fragment)}"
+      end
     end
   end
 end
