@@ -2,17 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
-current_phase: 52
-current_phase_name: retriever-span-host-declared-attributes
 status: executing
 stopped_at: Completed 52-03-PLAN.md
-last_updated: "2026-07-12T20:24:36.125Z"
+last_updated: "2026-07-12T20:30:47.172Z"
 last_activity: 2026-07-12
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
   percent: 25
 ---
 
@@ -29,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 ## Current Position
 
 Phase: 52 (retriever-span-host-declared-attributes) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-07-12
 
@@ -245,6 +243,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 51-05]: No deviations from the plan's literal instruction -- unlike Plan 51-04, this plan's metadata[:span_kind] || "tool" seam was already correct as written, so implemented verbatim.
 - [Phase 52-02]: model_name/0 is declared @optional_callbacks so host embedders that only implement embed_chunks/2 produce no missing-callback warning; the guarded function_exported?/3 call site lives in retrieve/2 (52-04), not this plan.
 - [Phase 52-03]: emit_prompt_span/1's gen_ai.usage.input_tokens sourcing lives in a new Semconv.merge_usage_input_tokens/2 (not inlined in observe.ex), per Task 2's own action instructions (FOUND-03 single-origin sourcing).
+- [Phase ?]: 52-05: Both req_llm and jido adapters route metadata through Semconv.merge_host_declared/2 identically; req_llm carries an inline D-ATTR01-7 caveat comment (hand-synthesized-only), jido is documented as production-reachable
 
 ### Resolved And Deferred Work
 
@@ -334,6 +333,7 @@ active.
 | Phase 52 P01 | 6min | 3 tasks | 2 files |
 | Phase 52 P02 | 5min | 1 tasks | 2 files |
 | Phase 52 P03 | 4min | 2 tasks | 4 files |
+| Phase 52 P05 | 8min | 2 tasks | 4 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -357,7 +357,7 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-12T20:24:36.118Z
+Last session: 2026-07-12T20:27:45.807Z
 Stopped at: Completed 52-03-PLAN.md
 Resume file: None
 
