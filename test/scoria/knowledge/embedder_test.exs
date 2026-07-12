@@ -18,12 +18,17 @@ defmodule Scoria.Knowledge.EmbedderTest do
     end
 
     test "is exported (an optional callback the Deterministic embedder implements)" do
+      # Ensure the module is loaded first — function_exported?/3 reports false for a
+      # not-yet-loaded module, which makes this assertion order-dependent across the
+      # full suite (passes in isolation, flaky when run after other test files).
+      assert Code.ensure_loaded?(Embedder.Deterministic)
       assert function_exported?(Embedder.Deterministic, :model_name, 0)
     end
   end
 
   describe "guarded fall-through for host embedders lacking model_name/0" do
     test "function_exported?/3 returns false without raising UndefinedFunctionError" do
+      assert Code.ensure_loaded?(NoModelName)
       refute function_exported?(NoModelName, :model_name, 0)
     end
   end
