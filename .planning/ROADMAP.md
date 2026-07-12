@@ -33,7 +33,12 @@
   3. Every span's `span_kind` column is drawn from one shared whitelist module consumed by both `WorkflowTreeComponent` and `TraceTreeComponent` (no independently-hardcoded lists), and carries a mirrored `openinference.span.kind` attribute, with `mcp` actions translating to `"TOOL"`.
   4. Every `gen_ai.*`/`openinference.*` key string used anywhere in the codebase traces back to one version-pinned mapping module (e.g. `Scoria.Observe.Semconv`), not inline string literals at multiple call sites.
   5. Adopters querying already-persisted legacy keys (`llm.model_name`, `llm.token_count`, `req.url`) against their own Postgres get an explicit, CHANGELOG-documented behavior (dual-emit or clean-replacement) rather than a silent break.
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 51-01-PLAN.md — SpanKind taxonomy module + UI-component consumers + CSS status overlay + drift-guard test (FOUND-02, SPAN-02) [Wave 1]
+- [ ] 51-02-PLAN.md — Version-pinned Semconv delegating module + single-origin test (FOUND-03) [Wave 1]
+- [ ] 51-03-PLAN.md — Buffer FK trace-upsert fix + loud flush-error surfacing + Telemetry wrapper (FOUND-01) [Wave 1]
+- [ ] 51-04-PLAN.md — ReqLLM adapter gen_ai.* + span_kind + legacy-key clean replacement + CHANGELOG 0.1.4 (SPAN-01, SPAN-02, COMPAT-01) [Wave 2]
+- [ ] 51-05-PLAN.md — Jido adapter span_kind host-declared default + openinference mirror (SPAN-02) [Wave 2]
 
 ### Phase 52: RETRIEVER Span + Host-Declared Attributes
 **Goal**: Retrieval calls are visible in the trace tree as a linked `RETRIEVER` span without displacing `ai_retrieval_runs` as the system-of-record, and hosts can declare feature/route/archetype/intent plus context-pack composition without Scoria ever inferring them.
@@ -79,7 +84,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 54
 | 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete | 2026-07-10 |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete | 2026-07-11 |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
-| 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 0/TBD | Not started | - |
+| 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 0/5 | Not started | - |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 0/TBD | Not started | - |
 | 53. Structured Child Spans + ai_span_events | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
