@@ -27,9 +27,9 @@ Committed scope for v3.6. Each maps to exactly one phase (see Traceability).
 ### Retrieval & Host-Declared Attributes
 
 - [ ] **RETR-01**: A `RETRIEVER` span is emitted at the single `Knowledge.retrieve/2` call site, dual-written alongside `ai_retrieval_runs` (kept as system-of-record — not collapsed), reusing the trace_id/span_id/latency it already computes.
-- [ ] **RETR-02**: Retrieval config (`embedding_model`, `index_version`, `reranker`) is captured as convention keys (no migration), mirrored into both the `RETRIEVER` span and `ai_retrieval_runs.metadata`, with a span↔table consistency guard against dual-write divergence.
-- [ ] **ATTR-01**: Reserved host-declared keys `feature` / `route` / `archetype` / `intent` are threaded through the existing metadata precedent (`tenant_id`/`workflow_run_id`) and documented — Scoria **reserves and passes through, never infers**.
-- [ ] **ATTR-02**: Context-pack / token-budget composition is captured on the `PROMPT` span — which chunk IDs + which memory IDs + the per-source token split that entered the assembled prompt (**IDs and counts, never raw text**), alongside `gen_ai.usage.input_tokens`.
+- [x] **RETR-02**: Retrieval config (`embedding_model`, `index_version`, `reranker`) is captured as convention keys (no migration), mirrored into both the `RETRIEVER` span and `ai_retrieval_runs.metadata`, with a span↔table consistency guard against dual-write divergence.
+- [x] **ATTR-01**: Reserved host-declared keys `feature` / `route` / `archetype` / `intent` are threaded through the existing metadata precedent (`tenant_id`/`workflow_run_id`) and documented — Scoria **reserves and passes through, never infers**.
+- [x] **ATTR-02**: Context-pack / token-budget composition is captured on the `PROMPT` span — which chunk IDs + which memory IDs + the per-source token split that entered the assembled prompt (**IDs and counts, never raw text**), alongside `gen_ai.usage.input_tokens`.
 
 ### Structured Spans & Events
 
@@ -92,9 +92,9 @@ Phase numbering continues from the previous milestone (v3.5 ended at Phase 50). 
 | SPAN-02 | Phase 51 | Complete |
 | COMPAT-01 | Phase 51 | Complete |
 | RETR-01 | Phase 52 | Pending |
-| RETR-02 | Phase 52 | Pending |
-| ATTR-01 | Phase 52 | Pending |
-| ATTR-02 | Phase 52 | Pending |
+| RETR-02 | Phase 52 | Complete |
+| ATTR-01 | Phase 52 | Complete |
+| ATTR-02 | Phase 52 | Complete |
 | EVENT-01 | Phase 53 | Pending |
 | EVENT-02 | Phase 53 | Pending |
 | EVENT-03 | Phase 53 | Pending |
