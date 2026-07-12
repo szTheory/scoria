@@ -1,5 +1,7 @@
 defmodule Scoria.Knowledge.Embedder do
   @callback embed_chunks([map()], keyword()) :: [[float()]]
+  @callback model_name() :: String.t()
+  @optional_callbacks [model_name: 0]
 
   defmodule Deterministic do
     @behaviour Scoria.Knowledge.Embedder
@@ -8,6 +10,9 @@ defmodule Scoria.Knowledge.Embedder do
     def embed_chunks(chunks, _opts) do
       Enum.map(chunks, &vectorize(&1.body))
     end
+
+    @impl true
+    def model_name, do: "scoria.deterministic.sha256.v1"
 
     def embed_query(text, _opts \\ []) do
       vectorize(text)
