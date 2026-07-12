@@ -32,10 +32,11 @@ defmodule Scoria.Observe.Adapters.JidoTest do
 
     assert_receive {:span, span}
     assert span.name == "jido_action"
-    assert span.span_kind == "INTERNAL"
+    assert span.span_kind == "tool"
     assert span.trace_id == trace_id
     assert span.attributes["jido.action_name"] == "calculate_pi"
     assert span.attributes["jido.status"] == "ok"
     assert span.attributes["duration_ms"] == 500
+    assert span.attributes["openinference.span.kind"] == "TOOL"
   end
 end
