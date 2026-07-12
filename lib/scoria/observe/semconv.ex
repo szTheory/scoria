@@ -13,6 +13,8 @@ defmodule Scoria.Observe.Semconv do
   - the retrieval-config keys (`scoria.retrieval.*`) — embedding model, index
     version, reranker
   - reserved host-declared keys: `feature`/`route`/`archetype`/`intent`
+  - the prompt-context key (`scoria.prompt.context`) — never-text
+    id/token-count-only projection of a host-supplied context pack
   """
 
   @openinference_span_kind_key "openinference.span.kind"
@@ -89,5 +91,66 @@ defmodule Scoria.Observe.Semconv do
         value -> Map.put(acc, Atom.to_string(key), value)
       end
     end)
+  end
+
+  @prompt_context_key "scoria.prompt.context"
+  @prompt_context_item_cap 100
+
+  @doc "Returns the canonical prompt-context attribute key."
+  @spec prompt_context_key() :: String.t()
+  def prompt_context_key, do: @prompt_context_key
+
+  @doc """
+  Builds the nested, never-text prompt-context value from a host-supplied
+  map with `:chunks`, `:memories` (each a list of item maps carrying at
+  least `:id` and `:tokens`) and `:token_budget` (a map with `:total`,
+  `:chunks`, `:memories`, `:overhead`).
+
+  Each chunk/memory item is projected to ONLY `%{"id" => id, "tokens" =>
+  tokens}` — the host's raw item map is never passed through, so a
+  `text`/`content`/`body` field on an over-sharing host item cannot reach
+  the span (D-ATTR02-4, the structural never-text guarantee). Each of
+  `chunks`/`memories` is capped at #{@prompt_context_item_cap} items; when
+  a list is truncated, `"truncated" => true` is added at the top level
+  (D-ATTR02-6).
+
+  This function only builds the value — it does NOT decide whether to
+  attach it to a span. Callers (the emitter) own the omit-when-empty
+  decision: when there is no context pack (or both lists are empty), the
+  emitter must omit the `prompt_context_key/0` attribute entirely rather
+  than attach an empty-but-present value (D-ATTR02-7).
+  """
+  @spec prompt_context(map()) :: map()
+  def prompt_context(%{chunks: chunks, memories: memories, token_budget: token_budget}) do
+    {chunks_out, chunks_truncated?} = project_items(chunks)
+    {memories_out, memories_truncated?} = project_items(memories)
+
+    value = %{
+      "chunks" => chunks_out,
+      "memories" => memories_out,
+      "token_budget" => %{
+        "total" => Map.get(token_budget, :total),
+        "chunks" => Map.get(token_budget, :chunks),
+        "memories" => Map.get(token_budget, :memories),
+        "overhead" => Map.get(token_budget, :overhead)
+      }
+    }
+
+    if chunks_truncated? or memories_truncated? do
+      Map.put(value, "truncated", true)
+    else
+      value
+    end
+  end
+
+  defp project_items(items) do
+    truncated? = length(items) > @prompt_context_item_cap
+
+    projected =
+      items
+      |> Enum.take(@prompt_context_item_cap)
+      |> Enum.map(fn item -> %{"id" => Map.get(item, :id), "tokens" => Map.get(item, :tokens)} end)
+
+    {projected, truncated?}
   end
 end

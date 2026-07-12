@@ -184,4 +184,95 @@ defmodule Scoria.Observe.SemconvTest do
       end
     end
   end
+
+  describe "prompt_context_key/0 + prompt_context/1" do
+    test "prompt_context_key/0 returns the exact canonical key string" do
+      assert Semconv.prompt_context_key() == "scoria.prompt.context"
+    end
+
+    test "never-text: chunk/memory items built from an over-sharing host item contain ONLY id/tokens" do
+      built =
+        Semconv.prompt_context(%{
+          chunks: [%{id: "c1", tokens: 10, text: "leaked chunk body", content: "also leaked"}],
+          memories: [%{id: "m1", tokens: 5, body: "leaked memory body"}],
+          token_budget: %{total: 15, chunks: 10, memories: 5, overhead: 0}
+        })
+
+      assert [%{"id" => "c1", "tokens" => 10} = chunk_item] = built["chunks"]
+      assert Map.keys(chunk_item) |> Enum.sort() == ["id", "tokens"]
+
+      assert [%{"id" => "m1", "tokens" => 5} = memory_item] = built["memories"]
+      assert Map.keys(memory_item) |> Enum.sort() == ["id", "tokens"]
+    end
+
+    test "structural guard: no key matches text/content/body/message/prompt/raw; leaves are bounded; encoded size <= 8KB" do
+      built =
+        Semconv.prompt_context(%{
+          chunks: [%{id: "c1", tokens: 10}],
+          memories: [%{id: "m1", tokens: 5}],
+          token_budget: %{total: 15, chunks: 10, memories: 5, overhead: 0}
+        })
+
+      allowed_keys = ~w(chunks memories token_budget id tokens total overhead truncated)
+
+      assert_only_allowed_keys(built, allowed_keys)
+
+      encoded = Jason.encode!(built)
+      assert byte_size(encoded) <= 8192
+    end
+
+    test "≤100-item cap: a 101-item chunk list is capped to 100 items with \"truncated\" => true" do
+      chunks = for i <- 1..101, do: %{id: "c#{i}", tokens: 1}
+
+      built =
+        Semconv.prompt_context(%{
+          chunks: chunks,
+          memories: [],
+          token_budget: %{total: 101, chunks: 101, memories: 0, overhead: 0}
+        })
+
+      assert length(built["chunks"]) == 100
+      assert built["truncated"] == true
+    end
+
+    test "anti-inline grep: no lib consumer file inlines the \"scoria.prompt.context\" literal" do
+      consumer_files = [
+        "lib/scoria/knowledge.ex",
+        "lib/scoria/observe.ex",
+        "lib/scoria/observe/adapters/req_llm.ex",
+        "lib/scoria/observe/adapters/jido.ex"
+      ]
+
+      for path <- consumer_files, File.exists?(Path.expand(path, File.cwd!())) do
+        source = path |> Path.expand(File.cwd!()) |> File.read!()
+
+        refute source =~ "scoria.prompt.context",
+               "#{path} must call Semconv.prompt_context_key/0, never inline the scoria.prompt.context literal"
+      end
+    end
+  end
+
+  defp assert_only_allowed_keys(value, allowed_keys) when is_map(value) do
+    for {key, sub} <- value do
+      assert key in allowed_keys, "unexpected key #{inspect(key)} in prompt_context value"
+      refute key =~ ~r/text|content|body|message|prompt|raw/i
+
+      assert_only_allowed_keys(sub, allowed_keys)
+    end
+  end
+
+  defp assert_only_allowed_keys(value, allowed_keys) when is_list(value) do
+    Enum.each(value, &assert_only_allowed_keys(&1, allowed_keys))
+  end
+
+  defp assert_only_allowed_keys(value, _allowed_keys) when is_binary(value) do
+    assert byte_size(value) <= 64
+  end
+
+  defp assert_only_allowed_keys(value, _allowed_keys) when is_integer(value) do
+    assert value >= 0
+  end
+
+  defp assert_only_allowed_keys(value, _allowed_keys) when is_boolean(value), do: :ok
+  defp assert_only_allowed_keys(nil, _allowed_keys), do: :ok
 end
