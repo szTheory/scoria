@@ -85,12 +85,7 @@ defmodule ScoriaWeb.TraceTreeComponent do
 
   defp span_kind(span) do
     span
-    |> Map.get(:span_kind, Map.get(span, "span_kind", "agent"))
-    |> to_string()
-    |> String.downcase()
-    |> case do
-      kind when kind in ~w(agent llm prompt tool mcp retriever guardrail eval error) -> kind
-      _ -> "agent"
-    end
+    |> Map.get(:span_kind, Map.get(span, "span_kind"))
+    |> Scoria.Observe.SpanKind.normalize()
   end
 end

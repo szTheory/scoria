@@ -62,6 +62,17 @@ defmodule ScoriaWeb.TraceTreeComponentTest do
     refute html =~ "gray-"
   end
 
+  test "renders the lowercase-native scoria-span--llm rail class regardless of stored casing" do
+    html =
+      render_component(ScoriaWeb.TraceTreeComponent,
+        id: "trace-casing",
+        spans: [%{id: "span-llm", name: "llm_call", span_kind: "LLM", depth: 0}]
+      )
+
+    assert html =~ "scoria-span--llm"
+    refute html =~ "scoria-span--LLM"
+  end
+
   test "source stays tokenized while preserving lazy metadata targeting" do
     source = File.read!("lib/scoria_web/components/trace_tree_component.ex")
 
