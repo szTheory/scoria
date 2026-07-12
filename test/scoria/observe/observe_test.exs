@@ -131,4 +131,115 @@ defmodule Scoria.ObserveTest do
                })
     end
   end
+
+  describe "emit_prompt_span/1" do
+    defp populated_context_pack do
+      %{
+        chunks: [%{id: "chunk-1", tokens: 128}],
+        memories: [%{id: "mem-1", tokens: 64}],
+        token_budget: %{total: 2048, chunks: 128, memories: 64, overhead: 1856}
+      }
+    end
+
+    test "populated pack + host input_tokens: prompt-context and usage input-tokens coexist" do
+      span =
+        capture_span(fn ->
+          Observe.emit_prompt_span(%{
+            trace_id: Ecto.UUID.generate(),
+            parent_id: nil,
+            context_pack: populated_context_pack(),
+            input_tokens: 1900
+          })
+        end)
+
+      assert span.attributes[Semconv.prompt_context_key()] ==
+               Semconv.prompt_context(populated_context_pack())
+
+      assert span.attributes["gen_ai.usage.input_tokens"] == 1900
+    end
+
+    test "no context_pack: prompt-context key is absent from attributes" do
+      span =
+        capture_span(fn ->
+          Observe.emit_prompt_span(%{trace_id: Ecto.UUID.generate(), input_tokens: 10})
+        end)
+
+      refute Map.has_key?(span.attributes, Semconv.prompt_context_key())
+    end
+
+    test "empty context_pack lists: prompt-context key is absent from attributes" do
+      span =
+        capture_span(fn ->
+          Observe.emit_prompt_span(%{
+            trace_id: Ecto.UUID.generate(),
+            context_pack: %{chunks: [], memories: [], token_budget: %{}},
+            input_tokens: 10
+          })
+        end)
+
+      refute Map.has_key?(span.attributes, Semconv.prompt_context_key())
+    end
+
+    test "nil/absent input_tokens: usage input-tokens key is absent" do
+      span =
+        capture_span(fn ->
+          Observe.emit_prompt_span(%{
+            trace_id: Ecto.UUID.generate(),
+            context_pack: populated_context_pack()
+          })
+        end)
+
+      refute Map.has_key?(span.attributes, "gen_ai.usage.input_tokens")
+    end
+
+    test "host-declared keys ride the span via merge_host_declared/2" do
+      span =
+        capture_span(fn ->
+          Observe.emit_prompt_span(%{
+            trace_id: Ecto.UUID.generate(),
+            feature: "support-copilot",
+            route: "/tickets/:id",
+            archetype: "rag",
+            intent: "answer"
+          })
+        end)
+
+      assert span.attributes["feature"] == "support-copilot"
+      assert span.attributes["route"] == "/tickets/:id"
+      assert span.attributes["archetype"] == "rag"
+      assert span.attributes["intent"] == "answer"
+    end
+
+    test "span_kind is prompt, name is prompt.compose, :id defaults to a fresh UUID" do
+      span = capture_span(fn -> Observe.emit_prompt_span(%{trace_id: Ecto.UUID.generate()}) end)
+
+      assert span.span_kind == SpanKind.normalize("prompt")
+      assert span.name == "prompt.compose"
+      assert {:ok, _} = Ecto.UUID.cast(span.id)
+    end
+
+    test "a supplied :span_id is preserved (not overwritten by a fresh UUID)" do
+      span_id = Ecto.UUID.generate()
+
+      span =
+        capture_span(fn ->
+          Observe.emit_prompt_span(%{trace_id: Ecto.UUID.generate(), span_id: span_id})
+        end)
+
+      assert span.id == span_id
+    end
+
+    test "returns :ok even when the telemetry handler raises" do
+      :telemetry.attach(
+        "scoria-observe-test-prompt-raiser",
+        [:scoria, :observe, :span, :stop],
+        fn _name, _measurements, _span, _config -> raise "boom" end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("scoria-observe-test-prompt-raiser") end)
+
+      assert :ok = Observe.emit_prompt_span(%{trace_id: Ecto.UUID.generate()})
+    end
+  end
 end
