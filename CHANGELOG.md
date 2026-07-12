@@ -150,6 +150,34 @@ install axis and do not map to Hex versions.
 
 ## [Unreleased]
 
+### ⚠ BREAKING CHANGES (`0.1.4` cut)
+
+**ReqLLM observability adapter attribute key rename.** `Scoria.Observe.Adapters.ReqLLM`
+now emits OTel-GenAI / OpenInference convention keys (`gen_ai.*`, `server.*`,
+`openinference.span.kind`) instead of Scoria's own ad hoc keys. This is a **clean
+replacement — no dual-emit, no runtime shim, no config flag.** No adopter Postgres
+database has ever actually persisted the old keys: a separate pre-existing bug (the
+`ai_spans.trace_id` foreign-key gap, fixed alongside this change) meant every span
+emitted through `Scoria.Observe.Buffer` was silently dropped before reaching the
+database, so there is zero legacy row data to protect.
+
+| Old key | New key(s) | Note |
+|---|---|---|
+| `llm.model_name` | `gen_ai.request.model` (requested) / `gen_ai.response.model` (actually used) | Was a single string; now split into request-vs-response semantics — some providers silently route to a different underlying model than requested |
+| `llm.token_count` | `gen_ai.usage.input_tokens` + `gen_ai.usage.output_tokens` | Was a single total; reconstruct the old total as `input_tokens + output_tokens` if you need it |
+| `req.url` | `server.address` + `server.port` | **Lossy**: the old key held a presumed full request URL; the new keys hold only host + port, not path. Combine with `gen_ai.operation.name` (e.g. `"chat"`) for "what kind of call, to what host" — not literal path-level detail |
+
+If you attached a custom `:telemetry` handler to `[:scoria, :observe, :span, :stop]`
+that reads the old key names out of `attributes` in memory, update it to read the new
+`gen_ai.*`/`server.*` keys above.
+
+**New persistence-failure observability.** `Scoria.Observe.Buffer` no longer silently
+swallows flush failures with a bare `rescue`. A new `[:scoria, :observe, :buffer,
+:flush_error]` telemetry event fires on every failed flush (logged by default), and a
+new `:on_flush_error` `Buffer` start-link option (`:log` default | `:raise`) lets you
+choose whether a persistent Postgres failure should crash the buffer process instead
+of only logging.
+
 ### Changed
 
 #### Pre-1.0 terminology migration
