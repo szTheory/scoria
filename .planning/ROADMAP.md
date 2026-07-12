@@ -61,11 +61,19 @@
   4. A `PROMPT` span's attributes carry which chunk IDs, which memory IDs, and the per-source token split that composed the assembled prompt, alongside `gen_ai.usage.input_tokens` — IDs and counts only, never the raw chunk/memory text.
 
 **Plans**: 6 plans
+**Wave 1**
+
 - [ ] 52-01-PLAN.md — Semconv projection seam (retrieval-config / host-declared / prompt-context) + drift-guard unit tests
 - [ ] 52-02-PLAN.md — Embedder optional `model_name/0` callback + Deterministic impl
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 52-03-PLAN.md — `Scoria.Observe` facade: `emit_retriever_span/1` + `emit_prompt_span/1`
-- [ ] 52-04-PLAN.md — Wire `retrieve/2` + RETR-01 join / RETR-02 equality / ATTR-01 pass-through / D-R2b migration
 - [ ] 52-05-PLAN.md — Adapters host-declared pipe (`merge_host_declared/2`) + pass-through tests
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 52-04-PLAN.md — Wire `retrieve/2` + RETR-01 join / RETR-02 equality / ATTR-01 pass-through / D-R2b migration
 - [ ] 52-06-PLAN.md — ATTR-02 SC#4 acceptance: real `emit_prompt_span/1` + `flush_now` persisted-span assertions
 
 ### Phase 53: Structured Child Spans + `ai_span_events`
