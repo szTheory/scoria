@@ -103,4 +103,19 @@ defmodule Scoria.Observe.Adapters.ReqLLMTest do
       refute Map.has_key?(span.attributes, "req.url")
     end
   end
+
+  describe "D-ATTR01-5: host-declared attribute pass-through" do
+    # D-ATTR01-7 caveat: this proves the merge_host_declared/2 pipe wiring
+    # on this adapter's OWN hand-synthesized test event, NOT production
+    # reachability. A real [:req_llm, :request, :stop] emission carries no
+    # host-declared keys in its metadata (req_llm builds a fixed base map);
+    # production host keys on the LLM/prompt lane flow via
+    # Scoria.Observe.emit_prompt_span/1 (52-03), not this adapter.
+    test "a host-supplied feature key passes through byte-for-byte and an omitted host key is absent" do
+      span = capture_span(realistic_metadata(%{feature: "support-copilot"}))
+
+      assert span.attributes["feature"] == "support-copilot"
+      refute Map.has_key?(span.attributes, "route")
+    end
+  end
 end

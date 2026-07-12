@@ -79,4 +79,13 @@ defmodule Scoria.Observe.Adapters.JidoTest do
       end
     end
   end
+
+  describe "D-ATTR01-5: host-declared attribute pass-through (production-shaped)" do
+    test "a host-supplied feature key passes through byte-for-byte and an omitted host key is absent" do
+      span = capture_span(base_metadata(%{feature: "support-copilot"}))
+
+      assert span.attributes["feature"] == "support-copilot"
+      refute Map.has_key?(span.attributes, "route")
+    end
+  end
 end
