@@ -23,8 +23,13 @@ defmodule Scoria.Observe.Adapters.ReqLLMTest do
 
   # Realistic %LLMDB.Model{} fixture — NOT a bare string. Production
   # [:req_llm, :request, :stop] events carry metadata[:model] as a real
-  # %LLMDB.Model{} struct (RESEARCH.md Pitfall 1); a bare-string fixture
-  # would mask the struct-in-jsonb bug fixed by this plan.
+  # %LLMDB.Model{} struct (RESEARCH.md Pitfall 1, confirmed against
+  # deps/req_llm/lib/req_llm/telemetry.ex `new_context/3`); a bare-string
+  # fixture would mask the struct-in-jsonb bug fixed by this plan. Pinned
+  # against the locked req_llm 1.13.0 dependency (`mix hex.outdated req_llm`
+  # pre-flight re-confirmed 2026-07-12: Hex latest is 1.17.1, but the
+  # `~> 1.13` mix.exs requirement is still up-to-date/unchanged, so the
+  # gen_ai.* key set enumerated below remains correct).
   defp realistic_metadata(overrides \\ %{}) do
     %{
       model: LLMDB.Model.new!(%{id: "gpt-5", provider: :openai}),
@@ -44,34 +49,58 @@ defmodule Scoria.Observe.Adapters.ReqLLMTest do
     |> Map.merge(overrides)
   end
 
-  test "transforms req_llm stop event into a scoria span with gen_ai.* attributes, correct span_kind, and no legacy keys" do
-    metadata = realistic_metadata()
-
+  defp capture_span(metadata) do
     :telemetry.execute([:req_llm, :request, :stop], %{}, metadata)
-
     assert_receive {:span, span}
-    assert span.name == "req_llm_request"
-    assert span.trace_id == metadata.trace_id
+    span
+  end
 
-    # SPAN-01 / SC#2: all four model-config params + a usage key present TOGETHER
-    assert span.attributes["gen_ai.request.model"] == "gpt-5"
-    assert span.attributes["gen_ai.request.temperature"] == 0.7
-    assert span.attributes["gen_ai.request.top_p"] == 0.9
-    assert span.attributes["gen_ai.request.max_tokens"] == 512
-    assert span.attributes["gen_ai.request.seed"] == 42
-    assert span.attributes["gen_ai.usage.input_tokens"] == 150
+  describe "span shape" do
+    test "transforms a req_llm stop event into a scoria span" do
+      metadata = realistic_metadata()
+      span = capture_span(metadata)
 
-    # SPAN-02: native-lowercase span_kind + mirrored openinference.span.kind
-    assert span.span_kind == "llm"
-    assert span.attributes["openinference.span.kind"] == "LLM"
+      assert span.name == "req_llm_request"
+      assert span.trace_id == metadata.trace_id
+    end
 
-    # COMPAT-01: legacy keys are gone (clean replacement, no dual-emit)
-    refute Map.has_key?(span.attributes, "llm.model_name")
-    refute Map.has_key?(span.attributes, "llm.token_count")
-    refute Map.has_key?(span.attributes, "req.url")
+    test "tenant_id / workflow_run_id from metadata appear in attributes when present" do
+      span = capture_span(realistic_metadata())
 
-    # tenant_id / workflow_run_id still appear when present
-    assert span.attributes["tenant_id"] == "tenant-1"
-    assert span.attributes["workflow_run_id"] == "run-1"
+      assert span.attributes["tenant_id"] == "tenant-1"
+      assert span.attributes["workflow_run_id"] == "run-1"
+    end
+  end
+
+  describe "SPAN-01: gen_ai.* completeness (SC#2 — never a partial subset)" do
+    test "all four model-config params + a usage key are present together" do
+      span = capture_span(realistic_metadata())
+
+      assert span.attributes["gen_ai.request.model"] == "gpt-5"
+      assert span.attributes["gen_ai.request.temperature"] == 0.7
+      assert span.attributes["gen_ai.request.top_p"] == 0.9
+      assert span.attributes["gen_ai.request.max_tokens"] == 512
+      assert span.attributes["gen_ai.request.seed"] == 42
+      assert span.attributes["gen_ai.usage.input_tokens"] == 150
+    end
+  end
+
+  describe "SPAN-02: span_kind + mirrored openinference.span.kind" do
+    test "span_kind is native-lowercase \"llm\" and the openinference mirror is UPPERCASE" do
+      span = capture_span(realistic_metadata())
+
+      assert span.span_kind == "llm"
+      assert span.attributes["openinference.span.kind"] == "LLM"
+    end
+  end
+
+  describe "COMPAT-01: legacy keys are gone (clean replacement, no dual-emit)" do
+    test "attributes do not contain the old llm.model_name/llm.token_count/req.url keys" do
+      span = capture_span(realistic_metadata())
+
+      refute Map.has_key?(span.attributes, "llm.model_name")
+      refute Map.has_key?(span.attributes, "llm.token_count")
+      refute Map.has_key?(span.attributes, "req.url")
+    end
   end
 end
