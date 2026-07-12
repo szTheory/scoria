@@ -28,6 +28,26 @@ defmodule Scoria.Observe.Telemetry do
     :telemetry.execute([:scoria, :observe, :span, :delta], %{}, metadata)
   end
 
+  @doc """
+  Emits a buffer flush-error telemetry event for non-fatal persistence failures.
+
+  `Scoria.Observe.Buffer` calls this instead of raw `:telemetry.execute/3`.
+  Integration tests must use this for flush-error proof (not raw
+  `:telemetry.execute` on `[:scoria, :observe, :buffer, :flush_error]`).
+
+  Expects a map carrying `:dropped_count`, `:buffer`, `:max_size`, `:kind`,
+  `:error`, and `:stacktrace`. Counts + error identity only -- never include
+  raw span `entries`/`attributes` (may carry prompt content).
+  """
+  def emit_flush_error(metadata) when is_map(metadata) do
+    measurements = %{
+      dropped_count: Map.get(metadata, :dropped_count, 0),
+      system_time: System.system_time()
+    }
+
+    :telemetry.execute([:scoria, :observe, :buffer, :flush_error], measurements, metadata)
+  end
+
   def handle_event([:scoria, :observe, :span, :delta], _measurements, metadata, _config) do
     redacted =
       metadata
