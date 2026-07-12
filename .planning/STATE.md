@@ -2,11 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
-current_phase: 51
-current_phase_name: foundation-fix-key-convention-span-kind-taxonomy
-status: ready_to_plan
-stopped_at: Phase 51 complete (5/5) — ready to discuss Phase 52
-last_updated: 2026-07-12T17:10:16.255Z
+status: planning
+stopped_at: Phase 52 context gathered
+last_updated: "2026-07-12T17:36:04.477Z"
 last_activity: 2026-07-12
 progress:
   total_phases: 4
@@ -352,9 +350,9 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-12T15:43:04.025Z
-Stopped at: Completed 51-04-PLAN.md
-Resume file: None
+Last session: 2026-07-12T17:36:04.472Z
+Stopped at: Phase 52 context gathered
+Resume file: .planning/phases/52-retriever-span-host-declared-attributes/52-CONTEXT.md
 
 ## Operator Next Steps
 
