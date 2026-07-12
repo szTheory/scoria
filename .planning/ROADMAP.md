@@ -74,7 +74,7 @@
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 52-04-PLAN.md — Wire `retrieve/2` + RETR-01 join / RETR-02 equality / ATTR-01 pass-through / D-R2b migration
-- [ ] 52-06-PLAN.md — ATTR-02 SC#4 acceptance: real `emit_prompt_span/1` + `flush_now` persisted-span assertions
+- [x] 52-06-PLAN.md — ATTR-02 SC#4 acceptance: real `emit_prompt_span/1` + `flush_now` persisted-span assertions
 
 ### Phase 53: Structured Child Spans + `ai_span_events`
 
@@ -116,7 +116,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 54
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete | 2026-07-11 |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
-| 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 5/6 | In Progress|  |
+| 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete   | 2026-07-12 |
 | 53. Structured Child Spans + ai_span_events | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 

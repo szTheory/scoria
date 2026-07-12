@@ -4,16 +4,16 @@ milestone: v3.6
 milestone_name: Trace Foundation
 current_phase: 52
 current_phase_name: retriever-span-host-declared-attributes
-status: executing
-stopped_at: Completed 52-04-PLAN.md
-last_updated: "2026-07-12T20:53:43.566Z"
+status: verifying
+stopped_at: Completed 52-06-PLAN.md
+last_updated: "2026-07-12T21:14:44.938Z"
 last_activity: 2026-07-12
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 11
-  completed_plans: 10
-  percent: 25
+  completed_plans: 11
+  percent: 50
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 
 Phase: 52 (retriever-span-host-declared-attributes) — EXECUTING
 Plan: 6 of 6
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-12
 
 ## Performance Metrics
@@ -248,6 +248,7 @@ Recent decisions affecting current work:
 - [Phase ?]: 52-05: Both req_llm and jido adapters route metadata through Semconv.merge_host_declared/2 identically; req_llm carries an inline D-ATTR01-7 caveat comment (hand-synthesized-only), jido is documented as production-reachable
 - [Phase 52]: opts[:embedding_model] wins outright; when opts[:query_embedding] is host-supplied, embedder.model_name/0 is never called and the field falls through to the "none" sentinel.
 - [Phase 52]: Dropped ai_retrieval_runs.trace_id/span_id hard foreign keys (kept columns+indexes) so the eventually-consistent run<->span join no longer raises on every context-less retrieve/2 call (D-R1/D-R2).
+- [Phase ?]: Test file mirrors telemetry_test.exs's real DB-backed setup (scoped Buffer + Telemetry.attach) rather than hand-synthesizing a span map, so the SC#4 proof exercises the actual production telemetry->buffer->Postgres pipeline (D-ATTR01-6).
 
 ### Resolved And Deferred Work
 
@@ -339,6 +340,7 @@ active.
 | Phase 52 P03 | 4min | 2 tasks | 4 files |
 | Phase 52 P05 | 8min | 2 tasks | 4 files |
 | Phase 52 P04 | 25min | 2 tasks | 3 files |
+| Phase 52 P06 | 16min | 1 tasks | 1 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -362,8 +364,8 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-12T20:53:29.801Z
-Stopped at: Completed 52-04-PLAN.md
+Last session: 2026-07-12T21:14:44.931Z
+Stopped at: Completed 52-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

@@ -40,3 +40,36 @@ here, not fixed inline).
   `Process.sleep` removal, flaky CI reruns) in `.planning/STATE.md`.
 - **Why out of scope for 52-04:** not in this plan's `files_modified`; not
   caused by this plan's changes; already tracked as project-level debt.
+
+## Found during 52-06
+
+Full-suite `mix test` reproduced items #1 and #2 above (still present,
+unmodified) plus two additional pre-existing failures — none touch
+`test/scoria/observe/prompt_span_test.exs` (this plan's only file):
+
+### 3. `Mix.Tasks.Scoria.InstallCheckTest` cross-test `test/tmp` race (pre-existing)
+
+- **Test:** `test/mix/tasks/scoria.install_check_test.exs:27` — "mix
+  scoria.install --check renders remediation payload parity for human and
+  json"
+- **Symptom:** `File.cd!/1` fails with `could not set current working
+  directory to ".../test/tmp/install_check/manual_review-10766": no such
+  file or directory` — another async test tore down/rotated a fixture
+  directory under `test/tmp` mid-run.
+- **Why out of scope for 52-06:** not in this plan's `files_modified`
+  (`test/scoria/observe/prompt_span_test.exs`); a `test/tmp` concurrency
+  race, consistent with the same SEED-004 test-code determinism debt as
+  item #2.
+
+### 4. `Scoria.WarningInventory.TmpPreflightTest` fixture-pollution race (pre-existing)
+
+- **Test:** `test/scoria/warning_inventory/tmp_preflight_test.exs:33` —
+  "ratchet check subprocess cleans test/tmp so inventory preflight passes
+  afterward"
+- **Symptom:** `ratchet check failed: test/tmp contains 1 entries; clean
+  installer fixture pollution before running warning inventory` — a
+  concurrently-running installer test left an entry in `test/tmp` when
+  this subprocess-driven preflight ran.
+- **Why out of scope for 52-06:** not in this plan's `files_modified`; same
+  `test/tmp` cross-test concurrency class as item #3, unrelated to
+  `Observe`/prompt-span work.
