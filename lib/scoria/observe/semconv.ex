@@ -153,4 +153,30 @@ defmodule Scoria.Observe.Semconv do
 
     {projected, truncated?}
   end
+
+  @doc """
+  Merges the req_llm-owned `gen_ai.usage.input_tokens` key into `attributes`
+  when `input_tokens` is present (non-`nil`). A `nil` `input_tokens` is a
+  no-op — the caller tolerates absence rather than asserting unconditional
+  presence (D-ATTR02-5; usage is `nil` on embedding-only or failed calls).
+
+  Sourced via `ReqLLM.OpenTelemetry.Attributes.terminal/1` with a minimal
+  `%{usage: %{input_tokens: input_tokens}}` metadata shape — every other
+  `terminal/1` field (`finish_reasons`, `response`, `embeddings`, etc.) is
+  absent from that shape and is stripped by `terminal/1`'s own `compact/1`,
+  so the result is exactly one key: the req_llm-owned usage input-tokens
+  attribute, mapped to `input_tokens`. This module never hand-writes a
+  gen_ai-namespaced string literal (FOUND-03) — both the key name and
+  value come from delegating to req_llm's own builder, not from a literal
+  declared here.
+  """
+  @spec merge_usage_input_tokens(map(), integer() | nil) :: map()
+  def merge_usage_input_tokens(attributes, nil), do: attributes
+
+  def merge_usage_input_tokens(attributes, input_tokens) do
+    Map.merge(
+      attributes,
+      ReqLLM.OpenTelemetry.Attributes.terminal(%{usage: %{input_tokens: input_tokens}})
+    )
+  end
 end

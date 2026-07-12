@@ -252,6 +252,25 @@ defmodule Scoria.Observe.SemconvTest do
     end
   end
 
+  describe "merge_usage_input_tokens/2" do
+    test "merges exactly the usage input-tokens key when input_tokens is present" do
+      merged = Semconv.merge_usage_input_tokens(%{}, 1900)
+
+      assert merged == %{"gen_ai.usage.input_tokens" => 1900}
+    end
+
+    test "preserves caller-supplied base attributes alongside the merged key" do
+      merged = Semconv.merge_usage_input_tokens(%{"feature" => "support-copilot"}, 42)
+
+      assert merged["feature"] == "support-copilot"
+      assert merged["gen_ai.usage.input_tokens"] == 42
+    end
+
+    test "nil input_tokens is a no-op — tolerate absence, never assert unconditional presence" do
+      assert Semconv.merge_usage_input_tokens(%{"a" => 1}, nil) == %{"a" => 1}
+    end
+  end
+
   defp assert_only_allowed_keys(value, allowed_keys) when is_map(value) do
     for {key, sub} <- value do
       assert key in allowed_keys, "unexpected key #{inspect(key)} in prompt_context value"
