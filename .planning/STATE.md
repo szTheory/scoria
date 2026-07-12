@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
-status: planning
-stopped_at: Phase 51 context gathered
-last_updated: "2026-07-11T21:56:54.222Z"
-last_activity: 2026-07-11 — v3.6 ROADMAP.md created (Phases 51-54, 16/16 requirements mapped, 0 orphans)
+status: executing
+stopped_at: Completed 51-01-PLAN.md
+last_updated: "2026-07-12T14:47:40.179Z"
+last_activity: 2026-07-12
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 5
+  completed_plans: 1
   percent: 0
 ---
 
@@ -22,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v3.6 Trace Foundation — ROADMAP.md created (Phases 51-54); Phase 51 (Foundation Fix + Key Convention + Span-Kind Taxonomy) ready to plan.
+**Current focus:** Phase 51 — foundation-fix-key-convention-span-kind-taxonomy
 
 ## Current Position
 
-Phase: 51 of 54 (Foundation Fix + Key Convention + Span-Kind Taxonomy)
-Plan: — (not yet planned)
-Status: Roadmap created — ready to plan Phase 51
-Last activity: 2026-07-11 — v3.6 ROADMAP.md created (Phases 51-54, 16/16 requirements mapped, 0 orphans)
+Phase: 51 (foundation-fix-key-convention-span-kind-taxonomy) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-07-12
 
 ## Performance Metrics
 
@@ -231,6 +231,8 @@ Recent decisions affecting current work:
 - [Phase ?]: package_surface_test :79 homepage_url assertion updated to https://scoria.hexdocs.pm to track mix.exs @hexdocs_url (REL-03/D-14); one-publish-surface invariant preserved
 - [Phase ?]: capture_parity_test.exs left unchanged - verify-first reproduction on the release head passed, confirming Bucket F was a local-env-only artifact, not a real contract break
 - [Phase ?]: [Phase 50-11]: Forward-fixed a real ExDoc --warnings-as-errors regression (docs/design_system.md broken markdown link in guides/maintainers.md, non-extras dev-only doc) discovered on PR #12's first CI pass; changed the link to a plain code span (same technique as prior c809241c fix), no assertions weakened. One duplicate push-triggered CI run hit an unrelated flaky eventually() timeout (SEED-004 class); re-ran via gh run rerun --failed rather than treating it as a new bucket.
+- [Phase 51-01]: Fallback telemetry event name locked as [:scoria, :observe, :span_kind, :fallback] with metadata %{value:, default:}, documented in the SpanKind moduledoc
+- [Phase 51-01]: workflow_tree_component.ex keeps its 3 step-vocab mapping clauses (approval->guardrail, handoff->agent, answer->llm) since it maps a different input than trace_tree_component.ex's real ai_spans.span_kind; only the fallback routes through SpanKind.normalize/1
 
 ### Resolved And Deferred Work
 
@@ -312,6 +314,7 @@ active.
 | Phase 50 P09 | 25min | 1 tasks | 2 files |
 | Phase 50 P10 | 10min | 2 tasks | 1 files |
 | Phase 50 P11 | 45min | 2 tasks | 1 files |
+| Phase 51 P01 | 6min | 3 tasks | 7 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -335,9 +338,9 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-11T21:56:54.218Z
-Stopped at: Phase 51 context gathered
-Resume file: .planning/phases/51-foundation-fix-key-convention-span-kind-taxonomy/51-CONTEXT.md
+Last session: 2026-07-12T14:47:40.174Z
+Stopped at: Completed 51-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
