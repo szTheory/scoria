@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
 status: executing
-stopped_at: Completed 51-01-PLAN.md
-last_updated: "2026-07-12T14:47:40.179Z"
+stopped_at: Completed 51-02-PLAN.md
+last_updated: "2026-07-12T14:53:21.531Z"
 last_activity: 2026-07-12
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 ## Current Position
 
 Phase: 51 (foundation-fix-key-convention-span-kind-taxonomy) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-07-12
 
@@ -233,6 +233,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 50-11]: Forward-fixed a real ExDoc --warnings-as-errors regression (docs/design_system.md broken markdown link in guides/maintainers.md, non-extras dev-only doc) discovered on PR #12's first CI pass; changed the link to a plain code span (same technique as prior c809241c fix), no assertions weakened. One duplicate push-triggered CI run hit an unrelated flaky eventually() timeout (SEED-004 class); re-ran via gh run rerun --failed rather than treating it as a new bucket.
 - [Phase 51-01]: Fallback telemetry event name locked as [:scoria, :observe, :span_kind, :fallback] with metadata %{value:, default:}, documented in the SpanKind moduledoc
 - [Phase 51-01]: workflow_tree_component.ex keeps its 3 step-vocab mapping clauses (approval->guardrail, handoff->agent, answer->llm) since it maps a different input than trace_tree_component.ex's real ai_spans.span_kind; only the fallback routes through SpanKind.normalize/1
+- [Phase 51-02]: Semconv.merge_req_llm_attributes/2 delegates wholesale to ReqLLM.OpenTelemetry.Attributes.start/1 + .terminal/1 rather than re-declaring the gen_ai.* key strings, per RESEARCH Pattern 3 / D-16 — avoids a second, driftable copy of req_llm's own vocabulary.
+- [Phase 51-02]: Test fixtures use LLMDB.Model.new!/1 (a real %LLMDB.Model{} struct) for metadata[:model] instead of a bare string, matching the real [:req_llm, :request, :stop] telemetry shape (RESEARCH Pitfall 1).
 
 ### Resolved And Deferred Work
 
@@ -315,6 +317,7 @@ active.
 | Phase 50 P10 | 10min | 2 tasks | 1 files |
 | Phase 50 P11 | 45min | 2 tasks | 1 files |
 | Phase 51 P01 | 6min | 3 tasks | 7 files |
+| Phase 51 P02 | 3min | 2 tasks | 2 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -338,8 +341,8 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-12T14:47:40.174Z
-Stopped at: Completed 51-01-PLAN.md
+Last session: 2026-07-12T14:53:21.524Z
+Stopped at: Completed 51-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
