@@ -17,7 +17,7 @@
 **Phase Numbering:** Continues from the previous milestone (v3.5 ended at Phase 50). No decimal insertions in this milestone yet.
 
 - [ ] **Phase 51: Foundation Fix + Key Convention + Span-Kind Taxonomy** - Trace-upsert FK fix, shared span_kind whitelist, version-pinned semconv module, `gen_ai.*` model-config capture via ReqLLM's attribute builder, correct span_kind + `openinference.span.kind`, legacy-key compat decision.
-- [ ] **Phase 52: RETRIEVER Span + Host-Declared Attributes** - `RETRIEVER` span dual-written alongside `ai_retrieval_runs`, retrieval config fields with a span↔table consistency guard, reserved host-declared attribute keys, context-pack composition on the `PROMPT` span.
+- [x] **Phase 52: RETRIEVER Span + Host-Declared Attributes** - `RETRIEVER` span dual-written alongside `ai_retrieval_runs`, retrieval config fields with a span↔table consistency guard, reserved host-declared attribute keys, context-pack composition on the `PROMPT` span. (completed 2026-07-12)
 - [ ] **Phase 53: Structured Child Spans + `ai_span_events`** - `tool`/`prompt`/`retrieval`/`guardrail` as real child spans with parent linkage, `ai_span_events` wired via `emit_event/1` through the shared redaction path, `prompt_rendered`/`guardrail_triggered` emitted from real call sites, PII/cardinality guard.
 - [ ] **Phase 54: Docs Accuracy + Conformance Check** - Honest "OpenInference-compatible" claim with contract-list updates in the same change, plus a falsifiable conformance check.
 
@@ -116,7 +116,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 54
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete | 2026-07-11 |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
-| 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete   | 2026-07-12 |
+| 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
 | 53. Structured Child Spans + ai_span_events | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
