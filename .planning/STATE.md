@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
 status: executing
-stopped_at: Completed 51-02-PLAN.md
-last_updated: "2026-07-12T14:53:21.531Z"
+stopped_at: Completed 51-03-PLAN.md
+last_updated: "2026-07-12T15:15:07.661Z"
 last_activity: 2026-07-12
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 ## Current Position
 
 Phase: 51 (foundation-fix-key-convention-span-kind-taxonomy) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-07-12
 
@@ -235,6 +235,9 @@ Recent decisions affecting current work:
 - [Phase 51-01]: workflow_tree_component.ex keeps its 3 step-vocab mapping clauses (approval->guardrail, handoff->agent, answer->llm) since it maps a different input than trace_tree_component.ex's real ai_spans.span_kind; only the fallback routes through SpanKind.normalize/1
 - [Phase 51-02]: Semconv.merge_req_llm_attributes/2 delegates wholesale to ReqLLM.OpenTelemetry.Attributes.start/1 + .terminal/1 rather than re-declaring the gen_ai.* key strings, per RESEARCH Pattern 3 / D-16 — avoids a second, driftable copy of req_llm's own vocabulary.
 - [Phase 51-02]: Test fixtures use LLMDB.Model.new!/1 (a real %LLMDB.Model{} struct) for metadata[:model] instead of a bare string, matching the real [:req_llm, :request, :stop] telemetry shape (RESEARCH Pitfall 1).
+- [Phase 51-03]: Ecto.Multi trace-upsert (insert_all traces on_conflict: :nothing, conflict_target: [:id]) followed by insert_all spans in one transaction -- avoids N round-trips per flush batch and is race-safe if two Buffer instances flush overlapping trace_ids
+- [Phase 51-03]: :on_flush_error :raise only fires from the handle_info(:flush,...) timer path (from_timer?: true); handle_call(:flush_now,...) and terminate/2 both pass from_timer?: false so neither can ever raise, even in :raise mode (D-09 i)
+- [Phase 51-03]: consecutive_failures storm-control counter lives in Buffer GenServer state, not CircuitBreaker (model-ID-keyed, semantically mismatched per RESEARCH Pitfall 4) -- logs full detail once per failure run, telemetry always fires
 
 ### Resolved And Deferred Work
 
@@ -318,6 +321,7 @@ active.
 | Phase 50 P11 | 45min | 2 tasks | 1 files |
 | Phase 51 P01 | 6min | 3 tasks | 7 files |
 | Phase 51 P02 | 3min | 2 tasks | 2 files |
+| Phase 51 P03 | 14min | 3 tasks | 3 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -341,8 +345,8 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-12T14:53:21.524Z
-Stopped at: Completed 51-02-PLAN.md
+Last session: 2026-07-12T15:15:07.655Z
+Stopped at: Completed 51-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

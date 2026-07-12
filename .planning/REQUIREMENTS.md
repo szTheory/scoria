@@ -15,7 +15,7 @@ Committed scope for v3.6. Each maps to exactly one phase (see Traceability).
 
 ### Foundation & Convention
 
-- [ ] **FOUND-01**: Operator's spans actually persist — trace rows are upserted before span insert (closing the `ai_spans.trace_id` `null:false` FK gap), and the silent `rescue` in `Buffer.flush_spans/1` no longer hides persistence failures (failures surface, not swallowed).
+- [x] **FOUND-01**: Operator's spans actually persist — trace rows are upserted before span insert (closing the `ai_spans.trace_id` `null:false` FK gap), and the silent `rescue` in `Buffer.flush_spans/1` no longer hides persistence failures (failures surface, not swallowed).
 - [x] **FOUND-02**: One shared `span_kind` whitelist module is the single canonical source consumed by both UI tree components (`WorkflowTreeComponent`, `TraceTreeComponent`), replacing the two drifted hardcoded lists, with a drift-guard test preventing re-divergence.
 - [x] **FOUND-03**: A version-pinned internal semconv mapping module (e.g. `Scoria.Observe.Semconv`) is the single source for every `gen_ai.*` / `openinference.*` key string, so an upstream rename is a one-module diff, not a grep-and-replace.
 
@@ -85,7 +85,7 @@ Phase numbering continues from the previous milestone (v3.5 ended at Phase 50). 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 51 | Pending |
+| FOUND-01 | Phase 51 | Complete |
 | FOUND-02 | Phase 51 | Complete |
 | FOUND-03 | Phase 51 | Complete |
 | SPAN-01 | Phase 51 | Pending |
