@@ -310,7 +310,7 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-**v3.6 Trace Foundation (SEED-007 · 999.3) is the scoped milestone** — requirements being defined (see `.planning/REQUIREMENTS.md`). Both adoption-blocking gates are closed (SEED-006 P0 trust/security in v3.4; SEED-005 docs/positioning + honest `0.1.3` release in v3.5), so the roadmap is now feature seeds from the ordered backlog. Trace foundation is first because scorers/eval-attribution/regression all read spans — 008/010/012 and every 013 screen consume this substrate.
+**v3.6 Trace Foundation (SEED-007 · 999.3) is the scoped milestone** — in progress: **Phase 51 (Foundation Fix + Key Convention + Span-Kind Taxonomy) complete (2026-07-12, 5/5 plans, verification passed)** — the silent FK gap in `Buffer.flush_spans/1` is closed (Ecto.Multi trace-upsert + loud flush-error telemetry), `Scoria.Observe.SpanKind` and version-pinned `Scoria.Observe.Semconv` are the single origins for span-kind + `gen_ai.*`/`openinference.*` keys, and both write-side adapters (ReqLLM, Jido) emit correct canonically-sourced `span_kind` with mirrored `openinference.span.kind` (legacy keys clean-replaced per CHANGELOG `0.1.4`). Phases 52–54 (RETRIEVER span, structured child spans/`ai_span_events`, docs conformance) remain (see `.planning/REQUIREMENTS.md`). Both adoption-blocking gates are closed (SEED-006 P0 trust/security in v3.4; SEED-005 docs/positioning + honest `0.1.3` release in v3.5), so the roadmap is now feature seeds from the ordered backlog. Trace foundation is first because scorers/eval-attribution/regression all read spans — 008/010/012 and every 013 screen consume this substrate.
 
 **After this milestone (execution order — see `ROADMAP.md ## Backlog`, refined 2026-07-11):**
 - [ ] **SEED-010 — Lethal-Trifecta Governance (999.4) ⭐ flagship:** content trust tiers + spotlighting + tool-declared trifecta classification + confluence-escalation policy + moderation/output hooks. Needs 007's taint substrate. No peer ships this as a runtime seam; Scoria is 2/3 built.
@@ -544,4 +544,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-11 — v3.6 Trace Foundation (SEED-007) scoped; requirements being defined.*
+*Last updated: 2026-07-12 — v3.6 Trace Foundation: Phase 51 (foundation FK fix + span-kind/semconv taxonomy) complete; Phases 52–54 remain.*
