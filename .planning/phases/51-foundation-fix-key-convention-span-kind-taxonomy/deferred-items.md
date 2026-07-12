@@ -45,3 +45,17 @@ logged under Plan 51-03 above (only fails under full-suite parallel subprocess i
 zero relationship to `lib/scoria/observe/adapters/*`). Plan 51-04's own verification lanes
 are all green: `mix test test/scoria/observe/adapters/req_llm_test.exs test/scoria/observe/`
 (76 tests, 0 failures) and the CHANGELOG grep gate (`OK`).
+
+## Plan 51-05
+
+### Same pre-existing flaky test recurred (out of scope)
+
+Full-suite `mix test` after Plan 51-05's changes (`lib/scoria/observe/adapters/jido.ex`,
+`test/scoria/observe/adapters/jido_test.exs`) reported `1 failure` out of 1163 tests + 3
+doctests, at `test/scoria/warning_inventory/capture_parity_test.exs:53`. Re-ran that file
+standalone -- 1 test, 0 failures (via `mix test --failed`) -- confirming this is the exact
+same environment-dependent flake logged under Plans 51-03/51-04 above (only fails under
+full-suite parallel `--only __ratchet_compile_only__` subprocess isolation, zero
+relationship to `lib/scoria/observe/adapters/*`). Plan 51-05's own verification lanes are
+all green: `mix test test/scoria/observe/adapters/jido_test.exs test/scoria/observe/`
+(80 tests, 0 failures).
