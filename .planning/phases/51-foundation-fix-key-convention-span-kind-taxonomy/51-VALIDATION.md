@@ -1,8 +1,8 @@
 ---
 phase: 51
 slug: foundation-fix-key-convention-span-kind-taxonomy
-status: draft
-nyquist_compliant: false
+status: ready
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-12
 ---
@@ -40,13 +40,13 @@ created: 2026-07-12
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 51-xx | TBD | 1 | FOUND-01 | — | Span persists to `ai_spans` with matching `ai_traces` row via real adapter path against real Postgres; no silent rescue | unit/integration | `mix test test/scoria/observe/buffer_test.exs` | ❌ W0 | ⬜ pending |
-| 51-xx | TBD | 1 | FOUND-01 | — | `[:scoria,:observe,:buffer,:flush_error]` telemetry event fires with `dropped_count > 0` on induced constraint failure; `:on_flush_error: :raise` also provable | unit | `mix test test/scoria/observe/buffer_test.exs` | ❌ W0 | ⬜ pending |
-| 51-xx | TBD | 1 | FOUND-02 | — | `SpanKind.kinds()` canary == `~w(agent llm prompt tool mcp retriever guardrail eval)`; exhaustive `to_openinference/1`; anti-inline grep guard | unit | `mix test test/scoria/observe/span_kind_test.exs` | ❌ W0 | ⬜ pending |
-| 51-xx | TBD | 1 | FOUND-03 | — | Every `gen_ai.*`/`openinference.*` key string sourced from `Scoria.Observe.Semconv` (no inline literals at call sites) | unit | `mix test test/scoria/observe/semconv_test.exs` | ❌ W0 | ⬜ pending |
-| 51-xx | TBD | 2 | SPAN-01 | — | Persisted LLM span carries `gen_ai.request.model/.temperature/.top_p/.max_tokens/.seed` + `gen_ai.usage.*` together (never a partial subset) | integration | `mix test test/scoria/observe/adapters/req_llm_test.exs` | ❌ W0 | ⬜ pending |
-| 51-xx | TBD | 2 | SPAN-02 | — | Adapter sets native lowercase `span_kind` + mirrored `openinference.span.kind`; `mcp`→`TOOL`; Jido default `tool` | integration | `mix test test/scoria/observe/adapters/` | ❌ W0 | ⬜ pending |
-| 51-xx | TBD | 2 | COMPAT-01 | — | CHANGELOG `0.1.4` breaking-change entry with literal old→new mapping table + upgrade-guide sentence; legacy keys absent from adapter output | doc/source | `grep` assertions + `mix test` | ❌ W0 | ⬜ pending |
+| 51-03-T2 | 51-03 | 1 | FOUND-01 | — | Span persists to `ai_spans` with matching `ai_traces` row via real adapter path against real Postgres; no silent rescue | unit/integration | `mix test test/scoria/observe/buffer_test.exs` | ❌ W0 | ⬜ pending |
+| 51-03-T1 | 51-03 | 1 | FOUND-01 | — | `[:scoria,:observe,:buffer,:flush_error]` telemetry event fires with `dropped_count > 0` on induced constraint failure; `:on_flush_error: :raise` also provable | unit | `mix test test/scoria/observe/buffer_test.exs` | ❌ W0 | ⬜ pending |
+| 51-01-T3 | 51-01 | 1 | FOUND-02 | — | `SpanKind.kinds()` canary == `~w(agent llm prompt tool mcp retriever guardrail eval)`; exhaustive `to_openinference/1`; anti-inline grep guard | unit | `mix test test/scoria/observe/span_kind_test.exs` | ❌ W0 | ⬜ pending |
+| 51-02-T1 | 51-02 | 1 | FOUND-03 | — | Every `gen_ai.*`/`openinference.*` key string sourced from `Scoria.Observe.Semconv` (no inline literals at call sites) | unit | `mix test test/scoria/observe/semconv_test.exs` | ❌ W0 | ⬜ pending |
+| 51-04-T1 | 51-04 | 2 | SPAN-01 | — | Persisted LLM span carries `gen_ai.request.model/.temperature/.top_p/.max_tokens/.seed` + `gen_ai.usage.*` together (never a partial subset) | integration | `mix test test/scoria/observe/adapters/req_llm_test.exs` | ❌ W0 | ⬜ pending |
+| 51-04-T1 / 51-05-T1 | 51-04, 51-05 | 2 | SPAN-02 | — | Adapter sets native lowercase `span_kind` + mirrored `openinference.span.kind`; `mcp`→`TOOL`; Jido default `tool` | integration | `mix test test/scoria/observe/adapters/` | ❌ W0 | ⬜ pending |
+| 51-04-T3 | 51-04 | 2 | COMPAT-01 | — | CHANGELOG `0.1.4` breaking-change entry with literal old→new mapping table + upgrade-guide sentence; legacy keys absent from adapter output | doc/source | `grep` assertions + `mix test` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -76,11 +76,12 @@ created: 2026-07-12
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 90s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (the new/extended test files are owned by each plan's Task 1)
+- [x] No watch-mode flags
+- [x] Feedback latency < 90s
+- [x] `nyquist_compliant: true` set in frontmatter
+- [x] No full-E2E frameworks (ExUnit + Ecto SQL sandbox only)
 
-**Approval:** pending
+**Approval:** ready

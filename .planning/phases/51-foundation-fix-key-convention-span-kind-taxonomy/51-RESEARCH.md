@@ -570,22 +570,25 @@ Note: the existing `buffer_test.exs` setup **pre-inserts a `%Trace{}` row manual
 
 **If this table is empty:** N/A — three assumptions logged above, all low-to-medium risk and independently re-checkable with a single command each.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Is "real adapter path" verification (ROADMAP Success Criterion #1) satisfied by a test that wires up `Buffer`/`Telemetry.attach`/`Adapters.*.attach` in its own `setup` block and fires a synthetic `:telemetry.execute`, or does it require the Observe pipeline to be added to `Scoria.Application.start/2`?**
    - What we know: nothing in `lib/scoria/application.ex` starts any Observe component today (Pitfall 5); only tests wire it manually; no guide documents host-side wiring either.
    - What's unclear: whether this gap is itself in-scope for Phase 51 (a 4th correctness bug alongside the FK bug) or a pre-existing, intentionally host-owned integration contract that's simply undocumented.
    - Recommendation: treat it as out of scope for Phase 51 (none of FOUND-01/02/03/SPAN-01/02/COMPAT-01 name supervision-tree wiring) and use the existing test convention (`start_supervised!`/`.attach()` in `setup`) for verification — but flag this explicitly to the user/planner as a confirmed scoping choice, since ROADMAP's literal wording ("real adapter path... persists... verifiable against a real Postgres") could be read either way.
+   - RESOLVED: Supervision-tree wiring is NOT added in Phase 51. Verification uses the existing `start_supervised!`/`.attach()` + Ecto SQL-sandbox test convention in each test's `setup` block (see 51-03 buffer_test, 51-04 req_llm_test, 51-05 jido_test); no change to `Scoria.Application.start/2`.
 
 2. **Does `metadata[:span_kind]` (the host-override key D-13 expects for Jido: `metadata[:span_kind] || "tool"`) have any existing producer today?**
    - What we know: `Scoria.Observe.Adapters.Jido.handle_event/4` reads from a plain telemetry `metadata` map (`[:jido, :action, :stop]`), which is under the host's/Jido's control, not `req_llm`'s.
    - What's unclear: whether any current Jido action call site in this codebase or in adopter code already passes a `:span_kind` telemetry metadata key, or whether this is a net-new host-facing contract this phase introduces (documentation-worthy for Phase 54, but the mechanism itself ships in Phase 51 per D-13).
    - Recommendation: grep the Jido action call sites in this codebase for any existing `:span_kind` telemetry metadata usage before assuming it's 100% new; if genuinely new, note it as a host-facing contract addition in the Phase 51 plan's own changelog note (separate from COMPAT-01's legacy-key CHANGELOG entry).
+   - RESOLVED: Plans proceed with the host-declared override `metadata[:span_kind] || "tool"` (51-05, D-13) unconditionally — no grep-gate precondition. `SpanKind.normalize/2` fails closed for any unlisted/absent value, so a pre-existing or net-new host `:span_kind` producer is handled identically; no action-name inference.
 
 3. **What telemetry event name should `SpanKind.normalize/2`'s fallback path emit?**
    - What we know: D-14 mandates "logs + emits telemetry" on fallback but does not name the event (unlike D-06, which names `[:scoria, :observe, :buffer, :flush_error]` explicitly for the flush-error case).
    - What's unclear: the exact atom-list event name and its measurement/metadata contract.
    - Recommendation: `[:scoria, :observe, :span_kind, :fallback]` with metadata `%{value: value, default: default}` is a reasonable default proposed in this research (Architecture Patterns §Pattern 2) — the planner should treat this as a naming decision to finalize, not re-litigate the underlying "must be observable" requirement.
+   - RESOLVED: Adopted `[:scoria, :observe, :span_kind, :fallback]` with metadata `%{value: value, default: default}` in 51-01; the name is pinned in the `SpanKind` moduledoc and asserted by the drift-guard suite's fallback-observability test.
 
 ## Environment Availability
 
