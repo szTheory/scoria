@@ -4,9 +4,9 @@ milestone: v3.6
 milestone_name: Trace Foundation
 current_phase: 51
 current_phase_name: foundation-fix-key-convention-span-kind-taxonomy
-status: verifying
-stopped_at: Completed 51-04-PLAN.md
-last_updated: "2026-07-12T15:47:11.068Z"
+status: ready_to_plan
+stopped_at: Phase 51 complete (5/5) — ready to discuss Phase 52
+last_updated: 2026-07-12T17:10:16.255Z
 last_activity: 2026-07-12
 progress:
   total_phases: 4
@@ -24,13 +24,13 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 51 — foundation-fix-key-convention-span-kind-taxonomy
+**Current focus:** Phase 52 — retriever span + host declared attributes
 
 ## Current Position
 
-Phase: 51 (foundation-fix-key-convention-span-kind-taxonomy) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
+Phase: 52
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-07-12
 
 ## Performance Metrics
