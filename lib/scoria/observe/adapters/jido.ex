@@ -20,6 +20,9 @@ defmodule Scoria.Observe.Adapters.Jido do
     # only via metadata[:span_kind] -- no action-name inference (D-13).
     span_kind = SpanKind.normalize(metadata[:span_kind] || "tool")
 
+    # D-ATTR01-7: unlike req_llm, this adapter's metadata is host-supplied
+    # at the call site, so merge_host_declared/2 here is reachable on real
+    # production TOOL-span emissions (not hand-synthesized-only).
     attributes =
       %{
         "jido.action_name" => metadata[:action_name],
@@ -31,6 +34,7 @@ defmodule Scoria.Observe.Adapters.Jido do
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
       |> Map.put(Semconv.openinference_span_kind_key(), SpanKind.to_openinference(span_kind))
+      |> Semconv.merge_host_declared(metadata)
 
     span = %{
       name: "jido_action",

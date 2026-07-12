@@ -31,10 +31,16 @@ defmodule Scoria.Observe.Adapters.ReqLLM do
     # different taxonomy than Scoria's span_kind; it must not be read here.
     span_kind = SpanKind.normalize(metadata[:span_kind] || "llm")
 
+    # D-ATTR01-7: this stage is correct/harmless (skip-nil reduce) but only
+    # takes effect on hand-synthesized test events -- a REAL
+    # [:req_llm, :request, :stop] emission has no host-key channel in its
+    # metadata. The production carrier for host-declared keys on the
+    # LLM/prompt lane is emit_prompt_span/1 (52-03), not this adapter.
     attributes =
       base_attributes
       |> Semconv.merge_req_llm_attributes(metadata)
       |> Map.put(Semconv.openinference_span_kind_key(), SpanKind.to_openinference(span_kind))
+      |> Semconv.merge_host_declared(metadata)
 
     span = %{
       name: "req_llm_request",
