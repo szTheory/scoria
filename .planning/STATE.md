@@ -2,15 +2,17 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
+current_phase: 51
+current_phase_name: foundation-fix-key-convention-span-kind-taxonomy
 status: executing
-stopped_at: Completed 51-03-PLAN.md
-last_updated: "2026-07-12T15:15:07.661Z"
+stopped_at: Completed 51-04-PLAN.md
+last_updated: "2026-07-12T15:30:03.116Z"
 last_activity: 2026-07-12
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -27,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 ## Current Position
 
 Phase: 51 (foundation-fix-key-convention-span-kind-taxonomy) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-07-12
 
@@ -238,6 +240,8 @@ Recent decisions affecting current work:
 - [Phase 51-03]: Ecto.Multi trace-upsert (insert_all traces on_conflict: :nothing, conflict_target: [:id]) followed by insert_all spans in one transaction -- avoids N round-trips per flush batch and is race-safe if two Buffer instances flush overlapping trace_ids
 - [Phase 51-03]: :on_flush_error :raise only fires from the handle_info(:flush,...) timer path (from_timer?: true); handle_call(:flush_now,...) and terminate/2 both pass from_timer?: false so neither can ever raise, even in :raise mode (D-09 i)
 - [Phase 51-03]: consecutive_failures storm-control counter lives in Buffer GenServer state, not CircuitBreaker (model-ID-keyed, semantically mismatched per RESEARCH Pitfall 4) -- logs full detail once per failure run, telemetry always fires
+- [Phase ?]: [Phase 51-04]: span_kind reads metadata[:span_kind] (host-override, defaults to llm) rather than the plan-literal metadata[:operation] -- operation is req_llm's own :chat/:embedding/:object vocabulary and would defeat SpanKind.normalize/2's fallback; mirrors the Jido sibling adapter's override convention.
+- [Phase ?]: [Phase 51-04]: CHANGELOG 0.1.4 breaking-change entry (gen_ai.*/server.* key mapping + flush_error/on_flush_error announcement) added as a new BREAKING CHANGES subsection inside the existing (pre-dated) Unreleased heading rather than a second Unreleased heading.
 
 ### Resolved And Deferred Work
 
@@ -322,6 +326,7 @@ active.
 | Phase 51 P01 | 6min | 3 tasks | 7 files |
 | Phase 51 P02 | 3min | 2 tasks | 2 files |
 | Phase 51 P03 | 14min | 3 tasks | 3 files |
+| Phase 51 P04 | 7min | 3 tasks | 3 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -345,8 +350,8 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-12T15:15:07.655Z
-Stopped at: Completed 51-03-PLAN.md
+Last session: 2026-07-12T15:30:03.099Z
+Stopped at: Completed 51-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

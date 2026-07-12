@@ -21,7 +21,7 @@ Committed scope for v3.6. Each maps to exactly one phase (see Traceability).
 
 ### Span Convention & Model Config
 
-- [ ] **SPAN-01**: Every LLM span carries the current OTel-GenAI attribute keys (`gen_ai.request.model/temperature/top_p/max_tokens/seed`, `gen_ai.usage.*`, `gen_ai.response.*`) sourced via `ReqLLM.OpenTelemetry.Attributes` — all four model-config params captured together (no partial capture that fakes replay fidelity).
+- [x] **SPAN-01**: Every LLM span carries the current OTel-GenAI attribute keys (`gen_ai.request.model/temperature/top_p/max_tokens/seed`, `gen_ai.usage.*`, `gen_ai.response.*`) sourced via `ReqLLM.OpenTelemetry.Attributes` — all four model-config params captured together (no partial capture that fakes replay fidelity).
 - [x] **SPAN-02**: Every span carries a correct `span_kind` from the canonical 8-value taxonomy (replacing the hardcoded `"LLM"`/`"INTERNAL"` literals in both adapters) plus a mirrored `openinference.span.kind`, with the `mcp`→`"TOOL"` translation for the one non-1:1 kind.
 
 ### Retrieval & Host-Declared Attributes
@@ -45,7 +45,7 @@ Committed scope for v3.6. Each maps to exactly one phase (see Traceability).
 ### Cross-Cutting Safety & Compatibility
 
 - [ ] **SEC-01**: New attribute and event payloads capture **IDs and counts, never raw prompt/completion text**; event payloads route through the existing `Redactor` path; attribute payload size is bounded at write time (PII + cardinality guard on the flat-deny-list redactor).
-- [ ] **COMPAT-01**: Legacy attribute keys already persisted in adopter Postgres (`llm.model_name`, `llm.token_count`, `req.url`) are handled by an **explicit, documented decision** (dual-emit for a deprecation window vs. clean replacement) recorded in CHANGELOG, so hosts querying their own tables aren't silently broken.
+- [x] **COMPAT-01**: Legacy attribute keys already persisted in adopter Postgres (`llm.model_name`, `llm.token_count`, `req.url`) are handled by an **explicit, documented decision** (dual-emit for a deprecation window vs. clean replacement) recorded in CHANGELOG, so hosts querying their own tables aren't silently broken.
 
 ## v2 Requirements
 
@@ -88,9 +88,9 @@ Phase numbering continues from the previous milestone (v3.5 ended at Phase 50). 
 | FOUND-01 | Phase 51 | Complete |
 | FOUND-02 | Phase 51 | Complete |
 | FOUND-03 | Phase 51 | Complete |
-| SPAN-01 | Phase 51 | Pending |
+| SPAN-01 | Phase 51 | Complete |
 | SPAN-02 | Phase 51 | Complete |
-| COMPAT-01 | Phase 51 | Pending |
+| COMPAT-01 | Phase 51 | Complete |
 | RETR-01 | Phase 52 | Pending |
 | RETR-02 | Phase 52 | Pending |
 | ATTR-01 | Phase 52 | Pending |
@@ -103,6 +103,7 @@ Phase numbering continues from the previous milestone (v3.5 ended at Phase 50). 
 | DOCS-02 | Phase 54 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 16 total
 - Mapped to phases: 16
 - Unmapped: 0 ✓

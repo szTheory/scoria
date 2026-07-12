@@ -45,7 +45,7 @@
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 51-04-PLAN.md — ReqLLM adapter gen_ai.* + span_kind + legacy-key clean replacement + CHANGELOG 0.1.4 (SPAN-01, SPAN-02, COMPAT-01) [Wave 2]
+- [x] 51-04-PLAN.md — ReqLLM adapter gen_ai.* + span_kind + legacy-key clean replacement + CHANGELOG 0.1.4 (SPAN-01, SPAN-02, COMPAT-01) [Wave 2]
 - [ ] 51-05-PLAN.md — Jido adapter span_kind host-declared default + openinference mirror (SPAN-02) [Wave 2]
 
 ### Phase 52: RETRIEVER Span + Host-Declared Attributes
@@ -101,7 +101,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 54
 | 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete | 2026-07-10 |
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete | 2026-07-11 |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
-| 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 3/5 | In Progress|  |
+| 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 4/5 | In Progress|  |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 0/TBD | Not started | - |
 | 53. Structured Child Spans + ai_span_events | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
