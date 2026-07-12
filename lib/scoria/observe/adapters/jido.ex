@@ -1,4 +1,7 @@
 defmodule Scoria.Observe.Adapters.Jido do
+  alias Scoria.Observe.Semconv
+  alias Scoria.Observe.SpanKind
+
   def attach do
     :telemetry.attach_many(
       "scoria-observe-jido",
@@ -12,6 +15,11 @@ defmodule Scoria.Observe.Adapters.Jido do
     tenant_id = metadata[:tenant_id]
     workflow_run_id = metadata[:workflow_run_id]
 
+    # A generic Jido action is discrete function execution = TOOL semantics;
+    # "agent" is reserved for the orchestrating span. Host-declared override
+    # only via metadata[:span_kind] -- no action-name inference (D-13).
+    span_kind = SpanKind.normalize(metadata[:span_kind] || "tool")
+
     attributes =
       %{
         "jido.action_name" => metadata[:action_name],
@@ -22,10 +30,11 @@ defmodule Scoria.Observe.Adapters.Jido do
       }
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
+      |> Map.put(Semconv.openinference_span_kind_key(), SpanKind.to_openinference(span_kind))
 
     span = %{
       name: "jido_action",
-      span_kind: "INTERNAL",
+      span_kind: span_kind,
       start_time: metadata[:start_time] || DateTime.utc_now(),
       end_time: DateTime.utc_now(),
       trace_id: metadata[:trace_id] || Ecto.UUID.generate(),
