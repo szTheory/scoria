@@ -79,4 +79,72 @@ defmodule Scoria.Observe.SpanKindTest do
       end
     end
   end
+
+  # D-15 mandatory drift-guard suite (FOUND-02). These four assertions are
+  # the structural single-source-of-truth guard: any future change to the
+  # kind list, the OpenInference mapping, the CSS rails, or a component
+  # reverting to an inline whitelist must fail one of these tests.
+  describe "D-15 drift guard" do
+    @css_path "assets/css/04-components.css"
+    @component_paths ~w(
+      lib/scoria_web/components/workflow_tree_component.ex
+      lib/scoria_web/components/trace_tree_component.ex
+    )
+
+    test "CANARY: kinds/0 is exactly the pinned 8-value list (forces review of CSS + OI map on any change)" do
+      assert SpanKind.kinds() == ~w(agent llm prompt tool mcp retriever guardrail eval)
+    end
+
+    test "EXHAUSTIVENESS: every kind is kind?/1-true and has a non-raising to_openinference/1 clause" do
+      for kind <- SpanKind.kinds() do
+        assert SpanKind.kind?(kind)
+
+        oi = SpanKind.to_openinference(kind)
+        assert is_binary(oi)
+        assert oi == String.upcase(oi)
+      end
+    end
+
+    test "CSS COHERENCE: every kind has a matching scoria-span--<kind> rail, and the status-error overlay replaces the error rail" do
+      css = File.read!(@css_path)
+
+      for kind <- SpanKind.kinds() do
+        assert css =~ "scoria-span--#{kind}",
+               "missing CSS rail for kind #{inspect(kind)} in #{@css_path}"
+      end
+
+      refute css =~ "scoria-span--error ",
+             "stale .scoria-span--error rail found in #{@css_path} (D-12: error is a status, not a kind)"
+
+      assert css =~ "scoria-span--status-error",
+             "expected .scoria-span--status-error overlay in #{@css_path}"
+    end
+
+    test "ANTI-INLINE GUARD: no residual span-kind ~w(...) whitelist literal remains in either UI component" do
+      for path <- @component_paths do
+        source = File.read!(path)
+
+        refute Regex.match?(~r/~w\([^)]*(llm|guardrail|retriever)/, source),
+               "inline span-kind ~w(...) whitelist literal found in #{path} — route through Scoria.Observe.SpanKind instead"
+      end
+    end
+
+    test "FALLBACK OBSERVABILITY: normalize/1 on an unrecognized value emits the fallback telemetry event and returns the default \"agent\"" do
+      :telemetry.attach(
+        "span-kind-drift-guard-fallback",
+        [:scoria, :observe, :span_kind, :fallback],
+        fn event, measurements, metadata, _config ->
+          send(self(), {:drift_guard_telemetry_event, event, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("span-kind-drift-guard-fallback") end)
+
+      assert SpanKind.normalize("bogus") == "agent"
+
+      assert_receive {:drift_guard_telemetry_event, [:scoria, :observe, :span_kind, :fallback],
+                       %{}, %{value: "bogus", default: "agent"}}
+    end
+  end
 end
