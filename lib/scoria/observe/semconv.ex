@@ -12,7 +12,7 @@ defmodule Scoria.Observe.Semconv do
   - the one key Scoria itself writes: `"openinference.span.kind"`
   - the retrieval-config keys (`scoria.retrieval.*`) — embedding model, index
     version, reranker
-  - (Phase 52+) reserved host-declared keys: `feature`/`route`/`archetype`/`intent`
+  - reserved host-declared keys: `feature`/`route`/`archetype`/`intent`
   """
 
   @openinference_span_kind_key "openinference.span.kind"
@@ -59,6 +59,35 @@ defmodule Scoria.Observe.Semconv do
   def retrieval_config_attributes(config) do
     Map.new(@retrieval_config_keys, fn {field, key} ->
       {key, Map.get(config, field) || "none"}
+    end)
+  end
+
+  @host_declared_keys ~w(feature route archetype intent)a
+
+  @doc """
+  Returns the canonical atom list of the four reserved host-declared
+  dimensions, in order. The single origin the RETRIEVER, prompt, and
+  adapter spans all reduce over (D-ATTR01-1).
+  """
+  @spec host_declared_keys() :: [atom()]
+  def host_declared_keys, do: @host_declared_keys
+
+  @doc """
+  Merges the host-declared dimensions present in an atom-keyed `metadata`
+  map into `attributes`. For each of `host_declared_keys/0`, a `nil` or
+  absent value is skipped entirely (never defaulted, never put) — empty
+  metadata yields no reserved keys. A present value passes through
+  byte-for-byte under its bare string key (D-ATTR01-2/6). This is the
+  single seam reused by the RETRIEVER span, the prompt span, and both
+  adapters.
+  """
+  @spec merge_host_declared(map(), map()) :: map()
+  def merge_host_declared(attributes, metadata) do
+    Enum.reduce(@host_declared_keys, attributes, fn key, acc ->
+      case Map.get(metadata, key) do
+        nil -> acc
+        value -> Map.put(acc, Atom.to_string(key), value)
+      end
     end)
   end
 end

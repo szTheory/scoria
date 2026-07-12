@@ -141,4 +141,47 @@ defmodule Scoria.Observe.SemconvTest do
       end
     end
   end
+
+  describe "host_declared_keys/0 + merge_host_declared/2" do
+    test "host_declared_keys/0 returns exactly the four reserved dimensions" do
+      assert Semconv.host_declared_keys() == [:feature, :route, :archetype, :intent]
+    end
+
+    test "merge_host_declared/2 on empty attrs and empty metadata returns %{} — never-default proof" do
+      merged = Semconv.merge_host_declared(%{}, %{})
+
+      assert merged == %{}
+
+      for key <- Semconv.host_declared_keys() do
+        refute Map.has_key?(merged, Atom.to_string(key))
+      end
+    end
+
+    test "merge_host_declared/2 passes a present value through byte-for-byte, others absent" do
+      merged = Semconv.merge_host_declared(%{}, %{feature: "support-copilot"})
+
+      assert merged == %{"feature" => "support-copilot"}
+      refute Map.has_key?(merged, "route")
+      refute Map.has_key?(merged, "archetype")
+      refute Map.has_key?(merged, "intent")
+    end
+
+    test "anti-inline grep: no lib consumer file inlines a reserved host-declared key literal" do
+      consumer_files = [
+        "lib/scoria/knowledge.ex",
+        "lib/scoria/observe.ex",
+        "lib/scoria/observe/adapters/req_llm.ex",
+        "lib/scoria/observe/adapters/jido.ex"
+      ]
+
+      for path <- consumer_files, File.exists?(Path.expand(path, File.cwd!())) do
+        source = path |> Path.expand(File.cwd!()) |> File.read!()
+
+        for literal <- ~w("feature" "route" "archetype" "intent") do
+          refute source =~ literal,
+                 "#{path} must call Semconv.host_declared_keys/0 / merge_host_declared/2, never inline #{literal}"
+        end
+      end
+    end
+  end
 end
