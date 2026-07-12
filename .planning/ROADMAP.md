@@ -60,7 +60,13 @@
   3. A host-supplied `feature`/`route`/`archetype`/`intent` value passed into a run flows through to persisted span attributes unmodified — Scoria never derives or overwrites these values from its own logic.
   4. A `PROMPT` span's attributes carry which chunk IDs, which memory IDs, and the per-source token split that composed the assembled prompt, alongside `gen_ai.usage.input_tokens` — IDs and counts only, never the raw chunk/memory text.
 
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 52-01-PLAN.md — Semconv projection seam (retrieval-config / host-declared / prompt-context) + drift-guard unit tests
+- [ ] 52-02-PLAN.md — Embedder optional `model_name/0` callback + Deterministic impl
+- [ ] 52-03-PLAN.md — `Scoria.Observe` facade: `emit_retriever_span/1` + `emit_prompt_span/1`
+- [ ] 52-04-PLAN.md — Wire `retrieve/2` + RETR-01 join / RETR-02 equality / ATTR-01 pass-through / D-R2b migration
+- [ ] 52-05-PLAN.md — Adapters host-declared pipe (`merge_host_declared/2`) + pass-through tests
+- [ ] 52-06-PLAN.md — ATTR-02 SC#4 acceptance: real `emit_prompt_span/1` + `flush_now` persisted-span assertions
 
 ### Phase 53: Structured Child Spans + `ai_span_events`
 
@@ -102,7 +108,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 54
 | 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete | 2026-07-11 |
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
-| 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 0/TBD | Not started | - |
+| 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 0/6 | Not started | - |
 | 53. Structured Child Spans + ai_span_events | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
