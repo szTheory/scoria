@@ -34,6 +34,8 @@ defmodule Scoria.Knowledge do
   alias Scoria.Knowledge.Retrievers.Scrypath
   alias Scoria.Knowledge.Scope
   alias Scoria.Knowledge.Source
+  alias Scoria.Observe
+  alias Scoria.Observe.Semconv
   alias Scoria.Repo
 
   def create_source(attrs \\ %{}, opts \\ []) do
@@ -212,6 +214,34 @@ defmodule Scoria.Knowledge do
     end
   end
 
+  @doc """
+  Retrieves chunks for `query_text` and persists the run as both an
+  `ai_retrieval_runs` row (kept, system-of-record) and a linked RETRIEVER
+  span sharing the same `trace_id`/`span_id` (RETR-01) -- the join between
+  the two never comes up empty for a successful call.
+
+  Two distinct ID axes in `opts`, per D-R2/D-R3:
+
+  - `opts[:parent_id]` -- the CALLER's/originating span id, or `nil` to
+    root the trace. Scoria never infers this; the host declares it.
+  - `opts[:span_id]` -- THIS retrieval's own span id (the join key written
+    to both `run.span_id` and the emitted span's `:id`). When omitted, a
+    fresh id is minted. **Must be fresh/unique** if supplied -- passing an
+    existing `ai_spans.id` PK-collides on flush and is silently dropped.
+
+  Also accepts `opts[:embedder]` (a `Scoria.Knowledge.Embedder`
+  implementation, defaults to `Embedder.Deterministic`) plus
+  `opts[:embedding_model]`/`opts[:index_version]`/`opts[:reranker]` and the
+  reserved host-declared keys (`feature`/`route`/`archetype`/`intent`,
+  ATTR-01) -- all threaded through unmodified onto both persistence sinks
+  via `Scoria.Observe.Semconv`.
+
+  Returns `{:ok, %{run:, results:, trace_id:, span_id:}}` (additive --
+  existing callers pattern-matching only `%{run:, results:}` are
+  unaffected). Span emission runs only after this with-chain succeeds and
+  is isolated so a raising telemetry handler never fails the retrieval
+  (D-R6).
+  """
   def retrieve(query_text, opts \\ []) do
     scope = Scope.from_opts!(opts)
     opts = Keyword.put(opts, :scope, scope)
@@ -219,14 +249,26 @@ defmodule Scoria.Knowledge do
     retriever = Keyword.get(opts, :retriever)
     limit = Keyword.get(opts, :limit, 5)
     filters = Keyword.get(opts, :filters, %{})
+    embedder = Keyword.get(opts, :embedder, Embedder.Deterministic)
     started_at = System.monotonic_time(:millisecond)
+    started_wall = DateTime.utc_now()
+    trace_id = opts[:trace_id] || Ecto.UUID.generate()
+    span_id = opts[:span_id] || Ecto.UUID.generate()
+
+    config_map = %{
+      embedding_model: resolve_embedding_model(opts, embedder),
+      index_version: opts[:index_version] || Application.get_env(:scoria, :index_version),
+      reranker: opts[:reranker]
+    }
+
+    host_metadata = Map.new(opts)
 
     results =
       case retriever do
         nil ->
           query_embedding =
             opts[:query_embedding] ||
-              Embedder.Deterministic.embed_query(query_text, opts)
+              embedder.embed_query(query_text, opts)
 
           backend.similar_chunks(query_embedding, limit: limit, filters: filters, scope: scope)
 
@@ -245,15 +287,55 @@ defmodule Scoria.Knowledge do
              retriever: retriever && inspect(retriever),
              top_k: limit,
              filters: filters,
-             trace_id: opts[:trace_id],
-             span_id: opts[:span_id],
+             trace_id: trace_id,
+             span_id: span_id,
              scope: scope,
              status: "completed",
-             latency_ms: System.monotonic_time(:millisecond) - started_at
+             latency_ms: System.monotonic_time(:millisecond) - started_at,
+             metadata:
+               config_map
+               |> Semconv.retrieval_config_attributes()
+               |> Semconv.merge_host_declared(host_metadata)
            }),
          {:ok, persisted_results} <- append_retrieval_results(run.id, result_rows) do
-      {:ok, %{run: run, results: persisted_results}}
+      emit_retriever_span(config_map, host_metadata, trace_id, span_id, opts[:parent_id], started_wall)
+
+      {:ok, %{run: run, results: persisted_results, trace_id: trace_id, span_id: span_id}}
     end
+  end
+
+  # opts[:embedding_model] wins outright. When the host supplied its own
+  # query_embedding (opts[:query_embedding]), Scoria never invoked `embedder`
+  # to produce it, so calling embedder.model_name/0 here would misattribute
+  # provenance -- fall through to the "none" sentinel instead (D-RETR02-2).
+  # Otherwise call the OPTIONAL model_name/0 callback only when the embedder
+  # module actually implements it (@optional_callbacks, D-RETR02-5) -- a host
+  # embedder without it must fall through, never UndefinedFunctionError.
+  defp resolve_embedding_model(opts, embedder) do
+    cond do
+      opts[:embedding_model] -> opts[:embedding_model]
+      opts[:query_embedding] -> nil
+      function_exported?(embedder, :model_name, 0) -> embedder.model_name()
+      true -> nil
+    end
+  end
+
+  # Emitted only after the with-chain above succeeds (success-path only,
+  # D-R6/RETR-01) and isolated with try/rescue so a raising telemetry
+  # handler can never propagate into retrieve/2's caller. Observe.emit_retriever_span/1
+  # already wraps its own :telemetry.execute in try/rescue -> :ok; this is a
+  # second, defense-in-depth layer per the task's explicit instruction.
+  defp emit_retriever_span(config_map, host_metadata, trace_id, span_id, parent_id, started_wall) do
+    Observe.emit_retriever_span(%{
+      config_map: config_map,
+      host_metadata: host_metadata,
+      trace_id: trace_id,
+      span_id: span_id,
+      parent_id: parent_id,
+      started_wall: started_wall
+    })
+  rescue
+    _ -> :ok
   end
 
   def list_retrieval_results(%RetrievalRun{id: run_id}), do: list_retrieval_results(run_id)
