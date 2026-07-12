@@ -10,6 +10,8 @@ defmodule Scoria.Observe.Semconv do
 
   This module owns:
   - the one key Scoria itself writes: `"openinference.span.kind"`
+  - the retrieval-config keys (`scoria.retrieval.*`) — embedding model, index
+    version, reranker
   - (Phase 52+) reserved host-declared keys: `feature`/`route`/`archetype`/`intent`
   """
 
@@ -30,5 +32,33 @@ defmodule Scoria.Observe.Semconv do
     attributes
     |> Map.merge(ReqLLM.OpenTelemetry.Attributes.start(metadata))
     |> Map.merge(ReqLLM.OpenTelemetry.Attributes.terminal(metadata))
+  end
+
+  @retrieval_config_keys [
+    embedding_model: "scoria.retrieval.embedding_model",
+    index_version: "scoria.retrieval.index_version",
+    reranker: "scoria.retrieval.reranker"
+  ]
+
+  @doc """
+  Returns the canonical keyword list mapping the three retrieval-config
+  dimensions to their dotted `scoria.retrieval.*` attribute-key strings.
+  The single origin the RETR-02 span<->table guard reads on both sinks.
+  """
+  @spec retrieval_config_keys() :: keyword(String.t())
+  def retrieval_config_keys, do: @retrieval_config_keys
+
+  @doc """
+  Projects a canonical `%{embedding_model:, index_version:, reranker:}` map
+  onto the dotted `retrieval_config_keys/0` string keys. Every value is
+  normalized to the literal sentinel `"none"` when absent or `nil` — never
+  `nil`, never omitted — so the produced map always has exactly three
+  string-keyed entries (D-RETR02-4).
+  """
+  @spec retrieval_config_attributes(map()) :: map()
+  def retrieval_config_attributes(config) do
+    Map.new(@retrieval_config_keys, fn {field, key} ->
+      {key, Map.get(config, field) || "none"}
+    end)
   end
 end

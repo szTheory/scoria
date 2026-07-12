@@ -88,4 +88,57 @@ defmodule Scoria.Observe.SemconvTest do
              "semconv.ex must delegate to ReqLLM.OpenTelemetry.Attributes, never hand-write a gen_ai.* string literal"
     end
   end
+
+  describe "retrieval_config_keys/0 + retrieval_config_attributes/1" do
+    test "retrieval_config_keys/0 returns the exact canonical keyword list" do
+      assert Semconv.retrieval_config_keys() == [
+               embedding_model: "scoria.retrieval.embedding_model",
+               index_version: "scoria.retrieval.index_version",
+               reranker: "scoria.retrieval.reranker"
+             ]
+    end
+
+    test "retrieval_config_attributes/1 on an empty map returns 3 keys, all sentinel \"none\"" do
+      attrs = Semconv.retrieval_config_attributes(%{})
+
+      assert map_size(attrs) == 3
+
+      assert attrs == %{
+               "scoria.retrieval.embedding_model" => "none",
+               "scoria.retrieval.index_version" => "none",
+               "scoria.retrieval.reranker" => "none"
+             }
+    end
+
+    test "retrieval_config_attributes/1 projects supplied values onto the dotted keys" do
+      attrs =
+        Semconv.retrieval_config_attributes(%{
+          embedding_model: "m",
+          index_version: "v1",
+          reranker: "r"
+        })
+
+      assert attrs == %{
+               "scoria.retrieval.embedding_model" => "m",
+               "scoria.retrieval.index_version" => "v1",
+               "scoria.retrieval.reranker" => "r"
+             }
+    end
+
+    test "anti-inline grep: no lib consumer file inlines the \"scoria.retrieval.\" literal" do
+      consumer_files = [
+        "lib/scoria/knowledge.ex",
+        "lib/scoria/observe.ex",
+        "lib/scoria/observe/adapters/req_llm.ex",
+        "lib/scoria/observe/adapters/jido.ex"
+      ]
+
+      for path <- consumer_files, File.exists?(Path.expand(path, File.cwd!())) do
+        source = path |> Path.expand(File.cwd!()) |> File.read!()
+
+        refute source =~ "scoria.retrieval.",
+               "#{path} must call Semconv.retrieval_config_keys/0, never inline a scoria.retrieval.* literal"
+      end
+    end
+  end
 end
