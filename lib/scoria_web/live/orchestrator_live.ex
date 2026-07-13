@@ -256,6 +256,7 @@ defmodule ScoriaWeb.OrchestratorLive do
           span_rows
           |> Enum.map(&span_view_from_record/1)
           |> TraceProjection.with_depths()
+          |> TraceProjection.tree_order()
 
         header
         |> Map.put(:spans, span_views)
@@ -388,6 +389,7 @@ defmodule ScoriaWeb.OrchestratorLive do
       |> Enum.reject(&(&1.id == span_view.id))
       |> Kernel.++([Map.put_new(span_view, :parent_id, nil)])
       |> TraceProjection.with_depths()
+      |> TraceProjection.tree_order()
 
     updated_trace = trace |> Map.put(:spans, spans) |> enrich_trace_badges()
 
