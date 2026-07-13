@@ -123,7 +123,13 @@ defmodule Scoria.Observe.Adapters.MCPTest do
   describe "Test 4: started emits nothing" do
     test "a started event alone produces no persisted span", %{buffer: buffer_name} do
       metadata = realistic_tool_metadata()
-      :telemetry.execute([:scoria, :tool, :started], %{system_time: System.system_time()}, metadata)
+
+      :telemetry.execute(
+        [:scoria, :tool, :started],
+        %{system_time: System.system_time()},
+        metadata
+      )
+
       :ok = Buffer.flush_now(buffer_name)
 
       refute Repo.get_by(Span, trace_id: metadata.trace_id)
@@ -223,7 +229,9 @@ defmodule Scoria.Observe.Adapters.MCPTest do
   # non-negative integer (mirrors prompt_span_test.exs:150-171).
   defp assert_never_text(value) when is_map(value) do
     for {k, v} <- value do
-      refute k =~ @never_text_key_regex, "forbidden key #{inspect(k)} matched the never-text guard"
+      refute k =~ @never_text_key_regex,
+             "forbidden key #{inspect(k)} matched the never-text guard"
+
       assert_never_text(v)
     end
   end

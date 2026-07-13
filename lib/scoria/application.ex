@@ -42,6 +42,7 @@ defmodule Scoria.Application do
   def observe_children do
     if Application.get_env(:scoria, Scoria.Observe, [])[:enabled] != false do
       safe_attach_observe_telemetry()
+      safe_attach_observe_mcp()
       [Scoria.Observe.Buffer]
     else
       []
@@ -54,6 +55,18 @@ defmodule Scoria.Application do
   # start/2, since a boot crash takes the entire host app down (T-53-08).
   defp safe_attach_observe_telemetry do
     case Scoria.Observe.Telemetry.attach() do
+      :ok -> :ok
+      {:error, :already_exists} -> :ok
+    end
+  end
+
+  # Phase 53 Plan 05: gives the MCP tool leg (SC#1) a live production
+  # producer. Uses a distinct handler id ("scoria-observe-mcp") from
+  # "scoria-observe-telemetry" so the two attach/detach lifecycles never
+  # collide, and the same match-and-ignore discipline as
+  # safe_attach_observe_telemetry/0 above (T-53-08).
+  defp safe_attach_observe_mcp do
+    case Scoria.Observe.Adapters.MCP.attach() do
       :ok -> :ok
       {:error, :already_exists} -> :ok
     end
