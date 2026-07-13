@@ -33,6 +33,7 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
 
   alias Scoria.Connectors.Connector
   alias Scoria.Observe.Approval
+  alias Scoria.Observe.Buffer
   alias Scoria.Repo
   alias Scoria.Repo.Trace
   alias Scoria.Eval.OnlineScoreCandidate
@@ -298,6 +299,64 @@ defmodule ScoriaWeb.OrchestratorLiveTest do
     assert html =~ "Review candidate context"
     assert html =~ candidate.score_explanation
     assert html =~ candidate.trace_id
+  end
+
+  describe "SEC-01: the operator dashboard still hydrates traces with Bounds ON (D-06c-1, plan 53-04)" do
+    test "a real span emitted through the full pipeline (Bounds live) still renders on mount" do
+      # Real production wiring: rely on the boot-attached default handler
+      # (Scoria.Application starts Buffer + Telemetry.attach/1 at boot,
+      # plan 53-01) rather than hand-synthesizing a projection map -- this
+      # is the pitfall that would ship silently: Bounds is built by
+      # reasoning about what THIS phase writes, not by auditing every bare
+      # key every EXISTING consumer reads. If a pre-seeded dashboard key
+      # (e.g. "tenant_id") were missing from Semconv.attribute_registry/0,
+      # Bounds would drop it, `attributes->>'tenant_id'` would match
+      # nothing, and every trace would vanish from the operator dashboard
+      # -- a failure whose only symptom is an empty list. A unit test of
+      # Bounds in isolation cannot catch it; only a live hydration test can.
+      case Scoria.Observe.Telemetry.attach() do
+        :ok -> :ok
+        {:error, :already_exists} -> :ok
+      end
+
+      tenant_id = "tenant-bounds-hydrate-#{System.unique_integer([:positive])}"
+      trace_id = Ecto.UUID.generate()
+      span_id = Ecto.UUID.generate()
+      workflow_run_id = Ecto.UUID.generate()
+
+      span = %{
+        id: span_id,
+        trace_id: trace_id,
+        parent_id: nil,
+        name: "bounds-dashboard-hydration-check",
+        span_kind: "llm",
+        status_code: "OK",
+        start_time: DateTime.utc_now(),
+        end_time: DateTime.utc_now(),
+        tenant_id: tenant_id,
+        attributes: %{
+          "tenant_id" => tenant_id,
+          "workflow_run_id" => workflow_run_id,
+          "feature" => "support-copilot",
+          "route" => "/tickets/:id",
+          "archetype" => "agentic-tool-use",
+          "intent" => "resolve-ticket"
+        }
+      }
+
+      :telemetry.execute([:scoria, :observe, :span, :stop], %{}, span)
+      :ok = Buffer.flush_now()
+
+      conn = session_conn(tenant_id)
+      {:ok, view, _html} = live(conn, "/scoria")
+      html = render_async(view)
+
+      # A rendered trace ROW, not just a non-empty query result -- this
+      # must fail if the dashboard goes dark.
+      assert html =~ "bounds-dashboard-hydration-check"
+      assert html =~ trace_id
+      refute html =~ "No traces yet."
+    end
   end
 
   defp status_home_fixture(tenant_id) do

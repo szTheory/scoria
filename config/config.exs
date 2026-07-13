@@ -11,6 +11,18 @@ config :scoria, Scoria.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   types: Scoria.PostgrexTypes
 
+# SEC-01 write-time bound (plan 53-04). No disable switch -- limits tune
+# upward only; raising a byte cap never relaxes key admission.
+config :scoria, Scoria.Observe.Bounds,
+  max_attribute_bytes: 256,
+  max_attribute_count: 128,
+  max_depth: 5,
+  max_list_length: 100,
+  max_total_bytes: 16_384,
+  max_delta_chunk_bytes: 2_048,
+  allowed_key_prefixes: [],
+  capture_error_messages: false
+
 config :scoria, Oban,
   engine: Oban.Engines.Basic,
   queues: [connector_sync: 10, compaction: 10, system: 10, inference: 20, evals: 50],
