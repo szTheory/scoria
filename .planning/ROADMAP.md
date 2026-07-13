@@ -97,10 +97,10 @@
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 53-03-PLAN.md — `Observe.span/4` seam: duration + ERROR + reraise; refactor Phase-52 emitters onto it [wave 2]
-- [ ] 53-04-PLAN.md — `Observe.Bounds` write-time choke point in `Telemetry.handle_event/4` (SEC-01) [wave 2]
-- [ ] 53-05-PLAN.md — `Observe.Adapters.MCP` — the production `tool` span producer (fingerprint, never args) [wave 2]
-- [ ] 53-06-PLAN.md — Trace-tree UI: consume `--indent-level`, cycle guard, `tree_order/1`, ERROR overlay, guardrail badge [wave 2]
+- [x] 53-03-PLAN.md — `Observe.span/4` seam: duration + ERROR + reraise; refactor Phase-52 emitters onto it [wave 2]
+- [x] 53-04-PLAN.md — `Observe.Bounds` write-time choke point in `Telemetry.handle_event/4` (SEC-01) [wave 2]
+- [x] 53-05-PLAN.md — `Observe.Adapters.MCP` — the production `tool` span producer (fingerprint, never args) [wave 2]
+- [x] 53-06-PLAN.md — Trace-tree UI: consume `--indent-level`, cycle guard, `tree_order/1`, ERROR overlay, guardrail badge [wave 2]
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -150,7 +150,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
-| 53. Structured Child Spans + Write-Time Bound | v3.6 | 2/8 | In Progress|  |
+| 53. Structured Child Spans + Write-Time Bound | v3.6 | 6/8 | In Progress|  |
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
