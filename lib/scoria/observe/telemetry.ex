@@ -1,4 +1,5 @@
 defmodule Scoria.Observe.Telemetry do
+  alias Scoria.Observe.Bounds
   alias Scoria.Observe.Buffer
   alias Scoria.Observe.Redactor
   alias Scoria.Observe.ReviewerBroadcast
@@ -53,6 +54,7 @@ defmodule Scoria.Observe.Telemetry do
       metadata
       |> Redactor.redact()
       |> scrub_delta_chunk()
+      |> cap_delta_chunk()
 
     ReviewerBroadcast.span_delta(redacted)
   end
@@ -61,14 +63,21 @@ defmodule Scoria.Observe.Telemetry do
         buffer_name: buffer_name
       }) do
     redacted = Redactor.redact(metadata)
-    ReviewerBroadcast.span_stopped(redacted)
-    Buffer.cast_span(buffer_span(redacted), buffer_name)
+
+    case Bounds.enforce(redacted, :span) do
+      {:ok, bounded} ->
+        ReviewerBroadcast.span_stopped(bounded)
+        Buffer.cast_span(buffer_span(bounded), buffer_name)
+
+      :drop ->
+        :ok
+    end
   end
 
   @span_buffer_fields ~w(id trace_id parent_id name span_kind status_code start_time end_time attributes)a
 
-  defp buffer_span(redacted) do
-    Map.take(redacted, @span_buffer_fields)
+  defp buffer_span(bounded) do
+    Map.take(bounded, @span_buffer_fields)
   end
 
   defp scrub_delta_chunk(%{chunk: chunk} = metadata) when is_binary(chunk) do
@@ -76,4 +85,20 @@ defmodule Scoria.Observe.Telemetry do
   end
 
   defp scrub_delta_chunk(metadata), do: metadata
+
+  # Delta persistence stays out of scope (verified absent -- the delta arm
+  # only broadcasts, there is no Buffer.cast_span/2 on it), but EGRESS is
+  # in scope (T-53-03): cap the streaming chunk before it reaches the
+  # operator's browser via ReviewerBroadcast.span_delta/1.
+  defp cap_delta_chunk(%{chunk: chunk} = metadata) when is_binary(chunk) do
+    max_bytes = Bounds.max_delta_chunk_bytes()
+
+    if byte_size(chunk) > max_bytes do
+      Map.put(metadata, :chunk, binary_part(chunk, 0, max_bytes) <> "…[TRUNCATED]")
+    else
+      metadata
+    end
+  end
+
+  defp cap_delta_chunk(metadata), do: metadata
 end

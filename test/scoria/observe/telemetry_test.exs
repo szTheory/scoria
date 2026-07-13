@@ -30,12 +30,18 @@ defmodule Scoria.Observe.TelemetryTest do
   end
 
   test "end-to-end integration: telemetry -> buffer -> db", %{trace: trace} do
+    # "feature" is a registered (SEC-01 closed-registry) key -- it survives
+    # Bounds.enforce/2 unchanged, proving redaction + persistence still work
+    # end-to-end with Bounds live in the pipeline (plan 53-04). An
+    # unregistered bare key like the old "public" fixture is now correctly
+    # DROPPED by Bounds, not passed through -- that is the SEC-01 guarantee,
+    # not a regression.
     span_data = %{
       name: "e2e_span",
       span_kind: "LLM",
       trace_id: trace.id,
       start_time: DateTime.utc_now(),
-      attributes: %{"password" => "secret_value", "public" => "value"}
+      attributes: %{"password" => "secret_value", "feature" => "value"}
     }
 
     :telemetry.execute([:scoria, :observe, :span, :stop], %{}, span_data)
@@ -46,8 +52,14 @@ defmodule Scoria.Observe.TelemetryTest do
     assert length(spans) == 1
     span = hd(spans)
     assert span.name == "e2e_span"
-    assert span.attributes["public"] == "value"
-    assert span.attributes["password"] == "[REDACTED]"
+    assert span.attributes["feature"] == "value"
+
+    # "password" is redacted by Redactor.redact/1 to "[REDACTED]" first, but
+    # it is not a SEC-01 registered key, so Bounds.enforce/2 drops it
+    # entirely -- neither the raw value nor the "[REDACTED]" placeholder is
+    # persisted. Redaction and the closed-registry bound are two
+    # independent, stacked defenses; the stricter one (Bounds) wins here.
+    refute Map.has_key?(span.attributes, "password")
   end
 
   test "broadcasts trace_span immediately on span stop before buffer flush", %{

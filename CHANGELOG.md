@@ -190,6 +190,30 @@ starts `Scoria.Observe.Buffer` under `Scoria.Supervisor` and calls
 `Scoria.Observe.Telemetry.attach/0` on boot, so spans persist to Postgres with zero
 host wiring. Opt out with `config :scoria, Scoria.Observe, enabled: false`.
 
+**Write-time attribute bound behind a closed key registry (SEC-01).**
+`Scoria.Observe.Bounds.enforce/2` is now the single write-time choke point every
+span attribute payload passes through, immediately after redaction and before both
+the operator PubSub broadcast and Postgres persistence. Attribute keys are admitted
+only via a closed registry (`Scoria.Observe.Semconv.attribute_registry/0`), a small
+set of vendor prefixes (`gen_ai.`, `server.`, `openai.`, `req_llm.`, `error.`) minus
+an exact-key/dot-segment denylist, or host-configured prefixes
+(`allowed_key_prefixes`, default `[]`). An unregistered or denied key is **dropped,
+never truncated** -- a byte-capped prefix of a leaked prompt is still a leaked
+prompt. Admitted values are size-bounded (`max_attribute_bytes`, `max_total_bytes`)
+and the attribute map is depth/count/list-length bounded
+(`max_depth`/`max_attribute_count`/`max_list_length`); a drop or truncation emits
+`[:scoria, :observe, :bounds, :exceeded]` telemetry so an SRE can alert on "my
+instrumentation is trying to log prompts." Configure via
+`config :scoria, Scoria.Observe.Bounds, ...` -- there is no disable switch, limits
+tune upward only.
+
+**Honest SEC-01 scope note.** This bound protects the DURABLE `ai_spans.attributes`
+column and the `ReviewerBroadcast` fan-out. It does **not** yet cover streaming
+completion text: `[:scoria, :observe, :span, :delta]` chunks are broadcast to the
+operator's browser (capped at `max_delta_chunk_bytes` on egress) but never
+persisted -- streaming deltas live only in the operator's LiveView process memory
+for the duration of the connection.
+
 ### Changed
 
 #### Pre-1.0 terminology migration

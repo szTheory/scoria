@@ -306,7 +306,7 @@ defmodule Scoria.Observe.BoundsTest do
 
       buffer_name = :"bounds_test_buffer_#{System.unique_integer([:positive])}"
 
-      pid =
+      _pid =
         start_supervised!(
           Supervisor.child_spec(
             {Buffer, [name: buffer_name, flush_interval: 10_000, max_size: 100]},
