@@ -1,8 +1,8 @@
 ---
 phase: 53
 slug: structured-child-spans-write-time-bound
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-12
 ---
@@ -87,6 +87,6 @@ created: 2026-07-12
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
 - [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-07-12 (gsd-plan-checker: VERIFICATION PASSED — all 8 plans carry `<automated>` verify commands scoped to targeted `mix test` runs; every Wave 0 gap is owned by a named task)

@@ -90,13 +90,24 @@
   4. No attribute payload carries raw prompt/completion text; payload sizes are bounded at write time; and a regression test goes RED if a future developer introduces an unbounded free-text attribute (enforced by a closed `Semconv` key registry, not a deny-pattern).
 
 **Plans**: 8 plans (4 waves)
+**Wave 1**
+
 - [ ] 53-01-PLAN.md — Wire `Observe.Buffer` + `Telemetry.attach/1` into `Scoria.Application` (gates everything) [wave 1]
 - [ ] 53-02-PLAN.md — `Semconv` closed key registry + guardrail enums + type-only error attributes [wave 1]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 53-03-PLAN.md — `Observe.span/4` seam: duration + ERROR + reraise; refactor Phase-52 emitters onto it [wave 2]
 - [ ] 53-04-PLAN.md — `Observe.Bounds` write-time choke point in `Telemetry.handle_event/4` (SEC-01) [wave 2]
 - [ ] 53-05-PLAN.md — `Observe.Adapters.MCP` — the production `tool` span producer (fingerprint, never args) [wave 2]
 - [ ] 53-06-PLAN.md — Trace-tree UI: consume `--indent-level`, cycle guard, `tree_order/1`, ERROR overlay, guardrail badge [wave 2]
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 53-07-PLAN.md — `Observe.Guardrail` + G1 release gate (no free-text reason, structurally) [wave 3]
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 53-08-PLAN.md — Step parent span + `trace_id` threading + G2/G3/G4 + `JudgeRunner` PROMPT span [wave 4]
 
 ### Phase 53b: `ai_span_events` + `emit_event/1`
