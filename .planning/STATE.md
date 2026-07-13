@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
 current_phase: 53
-current_phase_name: Structured Child Spans + `ai_span_events`
+current_phase_name: structured-child-spans-write-time-bound
 status: executing
 stopped_at: Phase 53 context gathered (split 53/53b)
-last_updated: "2026-07-13T01:15:06.797Z"
-last_activity: 2026-07-12
-last_activity_desc: Phase 52 complete, transitioned to Phase 53
+last_updated: "2026-07-13T17:21:10.967Z"
+last_activity: 2026-07-13
+last_activity_desc: Phase 53 execution started
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 11
+  total_plans: 19
   completed_plans: 11
   percent: 40
 ---
@@ -25,14 +25,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 52 — retriever-span-host-declared-attributes
+**Current focus:** Phase 53 — structured-child-spans-write-time-bound
 
 ## Current Position
 
-Phase: 53 — Structured Child Spans + `ai_span_events`
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-07-12 — Phase 52 complete, transitioned to Phase 53
+Phase: 53 (structured-child-spans-write-time-bound) — EXECUTING
+Plan: 1 of 8
+Status: Executing Phase 53
+Last activity: 2026-07-13 — Phase 53 execution started
 
 ## Performance Metrics
 

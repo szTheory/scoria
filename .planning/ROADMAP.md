@@ -92,8 +92,8 @@
 **Plans**: 8 plans (4 waves)
 **Wave 1**
 
-- [ ] 53-01-PLAN.md — Wire `Observe.Buffer` + `Telemetry.attach/1` into `Scoria.Application` (gates everything) [wave 1]
-- [ ] 53-02-PLAN.md — `Semconv` closed key registry + guardrail enums + type-only error attributes [wave 1]
+- [x] 53-01-PLAN.md — Wire `Observe.Buffer` + `Telemetry.attach/1` into `Scoria.Application` (gates everything) [wave 1]
+- [x] 53-02-PLAN.md — `Semconv` closed key registry + guardrail enums + type-only error attributes [wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -150,7 +150,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
-| 53. Structured Child Spans + Write-Time Bound | v3.6 | 0/TBD | Not started | - |
+| 53. Structured Child Spans + Write-Time Bound | v3.6 | 2/8 | In Progress|  |
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
