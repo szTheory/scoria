@@ -1064,11 +1064,19 @@
   }
 
   /* ---------- Trace span row ---------- */
+  /* padding-left consumes --indent-level (D-07a): the depth is computed
+     server-side (TraceProjection.with_depths/1) and set as a CSS custom
+     property by the component; this is the ONE rule that renders it as
+     visual nesting. Shared by every `.scoria-span` row (trace tree AND
+     workflow tree) — do not add a second depth-computation or rendering
+     path. Rows that never set --indent-level fall back to depth 0 via the
+     var()'s default. */
   .scoria-span {
     display: flex;
     align-items: center;
     gap: var(--scoria-space-3);
     padding: var(--scoria-space-2) var(--scoria-space-3);
+    padding-left: calc(0.75rem + var(--indent-level, 0) * 1.25rem);
     border-radius: var(--scoria-radius-sm);
   }
   .scoria-span:hover { background: var(--scoria-tone-neutral-bg); }

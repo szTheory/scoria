@@ -58,6 +58,88 @@ defmodule Scoria.Observe.TraceProjectionTest do
       assert child.depth == 1
       assert grandchild.depth == 2
     end
+
+    test "orphan span (parent not in fetched set) stays a root at depth 0 (D-07f)" do
+      spans = [%{id: "child", parent_id: "missing-parent", name: "orphan"}]
+
+      [result] = TraceProjection.with_depths(spans)
+
+      assert result.depth == 0
+    end
+  end
+
+  describe "with_depths/1 cycle guard (T-53-07)" do
+    test "self-parent terminates rather than hanging" do
+      task =
+        Task.async(fn ->
+          TraceProjection.with_depths([%{id: "a", parent_id: "a"}])
+        end)
+
+      result = Task.await(task, 1000)
+
+      assert [%{id: "a", depth: depth}] = result
+      assert is_integer(depth)
+    end
+
+    test "2-cycle terminates and both spans get an integer depth" do
+      task =
+        Task.async(fn ->
+          TraceProjection.with_depths([
+            %{id: "a", parent_id: "b"},
+            %{id: "b", parent_id: "a"}
+          ])
+        end)
+
+      result = Task.await(task, 1000)
+
+      assert [%{depth: depth_a}, %{depth: depth_b}] = result
+      assert is_integer(depth_a)
+      assert is_integer(depth_b)
+    end
+
+    test "depth is clamped at the hard cap for a pathologically deep chain" do
+      spans =
+        for i <- 0..149 do
+          parent_id = if i == 0, do: nil, else: "span-#{i - 1}"
+          %{id: "span-#{i}", parent_id: parent_id}
+        end
+
+      result = TraceProjection.with_depths(spans)
+      deepest = Enum.max_by(result, & &1.depth)
+
+      assert deepest.depth == 100
+    end
+  end
+
+  describe "tree_order/1" do
+    test "pre-order DFS orders by tree position, not start_time" do
+      parent = %{id: "p", parent_id: nil, start_time: ~U[2026-01-01 00:00:00.000000Z]}
+      child1 = %{id: "c1", parent_id: "p", start_time: ~U[2026-01-01 00:00:02.000000Z]}
+      child2 = %{id: "c2", parent_id: "p", start_time: ~U[2026-01-01 00:00:01.000000Z]}
+
+      ordered = TraceProjection.tree_order([parent, child1, child2])
+
+      assert Enum.map(ordered, & &1.id) == ["p", "c1", "c2"]
+    end
+
+    test "tolerates cycles (terminates) and emits orphan spans as roots" do
+      task =
+        Task.async(fn ->
+          TraceProjection.tree_order([%{id: "a", parent_id: "a"}])
+        end)
+
+      result = Task.await(task, 1000)
+
+      assert Enum.map(result, & &1.id) == ["a"]
+
+      orphan = %{id: "orphan", parent_id: "missing"}
+      root = %{id: "root", parent_id: nil}
+
+      ordered = TraceProjection.tree_order([root, orphan])
+
+      assert Enum.sort(Enum.map(ordered, & &1.id)) == ["orphan", "root"]
+      assert length(ordered) == 2
+    end
   end
 
   describe "trace_header/1" do
