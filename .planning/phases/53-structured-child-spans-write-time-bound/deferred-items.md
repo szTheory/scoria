@@ -23,3 +23,17 @@ boundary rule (only auto-fix issues directly caused by the current task's change
   class ("50-11: one duplicate push-triggered CI run hit an unrelated flaky
   `eventually()` timeout (SEED-004 class)"). Not fixed — out of scope for this
   plan's files.
+
+## Plan 53-04
+
+- **Recurrence of the same `capture_parity_test.exs` full-suite-only flake.**
+  `mix test --warnings-as-errors` (full suite, 3 doctests + 1233 tests) reported
+  exactly 1 failure in the identical `Scoria.WarningInventory.CaptureParityTest`
+  "optimized compile-only capture catches high-signal unclassified warning
+  (injected)" test — same subprocess-race symptom logged under Plan 53-01 above.
+  Re-ran in isolation (`mix test test/scoria/warning_inventory/capture_parity_test.exs`)
+  immediately after: 2 tests, 0 failures. Confirms this is unrelated to Plan
+  53-04's files (`lib/scoria/observe/bounds.ex`, `lib/scoria/observe/telemetry.ex`,
+  `config/config.exs`, `test/scoria/observe/bounds_test.exs`,
+  `test/scoria_web/live/orchestrator_live_test.exs`). Not fixed — out of scope,
+  same SEED-004 class debt.
