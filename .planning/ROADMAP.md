@@ -18,7 +18,8 @@
 
 - [ ] **Phase 51: Foundation Fix + Key Convention + Span-Kind Taxonomy** - Trace-upsert FK fix, shared span_kind whitelist, version-pinned semconv module, `gen_ai.*` model-config capture via ReqLLM's attribute builder, correct span_kind + `openinference.span.kind`, legacy-key compat decision.
 - [x] **Phase 52: RETRIEVER Span + Host-Declared Attributes** - `RETRIEVER` span dual-written alongside `ai_retrieval_runs`, retrieval config fields with a span↔table consistency guard, reserved host-declared attribute keys, context-pack composition on the `PROMPT` span. (completed 2026-07-12)
-- [ ] **Phase 53: Structured Child Spans + `ai_span_events`** - `tool`/`prompt`/`retrieval`/`guardrail` as real child spans with parent linkage, `ai_span_events` wired via `emit_event/1` through the shared redaction path, `prompt_rendered`/`guardrail_triggered` emitted from real call sites, PII/cardinality guard.
+- [ ] **Phase 53: Structured Child Spans + Write-Time Bound** - `tool`/`prompt`/`retrieval`/`guardrail` as real duration/failure-bearing child spans with parent linkage, the observe pipeline actually wired into the supervision tree, and the SEC-01 write-time PII/cardinality bound behind a closed key registry.
+- [ ] **Phase 53b: `ai_span_events` + `emit_event/1`** - The dead `ai_span_events` table resurrected via a public allow-listed `emit_event/1` through the shared redaction path, with an ordered Buffer flush, and `prompt_rendered`/`guardrail_triggered` emitted from real call sites.
 - [ ] **Phase 54: Docs Accuracy + Conformance Check** - Honest "OpenInference-compatible" claim with contract-list updates in the same change, plus a falsifiable conformance check.
 
 ## Phase Details
@@ -76,18 +77,31 @@
 - [x] 52-04-PLAN.md — Wire `retrieve/2` + RETR-01 join / RETR-02 equality / ATTR-01 pass-through / D-R2b migration
 - [x] 52-06-PLAN.md — ATTR-02 SC#4 acceptance: real `emit_prompt_span/1` + `flush_now` persisted-span assertions
 
-### Phase 53: Structured Child Spans + `ai_span_events`
+### Phase 53: Structured Child Spans + Write-Time Bound
 
-**Goal**: Tool, prompt, retrieval, and guardrail steps show up as real duration-bearing child spans in the trace tree, and the three reserved point-events can be emitted through a redaction-safe, allow-listed event path — closing the "everything is a flat LLM/INTERNAL span" gap.
-**Depends on**: Phase 51 (ordered flush discipline: traces → spans → events; shared whitelist already exists)
-**Requirements**: EVENT-01, EVENT-02, EVENT-03, SEC-01
+**Goal**: Tool, prompt, retrieval, and guardrail steps show up as real duration- and failure-bearing child spans in the trace tree — on a pipeline that is actually running in a host app — and no attribute payload can carry raw prompt/completion text.
+**Depends on**: Phase 51 (span pipeline + FK-safe trace upsert), Phase 52 (Semconv seam, RETRIEVER/prompt emitters)
+**Requirements**: EVENT-01, SEC-01
 **Success Criteria** (what must be TRUE):
 
-  1. A `tool`, `prompt`, `retrieval`, or `guardrail` step appears in the trace tree as its own child span with a `parent_id` linking it to the originating span — not folded into the parent's attributes and not modeled as an event.
-  2. Calling the public `emit_event/1` for an allow-listed name (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`) produces a persisted `ai_span_events` row whose attributes passed through the identical `Redactor.redact/1` call site spans use — a deny-listed key inside an event's attributes comes back `[REDACTED]`, proven by an integration test.
-  3. Calling `emit_event/1` with a name outside the 3-item allow-list is rejected/logged, not silently persisted — the vocabulary cannot silently grow.
-  4. `prompt_rendered` and `guardrail_triggered` are actually emitted from real runtime/workflow call sites during normal operation (not just reachable via a direct API call in a test) — `user_feedback_received` stays reserved-only, not emitted, in this milestone.
-  5. No new attribute or event payload carries raw prompt/completion text; payload sizes are bounded at write time, and a regression test would fail if an unbounded free-text value were introduced.
+  1. A `tool`, `prompt`, `retrieval`, or `guardrail` step appears in the trace tree as its own child span with a `parent_id` linking it to the originating span — not folded into the parent's attributes and not modeled as an event. The trace tree renders the nesting (today it does not: `--indent-level` is set and consumed by nothing).
+  2. `Scoria.Observe.Buffer` runs under `Scoria.Application` and `Telemetry.attach/1` is called on boot — so a span emitted by a real host app persists to Postgres without the host hand-wiring the pipeline. (Pre-existing gap: today the pipeline is inert outside tests.)
+  3. A step that raises produces a persisted child span with `status_code: "ERROR"` and a real duration, and the host's exception is reraised unchanged.
+  4. No attribute payload carries raw prompt/completion text; payload sizes are bounded at write time; and a regression test goes RED if a future developer introduces an unbounded free-text attribute (enforced by a closed `Semconv` key registry, not a deny-pattern).
+
+**Plans**: TBD
+
+### Phase 53b: `ai_span_events` + `emit_event/1`
+
+**Goal**: The three reserved point-events can be emitted through a redaction-safe, allow-listed event path that cannot lose a batch of good spans, and two of them fire from real call sites during normal operation.
+**Depends on**: Phase 53 (the guardrail/prompt spans these events attach to must exist first; `Bounds` must exist to bound event payloads)
+**Requirements**: EVENT-02, EVENT-03
+**Success Criteria** (what must be TRUE):
+
+  1. Calling the public `emit_event/1` for an allow-listed name (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`) produces a persisted `ai_span_events` row whose attributes passed through the identical `Redactor.redact/1` call site spans use — a deny-listed key inside an event's attributes comes back `[REDACTED]`, proven by an integration test.
+  2. Calling `emit_event/1` with a name outside the 3-item allow-list is rejected/logged, not silently persisted — including via a raw `:telemetry.execute` on the public bus. The vocabulary cannot silently grow.
+  3. `prompt_rendered` and `guardrail_triggered` are actually emitted from real call sites during normal operation (not just reachable via a direct API call in a test) — `user_feedback_received` stays reserved-only, not emitted, in this milestone.
+  4. An event whose span has not flushed (or was dropped) can never take down a batch of good spans — proven by a test that flushes 50 valid spans alongside one orphan event and loses nothing.
 
 **Plans**: TBD
 
@@ -106,7 +120,7 @@
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 51 → 52 → 53 → 54
+Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -117,7 +131,8 @@ Phases execute in numeric order: 51 → 52 → 53 → 54
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
-| 53. Structured Child Spans + ai_span_events | v3.6 | 0/TBD | Not started | - |
+| 53. Structured Child Spans + Write-Time Bound | v3.6 | 0/TBD | Not started | - |
+| 53b. `ai_span_events` + `emit_event/1` | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
 ## Archived Milestones

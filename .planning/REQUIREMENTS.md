@@ -96,9 +96,9 @@ Phase numbering continues from the previous milestone (v3.5 ended at Phase 50). 
 | ATTR-01 | Phase 52 | Complete |
 | ATTR-02 | Phase 52 | Complete |
 | EVENT-01 | Phase 53 | Pending |
-| EVENT-02 | Phase 53 | Pending |
-| EVENT-03 | Phase 53 | Pending |
 | SEC-01 | Phase 53 | Pending |
+| EVENT-02 | Phase 53b | Pending |
+| EVENT-03 | Phase 53b | Pending |
 | DOCS-01 | Phase 54 | Pending |
 | DOCS-02 | Phase 54 | Pending |
 
