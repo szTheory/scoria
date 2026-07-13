@@ -1,8 +1,19 @@
 defmodule Scoria.Observe do
   @moduledoc """
-  Host-facing span-emission facade — two symmetric emitters hosts call
-  directly, keeping `Scoria.Knowledge`/host prompt-assembly code free of
-  span plumbing (consumer-not-provider DNA):
+  Host-facing span-emission facade.
+
+  The single transparent primitive every producer in this phase funnels
+  through is `span/4` (D-01a): it mints a span, runs the host's `fun`, times
+  it from the monotonic clock, marks `status_code: "ERROR"` on failure, and
+  reraises the host's exception unchanged (D-01d, SC#3). `with_tool/3`,
+  `with_prompt/3`, and `with_guardrail/3` are thin kind wrappers over it
+  (D-01b). `trace_id_for_run/1` returns a run's id verbatim — a run IS a
+  trace (D-03a).
+
+  Two symmetric legacy-shaped emitters remain for hosts that have an
+  already-completed span to describe (no `fun` to run), keeping
+  `Scoria.Knowledge`/host prompt-assembly code free of span plumbing
+  (consumer-not-provider DNA):
 
   - `emit_retriever_span/1` — the RETR-01 spine. `Scoria.Knowledge.retrieve/2`
     calls this after its `with`-chain succeeds, emitting a RETRIEVER-kind
@@ -14,25 +25,157 @@ defmodule Scoria.Observe do
     `archetype`/`intent` and context-pack composition attributes on the
     trace calls this Scoria-owned helper directly at prompt-assembly time.
 
-  Both emitters build a span map and emit it on the shared
+  `span/4` and both legacy emitters build their span map through one shared
+  private builder (single origin, D-00c) and emit it on the shared
   `[:scoria, :observe, :span, :stop]` event — the same event the Phase-51
   adapters (`Scoria.Observe.Adapters.ReqLLM`/`Jido`) use — so redaction,
   `ReviewerBroadcast`, and the FK-safe `Buffer` flush apply identically.
-  Both mint a fresh own `:id` and wrap the emit in `try/rescue -> :ok` so a
-  raising telemetry handler can never propagate into the caller's business
-  logic (D-R6).
+  Every span mints a fresh own `:id` when the caller omits `:span_id` (own-id
+  semantics, Phase-52 D-R2 — passing an existing span's id PK-collides and
+  is silently dropped by the `insert_all` with no `on_conflict`), and the
+  emit itself is wrapped in `try/rescue -> :ok` so a raising telemetry
+  handler can never propagate into the caller's business logic (D-R6
+  continuity). This is a deliberate asymmetry: the EMIT is swallowed, the
+  HOST'S exception is not — `span/4` is transparent to the caller's failure
+  and opaque to its own.
 
-  **Phase-53 continuity note:** `emit_prompt_span/1` carries ATTR-02
-  composition attributes on this Scoria-emitted composition span. It does
-  NOT build a real duration/parent-linked PROMPT child span, `ai_span_events`,
-  or the SEC-01 write-time bound — those are Phase 53 / EVENT-01. The same
-  Semconv keys (`Semconv.prompt_context_key/0`, the usage input-tokens key)
-  relocate onto a real PROMPT child span in Phase 53 with zero contract
-  change (D-ATTR02-1).
+  **`:telemetry.span/3` prior art (D-01d):** `:telemetry.span/3`
+  (hexdocs.pm/telemetry) already implements this catch-mark-reraise
+  contract — "if an exception does occur, an `EventPrefix ++ [exception]`
+  event will be emitted and the caught error will be re-raised" — so this
+  shape is the ecosystem-standard idiom, not a Scoria invention. Scoria
+  does not call `:telemetry.span/3` directly only because every existing
+  consumer (`Telemetry.handle_event/4`, `Buffer`, `ReviewerBroadcast`) is
+  wired to a single flat `[:scoria, :observe, :span, :stop]` event rather
+  than telemetry's three-event start/stop/exception shape. For comparison,
+  OpenTelemetry's own `with_span/3` is `try...after` — it does NOT catch,
+  does NOT set an error status, and records no exception; Scoria's
+  `try/rescue -> ERROR + reraise` is strictly stronger than that reference
+  implementation.
+
+  **Explicit context, no implicit process-local variant (D-02b):**
+  `parent_id`/`trace_id`/`span_id` are ALWAYS explicit opts on `span/4` and
+  its wrappers. An implicit process-local context variant (an ambient
+  "current span" resolved from process dictionary or similar) was
+  considered and deliberately cut — not one of this phase's producers (a
+  pre-run release gate, the workflow runtime, two Oban job processes) runs
+  in a process where an ambient span context would resolve correctly. This
+  is a known, deliberate deferral, not an oversight.
+
+  **Phase-53 continuity note (historical):** `emit_prompt_span/1` used to
+  carry ATTR-02 composition attributes on a zero-duration composition span
+  only. It now shares `span/4`'s span-map builder and double-writes
+  `tenant_id`/`workflow_run_id`/`session_id` like every other producer
+  (D-00c/D-01e). The same Semconv keys (`Semconv.prompt_context_key/0`, the
+  usage input-tokens key) that were promised to relocate onto a real
+  PROMPT child span with zero contract change (D-ATTR02-1) do so here.
   """
 
   alias Scoria.Observe.Semconv
   alias Scoria.Observe.SpanKind
+
+  @doc """
+  The single transparent span primitive (D-01a). Runs `fun.()` inside a
+  `try`, measures its duration from `System.monotonic_time/0`, and returns
+  `fun`'s value verbatim on success — `span/4` never transforms the
+  caller's return.
+
+  On every outcome — success, a raised exception, or a thrown/exited value
+  — EXACTLY ONE span is emitted (RESEARCH Pitfall 1): each outcome branch
+  owns its own single emit-then-return/reraise, and there is no emit call
+  reachable after the `try` block.
+
+  - Normal return: emits `status_code: "OK"` and returns `value` verbatim.
+  - `rescue e`: emits `status_code: "ERROR"` with `Semconv.error_attributes/1`
+    merged into attributes, then `reraise e, __STACKTRACE__` — the host's
+    exception struct, message, and original stacktrace reach the caller
+    unchanged (D-01d, SC#3).
+  - `catch kind, reason` (a throw or an exit): emits `status_code: "ERROR"`
+    with type-only error attributes, then `:erlang.raise(kind, reason,
+    __STACKTRACE__)` — `reraise/2` only covers the `rescue` case, a
+    throw/exit needs the BIF.
+
+  `__STACKTRACE__` is only bound inside its matching `rescue`/`catch`
+  clause — this is exactly why the reraise/raise must live inside that
+  branch; hoisting it out (or sharing one emit call across branches) is the
+  double-emit footgun Test 5 exists to catch.
+
+  `opts` (a map or keyword list) accepts `:trace_id`, `:parent_id`,
+  `:span_id` (own-id semantics — a fresh id is minted when omitted, D-R2),
+  `:tenant_id`, `:workflow_run_id`, `:session_id`, `:attributes` (a
+  pre-built map merged into the span's attributes), plus the four
+  `Semconv.host_declared_keys/0` values read directly off `opts`.
+
+  The emit itself stays wrapped `try/rescue -> :ok` (Phase-52 D-R6
+  continuity) — a raising telemetry handler can never reach the caller.
+  """
+  @spec span(String.t(), String.t(), map() | keyword(), (-> any())) :: any()
+  def span(kind, name, opts, fun) when is_function(fun, 0) do
+    opts = normalize_opts(opts)
+    start_wall = DateTime.utc_now()
+    start_mono = System.monotonic_time()
+
+    try do
+      fun.()
+    rescue
+      e ->
+        emit_outcome_span(kind, name, opts, "ERROR", start_wall, start_mono, Semconv.error_attributes(e))
+        reraise e, __STACKTRACE__
+    catch
+      error_kind, reason ->
+        emit_outcome_span(
+          kind,
+          name,
+          opts,
+          "ERROR",
+          start_wall,
+          start_mono,
+          Semconv.error_attributes({error_kind, reason})
+        )
+
+        :erlang.raise(error_kind, reason, __STACKTRACE__)
+    else
+      value ->
+        emit_outcome_span(kind, name, opts, "OK", start_wall, start_mono, %{})
+        value
+    end
+  end
+
+  @doc """
+  Thin `tool`-kind wrapper over `span/4` (D-01b).
+  """
+  @spec with_tool(String.t(), map() | keyword(), (-> any())) :: any()
+  def with_tool(name, opts, fun), do: span("tool", name, opts, fun)
+
+  @doc """
+  Thin `prompt`-kind wrapper over `span/4` (D-01b).
+  """
+  @spec with_prompt(String.t(), map() | keyword(), (-> any())) :: any()
+  def with_prompt(name, opts, fun), do: span("prompt", name, opts, fun)
+
+  @doc """
+  Thin `guardrail`-kind wrapper over `span/4` (D-01b).
+  """
+  @spec with_guardrail(String.t(), map() | keyword(), (-> any())) :: any()
+  def with_guardrail(name, opts, fun), do: span("guardrail", name, opts, fun)
+
+  @doc """
+  Returns the trace id for a workflow run — a RUN IS A TRACE (D-03a).
+
+  Accepts either a `%Scoria.Workflows.Run{}` struct or a raw run id binary
+  and returns the run's id verbatim. This is safe by construction:
+  `ai_spans.trace_id` FKs to `ai_traces`, `Buffer` upserts trace rows
+  idempotently (`insert_all ... on_conflict: :nothing, conflict_target:
+  [:id]`), and `ai_traces.id` has no other producer — so reusing `run.id`
+  as a trace id is FK-safe and collision-free, and it creates the
+  run↔trace join the operator surface already assumes (`OrchestratorLive`
+  renders `trace[:workflow_run_id]`). Before this, both Phase-51 adapters
+  fell back to `metadata[:trace_id] || Ecto.UUID.generate()` — a fresh
+  random orphan trace per span with no run join at all.
+  """
+  @spec trace_id_for_run(Scoria.Workflows.Run.t() | binary()) :: binary()
+  def trace_id_for_run(%Scoria.Workflows.Run{id: id}), do: id
+  def trace_id_for_run(run_id) when is_binary(run_id), do: run_id
 
   @doc """
   Builds and emits a RETRIEVER-kind span for one `Scoria.Knowledge.retrieve/2`
@@ -71,22 +214,19 @@ defmodule Scoria.Observe do
     host_metadata = opts[:host_metadata] || %{}
 
     attributes =
-      %{}
-      |> Map.put(Semconv.openinference_span_kind_key(), SpanKind.to_openinference("retriever"))
-      |> Map.merge(Semconv.retrieval_config_attributes(config_map))
+      Semconv.retrieval_config_attributes(config_map)
       |> Semconv.merge_host_declared(host_metadata)
 
-    span = %{
-      name: "knowledge.retrieve",
-      span_kind: SpanKind.normalize("retriever"),
-      status_code: "OK",
-      start_time: opts[:started_wall] || DateTime.utc_now(),
-      end_time: DateTime.utc_now(),
-      trace_id: opts[:trace_id],
-      id: opts[:span_id],
-      parent_id: opts[:parent_id],
-      attributes: attributes
-    }
+    span =
+      build_span_map(
+        "retriever",
+        "knowledge.retrieve",
+        opts,
+        "OK",
+        opts[:started_wall] || DateTime.utc_now(),
+        DateTime.utc_now(),
+        attributes
+      )
 
     emit_span(span)
   end
@@ -137,22 +277,20 @@ defmodule Scoria.Observe do
   def emit_prompt_span(opts) when is_map(opts) do
     attributes =
       %{}
-      |> Map.put(Semconv.openinference_span_kind_key(), SpanKind.to_openinference("prompt"))
       |> Semconv.merge_host_declared(opts)
       |> maybe_put_prompt_context(opts[:context_pack])
       |> Semconv.merge_usage_input_tokens(opts[:input_tokens])
 
-    span = %{
-      name: "prompt.compose",
-      span_kind: SpanKind.normalize("prompt"),
-      status_code: "OK",
-      start_time: DateTime.utc_now(),
-      end_time: DateTime.utc_now(),
-      trace_id: opts[:trace_id],
-      id: opts[:span_id] || Ecto.UUID.generate(),
-      parent_id: opts[:parent_id],
-      attributes: attributes
-    }
+    span =
+      build_span_map(
+        "prompt",
+        "prompt.compose",
+        opts,
+        "OK",
+        DateTime.utc_now(),
+        DateTime.utc_now(),
+        attributes
+      )
 
     emit_span(span)
   end
@@ -168,6 +306,87 @@ defmodule Scoria.Observe do
   end
 
   defp maybe_put_prompt_context(attributes, _pack), do: attributes
+
+  # -- span/4 internals --------------------------------------------------
+
+  # span/4's opts type is `map() | keyword()` -- normalize once at the top
+  # so every downstream helper (build_span_map/7, Semconv.merge_host_declared/2,
+  # which uses Map.get/2 internally) can assume a map.
+  defp normalize_opts(opts) when is_map(opts), do: opts
+  defp normalize_opts(opts) when is_list(opts), do: Map.new(opts)
+
+  # Computes end_time from the monotonic clock so `end_time - start_time`
+  # is a real, monotonic-derived interval rather than two back-to-back wall
+  # reads (the bug this replaces in the legacy emitters). `max(elapsed_us,
+  # 1)` guarantees end_time is strictly after start_time even for a
+  # near-instant `fun` -- a zero-width span would misrepresent a real
+  # function call as having taken no time at all.
+  defp monotonic_end_time(start_wall, start_mono) do
+    elapsed_native = System.monotonic_time() - start_mono
+    elapsed_us = System.convert_time_unit(elapsed_native, :native, :microsecond)
+    DateTime.add(start_wall, max(elapsed_us, 1), :microsecond)
+  end
+
+  # span/4's single per-outcome-branch emit call. Builds the OpenInference
+  # kind attribute + any host-supplied :attributes, merges in
+  # outcome-specific attributes (empty on success, Semconv.error_attributes/1
+  # on failure), and emits through the same shared builder + emit path the
+  # legacy emitters use (single origin, D-00c).
+  defp emit_outcome_span(kind, name, opts, status_code, start_wall, start_mono, outcome_attributes) do
+    end_time = monotonic_end_time(start_wall, start_mono)
+
+    attributes =
+      (opts[:attributes] || %{})
+      |> Semconv.merge_host_declared(opts)
+      |> Map.merge(outcome_attributes)
+
+    span = build_span_map(kind, name, opts, status_code, start_wall, end_time, attributes)
+    emit_span(span)
+  end
+
+  # The single origin of every emitted span's shape (D-00c doctrine):
+  # span/4's three outcome branches and both legacy emitters
+  # (emit_retriever_span/1, emit_prompt_span/1) all call this. Owns the
+  # OpenInference span-kind attribute derivation and the tenant_id /
+  # workflow_run_id / session_id double-write -- both a top-level span-map
+  # field (read by `ReviewerBroadcast.span_stopped/1`, which fail-closes
+  # without a top-level `tenant_id`, and by the future `Bounds` tollbooth)
+  # AND into `attributes` (read by `OrchestratorLive`'s
+  # `attributes->>'tenant_id'` SQL filter and any other attributes-only
+  # consumer).
+  defp build_span_map(kind, name, opts, status_code, start_time, end_time, attributes) do
+    normalized_kind = SpanKind.normalize(kind)
+
+    full_attributes =
+      attributes
+      |> Map.put(Semconv.openinference_span_kind_key(), SpanKind.to_openinference(normalized_kind))
+      |> merge_scoped_ids(opts)
+
+    %{
+      name: name,
+      span_kind: normalized_kind,
+      status_code: status_code,
+      start_time: start_time,
+      end_time: end_time,
+      trace_id: opts[:trace_id],
+      id: opts[:span_id] || Ecto.UUID.generate(),
+      parent_id: opts[:parent_id],
+      tenant_id: opts[:tenant_id],
+      workflow_run_id: opts[:workflow_run_id],
+      session_id: opts[:session_id],
+      attributes: full_attributes
+    }
+  end
+
+  defp merge_scoped_ids(attributes, opts) do
+    attributes
+    |> maybe_put_scoped_id("tenant_id", opts[:tenant_id])
+    |> maybe_put_scoped_id("workflow_run_id", opts[:workflow_run_id])
+    |> maybe_put_scoped_id("session_id", opts[:session_id])
+  end
+
+  defp maybe_put_scoped_id(attributes, _key, nil), do: attributes
+  defp maybe_put_scoped_id(attributes, key, value), do: Map.put(attributes, key, value)
 
   defp emit_span(span) do
     :telemetry.execute([:scoria, :observe, :span, :stop], %{}, span)
