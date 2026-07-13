@@ -1,6 +1,11 @@
 defmodule ScoriaWeb.TraceTreeComponent do
   use Phoenix.LiveComponent
 
+  import ScoriaWeb.UI, only: [badge: 1]
+
+  alias Scoria.Observe.Semconv
+  alias ScoriaWeb.ReviewCopy
+
   attr(:spans, :list, required: true)
   attr(:token_previews, :map, default: %{})
 
@@ -31,7 +36,8 @@ defmodule ScoriaWeb.TraceTreeComponent do
         <div
           class={[
             "trace-row scoria-span flex flex-col",
-            "scoria-span--#{span_kind(span)}"
+            "scoria-span--#{span_kind(span)}",
+            errored?(span) && "scoria-span--status-error"
           ]}
           style={"--indent-level: #{Map.get(span, :depth, 0)}"}
         >
@@ -44,6 +50,15 @@ defmodule ScoriaWeb.TraceTreeComponent do
           >
             <%= Map.get(span, :name) || Map.get(span, "name") %>
           </div>
+          <%= if errored?(span) do %>
+            <span class="sr-only">Errored</span>
+          <% end %>
+          <%= if guardrail?(span) do %>
+            <.badge
+              tone={guardrail_tone(span)}
+              label={ReviewCopy.guardrail_label(guardrail_name(span), guardrail_decision(span))}
+            />
+          <% end %>
           <%= if llm_token_preview?(assigns, span) do %>
             <div class="token-preview scoria-raw-evidence__pre font-mono whitespace-pre-wrap break-all">
               <%= Map.get(@token_previews, span_id(span)) %>
@@ -87,5 +102,43 @@ defmodule ScoriaWeb.TraceTreeComponent do
     span
     |> Map.get(:span_kind, Map.get(span, "span_kind"))
     |> Scoria.Observe.SpanKind.normalize()
+  end
+
+  # A `block` decision carries status_code "OK" (D-05e) — the evaluation
+  # succeeded, the business decision went a particular way; "ERROR" is
+  # reserved for the gate itself raising. So a blocked guardrail span
+  # renders the guardrail badge but NEVER the error overlay (T-53-17).
+  defp errored?(span) do
+    span
+    |> status_code()
+    |> String.upcase()
+    |> Kernel.==("ERROR")
+  end
+
+  defp status_code(span) do
+    Map.get(span, :status_code) || Map.get(span, "status_code") || "OK"
+  end
+
+  defp guardrail?(span), do: span_kind(span) == "guardrail"
+
+  defp guardrail_name(span), do: guardrail_attribute(span, :name)
+  defp guardrail_decision(span), do: guardrail_attribute(span, :decision)
+
+  defp guardrail_attribute(span, field) do
+    key = Keyword.fetch!(Semconv.guardrail_keys(), field)
+    attributes_preview(span) |> Map.get(key)
+  end
+
+  defp attributes_preview(span) do
+    Map.get(span, :attributes_preview) || Map.get(span, "attributes_preview") || %{}
+  end
+
+  defp guardrail_tone(span) do
+    case guardrail_decision(span) do
+      "block" -> :fail
+      "escalate" -> :warn
+      "allow" -> :pass
+      _ -> :neutral
+    end
   end
 end
