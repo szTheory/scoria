@@ -2,19 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
-current_phase: 53
-current_phase_name: Structured Child Spans + `ai_span_events`
 status: verifying
-stopped_at: Completed 52-06-PLAN.md
-last_updated: "2026-07-12T21:40:16.871Z"
-last_activity: 2026-07-12
-last_activity_desc: Phase 52 complete, transitioned to Phase 53
+stopped_at: Phase 53 context gathered (split 53/53b)
+last_updated: "2026-07-13T00:33:44.829Z"
+last_activity: 2026-07-12 — Phase 52 complete, transitioned to Phase 53
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 2
   total_plans: 11
   completed_plans: 11
-  percent: 50
+  percent: 40
 ---
 
 # Project State
@@ -365,9 +362,9 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-12T21:14:44.931Z
-Stopped at: Completed 52-06-PLAN.md
-Resume file: None
+Last session: 2026-07-13T00:33:44.825Z
+Stopped at: Phase 53 context gathered (split 53/53b)
+Resume file: .planning/phases/53-structured-child-spans-write-time-bound/53-CONTEXT.md
 
 ## Operator Next Steps
 
