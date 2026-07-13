@@ -119,6 +119,7 @@ status: complete
 - `maybe_observe_buffer/0` gates on `Application.get_env(:scoria, Scoria.Observe, [])[:enabled] != false` (absent key = ON), deliberately not `Mix.env()` — per D-00a the Buffer must boot in `:prod` too.
 - `observe_children/0` is public (`@doc false`) so tests use a real seam instead of reaching into a private function; `maybe_observe_buffer/0` delegates to it.
 - `safe_attach_observe_telemetry/0` match-and-ignores both `:ok` and `{:error, :already_exists}` — a boot crash from a duplicate handler id would take the entire host app down (T-53-08, threat register mitigation).
+- **Deliberately did NOT mark `EVENT-01` complete in `.planning/REQUIREMENTS.md`.** `EVENT-01` ("tool/prompt/retrieval/guardrail are emitted as real child spans") appears in this plan's `requirements` frontmatter alongside 6 of the other 7 plans in this phase (53-02, 53-03, 53-05, 53-06, 53-07, 53-08). This plan only wires the boot-time persistence prerequisite (SC#2) -- it does not itself emit any child spans -- so running `gsd-tools query requirements.mark-complete EVENT-01` would have prematurely flipped the checkbox to done while 6+ plans still need to land. Reverted via `git checkout -- .planning/REQUIREMENTS.md` before this commit; left for whichever plan actually delivers the last piece of EVENT-01 (or the phase-close reconciliation) to mark complete.
 
 ## Deviations from Plan
 
