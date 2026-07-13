@@ -33,26 +33,139 @@ defmodule Scoria.Runtime do
 
   @doc """
   Starts a new run from canonical identity plus explicit runtime options.
+
+  Wires G1 -- the release gate -- into a guardrail span (D-03d, D-05*).
+  `ReleaseGate.check/1` runs BEFORE a run exists, so its outcome is carried
+  forward and the guardrail span is emitted at the right point for each
+  path: AFTER `Workflows.create_run/1` succeeds on the allowed path (the
+  new run's id becomes the trace's `trace_id`, D-03a), immediately with a
+  freshly-minted `trace_id` on the blocked path (a blocked run produces a
+  legitimate ONE-SPAN TRACE, not an orphan), and not at all when the gate
+  is not applicable (D-05d -- a host with no prompt policy configured must
+  not get a meaningless guardrail span on every run). This function's
+  return contract is unchanged: the guardrail span is a side effect, never
+  a control-flow change.
   """
   def start_run(identity, opts \\ []) do
     with {:ok, %{workflow_attrs: workflow_attrs, dispatch_opts: dispatch_opts}} <-
-           Params.start(identity, opts),
-         :ok <- Scoria.Runtime.ReleaseGate.check(workflow_attrs) do
-      case Scoria.Workflows.Runtime.prepare_semantic_fast_path(workflow_attrs) do
-        {:hit, prepared_attrs, entry} ->
-          with {:ok, run} <- Workflows.create_run(prepared_attrs),
-               {:ok, _completed_run} <- Scoria.Workflows.Runtime.complete_semantic_fast_path_hit(run, entry) do
-            {:ok, get_run!(run.id)}
-          end
+           Params.start(identity, opts) do
+      guardrail_applicable? = prompt_ref_configured?(workflow_attrs)
+      guardrail_started_wall = DateTime.utc_now()
+      guardrail_start_mono = System.monotonic_time()
 
-        {:continue, prepared_attrs} ->
-          with {:ok, run} <- Workflows.create_run(prepared_attrs),
-               {:ok, _count} <- maybe_dispatch(run.id, dispatch_opts) do
-            {:ok, get_run!(run.id)}
-          end
+      case Scoria.Runtime.ReleaseGate.check(workflow_attrs) do
+        :ok ->
+          start_run_after_gate(
+            workflow_attrs,
+            dispatch_opts,
+            guardrail_applicable?,
+            guardrail_started_wall,
+            guardrail_start_mono
+          )
+
+        {:error, reason} = error ->
+          emit_g1_block(reason, guardrail_started_wall, guardrail_start_mono)
+          error
       end
     end
   end
+
+  defp start_run_after_gate(
+         workflow_attrs,
+         dispatch_opts,
+         guardrail_applicable?,
+         guardrail_started_wall,
+         guardrail_start_mono
+       ) do
+    case Scoria.Workflows.Runtime.prepare_semantic_fast_path(workflow_attrs) do
+      {:hit, prepared_attrs, entry} ->
+        with {:ok, run} <- Workflows.create_run(prepared_attrs) do
+          emit_g1_allow(guardrail_applicable?, run, guardrail_started_wall, guardrail_start_mono)
+
+          with {:ok, _completed_run} <-
+                 Scoria.Workflows.Runtime.complete_semantic_fast_path_hit(run, entry) do
+            {:ok, get_run!(run.id)}
+          end
+        end
+
+      {:continue, prepared_attrs} ->
+        with {:ok, run} <- Workflows.create_run(prepared_attrs) do
+          emit_g1_allow(guardrail_applicable?, run, guardrail_started_wall, guardrail_start_mono)
+
+          with {:ok, _count} <- maybe_dispatch(run.id, dispatch_opts) do
+            {:ok, get_run!(run.id)}
+          end
+        end
+    end
+  end
+
+  # G1's not-applicable predicate (D-05d): mirrors ONLY the prompt_ref
+  # key-shape match inside `ReleaseGate.check/1`'s `%{metadata: metadata}`
+  # clause (release_gate.ex:36-44) -- whether a prompt_ref is resolvable
+  # from the workflow attrs' metadata at all, the same question that
+  # decides `check/1`'s no-op fall-through. `release_gate.ex` is untouched
+  # by this plan (its return contract is a locked acceptance criterion,
+  # `git diff lib/scoria/runtime/release_gate.ex` must stay empty), so this
+  # predicate cannot be shared as a function call into that module; it is
+  # intentionally narrow to just the key-shape question, not the deeper
+  # UUID-cast/`Repo.get` resolution `check/1` performs beyond it.
+  defp prompt_ref_configured?(%{metadata: metadata}) when is_map(metadata) do
+    case metadata do
+      %{"runtime" => %{"prompt_policy" => %{prompt_ref: id}}} when is_binary(id) -> true
+      %{"runtime" => %{"prompt_policy" => %{"prompt_ref" => id}}} when is_binary(id) -> true
+      %{"runtime" => %{"prompt_ref" => id}} when is_binary(id) -> true
+      _ -> false
+    end
+  end
+
+  defp prompt_ref_configured?(_workflow_attrs), do: false
+
+  # G1's single allow-path emit site (D-03d): both `prepare_semantic_fast_path/1`
+  # branches create a run via `Workflows.create_run/1` and both call this
+  # helper, so there is one emit call, not two. Emits AFTER the run exists
+  # -- `run.id` becomes the trace's `trace_id` (D-03a) -- and stays silent
+  # when the gate was not applicable (D-05d).
+  defp emit_g1_allow(false, _run, _started_wall, _start_mono), do: :ok
+
+  defp emit_g1_allow(true, run, started_wall, start_mono) do
+    Scoria.Observe.Guardrail.emit(%{
+      name: "release_gate",
+      decision: "allow",
+      trace_id: Scoria.Observe.trace_id_for_run(run),
+      parent_id: nil,
+      tenant_id: run.tenant_id,
+      workflow_run_id: run.id,
+      session_id: run.session_id,
+      started_wall: started_wall,
+      start_mono: start_mono
+    })
+  end
+
+  # G1's blocked-path emit (D-03d): no run exists and none will be created,
+  # so a freshly-minted `trace_id` roots a ONE-SPAN TRACE -- the legitimate,
+  # intentional shape a blocked run produces, not an orphan-span bug.
+  # `ReleaseGate.check/1`'s three error atoms are the exact vocabulary
+  # `Semconv`'s guardrail reason_code enum closes over (D-05f); the
+  # `{:eval_not_passing, verdict}` verdict struct is dropped here so only
+  # the bare atom reaches `Guardrail.emit/1` (T-53-05) -- a verdict struct
+  # carries scores and potentially judge output, none of which belongs on
+  # a span.
+  defp emit_g1_block(reason, started_wall, start_mono) do
+    Scoria.Observe.Guardrail.emit(%{
+      name: "release_gate",
+      decision: "block",
+      reason_code: block_reason_code(reason),
+      trace_id: Ecto.UUID.generate(),
+      parent_id: nil,
+      started_wall: started_wall,
+      start_mono: start_mono
+    })
+  end
+
+  defp block_reason_code(:unapproved_draft), do: :unapproved_draft
+  defp block_reason_code({:eval_not_passing, _verdict}), do: :eval_not_passing
+  defp block_reason_code(:eval_required), do: :eval_required
+  defp block_reason_code(other), do: other
 
   @doc """
   Starts a bounded delegated run with one explicit handoff and queued child step.
