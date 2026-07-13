@@ -271,6 +271,176 @@ defmodule Scoria.Observe.SemconvTest do
     end
   end
 
+  describe "attribute_registry/0 registry canary (SEC-01 Test 1)" do
+    test "returns exactly the pinned sorted key list — adding a key requires a deliberate edit here (D-06b)" do
+      assert Semconv.attribute_registry() |> Map.keys() |> Enum.sort() == [
+               "archetype",
+               "args_fingerprint",
+               "duration_ms",
+               "error.type",
+               "exception.type",
+               "feature",
+               "intent",
+               "openinference.span.kind",
+               "route",
+               "scoria.attributes.dropped",
+               "scoria.attributes.dropped_keys",
+               "scoria.attributes.truncated_keys",
+               "scoria.guardrail.decision",
+               "scoria.guardrail.name",
+               "scoria.guardrail.policy_key",
+               "scoria.guardrail.reason_code",
+               "scoria.guardrail.subject_ref",
+               "scoria.prompt.context",
+               "scoria.retrieval.embedding_model",
+               "scoria.retrieval.index_version",
+               "scoria.retrieval.reranker",
+               "session_id",
+               "status",
+               "tenant_id",
+               "tool_name",
+               "tool_ref",
+               "workflow_run_id"
+             ]
+    end
+  end
+
+  describe "attribute_classes/0 exhaustiveness (SEC-01 Test 2)" do
+    test "attribute_classes/0 is exactly the 6-member sorted closed vocabulary — a 7th class is the failure mode" do
+      assert Semconv.attribute_classes() |> Enum.sort() ==
+               [:count, :enum, :flag, :id, :structured, :timestamp]
+
+      assert length(Semconv.attribute_classes()) == 6
+    end
+
+    test "every attribute_registry/0 value is a member of attribute_classes/0" do
+      classes = Semconv.attribute_classes()
+
+      for {key, class} <- Semconv.attribute_registry() do
+        assert class in classes,
+               "registry key #{inspect(key)} has class #{inspect(class)} outside attribute_classes/0"
+      end
+    end
+  end
+
+  describe "dashboard pre-seed (SEC-01 Test 3)" do
+    test "the bare keys OrchestratorLive.build_hydrated_trace/2 reads are registry keys (D-06c-1)" do
+      # OrchestratorLive.build_hydrated_trace/2 (lib/scoria_web/live/orchestrator_live.ex:237)
+      # SQL-filters on attributes->>'tenant_id' and reads session_id/workflow_run_id bare
+      # from attributes; Phase 52 host-declared keys (feature/route/archetype/intent)
+      # render on the dashboard. Dropping any of these from the registry blanks the
+      # operator dashboard once Bounds (plan 53-04) is enabled.
+      for key <- ~w(tenant_id workflow_run_id session_id duration_ms feature route archetype intent) do
+        assert Map.has_key?(Semconv.attribute_registry(), key),
+               "missing dashboard-critical registry key #{inspect(key)}"
+      end
+    end
+  end
+
+  describe "Semconv-owned keys are registered (SEC-01 Test 4)" do
+    test "openinference_span_kind_key/0, prompt_context_key/0, and retrieval_config_keys/0 values are all registry keys" do
+      registry = Semconv.attribute_registry()
+
+      assert Map.has_key?(registry, Semconv.openinference_span_kind_key())
+      assert Map.has_key?(registry, Semconv.prompt_context_key())
+
+      for {_field, key} <- Semconv.retrieval_config_keys() do
+        assert Map.has_key?(registry, key),
+               "missing registry entry for retrieval_config_keys/0 value #{inspect(key)}"
+      end
+    end
+  end
+
+  describe "guardrail enums (SEC-01 Test 5)" do
+    test "guardrail_names/0 returns the exact 4-value closed list" do
+      assert Semconv.guardrail_names() == ~w(release_gate approval_gate budget_gate breaker_gate)
+    end
+
+    test "guardrail_decisions/0 returns allow/block/escalate and does NOT contain \"modify\" (D-05h reserved)" do
+      assert Semconv.guardrail_decisions() == ~w(allow block escalate)
+      refute "modify" in Semconv.guardrail_decisions()
+    end
+
+    test "guardrail_reason_codes/0 returns the exact 6-value closed list (not invented — ReleaseGate/BreakerRegistry already return these)" do
+      assert Semconv.guardrail_reason_codes() ==
+               ~w(unapproved_draft eval_not_passing eval_required approval_required budget_rejected breaker_open)
+    end
+  end
+
+  describe "normalize_reason_code/1 fallback (SEC-01 Test 6)" do
+    test "an unrecognized reason_code normalizes to \"unknown\" and emits the fallback telemetry event" do
+      handler_id = "test-guardrail-fallback-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :observe, :guardrail, :fallback],
+        fn name, meas, meta, pid -> send(pid, {:telemetry, name, meas, meta}) end,
+        self()
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert Semconv.normalize_reason_code("something_new") == "unknown"
+
+      assert_receive {:telemetry, [:scoria, :observe, :guardrail, :fallback], %{},
+                       %{value: "something_new"}}
+    end
+
+    test "a recognized reason_code (atom input) round-trips to its string form with no fallback event" do
+      handler_id = "test-guardrail-fallback-ok-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :observe, :guardrail, :fallback],
+        fn name, meas, meta, pid -> send(pid, {:telemetry, name, meas, meta}) end,
+        self()
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert Semconv.normalize_reason_code(:unapproved_draft) == "unapproved_draft"
+      refute_receive {:telemetry, [:scoria, :observe, :guardrail, :fallback], _meas, _meta}, 50
+    end
+  end
+
+  describe "guardrail_attributes/1 fixed-key projection (SEC-01 Test 7)" do
+    test "projects onto exactly the five scoria.guardrail.* keys, all registry keys, no extras" do
+      registry = Semconv.attribute_registry()
+      guardrail_key_strings = Semconv.guardrail_keys() |> Keyword.values() |> MapSet.new()
+
+      input = %{
+        name: "release_gate",
+        decision: "block",
+        reason_code: "unapproved_draft",
+        subject_ref: "run-123",
+        policy_key: "prompt-template-abc",
+        not_a_registered_field: "should never appear on a span"
+      }
+
+      attrs = Semconv.guardrail_attributes(input)
+
+      assert MapSet.new(Map.keys(attrs)) |> MapSet.subset?(guardrail_key_strings)
+      assert map_size(attrs) == 5
+
+      for key <- Map.keys(attrs) do
+        assert Map.has_key?(registry, key),
+               "guardrail_attributes/1 key #{inspect(key)} is not a registered attribute"
+      end
+
+      refute Enum.any?(Map.values(attrs), &(&1 == "should never appear on a span"))
+    end
+  end
+
+  describe "error_attributes/1 type-only projection (SEC-01 Test 8)" do
+    test "returns exactly exception.type/error.type, both the module name, never the message (D-06g)" do
+      result = Semconv.error_attributes(%RuntimeError{message: "SECRET_PARAM=abc"})
+
+      assert map_size(result) == 2
+      assert Map.keys(result) |> Enum.sort() == ["error.type", "exception.type"]
+      assert Map.values(result) |> Enum.sort() == ["RuntimeError", "RuntimeError"]
+    end
+  end
+
   defp assert_only_allowed_keys(value, allowed_keys) when is_map(value) do
     for {key, sub} <- value do
       assert key in allowed_keys, "unexpected key #{inspect(key)} in prompt_context value"
