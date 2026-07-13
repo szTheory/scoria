@@ -184,3 +184,14 @@ None — no external service configuration required.
 ---
 *Phase: 53-structured-child-spans-write-time-bound*
 *Completed: 2026-07-13*
+
+## Self-Check: PASSED
+
+- FOUND: lib/scoria/observe/guardrail.ex
+- FOUND: test/scoria/observe/guardrail_test.exs
+- FOUND: .planning/phases/53-structured-child-spans-write-time-bound/53-07-SUMMARY.md
+- FOUND commit: eb442638 (test, RED)
+- FOUND commit: fa6c0ad1 (feat, GREEN)
+- FOUND commit: 40dcf62f (feat, G1 wiring)
+- FOUND commit: da628592 (docs, flake log)
+- FOUND commit: bcb1f091 (docs, SUMMARY)
