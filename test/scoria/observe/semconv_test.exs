@@ -330,7 +330,8 @@ defmodule Scoria.Observe.SemconvTest do
       # from attributes; Phase 52 host-declared keys (feature/route/archetype/intent)
       # render on the dashboard. Dropping any of these from the registry blanks the
       # operator dashboard once Bounds (plan 53-04) is enabled.
-      for key <- ~w(tenant_id workflow_run_id session_id duration_ms feature route archetype intent) do
+      for key <-
+            ~w(tenant_id workflow_run_id session_id duration_ms feature route archetype intent) do
         assert Map.has_key?(Semconv.attribute_registry(), key),
                "missing dashboard-critical registry key #{inspect(key)}"
       end
@@ -383,7 +384,7 @@ defmodule Scoria.Observe.SemconvTest do
       assert Semconv.normalize_reason_code("something_new") == "unknown"
 
       assert_receive {:telemetry, [:scoria, :observe, :guardrail, :fallback], %{},
-                       %{value: "something_new"}}
+                      %{value: "something_new"}}
     end
 
     test "a recognized reason_code (atom input) round-trips to its string form with no fallback event" do
