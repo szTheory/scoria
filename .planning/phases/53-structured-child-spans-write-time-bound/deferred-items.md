@@ -37,3 +37,22 @@ boundary rule (only auto-fix issues directly caused by the current task's change
   `config/config.exs`, `test/scoria/observe/bounds_test.exs`,
   `test/scoria_web/live/orchestrator_live_test.exs`). Not fixed — out of scope,
   same SEED-004 class debt.
+
+## Plan 53-07
+
+- **Recurrence of the same `capture_parity_test.exs` full-suite-only flake.**
+  `mix test --warnings-as-errors` (full suite, 3 doctests + 1276 tests) reported
+  exactly 1 failure in the identical `Scoria.WarningInventory.CaptureParityTest`
+  "optimized compile-only capture catches high-signal unclassified warning
+  (injected)" test on a re-run; a prior full-suite run (same worktree, same
+  base) reported 2 failures, with the second failure not reproducing on
+  re-run. Re-ran `test/scoria/warning_inventory/capture_parity_test.exs` in
+  isolation immediately after the 1-failure full-suite run: 2 tests, 0
+  failures. Confirms this is unrelated to Plan 53-07's files
+  (`lib/scoria/observe/guardrail.ex`, `lib/scoria/runtime.ex`,
+  `test/scoria/observe/guardrail_test.exs`) — `test/scoria/observe/` (181
+  tests) and `test/scoria/runtime/` (26 tests) both pass 0 failures in
+  isolation, and `lib/scoria/runtime/release_gate.ex`,
+  `lib/scoria/connectors/auth.ex`, and
+  `lib/scoria/workflows/remote_approval_projection.ex` all show an empty
+  `git diff`. Not fixed — out of scope, same SEED-004 class debt.
