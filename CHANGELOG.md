@@ -178,6 +178,18 @@ new `:on_flush_error` `Buffer` start-link option (`:log` default | `:raise`) let
 choose whether a persistent Postgres failure should crash the buffer process instead
 of only logging.
 
+### Added
+
+**`Scoria.Observe.Buffer` now boots automatically.** Spans emitted by Phases 51/52
+(`Scoria.Observe.emit_*_span/1`, the ReqLLM/Jido adapters, and any custom
+`:telemetry.execute/3` on `[:scoria, :observe, :span, :stop]`) were previously inert
+outside of tests: `Scoria.Observe.Buffer` was never a supervised child of
+`Scoria.Application` and `Scoria.Observe.Telemetry.attach/1` had no `lib/` caller, so
+every span fired into a void in a real host app. `Scoria.Application.start/2` now
+starts `Scoria.Observe.Buffer` under `Scoria.Supervisor` and calls
+`Scoria.Observe.Telemetry.attach/0` on boot, so spans persist to Postgres with zero
+host wiring. Opt out with `config :scoria, Scoria.Observe, enabled: false`.
+
 ### Changed
 
 #### Pre-1.0 terminology migration
