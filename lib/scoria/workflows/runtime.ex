@@ -1,3 +1,35 @@
+defmodule Scoria.Workflows.Runtime.StepFailureSignal do
+  @moduledoc """
+  Internal control-flow exception (D-03c) -- never surfaced to a host.
+
+  `execute_step/2` wraps its whole outcome dispatch in one step-level parent
+  span via `Scoria.Observe.span/4` (D-03c). `span/4` only marks a span
+  `status_code: "ERROR"` when its `fun` genuinely raises/throws/exits --
+  but a workflow handler's raise is ALREADY contained by
+  `execute_handler/6`'s supervised `Task.Supervisor.async_nolink` boundary
+  and converted into a controlled `{:error, {:execution_failed, ...}}`
+  tuple long before it would reach `span/4`. Without this signal, the step
+  span would always read "OK", even for a step that failed (SC#3).
+
+  `execute_step/2` deliberately RAISES this struct (carrying the exact,
+  already-computed `Workflows.fail_step/2` return value) for every branch
+  that fails the step. `span/4`'s `rescue` clause catches it, marks the
+  span ERROR with a real duration, and reraises it unchanged -- which
+  `execute_step/2`'s own outer `rescue e in StepFailureSignal ->` clause
+  then catches, returning `e.return_value` verbatim. The net effect: the
+  step span is ERROR-marked and `execute_step/2`'s return value is
+  byte-for-byte identical to what it was before this plan (T-53-12) --
+  this struct never reaches any caller outside `execute_step/2`'s own
+  frame, and unrelated exceptions (a genuine bug in `Workflows.*`, a DB
+  error) are untouched by the typed rescue and propagate exactly as they
+  did before this plan.
+  """
+  defexception [:return_value]
+
+  @impl true
+  def message(_exception), do: "internal step-failure signal (never surfaced outside execute_step/2)"
+end
+
 defmodule Scoria.Workflows.Runtime do
   @moduledoc """
   Executes bounded workflow steps under supervision and persists stable outcomes.
@@ -6,6 +38,9 @@ defmodule Scoria.Workflows.Runtime do
   alias Decimal, as: D
   alias Scoria.Identity
   alias Scoria.Knowledge.Embedder
+  alias Scoria.Observe
+  alias Scoria.Observe.Guardrail
+  alias Scoria.Observe.SpanKind
   alias Scoria.Runtime.Params
   alias Scoria.SemanticCache
   alias Scoria.SemanticCache.Compatibility
@@ -15,8 +50,10 @@ defmodule Scoria.Workflows.Runtime do
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE.Telemetry
   alias Scoria.Workflows
+  alias Scoria.Workflows.Runtime.StepFailureSignal
 
   @default_timeout 5_000
+  @step_span_name "workflow_step"
 
   def prepare_semantic_fast_path(workflow_attrs) when is_map(workflow_attrs) do
     metadata = Map.get(workflow_attrs, :metadata, %{})
@@ -162,142 +199,266 @@ defmodule Scoria.Workflows.Runtime do
       budget_context = runtime_context(run, Keyword.get(opts, :budget_context, %{}))
       breaker_context = build_breaker_context(step, run, Keyword.get(opts, :breaker_context, %{}))
 
-      case reserve_budget(step, run, budget_context) do
-        {:error, envelope} ->
-          emit_budget_rejection(step, run, budget_context, envelope)
-          Workflows.fail_step(step.id, normalize_budget_envelope(envelope))
+      # Step-level parent span (D-03c): a run IS a trace (D-03a), the step
+      # span roots directly under it (`parent_id: nil`), and its freshly
+      # minted id is threaded to every child (G2/G3/G4's guardrail spans,
+      # and the handler's own trace context) as their `parent_id`. Minted
+      # here -- BEFORE the span opens -- so it is available to thread, per
+      # `span/4`'s own-id semantics (D-R2).
+      trace_id = Observe.trace_id_for_run(run)
+      step_span_id = Ecto.UUID.generate()
+      span_kind = SpanKind.normalize(step.kind)
 
-        {:ok, reservation_context} ->
-          case replay_execution(run, step, handler, timeout, opts, breaker_context) do
-            {:ok, {:completed, result, duration_ms}} ->
-              normalized_result =
-                result
-                |> normalize_payload()
-                |> maybe_attach_semantic_writeback(run, step)
+      span_opts = %{
+        trace_id: trace_id,
+        parent_id: nil,
+        span_id: step_span_id,
+        tenant_id: run.tenant_id,
+        workflow_run_id: run.id,
+        session_id: run.session_id
+      }
 
-              reconcile_budget(reservation_context, budget_context, normalized_result, "completed")
-              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, normalized_result)
-
-              Workflows.complete_step(
-                step.id,
-                attach_budget_evidence(normalized_result, reservation_context)
-              )
-
-            {:ok, {:waiting_for_approval, approval_attrs, duration_ms}} ->
-              reconcile_budget(reservation_context, budget_context, %{}, "waiting_for_approval")
-
-              emit_runtime_telemetry(
-                step,
-                run,
-                budget_context,
-                "waiting_for_approval",
-                duration_ms,
-                %{}
-              )
-
-              Workflows.mark_waiting_for_approval(run.id, step.id, Map.new(approval_attrs))
-
-            {:ok, {:handoff, handoff_attrs, duration_ms}} ->
-              reconcile_budget(reservation_context, budget_context, %{}, "handoff")
-              emit_runtime_telemetry(step, run, budget_context, "handoff", duration_ms, %{})
-              handle_handoff(run, step, Map.new(handoff_attrs))
-
-            {:error, {:replay_blocked, envelope, duration_ms}} ->
-              reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
-              emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
-              Workflows.fail_step(step.id, envelope)
-
-            {:error, {:handler_error, envelope, duration_ms}} when is_map(envelope) ->
-              reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
-              emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
-
-              Workflows.fail_step(
-                step.id,
-                attach_budget_evidence(normalize_payload(envelope), reservation_context)
-              )
-
-            {:error, {:handler_error, reason, duration_ms}} ->
-              reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
-              emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
-
-              Workflows.fail_step(
-                step.id,
-                attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context)
-              )
-
-            {:ok, {:other, other, duration_ms}} ->
-              reconcile_budget(reservation_context, budget_context, other, "completed")
-              emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, other)
-
-              Workflows.complete_step(
-                step.id,
-                attach_budget_evidence(normalize_payload(other), reservation_context),
-                run_status: "running"
-              )
-
-            {:error, {:timeout, envelope, duration_ms}} when is_map(envelope) ->
-              reconcile_budget(reservation_context, budget_context, %{}, "timeout")
-              emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms, %{})
-
-              Workflows.fail_step(
-                step.id,
-                attach_budget_evidence(normalize_payload(envelope), reservation_context)
-              )
-
-            {:error, {:timeout, duration_ms}} ->
-              reconcile_budget(reservation_context, budget_context, %{}, "timeout")
-              emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms, %{})
-
-              Workflows.fail_step(
-                step.id,
-                attach_budget_evidence(%{"reason" => "timeout"}, reservation_context)
-              )
-
-            {:error, {:execution_failed, envelope, duration_ms}} when is_map(envelope) ->
-              reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
-
-              emit_runtime_telemetry(
-                step,
-                run,
-                budget_context,
-                "execution_failed",
-                duration_ms,
-                %{}
-              )
-
-              Workflows.fail_step(
-                step.id,
-                attach_budget_evidence(normalize_payload(envelope), reservation_context)
-              )
-
-            {:error, {:execution_failed, reason, duration_ms}} ->
-              reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
-
-              emit_runtime_telemetry(
-                step,
-                run,
-                budget_context,
-                "execution_failed",
-                duration_ms,
-                %{}
-              )
-
-              Workflows.fail_step(
-                step.id,
-                attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context)
-              )
-
-            {:error, %{status: :breaker_open} = envelope} ->
-              reconcile_breaker_open_budget(reservation_context, envelope)
-              emit_runtime_breaker_open(step, run, budget_context, envelope)
-
-              Workflows.fail_step(
-                step.id,
-                attach_budget_evidence(normalize_budget_envelope(envelope), reservation_context)
-              )
-          end
+      try do
+        Observe.span(span_kind, @step_span_name, span_opts, fn ->
+          execute_step_body(
+            step,
+            run,
+            handler,
+            timeout,
+            opts,
+            budget_context,
+            breaker_context,
+            trace_id,
+            step_span_id
+          )
+        end)
+      rescue
+        e in StepFailureSignal -> e.return_value
       end
     end
+  end
+
+  # Every outcome branch's side effects (reconcile_budget/emit_runtime_telemetry/
+  # Workflows.complete_step|fail_step|mark_waiting_for_approval) are untouched
+  # from the pre-Phase-53 implementation -- the only change is that branches
+  # which fail the step now raise `StepFailureSignal` (carrying the exact
+  # already-computed return value) instead of returning it directly, so the
+  # wrapping `span/4` call in `execute_step/2` marks the step span ERROR
+  # (SC#3) while `execute_step/2`'s own rescue restores the identical return
+  # value (T-53-12, zero contract change). G2/G3/G4's guardrail spans are the
+  # new observability side effect this plan adds.
+  defp execute_step_body(
+         step,
+         run,
+         handler,
+         timeout,
+         opts,
+         budget_context,
+         breaker_context,
+         trace_id,
+         step_span_id
+       ) do
+    case reserve_budget(step, run, budget_context) do
+      {:error, envelope} ->
+        emit_budget_rejection(step, run, budget_context, envelope)
+        emit_g3_budget_block(run, trace_id, step_span_id)
+        fail_step_and_signal(step, normalize_budget_envelope(envelope))
+
+      {:ok, reservation_context} ->
+        case replay_execution(run, step, handler, timeout, opts, breaker_context, trace_id, step_span_id) do
+          {:ok, {:completed, result, duration_ms}} ->
+            normalized_result =
+              result
+              |> normalize_payload()
+              |> maybe_attach_semantic_writeback(run, step)
+
+            reconcile_budget(reservation_context, budget_context, normalized_result, "completed")
+            emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, normalized_result)
+
+            Workflows.complete_step(
+              step.id,
+              attach_budget_evidence(normalized_result, reservation_context)
+            )
+
+          {:ok, {:waiting_for_approval, approval_attrs, duration_ms}} ->
+            reconcile_budget(reservation_context, budget_context, %{}, "waiting_for_approval")
+
+            emit_runtime_telemetry(
+              step,
+              run,
+              budget_context,
+              "waiting_for_approval",
+              duration_ms,
+              %{}
+            )
+
+            emit_g2_approval_escalate(run, trace_id, step_span_id)
+
+            Workflows.mark_waiting_for_approval(run.id, step.id, Map.new(approval_attrs))
+
+          {:ok, {:handoff, handoff_attrs, duration_ms}} ->
+            reconcile_budget(reservation_context, budget_context, %{}, "handoff")
+            emit_runtime_telemetry(step, run, budget_context, "handoff", duration_ms, %{})
+            handle_handoff(run, step, Map.new(handoff_attrs))
+
+          {:error, {:replay_blocked, envelope, duration_ms}} ->
+            reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
+            emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
+            fail_step_and_signal(step, envelope)
+
+          {:error, {:handler_error, envelope, duration_ms}} when is_map(envelope) ->
+            reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
+            emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
+
+            fail_step_and_signal(
+              step,
+              attach_budget_evidence(normalize_payload(envelope), reservation_context)
+            )
+
+          {:error, {:handler_error, reason, duration_ms}} ->
+            reconcile_budget(reservation_context, budget_context, %{}, "handler_error")
+            emit_runtime_telemetry(step, run, budget_context, "handler_error", duration_ms, %{})
+
+            fail_step_and_signal(
+              step,
+              attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context)
+            )
+
+          {:ok, {:other, other, duration_ms}} ->
+            reconcile_budget(reservation_context, budget_context, other, "completed")
+            emit_runtime_telemetry(step, run, budget_context, "completed", duration_ms, other)
+
+            Workflows.complete_step(
+              step.id,
+              attach_budget_evidence(normalize_payload(other), reservation_context),
+              run_status: "running"
+            )
+
+          {:error, {:timeout, envelope, duration_ms}} when is_map(envelope) ->
+            reconcile_budget(reservation_context, budget_context, %{}, "timeout")
+            emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms, %{})
+
+            fail_step_and_signal(
+              step,
+              attach_budget_evidence(normalize_payload(envelope), reservation_context)
+            )
+
+          {:error, {:timeout, duration_ms}} ->
+            reconcile_budget(reservation_context, budget_context, %{}, "timeout")
+            emit_runtime_telemetry(step, run, budget_context, "timeout", duration_ms, %{})
+
+            fail_step_and_signal(
+              step,
+              attach_budget_evidence(%{"reason" => "timeout"}, reservation_context)
+            )
+
+          {:error, {:execution_failed, envelope, duration_ms}} when is_map(envelope) ->
+            reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
+
+            emit_runtime_telemetry(
+              step,
+              run,
+              budget_context,
+              "execution_failed",
+              duration_ms,
+              %{}
+            )
+
+            fail_step_and_signal(
+              step,
+              attach_budget_evidence(normalize_payload(envelope), reservation_context)
+            )
+
+          {:error, {:execution_failed, reason, duration_ms}} ->
+            reconcile_budget(reservation_context, budget_context, %{}, "execution_failed")
+
+            emit_runtime_telemetry(
+              step,
+              run,
+              budget_context,
+              "execution_failed",
+              duration_ms,
+              %{}
+            )
+
+            fail_step_and_signal(
+              step,
+              attach_budget_evidence(%{"reason" => inspect(reason)}, reservation_context)
+            )
+
+          {:error, %{status: :breaker_open} = envelope} ->
+            reconcile_breaker_open_budget(reservation_context, envelope)
+            emit_runtime_breaker_open(step, run, budget_context, envelope)
+            emit_g4_breaker_block(run, trace_id, step_span_id, envelope)
+
+            fail_step_and_signal(
+              step,
+              attach_budget_evidence(normalize_budget_envelope(envelope), reservation_context)
+            )
+        end
+    end
+  end
+
+  # Performs the step's failure side effect (unchanged from the
+  # pre-Phase-53 `Workflows.fail_step/2` call) and then raises
+  # `StepFailureSignal` carrying that EXACT return value, so `span/4`
+  # marks the wrapping step span ERROR (SC#3) while `execute_step/2`'s
+  # outer rescue restores the identical return value (T-53-12).
+  defp fail_step_and_signal(step, envelope) do
+    result = Workflows.fail_step(step.id, envelope)
+    raise StepFailureSignal, return_value: result
+  end
+
+  # G2 (MANDATORY, D-05b): the waiting_for_approval outcome escalates to a
+  # human. Parented to the step span; `status_code` is always "OK" on the
+  # guardrail span itself (D-05e) -- escalating is a successful evaluation,
+  # not a span error.
+  defp emit_g2_approval_escalate(run, trace_id, step_span_id) do
+    Guardrail.emit(%{
+      name: "approval_gate",
+      decision: "escalate",
+      reason_code: :approval_required,
+      trace_id: trace_id,
+      parent_id: step_span_id,
+      tenant_id: run.tenant_id,
+      workflow_run_id: run.id,
+      session_id: run.session_id
+    })
+  end
+
+  # G3 (discretionary, shipped): a budget-rejected step never reaches
+  # `replay_execution/8`, so it is parented to the step span the same as
+  # every other gate in this plan (the step span already opened before
+  # `reserve_budget/3` runs, D-03c).
+  defp emit_g3_budget_block(run, trace_id, step_span_id) do
+    Guardrail.emit(%{
+      name: "budget_gate",
+      decision: "block",
+      reason_code: :budget_rejected,
+      trace_id: trace_id,
+      parent_id: step_span_id,
+      tenant_id: run.tenant_id,
+      workflow_run_id: run.id,
+      session_id: run.session_id
+    })
+  end
+
+  # G4 (discretionary, shipped): reads the breaker envelope's own
+  # `reason_code` ("breaker_open", `breaker_registry.ex`'s `open_envelope/1`)
+  # rather than re-deriving a second copy (D-05j -- do not double-count the
+  # breaker; this instruments the workflow runtime's actual enforcement
+  # point, not `Scoria.Observe.CircuitBreaker`).
+  defp emit_g4_breaker_block(run, trace_id, step_span_id, envelope) do
+    Guardrail.emit(%{
+      name: "breaker_gate",
+      decision: "block",
+      reason_code: Map.get(envelope, :reason_code, "breaker_open"),
+      trace_id: trace_id,
+      parent_id: step_span_id,
+      tenant_id: run.tenant_id,
+      workflow_run_id: run.id,
+      session_id: run.session_id
+    })
   end
 
   defp replay_execution(
@@ -306,7 +467,9 @@ defmodule Scoria.Workflows.Runtime do
          handler,
          timeout,
          opts,
-         breaker_context
+         breaker_context,
+         trace_id,
+         parent_id
        ) do
     seam = Keyword.get(opts, :replay_seam, %{local_classification: :pure})
     source_evidence = Keyword.get(opts, :replay_source_evidence, %{})
@@ -333,7 +496,7 @@ defmodule Scoria.Workflows.Runtime do
 
       {:execute_live, evidence} ->
         case BreakerRegistry.run(breaker_context, fn ->
-               execute_handler(handler, step, run, timeout)
+               execute_handler(handler, step, run, timeout, trace_id, parent_id)
              end) do
           {:ok, {:completed, result, duration_ms}} ->
             {:ok,
@@ -367,8 +530,10 @@ defmodule Scoria.Workflows.Runtime do
     end
   end
 
-  defp replay_execution(run, step, handler, timeout, _opts, breaker_context) do
-    BreakerRegistry.run(breaker_context, fn -> execute_handler(handler, step, run, timeout) end)
+  defp replay_execution(run, step, handler, timeout, _opts, breaker_context, trace_id, parent_id) do
+    BreakerRegistry.run(breaker_context, fn ->
+      execute_handler(handler, step, run, timeout, trace_id, parent_id)
+    end)
   end
 
   defp replay_blocked_envelope(evidence) do
@@ -390,12 +555,13 @@ defmodule Scoria.Workflows.Runtime do
     }
   end
 
-  defp execute_handler(handler, step, run, timeout) do
+  defp execute_handler(handler, step, run, timeout, trace_id, parent_id) do
     started_at = System.monotonic_time()
+    handler_run = decorate_run_with_trace_context(run, trace_id, parent_id)
 
     task =
       Task.Supervisor.async_nolink(Scoria.Workflow.TaskSupervisor, fn ->
-        invoke_handler(handler, step, run)
+        invoke_handler(handler, step, handler_run)
       end)
 
     case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
@@ -529,6 +695,33 @@ defmodule Scoria.Workflows.Runtime do
         handlers = Application.get_env(:scoria, :workflow_runtime_handlers, %{})
         Map.fetch!(handlers, step.kind)
     end
+  end
+
+  # Threads `trace_id`/the step span's own id (D-03b) into the ephemeral,
+  # never-persisted copy of `run` handed to the handler -- the ONLY
+  # backward-compatible carrier available, since every handler shape
+  # (`{module, function}`, `{module, function, extra_args}`, `fun/1`,
+  # `fun/2`) already receives `run` and none can be given a new positional
+  # arg without breaking every host handler's existing arity contract.
+  # `run.metadata["runtime"]` is the SAME extension point
+  # `run_runtime_defaults/1` already reads for provider/model/policy_key
+  # (an established ad hoc pattern), so a host handler that wants to call
+  # `req_llm`/`jido`/`Scoria.MCP.Executor.execute/4` with the threaded ids
+  # reads them from `run.metadata["runtime"]["trace_id"]`/`["parent_id"]`
+  # and forwards them into whichever telemetry metadata / tool-execution
+  # context it builds. This decorated copy is NEVER persisted back to the
+  # database -- it exists only for the duration of the Task-isolated
+  # handler invocation.
+  defp decorate_run_with_trace_context(run, trace_id, parent_id) do
+    metadata = run.metadata || %{}
+    runtime = Map.get(metadata, "runtime", %{})
+
+    updated_runtime =
+      runtime
+      |> Map.put("trace_id", trace_id)
+      |> Map.put("parent_id", parent_id)
+
+    %{run | metadata: Map.put(metadata, "runtime", updated_runtime)}
   end
 
   defp invoke_handler({module, function}, step, run), do: apply(module, function, [step, run])
