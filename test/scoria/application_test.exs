@@ -36,6 +36,14 @@ defmodule Scoria.ApplicationTest do
       {:error, :already_exists} -> :ok
     end
 
+    # Drain spans other tests parked in the globally-supervised Buffer (G1
+    # emits a guardrail span on every `Runtime.start_run/2`, and those tests
+    # never flush). `flush/1` writes the whole buffer in ONE transaction, so a
+    # foreign span referencing a trace row its own sandbox already rolled back
+    # takes THIS test's span down with it. Draining first keeps the batch that
+    # `flush_now/0` writes below scoped to the span this test emits.
+    :ok = Buffer.flush_now()
+
     :ok
   end
 

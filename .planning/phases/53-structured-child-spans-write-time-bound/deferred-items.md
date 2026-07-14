@@ -56,3 +56,32 @@ boundary rule (only auto-fix issues directly caused by the current task's change
   `lib/scoria/connectors/auth.ex`, and
   `lib/scoria/workflows/remote_approval_projection.ex` all show an empty
   `git diff`. Not fixed — out of scope, same SEED-004 class debt.
+
+## Buffer.flush/1 drops the entire batch when one span is invalid (product debt)
+
+**Found:** Phase 53 post-merge gate, after Wave 3 (53-07) merged.
+**Severity:** real production robustness defect — not a test artifact.
+
+`Scoria.Observe.Buffer.flush/1` (`lib/scoria/observe/buffer.ex:120-160`) writes the
+whole buffer in a SINGLE `Ecto.Multi` transaction (`insert_all` traces +
+`insert_all` spans). A constraint violation on ONE span therefore rolls back the
+entire batch — up to `max_size` (default 1000) otherwise-valid spans are silently
+lost. The failure is caught and counted as `dropped_count`, so it never crashes the
+Buffer; it just discards good telemetry.
+
+**How it surfaced:** 53-07 wired G1 into `Scoria.Runtime.start_run/2`, so guardrail
+spans now flow through the default pipeline into the globally-supervised Buffer. The
+19 test files that call `start_run/2` park spans there and never flush; their sandbox
+transactions then roll back the referenced trace rows. When `Scoria.ApplicationTest`
+later called `Buffer.flush_now/0`, the batch included those orphaned foreign spans,
+the transaction failed as a unit, and the test's OWN span was rolled back with it —
+an intermittent (~1-in-5, seed-dependent) `Ecto.NoResultsError`.
+
+**Fixed in-phase (test scope only):** `test/scoria/application_test.exs` now drains
+the shared Buffer in `setup` so its flush batch is scoped to the span it emits.
+
+**NOT fixed (deliberate, out of scope):** the product behavior. No Phase 53 plan
+covers the write path's batch-failure semantics, and hardening it touches the same
+`telemetry.ex`/Buffer path 53-04 just wired `Bounds` into. Recommended follow-up:
+on batch failure, fall back to per-span (or chunked) inserts so poisoned rows are
+isolated and the remaining valid spans still persist.
