@@ -1,4 +1,24 @@
 defmodule Scoria.Observe.Adapters.Jido do
+  @moduledoc """
+  Turns Jido's `[:jido, :action, :stop]` telemetry into a TOOL-kind span.
+
+  **`metadata[:trace_id]`/`metadata[:parent_id]` are the intended path
+  (D-03b).** `Scoria.Workflows.Runtime.execute_step/2` threads the run's
+  `trace_id` and the step span's id into the handler, and a host handler
+  forwards them into the Jido action's telemetry metadata (which, unlike
+  `req_llm`'s, IS host-supplied at the call site); the span then joins the
+  run's trace as a child of the step span (SC#1).
+
+  The `|| Ecto.UUID.generate()` `trace_id` fallback below is retained
+  because a host may run a Jido action entirely outside a workflow — but it
+  is a LAST RESORT that produces an **ORPHAN single-span trace** with no run
+  join at all. Before plan 53-08 it was the ONLY path.
+
+  The span's `:id` is minted HERE, at emit time — not left to `Buffer`'s
+  flush-time `put_new_lazy/2`. A flush-time id is unreferenceable, so no
+  future child span could ever name this one as its `parent_id`.
+  """
+
   alias Scoria.Observe.Semconv
   alias Scoria.Observe.SpanKind
 
@@ -37,6 +57,7 @@ defmodule Scoria.Observe.Adapters.Jido do
       |> Semconv.merge_host_declared(metadata)
 
     span = %{
+      id: metadata[:span_id] || Ecto.UUID.generate(),
       name: "jido_action",
       span_kind: span_kind,
       start_time: metadata[:start_time] || DateTime.utc_now(),
