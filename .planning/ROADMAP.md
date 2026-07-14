@@ -104,7 +104,7 @@
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 53-07-PLAN.md — `Observe.Guardrail` + G1 release gate (no free-text reason, structurally) [wave 3]
+- [x] 53-07-PLAN.md — `Observe.Guardrail` + G1 release gate (no free-text reason, structurally) [wave 3]
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -150,7 +150,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
-| 53. Structured Child Spans + Write-Time Bound | v3.6 | 6/8 | In Progress|  |
+| 53. Structured Child Spans + Write-Time Bound | v3.6 | 7/8 | In Progress|  |
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
