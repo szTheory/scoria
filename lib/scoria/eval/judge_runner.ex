@@ -6,6 +6,7 @@ defmodule Scoria.Eval.JudgeRunner do
   alias Scoria.Eval.SubjectOutput
   alias Scoria.Eval.Timing
   alias Scoria.Eval.Verdict
+  alias Scoria.Observe
   alias ReqLLM.Response
 
   def run_live(attrs) when is_map(attrs) do
@@ -151,7 +152,7 @@ defmodule Scoria.Eval.JudgeRunner do
        ) do
     case SubjectOutput.resolve(dataset_item, :live_judge) do
       {:ok, actual_output} ->
-        prompt = build_judge_prompt(dataset_item, actual_output)
+        prompt = build_judge_prompt_span(dataset_item, actual_output, attrs)
 
         case orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts) do
           {:ok, response} ->
@@ -178,6 +179,30 @@ defmodule Scoria.Eval.JudgeRunner do
       {:not_scored, reason} ->
         {:ok, not_scored_score_attrs(dataset_item, eval_spec, attrs, reason)}
     end
+  end
+
+  # SC#1's `prompt` leg on a live path (T-53-01): wraps the prompt-render
+  # site in a real, duration-bearing PROMPT span via `Observe.with_prompt/3`.
+  # Reached from a real Oban `:evals` job (`CampaignWorker.perform/1` ->
+  # `online_scoring.ex:323`), which today carries no `trace_id`/`parent_id`
+  # in `attrs` -- so a fresh `trace_id` roots this span in its own
+  # one-span trace (the honest shape for an async eval job with no run
+  # context, mirroring G1's blocked-path one-span-trace precedent). A host
+  # caller (or a future job context) MAY supply `:trace_id`/`:parent_id` in
+  # `attrs` and this thread them through instead. Captures duration, kind,
+  # and ids ONLY -- `with_prompt/3`'s `opts` carries no `:attributes`, so
+  # NOTHING from the judge's own output (the free-form `explanation:` at
+  # `:167`/`:202`, the single most likely free-text leak in this codebase,
+  # T-53-01) ever reaches the span.
+  defp build_judge_prompt_span(dataset_item, subject_output, attrs) do
+    Observe.with_prompt(
+      "eval.judge_prompt",
+      %{
+        trace_id: fetch(attrs, :trace_id) || Ecto.UUID.generate(),
+        parent_id: fetch(attrs, :parent_id)
+      },
+      fn -> build_judge_prompt(dataset_item, subject_output) end
+    )
   end
 
   defp build_judge_prompt(dataset_item, subject_output) do
