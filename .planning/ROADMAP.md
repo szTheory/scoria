@@ -130,7 +130,7 @@
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 53B-03-PLAN.md — emit_event/1 + :event telemetry handler (redact collapse, allow-list re-check, fail-closed time/span_id seam, Bounds:event) (Wave 2)
+- [x] 53B-03-PLAN.md — emit_event/1 + :event telemetry handler (redact collapse, allow-list re-check, fail-closed time/span_id seam, Bounds:event) (Wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -167,7 +167,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
 | 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete    | 2026-07-18 |
-| 53b. `ai_span_events` + `emit_event/1` | v3.6 | 2/5 | In Progress|  |
+| 53b. `ai_span_events` + `emit_event/1` | v3.6 | 3/5 | In Progress|  |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
 ## Archived Milestones
