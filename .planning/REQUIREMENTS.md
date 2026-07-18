@@ -33,7 +33,7 @@ Committed scope for v3.6. Each maps to exactly one phase (see Traceability).
 
 ### Structured Spans & Events
 
-- [ ] **EVENT-01**: `tool` / `prompt` / `retrieval` / `guardrail` are emitted as real child **spans** (duration/failure-bearing) with `parent_id` linkage, not as events.
+- [x] **EVENT-01**: `tool` / `prompt` / `retrieval` / `guardrail` are emitted as real child **spans** (duration/failure-bearing) with `parent_id` linkage, not as events.
 - [ ] **EVENT-02**: `ai_span_events` is wired at the application layer via a public `emit_event/1` + a `[:scoria, :observe, :event, :emit]` telemetry clause that routes through the **identical `Redactor.redact/1` call site** spans use (no bypass); `Buffer` gains an event list with an ordered flush (traces → spans → events); emission is allow-listed to a reserved point-event vocabulary — `prompt_rendered`, `guardrail_triggered`, `user_feedback_received`.
 - [ ] **EVENT-03**: The synchronous point-events `prompt_rendered` and `guardrail_triggered` are emitted from real instrumentation call sites. (`user_feedback_received` is **reserved in the EVENT-02 vocabulary but not emitted in v3.6** — its capture instrumentation + async-arrival FK resolution is SEED-011 feedback-flywheel work; see v2 Requirements.)
 
@@ -44,7 +44,7 @@ Committed scope for v3.6. Each maps to exactly one phase (see Traceability).
 
 ### Cross-Cutting Safety & Compatibility
 
-- [ ] **SEC-01**: New attribute and event payloads capture **IDs and counts, never raw prompt/completion text**; event payloads route through the existing `Redactor` path; attribute payload size is bounded at write time (PII + cardinality guard on the flat-deny-list redactor).
+- [x] **SEC-01**: New attribute and event payloads capture **IDs and counts, never raw prompt/completion text**; event payloads route through the existing `Redactor` path; attribute payload size is bounded at write time (PII + cardinality guard on the flat-deny-list redactor).
 - [x] **COMPAT-01**: Legacy attribute keys already persisted in adopter Postgres (`llm.model_name`, `llm.token_count`, `req.url`) are handled by an **explicit, documented decision** (dual-emit for a deprecation window vs. clean replacement) recorded in CHANGELOG, so hosts querying their own tables aren't silently broken.
 
 ## v2 Requirements
@@ -95,8 +95,8 @@ Phase numbering continues from the previous milestone (v3.5 ended at Phase 50). 
 | RETR-02 | Phase 52 | Complete |
 | ATTR-01 | Phase 52 | Complete |
 | ATTR-02 | Phase 52 | Complete |
-| EVENT-01 | Phase 53 | Pending |
-| SEC-01 | Phase 53 | Pending |
+| EVENT-01 | Phase 53 | Complete |
+| SEC-01 | Phase 53 | Complete |
 | EVENT-02 | Phase 53b | Pending |
 | EVENT-03 | Phase 53b | Pending |
 | DOCS-01 | Phase 54 | Pending |

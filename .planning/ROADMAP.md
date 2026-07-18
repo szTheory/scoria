@@ -18,7 +18,7 @@
 
 - [ ] **Phase 51: Foundation Fix + Key Convention + Span-Kind Taxonomy** - Trace-upsert FK fix, shared span_kind whitelist, version-pinned semconv module, `gen_ai.*` model-config capture via ReqLLM's attribute builder, correct span_kind + `openinference.span.kind`, legacy-key compat decision.
 - [x] **Phase 52: RETRIEVER Span + Host-Declared Attributes** - `RETRIEVER` span dual-written alongside `ai_retrieval_runs`, retrieval config fields with a span↔table consistency guard, reserved host-declared attribute keys, context-pack composition on the `PROMPT` span. (completed 2026-07-12)
-- [ ] **Phase 53: Structured Child Spans + Write-Time Bound** - `tool`/`prompt`/`retrieval`/`guardrail` as real duration/failure-bearing child spans with parent linkage, the observe pipeline actually wired into the supervision tree, and the SEC-01 write-time PII/cardinality bound behind a closed key registry.
+- [x] **Phase 53: Structured Child Spans + Write-Time Bound** - `tool`/`prompt`/`retrieval`/`guardrail` as real duration/failure-bearing child spans with parent linkage, the observe pipeline actually wired into the supervision tree, and the SEC-01 write-time PII/cardinality bound behind a closed key registry. (completed 2026-07-18)
 - [ ] **Phase 53b: `ai_span_events` + `emit_event/1`** - The dead `ai_span_events` table resurrected via a public allow-listed `emit_event/1` through the shared redaction path, with an ordered Buffer flush, and `prompt_rendered`/`guardrail_triggered` emitted from real call sites.
 - [ ] **Phase 54: Docs Accuracy + Conformance Check** - Honest "OpenInference-compatible" claim with contract-list updates in the same change, plus a falsifiable conformance check.
 
@@ -150,7 +150,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
 | 50. Release readiness and `0.1.3` cut | v3.5 | 11/11 | Complete | 2026-07-11 |
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
-| 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete   | 2026-07-18 |
+| 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete    | 2026-07-18 |
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 0/TBD | Not started | - |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
