@@ -435,8 +435,17 @@ defmodule Scoria.Observe do
 
   Never raises: the whole body is wrapped `try/rescue -> :ok` (Phase 51
   D-05..D-09 continuity) — a deliberately malformed `event` still returns
-  `:ok` or `{:error, :unknown_event}`, never propagates an exception to the
-  caller.
+  `:ok`, `{:error, :unknown_event}`, or `{:error, :invalid_event}`, never
+  propagates an exception to the caller.
+
+  Also validates `:span_id`/`:time` shape up front (WR-02, the public-API
+  half of CR-01): a member `name` with a `span_id` that is not a
+  UUID-castable binary, or a `time` that is not a `%DateTime{}`, returns
+  `{:error, :invalid_event}` and fires NO telemetry — a synchronous signal
+  to the caller instead of a silent async drop at the handler seam. This
+  mirrors, at the public API, the exact fail-closed check
+  `Scoria.Observe.Telemetry`'s handler independently re-applies against the
+  raw bus.
 
   The `[:scoria, :observe, :event, :emit]` handler
   (`Scoria.Observe.Telemetry`) is the real boundary of record: it
@@ -446,13 +455,18 @@ defmodule Scoria.Observe do
   check exists for synchronous caller DX and a clean bus, not as the only
   gate.
   """
-  @spec emit_event(map()) :: :ok | {:error, :unknown_event}
+  @spec emit_event(map()) :: :ok | {:error, :unknown_event} | {:error, :invalid_event}
   def emit_event(%{name: name} = event) when is_map(event) do
-    if Semconv.event_name?(name) do
-      :telemetry.execute([:scoria, :observe, :event, :emit], %{}, event)
-      :ok
-    else
-      {:error, :unknown_event}
+    cond do
+      not Semconv.event_name?(name) ->
+        {:error, :unknown_event}
+
+      not valid_event_shape?(event) ->
+        {:error, :invalid_event}
+
+      true ->
+        :telemetry.execute([:scoria, :observe, :event, :emit], %{}, event)
+        :ok
     end
   rescue
     _ -> :ok
@@ -464,4 +478,24 @@ defmodule Scoria.Observe do
   # the never-raises guarantee. This catch-all closes that gap (Rule 2):
   # any shape that isn't `%{name: _}` is simply an unknown event.
   def emit_event(_event), do: {:error, :unknown_event}
+
+  # WR-02: both `:span_id` and `:time` must already be well-formed before
+  # this event ever reaches the bus -- `:span_id` must be a UUID-castable
+  # binary (the same `Ecto.UUID.cast/1` check `ai_span_events.span_id`'s
+  # `:binary_id` column implies) and `:time` must be a real `%DateTime{}`
+  # (the same shape `ai_span_events.time`'s `:utc_datetime_usec` column
+  # requires). An absent key reads as `nil` via `Map.get/2` and fails both
+  # checks, same as an explicit `nil`.
+  defp valid_event_shape?(event) do
+    valid_span_id?(Map.get(event, :span_id)) and valid_time?(Map.get(event, :time))
+  end
+
+  defp valid_span_id?(span_id) when is_binary(span_id) do
+    match?({:ok, _}, Ecto.UUID.cast(span_id))
+  end
+
+  defp valid_span_id?(_span_id), do: false
+
+  defp valid_time?(%DateTime{}), do: true
+  defp valid_time?(_time), do: false
 end

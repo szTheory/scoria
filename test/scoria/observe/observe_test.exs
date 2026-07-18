@@ -289,6 +289,38 @@ defmodule Scoria.ObserveTest do
       assert {:error, :unknown_event} = Observe.emit_event(%{})
     end
 
+    test "WR-02: a member name with a type-invalid time or span_id returns {:error, :invalid_event} and fires no telemetry" do
+      assert {:error, :invalid_event} =
+               Observe.emit_event(%{
+                 name: :prompt_rendered,
+                 span_id: Ecto.UUID.generate(),
+                 attributes: %{},
+                 time: "2026-01-01"
+               })
+
+      refute_receive {:event, _}
+
+      assert {:error, :invalid_event} =
+               Observe.emit_event(%{
+                 name: :prompt_rendered,
+                 span_id: "not-a-uuid",
+                 attributes: %{},
+                 time: DateTime.utc_now()
+               })
+
+      refute_receive {:event, _}
+
+      assert {:error, :invalid_event} =
+               Observe.emit_event(%{
+                 name: :prompt_rendered,
+                 span_id: nil,
+                 attributes: %{},
+                 time: DateTime.utc_now()
+               })
+
+      refute_receive {:event, _}
+    end
+
     test "a raising handler on :emit is swallowed -- emit_event/1 still returns :ok" do
       :telemetry.attach(
         "scoria-observe-event-test-raiser",
