@@ -278,6 +278,33 @@ defmodule Scoria.Observe.EventEmitTest do
         attributes: %{}
       })
 
+      # CR-01 regression: a TYPE-INVALID (not nil) `time` -- a string, as a
+      # buggy internal caller or a raw-bus attacker might send instead of a
+      # real `DateTime.utc_now()`. Before CR-01 this cleared `default_time/1`
+      # untouched and would raise `Ecto.ChangeError` inside the shared
+      # `insert_all`, poisoning this whole batch. Now it is coerced to
+      # `DateTime.utc_now()` and persists, same as the missing-time case.
+      invalid_time_span_id = Ecto.UUID.generate()
+
+      :telemetry.execute([:scoria, :observe, :event, :emit], %{}, %{
+        name: :prompt_rendered,
+        span_id: invalid_time_span_id,
+        time: "2026-01-01",
+        attributes: %{}
+      })
+
+      # CR-01 regression: a TYPE-INVALID (not nil), non-UUID-castable
+      # `span_id`. Before CR-01 this cleared `reject_if_nil_span_id/2`
+      # untouched and would raise `Ecto.ChangeError` inside the shared
+      # `insert_all`, poisoning this whole batch. Now it is rejected
+      # (dropped) at the handler seam, same as the nil-span_id case.
+      :telemetry.execute([:scoria, :observe, :event, :emit], %{}, %{
+        name: :prompt_rendered,
+        span_id: "not-a-uuid",
+        time: DateTime.utc_now(),
+        attributes: %{}
+      })
+
       :ok = Buffer.flush_now(buffer_name)
 
       for span_id <- good_span_ids do
@@ -287,11 +314,16 @@ defmodule Scoria.Observe.EventEmitTest do
       persisted_time_defaulted = Repo.get_by!(SpanEvent, span_id: missing_time_span_id)
       assert %DateTime{} = persisted_time_defaulted.time
 
-      # 50 good siblings + 1 defaulted-time survivor = 51. The nil-span_id
-      # event was dropped at the handler (NOT NULL column, no FK to look it
-      # up by even if it had persisted) -- asserting the exact total proves
-      # nothing extra landed and the batch was not rolled back.
-      assert Repo.aggregate(SpanEvent, :count) == 51
+      persisted_invalid_time = Repo.get_by!(SpanEvent, span_id: invalid_time_span_id)
+      assert %DateTime{} = persisted_invalid_time.time
+
+      # 50 good siblings + 1 defaulted-time survivor + 1 invalid-time
+      # survivor = 52. The nil-span_id and non-UUID-span_id ("not-a-uuid" is
+      # not even castable to :binary_id, so it cannot be looked up by
+      # Repo.get_by/2 the way the other cases are) events were both dropped
+      # at the handler -- asserting the exact total proves nothing extra
+      # landed and the batch was not rolled back.
+      assert Repo.aggregate(SpanEvent, :count) == 52
     end
   end
 end

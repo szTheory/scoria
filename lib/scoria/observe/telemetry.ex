@@ -85,10 +85,13 @@ defmodule Scoria.Observe.Telemetry do
   # matters: (1) independently re-check the allow-list -- never trust that
   # emit_event/1 already checked it; (2) redact through the single shared
   # `redact/1` call site; (3) the fail-closed seam -- default a missing/nil
-  # `time`, and drop (never persist) a `nil` `span_id` BEFORE Bounds, since
-  # both are NOT NULL columns and the only two raise classes reachable via
-  # the raw bus; (4) Bounds.enforce(_, :event) -- the same {:ok, _} | :drop
-  # contract as :span; (5) cast to the Buffer's fixed-key event projection.
+  # OR type-invalid `time` to `DateTime.utc_now()`, and drop (never persist)
+  # a `nil` OR non-UUID-castable `span_id` BEFORE Bounds, since both are
+  # NOT NULL columns and a type-invalid (not just nil) value would otherwise
+  # reach `Buffer.cast_event/2` -> `Repo.insert_all` and raise, poisoning the
+  # whole co-flushed batch (CR-01); (4) Bounds.enforce(_, :event) -- the same
+  # {:ok, _} | :drop contract as :span; (5) cast to the Buffer's fixed-key
+  # event projection.
   def handle_event([:scoria, :observe, :event, :emit], _measurements, metadata, %{
         buffer_name: buffer_name
       }) do
@@ -140,23 +143,39 @@ defmodule Scoria.Observe.Telemetry do
   # one Redactor.redact/1 call remains in this file.
   defp redact(metadata), do: Redactor.redact(metadata)
 
-  # Defaults a missing OR present-but-nil `:time` to `DateTime.utc_now()`
-  # (D-05a). `Map.get/2` returns `nil` for both an absent key and an
-  # explicit `nil` value, so a single branch handles both shapes.
+  # Defaults a missing, present-but-nil, OR type-invalid `:time` to
+  # `DateTime.utc_now()` (D-05a, CR-01). Only a real `%DateTime{}` survives
+  # unchanged -- `ai_span_events.time` is `:utc_datetime_usec` and NOT NULL,
+  # so a string/integer timestamp (e.g. `System.system_time()`) would
+  # otherwise clear this seam untouched and raise `Ecto.ChangeError` at
+  # `Repo.insert_all/2`, poisoning the whole co-flushed batch.
   defp default_time(metadata) do
     case Map.get(metadata, :time) do
-      nil -> Map.put(metadata, :time, DateTime.utc_now())
-      _time -> metadata
+      %DateTime{} = time -> Map.put(metadata, :time, time)
+      _invalid -> Map.put(metadata, :time, DateTime.utc_now())
     end
   end
 
-  # A nil span_id is dropped BEFORE Bounds.enforce/2 -- span_id is NOT NULL
-  # on ai_span_events, so letting it reach Buffer.cast_event/2 would raise
-  # at flush time instead of failing closed here (D-05a).
+  # A nil OR non-UUID-castable span_id is dropped BEFORE Bounds.enforce/2
+  # (D-05a, CR-01) -- span_id is `:binary_id` and NOT NULL on
+  # ai_span_events, so letting a `""`/`"not-a-uuid"`/non-binary value reach
+  # Buffer.cast_event/2 would raise `Ecto.ChangeError` at flush time instead
+  # of failing closed here. `Ecto.UUID.cast/1` is the same well-formedness
+  # check the schema's `:binary_id` type applies, so this seam and the
+  # column type agree by construction.
   defp reject_if_nil_span_id(metadata, _name) do
     case Map.get(metadata, :span_id) do
-      nil -> {:reject, :nil_span_id}
-      _span_id -> {:ok, metadata}
+      nil ->
+        {:reject, :nil_span_id}
+
+      span_id when is_binary(span_id) ->
+        case Ecto.UUID.cast(span_id) do
+          {:ok, _} -> {:ok, metadata}
+          :error -> {:reject, :invalid_span_id}
+        end
+
+      _non_binary ->
+        {:reject, :invalid_span_id}
     end
   end
 
