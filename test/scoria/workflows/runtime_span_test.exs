@@ -11,8 +11,12 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
   `[:scoria, :observe, :span, :stop]` event for the paths under test
   (D-ATTR01-6). `Scoria.Observe.Adapters.MCP` is attached once at
   `Scoria.Application` boot and stays live across every test in this file;
-  `Scoria.Observe.Adapters.ReqLLM` is attached/detached per test (it is NOT
-  boot-attached), mirroring `req_llm_test.exs`.
+  `Scoria.Observe.Adapters.ReqLLM` IS ALSO boot-attached at
+  `Scoria.Application` boot, exactly like MCP (Phase 54.1). This file's
+  per-test `:telemetry.detach("scoria-observe-reqllm")` + re-attach only
+  keeps this file's ReqLLM span lifecycle independent of the boot-registered
+  handler, mirroring `req_llm_test.exs`, so the scoped assertions here are
+  not perturbed by the global handler.
   """
 
   use ExUnit.Case, async: false
