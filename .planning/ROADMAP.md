@@ -125,8 +125,8 @@
 **Plans**: 5 plans
 **Wave 1**
 
-- [ ] 53B-01-PLAN.md — Core-lane FK-drop migration + closed Semconv event vocabulary + scoria.prompt.template_ref registry key (Wave 1)
-- [ ] 53B-02-PLAN.md — Buffer event list + two-phase ordered flush + cast_event/2 (Wave 1)
+- [x] 53B-01-PLAN.md — Core-lane FK-drop migration + closed Semconv event vocabulary + scoria.prompt.template_ref registry key (Wave 1)
+- [x] 53B-02-PLAN.md — Buffer event list + two-phase ordered flush + cast_event/2 (Wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -167,7 +167,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
 | 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete    | 2026-07-18 |
-| 53b. `ai_span_events` + `emit_event/1` | v3.6 | 0/TBD | Not started | - |
+| 53b. `ai_span_events` + `emit_event/1` | v3.6 | 2/5 | In Progress|  |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
 ## Archived Milestones
