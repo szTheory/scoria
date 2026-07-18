@@ -167,8 +167,9 @@
 **Plans**: 2 plans
 
 Plans:
-- [ ] 54.1-01-PLAN.md — Boot-attach ReqLLM/Jido adapters through observe_children/0 + SC#2 boot-path test + runtime_span_test moduledoc reconciliation (Wave 1)
-- [ ] 54.1-02-PLAN.md — CHANGELOG persist-vs-join amendment + new LLM/tool adapters capability guide + troubleshooting entry + docs-source inventory registration (Wave 1)
+
+- [x] 54.1-01-PLAN.md — Boot-attach ReqLLM/Jido adapters through observe_children/0 + SC#2 boot-path test + runtime_span_test moduledoc reconciliation (Wave 1)
+- [x] 54.1-02-PLAN.md — CHANGELOG persist-vs-join amendment + new LLM/tool adapters capability guide + troubleshooting entry + docs-source inventory registration (Wave 1)
 
 ## Progress
 
@@ -187,7 +188,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54 → 54.1
 | 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete    | 2026-07-18 |
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 5/5 | Complete    | 2026-07-18 |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
-| 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 0/2 | Not started | - |
+| 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 2/2 | Complete   | 2026-07-18 |
 
 ## Archived Milestones
 
@@ -348,4 +349,3 @@ honest `0.1.3` release) shipped in v3.5, so the next milestone is a feature seed
 
 - **FLEET-01** — migrate sibling repos onto the shared Traefik + unpublished-DB standard. Deferred v3.2.
 - **FLEET-02** — `make nuke-all` fleet-wide teardown (high blast radius). Deferred v3.2.
-
