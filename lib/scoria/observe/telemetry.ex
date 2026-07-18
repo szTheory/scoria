@@ -1,12 +1,16 @@
 defmodule Scoria.Observe.Telemetry do
+  require Logger
+
   alias Scoria.Observe.Bounds
   alias Scoria.Observe.Buffer
   alias Scoria.Observe.Redactor
   alias Scoria.Observe.ReviewerBroadcast
+  alias Scoria.Observe.Semconv
 
   @events [
     [:scoria, :observe, :span, :stop],
-    [:scoria, :observe, :span, :delta]
+    [:scoria, :observe, :span, :delta],
+    [:scoria, :observe, :event, :emit]
   ]
 
   def attach(buffer_name \\ Buffer) do
@@ -52,7 +56,7 @@ defmodule Scoria.Observe.Telemetry do
   def handle_event([:scoria, :observe, :span, :delta], _measurements, metadata, _config) do
     redacted =
       metadata
-      |> Redactor.redact()
+      |> redact()
       |> scrub_delta_chunk()
       |> cap_delta_chunk()
 
@@ -62,7 +66,7 @@ defmodule Scoria.Observe.Telemetry do
   def handle_event([:scoria, :observe, :span, _type], _measurements, metadata, %{
         buffer_name: buffer_name
       }) do
-    redacted = Redactor.redact(metadata)
+    redacted = redact(metadata)
 
     case Bounds.enforce(redacted, :span) do
       {:ok, bounded} ->
@@ -74,10 +78,123 @@ defmodule Scoria.Observe.Telemetry do
     end
   end
 
+  # The [:scoria, :observe, :event, :emit] handler is the boundary of
+  # record (D-03b/D-05/D-06) -- the ONLY gate that matters, because a raw
+  # `:telemetry.execute([:scoria, :observe, :event, :emit], ...)` call can
+  # always bypass `Scoria.Observe.emit_event/1`'s up-front check. Order
+  # matters: (1) independently re-check the allow-list -- never trust that
+  # emit_event/1 already checked it; (2) redact through the single shared
+  # `redact/1` call site; (3) the fail-closed seam -- default a missing/nil
+  # `time`, and drop (never persist) a `nil` `span_id` BEFORE Bounds, since
+  # both are NOT NULL columns and the only two raise classes reachable via
+  # the raw bus; (4) Bounds.enforce(_, :event) -- the same {:ok, _} | :drop
+  # contract as :span; (5) cast to the Buffer's fixed-key event projection.
+  def handle_event([:scoria, :observe, :event, :emit], _measurements, metadata, %{
+        buffer_name: buffer_name
+      }) do
+    name = Map.get(metadata, :name)
+
+    if Semconv.event_name?(name) do
+      metadata
+      |> redact()
+      |> default_time()
+      |> reject_if_nil_span_id(name)
+      |> case do
+        {:reject, reason} ->
+          reject_event(name, reason)
+
+        {:ok, safe} ->
+          case Bounds.enforce(safe, :event) do
+            {:ok, bounded} -> Buffer.cast_event(buffer_event(bounded), buffer_name)
+            :drop -> reject_event(name, :bounds)
+          end
+      end
+    else
+      reject_event(name, :unknown_name)
+    end
+  end
+
   @span_buffer_fields ~w(id trace_id parent_id name span_kind status_code start_time end_time attributes)a
 
   defp buffer_span(bounded) do
     Map.take(bounded, @span_buffer_fields)
+  end
+
+  @event_buffer_fields ~w(span_id name time attributes)a
+
+  # `ai_span_events.name` is a :string column (`Scoria.Repo.SpanEvent`) but
+  # `Semconv.event_names/0` is an ATOM vocabulary (D-03a) -- `name` arrives
+  # here as an atom via `metadata[:name]`. `Buffer.cast_event/2` feeds
+  # straight into `Repo.insert_all/2`, which bypasses changeset casting
+  # entirely, so an un-stringified atom would raise a type-mismatch at
+  # flush time instead of persisting. Stringify here, at the single fixed-
+  # key projection, rather than at every call site.
+  defp buffer_event(bounded) do
+    bounded
+    |> Map.take(@event_buffer_fields)
+    |> Map.update(:name, nil, &to_string/1)
+  end
+
+  # The single collapsed redaction call site (D-03d) -- span, delta, and
+  # event handler clauses all route through this one function, so exactly
+  # one Redactor.redact/1 call remains in this file.
+  defp redact(metadata), do: Redactor.redact(metadata)
+
+  # Defaults a missing OR present-but-nil `:time` to `DateTime.utc_now()`
+  # (D-05a). `Map.get/2` returns `nil` for both an absent key and an
+  # explicit `nil` value, so a single branch handles both shapes.
+  defp default_time(metadata) do
+    case Map.get(metadata, :time) do
+      nil -> Map.put(metadata, :time, DateTime.utc_now())
+      _time -> metadata
+    end
+  end
+
+  # A nil span_id is dropped BEFORE Bounds.enforce/2 -- span_id is NOT NULL
+  # on ai_span_events, so letting it reach Buffer.cast_event/2 would raise
+  # at flush time instead of failing closed here (D-05a).
+  defp reject_if_nil_span_id(metadata, _name) do
+    case Map.get(metadata, :span_id) do
+      nil -> {:reject, :nil_span_id}
+      _span_id -> {:ok, metadata}
+    end
+  end
+
+  # Never persists a rejected event (D-03e). The telemetry emit is
+  # UNCONDITIONAL every time; the Logger.warning is deduped once per
+  # distinct event name per node via the same lazy-create ETS
+  # :ets.insert_new idiom ReviewerBroadcast/Bounds already use.
+  @rejected_warned_table :scoria_observe_event_rejected_warned_names
+
+  defp reject_event(name, reason) do
+    :telemetry.execute([:scoria, :observe, :event, :rejected], %{}, %{
+      name: name,
+      reason: reason
+    })
+
+    if first_warning_for_rejected_name?(name) do
+      Logger.warning(
+        "Scoria.Observe.Telemetry rejected event #{inspect(name)} (reason=#{inspect(reason)}) -- " <>
+          "if this is a real event name, edit Semconv @event_names"
+      )
+    end
+
+    :ok
+  end
+
+  defp first_warning_for_rejected_name?(name) do
+    ensure_rejected_warned_table()
+    :ets.insert_new(@rejected_warned_table, {name, true})
+  end
+
+  defp ensure_rejected_warned_table do
+    case :ets.whereis(@rejected_warned_table) do
+      :undefined ->
+        :ets.new(@rejected_warned_table, [:named_table, :set, :public, read_concurrency: true])
+
+      _table ->
+        :ok
+    end
   end
 
   defp scrub_delta_chunk(%{chunk: chunk} = metadata) when is_binary(chunk) do
