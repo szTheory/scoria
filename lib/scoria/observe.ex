@@ -69,6 +69,32 @@ defmodule Scoria.Observe do
   (D-00c/D-01e). The same Semconv keys (`Semconv.prompt_context_key/0`, the
   usage input-tokens key) that were promised to relocate onto a real
   PROMPT child span with zero contract change (D-ATTR02-1) do so here.
+
+  **`emit_event/1` — the point-event vocabulary (Phase 53B, EVENT-02).**
+  Unlike `span/4` and the two span emitters above, `emit_event/1` does not
+  describe a duration — it announces that something happened at an instant
+  in a trace's lifetime. The vocabulary is closed and small:
+  `Semconv.event_names/0` (`prompt_rendered`, `guardrail_triggered`,
+  `user_feedback_received`), checked by up-front MEMBERSHIP only
+  (`Semconv.event_name?/1` — never `String.to_atom` on inbound data,
+  D-03a). `user_feedback_received` is RESERVED-ONLY in this milestone: it
+  has no `lib/` emitter yet (SEED-011 / FB-01 flywheel work); calling
+  `emit_event/1` with that name still fires the telemetry event today, but
+  nothing in `lib/` does so.
+
+  `emit_event/1` executes `[:scoria, :observe, :event, :emit]` telemetry
+  for a member name and returns `:ok`, or returns `{:error, :unknown_event}`
+  for a non-member WITHOUT executing any telemetry (a clean bus + a
+  synchronous DX signal for the caller). Like `span/4`'s emit, the whole
+  body is wrapped `try/rescue -> :ok` — it never raises, mirroring the
+  Phase 51 D-05..D-09 never-raise continuity every producer in this module
+  upholds.
+
+  **Forward flag (D-00b):** if Scoria ever adds an OTLP exporter,
+  `guardrail_triggered` MUST be exported as a log record / a separate
+  signal, NEVER as an OTel span event — point events in this vocabulary are
+  Scoria-internal persistence records today, not OTel span-event-shaped
+  data, and that distinction must not be lost if/when an exporter is built.
   """
 
   alias Scoria.Observe.Semconv
@@ -394,4 +420,48 @@ defmodule Scoria.Observe do
   rescue
     _ -> :ok
   end
+
+  @doc """
+  Emits a closed-vocabulary point event (EVENT-02): `%{name: name, span_id:
+  span_id, attributes: attributes, time: time}`, where `name` is an atom
+  member of `Semconv.event_names/0`.
+
+  Checks `Semconv.event_name?/1` UP FRONT — a membership check only, never
+  `String.to_atom` on `name` (D-03a). A member fires
+  `:telemetry.execute([:scoria, :observe, :event, :emit], %{}, event)` and
+  returns `:ok`; a non-member returns `{:error, :unknown_event}` and
+  executes NO telemetry at all, keeping the bus clean of events no handler
+  should ever see.
+
+  Never raises: the whole body is wrapped `try/rescue -> :ok` (Phase 51
+  D-05..D-09 continuity) — a deliberately malformed `event` still returns
+  `:ok` or `{:error, :unknown_event}`, never propagates an exception to the
+  caller.
+
+  The `[:scoria, :observe, :event, :emit]` handler
+  (`Scoria.Observe.Telemetry`) is the real boundary of record: it
+  independently re-checks `Semconv.event_name?/1` (closing the raw-bus
+  bypass where a caller skips this function and calls `:telemetry.execute/3`
+  directly), then redacts, bounds, and persists. This function's up-front
+  check exists for synchronous caller DX and a clean bus, not as the only
+  gate.
+  """
+  @spec emit_event(map()) :: :ok | {:error, :unknown_event}
+  def emit_event(%{name: name} = event) when is_map(event) do
+    if Semconv.event_name?(name) do
+      :telemetry.execute([:scoria, :observe, :event, :emit], %{}, event)
+      :ok
+    else
+      {:error, :unknown_event}
+    end
+  rescue
+    _ -> :ok
+  end
+
+  # A malformed call (not a map, or a map with no :name key at all) never
+  # reaches the clause above's function head, so it can never hit that
+  # clause's try/rescue either -- a bare FunctionClauseError would defeat
+  # the never-raises guarantee. This catch-all closes that gap (Rule 2):
+  # any shape that isn't `%{name: _}` is simply an unknown event.
+  def emit_event(_event), do: {:error, :unknown_event}
 end
