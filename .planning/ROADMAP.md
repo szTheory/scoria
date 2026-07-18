@@ -14,13 +14,14 @@
 
 ## Phases
 
-**Phase Numbering:** Continues from the previous milestone (v3.5 ended at Phase 50). No decimal insertions in this milestone yet.
+**Phase Numbering:** Continues from the previous milestone (v3.5 ended at Phase 50). Phase 54.1 inserted (v3.6 milestone-audit integration gap).
 
 - [ ] **Phase 51: Foundation Fix + Key Convention + Span-Kind Taxonomy** - Trace-upsert FK fix, shared span_kind whitelist, version-pinned semconv module, `gen_ai.*` model-config capture via ReqLLM's attribute builder, correct span_kind + `openinference.span.kind`, legacy-key compat decision.
 - [x] **Phase 52: RETRIEVER Span + Host-Declared Attributes** - `RETRIEVER` span dual-written alongside `ai_retrieval_runs`, retrieval config fields with a span↔table consistency guard, reserved host-declared attribute keys, context-pack composition on the `PROMPT` span. (completed 2026-07-12)
 - [x] **Phase 53: Structured Child Spans + Write-Time Bound** - `tool`/`prompt`/`retrieval`/`guardrail` as real duration/failure-bearing child spans with parent linkage, the observe pipeline actually wired into the supervision tree, and the SEC-01 write-time PII/cardinality bound behind a closed key registry. (completed 2026-07-18)
 - [x] **Phase 53b: `ai_span_events` + `emit_event/1`** - The dead `ai_span_events` table resurrected via a public allow-listed `emit_event/1` through the shared redaction path, with an ordered Buffer flush, and `prompt_rendered`/`guardrail_triggered` emitted from real call sites. (completed 2026-07-18)
 - [ ] **Phase 54: Docs Accuracy + Conformance Check** - Honest "OpenInference-compatible" claim with contract-list updates in the same change, plus a falsifiable conformance check.
+- [ ] **Phase 54.1: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG** (INSERTED) - Boot-attach the ReqLLM/Jido telemetry adapters so LLM/Jido-tool spans persist in a real host app without host hand-wiring, and reconcile the CHANGELOG "zero host wiring" claim with reality. Closes the v3.6 milestone-audit integration gap (SPAN-01/SPAN-02/COMPAT-01/EVENT-01, LLM/Jido-tool leg).
 
 ## Phase Details
 
@@ -152,10 +153,27 @@
 
 **Plans**: TBD
 
+### Phase 54.1: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED)
+
+**Goal**: A real `req_llm` chat call or Jido action in a host app produces a persisted LLM/TOOL span with zero host hand-wiring — closing the v3.6 milestone-audit integration gap where `Scoria.Observe.Adapters.ReqLLM.attach/0` and `Adapters.Jido.attach/0` have no `lib/` caller (only tests attach them), so those spans fire into a void in production while the CHANGELOG claims otherwise.
+**Depends on**: Phase 51 (defines the ReqLLM/Jido adapters + `gen_ai.*`/`span_kind` wiring), Phase 53 (added the `observe_children/0` boot-attach seam for `Buffer`/`Telemetry`/`MCP` that this extends)
+**Requirements**: SPAN-01, SPAN-02, COMPAT-01, EVENT-01 (integration-completion — the adapters were verified correct per-phase but are unreachable at runtime)
+**Success Criteria** (what must be TRUE):
+
+  1. `Scoria.Application` boot-attaches the ReqLLM and Jido adapters (mirroring the existing `safe_attach_observe_mcp/0` pattern, config-gated by the same `enabled: false` switch, `{:error, :already_exists}`-tolerant), OR — if host-opt-in is the deliberate design (e.g. `req_llm`/`jido` are optional peer deps) — the adapters stay host-attached and a `guides/` doc instructs hosts to call `attach/0` at boot.
+  2. A test proves an upstream `[:req_llm, :request, :stop]` / `[:jido, :action, :stop]` event, with no manual `attach/0` in the test body, results in a persisted span (the boot path did the wiring) — OR, under the opt-in design, the boot path deliberately does not attach and the test asserts that plus the documented host instruction.
+  3. The CHANGELOG's "zero host wiring" claim (lines ~183–191) is reconciled to match whichever design is chosen — the code, the CHANGELOG, and `runtime_span_test.exs`'s "NOT boot-attached" moduledoc no longer disagree.
+
+**Plans**: 2 plans
+
+Plans:
+- [ ] 54.1-01-PLAN.md — Boot-attach ReqLLM/Jido adapters through observe_children/0 + SC#2 boot-path test + runtime_span_test moduledoc reconciliation (Wave 1)
+- [ ] 54.1-02-PLAN.md — CHANGELOG persist-vs-join amendment + new LLM/tool adapters capability guide + troubleshooting entry + docs-source inventory registration (Wave 1)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
+Phases execute in numeric order: 51 → 52 → 53 → 53b → 54 → 54.1
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -169,6 +187,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
 | 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete    | 2026-07-18 |
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 5/5 | Complete    | 2026-07-18 |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
+| 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 0/2 | Not started | - |
 
 ## Archived Milestones
 
@@ -329,3 +348,4 @@ honest `0.1.3` release) shipped in v3.5, so the next milestone is a feature seed
 
 - **FLEET-01** — migrate sibling repos onto the shared Traefik + unpublished-DB standard. Deferred v3.2.
 - **FLEET-02** — `make nuke-all` fleet-wide teardown (high blast radius). Deferred v3.2.
+
