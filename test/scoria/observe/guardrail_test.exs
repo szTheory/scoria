@@ -21,6 +21,7 @@ defmodule Scoria.Observe.GuardrailTest do
   alias Scoria.PromptRegistry.PromptTemplate
   alias Scoria.Repo
   alias Scoria.Repo.Span
+  alias Scoria.Repo.SpanEvent
   alias Scoria.Runtime
   alias Scoria.Workflows.Run
 
@@ -350,6 +351,49 @@ defmodule Scoria.Observe.GuardrailTest do
       opts = [root_role_id: "executor", runtime: %{prompt_policy: %{prompt_ref: template.id}}]
 
       assert {:error, :unapproved_draft} = Runtime.start_run(identity, opts)
+    end
+  end
+
+  # -- Task 3 (SC#3): real-call-site guardrail_triggered emission proofs --
+
+  describe "Task 3 (SC#3): guardrail_triggered fires from the real Guardrail.emit/1 producer" do
+    test "a real block decision persists a guardrail_triggered event with the closed attribute set",
+         %{buffer: buffer_name} do
+      span =
+        emit_and_flush(
+          %{name: "release_gate", decision: "block", reason_code: :unapproved_draft},
+          buffer_name
+        )
+
+      event = Repo.get_by(SpanEvent, span_id: span.id)
+
+      assert event
+      assert event.name == "guardrail_triggered"
+      assert event.attributes["scoria.guardrail.name"] == "release_gate"
+      assert event.attributes["scoria.guardrail.decision"] == "block"
+      assert event.attributes["scoria.guardrail.reason_code"] == "unapproved_draft"
+      refute Map.has_key?(event.attributes, "scoria.guardrail.subject_ref")
+      refute Map.has_key?(event.attributes, "scoria.guardrail.policy_key")
+    end
+
+    test "a real escalate decision persists a guardrail_triggered event", %{buffer: buffer_name} do
+      span =
+        emit_and_flush(
+          %{name: "approval_gate", decision: "escalate", reason_code: :approval_required},
+          buffer_name
+        )
+
+      event = Repo.get_by(SpanEvent, span_id: span.id)
+
+      assert event
+      assert event.name == "guardrail_triggered"
+      assert event.attributes["scoria.guardrail.decision"] == "escalate"
+    end
+
+    test "a real allow decision persists NO guardrail_triggered event", %{buffer: buffer_name} do
+      span = emit_and_flush(%{name: "release_gate", decision: "allow"}, buffer_name)
+
+      refute Repo.get_by(SpanEvent, span_id: span.id)
     end
   end
 end

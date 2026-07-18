@@ -76,6 +76,7 @@ defmodule Scoria.Observe.Guardrail do
     ~3 lines at each call site.
   """
 
+  alias Scoria.Observe
   alias Scoria.Observe.Semconv
   alias Scoria.Observe.SpanKind
 
@@ -152,6 +153,7 @@ defmodule Scoria.Observe.Guardrail do
 
     start_wall = Map.get(input, :started_wall) || DateTime.utc_now()
     end_time = monotonic_end_time(start_wall, Map.get(input, :start_mono))
+    span_id = Map.get(input, :span_id) || Ecto.UUID.generate()
 
     span = %{
       name: span_name,
@@ -160,7 +162,7 @@ defmodule Scoria.Observe.Guardrail do
       start_time: start_wall,
       end_time: end_time,
       trace_id: Map.get(input, :trace_id),
-      id: Map.get(input, :span_id) || Ecto.UUID.generate(),
+      id: span_id,
       parent_id: Map.get(input, :parent_id),
       tenant_id: Map.get(input, :tenant_id),
       workflow_run_id: Map.get(input, :workflow_run_id),
@@ -169,6 +171,33 @@ defmodule Scoria.Observe.Guardrail do
     }
 
     emit_span(span)
+
+    maybe_emit_guardrail_triggered(span_id, end_time, guardrail_fields)
+  end
+
+  # `guardrail_triggered` is reserved for an actual intervention (D-04a) --
+  # the span already records `allow` durably, so a caller correctly
+  # allowing a step (or omitting a decision entirely) is deliberately NOT
+  # a point event. `nil` decision only occurs for a malformed/incomplete
+  # caller input and stays silent here too.
+  defp maybe_emit_guardrail_triggered(_span_id, _time, %{decision: decision})
+       when decision in [nil, "allow"],
+       do: :ok
+
+  defp maybe_emit_guardrail_triggered(span_id, time, guardrail_fields) do
+    Observe.emit_event(%{
+      name: :guardrail_triggered,
+      span_id: span_id,
+      time: time,
+      attributes:
+        Semconv.guardrail_attributes(%{
+          name: guardrail_fields.name,
+          decision: guardrail_fields.decision,
+          reason_code: guardrail_fields.reason_code
+        })
+    })
+
+    :ok
   end
 
   # `nil` reason_code (the `allow` decision) is a no-op -- do not run it
