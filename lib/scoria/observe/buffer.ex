@@ -15,6 +15,10 @@ defmodule Scoria.Observe.Buffer do
     GenServer.cast(name, {:cast_span, span_data})
   end
 
+  def cast_event(event_data, name \\ __MODULE__) do
+    GenServer.cast(name, {:cast_event, event_data})
+  end
+
   @doc """
   Synchronously flushes the buffer's current spans and replies once the
   flush attempt (success or non-fatal failure) has completed. Test hook --
@@ -37,6 +41,9 @@ defmodule Scoria.Observe.Buffer do
       name: Keyword.get(opts, :name, __MODULE__),
       on_flush_error: Keyword.get(opts, :on_flush_error, :log),
       consecutive_failures: 0,
+      events: [],
+      max_event_size: Keyword.get(opts, :max_event_size, @default_max_size),
+      event_consecutive_failures: 0,
       timer: nil
     }
 
@@ -51,6 +58,16 @@ defmodule Scoria.Observe.Buffer do
       {:noreply, state}
     else
       {:noreply, %{state | spans: [span_data | state.spans]}}
+    end
+  end
+
+  @impl true
+  def handle_cast({:cast_event, event_data}, state) do
+    if length(state.events) >= state.max_event_size do
+      Logger.warning("Scoria.Observe.Buffer is full (#{state.max_event_size}), dropping event.")
+      {:noreply, state}
+    else
+      {:noreply, %{state | events: [event_data | state.events]}}
     end
   end
 
