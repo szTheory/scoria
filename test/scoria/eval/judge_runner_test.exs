@@ -4,6 +4,13 @@ defmodule Scoria.Eval.JudgeRunnerTest do
   alias Scoria.Eval
   alias Scoria.Eval.JudgeRunner
   alias Scoria.Eval.Verdict
+  alias Scoria.Observe.Buffer
+  alias Scoria.Observe.Semconv
+  alias Scoria.Observe.Telemetry, as: ObserveTelemetry
+  alias Scoria.Repo
+  alias Scoria.Repo.SpanEvent
+
+  @distinctive_explanation "Stubbed judge marked the sealed expectation as correct"
 
   defmodule ReqLLMStub do
     def generate_object(model_spec, prompt, _schema, _opts) do
@@ -19,6 +26,29 @@ defmodule Scoria.Eval.JudgeRunnerTest do
          }
        }}
     end
+  end
+
+  # Task 3 (SC#3): real-call-site proof scaffold -- scoped Buffer + real
+  # Telemetry.attach/1 + flush_now, mirroring prompt_span_test.exs
+  # (D-ATTR01-6). Scoria.EvalCase's own `setup` already checks out the DB
+  # sandbox; this setup only adds the observability wiring.
+  setup do
+    buffer_name = :"judge_runner_test_buffer_#{System.unique_integer([:positive])}"
+
+    pid =
+      start_supervised!(
+        Supervisor.child_spec(
+          {Buffer, [name: buffer_name, flush_interval: 10_000, max_size: 100]},
+          id: buffer_name
+        )
+      )
+
+    :telemetry.detach("scoria-observe-telemetry")
+    ObserveTelemetry.attach(buffer_name)
+
+    on_exit(fn -> :telemetry.detach("scoria-observe-telemetry") end)
+
+    %{buffer: buffer_name, buffer_pid: pid}
   end
 
   test "run_live/1 sends frozen captured output as the judge Actual" do
@@ -90,6 +120,44 @@ defmodule Scoria.Eval.JudgeRunnerTest do
     assert is_nil(score.score)
     assert score.details["reason"] == "empty_capture"
     assert score.metadata["not_scored_reason"] == "empty_capture"
+  end
+
+  # Task 3 (SC#3): drives the REAL judge render path (run_live/1 ->
+  # judge_dataset/4 -> score_dataset_item/6 -> build_judge_prompt_span/4),
+  # not a hand-synthesized :telemetry.execute (D-ATTR01-6).
+  test "run_live/1's real judge render persists a prompt_rendered event with template_ref and no explanation/verdict leak",
+       %{buffer: buffer_name} do
+    {:ok, dataset, eval_spec, prompt_entity_id} =
+      seeded_eval_contract(captured_output: %{"answer" => "Captured judge subject output"})
+
+    assert {:ok, _result} =
+             JudgeRunner.run_live(%{
+               dataset_id: dataset.id,
+               eval_spec_id: eval_spec.id,
+               prompt: prompt_entity_id,
+               provider: "openai",
+               model: "gpt-4o-mini",
+               req_llm_module: ReqLLMStub
+             })
+
+    :ok = Buffer.flush_now(buffer_name)
+
+    assert [event] = Repo.all(SpanEvent)
+    assert event.name == "prompt_rendered"
+
+    template_ref_key = Semconv.prompt_template_ref_key()
+    assert event.attributes[template_ref_key] == "eval-spec-v#{eval_spec.version}"
+
+    # Fixed-key projection: template_ref only, nothing else -- and
+    # certainly never the judge's free-text explanation/verdict text
+    # (structurally impossible anyway, since the event fires at render
+    # time, before the judge produces any explanation, D-04b).
+    assert map_size(event.attributes) == 1
+
+    encoded = Jason.encode!(event.attributes)
+    refute encoded =~ @distinctive_explanation
+    refute encoded =~ "explanation"
+    refute encoded =~ "verdict"
   end
 
   defp seeded_eval_contract(opts) do
