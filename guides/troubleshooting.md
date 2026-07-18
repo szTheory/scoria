@@ -116,6 +116,18 @@ If knowledge proof fails:
 
 Default runtime, bounded handoffs, semantic cache, and connector proof do not require knowledge setup.
 
+## Why is my LLM/tool call a standalone single-span trace?
+
+The ReqLLM and Jido adapters boot-attach automatically and persist a span for every matching call, but a persisted span only joins the current workflow run's trace as a child span when the host forwards `trace_id`, `parent_id`, and `tenant_id` into the call's telemetry metadata.
+
+If a reviewer trace shows an LLM or tool call as its own separate, single-span trace instead of nested under the run you expected:
+
+1. Confirm the call was actually made from inside `Scoria.Workflows.Runtime.execute_step/2` — lineage forwarding is automatic there, but a raw call made from a background job, script, or unrelated LiveView event has no run to join.
+2. If the call is intentionally outside a workflow, forward `trace_id`, `parent_id`, and `tenant_id` yourself using the call-site metadata option your installed `req_llm` or Jido version exposes.
+3. Confirm the span still persisted at all (check `ai_spans` for the call) before assuming the adapter is not attached — persistence and trace-join are separate guarantees, and a missing span is a different problem than an unlinked one.
+
+See [LLM and Tool Adapters](guides/capabilities/llm-and-tool-adapters.md) for the full persist-vs-join contract and metadata-forwarding examples.
+
 ## Release preview and package proof
 
 Use release preview when validating publish-facing docs and package inventory:
