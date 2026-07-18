@@ -43,6 +43,8 @@ defmodule Scoria.Application do
     if Application.get_env(:scoria, Scoria.Observe, [])[:enabled] != false do
       safe_attach_observe_telemetry()
       safe_attach_observe_mcp()
+      safe_attach_observe_req_llm()
+      safe_attach_observe_jido()
       [Scoria.Observe.Buffer]
     else
       []
@@ -67,6 +69,34 @@ defmodule Scoria.Application do
   # safe_attach_observe_telemetry/0 above (T-53-08).
   defp safe_attach_observe_mcp do
     case Scoria.Observe.Adapters.MCP.attach() do
+      :ok -> :ok
+      {:error, :already_exists} -> :ok
+    end
+  end
+
+  # Phase 54.1 (D-01): gives the ReqLLM LLM-span leg a live production
+  # producer via observe_children/0's boot seam. Uses a distinct handler id
+  # ("scoria-observe-reqllm") from the other observe handlers, and the same
+  # match-and-ignore discipline as safe_attach_observe_mcp/0 above
+  # (T-53-08) -- a duplicate attach (adopter/test attached first) is not an
+  # error, it never raises or halts start/2.
+  defp safe_attach_observe_req_llm do
+    case Scoria.Observe.Adapters.ReqLLM.attach() do
+      :ok -> :ok
+      {:error, :already_exists} -> :ok
+    end
+  end
+
+  # Phase 54.1 (D-01, D-02): gives the Jido TOOL-span leg a live production
+  # producer via observe_children/0's boot seam. Uses a distinct handler id
+  # ("scoria-observe-jido") from the other observe handlers, and the same
+  # match-and-ignore discipline as safe_attach_observe_mcp/0 above
+  # (T-53-08). Attaches UNCONDITIONALLY -- no module-presence guard --
+  # because Scoria.Observe.Adapters.Jido references zero Jido.* modules; a
+  # presence guard would guard nothing and mislead. `jido` is deliberately
+  # NOT added to mix.exs deps (telemetry-coupled, not a dependency).
+  defp safe_attach_observe_jido do
+    case Scoria.Observe.Adapters.Jido.attach() do
       :ok -> :ok
       {:error, :already_exists} -> :ok
     end
