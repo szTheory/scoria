@@ -138,7 +138,7 @@
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 53B-05-PLAN.md — SC canaries: SC#1 redact / SC#2 vocabulary / SC#4 orphan / D-05 fail-closed / SEC-01 Bounds:event (Wave 4)
+- [x] 53B-05-PLAN.md — SC canaries: SC#1 redact / SC#2 vocabulary / SC#4 orphan / D-05 fail-closed / SEC-01 Bounds:event (Wave 4)
 
 ### Phase 54: Docs Accuracy + Conformance Check
 
@@ -167,7 +167,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54
 | 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete    | 2026-07-12 |
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
 | 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete    | 2026-07-18 |
-| 53b. `ai_span_events` + `emit_event/1` | v3.6 | 4/5 | In Progress|  |
+| 53b. `ai_span_events` + `emit_event/1` | v3.6 | 5/5 | Complete   | 2026-07-18 |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
 
 ## Archived Milestones
