@@ -206,6 +206,15 @@ defmodule Scoria.Observe.Telemetry do
     :ets.insert_new(@rejected_warned_table, {name, true})
   end
 
+  # Guarded (not just `:ets.whereis/1`-checked) against the concurrent
+  # first-rejection race (WR-01): two processes can both observe
+  # `:undefined` and both call `:ets.new/2` with `:named_table` before
+  # either's insert lands -- the loser raises `ArgumentError` (table already
+  # exists). This clause is reached from `handle_event/4`, which is NOT
+  # wrapped in `try/rescue`, so an uncaught raise here would propagate into
+  # `:telemetry.execute/3` and detach the whole `scoria-observe-telemetry`
+  # handler, silently disabling all span AND event persistence for the
+  # node. Rescuing the race here keeps that detach from ever happening.
   defp ensure_rejected_warned_table do
     case :ets.whereis(@rejected_warned_table) do
       :undefined ->
@@ -214,6 +223,8 @@ defmodule Scoria.Observe.Telemetry do
       _table ->
         :ok
     end
+  rescue
+    ArgumentError -> :ok
   end
 
   defp scrub_delta_chunk(%{chunk: chunk} = metadata) when is_binary(chunk) do

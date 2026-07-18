@@ -241,5 +241,51 @@ defmodule Scoria.Observe.TelemetryTest do
       assert event
       assert %DateTime{} = event.time
     end
+
+    test "WR-01: concurrent first-time rejections racing to create the rejected-warned ETS table never detach the handler", %{
+      buffer: buffer
+    } do
+      # Force the lazy-create race window: delete the table (if a prior test
+      # already created it) so every concurrent caller below observes
+      # `:ets.whereis/1 == :undefined` and races to `:ets.new/2`. Before the
+      # WR-01 fix, the losing process's `ArgumentError` (table already
+      # exists) was uncaught in `handle_event/4`, propagating into
+      # `:telemetry.execute/3` and detaching "scoria-observe-telemetry" for
+      # the whole node.
+      table = :scoria_observe_event_rejected_warned_names
+      if :ets.whereis(table) != :undefined, do: :ets.delete(table)
+
+      race_name = :"wr_01_race_test_event_#{System.unique_integer([:positive])}"
+
+      1..50
+      |> Enum.map(fn _ ->
+        Task.async(fn ->
+          :telemetry.execute(
+            [:scoria, :observe, :event, :emit],
+            %{},
+            %{name: race_name, span_id: Ecto.UUID.generate()}
+          )
+        end)
+      end)
+      |> Task.await_many()
+
+      # Proves the handler is still attached (not merely that this test
+      # process survived): a raise inside handle_event/4 would have
+      # detached "scoria-observe-telemetry" entirely, so a subsequent
+      # well-formed event would never reach Buffer/Postgres either.
+      span_id = Ecto.UUID.generate()
+
+      :ok =
+        Scoria.Observe.emit_event(%{
+          name: :prompt_rendered,
+          span_id: span_id,
+          attributes: %{},
+          time: DateTime.utc_now()
+        })
+
+      Buffer.flush_now(buffer)
+
+      assert Repo.get_by(Scoria.Repo.SpanEvent, span_id: span_id)
+    end
   end
 end
