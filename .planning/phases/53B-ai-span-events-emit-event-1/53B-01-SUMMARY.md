@@ -118,7 +118,9 @@ _No plan-metadata commit in this worktree — SUMMARY.md is committed separately
 
 ## Deviations from Plan
 
-None - plan executed exactly as written. All three tasks matched their `<action>` instructions and acceptance criteria; no Rule 1-4 auto-fixes were needed.
+None in the plan's own tasks - all three tasks matched their `<action>` instructions and acceptance criteria; no Rule 1-4 auto-fixes were needed.
+
+**Process note (not a code deviation):** The plan's frontmatter lists `requirements: [EVENT-02, EVENT-03]`, and the standard `state_updates` step calls for `requirements.mark-complete` on those IDs after this plan. This plan is 1 of ~5 in Phase 53B (per `53B-CONTEXT.md`'s Claude's-Discretion sequencing note); EVENT-02 still needs the Buffer event list + ordered flush (Plan 02) and `emit_event/1` + the `:event` telemetry handler (Plan 03), and EVENT-03 needs real call-site emission (Plan 04) before either requirement is genuinely satisfied. Running `requirements.mark-complete EVENT-02 EVENT-03` here would have marked both `[x]` in `.planning/REQUIREMENTS.md` while the underlying behavior does not yet exist — reverted via `git checkout -- .planning/REQUIREMENTS.md` (Rule 1: fixing an about-to-be-introduced correctness bug in shared tracking state). The `requirements-completed` frontmatter field above still lists both IDs per the field's literal contract ("copy ALL requirement IDs from this plan's requirements frontmatter field") — it is a per-plan contribution marker, not a completion claim. Final `[x]` marking in `.planning/REQUIREMENTS.md` should happen once the phase's terminal plan (or the orchestrator, at wave/phase close) confirms EVENT-02/EVENT-03 are fully implemented.
 
 ## Issues Encountered
 - The worktree had no fetched deps (`mix deps.get` required) and no compiled `_build` on first invocation — resolved by running `mix deps.get` then `mix compile` before any verification step; not a plan deviation, just first-run worktree setup.
