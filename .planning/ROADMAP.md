@@ -122,7 +122,12 @@
   3. `prompt_rendered` and `guardrail_triggered` are actually emitted from real call sites during normal operation (not just reachable via a direct API call in a test) — `user_feedback_received` stays reserved-only, not emitted, in this milestone.
   4. An event whose span has not flushed (or was dropped) can never take down a batch of good spans — proven by a test that flushes 50 valid spans alongside one orphan event and loses nothing.
 
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 53B-01-PLAN.md — Core-lane FK-drop migration + closed Semconv event vocabulary + scoria.prompt.template_ref registry key (Wave 1)
+- [ ] 53B-02-PLAN.md — Buffer event list + two-phase ordered flush + cast_event/2 (Wave 1)
+- [ ] 53B-03-PLAN.md — emit_event/1 + :event telemetry handler (redact collapse, allow-list re-check, fail-closed time/span_id seam, Bounds:event) (Wave 2)
+- [ ] 53B-04-PLAN.md — Real call-site emission: guardrail_triggered + prompt_rendered (Wave 3)
+- [ ] 53B-05-PLAN.md — SC canaries: SC#1 redact / SC#2 vocabulary / SC#4 orphan / D-05 fail-closed / SEC-01 Bounds:event (Wave 4)
 
 ### Phase 54: Docs Accuracy + Conformance Check
 
