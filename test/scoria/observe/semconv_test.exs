@@ -292,6 +292,7 @@ defmodule Scoria.Observe.SemconvTest do
                "scoria.guardrail.reason_code",
                "scoria.guardrail.subject_ref",
                "scoria.prompt.context",
+               "scoria.prompt.template_ref",
                "scoria.retrieval.embedding_model",
                "scoria.retrieval.index_version",
                "scoria.retrieval.reranker",
@@ -439,6 +440,63 @@ defmodule Scoria.Observe.SemconvTest do
       assert map_size(result) == 2
       assert Map.keys(result) |> Enum.sort() == ["error.type", "exception.type"]
       assert Map.values(result) |> Enum.sort() == ["RuntimeError", "RuntimeError"]
+    end
+  end
+
+  describe "event_names/0 + event_name?/1 closed vocabulary (EVENT-02, D-03a/D-03c)" do
+    test "event_names/0 returns exactly the 3-atom closed vocabulary" do
+      assert Semconv.event_names() == [
+               :prompt_rendered,
+               :guardrail_triggered,
+               :user_feedback_received
+             ]
+    end
+
+    test "event_name?/1 is true for each vocabulary member" do
+      for name <- Semconv.event_names() do
+        assert Semconv.event_name?(name), "#{inspect(name)} should be a member of event_names/0"
+      end
+    end
+
+    test "event_name?/1 is false for a non-member atom" do
+      refute Semconv.event_name?(:nope)
+    end
+
+    test "event_name?/1 is false for a string variant of a real event name — drift-proof, no String.to_atom coercion" do
+      refute Semconv.event_name?("prompt_rendered")
+      refute Semconv.event_name?("guardrail_triggered")
+      refute Semconv.event_name?("user_feedback_received")
+    end
+  end
+
+  describe "prompt_template_ref_key/0 (EVENT-02, D-04c)" do
+    test "returns the exact canonical registry key string" do
+      assert Semconv.prompt_template_ref_key() == "scoria.prompt.template_ref"
+    end
+
+    test "is registry-admitted as class :id" do
+      registry = Semconv.attribute_registry()
+
+      assert Map.get(registry, Semconv.prompt_template_ref_key()) == :id
+    end
+  end
+
+  describe "anti-inline grep: user_feedback_received has ZERO lib/ emitters (D-04d reserved-only guard)" do
+    test "no real lib/ producer file wires an emitter call for the reserved :user_feedback_received event" do
+      producer_files = [
+        "lib/scoria/observe.ex",
+        "lib/scoria/observe/guardrail.ex",
+        "lib/scoria/eval/judge_runner.ex",
+        "lib/scoria/observe/telemetry.ex"
+      ]
+
+      for path <- producer_files, File.exists?(Path.expand(path, File.cwd!())) do
+        source = path |> Path.expand(File.cwd!()) |> File.read!()
+
+        refute source =~ ~r/name:\s*:user_feedback_received/,
+               "#{path} must not wire a :user_feedback_received emitter — " <>
+                 "emission is SEED-011 / FB-01; do not wire an emitter"
+      end
     end
   end
 
