@@ -5,16 +5,16 @@ milestone_name: Trace Foundation
 current_phase: 54
 current_phase_name: Docs Accuracy + Conformance Check
 status: executing
-stopped_at: Phase 53b context gathered
-last_updated: "2026-07-18T20:34:21.966Z"
+stopped_at: Phase 54.1 context gathered
+last_updated: "2026-07-18T21:40:47.498Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 53B complete, transitioned to Phase 54
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 4
   total_plans: 24
   completed_plans: 24
-  percent: 80
+  percent: 67
 ---
 
 # Project State
@@ -275,6 +275,7 @@ active.
 - v3.5 roadmap created (2026-07-09): Phases 46-50 promote SEED-005 from the backlog for terminology, README/scope doctrine, ExDoc/guide ladder, AI-accessible docs, and the clean `0.1.3` release cut. 18/18 requirements mapped.
 - Phase 41.1 inserted after Phase 41: Wire orphaned ScoriaWeb.Copy/DatasetCopy into dataset page (COPY-01 SSOT) — surfaced by v3.3 milestone audit (URGENT)
 - v3.6 roadmap created (2026-07-11): Phases 51-54 promote SEED-007 from the backlog — 51 foundation fix + key convention + span-kind taxonomy (FOUND-01..03, SPAN-01..02, COMPAT-01), 52 RETRIEVER span + host-declared attributes (RETR-01..02, ATTR-01..02), 53 structured child spans + ai_span_events (EVENT-01..03, SEC-01), 54 docs accuracy + conformance check (DOCS-01..02). 16/16 requirements mapped; Phase 53 flagged for phase-level research (no existing point-event call sites; async-FK design for user_feedback_received deferred to SEED-011).
+- Phase 54.1 inserted after Phase 54: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (v3.6 audit integration gap) (URGENT)
 
 ## Deferred Items
 
@@ -365,9 +366,9 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-18T15:56:21.331Z
-Stopped at: Phase 53b context gathered
-Resume file: .planning/phases/53B-ai-span-events-emit-event-1/53B-CONTEXT.md
+Last session: 2026-07-18T21:40:47.492Z
+Stopped at: Phase 54.1 context gathered
+Resume file: .planning/phases/54.1-wire-reqllm-jido-adapters-at-boot-reconcile-changelog/54.1-CONTEXT.md
 
 ## Operator Next Steps
 
