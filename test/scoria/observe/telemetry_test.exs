@@ -124,4 +124,122 @@ defmodule Scoria.Observe.TelemetryTest do
     assert_receive {:trace_delta, delta}
     assert delta == %{trace_id: trace_id, span_id: span_id, chunk: "partial"}
   end
+
+  describe "single-redact-site drift guard (D-03d)" do
+    # CRITICAL: scoped to this single file path, never Path.wildcard or a
+    # repo-wide grep -- `Redactor.redact(` has 5 legitimate call sites
+    # across lib/ (orchestrator_live.ex:269, sre.ex:367, telemetry.ex x2
+    # pre-collapse, remote_approval_projection.ex:154) per RESEARCH. This
+    # guard only asserts the count WITHIN telemetry.ex itself.
+    test "exactly one Redactor.redact( call site remains in telemetry.ex" do
+      source =
+        "lib/scoria/observe/telemetry.ex"
+        |> Path.expand(File.cwd!())
+        |> File.read!()
+
+      occurrences =
+        source
+        |> String.split("Redactor.redact(")
+        |> length()
+        |> Kernel.-(1)
+
+      assert occurrences == 1,
+             "Expected exactly one `Redactor.redact(` call site in telemetry.ex (span, delta, " <>
+               "and event clauses must all route through a single defp redact/1), found #{occurrences}"
+    end
+  end
+
+  describe "[:scoria, :observe, :event, :emit] handler (EVENT-02, Plan 53B-03)" do
+    test "a known event name persists to ai_span_events after flush", %{buffer: buffer} do
+      span_id = Ecto.UUID.generate()
+
+      :ok =
+        Scoria.Observe.emit_event(%{
+          name: :prompt_rendered,
+          span_id: span_id,
+          attributes: %{},
+          time: DateTime.utc_now()
+        })
+
+      Buffer.flush_now(buffer)
+
+      event = Repo.get_by(Scoria.Repo.SpanEvent, span_id: span_id)
+      assert event
+      assert event.name == "prompt_rendered"
+    end
+
+    test "the raw-bus bypass (an unknown name, skipping emit_event/1) is rejected and never persisted", %{
+      buffer: buffer
+    } do
+      parent = self()
+
+      :telemetry.attach(
+        "smoke-event-rejected-capture",
+        [:scoria, :observe, :event, :rejected],
+        fn _name, _measurements, metadata, _config -> send(parent, {:rejected, metadata}) end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("smoke-event-rejected-capture") end)
+
+      span_id = Ecto.UUID.generate()
+
+      :telemetry.execute(
+        [:scoria, :observe, :event, :emit],
+        %{},
+        %{name: :not_a_real_event, span_id: span_id}
+      )
+
+      assert_receive {:rejected, %{name: :not_a_real_event, reason: :unknown_name}}
+
+      Buffer.flush_now(buffer)
+
+      refute Repo.get_by(Scoria.Repo.SpanEvent, span_id: span_id)
+    end
+
+    test "a nil span_id is rejected before Bounds/persistence (fail-closed seam, D-05a)", %{
+      buffer: buffer
+    } do
+      parent = self()
+
+      :telemetry.attach(
+        "smoke-event-nil-span-capture",
+        [:scoria, :observe, :event, :rejected],
+        fn _name, _measurements, metadata, _config -> send(parent, {:rejected, metadata}) end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("smoke-event-nil-span-capture") end)
+
+      :telemetry.execute(
+        [:scoria, :observe, :event, :emit],
+        %{},
+        %{name: :prompt_rendered, span_id: nil}
+      )
+
+      assert_receive {:rejected, %{name: :prompt_rendered, reason: :nil_span_id}}
+
+      Buffer.flush_now(buffer)
+
+      assert Repo.aggregate(Scoria.Repo.SpanEvent, :count) == 0
+    end
+
+    test "a missing time defaults to DateTime.utc_now() and the event still persists", %{
+      buffer: buffer
+    } do
+      span_id = Ecto.UUID.generate()
+
+      :telemetry.execute(
+        [:scoria, :observe, :event, :emit],
+        %{},
+        %{name: :prompt_rendered, span_id: span_id}
+      )
+
+      Buffer.flush_now(buffer)
+
+      event = Repo.get_by(Scoria.Repo.SpanEvent, span_id: span_id)
+      assert event
+      assert %DateTime{} = event.time
+    end
+  end
 end
