@@ -160,6 +160,40 @@ defmodule Scoria.Eval.JudgeRunnerTest do
     refute encoded =~ "verdict"
   end
 
+  # WR-03 regression: `run_existing/2` previously used
+  # `fetch!(attrs, :dataset) || Eval.get_dataset!(eval_run.dataset_id)`, but
+  # `fetch!/2` raises ArgumentError instead of returning a falsy value on a
+  # missing/nil key -- the `||` fallback was dead code, and omitting
+  # `:dataset` from `attrs` always raised instead of loading the dataset by
+  # `eval_run.dataset_id`. Proves the fallback now actually fires.
+  test "run_existing/2 falls back to loading the dataset by eval_run.dataset_id when :dataset is absent from attrs" do
+    {:ok, dataset, eval_spec, _prompt_entity_id} =
+      seeded_eval_contract(captured_output: %{"answer" => "Scoria is an embedded Phoenix AI runtime"})
+
+    {:ok, eval_run} =
+      Eval.create_eval_run(%{
+        eval_spec_id: eval_spec.id,
+        runner_mode: :live_judge,
+        status: "running",
+        provider: "openai",
+        model: "gpt-4o-mini"
+      })
+
+    assert eval_run.dataset_id == dataset.id
+
+    assert {:ok, result} =
+             JudgeRunner.run_existing(eval_run, %{
+               eval_spec: eval_spec,
+               provider: "openai",
+               model: "gpt-4o-mini",
+               req_llm_module: ReqLLMStub
+             })
+
+    assert result.eval_run.runner_mode == :live_judge
+    assert [score] = result.scores
+    assert score.status == "passed"
+  end
+
   defp seeded_eval_contract(opts) do
     expected_answer =
       Keyword.get(opts, :expected_answer, "Scoria is an embedded Phoenix AI runtime")

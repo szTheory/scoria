@@ -50,7 +50,7 @@ defmodule Scoria.Eval.JudgeRunner do
   def run_existing(%EvalRun{} = eval_run, attrs) when is_map(attrs) do
     run_started_at = Timing.mark()
     eval_spec = fetch!(attrs, :eval_spec)
-    dataset = fetch!(attrs, :dataset) || Eval.get_dataset!(eval_run.dataset_id)
+    dataset = fetch(attrs, :dataset) || Eval.get_dataset!(eval_run.dataset_id)
     base_score_attrs = fetch(attrs, :base_score_attrs) || []
 
     if dataset.state != :sealed do
