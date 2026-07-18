@@ -242,4 +242,70 @@ defmodule Scoria.ObserveTest do
       assert :ok = Observe.emit_prompt_span(%{trace_id: Ecto.UUID.generate()})
     end
   end
+
+  describe "emit_event/1 synchronous return contract (EVENT-02, Plan 53B-03)" do
+    # The full DB-persistence rejection proof for both the direct and
+    # raw-bus paths (SC#2) lives in Plan 05; this describe block proves
+    # only the fast synchronous contract of emit_event/1 itself.
+    setup do
+      :telemetry.detach("scoria-observe-event-test-capture")
+
+      parent = self()
+
+      :telemetry.attach(
+        "scoria-observe-event-test-capture",
+        [:scoria, :observe, :event, :emit],
+        fn _name, _measurements, event, _config -> send(parent, {:event, event}) end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("scoria-observe-event-test-capture") end)
+
+      :ok
+    end
+
+    test "a known event name returns :ok and fires the :emit telemetry event" do
+      event = %{
+        name: :prompt_rendered,
+        span_id: Ecto.UUID.generate(),
+        attributes: %{},
+        time: DateTime.utc_now()
+      }
+
+      assert :ok = Observe.emit_event(event)
+      assert_receive {:event, ^event}
+    end
+
+    test "an unknown event name returns {:error, :unknown_event} and fires no telemetry" do
+      assert {:error, :unknown_event} =
+               Observe.emit_event(%{name: :not_a_real_event, span_id: Ecto.UUID.generate()})
+
+      refute_receive {:event, _}
+    end
+
+    test "a malformed input (no :name key, or not a map) never raises" do
+      assert {:error, :unknown_event} = Observe.emit_event(%{garbage: true})
+      assert {:error, :unknown_event} = Observe.emit_event("not a map")
+      assert {:error, :unknown_event} = Observe.emit_event(%{})
+    end
+
+    test "a raising handler on :emit is swallowed -- emit_event/1 still returns :ok" do
+      :telemetry.attach(
+        "scoria-observe-event-test-raiser",
+        [:scoria, :observe, :event, :emit],
+        fn _name, _measurements, _event, _config -> raise "boom" end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach("scoria-observe-event-test-raiser") end)
+
+      assert :ok =
+               Observe.emit_event(%{
+                 name: :guardrail_triggered,
+                 span_id: Ecto.UUID.generate(),
+                 attributes: %{},
+                 time: DateTime.utc_now()
+               })
+    end
+  end
 end

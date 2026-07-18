@@ -214,6 +214,23 @@ operator's browser (capped at `max_delta_chunk_bytes` on egress) but never
 persisted -- streaming deltas live only in the operator's LiveView process memory
 for the duration of the connection.
 
+**New `Scoria.Observe.emit_event/1` point-event surface (EVENT-02).** A new
+public verb for the closed, 3-atom point-event vocabulary
+(`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`) --
+`user_feedback_received` is reserved-only for now and has no `lib/`
+emitter (that flywheel work belongs to SEED-011 / FB-01). `emit_event/1`
+checks the name against the vocabulary up front for a clean bus and a
+synchronous `:ok` / `{:error, :unknown_event}` return, and never raises.
+The `[:scoria, :observe, :event, :emit]` telemetry handler is the real
+boundary of record: it independently re-checks the vocabulary (closing the
+raw-bus bypass), redacts through the same single call site spans and
+deltas already use, defaults a missing `time` and drops a `nil` `span_id`
+before persistence, runs the events through the SEC-01 `Bounds.enforce/2`
+tollbooth, and casts to the durable `ai_span_events` table. **Deliberate
+v3.6 gap:** a fired `guardrail_triggered` event lands in Postgres with **no
+operator UI yet** -- that dashboard surface is Phase 53 D-08 / D-07 future
+work, not part of this change.
+
 ### Changed
 
 #### Pre-1.0 terminology migration
