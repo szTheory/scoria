@@ -20,12 +20,13 @@ defmodule Scoria.Observe.Adapters.BootAttachTest do
   CHANGELOG, and tests all agree: "proven" means something different for
   each leg (D-07).
 
-  Setup self-heals both boot handlers by calling `attach/0` and tolerating
+  Setup self-heals all three boot handlers by calling `attach/0` and tolerating
   `{:error, :already_exists}` — this repairs suite-order damage from other
-  test files that detach-then-reattach per test (e.g.
-  `runtime_span_test.exs`'s `on_exit` at L165 strips "scoria-observe-reqllm"),
-  it is NOT the mechanism under proof. The proof is that the handler was
-  already registered by `Scoria.Application.start/2` before this test ran.
+  test files that detach-then-reattach per test (e.g. `runtime_span_test.exs`'s
+  `on_exit` strips both "scoria-observe-reqllm" and, crucially, the core
+  "scoria-observe-telemetry" sink the adapter legs re-emit into), it is NOT the
+  mechanism under proof. The proof is that the handler was already registered by
+  `Scoria.Application.start/2` before this test ran.
 
   See `Scoria.Observe.Adapters.ReqLLM` / `Scoria.Observe.Adapters.Jido`
   moduledocs for the gen_ai.*/host-declared attribute contract SSOT — not
@@ -41,6 +42,17 @@ defmodule Scoria.Observe.Adapters.BootAttachTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+
+    # The adapter handlers re-emit [:scoria, :observe, :span, :stop]; the core
+    # Scoria.Observe.Telemetry handler ("scoria-observe-telemetry") is the sink
+    # that writes to Buffer. runtime_span_test.exs's on_exit (L168) detaches it
+    # without re-attaching, so under some suite orderings the sink is gone and
+    # the re-emitted span reaches no Buffer. Self-heal all three, tolerating
+    # already-registered — same non-mechanism caveat as the adapter legs below.
+    case Scoria.Observe.Telemetry.attach() do
+      :ok -> :ok
+      {:error, :already_exists} -> :ok
+    end
 
     case Scoria.Observe.Adapters.ReqLLM.attach() do
       :ok -> :ok
