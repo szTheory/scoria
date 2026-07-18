@@ -7,6 +7,7 @@ defmodule Scoria.Eval.JudgeRunner do
   alias Scoria.Eval.Timing
   alias Scoria.Eval.Verdict
   alias Scoria.Observe
+  alias Scoria.Observe.Semconv
   alias ReqLLM.Response
 
   def run_live(attrs) when is_map(attrs) do
@@ -152,7 +153,7 @@ defmodule Scoria.Eval.JudgeRunner do
        ) do
     case SubjectOutput.resolve(dataset_item, :live_judge) do
       {:ok, actual_output} ->
-        prompt = build_judge_prompt_span(dataset_item, actual_output, attrs)
+        prompt = build_judge_prompt_span(dataset_item, actual_output, attrs, eval_spec)
 
         case orchestrator_module.generate_object(model_spec, prompt, judge_schema(), opts) do
           {:ok, response} ->
@@ -194,15 +195,34 @@ defmodule Scoria.Eval.JudgeRunner do
   # NOTHING from the judge's own output (the free-form `explanation:` at
   # `:167`/`:202`, the single most likely free-text leak in this codebase,
   # T-53-01) ever reaches the span.
-  defp build_judge_prompt_span(dataset_item, subject_output, attrs) do
-    Observe.with_prompt(
-      "eval.judge_prompt",
-      %{
-        trace_id: fetch(attrs, :trace_id) || Ecto.UUID.generate(),
-        parent_id: fetch(attrs, :parent_id)
-      },
-      fn -> build_judge_prompt(dataset_item, subject_output) end
-    )
+  defp build_judge_prompt_span(dataset_item, subject_output, attrs, eval_spec) do
+    span_id = fetch(attrs, :span_id) || Ecto.UUID.generate()
+
+    result =
+      Observe.with_prompt(
+        "eval.judge_prompt",
+        %{
+          trace_id: fetch(attrs, :trace_id) || Ecto.UUID.generate(),
+          parent_id: fetch(attrs, :parent_id),
+          span_id: span_id
+        },
+        fn -> build_judge_prompt(dataset_item, subject_output) end
+      )
+
+    # Emit-after-success (D-04b): `span/4` reraises on a raised render, so
+    # this line is only reached when `with_prompt/3` actually returned --
+    # a raised render produces an ERROR span and NO event. Attributes carry
+    # ONLY template_ref (no scoria.prompt.tokens, D-04c); the judge's
+    # free-text `explanation` does not exist yet at render time and this
+    # fixed-key payload would drop it regardless.
+    Observe.emit_event(%{
+      name: :prompt_rendered,
+      span_id: span_id,
+      time: DateTime.utc_now(),
+      attributes: %{Semconv.prompt_template_ref_key() => "eval-spec-v#{eval_spec.version}"}
+    })
+
+    result
   end
 
   defp build_judge_prompt(dataset_item, subject_output) do
