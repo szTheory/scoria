@@ -1,8 +1,9 @@
 defmodule Scoria.Observe.BufferTest do
   use ExUnit.Case, async: false
-  
+
   alias Scoria.Observe.Buffer
   alias Scoria.Repo.Span
+  alias Scoria.Repo.SpanEvent
   alias Scoria.Repo.Trace
   alias Scoria.Repo
 
@@ -185,5 +186,99 @@ defmodule Scoria.Observe.BufferTest do
     :ok = GenServer.call(pid, :flush_now)
 
     assert Repo.get_by(Span, name: "flush_now_span")
+  end
+
+  # Test A (D-02b/D-02d): ordered two-phase happy path -- a cast_span and a
+  # cast_event (whose span_id references that same-batch span) both persist
+  # after one flush_now, proving traces->spans->events ordering and that
+  # Phase 2 runs and persists. The event's span_id points at the same-batch
+  # span so this test is FK-state-agnostic (green whether or not the Plan 01
+  # FK-drop migration has run -- Phase 1 commits the span before Phase 2
+  # inserts the event).
+  test "two-phase flush: cast_span + cast_event for the same span both persist after flush_now" do
+    pid =
+      start_supervised!(
+        Supervisor.child_spec(
+          {Buffer, [name: :test_buffer_two_phase, flush_interval: 10_000, max_size: 5]},
+          id: :test_buffer_two_phase
+        )
+      )
+
+    trace_id = Ecto.UUID.generate()
+    span_id = Ecto.UUID.generate()
+
+    Buffer.cast_span(
+      %{id: span_id, name: "two_phase_span", start_time: DateTime.utc_now(), trace_id: trace_id},
+      :test_buffer_two_phase
+    )
+
+    Buffer.cast_event(
+      %{
+        span_id: span_id,
+        name: "prompt_rendered",
+        time: DateTime.utc_now(),
+        attributes: %{}
+      },
+      :test_buffer_two_phase
+    )
+
+    :ok = GenServer.call(pid, :flush_now)
+
+    span = Repo.get(Span, span_id)
+    assert span
+    assert span.trace_id == trace_id
+
+    event = Repo.get_by(SpanEvent, span_id: span_id)
+    assert event
+    assert event.name == "prompt_rendered"
+  end
+
+  # Test B (D-02a): event buffer-full drops the newest event + logs a
+  # warning, independently of the span cap. Drives Buffer.cast_event/2
+  # directly (no hand-synthesized :telemetry.execute).
+  test "drops the newest event if max_event_size is exceeded, independently of the span cap" do
+    pid =
+      start_supervised!(
+        Supervisor.child_spec(
+          {Buffer,
+           [
+             name: :test_buffer_event_full,
+             flush_interval: 10_000,
+             max_size: 5,
+             max_event_size: 2
+           ]},
+          id: :test_buffer_event_full
+        )
+      )
+
+    trace_id = Ecto.UUID.generate()
+    span_id = Ecto.UUID.generate()
+
+    Buffer.cast_span(
+      %{id: span_id, name: "event_full_span", start_time: DateTime.utc_now(), trace_id: trace_id},
+      :test_buffer_event_full
+    )
+
+    for i <- 1..5 do
+      Buffer.cast_event(
+        %{
+          span_id: span_id,
+          name: "guardrail_triggered",
+          time: DateTime.utc_now(),
+          attributes: %{"i" => i}
+        },
+        :test_buffer_event_full
+      )
+    end
+
+    :ok = GenServer.call(pid, :flush_now)
+
+    # max_event_size is 2 -- only 2 of the 5 cast events should have
+    # survived the buffer-full drop and been flushed.
+    assert Repo.aggregate(SpanEvent, :count) == 2
+
+    # The span cap (max_size: 5) is untouched by the event cap -- the one
+    # cast span still persists.
+    assert Repo.get(Span, span_id)
   end
 end
