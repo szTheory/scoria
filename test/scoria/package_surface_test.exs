@@ -16,6 +16,7 @@ defmodule Scoria.PackageSurfaceTest do
     "guides/capabilities/semantic-cache.md",
     "guides/capabilities/connectors-and-mcp.md",
     "guides/capabilities/support-copilot-gallery.md",
+    "guides/capabilities/llm-and-tool-adapters.md",
     "guides/reviewer-verification.md",
     "guides/troubleshooting.md",
     "guides/scoria-vs-external-llm-ops.md",
@@ -124,7 +125,8 @@ defmodule Scoria.PackageSurfaceTest do
       "guides/capabilities/bounded-handoffs.md",
       "guides/capabilities/semantic-cache.md",
       "guides/capabilities/connectors-and-mcp.md",
-      "guides/capabilities/support-copilot-gallery.md"
+      "guides/capabilities/support-copilot-gallery.md",
+      "guides/capabilities/llm-and-tool-adapters.md"
     ])
 
     assert_group_contains(groups, "Operate & Verify", [

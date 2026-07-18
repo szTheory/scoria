@@ -152,13 +152,13 @@ install axis and do not map to Hex versions.
 
 ### ⚠ BREAKING CHANGES (`0.1.4` cut)
 
-**ReqLLM observability adapter attribute key rename.** `Scoria.Observe.Adapters.ReqLLM`
+**ReqLLM observability adapter attribute key rename.** Scoria.Observe.Adapters.ReqLLM
 now emits OTel-GenAI / OpenInference convention keys (`gen_ai.*`, `server.*`,
 `openinference.span.kind`) instead of Scoria's own ad hoc keys. This is a **clean
 replacement — no dual-emit, no runtime shim, no config flag.** No adopter Postgres
 database has ever actually persisted the old keys: a separate pre-existing bug (the
 `ai_spans.trace_id` foreign-key gap, fixed alongside this change) meant every span
-emitted through `Scoria.Observe.Buffer` was silently dropped before reaching the
+emitted through Scoria.Observe.Buffer was silently dropped before reaching the
 database, so there is zero legacy row data to protect.
 
 | Old key | New key(s) | Note |
@@ -171,7 +171,7 @@ If you attached a custom `:telemetry` handler to `[:scoria, :observe, :span, :st
 that reads the old key names out of `attributes` in memory, update it to read the new
 `gen_ai.*`/`server.*` keys above.
 
-**New persistence-failure observability.** `Scoria.Observe.Buffer` no longer silently
+**New persistence-failure observability.** Scoria.Observe.Buffer no longer silently
 swallows flush failures with a bare `rescue`. A new `[:scoria, :observe, :buffer,
 :flush_error]` telemetry event fires on every failed flush (logged by default), and a
 new `:on_flush_error` `Buffer` start-link option (`:log` default | `:raise`) lets you
@@ -180,21 +180,36 @@ of only logging.
 
 ### Added
 
-**`Scoria.Observe.Buffer` now boots automatically.** Spans emitted by Phases 51/52
-(`Scoria.Observe.emit_*_span/1`, the ReqLLM/Jido adapters, and any custom
-`:telemetry.execute/3` on `[:scoria, :observe, :span, :stop]`) were previously inert
-outside of tests: `Scoria.Observe.Buffer` was never a supervised child of
-`Scoria.Application` and `Scoria.Observe.Telemetry.attach/1` had no `lib/` caller, so
-every span fired into a void in a real host app. `Scoria.Application.start/2` now
-starts `Scoria.Observe.Buffer` under `Scoria.Supervisor` and calls
-`Scoria.Observe.Telemetry.attach/0` on boot, so spans persist to Postgres with zero
+**Scoria.Observe.Buffer now boots automatically.** Spans emitted by Phases 51/52
+(Scoria.Observe.emit_*_span/1 and any custom `:telemetry.execute/3` on
+`[:scoria, :observe, :span, :stop]`) were previously inert outside of tests:
+Scoria.Observe.Buffer was never a supervised child of Scoria.Application and
+Scoria.Observe.Telemetry.attach/1 had no `lib/` caller, so every span fired into a
+void in a real host app. Scoria.Application.start/2 now starts
+Scoria.Observe.Buffer under `Scoria.Supervisor` and calls
+Scoria.Observe.Telemetry.attach/0 on boot, so spans persist to Postgres with zero
 host wiring. Opt out with `config :scoria, Scoria.Observe, enabled: false`.
 
+**The ReqLLM and Jido adapters now boot-attach too.** Scoria.Application.start/2
+also calls the new `safe_attach_observe_req_llm/0` and `safe_attach_observe_jido/0`
+helpers this release adds, so their LLM/TOOL spans **persist to Postgres with zero host wiring**,
+the same as the default pipeline above. One caveat: a persisted adapter span only
+joins the current workflow run's trace as a child of the step span when the host
+forwards `trace_id`, `parent_id`, and `tenant_id` into the call's telemetry
+metadata. That forwarding is automatic for calls made inside
+Scoria.Workflows.Runtime.execute_step/2; a raw call made outside a workflow
+persists as a standalone single-span trace until the host forwards those keys
+itself. See
+[LLM and Tool Adapters](guides/capabilities/llm-and-tool-adapters.md) for the full
+metadata-forwarding contract. Note that `jido` is not a Scoria dependency: the Jido
+handler stays dormant unless the host app itself depends on and runs Jido. Opt out
+of both adapters the same way, with `config :scoria, Scoria.Observe, enabled: false`.
+
 **Write-time attribute bound behind a closed key registry (SEC-01).**
-`Scoria.Observe.Bounds.enforce/2` is now the single write-time choke point every
+Scoria.Observe.Bounds.enforce/2 is now the single write-time choke point every
 span attribute payload passes through, immediately after redaction and before both
 the operator PubSub broadcast and Postgres persistence. Attribute keys are admitted
-only via a closed registry (`Scoria.Observe.Semconv.attribute_registry/0`), a small
+only via a closed registry (Scoria.Observe.Semconv.attribute_registry/0), a small
 set of vendor prefixes (`gen_ai.`, `server.`, `openai.`, `req_llm.`, `error.`) minus
 an exact-key/dot-segment denylist, or host-configured prefixes
 (`allowed_key_prefixes`, default `[]`). An unregistered or denied key is **dropped,
@@ -214,7 +229,7 @@ operator's browser (capped at `max_delta_chunk_bytes` on egress) but never
 persisted -- streaming deltas live only in the operator's LiveView process memory
 for the duration of the connection.
 
-**New `Scoria.Observe.emit_event/1` point-event surface (EVENT-02).** A new
+**New Scoria.Observe.emit_event/1 point-event surface (EVENT-02).** A new
 public verb for the closed, 3-atom point-event vocabulary
 (`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`) --
 `user_feedback_received` is reserved-only for now and has no `lib/`

@@ -229,12 +229,12 @@ defmodule Scoria.Knowledge do
     fresh id is minted. **Must be fresh/unique** if supplied -- passing an
     existing `ai_spans.id` PK-collides on flush and is silently dropped.
 
-  Also accepts `opts[:embedder]` (a `Scoria.Knowledge.Embedder`
+  Also accepts `opts[:embedder]` (a Scoria.Knowledge.Embedder
   implementation, defaults to `Embedder.Deterministic`) plus
   `opts[:embedding_model]`/`opts[:index_version]`/`opts[:reranker]` and the
   reserved host-declared keys (`feature`/`route`/`archetype`/`intent`,
   ATTR-01) -- all threaded through unmodified onto both persistence sinks
-  via `Scoria.Observe.Semconv`.
+  via Scoria.Observe.Semconv.
 
   Returns `{:ok, %{run:, results:, trace_id:, span_id:}}` (additive --
   existing callers pattern-matching only `%{run:, results:}` are
