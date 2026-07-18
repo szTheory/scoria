@@ -18,7 +18,7 @@ must_haves:
     - "The [:scoria, :observe, :event, :emit] handler is the boundary of record: it INDEPENDENTLY re-checks Semconv.event_name?/1 (catches the raw-bus SC#2 bypass), then redact → fail-closed seam → Bounds.enforce(_, :event) → Buffer.cast_event (D-03b/D-05/D-06)."
     - "The fail-closed seam defaults missing time to DateTime.utc_now() and DROPS (via reject_event) a nil span_id BEFORE Bounds.enforce — the only two NOT NULL raise classes reachable via the raw bus are closed at the handler (D-05a)."
     - "telemetry.ex has exactly ONE Redactor.redact( token: span, delta, and event clauses all funnel through a single defp redact/1 (D-03d)."
-    - "The event tuple is added to Telemetry.attach/1's @events; without it the handler never fires (D-03f). Bounds.enforce(_, :event) is activated (no new Bounds code, D-06)."
+    - "The event tuple is added to Telemetry.attach/1's @events; without it the handler never fires (D-03f). Bounds.enforce(_, :event) is activated (no new Bounds code, D-06a)."
   artifacts:
     - "Scoria.Observe.emit_event/1"
     - "Telemetry [:scoria, :observe, :event, :emit] handle_event clause; @events entry; defp redact/1; @event_buffer_fields + buffer_event/1; reject_event/2"

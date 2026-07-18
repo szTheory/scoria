@@ -14,6 +14,7 @@ must_haves:
   truths:
     - "A new core-lane migration drops the ai_span_events.span_id FK; an event row whose span_id has no matching span becomes INSERTABLE rather than raising Postgrex 23503 (D-01a — gates SC#4)."
     - "The migration keeps ai_span_events.span_id NOT NULL and its index (D-01b)."
+    - "The FK-drop migration is core-lane (NOT dev-only) and Hex-lib-safe: a new post-0.1.0 migration auto-surfaces via Install.Surface.Migrations structural-set drift (mix scoria.install --check remediation) with no fixture refresh needed (D-01d)."
     - "Semconv exposes a closed 3-atom event vocabulary via event_names/0 + event_name?/1 that cannot widen without editing @event_names (D-03c)."
     - "scoria.prompt.template_ref is registered as an :id-class attribute key with a prompt_template_ref_key/0 accessor (D-04c)."
     - "No lib/ file wires a user_feedback_received emitter — a grep-guard goes RED if one is added (D-04d)."

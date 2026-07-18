@@ -14,7 +14,7 @@ must_haves:
     - "SC#2: an unknown name is rejected/never-persisted via BOTH the direct emit_event/1 path ({:error, :unknown_event}) AND a raw :telemetry.execute([:scoria, :observe, :event, :emit], ...) bypass (dropped at the handler, [:scoria, :observe, :event, :rejected] fires)."
     - "SC#4: 50 real span/4 emissions + 1 real emit_event/1 orphan (its span never flushed) → 50 spans persist, the orphan event ROW EXISTS with its dangling span_id, and no span exists for that id."
     - "D-05 fail-closed: a raw-bus event with nil span_id or missing time is dropped at the handler (never reaches insert_all) while 50 good sibling events land in the same batch."
-    - "SEC-01: an oversized/denied event attribute key is bounded exactly as a span attribute key is, end-to-end through the real handler (Bounds :event activation proof)."
+    - "SEC-01: an oversized/denied event attribute key is bounded exactly as a span attribute key is, end-to-end through the real handler — the Bounds.enforce(_, :event) arm (built + unit-tested in Phase 53) is activated and proven wired end-to-end (D-06a)."
   artifacts:
     - "test/scoria/observe/event_emit_test.exs (NEW) — the SC#1/SC#2/SC#4/D-05/SEC-01 canary suite"
   key_links:
