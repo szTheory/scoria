@@ -122,7 +122,7 @@ The ReqLLM and Jido adapters boot-attach automatically and persist a span for ev
 
 If a reviewer trace shows an LLM or tool call as its own separate, single-span trace instead of nested under the run you expected:
 
-1. Confirm the call was actually made from inside `Scoria.Workflows.Runtime.execute_step/2` — lineage forwarding is automatic there, but a raw call made from a background job, script, or unrelated LiveView event has no run to join.
+1. Confirm the call was actually made from inside Scoria.Workflows.Runtime.execute_step/2 — lineage forwarding is automatic there, but a raw call made from a background job, script, or unrelated LiveView event has no run to join.
 2. If the call is intentionally outside a workflow, forward `trace_id`, `parent_id`, and `tenant_id` yourself using the call-site metadata option your installed `req_llm` or Jido version exposes.
 3. Confirm the span still persisted at all (check `ai_spans` for the call) before assuming the adapter is not attached — persistence and trace-join are separate guarantees, and a missing span is a different problem than an unlinked one.
 

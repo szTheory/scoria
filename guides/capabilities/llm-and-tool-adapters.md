@@ -17,7 +17,7 @@ Both handlers attach during application start, are tolerant of an already-attach
 config :scoria, Scoria.Observe, enabled: false
 ```
 
-There is no separate per-adapter switch. Turning `Scoria.Observe` off turns off the default span pipeline and both adapters together.
+There is no separate per-adapter switch. Turning Scoria.Observe off turns off the default span pipeline and both adapters together.
 
 ## Persist vs. join: two different guarantees
 
@@ -25,7 +25,7 @@ Once a handler is attached, every matching `req_llm` call or Jido action **persi
 
 Persisting a span is not the same as that span **joining** the current workflow run's trace. A span only becomes a child of the step span (and shows up nested under that run in the reviewer trace) when the host forwards the run's lineage keys into the call's telemetry metadata. Without that forwarding, the adapter still persists the span — it just lands as a standalone, single-span trace with no parent.
 
-Forwarding is automatic for any LLM/tool call made from inside `Scoria.Workflows.Runtime.execute_step/2` — the runtime threads the run's lineage into the step handler for you. A raw `req_llm` call or Jido action run outside a workflow (a background job, a one-off script, an unrelated LiveView event) has no run to join, so its span persists standalone until your own code supplies the keys.
+Forwarding is automatic for any LLM/tool call made from inside Scoria.Workflows.Runtime.execute_step/2 — the runtime threads the run's lineage into the step handler for you. A raw `req_llm` call or Jido action run outside a workflow (a background job, a one-off script, an unrelated LiveView event) has no run to join, so its span persists standalone until your own code supplies the keys.
 
 ## Forwarding metadata yourself
 
