@@ -130,6 +130,18 @@ defmodule Scoria.Observe.Semconv do
   @spec prompt_context_key() :: String.t()
   def prompt_context_key, do: @prompt_context_key
 
+  @prompt_template_ref_key "scoria.prompt.template_ref"
+
+  @doc """
+  Returns the canonical `scoria.prompt.template_ref` attribute key (class
+  `:id`, registered in `attribute_registry/0`). The `prompt_rendered`
+  point event's single attribute — an opaque template/version reference
+  string (e.g. `"eval-spec-v3"`) that makes an orphan event legible
+  without duplicating the span it correlates to via `span_id`.
+  """
+  @spec prompt_template_ref_key() :: String.t()
+  def prompt_template_ref_key, do: @prompt_template_ref_key
+
   @doc """
   Builds the nested, never-text prompt-context value from a host-supplied
   map with `:chunks`, `:memories` (each a list of item maps carrying at
@@ -262,6 +274,30 @@ defmodule Scoria.Observe.Semconv do
   @spec guardrail_decisions() :: [String.t()]
   def guardrail_decisions, do: @guardrail_decisions
 
+  @event_names ~w(prompt_rendered guardrail_triggered user_feedback_received)a
+
+  @doc """
+  Returns the canonical closed 3-atom point-event vocabulary. Atoms, not
+  strings (D-03a) — drift-proof and pattern-matchable; a caller may never
+  widen this list without editing `@event_names` directly, which trips
+  the vocabulary contract test.
+
+  `:user_feedback_received` is RESERVED-ONLY in v3.6 — it has NO `lib/`
+  emitter. Its emission is SEED-011 / FB-01 flywheel work; a grep-guard
+  test goes RED if a future emitter is wired.
+  """
+  @spec event_names() :: [atom()]
+  def event_names, do: @event_names
+
+  @doc """
+  Returns `true` only for an exact atom member of `event_names/0`. This is
+  a MEMBERSHIP check only — callers must NEVER `String.to_atom` inbound
+  data to use this function (atom-table exhaustion guard); a string or
+  case/whitespace variant of a real event name is not a member.
+  """
+  @spec event_name?(term()) :: boolean()
+  def event_name?(name), do: name in @event_names
+
   @guardrail_reason_codes ~w(
     unapproved_draft
     eval_not_passing
@@ -284,6 +320,7 @@ defmodule Scoria.Observe.Semconv do
                         %{
                           @openinference_span_kind_key => :enum,
                           @prompt_context_key => :structured,
+                          @prompt_template_ref_key => :id,
                           "tenant_id" => :id,
                           "workflow_run_id" => :id,
                           "session_id" => :id,
