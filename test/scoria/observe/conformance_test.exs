@@ -15,7 +15,10 @@ defmodule Scoria.Observe.ConformanceTest do
   `Knowledge`, `JudgeRunner`), out of scope for an adapter-level check.
   """
 
-  use ExUnit.Case, async: true
+  # async: false — this module attaches a node-global `:telemetry` handler on
+  # `[:scoria, :observe, :span, :stop]`; running concurrently with other async
+  # modules would let `assert_receive` capture their spans and flake RED (WR-01).
+  use ExUnit.Case, async: false
 
   @moduletag :conformance
 
