@@ -260,4 +260,62 @@ defmodule Scoria.Observe.ConformanceTest do
       assert bounded.attributes[Semconv.openinference_span_kind_key()] == "AGENT"
     end
   end
+
+  # -- Task 2: negative self-test (the guard must bite) -------------------
+  #
+  # Mirrors span_kind_test.exs:132-148's "guard must bite" fallback proof
+  # shape: feed a deliberately bogus key/kind through the SAME
+  # Bounds.enforce/2 / SpanKind.kind?/1 calls the positive tests use, and
+  # assert the guard visibly bites -- proving the check would go RED on
+  # real drift, not merely that it doesn't crash.
+
+  describe "negative self-test: the guard must bite" do
+    test "a bogus attribute key is dropped by Bounds.enforce/2 (not silently admitted)" do
+      raw = %{
+        id: Ecto.UUID.generate(),
+        span_kind: "llm",
+        attributes: %{"totally.not.allowed" => "leaked-value"}
+      }
+
+      bounded = record_of_truth(raw)
+
+      refute Map.has_key?(bounded.attributes, "totally.not.allowed"),
+             "Bounds.enforce/2 admitted a bogus key #{inspect("totally.not.allowed")} for adapter fixture -- the guard failed to bite"
+    end
+
+    test "a bogus span_kind is SpanKind.kind?/1-false (not silently whitelisted)" do
+      refute SpanKind.kind?("not_a_kind"),
+             "SpanKind.kind?/1 incorrectly admitted bogus span_kind #{inspect("not_a_kind")} -- the guard failed to bite"
+    end
+  end
+
+  # -- Task 2: D-07 dropped-key classification (secondary bite) -----------
+  #
+  # Computes the pre-Bounds vs post-Bounds attribute-key difference for the
+  # jido corpus and asserts the dropped set is a SUBSET of the documented
+  # drop-list (jido.action_name, jido.status) -- so a NEW silently-dropped
+  # key becomes a loud failure instead of silently passing (RESEARCH.md
+  # item 8).
+
+  @jido_documented_drop_list ~w(jido.action_name jido.status)
+
+  describe "D-07 dropped-key classification: jido's silently-dropped keys are the documented set" do
+    test "the pre-Bounds minus post-Bounds key difference for jido is a subset of the documented drop-list" do
+      raw = capture_span([:jido, :action, :stop], %{duration: 10}, jido_metadata())
+      redacted = Redactor.redact(raw)
+      {:ok, bounded} = Bounds.enforce(redacted, :span)
+
+      pre_keys = redacted.attributes |> Map.keys() |> MapSet.new()
+      post_keys = bounded.attributes |> Map.keys() |> MapSet.new()
+      dropped = MapSet.difference(pre_keys, post_keys)
+
+      for key <- dropped do
+        assert key in @jido_documented_drop_list,
+               "jido adapter: unexpectedly dropped key #{inspect(key)} not in the documented drop-list #{inspect(@jido_documented_drop_list)}"
+      end
+
+      assert MapSet.subset?(MapSet.new(@jido_documented_drop_list), dropped),
+             "expected jido's known raw vendor keys #{inspect(@jido_documented_drop_list)} to actually be dropped by Bounds.enforce/2"
+    end
+  end
 end
