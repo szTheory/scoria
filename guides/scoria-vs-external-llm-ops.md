@@ -29,6 +29,12 @@ Scoria currently makes these claims:
 - Scoria requires no separate Scoria-hosted control plane.
 - Scoria requires no required egress for Scoria governance records beyond model or tool providers the host app already calls.
 
+Scoria records OpenTelemetry-GenAI / OpenInference-compatible convention keys (`gen_ai.*`,
+`server.*`, `openinference.span.kind`) in your host Postgres, pinned to OpenTelemetry GenAI
+semantic-conventions schema 1.37.0 (via `req_llm ~> 1.13`; these GenAI conventions are still
+experimental upstream). Scoria is not an OpenTelemetry exporter — sending these traces onward
+to Langfuse, Datadog, or Arize Phoenix is host-owned and opt-in.
+
 Those are current package and docs claims. They do not depend on a Scoria-hosted service or a cross-service data warehouse.
 
 ## What your Phoenix app still owns
