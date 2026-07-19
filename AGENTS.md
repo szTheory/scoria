@@ -60,6 +60,12 @@ Use current Scoria vocabulary: run, trace, reviewer, capability, verification su
 
 Keep copy calm, exact, and evidence-based. Lead with the Phoenix adopter job and the host/Scoria ownership boundary. Avoid backend topology as the first reader path unless it is a public contract.
 
+Scoria records OpenTelemetry-GenAI / OpenInference-compatible convention keys (`gen_ai.*`,
+`server.*`, `openinference.span.kind`) in your host Postgres, pinned to OpenTelemetry GenAI
+semantic-conventions schema 1.37.0 (via `req_llm ~> 1.13`; these GenAI conventions are still
+experimental upstream). Scoria is not an OpenTelemetry exporter — sending these traces onward
+to Langfuse, Datadog, or Arize Phoenix is host-owned and opt-in.
+
 ## Public API
 
 Prefer public facade and guide references:
