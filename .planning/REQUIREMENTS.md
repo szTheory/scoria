@@ -39,7 +39,7 @@ Committed scope for v3.6. Each maps to exactly one phase (see Traceability).
 
 ### Docs & Conformance
 
-- [ ] **DOCS-01**: The adopter claim flips to an honest, version-pinned "OpenInference-compatible" (from the v3.5-softened "OpenInference-style"), and the `adopter_doc_contract.ex` / `ai_doc_contract.ex` banned-phrase lists (which currently block that exact phrase) are updated in the **same change**.
+- [x] **DOCS-01**: The adopter claim flips to an honest, version-pinned "OpenInference-compatible" (from the v3.5-softened "OpenInference-style"), and the `adopter_doc_contract.ex` / `ai_doc_contract.ex` banned-phrase lists (which currently block that exact phrase) are updated in the **same change**.
 - [x] **DOCS-02**: The compatibility claim is backed by a falsifiable conformance check (Mix task or ExUnit) asserting emitted spans use only allow-listed convention key names and `span_kind` values drawn from the shared whitelist — a testable claim, not an adjective.
 
 ### Cross-Cutting Safety & Compatibility
@@ -99,7 +99,7 @@ Phase numbering continues from the previous milestone (v3.5 ended at Phase 50). 
 | SEC-01 | Phase 53 | Complete |
 | EVENT-02 | Phase 53b | Complete |
 | EVENT-03 | Phase 53b | Complete |
-| DOCS-01 | Phase 54 | Pending |
+| DOCS-01 | Phase 54 | Complete |
 | DOCS-02 | Phase 54 | Complete |
 
 **Coverage:**

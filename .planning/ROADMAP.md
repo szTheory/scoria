@@ -20,7 +20,7 @@
 - [x] **Phase 52: RETRIEVER Span + Host-Declared Attributes** - `RETRIEVER` span dual-written alongside `ai_retrieval_runs`, retrieval config fields with a span↔table consistency guard, reserved host-declared attribute keys, context-pack composition on the `PROMPT` span. (completed 2026-07-12)
 - [x] **Phase 53: Structured Child Spans + Write-Time Bound** - `tool`/`prompt`/`retrieval`/`guardrail` as real duration/failure-bearing child spans with parent linkage, the observe pipeline actually wired into the supervision tree, and the SEC-01 write-time PII/cardinality bound behind a closed key registry. (completed 2026-07-18)
 - [x] **Phase 53b: `ai_span_events` + `emit_event/1`** - The dead `ai_span_events` table resurrected via a public allow-listed `emit_event/1` through the shared redaction path, with an ordered Buffer flush, and `prompt_rendered`/`guardrail_triggered` emitted from real call sites. (completed 2026-07-18)
-- [ ] **Phase 54: Docs Accuracy + Conformance Check** - Honest "OpenInference-compatible" claim with contract-list updates in the same change, plus a falsifiable conformance check.
+- [x] **Phase 54: Docs Accuracy + Conformance Check** - Honest "OpenInference-compatible" claim with contract-list updates in the same change, plus a falsifiable conformance check. (completed 2026-07-19)
 - [x] **Phase 54.1: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG** (INSERTED) - Boot-attach the ReqLLM/Jido telemetry adapters so LLM/Jido-tool spans persist in a real host app without host hand-wiring, and reconcile the CHANGELOG "zero host wiring" claim with reality. Closes the v3.6 milestone-audit integration gap (SPAN-01/SPAN-02/COMPAT-01/EVENT-01, LLM/Jido-tool leg). (completed 2026-07-18)
 
 ## Phase Details
@@ -192,7 +192,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54 → 54.1
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
 | 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete    | 2026-07-18 |
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 5/5 | Complete    | 2026-07-18 |
-| 54. Docs Accuracy + Conformance Check | v3.6 | 2/2 | Complete   | 2026-07-19 |
+| 54. Docs Accuracy + Conformance Check | v3.6 | 2/2 | Complete    | 2026-07-19 |
 | 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 2/2 | Complete    | 2026-07-18 |
 
 ## Archived Milestones
