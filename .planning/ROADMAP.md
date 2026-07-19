@@ -151,7 +151,12 @@
   1. README (and any other adopter-facing surface) states the version-pinned "OpenInference-compatible" claim, and `adopter_doc_contract.ex`/`ai_doc_contract.ex`'s banned-phrase lists were updated in the same change — `mix test` passes on both contract files with the new claim string present and the old "not a current claim" string intentionally replaced.
   2. A Mix task or ExUnit test exists that asserts every span emitted by the two adapters uses only allow-listed convention key names and a `span_kind` value drawn from the shared whitelist — running it against a real emitted span set fails if an unlisted key or kind appears.
 
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+
+- [ ] 54-01-PLAN.md — Flip the claim to version-pinned "OpenInference-compatible", add the new trace guide, and update the doc-contract allowed/banned lists additively (Wave 1)
+- [ ] 54-02-PLAN.md — Add the falsifiable ExUnit conformance test driving all three adapters live + negative self-test + adoption-lane registration (Wave 1)
 
 ### Phase 54.1: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED)
 
