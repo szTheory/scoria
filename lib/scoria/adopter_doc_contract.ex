@@ -68,7 +68,8 @@ defmodule Scoria.AdopterDocContract do
     "tenant-scoped knowledge retrieval",
     "upgrade-safe verification suites",
     "no separate Scoria-hosted control plane",
-    "no required egress for Scoria governance records"
+    "no required egress for Scoria governance records",
+    "OpenInference-compatible convention keys"
   ]
 
   @comparison_ceded_strengths [

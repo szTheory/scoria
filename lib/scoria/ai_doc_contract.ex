@@ -45,7 +45,8 @@ defmodule Scoria.AiDocContract do
     "lib/scoria/mcp/tool.ex",
     "lib/scoria/eval.ex",
     "test/scoria/adoption_surface_test.exs",
-    "test/scoria/terminology_contract_test.exs"
+    "test/scoria/terminology_contract_test.exs",
+    "guides/capabilities/trace-observability.md"
   ]
 
   @required_llms_headings [

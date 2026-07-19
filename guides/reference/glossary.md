@@ -28,12 +28,17 @@ The human inspecting tenant-scoped runs, approvals, traces, eval results, and in
 
 The reviewer-visible execution story of a run: spans, model calls, retrievals, tool calls, approvals, eval scores, replay branches, semantic cache checks, and workflow inspection.
 
-- Industry equivalent: trace or span tree in OpenTelemetry/OpenInference-style observability.
+- Industry equivalent: trace or span tree in OpenTelemetry/OpenInference-compatible observability.
 - Use when describing run inspection surfaces and execution flow.
 - Do not use to rename stored proof fields such as `evidence_refs`.
 - Related APIs/docs: workflow detail page, trace components, `Scoria.get_run_detail/1`.
 
-Trace vocabulary aligns with OpenTelemetry/OpenInference-style observability language, but Scoria does not claim an OpenInference-compatible export or trace substrate until that future work ships.
+Scoria records OpenTelemetry-GenAI / OpenInference-compatible convention keys (`gen_ai.*`,
+`server.*`, `openinference.span.kind`) in your host Postgres, pinned to OpenTelemetry GenAI
+semantic-conventions schema 1.37.0 (via `req_llm ~> 1.13`; these GenAI conventions are still
+experimental upstream). Scoria is not an OpenTelemetry exporter — sending these traces onward
+to Langfuse, Datadog, or Arize Phoenix is host-owned and opt-in. See [Trace
+Observability](guides/capabilities/trace-observability.md).
 
 ### Evidence
 

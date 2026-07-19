@@ -37,6 +37,7 @@ Use this file as the compact public source map for humans and AI-assisted reader
 - [guides/capabilities/semantic-cache.md](guides/capabilities/semantic-cache.md) - Tenant-partitioned reuse for explicitly safe read-only work.
 - [guides/capabilities/connectors-and-mcp.md](guides/capabilities/connectors-and-mcp.md) - Remote connector and MCP tool governance.
 - [guides/capabilities/support-copilot-gallery.md](guides/capabilities/support-copilot-gallery.md) - Repository-local support scenario and advisory gallery proof.
+- [guides/capabilities/trace-observability.md](guides/capabilities/trace-observability.md) - OpenTelemetry-GenAI / OpenInference-compatible convention keys, schema pin, and not-an-exporter framing.
 - [guides/scoria-vs-external-llm-ops.md](guides/scoria-vs-external-llm-ops.md) - Comparison against external LLM-ops platforms with current Scoria claims and ceded strengths.
 
 ## Verify
