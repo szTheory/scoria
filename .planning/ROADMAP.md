@@ -155,8 +155,8 @@
 
 Plans:
 
-- [ ] 54-01-PLAN.md — Flip the claim to version-pinned "OpenInference-compatible", add the new trace guide, and update the doc-contract allowed/banned lists additively (Wave 1)
-- [ ] 54-02-PLAN.md — Add the falsifiable ExUnit conformance test driving all three adapters live + negative self-test + adoption-lane registration (Wave 1)
+- [x] 54-01-PLAN.md — Flip the claim to version-pinned "OpenInference-compatible", add the new trace guide, and update the doc-contract allowed/banned lists additively (Wave 1)
+- [x] 54-02-PLAN.md — Add the falsifiable ExUnit conformance test driving all three adapters live + negative self-test + adoption-lane registration (Wave 1)
 
 ### Phase 54.1: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED)
 
@@ -192,7 +192,7 @@ Phases execute in numeric order: 51 → 52 → 53 → 53b → 54 → 54.1
 | 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete    | 2026-07-12 |
 | 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete    | 2026-07-18 |
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 5/5 | Complete    | 2026-07-18 |
-| 54. Docs Accuracy + Conformance Check | v3.6 | 0/TBD | Not started | - |
+| 54. Docs Accuracy + Conformance Check | v3.6 | 2/2 | Complete   | 2026-07-19 |
 | 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 2/2 | Complete    | 2026-07-18 |
 
 ## Archived Milestones
