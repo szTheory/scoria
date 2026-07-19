@@ -12,9 +12,18 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 **Persona is roles-not-headcount (n=1 default).** Scoria's CORE roles — AI/product engineer, software architect, backend/platform, SRE/devops, reviewer/approver/operator, prompt-writer, eval-checker (full list in `SEED-005` persona strategy) — are *hats one person wears*, not separate people. The design default is the **smallest-viable team (n=1)**: every `/scoria` surface must be operable by one SWE with **no dedicated ML/platform/Trust-&-Safety team**. It **degrades gracefully to a few** — so n=1 is the default *lens*, not an invariant (e.g. `SEED-008` builds a multi-reviewer inter-rater agreement model, and `SEED-011` serves an ADJACENT privacy/legal persona). This sharpens P3 into a falsifiable test: *can one person operate every surface unaided?*
 
-## Next Milestone: SEED-010 Lethal-Trifecta Governance (⭐ flagship — to be scoped)
+## Current Milestone: v3.7 Portcullis (Lethal-Trifecta Governance)
 
-**Goal (seed intent, not yet scoped into a versioned milestone):** Content trust tiers + spotlighting + tool-declared trifecta classification + confluence-escalation policy (Meta Rule-of-Two) + moderation/output hooks + `SECURITY-BOUNDARY.md`. No peer ships this as a runtime seam; Scoria is 2/3 built. It consumes v3.6's taint substrate (`span_kind`, host-declared `feature`/`route`/`archetype`/`intent`, structured spans) — highest external/positioning payoff, cheapest to build while the trace work is fresh. Next step: `/gsd-new-milestone` to question → research → define requirements → roadmap. (ROADMAP `## Backlog` 999.4; ordered execution order there.)
+**Goal:** Make Scoria the first embedded framework that escalates to a human when one run touches private data, untrusted content, and an exfil channel at once — by shipping the missing untrusted-content taint leg and a confluence-escalation gate enforced at `MCP.Executor`, audited and replayable. (SEED-010 · ROADMAP `## Backlog` 999.4 · ⭐ flagship differentiator.)
+
+**Target features:**
+- Content trust tiers + spotlighting/datamarking + a `scan/2` BYO hook (no detector shipped) — supplies the missing untrusted-content leg
+- Tool-declared trifecta classification (`reads_private_data`/`sees_untrusted_content`/`can_exfiltrate` + `action_class`) declared once on the tool; kills the `executor.ex:150-165` `approval_sensitive: false` footgun
+- Per-run agent rails (`max_steps`/`max_tool_calls`/`timeout`, single-run scoped)
+- Confluence escalation policy — escalate to approval/HITL when all three legs co-occur in one tainted path; audited + replayable (Meta Rule-of-Two as policy)
+- Eval-seam moderation + output-scanner hooks; `SECURITY-BOUNDARY.md` shared-responsibility doc; a minimal read-only "exfiltration path" Govern surface
+
+**Scope guardrails:** mechanism-not-decision (Scoria owns the confluence gate; host owns approve/deny — P2/P4). Fail-closed-but-inspectable defaults (v3.4 ReleaseGate precedent — no adopter bricking; opt-in strict). **Deferred:** the injection detector/classifier + per-user allowlists + opinionated moderation/output-sanitizer (host-owned); the full Govern policy-builder UI + simulate-on-history (→ SEED-013); the Hex release cut (`0.1.4` staged, cut at closeout as a maintainer call).
 
 ## Current State
 
@@ -314,10 +323,9 @@ Phoenix teams can add AI runtime governance, visibility, and recovery to an exis
 
 ### Active
 
-**No milestone is currently scoped** — v3.6 Trace Foundation (SEED-007 · 999.3) shipped 2026-07-19 (16/16 requirements, 6/6 phases, audit `passed`; moved to Validated above). All three adoption-blocking gates are now closed (SEED-006 P0 trust/security in v3.4; SEED-005 docs/positioning + honest `0.1.3` release in v3.5; SEED-007 trace substrate in v3.6), so the roadmap is the ordered feature backlog. Next: `/gsd-new-milestone` to scope SEED-010.
+**v3.7 Portcullis (SEED-010 · Lethal-Trifecta Governance)** — 16 requirements across TAINT (content trust tiers + spotlighting + `scan/2` hook), CLASS (tool-declared trifecta classification + executor default fix), RAIL (per-run agent rails), GATE (confluence escalation policy), HOOK (eval-seam moderation + output-scanner hooks), BOUND (`SECURITY-BOUNDARY.md`), and GOVERN (minimal read-only exfil-path surface). Full list + traceability in `.planning/REQUIREMENTS.md`; phases in `.planning/ROADMAP.md`. All three adoption-blocking gates are already closed (SEED-006 P0 in v3.4; SEED-005 docs/release in v3.5; SEED-007 trace substrate in v3.6), so this is the first item off the ordered feature backlog.
 
-**Next candidates (execution order — see `ROADMAP.md ## Backlog`, refined 2026-07-11):**
-- [ ] **SEED-010 — Lethal-Trifecta Governance (999.4) ⭐ flagship — NEXT:** content trust tiers + spotlighting + tool-declared trifecta classification + confluence-escalation policy + moderation/output hooks. Consumes v3.6's taint substrate. No peer ships this as a runtime seam; Scoria is 2/3 built; highest external/positioning payoff.
+**Next candidates after v3.7 (execution order — see `ROADMAP.md ## Backlog`, refined 2026-07-11):**
 - [ ] **SEED-008 — Trustworthy Eval Depth (999.5):** real scorer library + regression-comparison + judge calibration + versioned rubric. Reads v3.6 spans. Emits the confusion-matrix/archetype slot 012 reuses.
 - [ ] **SEED-012 — Architecture-Archetype Awareness (999.8) — pulled forward** to run immediately after 008 (pure dividend of 007 attrs + 008 machinery).
 - [ ] **SEED-009 / SEED-011 (999.6 / 999.7):** independent tracks (retrieval depth; privacy & feedback) — order between them is a priority call.
@@ -454,6 +462,7 @@ _(Carried-forward: SEED-004 test-code determinism; FLEET-01/02 cross-repo conver
 | v3.6 adopts the semconv key **convention over the existing `attributes` jsonb map** rather than typed columns, keeps `ai_retrieval_runs` as system-of-record (dual-write the RETRIEVER span, never collapse), bounds all payloads to IDs-and-counts at one write-time choke point, and boot-attaches the ReqLLM/Jido adapters (54.1) so spans persist with zero host hand-wiring | Typed columns invite pre-1.0 migration churn; the table is richer than a span; IDs-only + a closed positive-allowlist registry is the only safe way to bound a key-name-only redactor against PII/cardinality; and an adapter that only tests attach fires into a void in production | ✓ Good — shipped v3.6; conformance test + Bounds registry + boot-attach test all green, milestone-audit integration gap closed by inserted Phase 54.1 |
 | v3.6 milestone closed `override_closeout` with one pre-existing test flake deferred rather than blocking the close to fix it | `capture_parity_test.exs:53` flakes only under full-suite `--seed 0` ordering, passes in isolation, and git-confirms as pre-existing (untouched by v3.6) — a SEED-004-class test-determinism item, not a milestone gap; blocking an otherwise-complete, audit-`passed` milestone on unrelated test-harness debt is the wrong trade | — Pending — deferred to SEED-004; recorded in STATE.md Deferred Items |
 | Seed execution order refined 2026-07-11 (dividend re-analysis): 007 → 010 → 008 → 012 → {009, 011} → 013; pulled 012 forward after 008; split 013 into early shell + late screens | The 2026-07-03 audit set the base order; a dependency+dividend pass found 012 is cheapest immediately after 008 (reuses its confusion-matrix warm) and 013's cross-cutting shell has no backend dep (build early so feature seeds slot into the frame, avoiding re-slot rework). Recorded in `ROADMAP.md ## Backlog` so it survives context clears | — Pending — recorded in backlog + seeds/README |
+| v3.7 Portcullis (SEED-010) scoped as the flagship next milestone: backend enforcement seams (taint substrate + tool-declared trifecta classification + per-run rails + confluence gate at `MCP.Executor` + eval-seam safety hooks) + `SECURITY-BOUNDARY.md` + a minimal read-only exfil-path Govern surface; fail-closed-but-inspectable defaults (no adopter bricking) | Highest-impact + dependency-ready item: 007's taint substrate shipped in v3.6, Scoria already owns 2/3 legs, and no peer ships trifecta enforcement as a runtime seam — the category wedge. The full Govern policy-builder UI (→ SEED-013) and the Hex release cut are deferred to keep the flagship shippable and prove the seam before spending it as positioning | — Pending — v3.7 in planning |
 
 ## Milestone History
 
@@ -552,4 +561,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-19 after v3.6 Trace Foundation milestone completion — trace substrate shipped (6/6 phases, 16/16 requirements, audit `passed`); next candidate SEED-010 Lethal-Trifecta Governance.*
+*Last updated: 2026-07-19 after v3.7 Portcullis (SEED-010 Lethal-Trifecta Governance) milestone scoping — requirements + roadmap defined; flagship confluence-escalation gate promoted from ROADMAP 999.4.*

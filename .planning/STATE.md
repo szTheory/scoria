@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.6
-milestone_name: Trace Foundation
-current_phase: 6
-status: Awaiting next milestone
-stopped_at: Phase 54 context gathered
-last_updated: "2026-07-19T01:49:22.191Z"
+milestone: v3.7
+milestone_name: Portcullis
+status: planning
+last_updated: "2026-07-19T02:39:49.980Z"
 last_activity: 2026-07-19
-last_activity_desc: Milestone v3.6 completed and archived
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 28
-  completed_plans: 28
-  percent: 100
-current_phase_name: —
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -29,10 +25,10 @@ See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 
 ## Current Position
 
-Phase: Milestone v3.6 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-19 — Milestone v3.6 completed and archived
+Status: Defining requirements
+Last activity: 2026-07-19 — Milestone v3.7 started
 
 ## Performance Metrics
 
