@@ -20,7 +20,7 @@ trace:
 - `server.*` — the OpenTelemetry generic server/network attributes present on the underlying
   request.
 - `openinference.span.kind` — the OpenInference span-kind convention key, used so the span's
-  role (LLM call, retriever, tool, chain, agent) is legible to anyone reading the stored
+  role (LLM call, retriever, tool, agent) is legible to anyone reading the stored
   attributes with OpenInference vocabulary in mind.
 
 These are stored as reviewer-visible trace data inside your host Postgres, alongside the rest
