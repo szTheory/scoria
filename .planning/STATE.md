@@ -2,37 +2,37 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Trace Foundation
-current_phase: 54.1
-current_phase_name: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG
-status: executing
+current_phase: 6
+status: Awaiting next milestone
 stopped_at: Phase 54 context gathered
-last_updated: "2026-07-19T01:24:48.991Z"
+last_updated: "2026-07-19T01:49:22.191Z"
 last_activity: 2026-07-19
-last_activity_desc: Phase 54 complete, transitioned to Phase 54.1
+last_activity_desc: Milestone v3.6 completed and archived
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 28
   completed_plans: 28
   percent: 100
+current_phase_name: —
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-07-11 after v3.5 milestone completion)
+See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 54 — docs-accuracy-conformance-check
+**Current focus:** Planning the next milestone — SEED-010 Lethal-Trifecta Governance (999.4, ⭐ flagship) via `/gsd-new-milestone`.
 
 ## Current Position
 
-Phase: 54.1 — Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG
-Plan: Not started
-Status: Executing Phase 54
-Last activity: 2026-07-19 — Phase 54 complete, transitioned to Phase 54.1
+Phase: Milestone v3.6 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-19 — Milestone v3.6 completed and archived
 
 ## Performance Metrics
 
@@ -293,6 +293,7 @@ active.
 | RAG depth | SEED-009: precision/NDCG/abstention/staleness + faithfulness/rerank hooks | Deferred | 2026-07-03 audit |
 | Agent security | SEED-010: lethal-trifecta governance (⭐ flagship differentiator) | Deferred | 2026-07-03 audit |
 | Privacy/feedback | SEED-011: retention/purge, PII masking hook, human-feedback flywheel | Deferred | 2026-07-03 audit |
+| Test determinism | `2026-07-18-flaky-capture-parity-test.md`: `capture_parity_test.exs:53` flakes under full-suite `--seed 0` ordering (passes in isolation); pre-existing, not a v3.6 regression — SEED-004-class | Acknowledged & deferred | 2026-07-19 v3.6 close |
 
 > **Ordered roadmap + dependencies** for SEED-007…013 live in `ROADMAP.md` `## Backlog` (999.3–999.9); SEED-005 is active in v3.5. "Why" index in `.planning/seeds/README.md`.
 | Phase 46 P01 | 4 min | 3 tasks | 11 files |
@@ -366,10 +367,10 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-19T00:05:58.918Z
-Stopped at: Phase 54 context gathered
-Resume file: .planning/phases/54-docs-accuracy-conformance-check/54-CONTEXT.md
+Last session: 2026-07-19
+Stopped at: v3.6 Trace Foundation completed and archived
+Resume file: — (milestone boundary; no in-flight phase)
 
 ## Operator Next Steps
 
-- Plan Phase 51 with /gsd-plan-phase 51
+- v3.6 Trace Foundation shipped + archived (2026-07-19). Start the next milestone with `/gsd-new-milestone` — next candidate SEED-010 Lethal-Trifecta Governance (ROADMAP `## Backlog` 999.4, ⭐ flagship).
