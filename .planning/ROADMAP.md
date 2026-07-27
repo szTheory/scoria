@@ -14,7 +14,61 @@
 
 ## Phases
 
-No milestone is currently scoped. Phase numbering continues from the previous milestone (v3.6 ended at Phase 54.1) when the next milestone is planned. Start the next milestone with `/gsd-new-milestone` (next candidate: SEED-010 Lethal-Trifecta Governance — see `## Backlog`).
+**Phase Numbering:** Integer phases (1, 2, 3): planned milestone work. Decimal phases (2.1, 2.2): urgent insertions. Phase numbering continues from the previous milestone (v3.6 ended at Phase 54.1) — v3.7 starts at Phase 55.
+
+**Current milestone: v3.7 Portcullis (SEED-010 Lethal-Trifecta Governance)**
+
+- [ ] **Phase 55: Content Trust & Taint Substrate** - Trust tiers on knowledge chunks/tool outputs + prompt-assembly spotlighting + BYO `scan/2` hook
+- [ ] **Phase 56: Tool-Declared Trifecta Classification & Per-Run Rails** - Tool-declared trifecta legs resolved at `MCP.Executor`, fail-closed defaults, per-run step/time rails
+- [ ] **Phase 57: Confluence Escalation Gate** - Escalate to human approval when private-data + untrusted-content + exfil co-occur on one tainted path
+- [ ] **Phase 58: Safety Hooks, Security Boundary & Govern Surface** - BYO moderation/output-scanner hooks, `SECURITY-BOUNDARY.md`, minimal read-only Govern surface
+
+## Phase Details
+
+### Phase 55: Content Trust & Taint Substrate
+**Goal**: Untrusted content moving through Scoria — retrieved knowledge chunks and tool outputs — carries a trust tier, is visibly separated from instructions at prompt assembly, and is scannable via a BYO hook, supplying the missing untrusted-content leg the confluence gate (Phase 57) will read.
+**Depends on**: Nothing (first phase of this milestone; builds on the v3.6 trace substrate — `span_kind`, structured child spans, `ai_span_events`/`emit_event/1`, `Observe.Bounds` IDs-only bounding)
+**Requirements**: TAINT-01, TAINT-02, TAINT-03, TAINT-04
+**Success Criteria** (what must be TRUE):
+  1. A retrieved knowledge chunk carries a trust-tier/taint tag in its `Knowledge.Chunk` metadata, defaulting to untrusted for externally-sourced/retrieved content.
+  2. A tool's output arrives wrapped in an envelope carrying a trust tier, so downstream code treats it as potentially-untrusted rather than implicitly-trusted context.
+  3. When a prompt is assembled in the orchestrator, untrusted content is spotlighted/datamarked with a model-agnostic delimiter that distinguishes it from instructions.
+  4. A host can register a `scan/2` hook (e.g. Rebuff/LlamaGuard-shaped) and see scanned/untrusted content tagged in traces; with none registered, the default no-op leaves current behavior unchanged.
+**Plans**: TBD
+
+### Phase 56: Tool-Declared Trifecta Classification & Per-Run Rails
+**Goal**: Every tool call enforced at `MCP.Executor` carries an explicit, tool-declared trifecta classification instead of a silent host-passed default, and a single run cannot exceed its own step/call/time budget unnoticed.
+**Depends on**: Nothing new (independent of Phase 55's taint substrate — both feed Phase 57's confluence gate)
+**Requirements**: CLASS-01, CLASS-02, CLASS-03, RAIL-01
+**Success Criteria** (what must be TRUE):
+  1. A tool declares its `reads_private_data`/`sees_untrusted_content`/`can_exfiltrate` legs plus an `action_class` once, on the tool itself, rather than passed per call.
+  2. An unclassified tool no longer silently resolves to `approval_sensitive: false`; it fails closed to an inspectable default and emits telemetry for unclassified/ungated use, closing the `executor.ex:150-165` footgun.
+  3. At `MCP.Executor` enforcement, every tool call's per-call taint is resolved from the tool's own declaration, never a host-passed default.
+  4. A single run that exceeds its `max_steps`/`max_tool_calls`/`timeout` rails halts, and the halt is recorded in the audit trail.
+**Plans**: TBD
+
+### Phase 57: Confluence Escalation Gate
+**Goal**: When a single tainted execution path touches private data, untrusted content, and an exfil-capable action at once, Scoria pauses for human approval before the exfil action executes — audited, replayable, and fail-closed-but-inspectable by default so no adopter is bricked.
+**Depends on**: Phase 55, Phase 56 (consumes the taint substrate and the tool-declared classification the gate evaluates)
+**Requirements**: GATE-01, GATE-02, GATE-03, GATE-04
+**Success Criteria** (what must be TRUE):
+  1. A confluence evaluator classifies a tainted execution path by which of the three legs (private-data / untrusted-content / exfil) are present, mirroring `ReplayDisposition`'s seam-classification style.
+  2. When all three legs co-occur on one tainted path, the run pauses for approval/human-in-the-loop at `MCP.Executor` before the exfil action executes.
+  3. Every confluence escalation decision is written to the audit outbox and can be replayed, consistent with existing approval/replay evidence.
+  4. With confluence enforcement left at its default, ungated confluence emits telemetry instead of blocking; opting into strict mode makes the pause actually enforce.
+**Plans**: TBD
+
+### Phase 58: Safety Hooks, Security Boundary & Govern Surface
+**Goal**: Adopters can wire optional moderation/output-scanning through Scoria's existing eval seam, know exactly what Scoria enforces versus what they must own, and see the named dangerous-combination classification for a tainted run through a minimal read-only screen.
+**Depends on**: Phase 57 (the Govern surface renders the confluence gate's classification output; hooks and the boundary doc close out the milestone)
+**Requirements**: HOOK-01, HOOK-02, BOUND-01, GOVERN-01
+**Success Criteria** (what must be TRUE):
+  1. A host can register a moderation scorer through the existing `Eval.online_scoring`/`judge_runner` seam; with none registered, moderation stays off by default.
+  2. A host can register an output-scanner hook through the same seam and see model output tagged "untrusted" in traces when it fires.
+  3. A committed `SECURITY-BOUNDARY.md` states, side by side, what Scoria enforces (taint substrate, tool classification, confluence gate, rails, hook seams) versus what the host must own (detectors, allowlists, sinks, content policy) across improper-output-handling, moderation, system-prompt-leakage, and per-user-allowlist scenarios.
+  4. An operator can open a read-only Govern screen and see, for a tainted run, the named dangerous combination ("private data + untrusted content + external egress → exfiltration path") plus per-tool trifecta classification, with no policy-builder or simulate-on-history present.
+**Plans**: TBD
+**UI hint**: yes
 
 ## Progress
 
@@ -26,6 +80,10 @@ No milestone is currently scoped. Phase numbering continues from the previous mi
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 5/5 | Complete | 2026-07-18 |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 2/2 | Complete | 2026-07-19 |
 | 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 2/2 | Complete | 2026-07-18 |
+| 55. Content Trust & Taint Substrate | v3.7 | 0/TBD | Not started | - |
+| 56. Tool-Declared Trifecta Classification & Per-Run Rails | v3.7 | 0/TBD | Not started | - |
+| 57. Confluence Escalation Gate | v3.7 | 0/TBD | Not started | - |
+| 58. Safety Hooks, Security Boundary & Govern Surface | v3.7 | 0/TBD | Not started | - |
 
 ## Archived Milestones
 
@@ -121,7 +179,8 @@ See `.planning/MILESTONES.md` for full closeout history.
 The `999.x` tags are stable seed IDs (cross-referenced from PROJECT.md/STATE.md), **not** the execution
 rank — read the numbered list below for order. **SEED-007 (999.3) shipped as v3.6 Trace Foundation (2026-07-19)**;
 the substrate it emits (span_kind / gen_ai.* / model-config / RETRIEVER span + host-declared
-feature/route/archetype/intent attrs) is now available to every seed below.
+feature/route/archetype/intent attrs) is now available to every seed below. **SEED-010 (999.4) is now
+active as v3.7 Portcullis (Phases 55–58, roadmap created 2026-07-19).**
 
 Provenance: the base order was set by a 2026-07-03 AI-eval posture audit (6-agent adjudication vs
 LangSmith/Langfuse/Phoenix/Ragas/Braintrust/Inspect/OTel). Cadence decision: **P0 fixes →
@@ -152,11 +211,12 @@ milestone is the flagship differentiator → SEED-010.
 > tracks; order between them is priority, not dependency). 013 depends on nothing structurally but
 > composes every feature seed's UI slice.
 
-1. **SEED-010 (999.4) — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR — NEXT]**
+1. **SEED-010 (999.4) — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR — ACTIVE AS v3.7 PORTCULLIS]**
    Content trust tiers + spotlighting + tool-declared trifecta classification + confluence
    escalation policy (Meta Rule-of-Two) + moderation/output hooks + SECURITY-BOUNDARY.md. No peer
    ships this as a runtime seam; Scoria is 2/3 built. Consumes 007's now-shipped taint substrate —
-   build while trace work is fresh; highest external/positioning payoff. → see `SEED-010`.
+   build while trace work is fresh; highest external/positioning payoff. Roadmapped as Phases 55–58
+   (2026-07-19). → see `SEED-010`.
 
 2. **SEED-008 (999.5) — Trustworthy Eval Depth**  (after 007 — scorers are meaningless over attribution-less traces)
    Real scorer library + regression-comparison engine + judge calibration (the unique join Scoria

@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-07-19T02:39:49.980Z"
 last_activity: 2026-07-19
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,19 +21,22 @@ See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Planning the next milestone — SEED-010 Lethal-Trifecta Governance (999.4, ⭐ flagship) via `/gsd-new-milestone`.
+**Current focus:** v3.7 Portcullis (SEED-010 Lethal-Trifecta Governance) — ROADMAP.md created (Phases 55–58, 16/16 requirements mapped). Next step: `/gsd-plan-phase 55`.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-07-19 — Milestone v3.7 started
+Phase: 1 of 4 (Phase 55: Content Trust & Taint Substrate) — v3.7 Portcullis
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-07-19 — ROADMAP.md created for v3.7 (Phases 55–58); REQUIREMENTS.md traceability filled (16/16 mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 - **Release cut (D-04 closeout, 2026-07-11):** `0.1.3` LIVE on Hex — PR #12 squash-merged (`b904c22a`), tag `v0.1.3`, published + post-publish registry attest **green** in Release Please run `29162646314` (https://github.com/szTheory/scoria/actions/runs/29162646314). `curl https://hex.pm/api/packages/scoria/releases/0.1.3` → HTTP 200 (has_docs, full requirements). Post-publish smoke proved fresh install + `0.1.0 → 0.1.3` lineage upgrade. REL-04 satisfied; v3.5 milestone 100% complete.
-- **Latest Shipped:** `v3.5 Documentation & Release Readiness` (2026-07-11) — 39 plans, 5 phases, 66 tasks. Audit `passed` (18/18 requirements, 5/5 phases, 5/5 seams) after inline closure of release-train branch drift + a Phase 46 verification-doc gap; Hex `0.1.3` LIVE (tag `v0.1.3`, post-publish attest green); archived in `.planning/milestones/v3.5-*`.
+- **Latest Shipped:** `v3.6 Trace Foundation` (2026-07-19) — 28 plans, 6 phases (51-54.1), 67 tasks. Audit `passed` (16/16 requirements, 6/6 phases, 12/12 integration seams, 1/1 E2E flow); `override_closeout` with one pre-existing SEED-004-class test flake deferred; archived in `.planning/milestones/v3.6-*`.
+- **Previous Shipped:** `v3.5 Documentation & Release Readiness` (2026-07-11) — 39 plans, 5 phases, 66 tasks. Audit `passed` (18/18 requirements, 5/5 phases, 5/5 seams) after inline closure of release-train branch drift + a Phase 46 verification-doc gap; Hex `0.1.3` LIVE (tag `v0.1.3`, post-publish attest green); archived in `.planning/milestones/v3.5-*`.
 - **Previous Shipped:** `v3.4 Pre-1.0 Trust & Security Hardening` (2026-07-09) — 24 plans, 4 phases, 61 tasks. Audit `passed` (17/17 requirements, 4/4 phases); archived in `.planning/milestones/v3.4-*`.
 - **Previous Shipped:** `v3.3 Design System Stress Test` (2026-07-04) — 30 plans, 7 phases, 74 tasks. Audit `passed` (22/22 requirements, 6/6 seams); tag `v3.3` local.
 - **Previous Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
@@ -57,6 +60,7 @@ Last activity: 2026-07-19 — Milestone v3.7 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v3.7: Roadmap sequences Phase 55 (TAINT substrate) and Phase 56 (CLASS classification + RAIL per-run rails) as parallel-capable — neither depends on the other — both feeding Phase 57's confluence escalation gate (the milestone's differentiator, GATE-01..04), with Phase 58 (HOOK safety hooks + BOUND SECURITY-BOUNDARY.md + GOVERN read-only surface) sequenced last as the closing surface/docs layer.
 - v3.4: Phases 42 (eval) / 43 (knowledge) / 44 (dashboard) are independent subsystems — parallelizable; Phase 45 (correctness sweep + doctrine + closeout) depends on 42 + 43.
 - v3.4: Fix + prove only — NO Hex publish. The honest `0.1.3` release cut belongs to SEED-005 / Backlog 999.2. `0.1.3` PR #12 stays held.
 - v3.4: DOC-01 is confirm-and-cross-link (P1–P6 scope doctrine already recorded in PROJECT.md Constraints + Key Decisions at v3.3 close) — kept lightweight in Phase 45.
@@ -272,6 +276,7 @@ active.
 - Phase 41.1 inserted after Phase 41: Wire orphaned ScoriaWeb.Copy/DatasetCopy into dataset page (COPY-01 SSOT) — surfaced by v3.3 milestone audit (URGENT)
 - v3.6 roadmap created (2026-07-11): Phases 51-54 promote SEED-007 from the backlog — 51 foundation fix + key convention + span-kind taxonomy (FOUND-01..03, SPAN-01..02, COMPAT-01), 52 RETRIEVER span + host-declared attributes (RETR-01..02, ATTR-01..02), 53 structured child spans + ai_span_events (EVENT-01..03, SEC-01), 54 docs accuracy + conformance check (DOCS-01..02). 16/16 requirements mapped; Phase 53 flagged for phase-level research (no existing point-event call sites; async-FK design for user_feedback_received deferred to SEED-011).
 - Phase 54.1 inserted after Phase 54: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (v3.6 audit integration gap) (URGENT)
+- v3.7 roadmap created (2026-07-19): Phases 55-58 promote SEED-010 from the backlog — 55 content trust & taint substrate (TAINT-01..04, no dependency, builds on v3.6's shipped taint-adjacent substrate), 56 tool-declared trifecta classification & per-run rails (CLASS-01..03, RAIL-01, independent of 55) at `MCP.Executor`, 57 confluence escalation gate (GATE-01..04, depends on 55+56 — the milestone's flagship differentiator), 58 safety hooks + `SECURITY-BOUNDARY.md` + minimal read-only Govern surface (HOOK-01..02, BOUND-01, GOVERN-01, depends on 57, closing surface/docs layer). 16/16 requirements mapped; no orphans.
 
 ## Deferred Items
 
@@ -283,15 +288,15 @@ active.
 | v3.0 gaps | Phase 13/14 verification-doc gaps (functional: 0 unsatisfied; 10 partials are proof-only) | Deferred | v3.0 close |
 | Release | Publish 0.1.1 → superseded by 0.1.2 in Phase 35 | Absorbed into REL-01 | v3.2 REL |
 | Trust/security P0 | SEED-006: eval fail-open, knowledge cross-tenant leak, dashboard auth bypass — completed by v3.4 (Phases 42–45) | Completed | 2026-07-09 v3.4 close |
-| Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt | Active in v3.5 | 2026-07-09 v3.5 start |
-| Observability | SEED-007: OTel-GenAI/OpenInference trace foundation — active in v3.6 (Phases 51-54) | Active | 2026-07-11 v3.6 start |
+| Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt — completed by v3.5 (Phases 46–50) | Completed | 2026-07-11 v3.5 close |
+| Observability | SEED-007: OTel-GenAI/OpenInference trace foundation — completed by v3.6 (Phases 51–54.1) | Completed | 2026-07-19 v3.6 close |
 | Eval depth | SEED-008: real scorers, judge calibration, regression comparison | Deferred | 2026-07-03 audit |
 | RAG depth | SEED-009: precision/NDCG/abstention/staleness + faithfulness/rerank hooks | Deferred | 2026-07-03 audit |
-| Agent security | SEED-010: lethal-trifecta governance (⭐ flagship differentiator) | Deferred | 2026-07-03 audit |
+| Agent security | SEED-010: lethal-trifecta governance ⭐ flagship differentiator — active in v3.7 (Phases 55-58) | Active | 2026-07-19 v3.7 start |
 | Privacy/feedback | SEED-011: retention/purge, PII masking hook, human-feedback flywheel | Deferred | 2026-07-03 audit |
 | Test determinism | `2026-07-18-flaky-capture-parity-test.md`: `capture_parity_test.exs:53` flakes under full-suite `--seed 0` ordering (passes in isolation); pre-existing, not a v3.6 regression — SEED-004-class | Acknowledged & deferred | 2026-07-19 v3.6 close |
 
-> **Ordered roadmap + dependencies** for SEED-007…013 live in `ROADMAP.md` `## Backlog` (999.3–999.9); SEED-005 is active in v3.5. "Why" index in `.planning/seeds/README.md`.
+> **Ordered roadmap + dependencies** for SEED-008…013 live in `ROADMAP.md` `## Backlog` (999.5–999.9); SEED-010 is active in v3.7. "Why" index in `.planning/seeds/README.md`.
 | Phase 46 P01 | 4 min | 3 tasks | 11 files |
 | Phase 46 P02 | 6 min | 1 tasks | 10 files |
 | Phase 46 P03 | 4 min | 1 tasks | 5 files |
@@ -351,12 +356,12 @@ active.
 | todo | `ci-policy-job-cache-key-mislabel` (CI cache-key/env mismatch) | Completed at v3.4 closeout |
 | todo | `docker-dx-fleet-hardening` (FLEET-01/02; out of scope) | Deferred |
 | seed | SEED-003 CI/CD efficiency overhaul | Archived |
-| seed | SEED-005 Documentation & positioning overhaul (v3.5 active) | Active |
+| seed | SEED-005 Documentation & positioning overhaul — shipped in v3.5 | Archived |
 | seed | SEED-006 Pre-1.0 Trust & Security Hardening — shipped in v3.4 | Archived |
-| seed | SEED-007 Trace foundation OTel-GenAI/OpenInference (ROADMAP 999.3) | Deferred |
+| seed | SEED-007 Trace foundation OTel-GenAI/OpenInference — shipped in v3.6 | Archived |
 | seed | SEED-008 Trustworthy eval depth (ROADMAP 999.5) | Deferred |
 | seed | SEED-009 Retrieval eval depth & seams (ROADMAP 999.6) | Deferred |
-| seed | SEED-010 Lethal-trifecta governance ⭐ flagship (ROADMAP 999.4) | Deferred |
+| seed | SEED-010 Lethal-trifecta governance ⭐ flagship — active in v3.7 (ROADMAP 999.4) | Active |
 | seed | SEED-011 Privacy & feedback governance (ROADMAP 999.7) | Deferred |
 | seed | SEED-012 Architecture-archetype awareness (ROADMAP 999.8) | Deferred |
 | seed | SEED-013 Operator IA pivot / Control-Room v2 (ROADMAP 999.9) | Deferred |
@@ -364,9 +369,9 @@ active.
 ## Session Continuity
 
 Last session: 2026-07-19
-Stopped at: v3.6 Trace Foundation completed and archived
-Resume file: — (milestone boundary; no in-flight phase)
+Stopped at: v3.7 Portcullis ROADMAP.md created (Phases 55–58); REQUIREMENTS.md traceability filled (16/16 mapped, 0 unmapped)
+Resume file: — (milestone boundary; ready for `/gsd-plan-phase 55`)
 
 ## Operator Next Steps
 
-- v3.6 Trace Foundation shipped + archived (2026-07-19). Start the next milestone with `/gsd-new-milestone` — next candidate SEED-010 Lethal-Trifecta Governance (ROADMAP `## Backlog` 999.4, ⭐ flagship).
+- v3.7 Portcullis roadmap created (2026-07-19): Phases 55 (Content Trust & Taint Substrate), 56 (Tool-Declared Trifecta Classification & Per-Run Rails), 57 (Confluence Escalation Gate), 58 (Safety Hooks, Security Boundary & Govern Surface) — 16/16 requirements mapped, 0 orphans. Next: `/gsd-plan-phase 55`.

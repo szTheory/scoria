@@ -80,32 +80,32 @@ Explicitly excluded. Documented to prevent scope creep.
 
 ## Traceability
 
-Which phases cover which requirements. Populated during roadmap creation (phase numbering continues from v3.6 — next phase is 55).
+Which phases cover which requirements. Phase numbering continues from v3.6 (next phase is 55).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TAINT-01 | TBD (roadmap) | Pending |
-| TAINT-02 | TBD (roadmap) | Pending |
-| TAINT-03 | TBD (roadmap) | Pending |
-| TAINT-04 | TBD (roadmap) | Pending |
-| CLASS-01 | TBD (roadmap) | Pending |
-| CLASS-02 | TBD (roadmap) | Pending |
-| CLASS-03 | TBD (roadmap) | Pending |
-| RAIL-01 | TBD (roadmap) | Pending |
-| GATE-01 | TBD (roadmap) | Pending |
-| GATE-02 | TBD (roadmap) | Pending |
-| GATE-03 | TBD (roadmap) | Pending |
-| GATE-04 | TBD (roadmap) | Pending |
-| HOOK-01 | TBD (roadmap) | Pending |
-| HOOK-02 | TBD (roadmap) | Pending |
-| BOUND-01 | TBD (roadmap) | Pending |
-| GOVERN-01 | TBD (roadmap) | Pending |
+| TAINT-01 | Phase 55 | Pending |
+| TAINT-02 | Phase 55 | Pending |
+| TAINT-03 | Phase 55 | Pending |
+| TAINT-04 | Phase 55 | Pending |
+| CLASS-01 | Phase 56 | Pending |
+| CLASS-02 | Phase 56 | Pending |
+| CLASS-03 | Phase 56 | Pending |
+| RAIL-01 | Phase 56 | Pending |
+| GATE-01 | Phase 57 | Pending |
+| GATE-02 | Phase 57 | Pending |
+| GATE-03 | Phase 57 | Pending |
+| GATE-04 | Phase 57 | Pending |
+| HOOK-01 | Phase 58 | Pending |
+| HOOK-02 | Phase 58 | Pending |
+| BOUND-01 | Phase 58 | Pending |
+| GOVERN-01 | Phase 58 | Pending |
 
 **Coverage:**
 - v1 requirements: 16 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 16 ⚠️ (resolved when roadmapper runs)
+- Mapped to phases: 16
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-19*
-*Last updated: 2026-07-19 after v3.7 milestone scoping*
+*Last updated: 2026-07-19 after ROADMAP creation (Phases 55–58)*
