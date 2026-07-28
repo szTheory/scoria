@@ -6,6 +6,7 @@ defmodule Scoria.MCP.Executor do
 
   import Ecto.Query, warn: false
 
+  alias Scoria.MCP.Classification
   alias Scoria.MCP.Envelope
   alias Scoria.Observe.Semconv
   alias Scoria.Repo
@@ -26,14 +27,74 @@ defmodule Scoria.MCP.Executor do
   def execute(tool_module, args, context, timeout \\ 5000) do
     context = canonical_context(context || %{})
 
-    case replay_gate(tool_module, args, context) do
-      {:continue, context} ->
-        execute_live(tool_module, args, context, timeout)
+    case resolve_classification(tool_module, context) do
+      {:ok, context} ->
+        case replay_gate(tool_module, args, context) do
+          {:continue, context} ->
+            execute_live(tool_module, args, context, timeout)
+
+          other ->
+            other
+        end
 
       other ->
         other
     end
   end
+
+  # D-05: resolution happens exactly once, here, before `replay_gate/3`.
+  # Idempotent and single-shot -- if `context` already carries a resolved
+  # `%Classification{}` under `:tool_classification` (a connector call site
+  # may inject one ahead of this), it is reused unchanged and no telemetry
+  # fires a second time. Otherwise the tool's own declaration (or the
+  # fail-closed-but-inspectable maximal default, D-03) is resolved and
+  # carried forward on that same new context key. `execute/4`'s call site
+  # deliberately matches only `{:ok, context}` plus a catch-all `other ->
+  # other` (never a literal `{:error, _}` clause) -- this function only
+  # ever returns `{:ok, map()}` today, and a literal `{:error, _}` clause
+  # would trip the compiler's unreachable-clause check. A later opt-in
+  # `require_tool_classification` refusal path can start returning
+  # `{:error, envelope}` here without any change at the `execute/4` call
+  # site, since the catch-all already passes it through unchanged.
+  @spec resolve_classification(module(), map()) :: {:ok, map()} | {:error, map()}
+  defp resolve_classification(tool_module, context) do
+    case Map.get(context, :tool_classification) do
+      %Classification{} ->
+        {:ok, context}
+
+      _ ->
+        declaration = Classification.tool_declaration(tool_module)
+        maybe_emit_unclassified(declaration, tool_module, context)
+        resolved = classification_from_declaration(declaration)
+        {:ok, Map.put(context, :tool_classification, resolved)}
+    end
+  end
+
+  # Task 1 baseline: the bare tool declaration (or the maximal fail-closed
+  # default) with no host-tightening join yet. Repointed at
+  # `Classification.resolve/2`'s tighten-only host join once that lands.
+  defp classification_from_declaration({:ok, declared}), do: declared
+  defp classification_from_declaration(:none), do: Classification.unclassified_default()
+
+  defp maybe_emit_unclassified(:none, tool_module, context) do
+    try do
+      :telemetry.execute(
+        [:scoria, :class, :unclassified],
+        %{},
+        %{
+          tool: tool_module,
+          tool_ref: inspect(tool_module),
+          trace_id: Map.get(context, :trace_id),
+          step_id: Map.get(context, :step_id),
+          site: :mcp_executor
+        }
+      )
+    rescue
+      _ -> :ok
+    end
+  end
+
+  defp maybe_emit_unclassified({:ok, _declared}, _tool_module, _context), do: :ok
 
   defp execute_live(tool_module, args, context, timeout) do
 
@@ -180,6 +241,7 @@ defmodule Scoria.MCP.Executor do
 
   defp build_replay_seam(tool_module, context) do
     %{
+      tool_classification: Map.get(context, :tool_classification),
       local_classification: Map.get(context, :local_classification, :write),
       tool_id: Map.get(context, :tool_id, inspect(tool_module)),
       action_class: Map.get(context, :action_class, "write"),
