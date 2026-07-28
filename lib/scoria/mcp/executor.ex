@@ -601,8 +601,8 @@ defmodule Scoria.MCP.Executor do
   defp attach_budget_metadata(metadata, %{audit_outbox_event: audit_outbox_event}), do: Map.put(metadata, :audit_outbox_event_id, audit_outbox_event.id)
   defp attach_budget_metadata(metadata, %{reservation: reservation}), do: Map.put(metadata, :budget_reservation_id, reservation.id)
 
-  # Site 3 (D-05, plan 56-03): the same shared `Classification.declared_sensitive?/1`
-  # predicate as site 2 (site 2, `policy_sensitive_invocation?/1`) is the
+  # Site 3 (D-05, plan 56-03): the SAME shared declared-only sensitivity
+  # predicate used by site 2 (`policy_sensitive_invocation?/1`) is the
   # fifth OR operand -- one origin for "does this declaration count as
   # sensitive" is what keeps the two sites from drifting apart. This also
   # widens the read-only `maybe_emit_budget/4` call site (`:843-858`): a
@@ -726,8 +726,7 @@ defmodule Scoria.MCP.Executor do
   # `"admin"` now trips this predicate even when the host passed neither
   # `:policy_sensitive` nor `:sensitive_tool` -- the fail-open seam
   # actually closing for adopters who opt in, never for legacy traffic
-  # (`Classification.declared_sensitive?/1` returns `false` for
-  # `:unclassified_default`).
+  # (the shared predicate below returns `false` for `:unclassified_default`).
   defp policy_sensitive_invocation?(context) do
     Map.get(context, :policy_sensitive) || Map.get(context, :sensitive_tool) ||
       Classification.declared_sensitive?(Map.get(context, :tool_classification))
