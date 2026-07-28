@@ -29,7 +29,7 @@ Supplies the missing untrusted-content leg — the substrate the confluence gate
 
 ### Per-Run Agent Rails (RAIL)
 
-- [ ] **RAIL-01**: A single run enforces `max_steps` / `max_tool_calls` / `timeout` rails (distinct from tenant-level budgets/breakers) and halts a run that exceeds them, with the halt audited.
+- [x] **RAIL-01**: A single run enforces `max_steps` / `max_tool_calls` / `timeout` rails (distinct from tenant-level budgets/breakers) and halts a run that exceeds them, with the halt audited.
 
 ### Confluence Escalation Policy (GATE) — the differentiator
 
@@ -91,7 +91,7 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 | CLASS-01 | Phase 56 | Complete |
 | CLASS-02 | Phase 56 | Complete |
 | CLASS-03 | Phase 56 | Complete |
-| RAIL-01 | Phase 56.1 | Pending |
+| RAIL-01 | Phase 56.1 | Complete |
 | GATE-01 | Phase 57 | Pending |
 | GATE-02 | Phase 57 | Pending |
 | GATE-03 | Phase 57 | Pending |
