@@ -18,7 +18,7 @@
 
 **Current milestone: v3.7 Portcullis (SEED-010 Lethal-Trifecta Governance)**
 
-- [ ] **Phase 55: Content Trust & Taint Substrate** - Trust tiers on knowledge chunks/tool outputs + prompt-assembly spotlighting + BYO `scan/2` hook
+- [x] **Phase 55: Content Trust & Taint Substrate** - Trust tiers on knowledge chunks/tool outputs + prompt-assembly spotlighting + BYO `scan/2` hook
 - [ ] **Phase 56: Tool-Declared Trifecta Classification & Per-Run Rails** - Tool-declared trifecta legs resolved at `MCP.Executor`, fail-closed defaults, per-run step/time rails
 - [ ] **Phase 57: Confluence Escalation Gate** - Escalate to human approval when private-data + untrusted-content + exfil co-occur on one tainted path
 - [ ] **Phase 58: Safety Hooks, Security Boundary & Govern Surface** - BYO moderation/output-scanner hooks, `SECURITY-BOUNDARY.md`, minimal read-only Govern surface
