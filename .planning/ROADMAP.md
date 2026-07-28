@@ -68,7 +68,7 @@
 **Plans**: 3 plans (3 waves)
 **Wave 1**
 
-- [ ] 56-01-PLAN.md — Classification leaf + Tool declaration surface + executor resolution choke point (tracer) [wave 1]
+- [x] 56-01-PLAN.md — Classification leaf + Tool declaration surface + executor resolution choke point (tracer) [wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

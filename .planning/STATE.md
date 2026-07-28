@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Portcullis
 current_phase: 56
+current_phase_name: tool-declared-trifecta-classification-per-run-rails
 status: executing
-stopped_at: Phase 55 context gathered
-last_updated: "2026-07-28T15:33:43.078Z"
+stopped_at: Completed 56-01-PLAN.md
+last_updated: "2026-07-28T16:31:38.161Z"
 last_activity: 2026-07-28
-last_activity_desc: Phase 56 planning complete
+last_activity_desc: Phase 56 execution started
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 8
-  completed_plans: 5
-  percent: 0
+  completed_plans: 6
 ---
 
 # Project State
@@ -24,16 +24,16 @@ See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 56 — tool declared trifecta classification & per run rails
+**Current focus:** Phase 56 — tool-declared-trifecta-classification-per-run-rails
 
 ## Current Position
 
-Phase: 56
-Plan: Not started
+Phase: 56 (tool-declared-trifecta-classification-per-run-rails) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-07-28 — Phase 56 planning complete
+Last activity: 2026-07-28 -- Phase 56 execution started
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -55,6 +55,11 @@ Progress: [░░░░░░░░░░] 0%
 - **Phase 45:** 5 plans, 11 tasks — correctness sweep + doctrine closeout complete; focused Phase 45 and scope-doctrine tests green during closeout.
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 56 P01 | 50min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -253,6 +258,9 @@ Recent decisions affecting current work:
 - [Phase 52]: opts[:embedding_model] wins outright; when opts[:query_embedding] is host-supplied, embedder.model_name/0 is never called and the field falls through to the "none" sentinel.
 - [Phase 52]: Dropped ai_retrieval_runs.trace_id/span_id hard foreign keys (kept columns+indexes) so the eventually-consistent run<->span join no longer raises on every context-less retrieve/2 call (D-R1/D-R2).
 - [Phase ?]: Test file mirrors telemetry_test.exs's real DB-backed setup (scoped Buffer + Telemetry.attach) rather than hand-synthesizing a span map, so the SC#4 proof exercises the actual production telemetry->buffer->Postgres pipeline (D-ATTR01-6).
+- [Phase ?]: [Phase 56-01]: host_declaration/1 reads a single new :host_classification context key (action_class left un-normalized at extraction) so resolve/2 can flag a raw-junk host action_class identically to a looser one per D-04, even when normalization would make it look tighter.
+- [Phase ?]: [Phase 56-01]: When no tool declaration exists, resolve/2 always returns unclassified_default/0 regardless of any host input -- the host-tightening mechanism never stands in for a missing tool declaration.
+- [Phase ?]: [Phase 56-01]: Added @derive Jason.Encoder to Scoria.MCP.Classification (Rule 1 fix) since :tool_classification now flows into every tool's context by design and a pre-existing router test echoes context through JSON.
 
 ### Resolved And Deferred Work
 
@@ -371,9 +379,9 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-27T23:07:04.431Z
-Stopped at: Phase 55 context gathered
-Resume file: .planning/phases/55-content-trust-taint-substrate/55-CONTEXT.md
+Last session: 2026-07-28T16:31:38.151Z
+Stopped at: Completed 56-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
