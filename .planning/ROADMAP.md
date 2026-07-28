@@ -99,8 +99,8 @@
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 56.1-02-PLAN.md — Config ladder `Scoria.Runtime.Rails` + threading into both `Params` entry points (RAIL-01) [wave 2]
-- [ ] 56.1-03-PLAN.md — `max_tool_calls` at both tool entry points, SC#4 no-op, `run_id` forward, CAS determinism battery (RAIL-01) [wave 2]
+- [x] 56.1-02-PLAN.md — Config ladder `Scoria.Runtime.Rails` + threading into both `Params` entry points (RAIL-01) [wave 2]
+- [x] 56.1-03-PLAN.md — `max_tool_calls` at both tool entry points, SC#4 no-op, `run_id` forward, CAS determinism battery (RAIL-01) [wave 2]
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
