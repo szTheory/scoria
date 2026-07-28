@@ -1,6 +1,7 @@
 defmodule Scoria.MCP.ExecutorTest do
   use ExUnit.Case, async: false
 
+  alias Scoria.MCP.Envelope
   alias Scoria.MCP.Executor
   alias Scoria.Repo
   alias Scoria.SRE
@@ -35,6 +36,24 @@ defmodule Scoria.MCP.ExecutorTest do
     
     def execute(%{"action" => "exit"}, _context) do
       exit(:killed)
+    end
+  end
+
+  defmodule ActualUnitsTool do
+    @behaviour Scoria.MCP.Tool
+
+    @impl true
+    def name, do: "actual_units_tool"
+
+    @impl true
+    def description, do: "A tool that declares its own actual_units for billing tests"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(%{"action" => "success"}, _context) do
+      {:ok, %{actual_units: 3}}
     end
   end
 
@@ -313,6 +332,149 @@ defmodule Scoria.MCP.ExecutorTest do
       assert envelope.status == :replay_blocked
       assert envelope.replay_disposition == :blocked
       assert envelope.replay_reason_code == "missing_source_evidence"
+    end
+  end
+
+  describe "Scoria.MCP.Envelope soft-launch wrap (D-07, D-08, D-10)" do
+    setup do
+      on_exit(fn -> Application.delete_env(:scoria, Scoria.MCP.Envelope) end)
+      :ok
+    end
+
+    test "flag OFF (default): return shape is byte-identical to the raw tool value, and taint is still persisted",
+         %{context: context} do
+      refute Keyword.get(Application.get_env(:scoria, Scoria.MCP.Envelope, []), :wrap_tool_output)
+
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "tool",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      assert persisted_step.result_envelope["scoria.taint"]["tier"] == "untrusted"
+      assert persisted_step.result_envelope["scoria.taint"]["tool_ref"] =~ "DummyTool"
+    end
+
+    test "flag ON: return shape wraps the inner value in an Envelope, not the {:ok, value} tuple (Pitfall 1)",
+         %{context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(DummyTool, %{"action" => "success"}, context)
+
+      assert Envelope.value(envelope) == %{result: "success"}
+      assert Envelope.tier(envelope) == "untrusted"
+    end
+
+    test "{:error, reason} is returned unchanged under both flag states", %{context: context} do
+      assert {:error, :execution_failed} = Executor.execute(DummyTool, %{"action" => "crash"}, context)
+
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+      assert {:error, :execution_failed} = Executor.execute(DummyTool, %{"action" => "crash"}, context)
+    end
+
+    test "ordering: reconcile_budget/billing reads the RAW result, not the Envelope (D-07 load-bearing order)",
+         %{context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+      create_budget_policy!("tenant-1", "cost_usd")
+      trace_id = "trace-envelope-billing"
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(
+                 ActualUnitsTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{
+                   trace_id: trace_id,
+                   run_id: Ecto.UUID.generate(),
+                   estimated_cost_usd: Decimal.new("5.0"),
+                   integration_kind: "tool",
+                   sensitive_tool: true
+                 })
+               )
+
+      assert Envelope.value(envelope) == %{actual_units: 3}
+
+      # Billing read the raw `%{actual_units: 3}` map BEFORE the wrap, so the
+      # reservation reflects 3 (the tool's declared units), not the 5.0
+      # estimate and not a mis-billed reading of the `%Envelope{}` struct's
+      # own fields.
+      reservation = Repo.get_by!(BudgetReservation, trace_id: trace_id)
+      assert reservation.status == "reconciled"
+      assert Decimal.equal?(reservation.actual_units, Decimal.new("3"))
+    end
+
+    test "actual_units/3 defense-in-depth head bills against an Envelope's inner value directly" do
+      assert Executor.actual_units(%{}, %Envelope{value: %{actual_units: 7}, tier: "untrusted"}, "completed") == 7
+
+      assert Executor.actual_units(
+               %{},
+               %Envelope{value: %{estimated_units: 1}, tier: "untrusted"},
+               "completed"
+             ) == 1
+    end
+
+    test "replay historical-stub result matches the live envelope shape when the flag is ON (D-10)",
+         %{context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          replay_overrides: %{"live_tool_allowlist" => ["allowed.tool"]}
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      replay_context =
+        Map.merge(context, %{
+          run: run,
+          run_id: run.id,
+          step_id: step.id,
+          tool_id: "repo.read",
+          local_classification: :read,
+          action_class: "read",
+          risk_level: "low",
+          args_fingerprint: "same",
+          subject_ref: "repo:acme/scoria",
+          required_scopes: ["repo:read"],
+          grant_state: "active",
+          policy_key: "repo.read",
+          source_evidence: %{
+            source_run_id: run.source_run_id || run.id,
+            source_checkpoint_id: run.source_checkpoint_id || Ecto.UUID.generate(),
+            source_step_id: step.id,
+            source_audit_outbox_event_id: Ecto.UUID.generate(),
+            tool_id: "repo.read",
+            args_fingerprint: "same",
+            subject_ref: "repo:acme/scoria",
+            required_scopes: ["repo:read"],
+            grant_state: "active",
+            policy_key: "repo.read",
+            result: %{"cached" => true}
+          }
+        })
+
+      assert {:ok, replay_result} = Executor.execute(DummyTool, %{"action" => "read"}, replay_context)
+
+      assert replay_result.status == :historical_stub
+      assert %Envelope{} = replay_result.result
+      assert Envelope.value(replay_result.result) == %{"cached" => true}
+      assert Envelope.tier(replay_result.result) == "untrusted"
+      assert replay_result.result.provenance.source == :replay_stub
     end
   end
 
