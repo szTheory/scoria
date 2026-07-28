@@ -112,7 +112,7 @@
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 56.1-06-PLAN.md — Adopter surface: per-run-rails guide, mirrored footgun notes, migration disclosure (RAIL-01) [wave 5]
+- [x] 56.1-06-PLAN.md — Adopter surface: per-run-rails guide, mirrored footgun notes, migration disclosure (RAIL-01) [wave 5]
 
 **Context**: `.planning/phases/56.1-per-run-rails-split-from-phase-56/56.1-CONTEXT.md` is the canonical locked spec (D-01..D-23); the older D-56.1-A..H notes in `56-CONTEXT.md` are superseded and several of their citations are stale
 
