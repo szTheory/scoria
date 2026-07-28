@@ -1,6 +1,7 @@
 defmodule Scoria.MCP.ExecutorTest do
   use ExUnit.Case, async: false
   import Ecto.Query
+  import ExUnit.CaptureLog
 
   alias Scoria.MCP.Envelope
   alias Scoria.MCP.Executor
@@ -10,6 +11,7 @@ defmodule Scoria.MCP.ExecutorTest do
   alias Scoria.SRE.BudgetReservation
   alias Scoria.Trust.Verdict
   alias Scoria.Workflows
+  alias Scoria.Workflows.Run
 
   defmodule DummyTool do
     @behaviour Scoria.MCP.Tool
@@ -827,6 +829,158 @@ defmodule Scoria.MCP.ExecutorTest do
                from(a in AuditOutboxEvent, where: a.trace_id == ^trace_id and a.event_type == "tool.invocation"),
                :count
              ) == 1
+    end
+  end
+
+  describe "max_tool_calls rail admission -- the FIRST gate in execute/4 (56.1-CONTEXT.md D-08/D-09, plan 56.1-03 Task 1)" do
+    test "denies once the limit is reached, halts the run, and returns the run_halted envelope", %{context: context} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_tool_calls: 1})
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(context, :run_id, run.id)
+               )
+
+      assert {:error, %{status: :run_halted, reason_code: "max_tool_calls_exceeded"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(context, :run_id, run.id)
+               )
+
+      assert Repo.get!(Run, run.id).status == "halted"
+    end
+
+    test "denies with observed == limit and never overshoots across sequential admits", %{context: context} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_tool_calls: 2})
+      run_context = Map.put(context, :run_id, run.id)
+
+      assert {:ok, %{result: "success"}} = Executor.execute(DummyTool, %{"action" => "success"}, run_context)
+      assert {:ok, %{result: "success"}} = Executor.execute(DummyTool, %{"action" => "success"}, run_context)
+
+      assert {:error, %{status: :run_halted, limit: 2, observed: 2}} =
+               Executor.execute(DummyTool, %{"action" => "success"}, run_context)
+    end
+
+    test "is the FIRST gate: it denies a tool that would otherwise be refused as unclassified, and the refusal never fires",
+         %{context: context} do
+      previous = Application.get_env(:scoria, :require_tool_classification, false)
+      Application.put_env(:scoria, :require_tool_classification, true)
+      on_exit(fn -> Application.put_env(:scoria, :require_tool_classification, previous) end)
+
+      # A limit of 0 denies the very first call -- proving the rail trips
+      # even though DummyTool's undeclared, unclassified-default resolution
+      # would ALSO have been refused (require_tool_classification: true) had
+      # resolve_classification/2 run first. If the rail did not fire ahead
+      # of classification, this would return {:error, %{status: :unclassified_tool}}.
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_tool_calls: 0})
+
+      assert {:error, %{status: :run_halted, reason_code: "max_tool_calls_exceeded"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(context, :run_id, run.id)
+               )
+    end
+
+    test "with no :run_id in context, executes normally and emits [:scoria, :run, :rail, :skipped] exactly once with reason: :no_run_id",
+         %{context: context} do
+      parent = self()
+      ref = make_ref()
+      handler_id = "rail-skipped-test-#{System.unique_integer()}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :run, :rail, :skipped],
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:rail_skipped, ref, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      refute Map.has_key?(context, :run_id)
+
+      assert {:ok, %{result: "success"}} = Executor.execute(DummyTool, %{"action" => "success"}, context)
+
+      assert_receive {:rail_skipped, ^ref, [:scoria, :run, :rail, :skipped], %{}, metadata}
+      assert metadata.reason == :no_run_id
+      assert metadata.site == :mcp_executor
+      assert metadata.tool_ref =~ "DummyTool"
+
+      refute_receive {:rail_skipped, ^ref, [:scoria, :run, :rail, :skipped], _measurements, _metadata2}
+    end
+
+    test "a custom :rail_site in context overrides the default :mcp_executor site on the :skipped event", %{
+      context: context
+    } do
+      parent = self()
+      ref = make_ref()
+      handler_id = "rail-skipped-site-test-#{System.unique_integer()}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :run, :rail, :skipped],
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:rail_skipped, ref, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(context, :rail_site, :custom_caller_site)
+               )
+
+      assert_receive {:rail_skipped, ^ref, [:scoria, :run, :rail, :skipped], %{}, metadata}
+      assert metadata.site == :custom_caller_site
+    end
+
+    test "Logger.warning fires once per boot per site, ONLY when max_tool_calls is configured somewhere", %{
+      context: context
+    } do
+      previous = Application.get_env(:scoria, Scoria.Runtime.Rails, [])
+      on_exit(fn -> Application.put_env(:scoria, Scoria.Runtime.Rails, previous) end)
+
+      Application.put_env(:scoria, Scoria.Runtime.Rails, max_tool_calls: 100)
+
+      site_context = Map.put(context, :rail_site, :executor_test_configured_site)
+
+      log =
+        capture_log(fn ->
+          Executor.execute(DummyTool, %{"action" => "success"}, site_context)
+        end)
+
+      assert log =~ "max_tool_calls"
+
+      log2 =
+        capture_log(fn ->
+          Executor.execute(DummyTool, %{"action" => "success"}, site_context)
+        end)
+
+      refute log2 =~ "max_tool_calls"
+    end
+
+    test "Logger.warning never fires when max_tool_calls is not configured anywhere", %{context: context} do
+      previous = Application.get_env(:scoria, Scoria.Runtime.Rails, [])
+      on_exit(fn -> Application.put_env(:scoria, Scoria.Runtime.Rails, previous) end)
+      Application.delete_env(:scoria, Scoria.Runtime.Rails)
+
+      site_context = Map.put(context, :rail_site, :executor_test_unconfigured_site)
+
+      log =
+        capture_log(fn ->
+          Executor.execute(DummyTool, %{"action" => "success"}, site_context)
+        end)
+
+      refute log =~ "max_tool_calls"
     end
   end
 

@@ -5,6 +5,7 @@ defmodule Scoria.MCP.Executor do
   """
 
   import Ecto.Query, warn: false
+  require Logger
 
   alias Scoria.MCP.Classification
   alias Scoria.MCP.Envelope
@@ -17,9 +18,12 @@ defmodule Scoria.MCP.Executor do
   alias Scoria.Trust
   alias Scoria.Trust.Scanner
   alias Scoria.Workflows
+  alias Scoria.Workflows.Rails
   alias Scoria.Workflows.ReplayDisposition
   alias Scoria.Workflows.Run
   alias Scoria.Workflows.Step
+
+  @rail_warned_table :scoria_mcp_executor_rail_warned
 
   @doc """
   Executes a tool module with the given arguments and context.
@@ -27,19 +31,196 @@ defmodule Scoria.MCP.Executor do
   def execute(tool_module, args, context, timeout \\ 5000) do
     context = canonical_context(context || %{})
 
-    case resolve_classification(tool_module, context) do
+    case admit_tool_call_rail(context, tool_module) do
       {:ok, context} ->
-        case replay_gate(tool_module, args, context) do
-          {:continue, context} ->
-            execute_live(tool_module, args, context, timeout)
+        # Rule 1: `:rail_admission` is a purely internal cross-module
+        # idempotence marker (this function <-> `Connectors.Invocation`),
+        # never a tool-visible fact -- unlike `:tool_classification`, which
+        # IS deliberately surfaced. Drop it immediately once the admission
+        # decision above is made, so it never reaches
+        # `tool_module.execute/2`'s own context (a tool that echoes its
+        # context back, e.g. in `MCP.Router`'s test fixture, must see the
+        # exact context it was handed, not this implementation detail).
+        context = Map.delete(context, :rail_admission)
+
+        case resolve_classification(tool_module, context) do
+          {:ok, context} ->
+            case replay_gate(tool_module, args, context) do
+              {:continue, context} ->
+                execute_live(tool_module, args, context, timeout)
+
+              other ->
+                other
+            end
 
           other ->
             other
         end
 
-      other ->
-        other
+      {:error, envelope} ->
+        {:error, envelope}
     end
+  end
+
+  # RAIL-01 (56.1-CONTEXT.md D-08/D-09/D-19): the FIRST statement of
+  # `execute/4`'s dispatch, AHEAD of `resolve_classification/2` -- a
+  # runaway loop of `:unclassified_tool` refusals must still count against
+  # `max_tool_calls`, so the rail has to trip before that refusal can. Guarded
+  # by the `:rail_admission` context marker, mirroring
+  # `resolve_classification/2`'s own struct-match idempotence guard just
+  # below: a logical call already admitted at
+  # `Connectors.Invocation.invoke/4` carries this marker into `live_context`
+  # (additive, survives `canonical_context/1`) and is never re-admitted --
+  # and never double-counted -- when it reaches here.
+  defp admit_tool_call_rail(%{rail_admission: _} = context, _tool_module), do: {:ok, context}
+
+  defp admit_tool_call_rail(context, tool_module) do
+    case Map.get(context, :run_id) do
+      nil ->
+        # D-19 -- SC#4's no-run-attribution no-op. This is NOT a refusal:
+        # the tool's own return value is unaffected. Guarded HERE (the
+        # executor) rather than in `MCP.Router`, since `MCPController` and
+        # direct host `execute/4` calls have the identical gap and this
+        # covers all of them by construction, with `site` distinguishing.
+        site = rail_site(context, :mcp_executor)
+        maybe_warn_unattributed_rail_call(site)
+        emit_rail_skipped(context, tool_module, site, :no_run_id)
+        {:ok, Map.put(context, :rail_admission, :skipped)}
+
+      run_id ->
+        case Rails.admit_tool_call(run_id) do
+          {:ok, _count} ->
+            {:ok, Map.put(context, :rail_admission, :ok)}
+
+          :denied ->
+            # Rule 1: disambiguate via the cold-path `Rails.deny_reason/1`
+            # BEFORE treating this as a real rail trip -- `:denied` fires
+            # identically whether the run is genuinely at its limit OR
+            # `run_id` never matched any persisted `%Run{}` row (a
+            # synthetic/trace-only id, an established test/adopter
+            # pattern that predates this plan). A run that does not exist
+            # has no counter to admit against; halting it would raise
+            # `Ecto.NoResultsError` instead of the SC#4 no-op this
+            # context deserves.
+            case Rails.deny_reason(run_id) do
+              :no_run ->
+                site = rail_site(context, :mcp_executor)
+                emit_rail_skipped(context, tool_module, site, :no_run)
+                {:ok, Map.put(context, :rail_admission, :skipped)}
+
+              _reason ->
+                {:error, tool_call_rail_denied_envelope(run_id, context)}
+            end
+        end
+    end
+  end
+
+  defp rail_site(context, default), do: Map.get(context, :rail_site, default)
+
+  # Volume equals `[:scoria, :tool, :started]` (`:545` below), which already
+  # fires on every call -- the count IS the deliverable (D-19). Wrapped in
+  # `try/rescue` so a broken adopter handler cannot break a tool call.
+  #
+  # `:no_run_id` (D-19, SC#4) is the documented, public reason: the context
+  # carried no `:run_id` at all. `:no_run` is the cold-path disambiguation
+  # (D-09) for the OTHER way admission can find nothing to enforce against:
+  # a `:run_id` was present but matched no persisted `%Run{}` row (a
+  # synthetic/trace-only id) -- there is no counter to admit against, so
+  # this is the same class of no-op, not a rail trip.
+  defp emit_rail_skipped(context, tool_module, site, :no_run_id) do
+    emit_rail_skipped_event(context, tool_module, %{reason: :no_run_id, site: site})
+  end
+
+  defp emit_rail_skipped(context, tool_module, site, :no_run) do
+    emit_rail_skipped_event(context, tool_module, %{reason: :no_run, site: site})
+  end
+
+  defp emit_rail_skipped_event(context, tool_module, base_metadata) do
+    try do
+      :telemetry.execute(
+        [:scoria, :run, :rail, :skipped],
+        %{},
+        Map.merge(base_metadata, %{
+          tool_ref: inspect(tool_module),
+          tenant_id: Map.get(context, :tenant_id),
+          session_id: Map.get(context, :session_id),
+          trace_id: Map.get(context, :trace_id)
+        })
+      )
+    rescue
+      _ -> :ok
+    end
+  end
+
+  # Once per boot per `site`, and ONLY when `max_tool_calls` is actually
+  # configured somewhere -- D-19 explicitly cuts an info-level "rail not
+  # configured" line, since given the run-attribution gap that would fire
+  # for every adopter forever. Mirrors `Observe.Bounds`' ETS `log_once`
+  # idiom (`bounds.ex:375-395`).
+  defp maybe_warn_unattributed_rail_call(site) do
+    if max_tool_calls_configured?() and first_rail_warning_for_site?(site) do
+      Logger.warning(
+        "Scoria.MCP.Executor: max_tool_calls is configured, but a tool call " <>
+          "arrived with no :run_id in its context (site: #{inspect(site)}) and is " <>
+          "NOT railed. See [:scoria, :run, :rail, :skipped] telemetry to measure " <>
+          "this gap; forward run_id/step_id from run.metadata[\"runtime\"] to close it."
+      )
+    end
+  end
+
+  defp max_tool_calls_configured? do
+    :scoria
+    |> Application.get_env(Scoria.Runtime.Rails, [])
+    |> Keyword.get(:max_tool_calls)
+    |> is_integer()
+  end
+
+  defp first_rail_warning_for_site?(site) do
+    ensure_rail_warned_table()
+    :ets.insert_new(@rail_warned_table, {site, true})
+  end
+
+  defp ensure_rail_warned_table do
+    case :ets.whereis(@rail_warned_table) do
+      :undefined -> :ets.new(@rail_warned_table, [:named_table, :set, :public, read_concurrency: true])
+      _table -> :ok
+    end
+  end
+
+  # Cold path (D-09): only reached on `:denied`, which under the CAS means
+  # `observed == limit` exactly (the UPDATE never fired) and
+  # `attempted == limit + 1`. The atom-keyed return mirrors
+  # `unclassified_tool_envelope/2`'s shape; the string-keyed envelope handed
+  # to `halt_run/3` mirrors 56.1-CONTEXT.md D-03's error-envelope contract.
+  defp tool_call_rail_denied_envelope(run_id, context) do
+    run = Workflows.get_run!(run_id)
+    step_id = Map.get(context, :step_id)
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    limit = run.rail_max_tool_calls
+    observed = run.rail_tool_calls
+
+    halt_envelope = %{
+      "status" => "run_halted",
+      "reason_code" => "max_tool_calls_exceeded",
+      "rail" => "max_tool_calls",
+      "limit" => limit,
+      "observed" => observed,
+      "attempted" => (observed || 0) + 1,
+      "run_id" => run_id,
+      "step_id" => step_id,
+      "halted_at" => DateTime.to_iso8601(now),
+      "site" => "mcp_executor"
+    }
+
+    Workflows.halt_run(run_id, step_id, halt_envelope)
+
+    %{
+      status: :run_halted,
+      reason_code: "max_tool_calls_exceeded",
+      rail: "max_tool_calls",
+      limit: limit,
+      observed: observed
+    }
   end
 
   # D-05: resolution happens exactly once, here, before `replay_gate/3`.
