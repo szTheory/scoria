@@ -756,6 +756,179 @@ defmodule Scoria.WorkflowsTest do
     end
   end
 
+  describe "maybe_emit_rail_observed/1 (RAIL-01 D-17, plan 56.1-05 Task 2)" do
+    setup do
+      parent = self()
+      ref = make_ref()
+
+      handler = fn event_name, measurements, metadata, _config ->
+        send(parent, {:rail_observed, ref, event_name, measurements, metadata})
+      end
+
+      handler_id = "rail-observed-test-#{System.unique_integer([:positive])}"
+      :telemetry.attach(handler_id, [:scoria, :run, :rail, :observed], handler, nil)
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      %{ref: ref}
+    end
+
+    test "a run reaching \"completed\" emits exactly one :observed event with tripped: false", %{ref: ref} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, completed_step} = Workflows.complete_step(step.id, %{"status" => "ok"})
+      assert completed_step.status == "completed"
+
+      assert_receive {:rail_observed, ^ref, [:scoria, :run, :rail, :observed], measurements, metadata}
+      assert metadata.terminal_status == :completed
+      assert metadata.tripped == false
+      assert metadata.run_id == run.id
+      assert Map.keys(measurements) |> Enum.sort() == [:active_ms, :paused_ms, :steps, :tool_calls, :wall_ms]
+
+      refute_receive {:rail_observed, ^ref, [:scoria, :run, :rail, :observed], _m2, _md2}
+    end
+
+    test "a run reaching \"failed\" emits exactly one :observed event with tripped: false", %{ref: ref} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, failed_step} = Workflows.fail_step(step.id, %{"reason_code" => "boom"})
+      assert failed_step.status == "failed"
+
+      assert_receive {:rail_observed, ^ref, [:scoria, :run, :rail, :observed], _measurements, metadata}
+      assert metadata.terminal_status == :failed
+      assert metadata.tripped == false
+
+      refute_receive {:rail_observed, ^ref, [:scoria, :run, :rail, :observed], _m2, _md2}
+    end
+
+    test "a run reaching \"halted\" emits exactly one :observed event with tripped: true", %{ref: ref} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, _claimed} = Workflows.claim_step(step.id)
+
+      envelope = rail_envelope(run, step)
+
+      assert {:ok, %Run{status: "halted"}} = Workflows.halt_run(run.id, step.id, envelope)
+
+      assert_receive {:rail_observed, ^ref, [:scoria, :run, :rail, :observed], _measurements, metadata}
+      assert metadata.terminal_status == :halted
+      assert metadata.tripped == true
+
+      refute_receive {:rail_observed, ^ref, [:scoria, :run, :rail, :observed], _m2, _md2}
+    end
+
+    test "a non-terminal transition (a sibling step completing while another is still pending) emits nothing",
+         %{ref: ref} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step_a} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, _step_b} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, completed_step} = Workflows.complete_step(step_a.id, %{"status" => "ok"})
+      assert completed_step.status == "completed"
+
+      reloaded_run = Repo.get!(Run, run.id)
+      assert reloaded_run.status == "running"
+
+      refute_receive {:rail_observed, ^ref, [:scoria, :run, :rail, :observed], _m, _md}
+    end
+
+    test "G4 interleaving: a run halted then a sibling step completing against the already-halted run emits exactly one :observed event total",
+         %{ref: ref} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, sibling_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert_receive {:rail_observed, ^ref, [:scoria, :run, :rail, :observed], _measurements, metadata}
+      assert metadata.terminal_status == :halted
+
+      assert {:ok, completed_step} = Workflows.complete_step(sibling_step.id, %{"status" => "ok"})
+      assert completed_step.status == "completed"
+
+      refute_receive {:rail_observed, ^ref, [:scoria, :run, :rail, :observed], _m2, _md2}
+    end
+
+    test "a handler that raises does not prevent the run from reaching its terminal status" do
+      handler_id = "rail-observed-raising-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :run, :rail, :observed],
+        fn _event, _measurements, _metadata, _config -> raise "boom-rail-observed-handler" end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, completed_step} = Workflows.complete_step(step.id, %{"status" => "ok"})
+      assert completed_step.status == "completed"
+      assert Repo.get!(Run, run.id).status == "completed"
+    end
+  end
+
   describe "terminality guards G1-G6 (RAIL-01 D-02)" do
     test "G1: claim_step/1 refuses a queued step created on an already-halted run" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})

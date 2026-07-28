@@ -272,6 +272,15 @@ defmodule Scoria.Workflows do
       step = repo.get!(Step, step_id)
       run = repo.get!(Run, step.run_id)
 
+      # Captured BEFORE this transaction's own write (RAIL-01 D-17): true
+      # only when `run` arrived already terminal (the G4 clamp path -- a
+      # sibling whose transaction started reading `run` AFTER the halt
+      # already committed). Threaded through so the post-commit
+      # `maybe_emit_rail_observed/1` call below never double-emits for a
+      # run that already emitted its one `:observed` event at its real
+      # terminal transition.
+      already_terminal? = Run.halted?(run)
+
       completed_step =
         step
         |> Step.changeset(%{
@@ -340,11 +349,12 @@ defmodule Scoria.Workflows do
         |> Run.changeset(run_update_attrs)
         |> repo.update!()
 
-      {updated_run, completed_step, checkpoint}
+      {updated_run, completed_step, checkpoint, already_terminal?}
     end)
     |> case do
-      {:ok, {run, step, _checkpoint}} ->
+      {:ok, {run, step, _checkpoint, already_terminal?}} ->
         broadcast(run.id, {:workflow_updated, run.id})
+        unless already_terminal?, do: maybe_emit_rail_observed(run)
         {:ok, step}
 
       {:error, value} ->
@@ -519,6 +529,10 @@ defmodule Scoria.Workflows do
       step = repo.get!(Step, step_id)
       run = repo.get!(Run, step.run_id)
 
+      # Captured BEFORE this transaction's own write (RAIL-01 D-17) --
+      # see the identical comment in `complete_step/3`.
+      already_terminal? = Run.halted?(run)
+
       # G5 (RAIL-01 D-02): the sneakiest of the three clamps -- without it a
       # sibling failing after the halt commits rewrites "halted" to
       # "failed", re-opening `resume_run/1`'s retry branch.
@@ -560,11 +574,12 @@ defmodule Scoria.Workflows do
         })
         |> repo.update!()
 
-      {updated_run, failed_step}
+      {updated_run, failed_step, already_terminal?}
     end)
     |> case do
-      {:ok, {run, step}} ->
+      {:ok, {run, step, already_terminal?}} ->
         broadcast(run.id, {:workflow_updated, run.id})
+        unless already_terminal?, do: maybe_emit_rail_observed(run)
         {:ok, step}
 
       {:error, value} ->
@@ -653,6 +668,7 @@ defmodule Scoria.Workflows do
       {:ok, {run, audit_outbox_event}} ->
         broadcast(run.id, {:workflow_updated, run.id})
         emit_rail_tripped(run, audit_outbox_event, envelope)
+        maybe_emit_rail_observed(run)
         {:ok, run}
 
       {:error, :already_halted} ->
@@ -681,6 +697,91 @@ defmodule Scoria.Workflows do
       _ -> false
     end)
   end
+
+  @rail_observed_terminal_statuses ~w(completed failed halted)
+
+  # `[:scoria, :run, :rail, :observed]` fires exactly ONCE per run, at its
+  # terminal transition ("completed", "failed", "halted") -- NEVER per
+  # check (56.1-CONTEXT.md D-17). Called post-commit from the three --
+  # and only three -- functions that write a terminal run status:
+  # `complete_step/3`, `fail_step/3`, `halt_run/3`. That set is the choke
+  # point; emitting from anywhere else would double-count. Each of those
+  # three callers skips this call entirely when its own freshly-read
+  # `%Run{}` arrived ALREADY terminal (the G4/G5 clamp path -- a sibling
+  # whose transaction started reading `run` after a halt already
+  # committed), so a run that transitions to "halted" and then has a
+  # sibling step complete/fail against the already-halted row still emits
+  # exactly one `:observed` event, not two.
+  #
+  # Frequency is once per run at the terminal transition, NOT per check:
+  # sizing needs the distribution of final per-run totals, and a stream
+  # of running counters would force every adopter to build a stateful
+  # aggregator keyed by `run_id` with an eviction policy (nobody does
+  # that) -- and threshold-crossing has no denominator because rails are
+  # `nil` for essentially every adopter. A terminal event is
+  # histogram-ready.
+  #
+  # Measurements separate `steps`, `tool_calls`, `active_ms`, `paused_ms`
+  # and `wall_ms` as five distinct numbers, deliberately: a consumer must
+  # be able to show what the rail measures (`active_ms`), the human wait
+  # cost (`paused_ms`), and the derived wall-clock total (`wall_ms`)
+  # separately, and must NEVER render `wall_ms` against the rail limit --
+  # that re-teaches the wrong mental model (56.1-CONTEXT.md D-17, D-23).
+  #
+  # Cardinality contract: `run_id`, `step_id`, `trace_id` and
+  # `audit_outbox_event_id` are unbounded and are included (where a given
+  # `[:scoria, :run, :rail, *]` event carries them) deliberately as
+  # correlation keys for log and trace joins, NEVER as metric tags -- the
+  # safe-to-tag dimensions across the whole `[:scoria, :run, :rail, *]`
+  # family are `rail`, `reason_code`, `unit`, `terminal_status`,
+  # `tripped`, `reason` and `site`. `Observe.Bounds` does not apply here
+  # -- its own docstring pins it to the span tree -- so cardinality
+  # discipline is entirely ours; an adopter attaching a run id to a
+  # counter and killing their Prometheus registry is the one foreseeable
+  # way this contract hurts someone.
+  #
+  # Known, documented gap: a run wedged in "running" or parked in
+  # `waiting_for_approval` never reaches a terminal transition and never
+  # emits, so the sizing histogram this event feeds is a distribution
+  # over terminated runs only.
+  #
+  # Wrapped in `try/rescue -> :ok` -- a broken adopter handler must not
+  # break a run's terminal transition.
+  defp maybe_emit_rail_observed(%Run{status: status} = run)
+       when status in @rail_observed_terminal_statuses do
+    try do
+      now = DateTime.utc_now()
+      anchor = run.started_at || run.inserted_at
+      wall_ms = if anchor, do: DateTime.diff(now, anchor, :millisecond), else: 0
+      paused_ms = run.rail_paused_ms || 0
+      active_ms = wall_ms - paused_ms
+
+      measurements = %{
+        steps: run.rail_steps || 0,
+        tool_calls: run.rail_tool_calls || 0,
+        active_ms: active_ms,
+        paused_ms: paused_ms,
+        wall_ms: wall_ms
+      }
+
+      metadata = %{
+        run_id: run.id,
+        tenant_id: run.tenant_id,
+        terminal_status: String.to_atom(status),
+        tripped: status == "halted",
+        max_steps: run.rail_max_steps,
+        max_tool_calls: run.rail_max_tool_calls,
+        max_active_ms: run.rail_max_active_ms,
+        site: :workflow_lifecycle
+      }
+
+      :telemetry.execute([:scoria, :run, :rail, :observed], measurements, metadata)
+    rescue
+      _ -> :ok
+    end
+  end
+
+  defp maybe_emit_rail_observed(_run), do: :ok
 
   # `[:scoria, :run, :rail, :tripped]` fires ONCE, post-commit, only on
   # `{:ok, run}` -- never on `{:error, :already_halted}`, because a host
