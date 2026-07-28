@@ -113,7 +113,15 @@ defmodule Scoria.Trust.ScanTest do
         "scan-noop-telemetry-test",
         [[:scoria, :trust, :scanned], [:scoria, :trust, :fallback]],
         fn event, measurements, metadata, _config ->
-          send(test_pid, {:telemetry, event, measurements, metadata})
+          # Telemetry handlers run synchronously in the EMITTING process, and
+          # this handler is globally attached while the module runs async. Other
+          # async tests legitimately emit these events (e.g. the envelope suite
+          # wraps an unrecognized tier, which trips the Trust fallback), so
+          # forward only what this test's own process emitted -- otherwise the
+          # refute_receive below fails on a sibling test's telemetry.
+          if self() == test_pid do
+            send(test_pid, {:telemetry, event, measurements, metadata})
+          end
         end,
         nil
       )
