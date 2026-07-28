@@ -92,8 +92,29 @@
   3. Rails default to unlimited, so an adopter who configures nothing sees unchanged behavior; counting is always on so limits can be sized from real traffic.
   4. Surfaces with no run attribution (inbound JSON-RPC via `MCP.Router`) are an explicit, telemetried no-op rather than a silent gap.
 
-**Plans**: TBD
-**Context**: researched decisions D-56.1-A..H are recorded in `.planning/phases/56-tool-declared-trifecta-classification-per-run-rails/56-CONTEXT.md` under `<deferred>`
+**Plans**: 6 plans (5 waves)
+**Wave 1**
+
+- [ ] 56.1-01-PLAN.md — Tracer: rail columns, CAS step admission, terminal audited halt + six guards G1-G6 (RAIL-01) [wave 1]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 56.1-02-PLAN.md — Config ladder `Scoria.Runtime.Rails` + threading into both `Params` entry points (RAIL-01) [wave 2]
+- [ ] 56.1-03-PLAN.md — `max_tool_calls` at both tool entry points, SC#4 no-op, `run_id` forward, CAS determinism battery (RAIL-01) [wave 2]
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 56.1-04-PLAN.md — Timeout rail: active-time predicate + changeset-derived pause accounting (RAIL-01) [wave 3]
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 56.1-05-PLAN.md — Halt evidence surfaces: `:observed` telemetry, `scoria.rail.*` trace keys, operator halt message (RAIL-01) [wave 4]
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 56.1-06-PLAN.md — Adopter surface: per-run-rails guide, mirrored footgun notes, migration disclosure (RAIL-01) [wave 5]
+
+**Context**: `.planning/phases/56.1-per-run-rails-split-from-phase-56/56.1-CONTEXT.md` is the canonical locked spec (D-01..D-23); the older D-56.1-A..H notes in `56-CONTEXT.md` are superseded and several of their citations are stale
 
 ### Phase 57: Confluence Escalation Gate
 
