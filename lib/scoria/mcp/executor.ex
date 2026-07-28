@@ -7,12 +7,14 @@ defmodule Scoria.MCP.Executor do
   import Ecto.Query, warn: false
 
   alias Scoria.MCP.Envelope
+  alias Scoria.Observe.Semconv
   alias Scoria.Repo
   alias Scoria.SRE.BudgetEngine
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE
   alias Scoria.SRE.Telemetry
   alias Scoria.Trust
+  alias Scoria.Trust.Scanner
   alias Scoria.Workflows
   alias Scoria.Workflows.ReplayDisposition
   alias Scoria.Workflows.Run
@@ -52,14 +54,25 @@ defmodule Scoria.MCP.Executor do
              execute_tool(tool_module, args, access_context, timeout, metadata)
            end) do
         {:ok, {:completed, result, duration}} ->
-          # D-07 load-bearing ordering: reconcile_budget/emit_sre_telemetry/the
-          # [:scoria, :tool, :completed] event above all read the RAW `result`
-          # before any envelope wrapping happens below. Do not reorder this.
+          # D-07 load-bearing ordering: reconcile_budget/emit_sre_telemetry
+          # read the RAW `result` before any scan/envelope wrapping happens
+          # below. Do not reorder this.
           reconcile_budget(execution_context, access_context, result, "completed")
           emit_sre_telemetry(tool_module, access_context, "completed", duration, result)
-          :telemetry.execute([:scoria, :tool, :completed], %{duration: duration}, metadata)
 
-          finalize_tool_result(result, tool_module, access_context)
+          # D-18/D-21: scan the tool output at THIS envelope-creation choke
+          # point (after billing has read the raw result) and tag the SAME
+          # [:scoria, :tool, :completed] telemetry event with the resolved
+          # scoria.trust.* attributes -- no second span (D-21).
+          {trust_attrs, verdict, scan_slot} = scan_tool_output(result, access_context)
+
+          :telemetry.execute(
+            [:scoria, :tool, :completed],
+            %{duration: duration},
+            Map.merge(metadata, trust_attrs)
+          )
+
+          finalize_tool_result(result, tool_module, access_context, verdict, scan_slot)
 
         {:error, {:timeout, duration}} ->
           reconcile_budget(execution_context, access_context, %{}, "timeout")
@@ -212,24 +225,58 @@ defmodule Scoria.MCP.Executor do
   # the raw `{:ok, value} | {:error, reason}` tuple itself (that would
   # double-nest `%Envelope{value: {:ok, v}}`, RESEARCH.md Pitfall 1).
   # `{:error, _}` passes through untouched under both flag states.
-  defp finalize_tool_result({:ok, value}, tool_module, context) do
-    persist_taint(context, tool_module)
-    {:ok, maybe_wrap_envelope(value, tool_module, context)}
+  defp finalize_tool_result({:ok, value}, tool_module, context, verdict, scan_slot) do
+    persist_taint(context, tool_module, verdict)
+    {:ok, maybe_wrap_envelope(value, tool_module, context, tier: verdict && verdict.tier, scan: scan_slot)}
   end
 
-  defp finalize_tool_result({:error, _} = error, _tool_module, _context), do: error
+  defp finalize_tool_result({:error, _} = error, _tool_module, _context, _verdict, _scan_slot), do: error
 
   # Defensive fallback: `Scoria.MCP.Tool.execute/2`'s callback contract is
   # `{:ok, any()} | {:error, any()}`, but a misbehaving tool returning
   # something else must not crash the executor.
-  defp finalize_tool_result(other, _tool_module, _context), do: other
+  defp finalize_tool_result(other, _tool_module, _context, _verdict, _scan_slot), do: other
+
+  # D-18: scans the tool output at the envelope-creation choke point. Only
+  # the `{:ok, value}` leg is scanned -- an `{:error, _}` result never
+  # minted taint content in the first place. The scanner is resolved via
+  # `Map.get(context, :content_scanner, ...)` (D-17 -- `context` is a MAP
+  # throughout the executor, unlike `Knowledge.retrieve/2`'s keyword-list
+  # `opts`, so this reads via `Map.get/3`, never `Keyword.pop`).
+  #
+  # `scanner == Scanner.NoOp` is the D-17 true no-op: `Trust.scan/2` still
+  # resolves (zero Task overhead, `Scan.scan/2`'s own internal
+  # short-circuit), but the `Envelope.scan` slot stays `nil` (byte-identical
+  # Plan 02 behavior) -- only a REAL scanner's verdict is ever exposed
+  # there.
+  defp scan_tool_output({:ok, value}, context) do
+    scanner = Map.get(context, :content_scanner, Application.get_env(:scoria, :content_scanner, Scanner.NoOp))
+
+    {:ok, verdict} = Trust.scan(value, Map.put(context, :content_scanner, scanner))
+
+    trust_attrs =
+      Semconv.trust_attributes(%{
+        tier: verdict.tier,
+        scanner: verdict.scanner && inspect(verdict.scanner),
+        reason_code: verdict.reason_code
+      })
+
+    scan_slot = if scanner == Scanner.NoOp, do: nil, else: verdict
+
+    {trust_attrs, verdict, scan_slot}
+  end
+
+  defp scan_tool_output(_other, _context), do: {%{}, nil, nil}
 
   # D-08: taint is ALWAYS computed and persisted (inspectable via the step's
   # jsonb `result_envelope` and via telemetry), regardless of the
   # `wrap_tool_output` return-shape flag. The flag below only gates the
-  # RETURN SHAPE, never this computation.
-  defp persist_taint(context, tool_module) do
-    tier = Trust.default_tier()
+  # RETURN SHAPE, never this computation. `verdict` is the resolved
+  # `Scoria.Trust.Scan` verdict (D-18) -- under `Scanner.NoOp` this resolves
+  # to the same `Trust.default_tier/0` value persisted here before this
+  # plan, so NoOp behavior is byte-identical (D-17).
+  defp persist_taint(context, tool_module, verdict) do
+    tier = (verdict && verdict.tier) || Trust.default_tier()
 
     emit_taint_telemetry(context, tool_module, tier)
     persist_taint_to_step(context, tool_module, tier)
@@ -297,9 +344,12 @@ defmodule Scoria.MCP.Executor do
   # unless `config :scoria, Scoria.MCP.Envelope, wrap_tool_output: true` is
   # set (default off). `opts[:provenance_overrides]` lets the replay-stub
   # call site (D-10) tag its provenance distinctly while sharing this same
-  # gate.
-  defp maybe_wrap_envelope(value, tool_module, context, opts \\ [])
-
+  # gate. `opts[:tier]` carries the resolved `Scoria.Trust.Scan` verdict
+  # tier (D-18, already monotonic-resolved over the default by `Scan`
+  # itself) -- defaults to `Trust.default_tier/0` when absent (the
+  # replay-stub call site below never scans, so it keeps the pre-Plan-05
+  # default). `opts[:scan]` carries the `Envelope.scan` slot (D-06) -- `nil`
+  # for the replay-stub path and for a `Scanner.NoOp` resolution.
   defp maybe_wrap_envelope(value, tool_module, context, opts) do
     if wrap_tool_output?() do
       provenance =
@@ -313,7 +363,11 @@ defmodule Scoria.MCP.Executor do
         }
         |> Map.merge(Keyword.get(opts, :provenance_overrides, %{}))
 
-      Envelope.wrap(value, tier: Trust.default_tier(), provenance: provenance)
+      Envelope.wrap(value,
+        tier: Keyword.get(opts, :tier) || Trust.default_tier(),
+        provenance: provenance,
+        scan: Keyword.get(opts, :scan)
+      )
     else
       value
     end
