@@ -107,6 +107,22 @@ defmodule Scoria.Trust do
     Map.put(metadata, @tier_key, normalize_tier(value))
   end
 
+  @doc """
+  Scans `content` per-leg (D-18), a thin public delegator to
+  `Scoria.Trust.Scan.scan/2` — see that module for the monotonic taint law
+  (D-19) and fail-closed error/timeout isolation (D-20) it enforces.
+
+  This is a plain remote function call, not a `use`/macro/protocol
+  dependency: it creates an ordinary Elixir "invoke" edge (resolved at
+  runtime, like any inter-module function call), not a compile-time
+  structural dependency. `Scoria.Trust` stays free of `alias
+  Scoria.Knowledge` / `Scoria.MCP` / `Scoria.Observe` (D-02, D-23) — calling
+  a sibling module in its own `Scoria.Trust.*` namespace does not violate
+  that leaf discipline.
+  """
+  @spec scan(binary() | map(), map()) :: {:ok, Scoria.Trust.Verdict.t()}
+  def scan(content, context \\ %{}), do: Scoria.Trust.Scan.scan(content, context)
+
   # Shared fail-closed fallback path (D-03): logs a warning, emits
   # `[:scoria, :trust, :fallback]` telemetry wrapped in try/rescue so a
   # raising host-attached handler can never break the caller, and returns
