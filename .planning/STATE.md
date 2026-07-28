@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Portcullis
-status: executing
-stopped_at: Phase 55 context gathered
-last_updated: "2026-07-28T00:56:29.434Z"
+status: ready_to_plan
+stopped_at: Phase 55 complete (5/5) — ready to discuss Phase 56
+last_updated: 2026-07-28T02:22:42.549Z
 last_activity: 2026-07-28 -- Phase 55 execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
-  completed_plans: 0
+  completed_plans: 5
   percent: 0
 ---
 
@@ -22,14 +22,14 @@ See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 55 — content-trust-taint-substrate
+**Current focus:** Phase 56 — tool declared trifecta classification & per run rails
 
 ## Current Position
 
-Phase: 55 (content-trust-taint-substrate) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 55
-Last activity: 2026-07-28 -- Phase 55 execution started
+Phase: 56
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-28
 
 Progress: [░░░░░░░░░░] 0%
 
