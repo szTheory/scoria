@@ -72,7 +72,7 @@
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 56-02-PLAN.md — require_tool_classification refusal + result_envelope persistence + scoria.classification.* registry (CLASS-02) [wave 2]
+- [x] 56-02-PLAN.md — require_tool_classification refusal + result_envelope persistence + scoria.classification.* registry (CLASS-02) [wave 2]
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -135,7 +135,7 @@
 | 54. Docs Accuracy + Conformance Check | v3.6 | 2/2 | Complete | 2026-07-19 |
 | 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 2/2 | Complete | 2026-07-18 |
 | 55. Content Trust & Taint Substrate | v3.7 | 5/5 | Complete    | 2026-07-28 |
-| 56. Tool-Declared Trifecta Classification | v3.7 | 0/TBD | Not started | - |
+| 56. Tool-Declared Trifecta Classification | v3.7 | 2/3 | In Progress|  |
 | 56.1. Per-Run Rails (SPLIT from 56) | v3.7 | 0/TBD | Not started | - |
 | 57. Confluence Escalation Gate | v3.7 | 0/TBD | Not started | - |
 | 58. Safety Hooks, Security Boundary & Govern Surface | v3.7 | 0/TBD | Not started | - |

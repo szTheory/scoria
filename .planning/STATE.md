@@ -2,18 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Portcullis
-current_phase: 56
-current_phase_name: tool-declared-trifecta-classification-per-run-rails
 status: executing
-stopped_at: Completed 56-01-PLAN.md
-last_updated: "2026-07-28T16:31:38.161Z"
+stopped_at: Completed 56-02-PLAN.md
+last_updated: "2026-07-28T16:49:56.699Z"
 last_activity: 2026-07-28
-last_activity_desc: Phase 56 execution started
 progress:
-  total_phases: 2
+  total_phases: 5
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
+  percent: 20
 ---
 
 # Project State
@@ -29,11 +27,11 @@ See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 ## Current Position
 
 Phase: 56 (tool-declared-trifecta-classification-per-run-rails) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
-Last activity: 2026-07-28 -- Phase 56 execution started
+Last activity: 2026-07-28
 
-Progress: [████████░░] 75%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -60,6 +58,7 @@ Progress: [████████░░] 75%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 56 P01 | 50min | 2 tasks | 7 files |
+| Phase 56 P02 | 35min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -261,6 +260,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 56-01]: host_declaration/1 reads a single new :host_classification context key (action_class left un-normalized at extraction) so resolve/2 can flag a raw-junk host action_class identically to a looser one per D-04, even when normalization would make it look tighter.
 - [Phase ?]: [Phase 56-01]: When no tool declaration exists, resolve/2 always returns unclassified_default/0 regardless of any host input -- the host-tightening mechanism never stands in for a missing tool declaration.
 - [Phase ?]: [Phase 56-01]: Added @derive Jason.Encoder to Scoria.MCP.Classification (Rule 1 fix) since :tool_classification now flows into every tool's context by design and a pre-existing router test echoes context through JSON.
+- [Phase ?]: [Phase 56-02]: require_tool_classification gates on source == :unclassified_default specifically -- a host-tightened resolution is a real classification and is never refused, even under the strict flag.
+- [Phase ?]: [Phase 56-02]: persist_classification_to_step/3 runs at resolve_classification/2's resolution time (before replay_gate/3), not from finalize_tool_result/5 -- so blocked and stubbed replay calls still get their classification persisted, unlike taint.
+- [Phase ?]: [Phase 56-02]: classification_attributes_for_telemetry/1 merges the five scoria.classification.* keys into the EXISTING [:scoria, :tool, :completed] event alongside trust_attrs -- no new span, :telemetry.execute( count in executor.ex unchanged at 7.
 
 ### Resolved And Deferred Work
 
@@ -379,8 +381,8 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-28T16:31:38.151Z
-Stopped at: Completed 56-01-PLAN.md
+Last session: 2026-07-28T16:49:56.694Z
+Stopped at: Completed 56-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
