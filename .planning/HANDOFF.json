@@ -1,0 +1,71 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-07-28T01:00:50.973Z",
+  "phase": "55",
+  "phase_name": "content-trust-taint-substrate",
+  "phase_dir": ".planning/phases/55-content-trust-taint-substrate",
+  "plan": 0,
+  "task": 0,
+  "total_tasks": 12,
+  "status": "paused",
+  "completed_tasks": [
+    {
+      "id": 0,
+      "name": "Orchestration setup + environment bring-up (pre-dispatch)",
+      "status": "done",
+      "commit": null,
+      "progress": "execute-phase workflow loaded; init + phase-plan-index resolved; worktree isolation established; test DB provisioned. NO plan tasks executed."
+    }
+  ],
+  "remaining_tasks": [
+    {"id": 1, "name": "Wave 1 — 55-01 trust vocabulary substrate + TAINT-01 (3 tasks)", "status": "not_started"},
+    {"id": 2, "name": "Wave 2 — 55-02 MCP.Envelope / TAINT-02 (2 tasks)", "status": "not_started"},
+    {"id": 3, "name": "Wave 2 — 55-03 Spotlight.render / TAINT-03 (2 tasks)", "status": "not_started"},
+    {"id": 4, "name": "Wave 2 — 55-04 Trust.Scanner scan engine / TAINT-04 (2 tasks)", "status": "not_started"},
+    {"id": 5, "name": "Wave 3 — 55-05 wire scan into chokepoints + semconv projector (3 tasks)", "status": "not_started"},
+    {"id": 6, "name": "Post-merge build/test gate, verification, roadmap update", "status": "not_started"}
+  ],
+  "blockers": [
+    {
+      "description": "No green test baseline was established — the full `mix test` run was interrupted before completing. Without a baseline, post-merge failures cannot be cleanly attributed to phase 55 work vs. pre-existing breakage.",
+      "type": "technical",
+      "workaround": "Either run the full suite once to capture a baseline, or use a scoped lane (e.g. `mix test.semantic_fast_path`) and accept narrower attribution."
+    },
+    {
+      "description": "Test-gate strategy for parallel executors is undecided. Wave 2 runs 3 concurrent executors; all default to the same `scoria_test` database on localhost:55432.",
+      "type": "technical",
+      "workaround": "Pass a distinct SCORIA_DB_NAME (or MIX_TEST_PARTITION) per executor, or serialize Wave 2."
+    }
+  ],
+  "async_jobs": [],
+  "human_actions_pending": [
+    {
+      "action": "Decide the test-gate strategy before dispatching executors (full suite vs. scoped lane; per-executor DB isolation vs. serialized Wave 2)",
+      "context": "The full `mix test` run was interrupted by the user, suggesting it is too slow or otherwise undesirable to run as-is. This decision gates how executors self-check and how the post-merge gate runs.",
+      "blocking": true
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Run the orchestrator inside its own git worktree at .claude/worktrees/phase-55-content-trust-taint (branch worktree-phase-55-content-trust-taint)",
+      "rationale": "This session is a background job; the harness rejects file edits in the shared checkout until isolated. branching_strategy is \"none\", so all phase commits land on this worktree branch. Final delivery is a pushed branch + draft PR, never a push to main.",
+      "phase": "55"
+    },
+    {
+      "decision": "Keep parallel worktree execution enabled rather than degrading to sequential",
+      "rationale": "Local main is 238 commits ahead of origin/main, which is the classic #683 base-divergence condition. But .claude/settings.local.json already sets worktree.baseRef=\"head\", so agent worktrees fork from live HEAD (5b46b282) and carry all 238 commits plus the phase 55 plans. Verified: the orchestrator worktree is at 5b46b282 with all plans present.",
+      "phase": "55"
+    },
+    {
+      "decision": "Wave 2 (55-02, 55-03, 55-04) may run in parallel",
+      "rationale": "Intra-wave files_modified overlap check passed — the three plans share no files. 55-01 and 55-04 both touch lib/scoria/trust.ex but are in different waves, so they serialize naturally.",
+      "phase": "55"
+    }
+  ],
+  "uncommitted_files": [
+    ".planning/STATE.md",
+    "test/tmp/ (untracked scratch from the interrupted test run)"
+  ],
+  "next_action": "Confirm the test-gate strategy with the user, then emit the Wave 1 checkpoint heartbeat and dispatch a single gsd-executor for 55-01 with isolation=\"worktree\", embedding EXPECTED_BASE and the environment bring-up steps (mix deps.get + DB env vars) in the prompt.",
+  "context_notes": "Everything done so far is orchestration scaffolding, not plan work — zero production code has been written and zero plan commits exist. The phase is fully planned (5 plans, 3 waves, no checkpoints, all autonomous, mvp_mode false, cross_ai false, auto-mode false; executor and verifier models both sonnet; context_window 200000). The single most valuable thing this session discovered is the environment bring-up recipe for a fresh worktree, captured under Infrastructure State in .continue-here.md — a fresh worktree has no deps/ or _build/, and the test suite needs pgvector on port 55432 with a specific four-step migration order. Resume by reading that section first."
+}
