@@ -34,7 +34,12 @@
   2. A tool's output arrives wrapped in an envelope carrying a trust tier, so downstream code treats it as potentially-untrusted rather than implicitly-trusted context.
   3. When a prompt is assembled in the orchestrator, untrusted content is spotlighted/datamarked with a model-agnostic delimiter that distinguishes it from instructions.
   4. A host can register a `scan/2` hook (e.g. Rebuff/LlamaGuard-shaped) and see scanned/untrusted content tagged in traces; with none registered, the default no-op leaves current behavior unchanged.
-**Plans**: TBD
+**Plans**: 5 plans (3 waves)
+- [ ] 55-01-PLAN.md — Trust leaf vocab + Tiered protocol + TAINT-01 Knowledge (tracer) [wave 1]
+- [ ] 55-02-PLAN.md — Scoria.MCP.Envelope + executor wrap + soft-launch flag (TAINT-02) [wave 2]
+- [ ] 55-03-PLAN.md — Scoria.Spotlight datamark/delimit + spotlight trace keys (TAINT-03) [wave 2]
+- [ ] 55-04-PLAN.md — Scan engine: Scanner/Verdict/Scan, monotonic law, fail-closed (TAINT-04) [wave 2]
+- [ ] 55-05-PLAN.md — Wire scan at retrieve/executor + scoria.trust.* trace tagging (TAINT-04) [wave 3]
 
 ### Phase 56: Tool-Declared Trifecta Classification & Per-Run Rails
 **Goal**: Every tool call enforced at `MCP.Executor` carries an explicit, tool-declared trifecta classification instead of a silent host-passed default, and a single run cannot exceed its own step/call/time budget unnoticed.
