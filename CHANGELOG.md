@@ -178,6 +178,31 @@ new `:on_flush_error` `Buffer` start-link option (`:log` default | `:raise`) let
 choose whether a persistent Postgres failure should crash the buffer process instead
 of only logging.
 
+### Migration Required (per-run rails, RAIL-01)
+
+The pre-1.0 terminology migration described below requires no schema change, and the
+per-run rails feature described here adds one.
+
+**One new migration: `20260728120000_add_rail_columns_to_ai_workflow_runs.exs`.** This
+migration adds seven columns to `ai_workflow_runs`: `rail_max_steps`,
+`rail_max_tool_calls`, `rail_max_active_ms`, `rail_steps`, `rail_tool_calls`,
+`rail_paused_ms`, and `rail_paused_at`. It is catalog-only — there is no backfill, so
+every existing row reads zero counters and null limits, and every pre-existing run
+behaves exactly as before. **Hosts must run their migrations after upgrading** (`mix
+ecto.migrate`); see [Troubleshooting](guides/troubleshooting.md) for the failure symptom
+if this step is skipped.
+
+**A new terminal run status: `"halted"`.** A run that exceeds a configured rail now
+reaches this status instead of being silently allowed to continue.
+
+**A new audit-outbox event type: `"run.rail.tripped"`.** Call this out explicitly if you
+maintain a custom `Scoria.SRE.AuditSink` implementation: `SRE.Relay` is
+event-type-agnostic and every in-repo UI filter is positive, but an adopter's own sink
+that pattern-matches `event_type` exhaustively could crash on an unrecognised value
+unless it is updated to handle `"run.rail.tripped"` before upgrading.
+
+See [Per-Run Rails](guides/capabilities/per-run-rails.md) for the full capability guide.
+
 ### Added
 
 **Scoria.Observe.Buffer now boots automatically.** Spans emitted by Phases 51/52

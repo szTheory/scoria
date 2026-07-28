@@ -25,6 +25,7 @@ Skip connectors on first adoption if you only need durable runs, reviewer traces
 | When to escalate to human review | Tool policy, approval gates, and invocation audit |
 | Business-specific tool allowlists | Curated connector profiles and boring install defaults |
 | Product meaning of a tool result | Reviewer trace projection and durable audit evidence |
+| Forwarding `run_id`/`step_id` into tool call context | Per-run rail coverage (`max_tool_calls`) only where that `run_id` arrives — see [Per-Run Rails](guides/capabilities/per-run-rails.md); `[:scoria, :run, :rail, :skipped]` measures unattributed calls, and `Scoria.MCP.Router` carries no `run_id` today |
 
 Scoria does not run connectors as a multi-tenant SaaS. Each connector invocation stays on your BEAM with your Ecto data.
 

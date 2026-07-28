@@ -53,6 +53,10 @@ This is the practical rule: Scoria owns the mechanism; your app owns the noun an
 - Semantic cache is not a knowledge base. Semantic cache reuses safe read-only answers; the optional knowledge base owns retrieval, citations, and grounding.
 - Dashboard scope is not selected by URL params. The host app authenticates and authorizes the reviewer first.
 - Default runtime adoption does not require knowledge, semantic cache, or connector setup.
+- Per-run rails only cover calls where a `run_id` reaches the tool context. Wherever a
+  `run_id` is absent — `Scoria.MCP.Router` inbound JSON-RPC is the shipped example —
+  `max_tool_calls` has no coverage; `[:scoria, :run, :rail, :skipped]` measures the gap.
+  See [Per-Run Rails](guides/capabilities/per-run-rails.md).
 
 ## Related Guides
 
