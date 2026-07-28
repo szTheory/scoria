@@ -569,6 +569,67 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     refute html =~ "scoria-toast--pass"
   end
 
+  # RAIL-01, D-05 (plan 56.1-05 Task 3): `maybe_resume_approval/3` calls
+  # `Resume.resume_run/1` AFTER `Workflows.approve/3` has already committed
+  # the decision. A run halted by a per-run rail falls through
+  # `Workflows.resume_run/1`'s catch-all as `{:error, :not_resumable}` --
+  # the decision WAS recorded, only the resume did not happen. Before this
+  # fix the generic `approval_error_message/2` fallback rendered "Could not
+  # record approved approval decision", telling the operator their approval
+  # failed when it did not.
+  test "approving a decision on a run halted by a per-run rail shows an accurate info-tone toast, not a false failure" do
+    %{run: run, step: step, approval: approval} = pending_approval()
+
+    envelope = %{
+      "status" => "run_halted",
+      "reason_code" => "max_steps_exceeded",
+      "rail" => "max_steps",
+      "limit" => 1,
+      "observed" => 1,
+      "attempted" => 2,
+      "run_id" => run.id,
+      "step_id" => step.id,
+      "halted_at" => DateTime.to_iso8601(DateTime.utc_now()),
+      "site" => "workflow_runtime_step"
+    }
+
+    assert {:ok, %Scoria.Workflows.Run{status: "halted"}} =
+             Workflows.halt_run(run.id, step.id, envelope)
+
+    # D-05: halting a run never modifies its pending Approval rows.
+    assert Workflows.get_approval!(approval.id).status == "pending"
+
+    # RAIL-01 D-18/D-01: a halted run's own dashboard rendering must not
+    # raise, and it renders with the failure tone (asserted separately in
+    # eval_vocabulary_test.exs's tone/1 unit test). This LiveView mount
+    # succeeding, below, is the end-to-end proof for the approvals surface.
+    {:ok, view, _html} =
+      live(
+        session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+        "/scoria/approvals?runtime=#{run.id}"
+      )
+
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+    send(view.pid, {:hitl_request, projection})
+
+    render_click(view, "approve", %{})
+
+    eventually(fn -> render(view) =~ "scoria-toast--info" end)
+    html = render(view)
+
+    assert html =~ "scoria-toast--info"
+
+    assert html =~
+             "Approval decision recorded. This run was halted by a per-run rail and cannot be resumed."
+
+    refute html =~ "Could not record"
+    refute html =~ "Approval granted."
+    refute html =~ "scoria-toast--fail"
+
+    # The decision itself WAS recorded despite the run staying halted.
+    assert Workflows.get_approval!(approval.id).status == "approved"
+  end
+
   # D-21: fixtures MUST route decided rows through approve/3 (not Repo.update_all)
   # so the real path emits the decision audit event and the history surface is
   # exercised honestly.
