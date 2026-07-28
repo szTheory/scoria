@@ -50,7 +50,7 @@
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 55-05-PLAN.md — Wire scan at retrieve/executor + scoria.trust.* trace tagging (TAINT-04) [wave 3]
+- [x] 55-05-PLAN.md — Wire scan at retrieve/executor + scoria.trust.* trace tagging (TAINT-04) [wave 3]
 
 ### Phase 56: Tool-Declared Trifecta Classification & Per-Run Rails
 
@@ -105,7 +105,7 @@
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 5/5 | Complete | 2026-07-18 |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 2/2 | Complete | 2026-07-19 |
 | 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 2/2 | Complete | 2026-07-18 |
-| 55. Content Trust & Taint Substrate | v3.7 | 4/5 | In Progress|  |
+| 55. Content Trust & Taint Substrate | v3.7 | 5/5 | Complete   | 2026-07-28 |
 | 56. Tool-Declared Trifecta Classification & Per-Run Rails | v3.7 | 0/TBD | Not started | - |
 | 57. Confluence Escalation Gate | v3.7 | 0/TBD | Not started | - |
 | 58. Safety Hooks, Security Boundary & Govern Surface | v3.7 | 0/TBD | Not started | - |
