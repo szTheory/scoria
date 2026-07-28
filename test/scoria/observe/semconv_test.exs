@@ -296,6 +296,10 @@ defmodule Scoria.Observe.SemconvTest do
                "scoria.retrieval.embedding_model",
                "scoria.retrieval.index_version",
                "scoria.retrieval.reranker",
+               "scoria.spotlight.marked_bytes",
+               "scoria.spotlight.marked_spans",
+               "scoria.spotlight.technique",
+               "scoria.spotlight.tier",
                "session_id",
                "status",
                "tenant_id",
@@ -430,6 +434,40 @@ defmodule Scoria.Observe.SemconvTest do
       end
 
       refute Enum.any?(Map.values(attrs), &(&1 == "should never appear on a span"))
+    end
+  end
+
+  describe "spotlight_attributes/1 fixed-key projection (D-14)" do
+    test "projects onto exactly the four scoria.spotlight.* keys, all registry keys, no extras" do
+      registry = Semconv.attribute_registry()
+      spotlight_key_strings = Semconv.spotlight_keys() |> Keyword.values() |> MapSet.new()
+
+      input = %{
+        technique: :datamark,
+        marked_spans: 3,
+        marked_bytes: 120,
+        tier: "untrusted",
+        not_a_registered_field: "should never appear on a span"
+      }
+
+      attrs = Semconv.spotlight_attributes(input)
+
+      assert MapSet.new(Map.keys(attrs)) |> MapSet.subset?(spotlight_key_strings)
+      assert map_size(attrs) == 4
+
+      for key <- Map.keys(attrs) do
+        assert Map.has_key?(registry, key),
+               "spotlight_attributes/1 key #{inspect(key)} is not a registered attribute"
+      end
+
+      refute Enum.any?(Map.values(attrs), &(&1 == "should never appear on a span"))
+    end
+
+    test "a nil field is omitted, never defaulted (structural never-free-text guarantee)" do
+      attrs = Semconv.spotlight_attributes(%{technique: :delimit, marked_spans: 1, marked_bytes: nil, tier: "untrusted"})
+
+      refute Map.has_key?(attrs, "scoria.spotlight.marked_bytes")
+      assert map_size(attrs) == 3
     end
   end
 
