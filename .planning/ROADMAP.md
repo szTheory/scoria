@@ -65,7 +65,19 @@
   3. At `MCP.Executor` enforcement, every tool call's per-call taint is resolved from the tool's own declaration, never a host-passed default.
   4. Resolution covers ALL five fail-open seams, not just `MCP.Executor`: the replay seam, the live `policy_sensitive_invocation?/1` path, `budget_required?/1`, `Connectors.Invocation.build_seam/2` (which decides replay BEFORE the executor), and `Workflows.Runtime`'s `%{local_classification: :pure}` default.
 
-**Plans**: TBD
+**Plans**: 3 plans (3 waves)
+**Wave 1**
+
+- [ ] 56-01-PLAN.md — Classification leaf + Tool declaration surface + executor resolution choke point (tracer) [wave 1]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 56-02-PLAN.md — require_tool_classification refusal + result_envelope persistence + scoria.classification.* registry (CLASS-02) [wave 2]
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 56-03-PLAN.md — Fail-open sites 2-5 consume the classification (CLASS-03) [wave 3]
+
 **Context**: `.planning/phases/56-tool-declared-trifecta-classification-per-run-rails/56-CONTEXT.md`
 
 ### Phase 56.1: Per-Run Rails (SPLIT from Phase 56)
