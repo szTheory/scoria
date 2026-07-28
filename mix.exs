@@ -333,7 +333,20 @@ defmodule Scoria.MixProject do
       "Scoria.SupportJourney",
       "Scoria.VerificationSuites.closeout_order/0",
       "ScoriaWeb.DashboardScope.Resolver",
-      "ScoriaWeb.UI"
+      "ScoriaWeb.UI",
+      # RAIL-01 (56.1-06): guides/capabilities/per-run-rails.md and its three
+      # mirrored footgun notes reference these internal (non-public-surface)
+      # modules/functions by name in prose -- they are deliberately filtered
+      # out of docs_public_modules/0, so ExDoc cannot autolink them.
+      "Scoria.SRE.BudgetEngine",
+      "Scoria.Runtime.Params",
+      "Scoria.Runtime.Rails",
+      "Scoria.Runtime.Rails.resolve/1",
+      "Scoria.Runtime.Rails.validate_app_env/0",
+      "Scoria.MCP.Executor.execute/4",
+      "Scoria.MCP.Router",
+      "Scoria.Workflows.Run",
+      "Scoria.Application.start/2"
     ]
   end
 
