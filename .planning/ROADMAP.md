@@ -44,9 +44,9 @@
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 55-02-PLAN.md — Scoria.MCP.Envelope + executor wrap + soft-launch flag (TAINT-02) [wave 2]
-- [ ] 55-03-PLAN.md — Scoria.Spotlight datamark/delimit + spotlight trace keys (TAINT-03) [wave 2]
-- [ ] 55-04-PLAN.md — Scan engine: Scanner/Verdict/Scan, monotonic law, fail-closed (TAINT-04) [wave 2]
+- [x] 55-02-PLAN.md — Scoria.MCP.Envelope + executor wrap + soft-launch flag (TAINT-02) [wave 2]
+- [x] 55-03-PLAN.md — Scoria.Spotlight datamark/delimit + spotlight trace keys (TAINT-03) [wave 2]
+- [x] 55-04-PLAN.md — Scan engine: Scanner/Verdict/Scan, monotonic law, fail-closed (TAINT-04) [wave 2]
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -105,7 +105,7 @@
 | 53b. `ai_span_events` + `emit_event/1` | v3.6 | 5/5 | Complete | 2026-07-18 |
 | 54. Docs Accuracy + Conformance Check | v3.6 | 2/2 | Complete | 2026-07-19 |
 | 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 2/2 | Complete | 2026-07-18 |
-| 55. Content Trust & Taint Substrate | v3.7 | 1/5 | In Progress|  |
+| 55. Content Trust & Taint Substrate | v3.7 | 4/5 | In Progress|  |
 | 56. Tool-Declared Trifecta Classification & Per-Run Rails | v3.7 | 0/TBD | Not started | - |
 | 57. Confluence Escalation Gate | v3.7 | 0/TBD | Not started | - |
 | 58. Safety Hooks, Security Boundary & Govern Surface | v3.7 | 0/TBD | Not started | - |
