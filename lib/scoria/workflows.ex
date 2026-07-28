@@ -10,6 +10,7 @@ defmodule Scoria.Workflows do
   alias Scoria.Connectors.Connector
   alias Scoria.Connectors.LocalTool
   alias Scoria.Identity
+  alias Scoria.Observe
   alias Scoria.Observe.Approval
   alias Scoria.Observe.ReviewerBroadcast
   alias Scoria.Repo
@@ -531,6 +532,209 @@ defmodule Scoria.Workflows do
         {:error, value}
     end
   end
+
+  @doc """
+  Terminally halts a run for exceeding a per-run rail (RAIL-01). Unlike
+  `fail_step/3`, this is a new lifecycle transition -- it writes the new
+  `"halted"` status (never `"failed"`), a dedicated `"run_halted"`
+  checkpoint/event transition, and a `run.rail.tripped` audit-outbox row,
+  all inside one transaction.
+
+  `run_id` is locked `FOR UPDATE` FIRST, establishing a single global lock
+  order (run before steps) shared with `claim_step/1`'s G1 guard -- this is
+  what makes the two paths deadlock-free (56.1-CONTEXT.md D-04). A second
+  `halt_run/3` call on an already-halted run rolls back with
+  `{:error, :already_halted}`; a genuine race that instead surfaces as
+  `Ecto.StaleEntryError` or a unique-constraint violation on the audit
+  outbox's `dedupe_key` is normalized to the same value below.
+  """
+  @spec halt_run(binary() | Run.t(), binary() | nil, map()) ::
+          {:ok, Run.t()} | {:error, :already_halted} | {:error, Ecto.Changeset.t()}
+  def halt_run(%Run{id: run_id}, step_id, envelope), do: halt_run(run_id, step_id, envelope)
+
+  def halt_run(run_id, step_id, envelope) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    Repo.transaction(fn repo ->
+      run = repo.one!(from(r in Run, where: r.id == ^run_id, lock: "FOR UPDATE"))
+
+      if Run.halted?(run) do
+        repo.rollback(:already_halted)
+      end
+
+      if step_id do
+        step = repo.get!(Step, step_id)
+
+        step
+        |> Step.changeset(%{status: "failed", completed_at: now, error_envelope: envelope})
+        |> repo.update!()
+      end
+
+      {cancelled_sibling_count, _} =
+        repo.update_all(
+          from(s in Step, where: s.run_id == ^run.id and s.status in ["queued", "retrying"]),
+          set: [status: "cancelled"]
+        )
+
+      checkpoint =
+        insert_checkpoint(
+          repo,
+          run.id,
+          step_id,
+          replay_transition_checkpoint_attrs(run, "run_halted", "halted", envelope, :error)
+        )
+
+      insert_event(
+        repo,
+        run.id,
+        step_id,
+        replay_transition_event_attrs(run, "run_halted", envelope, :error)
+      )
+
+      audit_outbox_event =
+        SRE.insert_audit_outbox_event(
+          repo,
+          halt_audit_envelope(run, step_id, envelope, cancelled_sibling_count)
+        )
+
+      updated_run =
+        run
+        |> Run.changeset(%{
+          status: "halted",
+          current_step_id: step_id,
+          latest_checkpoint_id: checkpoint.id,
+          error_envelope: envelope,
+          completed_at: now
+        })
+        |> repo.update!()
+
+      {updated_run, audit_outbox_event}
+    end)
+    |> case do
+      {:ok, {run, audit_outbox_event}} ->
+        broadcast(run.id, {:workflow_updated, run.id})
+        emit_rail_tripped(run, audit_outbox_event, envelope)
+        {:ok, run}
+
+      {:error, :already_halted} ->
+        {:error, :already_halted}
+
+      {:error, value} ->
+        normalize_halt_error(value)
+    end
+  rescue
+    _e in Ecto.StaleEntryError -> {:error, :already_halted}
+  end
+
+  defp normalize_halt_error(%Ecto.Changeset{} = changeset) do
+    if unique_dedupe_error?(changeset) do
+      {:error, :already_halted}
+    else
+      {:error, changeset}
+    end
+  end
+
+  defp normalize_halt_error(value), do: {:error, value}
+
+  defp unique_dedupe_error?(%Ecto.Changeset{} = changeset) do
+    Enum.any?(changeset.errors, fn
+      {:dedupe_key, {_message, metadata}} -> Keyword.get(metadata, :constraint) == :unique
+      _ -> false
+    end)
+  end
+
+  # `[:scoria, :run, :rail, :tripped]` fires ONCE, post-commit, only on
+  # `{:ok, run}` -- never on `{:error, :already_halted}`, because a host
+  # looping against a halted run's id would otherwise produce a telemetry
+  # storm (56.1-CONTEXT.md D-17). Wrapped in try/rescue so a broken adopter
+  # handler cannot halt a halt.
+  defp emit_rail_tripped(run, audit_outbox_event, envelope) do
+    try do
+      rail = attr_value(envelope, :rail)
+
+      measurements = %{
+        limit: attr_value(envelope, :limit),
+        observed: attr_value(envelope, :observed),
+        attempted: attr_value(envelope, :attempted)
+      }
+
+      metadata = %{
+        rail: rail && String.to_atom(rail),
+        reason_code: attr_value(envelope, :reason_code),
+        unit: rail_unit(rail),
+        run_id: run.id,
+        step_id: audit_outbox_event.step_id,
+        trace_id: audit_outbox_event.trace_id,
+        tenant_id: audit_outbox_event.tenant_id,
+        audit_outbox_event_id: audit_outbox_event.id,
+        site: attr_value(envelope, :site) |> maybe_atomize()
+      }
+
+      :telemetry.execute([:scoria, :run, :rail, :tripped], measurements, metadata)
+    rescue
+      _ -> :ok
+    end
+  end
+
+  defp maybe_atomize(nil), do: nil
+  defp maybe_atomize(value) when is_binary(value), do: String.to_atom(value)
+  defp maybe_atomize(value), do: value
+
+  defp halt_audit_envelope(run, step_id, envelope, cancelled_sibling_count) do
+    rail = attr_value(envelope, :rail)
+
+    %{
+      tenant_id: run.tenant_id || "system",
+      workflow_run_id: run.id,
+      step_id: step_id,
+      trace_id: Observe.trace_id_for_run(run),
+      actor_ref: "system:scoria.rails",
+      event_type: "run.rail.tripped",
+      policy_class: "run_rail",
+      reason_code: attr_value(envelope, :reason_code),
+      dedupe_key: "run.rail.tripped:" <> run.id,
+      metadata: %{
+        "rail" => rail,
+        "limit" => attr_value(envelope, :limit),
+        "observed" => attr_value(envelope, :observed),
+        "attempted" => attr_value(envelope, :attempted),
+        "unit" => rail_unit(rail),
+        "check_order" => rail_check_order(rail),
+        "rails_snapshot" => rails_snapshot(run),
+        "halting_step_id" => step_id,
+        "cancelled_sibling_count" => cancelled_sibling_count,
+        "run_actor_id" => run.actor_id,
+        "run_started_at" => run.started_at && DateTime.to_iso8601(run.started_at),
+        "run_paused_ms" => run.rail_paused_ms,
+        "run_status_after" => "halted"
+      }
+    }
+  end
+
+  # Computed eagerly from the already-locked run row (Claude's Discretion 3)
+  # -- all three legs, INCLUDING the untripped ones, at zero extra queries.
+  defp rails_snapshot(run) do
+    %{
+      "max_steps" => %{"limit" => run.rail_max_steps, "observed" => run.rail_steps},
+      "max_tool_calls" => %{"limit" => run.rail_max_tool_calls, "observed" => run.rail_tool_calls},
+      "max_active_ms" => %{"limit" => run.rail_max_active_ms, "observed" => observed_active_ms(run)}
+    }
+  end
+
+  defp observed_active_ms(%Run{started_at: nil, inserted_at: nil}), do: 0
+
+  defp observed_active_ms(run) do
+    anchor = run.started_at || run.inserted_at
+    DateTime.diff(DateTime.utc_now(), anchor, :millisecond) - (run.rail_paused_ms || 0)
+  end
+
+  defp rail_unit("max_active_ms"), do: "ms"
+  defp rail_unit(_rail), do: "count"
+
+  defp rail_check_order("max_active_ms"), do: 1
+  defp rail_check_order("max_steps"), do: 2
+  defp rail_check_order("max_tool_calls"), do: 3
+  defp rail_check_order(_rail), do: nil
 
   def create_handoff(%Step{} = step, attrs) do
     attrs =

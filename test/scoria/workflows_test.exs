@@ -5,6 +5,8 @@ defmodule Scoria.WorkflowsTest do
   alias Scoria.Repo
   alias Scoria.Observe.Approval
   alias Scoria.Observe.OperatorBroadcast
+  alias Scoria.SRE
+  alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
   alias Scoria.Workflows.{Checkpoint, Event, Handoff, Run, Step}
 
@@ -513,6 +515,88 @@ defmodule Scoria.WorkflowsTest do
     end
   end
 
+  describe "halt_run/3 (RAIL-01)" do
+    test "writes the new terminal \"halted\" status and audits exactly one run.rail.tripped row" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, _claimed} = Workflows.claim_step(step.id)
+
+      envelope = rail_envelope(run, step)
+
+      assert {:ok, %Run{status: "halted"} = halted_run} = Workflows.halt_run(run.id, step.id, envelope)
+      assert Repo.get!(Step, step.id).status == "failed"
+
+      audit_events =
+        AuditOutboxEvent
+        |> where(
+          [e],
+          e.workflow_run_id == ^halted_run.id and e.event_type == "run.rail.tripped"
+        )
+        |> Repo.all()
+
+      assert length(audit_events) == 1
+      assert hd(audit_events).actor_ref == "system:scoria.rails"
+    end
+
+    test "a second halt_run/3 on the same run returns {:error, :already_halted}" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, _claimed} = Workflows.claim_step(step.id)
+
+      envelope = rail_envelope(run, step)
+
+      assert {:ok, %Run{status: "halted"}} = Workflows.halt_run(run.id, step.id, envelope)
+      assert {:error, :already_halted} = Workflows.halt_run(run.id, step.id, envelope)
+    end
+
+    test "a forced duplicate dedupe_key rolls back the whole transaction; the run stays running" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, _claimed} = Workflows.claim_step(step.id)
+
+      dedupe_key = "run.rail.tripped:" <> run.id
+
+      {:ok, _existing} =
+        SRE.create_audit_outbox_event(%{
+          tenant_id: "system",
+          event_type: "run.rail.tripped",
+          policy_class: "run_rail",
+          dedupe_key: dedupe_key,
+          actor_ref: "system:scoria.rails",
+          workflow_run_id: run.id
+        })
+
+      envelope = rail_envelope(run, step)
+
+      assert {:error, :already_halted} = Workflows.halt_run(run.id, step.id, envelope)
+      assert Repo.get!(Run, run.id).status == "running"
+    end
+  end
+
   describe "HITL tenant fan-out" do
     test "mark_waiting_for_approval/3 broadcasts hitl_request on tenant topic" do
       tenant_id = "tenant-hitl-#{System.unique_integer([:positive])}"
@@ -596,5 +680,20 @@ defmodule Scoria.WorkflowsTest do
       assert {:ok, _} = Workflows.approve(approval.id, "approved", %{})
       assert {:error, :not_pending} = Workflows.approve(approval.id, "approved", %{})
     end
+  end
+
+  defp rail_envelope(run, step) do
+    %{
+      "status" => "run_halted",
+      "reason_code" => "max_steps_exceeded",
+      "rail" => "max_steps",
+      "limit" => 1,
+      "observed" => 1,
+      "attempted" => 2,
+      "run_id" => run.id,
+      "step_id" => step.id,
+      "halted_at" => DateTime.to_iso8601(DateTime.utc_now()),
+      "site" => "workflow_runtime_step"
+    }
   end
 end
