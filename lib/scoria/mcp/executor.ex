@@ -4,13 +4,19 @@ defmodule Scoria.MCP.Executor do
   Emits telemetry events for auditing.
   """
 
+  import Ecto.Query, warn: false
+
+  alias Scoria.MCP.Envelope
+  alias Scoria.Repo
   alias Scoria.SRE.BudgetEngine
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE
   alias Scoria.SRE.Telemetry
+  alias Scoria.Trust
   alias Scoria.Workflows
   alias Scoria.Workflows.ReplayDisposition
   alias Scoria.Workflows.Run
+  alias Scoria.Workflows.Step
 
   @doc """
   Executes a tool module with the given arguments and context.
@@ -46,10 +52,14 @@ defmodule Scoria.MCP.Executor do
              execute_tool(tool_module, args, access_context, timeout, metadata)
            end) do
         {:ok, {:completed, result, duration}} ->
+          # D-07 load-bearing ordering: reconcile_budget/emit_sre_telemetry/the
+          # [:scoria, :tool, :completed] event above all read the RAW `result`
+          # before any envelope wrapping happens below. Do not reorder this.
           reconcile_budget(execution_context, access_context, result, "completed")
           emit_sre_telemetry(tool_module, access_context, "completed", duration, result)
           :telemetry.execute([:scoria, :tool, :completed], %{duration: duration}, metadata)
-          result
+
+          finalize_tool_result(result, tool_module, access_context)
 
         {:error, {:timeout, duration}} ->
           reconcile_budget(execution_context, access_context, %{}, "timeout")
@@ -88,12 +98,20 @@ defmodule Scoria.MCP.Executor do
           {:historical_stub, evidence} ->
             record_replay_audit(context, tool_module, evidence, "tool.replay.stubbed")
 
+            raw_result = Map.get(source_evidence, :result) || Map.get(source_evidence, "result")
+
             {:ok,
              %{
                status: :historical_stub,
                replay_disposition: :historical_stub,
                replay_reason_code: evidence.replay_reason_code,
-               result: Map.get(source_evidence, :result) || Map.get(source_evidence, "result")
+               # D-10: wrapped under the SAME flag as the live success path so
+               # a consumer written against `{:ok, %Envelope{}}` never diverges
+               # on replay.
+               result:
+                 maybe_wrap_envelope(raw_result, tool_module, context,
+                   provenance_overrides: %{source: :replay_stub}
+                 )
              }}
 
           {:blocked, evidence} ->
@@ -190,6 +208,123 @@ defmodule Scoria.MCP.Executor do
     end
   end
 
+  # D-07: only the `{:ok, value}` leg's inner `value` is ever wrapped — never
+  # the raw `{:ok, value} | {:error, reason}` tuple itself (that would
+  # double-nest `%Envelope{value: {:ok, v}}`, RESEARCH.md Pitfall 1).
+  # `{:error, _}` passes through untouched under both flag states.
+  defp finalize_tool_result({:ok, value}, tool_module, context) do
+    persist_taint(context, tool_module)
+    {:ok, maybe_wrap_envelope(value, tool_module, context)}
+  end
+
+  defp finalize_tool_result({:error, _} = error, _tool_module, _context), do: error
+
+  # Defensive fallback: `Scoria.MCP.Tool.execute/2`'s callback contract is
+  # `{:ok, any()} | {:error, any()}`, but a misbehaving tool returning
+  # something else must not crash the executor.
+  defp finalize_tool_result(other, _tool_module, _context), do: other
+
+  # D-08: taint is ALWAYS computed and persisted (inspectable via the step's
+  # jsonb `result_envelope` and via telemetry), regardless of the
+  # `wrap_tool_output` return-shape flag. The flag below only gates the
+  # RETURN SHAPE, never this computation.
+  defp persist_taint(context, tool_module) do
+    tier = Trust.default_tier()
+
+    emit_taint_telemetry(context, tool_module, tier)
+    persist_taint_to_step(context, tool_module, tier)
+  end
+
+  defp emit_taint_telemetry(context, tool_module, tier) do
+    try do
+      :telemetry.execute(
+        [:scoria, :trust, :taint],
+        %{},
+        %{
+          tool: tool_module,
+          tier: tier,
+          trace_id: Map.get(context, :trace_id),
+          step_id: Map.get(context, :step_id)
+        }
+      )
+    rescue
+      _ -> :ok
+    end
+  end
+
+  # Persists the always-computed taint map onto the step's `result_envelope`
+  # jsonb via a Postgres jsonb merge (mirrors
+  # `Knowledge.set_source_trust/3`'s `fragment("? || ?", ...)` pattern) — no
+  # new Ecto column (D-08). Best-effort: a standalone/non-workflow tool
+  # invocation with no `step_id` in context, or no matching step row, is not
+  # an error — taint has already been telemetried above.
+  defp persist_taint_to_step(context, tool_module, tier) do
+    case Map.get(context, :step_id) do
+      nil ->
+        :ok
+
+      step_id ->
+        taint = %{
+          "tier" => tier,
+          "tool_ref" => inspect(tool_module),
+          "args_fingerprint" => Map.get(context, :args_fingerprint)
+        }
+
+        try do
+          from(step in Step,
+            where: step.id == ^step_id,
+            update: [
+              set: [
+                result_envelope:
+                  fragment(
+                    "? || ?",
+                    step.result_envelope,
+                    type(^%{"scoria.taint" => taint}, :map)
+                  )
+              ]
+            ]
+          )
+          |> Repo.update_all([])
+        rescue
+          _ -> :ok
+        end
+
+        :ok
+    end
+  end
+
+  # Soft-launch flag (D-08): the return VALUE stays byte-identical to 0.1.3
+  # unless `config :scoria, Scoria.MCP.Envelope, wrap_tool_output: true` is
+  # set (default off). `opts[:provenance_overrides]` lets the replay-stub
+  # call site (D-10) tag its provenance distinctly while sharing this same
+  # gate.
+  defp maybe_wrap_envelope(value, tool_module, context, opts \\ [])
+
+  defp maybe_wrap_envelope(value, tool_module, context, opts) do
+    if wrap_tool_output?() do
+      provenance =
+        %{
+          tool_ref: Map.get(context, :tool_ref, inspect(tool_module)),
+          tool_name: tool_name(tool_module),
+          trace_id: Map.get(context, :trace_id),
+          workflow_run_id: Map.get(context, :run_id),
+          step_id: Map.get(context, :step_id),
+          args_fingerprint: Map.get(context, :args_fingerprint)
+        }
+        |> Map.merge(Keyword.get(opts, :provenance_overrides, %{}))
+
+      Envelope.wrap(value, tier: Trust.default_tier(), provenance: provenance)
+    else
+      value
+    end
+  end
+
+  defp wrap_tool_output? do
+    :scoria
+    |> Application.get_env(Envelope, [])
+    |> Keyword.get(:wrap_tool_output, false)
+  end
+
   defp execute_tool(tool_module, args, context, timeout, metadata) do
     :telemetry.execute([:scoria, :tool, :started], %{system_time: System.system_time()}, metadata)
 
@@ -275,11 +410,24 @@ defmodule Scoria.MCP.Executor do
     end
   end
 
-  defp actual_units(_context, _result, outcome) when outcome in ["timeout", "execution_failed"], do: 0
+  # `@doc false` (not `defp`) so the D-07 defense-in-depth `%Envelope{}` head
+  # below is directly unit-testable even though the current (correct)
+  # `execute_live/4` ordering never routes a wrapped value through here —
+  # billing runs on the raw result before `finalize_tool_result/3` wraps it.
+  # This is an internal function, not a published API.
+  @doc false
+  def actual_units(_context, _result, outcome) when outcome in ["timeout", "execution_failed"], do: 0
 
-  defp actual_units(context, {:ok, result}, outcome), do: actual_units(context, result, outcome)
+  def actual_units(context, {:ok, result}, outcome), do: actual_units(context, result, outcome)
 
-  defp actual_units(context, result, _outcome) do
+  # Defense-in-depth (D-07): billing runs on the RAW result before any
+  # envelope wrap happens (see `finalize_tool_result/3`), so this head never
+  # fires in the current ordering. It exists so a future reorder that wraps
+  # before billing can't silently mis-bill against `%Envelope{}`'s own struct
+  # shape instead of its inner `value`.
+  def actual_units(context, %Envelope{value: v}, outcome), do: actual_units(context, v, outcome)
+
+  def actual_units(context, result, _outcome) do
     cond do
       is_map(result) && Map.has_key?(result, :actual_units) -> Map.fetch!(result, :actual_units)
       is_map(result) && Map.has_key?(result, "actual_units") -> Map.fetch!(result, "actual_units")
