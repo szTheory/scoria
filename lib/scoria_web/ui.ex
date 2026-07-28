@@ -36,7 +36,8 @@ defmodule ScoriaWeb.UI do
         :warn
 
       s
-      when s in ~w(failed failure error offline denied rejected regression cancelled canceled unhealthy expired) ->
+      when s in
+             ~w(failed failure error offline denied rejected regression cancelled canceled unhealthy expired halted) ->
         :fail
 
       s when s in ~w(replay experiment branch candidate trace promotion_candidate online_eval) ->

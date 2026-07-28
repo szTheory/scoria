@@ -28,22 +28,23 @@ defmodule Scoria.Workflows.ApprovalWriteInvariantGuardTest do
   # `pending` state. Verified against HEAD, exactly two `Approval.changeset(...)`
   # call sites terminate in an update (a third terminates in `insert!`, which is
   # the row's creation and is not a concern here):
-  #   1. workflows.ex:471 — the creation-time second `Approval.changeset |> update!`
+  #   1. workflows.ex:481 — the creation-time second `Approval.changeset |> update!`
   #      that backfills `audit_outbox_event_id` right after insert; the row is
   #      still "pending" at that point (not yet decided) — allow-listed.
-  #   2. workflows.ex:964 — the single decision write inside `approve/3` that
+  #   2. workflows.ex:1065 — the single decision write inside `approve/3` that
   #      performs the pending -> decided transition itself — allow-listed (this
   #      IS the sanctioned decision writer the rest of the system relies on).
   # Any OTHER `Approval.changeset(...) |> update!/update(` call site is a
   # violation of the decided-at write invariant this guard protects.
   #
-  # NOTE (56.1-01): these line numbers drift whenever code is inserted above
-  # them in workflows.ex (most recently by RAIL-01's six terminality guards,
-  # G1-G6). Re-verify with `grep -n "Approval.changeset" lib/scoria/workflows.ex`
-  # after any edit that adds/removes lines above these two call sites.
+  # NOTE (56.1-01, re-verified 56.1-05): these line numbers drift whenever code
+  # is inserted above them in workflows.ex (most recently by RAIL-01's
+  # `maybe_emit_rail_observed/1`, plan 56.1-05 Task 2). Re-verify with
+  # `grep -n "Approval.changeset" lib/scoria/workflows.ex` after any edit that
+  # adds/removes lines above these two call sites.
   @allowed_approval_updates MapSet.new([
-                              {"lib/scoria/workflows.ex", 471},
-                              {"lib/scoria/workflows.ex", 964}
+                              {"lib/scoria/workflows.ex", 481},
+                              {"lib/scoria/workflows.ex", 1065}
                             ])
 
   setup do

@@ -527,4 +527,61 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
       assert "mcp" in kinds
     end
   end
+
+  # -- Test 11: rail denial persists scoria.rail.* attributes (RAIL-01, D-18, plan 56.1-05 Task 1)
+
+  describe "Test 11: a rail-denied step's span carries the three scoria.rail.* attributes; no second span" do
+    test "a max_steps denial persists the three attributes onto the step span and creates no additional span",
+         %{buffer: buffer_name} do
+      run = create_run(%{rail_max_steps: 0})
+      step = create_step(run, "tool")
+
+      assert {:error, envelope} = Runtime.execute_step(step.id, handler: {Handlers, :sleepy_success})
+      assert envelope["reason_code"] == "max_steps_exceeded"
+
+      :ok = Buffer.flush_now(buffer_name)
+
+      span = step_span_for!(run.id)
+
+      assert span.status_code == "ERROR"
+      assert span.attributes["scoria.rail.rail"] == "max_steps"
+      assert span.attributes["scoria.rail.limit"] == 0
+      assert span.attributes["scoria.rail.observed"] == 0
+
+      assert Repo.aggregate(from(s in Span, where: s.trace_id == ^run.id), :count) == 1
+
+      reloaded_run = Repo.get!(Scoria.Workflows.Run, run.id)
+      assert reloaded_run.status == "halted"
+    end
+
+    test "a max_active_ms denial persists the three attributes onto the step span and creates no additional span",
+         %{buffer: buffer_name} do
+      run = create_run(%{rail_max_active_ms: :timer.minutes(5)})
+      step = create_step(run, "tool")
+
+      ten_minutes_ago =
+        DateTime.utc_now() |> DateTime.add(-600, :second) |> DateTime.truncate(:microsecond)
+
+      Repo.get!(Scoria.Workflows.Run, run.id)
+      |> Ecto.Changeset.change(started_at: ten_minutes_ago)
+      |> Repo.update!()
+
+      assert {:error, envelope} = Runtime.execute_step(step.id, handler: {Handlers, :sleepy_success})
+      assert envelope["reason_code"] == "max_active_ms_exceeded"
+
+      :ok = Buffer.flush_now(buffer_name)
+
+      span = step_span_for!(run.id)
+
+      assert span.status_code == "ERROR"
+      assert span.attributes["scoria.rail.rail"] == "max_active_ms"
+      assert span.attributes["scoria.rail.limit"] == :timer.minutes(5)
+      assert span.attributes["scoria.rail.observed"] > span.attributes["scoria.rail.limit"]
+
+      assert Repo.aggregate(from(s in Span, where: s.trace_id == ^run.id), :count) == 1
+
+      reloaded_run = Repo.get!(Scoria.Workflows.Run, run.id)
+      assert reloaded_run.status == "halted"
+    end
+  end
 end

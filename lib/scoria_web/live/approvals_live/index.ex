@@ -668,14 +668,27 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         attrs = approval_decision_attrs(socket, approval)
 
         with {:ok, updated_approval} <- Workflows.approve(approval.id, status, attrs),
-             {:ok, updated_socket} <- maybe_resume_approval(socket, updated_approval, status) do
+             {:ok, updated_socket, resume_outcome} <-
+               maybe_resume_approval(socket, updated_approval, status) do
           # WR-03: a rejection deliberately keeps the workflow paused, so it must not
           # report the same green ":pass / decision recorded" toast as an approval —
           # that blurs a safety-relevant distinction. Branch the toast on status.
+          #
+          # `:not_resumable` (RAIL-01, D-05) overrides the default "Approval
+          # granted." copy: the decision was recorded, but the run was halted
+          # by a per-run rail and cannot be resumed, so telling the operator
+          # it was "granted" would mislead them into thinking the run is
+          # proceeding.
           toast_opts =
-            case status do
-              "approved" -> [tone: :pass, message: "Approval granted."]
-              _ -> [tone: :warn, message: "Approval denied - run is still waiting for approval."]
+            case {status, resume_outcome} do
+              {"approved", :not_resumable} ->
+                [tone: :info, message: approval_error_message("approved", :not_resumable)]
+
+              {"approved", _outcome} ->
+                [tone: :pass, message: "Approval granted."]
+
+              _ ->
+                [tone: :warn, message: "Approval denied - run is still waiting for approval."]
             end
 
           # Clearing the drawer selection via push_patch (instead of a bare assign)
@@ -697,16 +710,28 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     end
   end
 
+  # `Resume.resume_run/1` runs AFTER `Workflows.approve/3` has already
+  # committed the decision (this function is called second in
+  # `record_approval_decision/2`'s own `with` chain). A run halted by a
+  # per-run rail (RAIL-01) falls through `Workflows.resume_run/1`'s
+  # catch-all as `{:error, :not_resumable}` -- the decision WAS recorded,
+  # only the resume did not happen. Reporting that through the generic
+  # failure branch would tell the operator their approval failed when it
+  # did not (D-05). The third element of the returned tuple carries the
+  # resume outcome so the caller can pick an accurate toast instead of the
+  # default "Approval granted." copy, which would otherwise mislead the
+  # operator into thinking the run is proceeding.
   defp maybe_resume_approval(socket, _approval, status) when status != "approved",
-    do: {:ok, socket}
+    do: {:ok, socket, :not_applicable}
 
   defp maybe_resume_approval(socket, approval, "approved") do
     case approval.workflow_run_id do
-      nil -> {:ok, socket}
+      nil -> {:ok, socket, :not_applicable}
       run_id -> Resume.resume_run(run_id)
     end
     |> case do
-      {:ok, _run} -> {:ok, socket}
+      {:ok, _run} -> {:ok, socket, :resumed}
+      {:error, :not_resumable} -> {:ok, socket, :not_resumable}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -744,6 +769,13 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   defp approval_error_message(_status, %Ecto.StaleEntryError{}) do
     "This approval was already decided by another operator."
+  end
+
+  # RAIL-01, D-05: `Resume.resume_run/1` runs AFTER the decision has already
+  # committed, so this is NOT a failed approval -- the decision was recorded.
+  # The run simply cannot be resumed because a per-run rail halted it.
+  defp approval_error_message(_status, :not_resumable) do
+    "Approval decision recorded. This run was halted by a per-run rail and cannot be resumed."
   end
 
   defp approval_error_message(status, reason) do
