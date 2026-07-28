@@ -24,7 +24,7 @@ Supplies the missing untrusted-content leg — the substrate the confluence gate
 ### Tool-Declared Trifecta Classification (CLASS)
 
 - [ ] **CLASS-01**: The `Tool` behaviour is extended so a tool declares its trifecta legs (`reads_private_data`, `sees_untrusted_content`, `can_exfiltrate`) plus an `action_class`, declared once on the tool rather than passed per-call.
-- [ ] **CLASS-02**: Unclassified tools resolve to a fail-closed-but-inspectable default (no silent `approval_sensitive: false`; unclassified/ungated use emits telemetry), closing the `executor.ex:150-165` footgun.
+- [ ] **CLASS-02**: Unclassified tools resolve to a fail-closed-but-inspectable default (no silent `approval_sensitive: false`; unclassified/ungated use emits telemetry), closing the fail-open seam (code moved during Phase 55; see 56-CONTEXT.md D-05 for all five sites).
 - [ ] **CLASS-03**: The declared classification is resolved at the `MCP.Executor` enforcement point for every tool call, so per-call taint derives from the tool's declaration and cannot rely on host-passed defaults.
 
 ### Per-Run Agent Rails (RAIL)
@@ -91,7 +91,7 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 | CLASS-01 | Phase 56 | Pending |
 | CLASS-02 | Phase 56 | Pending |
 | CLASS-03 | Phase 56 | Pending |
-| RAIL-01 | Phase 56 | Pending |
+| RAIL-01 | Phase 56.1 | Pending |
 | GATE-01 | Phase 57 | Pending |
 | GATE-02 | Phase 57 | Pending |
 | GATE-03 | Phase 57 | Pending |

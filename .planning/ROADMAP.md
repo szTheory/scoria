@@ -19,7 +19,8 @@
 **Current milestone: v3.7 Portcullis (SEED-010 Lethal-Trifecta Governance)**
 
 - [x] **Phase 55: Content Trust & Taint Substrate** - Trust tiers on knowledge chunks/tool outputs + prompt-assembly spotlighting + BYO `scan/2` hook
-- [ ] **Phase 56: Tool-Declared Trifecta Classification & Per-Run Rails** - Tool-declared trifecta legs resolved at `MCP.Executor`, fail-closed defaults, per-run step/time rails
+- [ ] **Phase 56: Tool-Declared Trifecta Classification** - Tool-declared trifecta legs resolved at `MCP.Executor`, fail-closed-but-inspectable defaults across all five fail-open seams
+- [ ] **Phase 56.1: Per-Run Rails (SPLIT from 56)** - Per-run `max_steps`/`max_tool_calls`/`timeout` rails with an audited, non-resumable halt
 - [ ] **Phase 57: Confluence Escalation Gate** - Escalate to human approval when private-data + untrusted-content + exfil co-occur on one tainted path
 - [ ] **Phase 58: Safety Hooks, Security Boundary & Govern Surface** - BYO moderation/output-scanner hooks, `SECURITY-BOUNDARY.md`, minimal read-only Govern surface
 
@@ -52,19 +53,35 @@
 
 - [x] 55-05-PLAN.md — Wire scan at retrieve/executor + scoria.trust.* trace tagging (TAINT-04) [wave 3]
 
-### Phase 56: Tool-Declared Trifecta Classification & Per-Run Rails
+### Phase 56: Tool-Declared Trifecta Classification
 
-**Goal**: Every tool call enforced at `MCP.Executor` carries an explicit, tool-declared trifecta classification instead of a silent host-passed default, and a single run cannot exceed its own step/call/time budget unnoticed.
+**Goal**: Every tool call enforced at `MCP.Executor` carries an explicit, tool-declared trifecta classification instead of a silent host-passed default.
 **Depends on**: Nothing new (independent of Phase 55's taint substrate — both feed Phase 57's confluence gate)
-**Requirements**: CLASS-01, CLASS-02, CLASS-03, RAIL-01
+**Requirements**: CLASS-01, CLASS-02, CLASS-03
 **Success Criteria** (what must be TRUE):
 
   1. A tool declares its `reads_private_data`/`sees_untrusted_content`/`can_exfiltrate` legs plus an `action_class` once, on the tool itself, rather than passed per call.
-  2. An unclassified tool no longer silently resolves to `approval_sensitive: false`; it fails closed to an inspectable default and emits telemetry for unclassified/ungated use, closing the `executor.ex:150-165` footgun.
+  2. An unclassified tool no longer silently resolves to `approval_sensitive: false`; it fails closed to an inspectable default and emits telemetry for unclassified/ungated use, closing the fail-open seam (formerly cited as `executor.ex:150-165`; the code moved during Phase 55 — the live-path seam is now `executor.ex:552-554` and the replay seam `executor.ex:181-194`).
   3. At `MCP.Executor` enforcement, every tool call's per-call taint is resolved from the tool's own declaration, never a host-passed default.
-  4. A single run that exceeds its `max_steps`/`max_tool_calls`/`timeout` rails halts, and the halt is recorded in the audit trail.
+  4. Resolution covers ALL five fail-open seams, not just `MCP.Executor`: the replay seam, the live `policy_sensitive_invocation?/1` path, `budget_required?/1`, `Connectors.Invocation.build_seam/2` (which decides replay BEFORE the executor), and `Workflows.Runtime`'s `%{local_classification: :pure}` default.
 
 **Plans**: TBD
+**Context**: `.planning/phases/56-tool-declared-trifecta-classification-per-run-rails/56-CONTEXT.md`
+
+### Phase 56.1: Per-Run Rails (SPLIT from Phase 56)
+
+**Goal**: A single run cannot exceed its own step/call/time budget unnoticed; exceeding a rail halts the run terminally and the halt is audited.
+**Depends on**: Nothing new. **Split out of Phase 56 on 2026-07-28** after research showed the two halves share no files or failure modes, that Phase 57 depends on Phase 56 for classification only (not rails), and that rails require a schema migration classification does not. Splitting unblocks Phase 57 earlier.
+**Requirements**: RAIL-01
+**Success Criteria** (what must be TRUE):
+
+  1. A single run that exceeds its `max_steps`/`max_tool_calls`/`timeout` rails halts, and the halt is recorded in the audit trail.
+  2. The halt is genuinely terminal — not resurrectable via `Workflows.retry_step/1` / `Resume.retry_failed_step/2`.
+  3. Rails default to unlimited, so an adopter who configures nothing sees unchanged behavior; counting is always on so limits can be sized from real traffic.
+  4. Surfaces with no run attribution (inbound JSON-RPC via `MCP.Router`) are an explicit, telemetried no-op rather than a silent gap.
+
+**Plans**: TBD
+**Context**: researched decisions D-56.1-A..H are recorded in `.planning/phases/56-tool-declared-trifecta-classification-per-run-rails/56-CONTEXT.md` under `<deferred>`
 
 ### Phase 57: Confluence Escalation Gate
 
@@ -106,7 +123,8 @@
 | 54. Docs Accuracy + Conformance Check | v3.6 | 2/2 | Complete | 2026-07-19 |
 | 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 2/2 | Complete | 2026-07-18 |
 | 55. Content Trust & Taint Substrate | v3.7 | 5/5 | Complete    | 2026-07-28 |
-| 56. Tool-Declared Trifecta Classification & Per-Run Rails | v3.7 | 0/TBD | Not started | - |
+| 56. Tool-Declared Trifecta Classification | v3.7 | 0/TBD | Not started | - |
+| 56.1. Per-Run Rails (SPLIT from 56) | v3.7 | 0/TBD | Not started | - |
 | 57. Confluence Escalation Gate | v3.7 | 0/TBD | Not started | - |
 | 58. Safety Hooks, Security Boundary & Govern Surface | v3.7 | 0/TBD | Not started | - |
 
