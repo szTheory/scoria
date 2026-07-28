@@ -4,9 +4,9 @@ milestone: v3.7
 milestone_name: Portcullis
 current_phase: 56
 current_phase_name: tool-declared-trifecta-classification-per-run-rails
-status: verifying
-stopped_at: Completed 56-03-PLAN.md
-last_updated: "2026-07-28T17:18:54.738Z"
+status: ready_to_plan
+stopped_at: Phase 56 complete (3/3) — ready to discuss Phase 56.1
+last_updated: 2026-07-28T17:26:09.207Z
 last_activity: 2026-07-28
 progress:
   total_phases: 2
@@ -23,13 +23,13 @@ See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 56 — tool-declared-trifecta-classification-per-run-rails
+**Current focus:** Phase 56.1 — per run rails (split from phase 56)
 
 ## Current Position
 
-Phase: 56 (tool-declared-trifecta-classification-per-run-rails) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 56.1
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-07-28
 
 Progress: [██████████] 100%
