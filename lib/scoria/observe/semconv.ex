@@ -37,6 +37,10 @@ defmodule Scoria.Observe.Semconv do
     it), and `guardrail_attributes/1`, a fixed five-key projector with no
     host-map spread — the structural reason a caller cannot smuggle a
     free-text `reason` key onto a guardrail span (D-05g).
+  - the spotlight vocabulary (D-14) — `spotlight_keys/0` (the four
+    `scoria.spotlight.*` dimensions `Scoria.Spotlight.render/2` emits) and
+    `spotlight_attributes/1`, a fixed four-key projector mirroring
+    `guardrail_attributes/1`'s no-passthrough shape.
   - `error_attributes/1` — a type-only exception projection
     (`exception.type` / `error.type`, both the module name, never
     `Exception.message/1` or `__STACKTRACE__`). This deliberately inverts
@@ -247,6 +251,21 @@ defmodule Scoria.Observe.Semconv do
     policy_key: "scoria.guardrail.policy_key"
   ]
 
+  @spotlight_keys [
+    technique: "scoria.spotlight.technique",
+    marked_spans: "scoria.spotlight.marked_spans",
+    marked_bytes: "scoria.spotlight.marked_bytes",
+    tier: "scoria.spotlight.tier"
+  ]
+
+  @doc """
+  Returns the canonical keyword list mapping the four `Scoria.Spotlight`
+  dimensions (D-14) to their dotted `scoria.spotlight.*` attribute-key
+  strings. Sole origin for `spotlight_attributes/1`'s fixed-key projection.
+  """
+  @spec spotlight_keys() :: keyword(String.t())
+  def spotlight_keys, do: @spotlight_keys
+
   @doc """
   Returns the canonical keyword list mapping the five guardrail dimensions
   to their dotted `scoria.guardrail.*` attribute-key strings. Sole origin
@@ -338,7 +357,11 @@ defmodule Scoria.Observe.Semconv do
                           Keyword.fetch!(@guardrail_keys, :decision) => :enum,
                           Keyword.fetch!(@guardrail_keys, :reason_code) => :enum,
                           Keyword.fetch!(@guardrail_keys, :subject_ref) => :id,
-                          Keyword.fetch!(@guardrail_keys, :policy_key) => :id
+                          Keyword.fetch!(@guardrail_keys, :policy_key) => :id,
+                          Keyword.fetch!(@spotlight_keys, :technique) => :enum,
+                          Keyword.fetch!(@spotlight_keys, :marked_spans) => :count,
+                          Keyword.fetch!(@spotlight_keys, :marked_bytes) => :count,
+                          Keyword.fetch!(@spotlight_keys, :tier) => :enum
                         },
                         Map.new(@host_declared_keys, &{Atom.to_string(&1), :enum})
                       )
@@ -466,6 +489,24 @@ defmodule Scoria.Observe.Semconv do
   @spec guardrail_attributes(map()) :: map()
   def guardrail_attributes(input) when is_map(input) do
     Enum.reduce(@guardrail_keys, %{}, fn {field, key}, acc ->
+      case Map.get(input, field) do
+        nil -> acc
+        value -> Map.put(acc, key, value)
+      end
+    end)
+  end
+
+  @doc """
+  Projects a host/caller map onto EXACTLY the four `spotlight_keys/0`
+  strings and nothing else (D-14). Never spreads the input map -- a `nil`
+  value is omitted, never defaulted, never put, mirroring
+  `guardrail_attributes/1`'s no-passthrough discipline. This is what makes
+  `Scoria.Spotlight.render/2`'s bounds-safe telemetry payload (counts and
+  enums only) a structural guarantee rather than a review convention.
+  """
+  @spec spotlight_attributes(map()) :: map()
+  def spotlight_attributes(input) when is_map(input) do
+    Enum.reduce(@spotlight_keys, %{}, fn {field, key}, acc ->
       case Map.get(input, field) do
         nil -> acc
         value -> Map.put(acc, key, value)
