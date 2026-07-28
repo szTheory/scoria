@@ -167,6 +167,7 @@ defmodule Scoria.MixProject do
       "guides/capabilities/bounded-handoffs.md",
       "guides/capabilities/semantic-cache.md",
       "guides/capabilities/connectors-and-mcp.md",
+      "guides/capabilities/per-run-rails.md",
       "guides/capabilities/support-copilot-gallery.md",
       "guides/capabilities/llm-and-tool-adapters.md",
       "guides/reviewer-verification.md",
@@ -193,6 +194,7 @@ defmodule Scoria.MixProject do
         "guides/capabilities/bounded-handoffs.md",
         "guides/capabilities/semantic-cache.md",
         "guides/capabilities/connectors-and-mcp.md",
+        "guides/capabilities/per-run-rails.md",
         "guides/capabilities/support-copilot-gallery.md",
         "guides/capabilities/llm-and-tool-adapters.md"
       ],
@@ -373,6 +375,7 @@ defmodule Scoria.MixProject do
         "guides/capabilities/bounded-handoffs.md",
         "guides/capabilities/semantic-cache.md",
         "guides/capabilities/connectors-and-mcp.md",
+        "guides/capabilities/per-run-rails.md",
         "guides/capabilities/support-copilot-gallery.md",
         "guides/capabilities/llm-and-tool-adapters.md",
         "guides/reviewer-verification.md",
