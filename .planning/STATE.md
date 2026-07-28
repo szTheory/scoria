@@ -2,18 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Portcullis
-current_phase: 57
-current_phase_name: Confluence Escalation Gate
 status: planning
-stopped_at: Phase 56.1 context gathered
-last_updated: "2026-07-28T22:44:08.142Z"
-last_activity: 2026-07-28
-last_activity_desc: Phase 56.1 complete, transitioned to Phase 57
+stopped_at: Phase 57 context gathered
+last_updated: "2026-07-28T23:47:05.353Z"
+last_activity: 2026-07-28 — Phase 56.1 complete, transitioned to Phase 57
 progress:
-  total_phases: 3
+  total_phases: 5
   completed_phases: 3
   total_plans: 14
   completed_plans: 14
+  percent: 60
 ---
 
 # Project State
@@ -387,9 +385,9 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-28T18:12:46.144Z
-Stopped at: Phase 56.1 context gathered
-Resume file: .planning/phases/56.1-per-run-rails-split-from-phase-56/56.1-CONTEXT.md
+Last session: 2026-07-28T23:47:05.330Z
+Stopped at: Phase 57 context gathered
+Resume file: .planning/phases/57-confluence-escalation-gate/57-CONTEXT.md
 
 ## Operator Next Steps
 
