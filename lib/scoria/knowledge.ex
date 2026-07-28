@@ -37,6 +37,7 @@ defmodule Scoria.Knowledge do
   alias Scoria.Observe
   alias Scoria.Observe.Semconv
   alias Scoria.Repo
+  alias Scoria.Trust
 
   def create_source(attrs \\ %{}, opts \\ []) do
     scope = Scope.for_write!(scope_input(attrs, opts))
@@ -74,8 +75,20 @@ defmodule Scoria.Knowledge do
       )
     )
     |> Multi.run(:chunks, fn repo, _changes ->
+      # D-04: the canonical trust tier lives on `source.metadata`; every
+      # created chunk denormalizes it onto its OWN `metadata` at ingest so
+      # `retrieve/2` (and any other reader) resolves trust with NO Source
+      # join on the hot path. Read once here (not per-chunk) since it is
+      # the same source for every chunk in this ingest.
+      source_tier = Trust.tier(source.metadata || %{})
+
       chunks
-      |> Enum.map(&(&1 |> Map.put(:source_id, source.id) |> Scope.put_source_attrs(scope)))
+      |> Enum.map(fn chunk_attrs ->
+        chunk_attrs
+        |> Map.put(:source_id, source.id)
+        |> Scope.put_source_attrs(scope)
+        |> Map.put(:metadata, Trust.put_tier(Map.get(chunk_attrs, :metadata) || %{}, source_tier))
+      end)
       |> Enum.map(fn attrs ->
         %Chunk{}
         |> Chunk.changeset(attrs)

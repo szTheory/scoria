@@ -1,4 +1,17 @@
 defmodule Scoria.Knowledge.Source do
+  @moduledoc """
+  A knowledge source and its provenance.
+
+  Trust is a property of the `Source` (D-04): the canonical tier lives at
+  `metadata["scoria.trust.tier"]` (see `Scoria.Trust.tier_key/0`) — no new
+  Ecto column, convention over the existing jsonb `metadata` field. This is
+  the value `Scoria.Knowledge.ingest_source/2` denormalizes onto every
+  chunk's own `metadata` at ingest time (via `Scoria.Trust.tier/1` +
+  `Scoria.Trust.put_tier/2`), so retrieval reads a chunk's trust with no
+  `Source` join on the hot path. Absent/junk values fail closed to
+  `Scoria.Trust.default_tier/0` (`"untrusted"`).
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 
