@@ -24,3 +24,22 @@ Both were left untouched per the SCOPE BOUNDARY rule (only auto-fix issues direc
 this plan's changes). The scoped verification lane
 (`mix test test/scoria/workflows/rails_test.exs test/scoria/workflows_test.exs
 test/scoria/workflows/approval_write_invariant_guard_test.exs --warnings-as-errors`) is green.
+
+## Plan 04
+
+Full-suite `mix test --warnings-as-errors` run during plan-04 closeout (2026-07-28) surfaced
+1 pre-existing failure, unrelated to any file this plan modified
+(`lib/scoria/workflows/run.ex`, `lib/scoria/workflows/rails.ex`, `lib/scoria/workflows/runtime.ex`,
+`test/scoria/workflows_test.exs`, `test/scoria/workflows/rails_test.exs`,
+`test/scoria/workflows/runtime_test.exs`):
+
+1. **`test/scoria_web/live/orchestrator_live_test.exs:356`** ("SEC-01: the operator dashboard
+   still hydrates traces with Bounds ON (D-06c-1, plan 53-04) a real span emitted through the
+   full pipeline (Bounds live) still renders on mount") — a full-suite ordering flake in the
+   observe/buffer async-flush pipeline, unrelated to workflows/rails. Verified passing in
+   isolation (`mix test test/scoria_web/live/orchestrator_live_test.exs` -> 13 tests, 0 failures)
+   immediately after the full-suite run failed it. SEED-004-class, out of this plan's file scope.
+
+Left untouched per the SCOPE BOUNDARY rule. The scoped verification lane
+(`mix test test/scoria/workflows/rails_test.exs test/scoria/workflows_test.exs
+test/scoria/workflows/runtime_test.exs --warnings-as-errors`) is green (81/81).

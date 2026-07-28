@@ -70,7 +70,7 @@ defmodule Scoria.WorkflowsTest do
     @all_statuses ~w(running waiting_for_approval paused retrying failed completed cancelled halted)
     @pause_set ~w(waiting_for_approval paused)
 
-    defp run_fixture(status, opts \\ []) do
+    defp run_fixture(status, opts) do
       %Run{
         id: Ecto.UUID.generate(),
         root_role_id: "root",
