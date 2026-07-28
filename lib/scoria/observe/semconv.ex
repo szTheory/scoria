@@ -41,6 +41,13 @@ defmodule Scoria.Observe.Semconv do
     `scoria.spotlight.*` dimensions `Scoria.Spotlight.render/2` emits) and
     `spotlight_attributes/1`, a fixed four-key projector mirroring
     `guardrail_attributes/1`'s no-passthrough shape.
+  - the trust-scan vocabulary (D-21) — `trust_keys/0` (the four
+    `scoria.trust.*` dimensions the taint-minting chokepoints tag — see
+    `Scoria.Knowledge.retrieve/2` and `Scoria.MCP.Executor`) and
+    `trust_attributes/1`, a fixed four-key projector mirroring
+    `guardrail_attributes/1`'s no-passthrough shape. There is deliberately
+    NO `score` key — `Scoria.Trust.Verdict.score` is host-only and
+    structurally cannot reach a span through this projector (T-55-20).
   - `error_attributes/1` — a type-only exception projection
     (`exception.type` / `error.type`, both the module name, never
     `Exception.message/1` or `__STACKTRACE__`). This deliberately inverts
@@ -266,6 +273,23 @@ defmodule Scoria.Observe.Semconv do
   @spec spotlight_keys() :: keyword(String.t())
   def spotlight_keys, do: @spotlight_keys
 
+  @trust_keys [
+    tier: "scoria.trust.tier",
+    scanner: "scoria.trust.scanner",
+    reason_code: "scoria.trust.reason_code",
+    scanned_count: "scoria.trust.scanned_count"
+  ]
+
+  @doc """
+  Returns the canonical keyword list mapping the four `scoria.trust.*`
+  dimensions (D-21) to their dotted attribute-key strings. Sole origin for
+  `trust_attributes/1`'s fixed-key projection. Deliberately has NO
+  `:score` entry — `Scoria.Trust.Verdict.score` is host-only and never
+  reaches a trace (T-55-20).
+  """
+  @spec trust_keys() :: keyword(String.t())
+  def trust_keys, do: @trust_keys
+
   @doc """
   Returns the canonical keyword list mapping the five guardrail dimensions
   to their dotted `scoria.guardrail.*` attribute-key strings. Sole origin
@@ -361,7 +385,11 @@ defmodule Scoria.Observe.Semconv do
                           Keyword.fetch!(@spotlight_keys, :technique) => :enum,
                           Keyword.fetch!(@spotlight_keys, :marked_spans) => :count,
                           Keyword.fetch!(@spotlight_keys, :marked_bytes) => :count,
-                          Keyword.fetch!(@spotlight_keys, :tier) => :enum
+                          Keyword.fetch!(@spotlight_keys, :tier) => :enum,
+                          Keyword.fetch!(@trust_keys, :tier) => :enum,
+                          Keyword.fetch!(@trust_keys, :scanner) => :id,
+                          Keyword.fetch!(@trust_keys, :reason_code) => :enum,
+                          Keyword.fetch!(@trust_keys, :scanned_count) => :count
                         },
                         Map.new(@host_declared_keys, &{Atom.to_string(&1), :enum})
                       )
@@ -507,6 +535,26 @@ defmodule Scoria.Observe.Semconv do
   @spec spotlight_attributes(map()) :: map()
   def spotlight_attributes(input) when is_map(input) do
     Enum.reduce(@spotlight_keys, %{}, fn {field, key}, acc ->
+      case Map.get(input, field) do
+        nil -> acc
+        value -> Map.put(acc, key, value)
+      end
+    end)
+  end
+
+  @doc """
+  Projects a `Scoria.Trust.Verdict`-shaped map onto EXACTLY the four
+  `trust_keys/0` strings and nothing else (D-21). Never spreads the input
+  map -- a `nil` value is omitted, never defaulted, never put, mirroring
+  `guardrail_attributes/1`'s and `spotlight_attributes/1`'s no-passthrough
+  discipline. `trust_keys/0` has no `:score` entry, so a `score` field on
+  the input is structurally impossible to emit through this projector
+  (T-55-20) -- this is what makes the never-leaks-a-numeric-confidence
+  guarantee structural rather than a review convention.
+  """
+  @spec trust_attributes(map()) :: map()
+  def trust_attributes(input) when is_map(input) do
+    Enum.reduce(@trust_keys, %{}, fn {field, key}, acc ->
       case Map.get(input, field) do
         nil -> acc
         value -> Map.put(acc, key, value)
