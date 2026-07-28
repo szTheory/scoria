@@ -20,6 +20,15 @@ Phase 56 = CLASS-01/02/03 only. Rails decisions are recorded in `<deferred>` so 
 
 ## `<decisions>`
 
+Index (machine-readable; the authoritative detail for each decision is its `###` section below):
+
+- **D-01 — Declaration surface (CLASS-01)** Extend `Scoria.MCP.Tool` with an optional `classification/0` callback plus a `use Scoria.MCP.Tool` macro; memoize resolution in `:persistent_term`.
+- **D-02 — action_class closed enum (CLASS-01)** Reuse `~w(read write exec admin)` verbatim from `replay_disposition.ex:11`; list order is load-bearing.
+- **D-03 — Unclassified fallback (CLASS-02)** Fail-closed-but-inspectable maximal default with `source: :unclassified_default`; the call still runs; hard prohibition on writing the six existing seam keys.
+- **D-04 — Precedence: tighten-only, fallback is not an operand (CLASS-03)** Legs join with `or`, `action_class` joins with max; polarity is inverted vs phase 55's D-19.
+- **D-05 — Every fail-open site is fixed, and there are FIVE (CLASS-03)** Resolve once in `MCP.Executor.execute/4`; all five seams consume it, including `invocation.ex` and `runtime.ex:474`.
+- **D-06 — Phase 57 cascade mitigation (cross-phase obligation)** `source` is `@enforce_keys` and persisted so Phase 57 can disposition `:unclassified_default` separately.
+
 ### D-01 — Declaration surface (CLASS-01)
 
 Extend `Scoria.MCP.Tool` with `@callback classification() :: %Scoria.MCP.Classification{}`, marked **`@optional_callbacks [classification: 0]`**, plus a `use Scoria.MCP.Tool, reads_private_data: true, ...` macro that generates it. Mirrors `Scoria.SemanticCache.Profile` (`lib/scoria/semantic_cache/profile.ex:22-54`) — the only existing behaviour-plus-`__using__` precedent in `lib/`.
