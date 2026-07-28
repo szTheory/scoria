@@ -108,7 +108,7 @@
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 56.1-05-PLAN.md — Halt evidence surfaces: `:observed` telemetry, `scoria.rail.*` trace keys, operator halt message (RAIL-01) [wave 4]
+- [x] 56.1-05-PLAN.md — Halt evidence surfaces: `:observed` telemetry, `scoria.rail.*` trace keys, operator halt message (RAIL-01) [wave 4]
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
