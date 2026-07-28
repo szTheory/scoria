@@ -5,6 +5,10 @@ defmodule Scoria.Workflows.Run do
   @statuses ~w(running waiting_for_approval paused retrying failed completed cancelled halted)
   @execution_modes ~w(live replay)
 
+  # RAIL-01 D-14/D-15: the timeout rail's pause set. A run whose status is
+  # in this set is not dispatchable and consumes no active time.
+  @rail_pause_set ["waiting_for_approval", "paused"]
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "ai_workflow_runs" do
@@ -89,6 +93,7 @@ defmodule Scoria.Workflows.Run do
       :rail_max_active_ms
     ])
     |> validate_replay_allowlist_immutability()
+    |> derive_rail_pause_accounting()
     |> validate_required([:root_role_id, :status])
     |> validate_inclusion(:status, @statuses)
     |> validate_inclusion(:execution_mode, @execution_modes)
@@ -109,6 +114,65 @@ defmodule Scoria.Workflows.Run do
   # touches `:lock_version`, so the increment can never provoke
   # `Ecto.StaleEntryError`. The two writer classes are disjoint by
   # construction, not by convention.
+
+  # RAIL-01 D-15: pause accounting derived from the `:status` transition
+  # itself -- NOT written at call sites. Mirrors
+  # `validate_replay_allowlist_immutability/1` immediately below: read the
+  # pre-transition value from `changeset.data.status` and the
+  # post-transition value from `get_field(changeset, :status)`, then derive.
+  #
+  # Entering the pause set (`@rail_pause_set`) from outside it sets
+  # `rail_paused_at` to the transition time. Leaving the pause set folds
+  # `DateTime.diff(now, rail_paused_at, :millisecond)` into `rail_paused_ms`
+  # and nulls `rail_paused_at`. Transitions within the set, and transitions
+  # where the status does not change, leave both fields untouched.
+  #
+  # This is the ONLY writer of these two fields -- they are absent from
+  # `cast/3` above -- so every caller that moves `:status`
+  # (`mark_waiting_for_approval/3`, `resume_run/1`, `complete_step/3`,
+  # `fail_step/3`, `retry_step/1`, `halt_run/3`, any future Phase 57 path,
+  # and any direct host `Run.changeset/2` call) is accounted for by
+  # construction, closing the accumulator-leak defect where
+  # `complete_step/3` previously read the run with no regard for its
+  # current status and wrote `run_status` unconditionally.
+  defp derive_rail_pause_accounting(changeset) do
+    previous_status = changeset.data.status
+    next_status = get_field(changeset, :status)
+
+    cond do
+      previous_status == next_status ->
+        changeset
+
+      next_status in @rail_pause_set and previous_status not in @rail_pause_set ->
+        now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+        put_change(changeset, :rail_paused_at, now)
+
+      previous_status in @rail_pause_set and next_status not in @rail_pause_set ->
+        fold_rail_paused_interval(changeset)
+
+      true ->
+        changeset
+    end
+  end
+
+  # Guard against a nil `rail_paused_at` (a row predating this feature, or
+  # any other unexpected state) by folding nothing rather than raising.
+  defp fold_rail_paused_interval(changeset) do
+    run = changeset.data
+
+    case run.rail_paused_at do
+      nil ->
+        changeset
+
+      paused_at ->
+        now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+        elapsed_ms = DateTime.diff(now, paused_at, :millisecond)
+
+        changeset
+        |> put_change(:rail_paused_ms, (run.rail_paused_ms || 0) + elapsed_ms)
+        |> put_change(:rail_paused_at, nil)
+    end
+  end
 
   defp validate_replay_allowlist_immutability(changeset) do
     run = changeset.data

@@ -63,6 +63,165 @@ defmodule Scoria.WorkflowsTest do
     end
   end
 
+  describe "derive_rail_pause_accounting/1 (RAIL-01 D-15, plan 56.1-04 Task 1)" do
+    # Mirrors the schema's own @statuses list (run.ex:5) and its pause-set
+    # subset (run.ex:10) -- kept as a literal duplicate here since neither is
+    # a public accessor.
+    @all_statuses ~w(running waiting_for_approval paused retrying failed completed cancelled halted)
+    @pause_set ~w(waiting_for_approval paused)
+
+    defp run_fixture(status, opts) do
+      %Run{
+        id: Ecto.UUID.generate(),
+        root_role_id: "root",
+        status: status,
+        lock_version: 1,
+        rail_paused_at: Keyword.get(opts, :rail_paused_at),
+        rail_paused_ms: Keyword.get(opts, :rail_paused_ms, 0)
+      }
+    end
+
+    test "the invariant: for every status transition, a run landing outside the pause set has rail_paused_at nil" do
+      for from_status <- @all_statuses, to_status <- @all_statuses do
+        paused_at =
+          if from_status in @pause_set do
+            DateTime.utc_now() |> DateTime.truncate(:microsecond) |> DateTime.add(-5, :second)
+          end
+
+        run = run_fixture(from_status, rail_paused_at: paused_at, rail_paused_ms: 100)
+        changeset = Run.changeset(run, %{status: to_status})
+        result = Ecto.Changeset.apply_changes(changeset)
+
+        if to_status not in @pause_set do
+          assert is_nil(result.rail_paused_at),
+                 "expected rail_paused_at nil after #{from_status} -> #{to_status}, got #{inspect(result.rail_paused_at)}"
+        end
+      end
+    end
+
+    test "entering the pause set from outside it sets rail_paused_at and leaves rail_paused_ms unchanged" do
+      run = run_fixture("running", rail_paused_ms: 42)
+      changeset = Run.changeset(run, %{status: "waiting_for_approval"})
+
+      assert {:ok, %DateTime{}} = Ecto.Changeset.fetch_change(changeset, :rail_paused_at)
+      refute Ecto.Changeset.get_change(changeset, :rail_paused_ms)
+
+      result = Ecto.Changeset.apply_changes(changeset)
+      assert %DateTime{} = result.rail_paused_at
+      assert result.rail_paused_ms == 42
+    end
+
+    test "leaving the pause set folds the elapsed interval into rail_paused_ms and nulls rail_paused_at" do
+      paused_at = DateTime.utc_now() |> DateTime.truncate(:microsecond) |> DateTime.add(-5, :second)
+      run = run_fixture("waiting_for_approval", rail_paused_at: paused_at, rail_paused_ms: 10)
+
+      changeset = Run.changeset(run, %{status: "running"})
+      result = Ecto.Changeset.apply_changes(changeset)
+
+      assert is_nil(result.rail_paused_at)
+      assert result.rail_paused_ms > 10
+    end
+
+    test "staying inside the pause set does not restart or double-count the interval" do
+      paused_at = DateTime.utc_now() |> DateTime.truncate(:microsecond) |> DateTime.add(-5, :second)
+      run = run_fixture("waiting_for_approval", rail_paused_at: paused_at, rail_paused_ms: 10)
+
+      changeset = Run.changeset(run, %{status: "paused"})
+
+      refute Ecto.Changeset.get_change(changeset, :rail_paused_at)
+      refute Ecto.Changeset.get_change(changeset, :rail_paused_ms)
+
+      result = Ecto.Changeset.apply_changes(changeset)
+      assert result.rail_paused_at == paused_at
+      assert result.rail_paused_ms == 10
+    end
+
+    test "a transition where the status does not change leaves both pause fields untouched" do
+      paused_at = DateTime.utc_now() |> DateTime.truncate(:microsecond) |> DateTime.add(-5, :second)
+      run = run_fixture("waiting_for_approval", rail_paused_at: paused_at, rail_paused_ms: 10)
+
+      changeset = Run.changeset(run, %{status: "waiting_for_approval"})
+
+      refute Ecto.Changeset.get_change(changeset, :rail_paused_at)
+      refute Ecto.Changeset.get_change(changeset, :rail_paused_ms)
+    end
+
+    test "leaving the pause set with a nil rail_paused_at (a row predating this feature) folds nothing rather than raising" do
+      run = run_fixture("waiting_for_approval", rail_paused_at: nil, rail_paused_ms: 0)
+
+      changeset = Run.changeset(run, %{status: "running"})
+      result = Ecto.Changeset.apply_changes(changeset)
+
+      assert is_nil(result.rail_paused_at)
+      assert result.rail_paused_ms == 0
+    end
+
+    test "rail_paused_at and rail_paused_ms cannot be set by a caller passing them in changeset attrs" do
+      run = run_fixture("running", rail_paused_at: nil, rail_paused_ms: 0)
+
+      changeset =
+        Run.changeset(run, %{
+          status: "running",
+          rail_paused_at: DateTime.utc_now(),
+          rail_paused_ms: 999
+        })
+
+      refute Map.has_key?(changeset.changes, :rail_paused_at)
+      refute Map.has_key?(changeset.changes, :rail_paused_ms)
+    end
+
+    test "the regression: step A escalates and sibling step B then completes, the accumulator does not leak" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step_a} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      {:ok, step_b} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      {:ok, _updated_run} =
+        Workflows.mark_waiting_for_approval(run.id, step_a.id, %{
+          tool_name: "dangerous_tool",
+          reason: "needs review"
+        })
+
+      assert Repo.get!(Run, run.id).rail_paused_at
+
+      Process.sleep(5)
+
+      {:ok, _completed_step} = Workflows.complete_step(step_b.id, %{"status" => "ok"})
+
+      reloaded_run = Repo.get!(Run, run.id)
+
+      assert reloaded_run.status == "running"
+      assert is_nil(reloaded_run.rail_paused_at)
+      assert reloaded_run.rail_paused_ms > 0
+    end
+
+    test "derive_rail_pause_accounting/1 has no reference to last_heartbeat_at" do
+      {:ok, source} =
+        File.read(Path.join([File.cwd!(), "lib", "scoria", "workflows", "run.ex"]))
+
+      [_before, function_and_rest] =
+        String.split(source, "defp derive_rail_pause_accounting(changeset) do", parts: 2)
+
+      [function_body, _rest] =
+        String.split(function_and_rest, "defp fold_rail_paused_interval(changeset) do", parts: 2)
+
+      refute function_body =~ "last_heartbeat_at"
+    end
+  end
+
   describe "durable workflow persistence" do
     test "create_run/1 writes the root run plus its initial checkpoint and event atomically" do
       assert {:ok, run} =

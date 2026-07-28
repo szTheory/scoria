@@ -458,6 +458,179 @@ defmodule Scoria.Workflows.RailsTest do
     end
   end
 
+  describe "the active-time predicate: Rails.admit_step/2 + Rails.deny_reason/2 (56.1-CONTEXT.md D-08/D-09/D-14, plan 56.1-04 Task 2)" do
+    test "a run 10 minutes old with a 5-minute ceiling and 0 paused ms is denied with max_active_ms_exceeded" do
+      {:ok, run} =
+        Workflows.create_run(%{root_role_id: "executor", rail_max_active_ms: :timer.minutes(5)})
+
+      backdate_started_at(run, minutes_ago(10))
+
+      assert :denied = Rails.admit_step(run.id)
+      assert :max_active_ms_exceeded = Rails.deny_reason(run.id)
+    end
+
+    test "the same run with 6 minutes of paused time is admitted -- elapsed active time is 4 minutes, under the ceiling" do
+      {:ok, run} =
+        Workflows.create_run(%{root_role_id: "executor", rail_max_active_ms: :timer.minutes(5)})
+
+      run
+      |> Ecto.Changeset.change(rail_paused_ms: :timer.minutes(6))
+      |> Repo.update!()
+
+      backdate_started_at(run, minutes_ago(10))
+
+      assert {:ok, 1} = Rails.admit_step(run.id)
+    end
+
+    test "with rail_max_active_ms: nil, never denied for time no matter how old the run is" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+      assert is_nil(run.rail_max_active_ms)
+
+      backdate_started_at(run, minutes_ago(1440))
+
+      assert {:ok, 1} = Rails.admit_step(run.id)
+    end
+
+    test "anchor fallback: a run whose started_at is nil falls back to inserted_at rather than skipping the rail" do
+      {:ok, run} =
+        Workflows.create_run(%{root_role_id: "executor", rail_max_active_ms: :timer.minutes(5)})
+
+      run
+      |> Ecto.Changeset.change(started_at: nil, inserted_at: minutes_ago(10))
+      |> Repo.update!()
+
+      assert :denied = Rails.admit_step(run.id)
+    end
+
+    test "the computed elapsed value is identical under a non-UTC session TimeZone as under UTC (RESEARCH Pitfall 5)" do
+      {:ok, run} =
+        Workflows.create_run(%{root_role_id: "executor", rail_max_active_ms: :timer.minutes(5)})
+
+      backdate_started_at(run, minutes_ago(10))
+
+      Repo.query!("SET LOCAL TIME ZONE 'America/New_York'")
+
+      assert :denied = Rails.admit_step(run.id)
+    end
+
+    test "check order: a run over BOTH its max_active_ms and max_steps budgets reports max_active_ms_exceeded, not max_steps_exceeded" do
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          rail_max_active_ms: :timer.minutes(5),
+          rail_max_steps: 1
+        })
+
+      run
+      |> Ecto.Changeset.change(rail_steps: 1)
+      |> Repo.update!()
+
+      backdate_started_at(run, minutes_ago(10))
+
+      assert :denied = Rails.admit_step(run.id)
+      assert :max_active_ms_exceeded = Rails.deny_reason(run.id)
+    end
+
+    test "grep-level: no fragment(\"now()\") -- the bound parameter is always an Elixir-side timestamp" do
+      {:ok, source} =
+        File.read(Path.join([File.cwd!(), "lib", "scoria", "workflows", "rails.ex"]))
+
+      refute String.contains?(source, "fragment(\"now()\")")
+      assert source =~ ":utc_datetime_usec"
+      assert source =~ "rail_paused_ms"
+      assert source =~ "COALESCE"
+    end
+
+    defp minutes_ago(minutes) do
+      DateTime.utc_now() |> DateTime.add(-minutes * 60, :second) |> DateTime.truncate(:microsecond)
+    end
+
+    defp backdate_started_at(run, timestamp) do
+      run
+      |> Ecto.Changeset.change(started_at: timestamp)
+      |> Repo.update!()
+    end
+  end
+
+  describe "retrying counts as active: a retry loop cannot outrun the timeout rail (D-14, plan 56.1-04 Task 2)" do
+    test "a run cycling through retry_step/1 never gets its active-time clock paused or reset" do
+      {:ok, run} =
+        Workflows.create_run(%{root_role_id: "executor", rail_max_active_ms: :timer.minutes(5)})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "failed"
+        })
+
+      Enum.each(1..3, fn _ -> assert {:ok, _retried} = Workflows.retry_step(step.id) end)
+
+      reloaded_run = Repo.get!(Run, run.id)
+      assert is_nil(reloaded_run.rail_paused_at)
+      assert reloaded_run.rail_paused_ms == 0
+
+      six_minutes_ago =
+        DateTime.utc_now() |> DateTime.add(-360, :second) |> DateTime.truncate(:microsecond)
+
+      Repo.get!(Run, run.id)
+      |> Ecto.Changeset.change(started_at: six_minutes_ago)
+      |> Repo.update!()
+
+      # If retrying had (wrongly) paused or reset the clock, this run would
+      # still be admitted; it is not -- the clock kept running the whole
+      # time, so a retry loop cannot outrun the rail.
+      assert :denied = Rails.admit_step(run.id)
+    end
+  end
+
+  describe "the Phase 57 invariant: a long approval wait never converts into a halt (D-14, 56.1-04 Task 2)" do
+    test "a run parked past max_active_ms in waiting_for_approval, then approved and resumed, executes its next step without halting" do
+      {:ok, run} =
+        Workflows.create_run(%{root_role_id: "executor", rail_max_active_ms: :timer.minutes(5)})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "queued"
+        })
+
+      escalate_handler = fn _step, _run ->
+        {:waiting_for_approval,
+         %{tool_name: "publish", arguments: %{}, reason: "needs review"}}
+      end
+
+      assert {:ok, approval} = Runtime.execute_step(step.id, handler: escalate_handler)
+      assert %Run{rail_paused_at: %DateTime{}} = Repo.get!(Run, run.id)
+
+      # The human takes 10 minutes to decide -- longer than the 5-minute
+      # rail_max_active_ms ceiling. Backdate rail_paused_at so the
+      # PAUSED interval genuinely exceeds the budget; approving/resuming
+      # folds that whole interval into rail_paused_ms (D-15), so it must
+      # never count as active time.
+      ten_minutes_ago =
+        DateTime.utc_now() |> DateTime.add(-600, :second) |> DateTime.truncate(:microsecond)
+
+      Repo.get!(Run, run.id)
+      |> Ecto.Changeset.change(rail_paused_at: ten_minutes_ago)
+      |> Repo.update!()
+
+      assert {:ok, _approved} = Workflows.approve(approval.id, "approved", %{})
+      assert {:ok, resumed_step} = Workflows.resume_run(run.id)
+
+      complete_handler = fn step, _run -> {:ok, %{"step_id" => step.id, "status" => "ok"}} end
+      assert {:ok, completed_step} = Runtime.execute_step(resumed_step.id, handler: complete_handler)
+
+      assert completed_step.status == "completed"
+      reloaded_run = Repo.get!(Run, run.id)
+      assert reloaded_run.status != "halted"
+      assert is_nil(reloaded_run.rail_paused_at)
+    end
+  end
+
   defp rail_envelope(run, step) do
     %{
       "status" => "run_halted",

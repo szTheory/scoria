@@ -33,6 +33,10 @@ end
 defmodule Scoria.Workflows.Runtime do
   @moduledoc """
   Executes bounded workflow steps under supervision and persists stable outcomes.
+
+  `max_active_ms` (RAIL-01) is a ceiling on admission, not a wall-clock
+  kill -- work already in flight when the budget is exhausted is allowed
+  to finish.
   """
 
   alias Decimal, as: D
@@ -229,29 +233,51 @@ defmodule Scoria.Workflows.Runtime do
       # the span body, as the FIRST statement -- `halt_run/3` then
       # `raise StepFailureSignal` so this exact span is still ERROR-marked
       # (mirrors `fail_step_and_signal/2`).
+      #
+      # Fixed check order (D-08): `max_active_ms` -> `max_steps` ->
+      # `max_tool_calls`. The `max_active_ms` pre-check runs first, in pure
+      # Elixir, computed entirely from the already-loaded `run` -- zero
+      # queries -- because unlike the two counter rails it maintains no
+      # counter (it is a ceiling on admission, not a wall-clock kill: work
+      # already in flight when the budget is exhausted is allowed to
+      # finish) and its overage is unbounded and unrelated to work
+      # performed. Only when it is `:ok` does `Rails.admit_step/2`'s atomic
+      # CAS (max_steps, with the active-time predicate as a SQL-level
+      # defense-in-depth second check) run.
       body_fun =
-        case Rails.admit_step(run.id) do
-          {:ok, _count} ->
-            fn ->
-              execute_step_body(
-                step,
-                run,
-                handler,
-                timeout,
-                opts,
-                budget_context,
-                breaker_context,
-                trace_id,
-                step_span_id
-              )
-            end
-
-          :denied ->
-            envelope = rail_denied_envelope(run, step)
+        case active_time_check(run) do
+          {:exceeded, elapsed_ms} ->
+            envelope = active_time_denied_envelope(run, step, elapsed_ms)
 
             fn ->
               Workflows.halt_run(run.id, step.id, envelope)
               raise StepFailureSignal, return_value: {:error, envelope}
+            end
+
+          :ok ->
+            case Rails.admit_step(run.id) do
+              {:ok, _count} ->
+                fn ->
+                  execute_step_body(
+                    step,
+                    run,
+                    handler,
+                    timeout,
+                    opts,
+                    budget_context,
+                    breaker_context,
+                    trace_id,
+                    step_span_id
+                  )
+                end
+
+              :denied ->
+                envelope = rail_denied_envelope(run, step)
+
+                fn ->
+                  Workflows.halt_run(run.id, step.id, envelope)
+                  raise StepFailureSignal, return_value: {:error, envelope}
+                end
             end
         end
 
@@ -261,6 +287,51 @@ defmodule Scoria.Workflows.Runtime do
         e in StepFailureSignal -> e.return_value
       end
     end
+  end
+
+  # RAIL-01 D-08/D-14: `elapsed_active_ms = diff(now, anchor) - rail_paused_ms`,
+  # anchored at `coalesce(started_at, inserted_at)`. Fails CLOSED on a nil
+  # anchor (denies) rather than skipping the rail -- `inserted_at` is
+  # `NOT NULL` via `timestamps()` so this branch is defensive, not expected
+  # to fire in practice.
+  defp active_time_check(%{rail_max_active_ms: nil}), do: :ok
+
+  defp active_time_check(%{rail_max_active_ms: max_active_ms} = run) do
+    case run.started_at || run.inserted_at do
+      nil ->
+        {:exceeded, 0}
+
+      anchor ->
+        elapsed_ms =
+          DateTime.diff(DateTime.utc_now(), anchor, :millisecond) - (run.rail_paused_ms || 0)
+
+        if elapsed_ms >= max_active_ms do
+          {:exceeded, elapsed_ms}
+        else
+          :ok
+        end
+    end
+  end
+
+  # `max_active_ms` reports `overage` in its telemetry/audit measurements
+  # while the two counter rails omit it (56.1-01 D-16/D-17) -- its elapsed
+  # value genuinely exceeds the ceiling, whereas a counter rail's denial
+  # means the UPDATE never fired and `observed` equals `limit` exactly.
+  defp active_time_denied_envelope(run, step, elapsed_ms) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    %{
+      "status" => "run_halted",
+      "reason_code" => "max_active_ms_exceeded",
+      "rail" => "max_active_ms",
+      "limit" => run.rail_max_active_ms,
+      "observed" => elapsed_ms,
+      "overage" => elapsed_ms - run.rail_max_active_ms,
+      "run_id" => run.id,
+      "step_id" => step.id,
+      "halted_at" => DateTime.to_iso8601(now),
+      "site" => "workflow_runtime_step"
+    }
   end
 
   # Task 1 covers only `max_steps` -- `max_active_ms`'s check order (D-08:

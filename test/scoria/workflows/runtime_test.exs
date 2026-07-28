@@ -5,7 +5,7 @@ defmodule Scoria.Workflows.RuntimeTest do
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.SRE.BudgetReservation
   alias Scoria.Workflows
-  alias Scoria.Workflows.{Reconciler, Resume, Runtime}
+  alias Scoria.Workflows.{Reconciler, Resume, Run, Runtime}
   alias Scoria.SRE
 
   defmodule Handlers do
@@ -505,6 +505,41 @@ defmodule Scoria.Workflows.RuntimeTest do
         [step] = Workflows.list_run_steps(run.id)
         step.status == "completed"
       end)
+    end
+  end
+
+  describe "max_active_ms rail admission -- the pure-Elixir pre-check ahead of max_steps (56.1-CONTEXT.md D-08/D-14, plan 56.1-04 Task 2)" do
+    test "denies with the max_active_ms envelope even though the run is also over its max_steps budget, and halts the run" do
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          rail_max_active_ms: :timer.minutes(5),
+          rail_max_steps: 100
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      ten_minutes_ago =
+        DateTime.utc_now() |> DateTime.add(-600, :second) |> DateTime.truncate(:microsecond)
+
+      Repo.get!(Run, run.id)
+      |> Ecto.Changeset.change(started_at: ten_minutes_ago)
+      |> Repo.update!()
+
+      assert {:error, envelope} = Runtime.execute_step(step.id, handler: &Handlers.succeed/2)
+      assert envelope["reason_code"] == "max_active_ms_exceeded"
+      assert envelope["rail"] == "max_active_ms"
+      assert envelope["limit"] == :timer.minutes(5)
+      assert envelope["observed"] > envelope["limit"]
+
+      reloaded_run = Repo.get!(Run, run.id)
+      assert reloaded_run.status == "halted"
     end
   end
 end
