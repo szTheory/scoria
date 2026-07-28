@@ -7,8 +7,20 @@ defmodule Scoria.Knowledge.TrustTest do
   alias Scoria.Knowledge.Chunk
   alias Scoria.Repo
   alias Scoria.Trust
+  alias Scoria.Trust.Verdict
 
   @scope [tenant_id: "tenant-trust", actor_id: "actor-trust", scope_kind: :tenant_shared]
+
+  # Test scanner double for the batch-scan-at-retrieve tests below (D-18):
+  # unconditionally flags every scan as untrusted with reason_code
+  # :prompt_injection, mirroring the fixture style already used by
+  # test/scoria/trust/scan_test.exs.
+  defmodule FlaggingScanner do
+    @behaviour Scoria.Trust.Scanner
+
+    @impl true
+    def scan(_content, _context), do: {:ok, %Verdict{tier: "untrusted", reason_code: :prompt_injection}}
+  end
 
   setup do
     handler_id = "knowledge-trust-test-#{System.unique_integer([:positive])}"
@@ -385,6 +397,79 @@ defmodule Scoria.Knowledge.TrustTest do
       for reembedded_chunk <- reembedded_chunks do
         assert Trust.tier(reembedded_chunk.metadata) == "trusted"
       end
+    end
+  end
+
+  describe "batch-scan wired at Knowledge.retrieve/2 (D-18, D-21)" do
+    setup do
+      test_pid = self()
+      handler_id = "retrieve-trust-span-test-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :observe, :span, :stop],
+        fn _event, _measurements, span, _config -> send(test_pid, {:retriever_span, span}) end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      :ok
+    end
+
+    test "NoOp (no scanner registered): retrieve/2 output is unchanged and the RETRIEVER span carries only the default tier + scanned_count, no reason_code beyond default" do
+      assert {:ok, source} =
+               Knowledge.ingest_source(
+                 %{
+                   kind: "doc",
+                   title: "noop scan doc",
+                   uri: "file:///noop-scan.md",
+                   body: "NoOp-scanned content."
+                 },
+                 scope: @scope
+               )
+
+      assert {:ok, %{results: [result]}} =
+               Knowledge.retrieve("noop scan query",
+                 query_embedding: [0.1, 0.2, 0.3],
+                 filters: %{source_id: source.id},
+                 scope: @scope
+               )
+
+      # Output unchanged -- exactly today's retrieve/2 result shape.
+      assert result.chunk_id
+
+      assert_received {:retriever_span, span}
+      assert span.attributes["scoria.trust.tier"] == "untrusted"
+      assert span.attributes["scoria.trust.scanned_count"] == 1
+      refute Map.has_key?(span.attributes, "scoria.trust.reason_code")
+    end
+
+    test "a registered flagging scanner tags the RETRIEVER span with reason_code/tier/scanned_count (result set size)" do
+      assert {:ok, source} =
+               Knowledge.ingest_source(
+                 %{
+                   kind: "doc",
+                   title: "flagged scan doc",
+                   uri: "file:///flagged-scan.md",
+                   body: "Flagged content."
+                 },
+                 scope: @scope
+               )
+
+      assert {:ok, %{results: [_result]}} =
+               Knowledge.retrieve("flagged scan query",
+                 query_embedding: [0.1, 0.2, 0.3],
+                 filters: %{source_id: source.id},
+                 scope: @scope,
+                 content_scanner: FlaggingScanner
+               )
+
+      assert_received {:retriever_span, span}
+      assert span.attributes["scoria.trust.tier"] == "untrusted"
+      assert span.attributes["scoria.trust.reason_code"] == :prompt_injection
+      assert span.attributes["scoria.trust.scanned_count"] == 1
+      assert span.attributes["scoria.trust.scanner"] =~ "FlaggingScanner"
     end
   end
 end

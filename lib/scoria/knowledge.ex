@@ -377,6 +377,7 @@ defmodule Scoria.Knowledge do
       end
 
     with {:ok, result_rows} <- results,
+         trust_attrs = resolve_trust_attributes(result_rows, opts),
          {:ok, run} <-
            create_retrieval_run(%{
              query_text: query_text,
@@ -395,10 +396,55 @@ defmodule Scoria.Knowledge do
                |> Semconv.merge_host_declared(host_metadata)
            }),
          {:ok, persisted_results} <- append_retrieval_results(run.id, result_rows) do
-      emit_retriever_span(config_map, host_metadata, trace_id, span_id, opts[:parent_id], started_wall)
+      emit_retriever_span(
+        config_map,
+        host_metadata,
+        trace_id,
+        span_id,
+        opts[:parent_id],
+        started_wall,
+        trust_attrs
+      )
 
       {:ok, %{run: run, results: persisted_results, trace_id: trace_id, span_id: span_id}}
     end
+  end
+
+  # D-18: batch-scans the WHOLE result set in ONE Scoria.Trust.Scan call
+  # (scanned_count = the result-set size), rather than per-chunk -- this is
+  # the taint-MINTING chokepoint for retrieval (a host that assembles its
+  # own prompt would never call Scoria.Spotlight.render, so scan must fire
+  # here, not only there). The scanner is resolved via `Keyword.get(opts,
+  # :content_scanner, ...)` (D-17, matching the existing
+  # `:embedder`/`:retriever` opts idiom on this same keyword-list `opts`
+  # container).
+  #
+  # `incoming_tier` is the aggregate of every result row's ALREADY
+  # DENORMALIZED chunk-metadata trust tier (Plan 01, D-04) -- "untrusted"
+  # if ANY row resolves untrusted, else "trusted" -- mirroring
+  # `Scoria.Spotlight.Marked`'s call-level tier aggregation (55-03). No
+  # `Source` join is added; `Trust.tier/1` reads `row.metadata` directly.
+  defp resolve_trust_attributes(result_rows, opts) do
+    scanner =
+      Keyword.get(opts, :content_scanner, Application.get_env(:scoria, :content_scanner, Scoria.Trust.Scanner.NoOp))
+
+    incoming_tier = aggregate_incoming_tier(result_rows)
+
+    {:ok, verdict} =
+      Trust.scan(%{chunks: result_rows}, %{content_scanner: scanner, incoming_tier: incoming_tier})
+
+    Semconv.trust_attributes(%{
+      tier: verdict.tier,
+      scanner: verdict.scanner && inspect(verdict.scanner),
+      reason_code: verdict.reason_code,
+      scanned_count: length(result_rows)
+    })
+  end
+
+  defp aggregate_incoming_tier(result_rows) do
+    Enum.reduce(result_rows, "trusted", fn row, acc ->
+      if Trust.tier(row.metadata) == "untrusted", do: "untrusted", else: acc
+    end)
   end
 
   # opts[:embedding_model] wins outright. When the host supplied its own
@@ -422,14 +468,19 @@ defmodule Scoria.Knowledge do
   # handler can never propagate into retrieve/2's caller. Observe.emit_retriever_span/1
   # already wraps its own :telemetry.execute in try/rescue -> :ok; this is a
   # second, defense-in-depth layer per the task's explicit instruction.
-  defp emit_retriever_span(config_map, host_metadata, trace_id, span_id, parent_id, started_wall) do
+  #
+  # D-21: `trust_attrs` (the projected `scoria.trust.*` map from
+  # `resolve_trust_attributes/2`) folds into the SAME RETRIEVER span's
+  # attributes -- no new span, no Guardrail.emit/1.
+  defp emit_retriever_span(config_map, host_metadata, trace_id, span_id, parent_id, started_wall, trust_attrs) do
     Observe.emit_retriever_span(%{
       config_map: config_map,
       host_metadata: host_metadata,
       trace_id: trace_id,
       span_id: span_id,
       parent_id: parent_id,
-      started_wall: started_wall
+      started_wall: started_wall,
+      trust_attributes: trust_attrs
     })
   rescue
     _ -> :ok
