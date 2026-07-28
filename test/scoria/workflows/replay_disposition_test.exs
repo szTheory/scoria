@@ -215,4 +215,24 @@ defmodule Scoria.Workflows.ReplayDispositionTest do
       assert evidence.replay_reason_code == "local_safe_to_rerun"
     end
   end
+
+  describe "site-5 named default seam shape (plan 56-03, Workflows.Runtime.default_replay_seam/2)" do
+    test "resolves execute_live/local_safe_to_rerun with :pure intact and a real unclassified_default classification" do
+      run = %{id: "replay-run-8", execution_mode: "replay"}
+
+      # Hand-built to match Runtime.default_replay_seam/2's literal output --
+      # kept as a pure-map assertion per this plan's own instruction, not a
+      # DB-backed Runtime integration test.
+      seam = %{
+        local_classification: :pure,
+        tool_classification: Scoria.MCP.Classification.unclassified_default()
+      }
+
+      assert {:execute_live, evidence} = ReplayDisposition.resolve(run, seam, %{}, %{}, %{})
+      assert evidence.replay_reason_code == "local_safe_to_rerun"
+
+      assert seam.local_classification == :pure
+      assert %Scoria.MCP.Classification{source: :unclassified_default} = seam.tool_classification
+    end
+  end
 end
