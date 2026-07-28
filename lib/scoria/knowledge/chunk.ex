@@ -58,3 +58,10 @@ defmodule Scoria.Knowledge.Chunk do
     |> unique_constraint([:source_id, :chunk_digest])
   end
 end
+
+# `Scoria.Trust.Tiered` impl lives here (the owning module, D-23) rather
+# than in `Scoria.Trust` itself — keeps `Trust` a dependency-free leaf and
+# avoids a `Knowledge <-> Trust` compile cycle.
+defimpl Scoria.Trust.Tiered, for: Scoria.Knowledge.Chunk do
+  def tier(%Scoria.Knowledge.Chunk{metadata: metadata}), do: Scoria.Trust.tier(metadata || %{})
+end
