@@ -228,6 +228,10 @@ defmodule Scoria.Observe do
     `retrieve/2`, used as `start_time` (D-R4). The authoritative
     `latency_ms` stays the existing monotonic-clock computation in
     `retrieve/2`; this wall-clock pair is display-only.
+  - `:trust_attributes` — a pre-projected `scoria.trust.*` attribute map
+    (`Semconv.trust_attributes/1`'s output, D-21) merged onto this SAME
+    RETRIEVER span's attributes — the taint-MINTING chokepoint's scan
+    verdict tagging. Defaults to `%{}` (no scanner registered / no tags).
 
   Emits `:telemetry.execute([:scoria, :observe, :span, :stop], %{}, span)`
   wrapped in `try/rescue -> :ok` (D-R6) — a raising handler never
@@ -238,10 +242,12 @@ defmodule Scoria.Observe do
   def emit_retriever_span(opts) when is_map(opts) do
     config_map = opts[:config_map] || %{}
     host_metadata = opts[:host_metadata] || %{}
+    trust_attributes = opts[:trust_attributes] || %{}
 
     attributes =
       Semconv.retrieval_config_attributes(config_map)
       |> Semconv.merge_host_declared(host_metadata)
+      |> Map.merge(trust_attributes)
 
     span =
       build_span_map(

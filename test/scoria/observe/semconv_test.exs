@@ -300,6 +300,10 @@ defmodule Scoria.Observe.SemconvTest do
                "scoria.spotlight.marked_spans",
                "scoria.spotlight.technique",
                "scoria.spotlight.tier",
+               "scoria.trust.reason_code",
+               "scoria.trust.scanned_count",
+               "scoria.trust.scanner",
+               "scoria.trust.tier",
                "session_id",
                "status",
                "tenant_id",
@@ -467,6 +471,47 @@ defmodule Scoria.Observe.SemconvTest do
       attrs = Semconv.spotlight_attributes(%{technique: :delimit, marked_spans: 1, marked_bytes: nil, tier: "untrusted"})
 
       refute Map.has_key?(attrs, "scoria.spotlight.marked_bytes")
+      assert map_size(attrs) == 3
+    end
+  end
+
+  describe "trust_attributes/1 fixed-key projection (D-21)" do
+    test "projects onto exactly the four scoria.trust.* keys, all registry keys, no extras, and score is NEVER projected" do
+      registry = Semconv.attribute_registry()
+      trust_key_strings = Semconv.trust_keys() |> Keyword.values() |> MapSet.new()
+
+      input = %{
+        tier: "untrusted",
+        scanner: "MyApp.PromptGuard",
+        reason_code: :prompt_injection,
+        scanned_count: 5,
+        score: 0.987
+      }
+
+      attrs = Semconv.trust_attributes(input)
+
+      assert MapSet.new(Map.keys(attrs)) |> MapSet.subset?(trust_key_strings)
+      assert map_size(attrs) == 4
+
+      for key <- Map.keys(attrs) do
+        assert Map.has_key?(registry, key),
+               "trust_attributes/1 key #{inspect(key)} is not a registered attribute"
+      end
+
+      refute Map.has_key?(attrs, "scoria.trust.score")
+      refute Enum.any?(Map.values(attrs), &(&1 == 0.987))
+    end
+
+    test "a nil field is omitted, never defaulted (structural never-free-text guarantee)" do
+      attrs =
+        Semconv.trust_attributes(%{
+          tier: "untrusted",
+          scanner: "MyApp.PromptGuard",
+          reason_code: nil,
+          scanned_count: 3
+        })
+
+      refute Map.has_key?(attrs, "scoria.trust.reason_code")
       assert map_size(attrs) == 3
     end
   end

@@ -6,6 +6,7 @@ defmodule Scoria.MCP.ExecutorTest do
   alias Scoria.Repo
   alias Scoria.SRE
   alias Scoria.SRE.BudgetReservation
+  alias Scoria.Trust.Verdict
   alias Scoria.Workflows
 
   defmodule DummyTool do
@@ -54,6 +55,27 @@ defmodule Scoria.MCP.ExecutorTest do
     @impl true
     def execute(%{"action" => "success"}, _context) do
       {:ok, %{actual_units: 3}}
+    end
+  end
+
+  # Test scanner doubles for the scan-at-envelope tests below (D-18, D-21),
+  # mirroring the fixture style already used by test/scoria/trust/scan_test.exs.
+  defmodule FlaggingScanner do
+    @behaviour Scoria.Trust.Scanner
+
+    @impl true
+    def scan(_content, _context), do: {:ok, %Verdict{tier: "untrusted", reason_code: :prompt_injection}}
+  end
+
+  # Actively tries to leak a numeric confidence score -- proves the leak is
+  # structurally impossible (Scoria.Trust.Scan.scan/2 always resolves
+  # `score: nil`, and Semconv.trust_attributes/1 has no `:score` key at all).
+  defmodule ScoringScanner do
+    @behaviour Scoria.Trust.Scanner
+
+    @impl true
+    def scan(_content, _context) do
+      {:ok, %Verdict{tier: "untrusted", score: 0.987, reason_code: :moderation_flag}}
     end
   end
 
@@ -475,6 +497,101 @@ defmodule Scoria.MCP.ExecutorTest do
       assert Envelope.value(replay_result.result) == %{"cached" => true}
       assert Envelope.tier(replay_result.result) == "untrusted"
       assert replay_result.result.provenance.source == :replay_stub
+    end
+  end
+
+  describe "trust scan wired at envelope creation (D-18, D-21)" do
+    setup do
+      on_exit(fn -> Application.delete_env(:scoria, Scoria.MCP.Envelope) end)
+      :ok
+    end
+
+    test "NoOp (no scanner registered): Envelope.scan stays nil and the tool telemetry carries no scoria.trust.reason_code beyond default",
+         %{ref: ref, context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(DummyTool, %{"action" => "success"}, context)
+
+      assert Envelope.value(envelope) == %{result: "success"}
+      assert Envelope.tier(envelope) == "untrusted"
+      assert Envelope.scan(envelope) == nil
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :tool, :completed], _measurements, metadata}
+      assert metadata["scoria.trust.tier"] == "untrusted"
+      refute Map.has_key?(metadata, "scoria.trust.reason_code")
+    end
+
+    test "a registered flagging scanner populates Envelope.scan and tags the tool telemetry with scoria.trust.*",
+         %{ref: ref, context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(context, :content_scanner, FlaggingScanner)
+               )
+
+      assert %Verdict{tier: "untrusted", reason_code: :prompt_injection} = Envelope.scan(envelope)
+      assert Envelope.tier(envelope) == "untrusted"
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :tool, :completed], _measurements, metadata}
+      assert metadata["scoria.trust.tier"] == "untrusted"
+      assert metadata["scoria.trust.reason_code"] == :prompt_injection
+      assert metadata["scoria.trust.scanner"] =~ "FlaggingScanner"
+    end
+
+    test "flag OFF: a registered scanner still persists taint to the step, byte-identical return shape", %{
+      context: context
+    } do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id, content_scanner: FlaggingScanner})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      assert persisted_step.result_envelope["scoria.taint"]["tier"] == "untrusted"
+    end
+
+    test "score never appears in step.result_envelope nor in the tool telemetry attributes, even when the scanner sets one",
+         %{context: context} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      test_pid = self()
+      handler_id = "executor-trust-score-test-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :tool, :completed],
+        fn _event, _measurements, metadata, _config -> send(test_pid, {:completed_metadata, metadata}) end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id, content_scanner: ScoringScanner})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      refute Map.has_key?(persisted_step.result_envelope["scoria.taint"], "score")
+
+      assert_receive {:completed_metadata, metadata}
+      refute Map.has_key?(metadata, "scoria.trust.score")
     end
   end
 
