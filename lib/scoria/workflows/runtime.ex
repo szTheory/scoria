@@ -646,7 +646,7 @@ defmodule Scoria.Workflows.Runtime do
 
   defp execute_handler(handler, step, run, timeout, trace_id, parent_id) do
     started_at = System.monotonic_time()
-    handler_run = decorate_run_with_trace_context(run, trace_id, parent_id)
+    handler_run = decorate_run_with_trace_context(run, trace_id, parent_id, step.id)
 
     task =
       Task.Supervisor.async_nolink(Scoria.Workflow.TaskSupervisor, fn ->
@@ -794,14 +794,21 @@ defmodule Scoria.Workflows.Runtime do
   # arg without breaking every host handler's existing arity contract.
   # `run.metadata["runtime"]` is the SAME extension point
   # `run_runtime_defaults/1` already reads for provider/model/policy_key
-  # (an established ad hoc pattern), so a host handler that wants to call
-  # `req_llm`/`jido`/`Scoria.MCP.Executor.execute/4` with the threaded ids
-  # reads them from `run.metadata["runtime"]["trace_id"]`/`["parent_id"]`
-  # and forwards them into whichever telemetry metadata / tool-execution
-  # context it builds. This decorated copy is NEVER persisted back to the
-  # database -- it exists only for the duration of the Task-isolated
-  # handler invocation.
-  defp decorate_run_with_trace_context(run, trace_id, parent_id) do
+  # (an established ad hoc pattern).
+  #
+  # RAIL-01 (56.1-CONTEXT.md D-10): also carries `"run_id"` and `"step_id"`
+  # alongside `"trace_id"`/`"parent_id"` -- this is the fix for the fact
+  # that `max_tool_calls` enforced only at `MCP.Executor.execute/4` would
+  # fire only if a host hand-threaded a key Scoria never populated and
+  # never documented. A host handler wanting to call
+  # `Scoria.MCP.Executor.execute/4` reads `run_id` and `step_id` from
+  # `run.metadata["runtime"]` and forwards them into whatever tool context
+  # it builds -- Scoria will not infer one, and the residual gap for a
+  # handler that does not forward them is measured honestly by
+  # `[:scoria, :run, :rail, :skipped]` rather than papered over. This
+  # decorated copy is NEVER persisted back to the database -- it exists
+  # only for the duration of the Task-isolated handler invocation.
+  defp decorate_run_with_trace_context(run, trace_id, parent_id, step_id) do
     metadata = run.metadata || %{}
     runtime = Map.get(metadata, "runtime", %{})
 
@@ -809,6 +816,8 @@ defmodule Scoria.Workflows.Runtime do
       runtime
       |> Map.put("trace_id", trace_id)
       |> Map.put("parent_id", parent_id)
+      |> Map.put("run_id", run.id)
+      |> Map.put("step_id", step_id)
 
     %{run | metadata: Map.put(metadata, "runtime", updated_runtime)}
   end
