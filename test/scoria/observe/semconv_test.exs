@@ -286,6 +286,11 @@ defmodule Scoria.Observe.SemconvTest do
                "scoria.attributes.dropped",
                "scoria.attributes.dropped_keys",
                "scoria.attributes.truncated_keys",
+               "scoria.classification.action_class",
+               "scoria.classification.can_exfiltrate",
+               "scoria.classification.reads_private_data",
+               "scoria.classification.sees_untrusted_content",
+               "scoria.classification.source",
                "scoria.guardrail.decision",
                "scoria.guardrail.name",
                "scoria.guardrail.policy_key",
@@ -513,6 +518,90 @@ defmodule Scoria.Observe.SemconvTest do
 
       refute Map.has_key?(attrs, "scoria.trust.reason_code")
       assert map_size(attrs) == 3
+    end
+  end
+
+  describe "classification_keys/0 (phase 56, CLASS-02)" do
+    test "returns the canonical five-entry keyword list mapped to scoria.classification.* strings" do
+      assert Semconv.classification_keys() == [
+               action_class: "scoria.classification.action_class",
+               source: "scoria.classification.source",
+               reads_private_data: "scoria.classification.reads_private_data",
+               sees_untrusted_content: "scoria.classification.sees_untrusted_content",
+               can_exfiltrate: "scoria.classification.can_exfiltrate"
+             ]
+    end
+  end
+
+  describe "classification_attributes/1 fixed-key projection (phase 56, CLASS-02)" do
+    test "projects onto exactly the five scoria.classification.* keys, all registry keys, no extras" do
+      registry = Semconv.attribute_registry()
+      classification_key_strings = Semconv.classification_keys() |> Keyword.values() |> MapSet.new()
+
+      input = %{
+        action_class: "admin",
+        source: "unclassified_default",
+        reads_private_data: true,
+        sees_untrusted_content: true,
+        can_exfiltrate: true
+      }
+
+      attrs = Semconv.classification_attributes(input)
+
+      assert MapSet.new(Map.keys(attrs)) |> MapSet.subset?(classification_key_strings)
+      assert map_size(attrs) == 5
+
+      for key <- Map.keys(attrs) do
+        assert Map.has_key?(registry, key),
+               "classification_attributes/1 key #{inspect(key)} is not a registered attribute"
+      end
+    end
+
+    test "an unlisted extra field (e.g. score or reason) is ignored -- exactly five keys emitted" do
+      attrs =
+        Semconv.classification_attributes(%{
+          action_class: "read",
+          source: "tool_declared",
+          reads_private_data: false,
+          sees_untrusted_content: false,
+          can_exfiltrate: false,
+          score: 0.99,
+          reason: "free text should never reach a span"
+        })
+
+      assert map_size(attrs) == 5
+      refute Map.has_key?(attrs, "scoria.classification.score")
+      refute Map.has_key?(attrs, "scoria.classification.reason")
+    end
+
+    test "an explicit false-valued leg IS emitted -- only nil is dropped, never a truthiness check" do
+      attrs =
+        Semconv.classification_attributes(%{
+          action_class: "read",
+          source: "tool_declared",
+          reads_private_data: false,
+          sees_untrusted_content: false,
+          can_exfiltrate: false
+        })
+
+      assert attrs["scoria.classification.reads_private_data"] == false
+      assert attrs["scoria.classification.sees_untrusted_content"] == false
+      assert attrs["scoria.classification.can_exfiltrate"] == false
+      assert map_size(attrs) == 5
+    end
+
+    test "a nil field is omitted, never defaulted" do
+      attrs =
+        Semconv.classification_attributes(%{
+          action_class: "read",
+          source: "tool_declared",
+          reads_private_data: nil,
+          sees_untrusted_content: false,
+          can_exfiltrate: false
+        })
+
+      refute Map.has_key?(attrs, "scoria.classification.reads_private_data")
+      assert map_size(attrs) == 4
     end
   end
 

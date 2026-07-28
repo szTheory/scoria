@@ -152,10 +152,16 @@ defmodule Scoria.MCP.Executor do
           # scoria.trust.* attributes -- no second span (D-21).
           {trust_attrs, verdict, scan_slot} = scan_tool_output(result, access_context)
 
+          # Plan 56-02: the resolved scoria.classification.* attributes join
+          # the SAME [:scoria, :tool, :completed] event alongside trust_attrs
+          # -- no new span, no second :telemetry.execute/3 call (D-21 no-
+          # second-span discipline applies unchanged).
+          class_attrs = classification_attributes_for_telemetry(access_context)
+
           :telemetry.execute(
             [:scoria, :tool, :completed],
             %{duration: duration},
-            Map.merge(metadata, trust_attrs)
+            metadata |> Map.merge(trust_attrs) |> Map.merge(class_attrs)
           )
 
           finalize_tool_result(result, tool_module, access_context, verdict, scan_slot)
@@ -354,6 +360,25 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp scan_tool_output(_other, _context), do: {%{}, nil, nil}
+
+  # Plan 56-02: projects the resolved `%Classification{}` already carried on
+  # `context` (put there by `resolve_classification/2`) through
+  # `Semconv.classification_attributes/1`'s fixed-key projector. `source` is
+  # converted with `to_string/1` so the emitted attribute is a string enum,
+  # not an Elixir atom literal. Absent classification (never expected on the
+  # live path, since resolution always runs first) yields an empty map.
+  defp classification_attributes_for_telemetry(context) do
+    case Map.get(context, :tool_classification) do
+      %Classification{} = classification ->
+        classification
+        |> Map.from_struct()
+        |> Map.update!(:source, &to_string/1)
+        |> Semconv.classification_attributes()
+
+      _ ->
+        %{}
+    end
+  end
 
   # D-08: taint is ALWAYS computed and persisted (inspectable via the step's
   # jsonb `result_envelope` and via telemetry), regardless of the
