@@ -42,7 +42,8 @@ defmodule Scoria.MCP.ExecutorTelemetryTest do
       [:scoria, :sre, :runtime, :cost],
       [:scoria, :sre, :runtime, :budget_burn],
       [:scoria, :sre, :runtime, :tool_reliability],
-      [:scoria, :sre, :runtime, :breaker_state]
+      [:scoria, :sre, :runtime, :breaker_state],
+      [:scoria, :tool, :completed]
     ]
 
     :telemetry.attach_many(
@@ -176,6 +177,22 @@ defmodule Scoria.MCP.ExecutorTelemetryTest do
     assert metadata.provider == "anthropic"
     assert metadata.model == "claude-4-sonnet"
     assert metadata.policy_key == "tool:nested-runtime"
+  end
+
+  test "completed MCP execution's [:scoria, :tool, :completed] metadata carries the five scoria.classification.* keys (phase 56, CLASS-02)" do
+    assert {:ok, %{result: "success"}} =
+             Executor.execute(DummyTool, %{"action" => "success"}, %{
+               actor_id: "mcp-actor",
+               tenant_id: "tenant-mcp",
+               trace_id: "trace-mcp-classification"
+             })
+
+    assert_receive {:telemetry_event, [:scoria, :tool, :completed], _measurements, metadata}
+    assert metadata["scoria.classification.action_class"] == "admin"
+    assert metadata["scoria.classification.source"] == "unclassified_default"
+    assert metadata["scoria.classification.reads_private_data"] == true
+    assert metadata["scoria.classification.sees_untrusted_content"] == true
+    assert metadata["scoria.classification.can_exfiltrate"] == true
   end
 
   defp flush_mailbox do

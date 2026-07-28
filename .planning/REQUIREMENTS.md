@@ -16,16 +16,16 @@ Requirements for this milestone (v3.7). Each maps to exactly one roadmap phase.
 
 Supplies the missing untrusted-content leg — the substrate the confluence gate reads.
 
-- [ ] **TAINT-01**: Retrieved knowledge chunks carry a trust-tier/taint tag on `Knowledge.Chunk` metadata reflecting provenance, defaulting to untrusted for externally-sourced/retrieved content.
-- [ ] **TAINT-02**: Tool outputs are wrapped in an envelope carrying a trust tier, so tool results are treated as potentially-untrusted content rather than implicitly-trusted context.
-- [ ] **TAINT-03**: At prompt assembly in the orchestrator, untrusted content is spotlighted/datamarked (delimited with a model-agnostic marking) so the model can distinguish instructions from untrusted data.
-- [ ] **TAINT-04**: Scoria exposes a `scan/2` behaviour hook (default no-op) for BYO content scanners (e.g. Rebuff/LlamaGuard) and tags scanned/untrusted content in traces — no detector or classifier is shipped in-lib.
+- [x] **TAINT-01**: Retrieved knowledge chunks carry a trust-tier/taint tag on `Knowledge.Chunk` metadata reflecting provenance, defaulting to untrusted for externally-sourced/retrieved content.
+- [x] **TAINT-02**: Tool outputs are wrapped in an envelope carrying a trust tier, so tool results are treated as potentially-untrusted content rather than implicitly-trusted context.
+- [x] **TAINT-03**: At prompt assembly in the orchestrator, untrusted content is spotlighted/datamarked (delimited with a model-agnostic marking) so the model can distinguish instructions from untrusted data.
+- [x] **TAINT-04**: Scoria exposes a `scan/2` behaviour hook (default no-op) for BYO content scanners (e.g. Rebuff/LlamaGuard) and tags scanned/untrusted content in traces — no detector or classifier is shipped in-lib.
 
 ### Tool-Declared Trifecta Classification (CLASS)
 
-- [ ] **CLASS-01**: The `Tool` behaviour is extended so a tool declares its trifecta legs (`reads_private_data`, `sees_untrusted_content`, `can_exfiltrate`) plus an `action_class`, declared once on the tool rather than passed per-call.
-- [ ] **CLASS-02**: Unclassified tools resolve to a fail-closed-but-inspectable default (no silent `approval_sensitive: false`; unclassified/ungated use emits telemetry), closing the `executor.ex:150-165` footgun.
-- [ ] **CLASS-03**: The declared classification is resolved at the `MCP.Executor` enforcement point for every tool call, so per-call taint derives from the tool's declaration and cannot rely on host-passed defaults.
+- [x] **CLASS-01**: The `Tool` behaviour is extended so a tool declares its trifecta legs (`reads_private_data`, `sees_untrusted_content`, `can_exfiltrate`) plus an `action_class`, declared once on the tool rather than passed per-call.
+- [x] **CLASS-02**: Unclassified tools resolve to a fail-closed-but-inspectable default (no silent `approval_sensitive: false`; unclassified/ungated use emits telemetry), closing the fail-open seam (code moved during Phase 55; see 56-CONTEXT.md D-05 for all five sites).
+- [x] **CLASS-03**: The declared classification is resolved at the `MCP.Executor` enforcement point for every tool call, so per-call taint derives from the tool's declaration and cannot rely on host-passed defaults.
 
 ### Per-Run Agent Rails (RAIL)
 
@@ -84,14 +84,14 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TAINT-01 | Phase 55 | Pending |
-| TAINT-02 | Phase 55 | Pending |
-| TAINT-03 | Phase 55 | Pending |
-| TAINT-04 | Phase 55 | Pending |
-| CLASS-01 | Phase 56 | Pending |
-| CLASS-02 | Phase 56 | Pending |
-| CLASS-03 | Phase 56 | Pending |
-| RAIL-01 | Phase 56 | Pending |
+| TAINT-01 | Phase 55 | Complete |
+| TAINT-02 | Phase 55 | Complete |
+| TAINT-03 | Phase 55 | Complete |
+| TAINT-04 | Phase 55 | Complete |
+| CLASS-01 | Phase 56 | Complete |
+| CLASS-02 | Phase 56 | Complete |
+| CLASS-03 | Phase 56 | Complete |
+| RAIL-01 | Phase 56.1 | Pending |
 | GATE-01 | Phase 57 | Pending |
 | GATE-02 | Phase 57 | Pending |
 | GATE-03 | Phase 57 | Pending |
@@ -102,6 +102,7 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 | GOVERN-01 | Phase 58 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 16 total
 - Mapped to phases: 16
 - Unmapped: 0 ✓

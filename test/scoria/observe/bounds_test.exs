@@ -42,6 +42,25 @@ defmodule Scoria.Observe.BoundsTest do
     end
   end
 
+  describe "Test: scoria.trust.* keys admission (D-21)" do
+    test "all four scoria.trust.* keys survive Bounds.enforce/2 byte-for-byte" do
+      metadata = %{
+        attributes: %{
+          "scoria.trust.tier" => "untrusted",
+          "scoria.trust.scanner" => "Scoria.Trust.Scanner.NoOp",
+          "scoria.trust.reason_code" => "prompt_injection",
+          "scoria.trust.scanned_count" => 5
+        }
+      }
+
+      assert {:ok, bounded} = Bounds.enforce(metadata, :span)
+      assert bounded.attributes["scoria.trust.tier"] == "untrusted"
+      assert bounded.attributes["scoria.trust.scanner"] == "Scoria.Trust.Scanner.NoOp"
+      assert bounded.attributes["scoria.trust.reason_code"] == "prompt_injection"
+      assert bounded.attributes["scoria.trust.scanned_count"] == 5
+    end
+  end
+
   describe "Test 2: drop-not-truncate (D-06e)" do
     test "an unregistered key's 100-byte value is absent from the output, never truncated" do
       long_value = String.duplicate("x", 100)

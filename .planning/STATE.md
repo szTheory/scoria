@@ -2,18 +2,17 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Portcullis
-current_phase: 1
-current_phase_name: "Phase 55: Content Trust & Taint Substrate"
-status: executing
-stopped_at: Phase 55 context gathered
-last_updated: "2026-07-28T00:47:50.841Z"
-last_activity: 2026-07-19
-last_activity_desc: ROADMAP.md created for v3.7 (Phases 55–58); REQUIREMENTS.md traceability filled (16/16 mapped)
+current_phase: 56
+current_phase_name: tool-declared-trifecta-classification-per-run-rails
+status: ready_to_plan
+stopped_at: Phase 56 complete (3/3) — ready to discuss Phase 56.1
+last_updated: 2026-07-28T17:26:09.207Z
+last_activity: 2026-07-28
 progress:
-  total_phases: 1
-  completed_phases: 0
-  total_plans: 5
-  completed_plans: 0
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -24,16 +23,16 @@ See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** v3.7 Portcullis (SEED-010 Lethal-Trifecta Governance) — ROADMAP.md created (Phases 55–58, 16/16 requirements mapped). Next step: `/gsd-plan-phase 55`.
+**Current focus:** Phase 56.1 — per run rails (split from phase 56)
 
 ## Current Position
 
-Phase: 1 of 4 (Phase 55: Content Trust & Taint Substrate) — v3.7 Portcullis
-Plan: — (not yet planned)
-Status: Ready to execute
-Last activity: 2026-07-19 — ROADMAP.md created for v3.7 (Phases 55–58); REQUIREMENTS.md traceability filled (16/16 mapped)
+Phase: 56.1
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-28
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -55,6 +54,13 @@ Progress: [░░░░░░░░░░] 0%
 - **Phase 45:** 5 plans, 11 tasks — correctness sweep + doctrine closeout complete; focused Phase 45 and scope-doctrine tests green during closeout.
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 56 P01 | 50min | 2 tasks | 7 files |
+| Phase 56 P02 | 35min | 3 tasks | 6 files |
+| Phase 56 P03 | 30min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -253,6 +259,15 @@ Recent decisions affecting current work:
 - [Phase 52]: opts[:embedding_model] wins outright; when opts[:query_embedding] is host-supplied, embedder.model_name/0 is never called and the field falls through to the "none" sentinel.
 - [Phase 52]: Dropped ai_retrieval_runs.trace_id/span_id hard foreign keys (kept columns+indexes) so the eventually-consistent run<->span join no longer raises on every context-less retrieve/2 call (D-R1/D-R2).
 - [Phase ?]: Test file mirrors telemetry_test.exs's real DB-backed setup (scoped Buffer + Telemetry.attach) rather than hand-synthesizing a span map, so the SC#4 proof exercises the actual production telemetry->buffer->Postgres pipeline (D-ATTR01-6).
+- [Phase ?]: [Phase 56-01]: host_declaration/1 reads a single new :host_classification context key (action_class left un-normalized at extraction) so resolve/2 can flag a raw-junk host action_class identically to a looser one per D-04, even when normalization would make it look tighter.
+- [Phase ?]: [Phase 56-01]: When no tool declaration exists, resolve/2 always returns unclassified_default/0 regardless of any host input -- the host-tightening mechanism never stands in for a missing tool declaration.
+- [Phase ?]: [Phase 56-01]: Added @derive Jason.Encoder to Scoria.MCP.Classification (Rule 1 fix) since :tool_classification now flows into every tool's context by design and a pre-existing router test echoes context through JSON.
+- [Phase ?]: [Phase 56-02]: require_tool_classification gates on source == :unclassified_default specifically -- a host-tightened resolution is a real classification and is never refused, even under the strict flag.
+- [Phase ?]: [Phase 56-02]: persist_classification_to_step/3 runs at resolve_classification/2's resolution time (before replay_gate/3), not from finalize_tool_result/5 -- so blocked and stubbed replay calls still get their classification persisted, unlike taint.
+- [Phase ?]: [Phase 56-02]: classification_attributes_for_telemetry/1 merges the five scoria.classification.* keys into the EXISTING [:scoria, :tool, :completed] event alongside trust_attrs -- no new span, :telemetry.execute( count in executor.ex unchanged at 7.
+- [Phase ?]: [Phase 56-03]: declared_sensitive?/1 is a declared-only sensitivity predicate (D-A2) shared by sites 2/3 -- false for nil and :unclassified_default, never writes into any of the six prohibited context keys.
+- [Phase ?]: [Phase 56-03]: sites 4 and 5 route through Classification.tool_declaration/1 + Classification.resolve/2 directly and never consult or extend require_tool_classification -- D-03 scopes that refusal to MCP.Executor resolution only.
+- [Phase ?]: [Phase 56-03]: Workflows.Runtime.default_replay_seam/2 keeps local_classification: :pure byte-identical and only adds tool_classification alongside it -- ReplayDisposition's clause-3 short-circuit is unchanged, the bypass is now inspectable via telemetry instead of silent.
 
 ### Resolved And Deferred Work
 
@@ -371,9 +386,9 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-27T23:07:04.431Z
-Stopped at: Phase 55 context gathered
-Resume file: .planning/phases/55-content-trust-taint-substrate/55-CONTEXT.md
+Last session: 2026-07-28T17:18:54.731Z
+Stopped at: Completed 56-03-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 

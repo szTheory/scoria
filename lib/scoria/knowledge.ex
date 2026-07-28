@@ -37,7 +37,13 @@ defmodule Scoria.Knowledge do
   alias Scoria.Observe
   alias Scoria.Observe.Semconv
   alias Scoria.Repo
+  alias Scoria.Trust
 
+  # D-05: `opts[:trust]` is the host-override for a Source's canonical trust
+  # tier. Accepted by both `create_source/2` and `ingest_source/2` (below);
+  # every value routes through `Trust.normalize_tier/1` so a typo fails
+  # closed to `Trust.default_tier/0` + fallback telemetry rather than
+  # minting a bogus-trusted row.
   def create_source(attrs \\ %{}, opts \\ []) do
     scope = Scope.for_write!(scope_input(attrs, opts))
 
@@ -49,6 +55,7 @@ defmodule Scoria.Knowledge do
       |> Map.put_new(:version, 1)
       |> Map.put_new(:is_current, true)
       |> Map.put_new_lazy(:digest, fn -> digest_body(attrs) end)
+      |> maybe_put_trust_override(opts)
 
     %Source{}
     |> Source.changeset(attrs)
@@ -67,15 +74,34 @@ defmodule Scoria.Knowledge do
     embeddings = embedder.embed_chunks(chunks, opts)
 
     Multi.new()
+    |> Multi.run(:source, fn repo, _changes ->
+      # D-05: an explicit `opts[:trust]` override is written to
+      # `Source.metadata` BEFORE the chunk denormalization below reads it,
+      # so a first-create/re-ingest override flows through to every chunk.
+      # No-op (no extra write) when `:trust` is absent.
+      maybe_apply_trust_override(repo, source, opts)
+    end)
     |> Multi.delete_all(
       :delete_chunks,
       from(chunk in Chunk,
         where: chunk.source_id == ^source.id and chunk.tenant_id == ^scope.tenant_id
       )
     )
-    |> Multi.run(:chunks, fn repo, _changes ->
+    |> Multi.run(:chunks, fn repo, %{source: source} ->
+      # D-04: the canonical trust tier lives on `source.metadata`; every
+      # created chunk denormalizes it onto its OWN `metadata` at ingest so
+      # `retrieve/2` (and any other reader) resolves trust with NO Source
+      # join on the hot path. Read once here (not per-chunk) since it is
+      # the same source for every chunk in this ingest.
+      source_tier = Trust.tier(source.metadata || %{})
+
       chunks
-      |> Enum.map(&(&1 |> Map.put(:source_id, source.id) |> Scope.put_source_attrs(scope)))
+      |> Enum.map(fn chunk_attrs ->
+        chunk_attrs
+        |> Map.put(:source_id, source.id)
+        |> Scope.put_source_attrs(scope)
+        |> Map.put(:metadata, Trust.put_tier(Map.get(chunk_attrs, :metadata) || %{}, source_tier))
+      end)
       |> Enum.map(fn attrs ->
         %Chunk{}
         |> Chunk.changeset(attrs)
@@ -95,7 +121,11 @@ defmodule Scoria.Knowledge do
 
   def ingest_source(attrs, opts) when is_map(attrs) do
     with {:ok, source} <- create_source(attrs, opts),
-         {:ok, _chunks} <- ingest_source(source, Keyword.put(opts, :source_payload, attrs)) do
+         {:ok, _chunks} <-
+           ingest_source(
+             source,
+             opts |> Keyword.put(:source_payload, attrs) |> Keyword.delete(:trust)
+           ) do
       {:ok, source}
     end
   end
@@ -104,6 +134,16 @@ defmodule Scoria.Knowledge do
     scope = Scope.for_write!(scope_input(source, opts))
     embedder = Keyword.get(opts, :embedder, Embedder.Deterministic)
     backend = Keyword.get(opts, :backend, Pgvector)
+
+    # D-04 red-team fix: re-stamp every chunk's metadata with the tier
+    # DERIVED FROM THE STORED `source.metadata` value -- never a fresh
+    # `Trust.default_tier()` -- so a re-embed is idempotent w.r.t. trust
+    # and never silently reverts a host's declared tier back to
+    # "untrusted" (Pitfall 4). Runs BEFORE `list_source_chunks/2` below so
+    # the chunks handed to the embedder/backend already carry the
+    # preserved metadata.
+    preserve_chunk_trust_from_source(source, scope)
+
     chunks = list_source_chunks(source.id, scope: scope)
     embeddings = embedder.embed_chunks(chunks, opts)
     backend.upsert_chunk_embeddings(chunks, embeddings)
@@ -115,6 +155,63 @@ defmodule Scoria.Knowledge do
     with :ok <- Pgvector.delete_source_embeddings(source.id),
          {:ok, chunks} <- reembed_source(source, Keyword.put(opts, :scope, scope)) do
       {:ok, chunks}
+    end
+  end
+
+  @doc """
+  Post-hoc host-override trust API (D-05): writes `tier` onto
+  `Source.metadata` AND bulk-updates every EXISTING chunk row for
+  `source.id`, scoped to `opts[:scope]`'s `tenant_id` -- mirroring the
+  tenant-scoped `WHERE` at `ingest_source/2`'s `Multi.delete_all`
+  (`chunk.source_id == ^source.id and chunk.tenant_id == ^scope.tenant_id`).
+  A chunk sharing `source_id` under a DIFFERENT `tenant_id` is never
+  touched.
+
+  `tier` routes through `Trust.normalize_tier/1` before either write, so a
+  host typo fails closed to `Trust.default_tier/0` (+ fallback telemetry)
+  rather than minting a bogus-trusted row.
+
+  Returns `{:ok, updated_source, updated_chunk_count}` or `{:error, reason}`.
+  """
+  @spec set_source_trust(Source.t(), term(), keyword()) ::
+          {:ok, Source.t(), non_neg_integer()} | {:error, term()}
+  def set_source_trust(%Source{} = source, tier, opts \\ []) do
+    scope = Scope.for_write!(scope_input(source, opts))
+    normalized_tier = Trust.normalize_tier(tier)
+
+    Multi.new()
+    |> Multi.run(:source, fn repo, _changes ->
+      source
+      |> Source.changeset(%{
+        metadata: Map.put(source.metadata || %{}, Trust.tier_key(), normalized_tier)
+      })
+      |> repo.update()
+    end)
+    |> Multi.run(:chunks, fn repo, _changes ->
+      {count, _} =
+        repo.update_all(
+          from(chunk in Chunk,
+            where: chunk.source_id == ^source.id and chunk.tenant_id == ^scope.tenant_id,
+            update: [
+              set: [
+                metadata:
+                  fragment(
+                    "? || ?",
+                    chunk.metadata,
+                    type(^%{Trust.tier_key() => normalized_tier}, :map)
+                  )
+              ]
+            ]
+          ),
+          []
+        )
+
+      {:ok, count}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{source: updated_source, chunks: count}} -> {:ok, updated_source, count}
+      {:error, _op, reason, _changes} -> {:error, reason}
     end
   end
 
@@ -280,6 +377,7 @@ defmodule Scoria.Knowledge do
       end
 
     with {:ok, result_rows} <- results,
+         trust_attrs = resolve_trust_attributes(result_rows, opts),
          {:ok, run} <-
            create_retrieval_run(%{
              query_text: query_text,
@@ -298,10 +396,55 @@ defmodule Scoria.Knowledge do
                |> Semconv.merge_host_declared(host_metadata)
            }),
          {:ok, persisted_results} <- append_retrieval_results(run.id, result_rows) do
-      emit_retriever_span(config_map, host_metadata, trace_id, span_id, opts[:parent_id], started_wall)
+      emit_retriever_span(
+        config_map,
+        host_metadata,
+        trace_id,
+        span_id,
+        opts[:parent_id],
+        started_wall,
+        trust_attrs
+      )
 
       {:ok, %{run: run, results: persisted_results, trace_id: trace_id, span_id: span_id}}
     end
+  end
+
+  # D-18: batch-scans the WHOLE result set in ONE Scoria.Trust.Scan call
+  # (scanned_count = the result-set size), rather than per-chunk -- this is
+  # the taint-MINTING chokepoint for retrieval (a host that assembles its
+  # own prompt would never call Scoria.Spotlight.render, so scan must fire
+  # here, not only there). The scanner is resolved via `Keyword.get(opts,
+  # :content_scanner, ...)` (D-17, matching the existing
+  # `:embedder`/`:retriever` opts idiom on this same keyword-list `opts`
+  # container).
+  #
+  # `incoming_tier` is the aggregate of every result row's ALREADY
+  # DENORMALIZED chunk-metadata trust tier (Plan 01, D-04) -- "untrusted"
+  # if ANY row resolves untrusted, else "trusted" -- mirroring
+  # `Scoria.Spotlight.Marked`'s call-level tier aggregation (55-03). No
+  # `Source` join is added; `Trust.tier/1` reads `row.metadata` directly.
+  defp resolve_trust_attributes(result_rows, opts) do
+    scanner =
+      Keyword.get(opts, :content_scanner, Application.get_env(:scoria, :content_scanner, Scoria.Trust.Scanner.NoOp))
+
+    incoming_tier = aggregate_incoming_tier(result_rows)
+
+    {:ok, verdict} =
+      Trust.scan(%{chunks: result_rows}, %{content_scanner: scanner, incoming_tier: incoming_tier})
+
+    Semconv.trust_attributes(%{
+      tier: verdict.tier,
+      scanner: verdict.scanner && inspect(verdict.scanner),
+      reason_code: verdict.reason_code,
+      scanned_count: length(result_rows)
+    })
+  end
+
+  defp aggregate_incoming_tier(result_rows) do
+    Enum.reduce(result_rows, "trusted", fn row, acc ->
+      if Trust.tier(row.metadata) == "untrusted", do: "untrusted", else: acc
+    end)
   end
 
   # opts[:embedding_model] wins outright. When the host supplied its own
@@ -325,14 +468,19 @@ defmodule Scoria.Knowledge do
   # handler can never propagate into retrieve/2's caller. Observe.emit_retriever_span/1
   # already wraps its own :telemetry.execute in try/rescue -> :ok; this is a
   # second, defense-in-depth layer per the task's explicit instruction.
-  defp emit_retriever_span(config_map, host_metadata, trace_id, span_id, parent_id, started_wall) do
+  #
+  # D-21: `trust_attrs` (the projected `scoria.trust.*` map from
+  # `resolve_trust_attributes/2`) folds into the SAME RETRIEVER span's
+  # attributes -- no new span, no Guardrail.emit/1.
+  defp emit_retriever_span(config_map, host_metadata, trace_id, span_id, parent_id, started_wall, trust_attrs) do
     Observe.emit_retriever_span(%{
       config_map: config_map,
       host_metadata: host_metadata,
       trace_id: trace_id,
       span_id: span_id,
       parent_id: parent_id,
-      started_wall: started_wall
+      started_wall: started_wall,
+      trust_attributes: trust_attrs
     })
   rescue
     _ -> :ok
@@ -411,6 +559,67 @@ defmodule Scoria.Knowledge do
           {:ok, Enum.map(scores, fn {:ok, deterministic} -> deterministic end) ++ [score]}
         end
     end
+  end
+
+  # D-05: applied inside `create_source/2` -- when `opts[:trust]` is present,
+  # normalize it and stamp it onto the about-to-be-inserted Source's
+  # `:metadata`. Absent `:trust` is a no-op (existing/default metadata
+  # governs, per `Trust.tier/1`'s fail-closed default).
+  defp maybe_put_trust_override(attrs, opts) do
+    case Keyword.fetch(opts, :trust) do
+      :error ->
+        attrs
+
+      {:ok, trust} ->
+        Map.put(attrs, :metadata, Trust.put_tier(Map.get(attrs, :metadata) || %{}, trust))
+    end
+  end
+
+  # D-05: applied inside `ingest_source/2` -- when `opts[:trust]` is
+  # present, normalize it and PERSIST it onto the existing Source row's
+  # `:metadata` before the chunk-denormalization step reads it, so a
+  # re-ingest override flows through to every chunk. Absent `:trust` is a
+  # no-op read-through (no extra write), preserving whatever tier is
+  # already stored on `source.metadata`.
+  defp maybe_apply_trust_override(repo, %Source{} = source, opts) do
+    case Keyword.fetch(opts, :trust) do
+      :error ->
+        {:ok, source}
+
+      {:ok, trust} ->
+        source
+        |> Source.changeset(%{metadata: Trust.put_tier(source.metadata || %{}, trust)})
+        |> repo.update()
+    end
+  end
+
+  # D-04 red-team fix / Pitfall 4: derives the tier from the STORED
+  # `source.metadata` (via `Trust.tier/1`, itself fail-closed) and
+  # re-stamps it onto every chunk row for this source, scoped by
+  # `tenant_id` -- the same tenant-scoped `WHERE` shape used by
+  # `ingest_source/2`'s `Multi.delete_all` and `set_source_trust/3`'s bulk
+  # update. Never reconstructs chunk attrs with `Trust.default_tier()`.
+  defp preserve_chunk_trust_from_source(%Source{} = source, %Scope{} = scope) do
+    source_tier = Trust.tier(source.metadata || %{})
+
+    Repo.update_all(
+      from(chunk in Chunk,
+        where: chunk.source_id == ^source.id and chunk.tenant_id == ^scope.tenant_id,
+        update: [
+          set: [
+            metadata:
+              fragment(
+                "? || ?",
+                chunk.metadata,
+                type(^%{Trust.tier_key() => source_tier}, :map)
+              )
+          ]
+        ]
+      ),
+      []
+    )
+
+    :ok
   end
 
   defp source_or_payload(source, opts) do

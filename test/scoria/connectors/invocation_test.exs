@@ -3,6 +3,7 @@ defmodule Scoria.Connectors.InvocationTest do
   import Ecto.Query
 
   alias Scoria.Connectors.Invocation
+  alias Scoria.MCP.Classification
   alias Scoria.Repo
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
@@ -15,6 +16,25 @@ defmodule Scoria.Connectors.InvocationTest do
 
     @impl true
     def description, do: "Replay invocation test tool"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(args, context) do
+      send(context.test_pid, {:tool_executed, args, context})
+      {:ok, %{result: "live"}}
+    end
+  end
+
+  defmodule ClassifiedReplayTool do
+    use Scoria.MCP.Tool, action_class: "write", can_exfiltrate: true
+
+    @impl true
+    def name, do: "classified_replay_tool"
+
+    @impl true
+    def description, do: "Declares a classification for site-4 connector-invocation seam tests (plan 56-03)"
 
     @impl true
     def input_schema, do: %{}
@@ -231,5 +251,106 @@ defmodule Scoria.Connectors.InvocationTest do
     assert first_ctx.replay_idempotency_key == second_ctx.replay_idempotency_key
 
     assert Repo.aggregate(from(a in AuditOutboxEvent, where: a.trace_id == "replay-live" and a.event_type == "tool.invocation"), :count) == 1
+  end
+
+  describe "Site 4 (D-05, plan 56-03): classification resolved before Invocation's own replay decision" do
+    setup %{run: run, step: step} do
+      live_context = %{
+        run: run,
+        run_id: run.id,
+        step_id: step.id,
+        test_pid: self(),
+        tool_id: "allowed.tool",
+        local_classification: :write,
+        action_class: "write",
+        risk_level: "high",
+        approval_sensitive: true,
+        args_fingerprint: "same",
+        subject_ref: "env:prod",
+        required_scopes: ["deploy:write"],
+        grant_state: "active",
+        policy_key: "allowed.tool",
+        tenant_id: "tenant-1",
+        approval_context: %{current_policy_ok?: true, replay_approved?: true}
+      }
+
+      %{live_context: live_context}
+    end
+
+    test "undeclared tool: exactly one unclassified event fires, and the tool's context carries :tool_classification",
+         %{live_context: live_context} do
+      parent = self()
+      ref = make_ref()
+      handler_id = "invocation-classification-undeclared-#{System.unique_integer()}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :class, :unclassified],
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, ref, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:ok, %{status: :execute_live}} = Invocation.invoke(ReplayTool, %{"action" => "live"}, live_context)
+
+      assert_receive {:tool_executed, _args, tool_context}
+      assert %Classification{source: :unclassified_default} = Map.get(tool_context, :tool_classification)
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, metadata}
+      assert metadata.site == :connector_invocation
+
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata2}
+    end
+
+    test "a declaring tool: no unclassified event fires, and the tool's received context carries its declaration",
+         %{live_context: live_context} do
+      create_budget_policy!("tenant-1", "tool_calls")
+
+      parent = self()
+      ref = make_ref()
+      handler_id = "invocation-classification-declaring-#{System.unique_integer()}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :class, :unclassified],
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, ref, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:ok, %{status: :execute_live}} =
+               Invocation.invoke(ClassifiedReplayTool, %{"action" => "live"}, live_context)
+
+      assert_receive {:tool_executed, _args, tool_context}
+
+      assert %Classification{source: :tool_declared, action_class: "write", can_exfiltrate: true} =
+               Map.get(tool_context, :tool_classification)
+
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata}
+    end
+  end
+
+  defp create_budget_policy!(tenant_id, resource_kind) do
+    {:ok, _policy} =
+      Scoria.SRE.create_budget_policy(%{
+        tenant_id: tenant_id,
+        policy_key: "tenant:default:#{resource_kind}",
+        scope_key: "tenant:#{tenant_id}",
+        scope_kind: "tenant",
+        resource_kind: resource_kind,
+        status: "active",
+        warn_threshold: Decimal.new("80.0"),
+        trip_threshold: Decimal.new("100.0"),
+        max_workflow_steps: 25,
+        max_repeated_tool_calls: 3,
+        max_consecutive_failures: 2,
+        metadata: %{}
+      })
   end
 end

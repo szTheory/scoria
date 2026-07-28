@@ -4,13 +4,22 @@ defmodule Scoria.MCP.Executor do
   Emits telemetry events for auditing.
   """
 
+  import Ecto.Query, warn: false
+
+  alias Scoria.MCP.Classification
+  alias Scoria.MCP.Envelope
+  alias Scoria.Observe.Semconv
+  alias Scoria.Repo
   alias Scoria.SRE.BudgetEngine
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE
   alias Scoria.SRE.Telemetry
+  alias Scoria.Trust
+  alias Scoria.Trust.Scanner
   alias Scoria.Workflows
   alias Scoria.Workflows.ReplayDisposition
   alias Scoria.Workflows.Run
+  alias Scoria.Workflows.Step
 
   @doc """
   Executes a tool module with the given arguments and context.
@@ -18,14 +27,99 @@ defmodule Scoria.MCP.Executor do
   def execute(tool_module, args, context, timeout \\ 5000) do
     context = canonical_context(context || %{})
 
-    case replay_gate(tool_module, args, context) do
-      {:continue, context} ->
-        execute_live(tool_module, args, context, timeout)
+    case resolve_classification(tool_module, context) do
+      {:ok, context} ->
+        case replay_gate(tool_module, args, context) do
+          {:continue, context} ->
+            execute_live(tool_module, args, context, timeout)
+
+          other ->
+            other
+        end
 
       other ->
         other
     end
   end
+
+  # D-05: resolution happens exactly once, here, before `replay_gate/3`.
+  # Idempotent and single-shot -- if `context` already carries a resolved
+  # `%Classification{}` under `:tool_classification` (a connector call site
+  # may inject one ahead of this), it is reused unchanged and no telemetry
+  # fires a second time. Otherwise the tool's own declaration (or the
+  # fail-closed-but-inspectable maximal default, D-03) is resolved and
+  # carried forward on that same new context key.
+  #
+  # Plan 56-02: when `config :scoria, :require_tool_classification` is
+  # truthy (default `false`) AND the resolved classification's `source` is
+  # `:unclassified_default`, this now returns `{:error, envelope}` instead --
+  # a genuine refusal, never reached for a host-tightened or tool-declared
+  # resolution. `execute/4`'s call site matches only `{:ok, context}` plus a
+  # catch-all `other -> other`, so this branch flows straight back to the
+  # caller with zero further side effects (no `replay_gate/3`, no budget
+  # reservation, no audit insert, no tool Task -- mirrors
+  # `Scoria.Runtime.ReleaseGate.handle_missing_verdict/1`).
+  @spec resolve_classification(module(), map()) :: {:ok, map()} | {:error, map()}
+  defp resolve_classification(tool_module, context) do
+    case Map.get(context, :tool_classification) do
+      %Classification{} ->
+        {:ok, context}
+
+      _ ->
+        declaration = Classification.tool_declaration(tool_module)
+        resolved = Classification.resolve(declaration, context)
+
+        if refuse_unclassified_tool?(resolved) do
+          {:error, unclassified_tool_envelope(tool_module, context)}
+        else
+          maybe_emit_unclassified(declaration, tool_module, context)
+          persist_classification_to_step(context, tool_module, resolved)
+          {:ok, Map.put(context, :tool_classification, resolved)}
+        end
+    end
+  end
+
+  # Gate on `source == :unclassified_default` specifically (D-03) -- a
+  # host-tightened resolution is a real classification and must never be
+  # refused by this flag. Mirrors `release_gate.ex:82`'s
+  # `Application.get_env(:scoria, :require_eval_verdict, false)` --
+  # default-off, no config-file entry (grep-verified in acceptance
+  # criteria), so no existing adopter inherits the strict behavior.
+  defp refuse_unclassified_tool?(%Classification{source: :unclassified_default}) do
+    Application.get_env(:scoria, :require_tool_classification, false)
+  end
+
+  defp refuse_unclassified_tool?(_resolved), do: false
+
+  defp unclassified_tool_envelope(tool_module, context) do
+    %{
+      status: :unclassified_tool,
+      reason_code: "tool_classification_required",
+      tool_ref: inspect(tool_module),
+      trace_id: Map.get(context, :trace_id),
+      policy_key: Map.get(context, :policy_key)
+    }
+  end
+
+  defp maybe_emit_unclassified(:none, tool_module, context) do
+    try do
+      :telemetry.execute(
+        [:scoria, :class, :unclassified],
+        %{},
+        %{
+          tool: tool_module,
+          tool_ref: inspect(tool_module),
+          trace_id: Map.get(context, :trace_id),
+          step_id: Map.get(context, :step_id),
+          site: :mcp_executor
+        }
+      )
+    rescue
+      _ -> :ok
+    end
+  end
+
+  defp maybe_emit_unclassified({:ok, _declared}, _tool_module, _context), do: :ok
 
   defp execute_live(tool_module, args, context, timeout) do
 
@@ -46,10 +140,31 @@ defmodule Scoria.MCP.Executor do
              execute_tool(tool_module, args, access_context, timeout, metadata)
            end) do
         {:ok, {:completed, result, duration}} ->
+          # D-07 load-bearing ordering: reconcile_budget/emit_sre_telemetry
+          # read the RAW `result` before any scan/envelope wrapping happens
+          # below. Do not reorder this.
           reconcile_budget(execution_context, access_context, result, "completed")
           emit_sre_telemetry(tool_module, access_context, "completed", duration, result)
-          :telemetry.execute([:scoria, :tool, :completed], %{duration: duration}, metadata)
-          result
+
+          # D-18/D-21: scan the tool output at THIS envelope-creation choke
+          # point (after billing has read the raw result) and tag the SAME
+          # [:scoria, :tool, :completed] telemetry event with the resolved
+          # scoria.trust.* attributes -- no second span (D-21).
+          {trust_attrs, verdict, scan_slot} = scan_tool_output(result, access_context)
+
+          # Plan 56-02: the resolved scoria.classification.* attributes join
+          # the SAME [:scoria, :tool, :completed] event alongside trust_attrs
+          # -- no new span, no second :telemetry.execute/3 call (D-21 no-
+          # second-span discipline applies unchanged).
+          class_attrs = classification_attributes_for_telemetry(access_context)
+
+          :telemetry.execute(
+            [:scoria, :tool, :completed],
+            %{duration: duration},
+            metadata |> Map.merge(trust_attrs) |> Map.merge(class_attrs)
+          )
+
+          finalize_tool_result(result, tool_module, access_context, verdict, scan_slot)
 
         {:error, {:timeout, duration}} ->
           reconcile_budget(execution_context, access_context, %{}, "timeout")
@@ -88,12 +203,20 @@ defmodule Scoria.MCP.Executor do
           {:historical_stub, evidence} ->
             record_replay_audit(context, tool_module, evidence, "tool.replay.stubbed")
 
+            raw_result = Map.get(source_evidence, :result) || Map.get(source_evidence, "result")
+
             {:ok,
              %{
                status: :historical_stub,
                replay_disposition: :historical_stub,
                replay_reason_code: evidence.replay_reason_code,
-               result: Map.get(source_evidence, :result) || Map.get(source_evidence, "result")
+               # D-10: wrapped under the SAME flag as the live success path so
+               # a consumer written against `{:ok, %Envelope{}}` never diverges
+               # on replay.
+               result:
+                 maybe_wrap_envelope(raw_result, tool_module, context,
+                   provenance_overrides: %{source: :replay_stub}
+                 )
              }}
 
           {:blocked, evidence} ->
@@ -149,6 +272,7 @@ defmodule Scoria.MCP.Executor do
 
   defp build_replay_seam(tool_module, context) do
     %{
+      tool_classification: Map.get(context, :tool_classification),
       local_classification: Map.get(context, :local_classification, :write),
       tool_id: Map.get(context, :tool_id, inspect(tool_module)),
       action_class: Map.get(context, :action_class, "write"),
@@ -188,6 +312,233 @@ defmodule Scoria.MCP.Executor do
       {:ok, event} -> event.id
       _ -> nil
     end
+  end
+
+  # D-07: only the `{:ok, value}` leg's inner `value` is ever wrapped — never
+  # the raw `{:ok, value} | {:error, reason}` tuple itself (that would
+  # double-nest `%Envelope{value: {:ok, v}}`, RESEARCH.md Pitfall 1).
+  # `{:error, _}` passes through untouched under both flag states.
+  defp finalize_tool_result({:ok, value}, tool_module, context, verdict, scan_slot) do
+    persist_taint(context, tool_module, verdict)
+    {:ok, maybe_wrap_envelope(value, tool_module, context, tier: verdict && verdict.tier, scan: scan_slot)}
+  end
+
+  defp finalize_tool_result({:error, _} = error, _tool_module, _context, _verdict, _scan_slot), do: error
+
+  # Defensive fallback: `Scoria.MCP.Tool.execute/2`'s callback contract is
+  # `{:ok, any()} | {:error, any()}`, but a misbehaving tool returning
+  # something else must not crash the executor.
+  defp finalize_tool_result(other, _tool_module, _context, _verdict, _scan_slot), do: other
+
+  # D-18: scans the tool output at the envelope-creation choke point. Only
+  # the `{:ok, value}` leg is scanned -- an `{:error, _}` result never
+  # minted taint content in the first place. The scanner is resolved via
+  # `Map.get(context, :content_scanner, ...)` (D-17 -- `context` is a MAP
+  # throughout the executor, unlike `Knowledge.retrieve/2`'s keyword-list
+  # `opts`, so this reads via `Map.get/3`, never `Keyword.pop`).
+  #
+  # `scanner == Scanner.NoOp` is the D-17 true no-op: `Trust.scan/2` still
+  # resolves (zero Task overhead, `Scan.scan/2`'s own internal
+  # short-circuit), but the `Envelope.scan` slot stays `nil` (byte-identical
+  # Plan 02 behavior) -- only a REAL scanner's verdict is ever exposed
+  # there.
+  defp scan_tool_output({:ok, value}, context) do
+    scanner = Map.get(context, :content_scanner, Application.get_env(:scoria, :content_scanner, Scanner.NoOp))
+
+    {:ok, verdict} = Trust.scan(value, Map.put(context, :content_scanner, scanner))
+
+    trust_attrs =
+      Semconv.trust_attributes(%{
+        tier: verdict.tier,
+        scanner: verdict.scanner && inspect(verdict.scanner),
+        reason_code: verdict.reason_code
+      })
+
+    scan_slot = if scanner == Scanner.NoOp, do: nil, else: verdict
+
+    {trust_attrs, verdict, scan_slot}
+  end
+
+  defp scan_tool_output(_other, _context), do: {%{}, nil, nil}
+
+  # Plan 56-02: projects the resolved `%Classification{}` already carried on
+  # `context` (put there by `resolve_classification/2`) through
+  # `Semconv.classification_attributes/1`'s fixed-key projector. `source` is
+  # converted with `to_string/1` so the emitted attribute is a string enum,
+  # not an Elixir atom literal. Absent classification (never expected on the
+  # live path, since resolution always runs first) yields an empty map.
+  defp classification_attributes_for_telemetry(context) do
+    case Map.get(context, :tool_classification) do
+      %Classification{} = classification ->
+        classification
+        |> Map.from_struct()
+        |> Map.update!(:source, &to_string/1)
+        |> Semconv.classification_attributes()
+
+      _ ->
+        %{}
+    end
+  end
+
+  # D-08: taint is ALWAYS computed and persisted (inspectable via the step's
+  # jsonb `result_envelope` and via telemetry), regardless of the
+  # `wrap_tool_output` return-shape flag. The flag below only gates the
+  # RETURN SHAPE, never this computation. `verdict` is the resolved
+  # `Scoria.Trust.Scan` verdict (D-18) -- under `Scanner.NoOp` this resolves
+  # to the same `Trust.default_tier/0` value persisted here before this
+  # plan, so NoOp behavior is byte-identical (D-17).
+  defp persist_taint(context, tool_module, verdict) do
+    tier = (verdict && verdict.tier) || Trust.default_tier()
+
+    emit_taint_telemetry(context, tool_module, tier)
+    persist_taint_to_step(context, tool_module, tier)
+  end
+
+  defp emit_taint_telemetry(context, tool_module, tier) do
+    try do
+      :telemetry.execute(
+        [:scoria, :trust, :taint],
+        %{},
+        %{
+          tool: tool_module,
+          tier: tier,
+          trace_id: Map.get(context, :trace_id),
+          step_id: Map.get(context, :step_id)
+        }
+      )
+    rescue
+      _ -> :ok
+    end
+  end
+
+  # Persists the always-computed taint map onto the step's `result_envelope`
+  # jsonb via a Postgres jsonb merge (mirrors
+  # `Knowledge.set_source_trust/3`'s `fragment("? || ?", ...)` pattern) — no
+  # new Ecto column (D-08). Best-effort: a standalone/non-workflow tool
+  # invocation with no `step_id` in context, or no matching step row, is not
+  # an error — taint has already been telemetried above.
+  defp persist_taint_to_step(context, tool_module, tier) do
+    case Map.get(context, :step_id) do
+      nil ->
+        :ok
+
+      step_id ->
+        taint = %{
+          "tier" => tier,
+          "tool_ref" => inspect(tool_module),
+          "args_fingerprint" => Map.get(context, :args_fingerprint)
+        }
+
+        try do
+          from(step in Step,
+            where: step.id == ^step_id,
+            update: [
+              set: [
+                result_envelope:
+                  fragment(
+                    "? || ?",
+                    step.result_envelope,
+                    type(^%{"scoria.taint" => taint}, :map)
+                  )
+              ]
+            ]
+          )
+          |> Repo.update_all([])
+        rescue
+          _ -> :ok
+        end
+
+        :ok
+    end
+  end
+
+  # Persists every resolved classification (declared, host-tightened, or
+  # unclassified-default) onto the step's `result_envelope` jsonb, mirroring
+  # `persist_taint_to_step/3`'s choke point and best-effort discipline
+  # exactly (D-03/D-06): a `nil` `:step_id`, or one matching no row, is `:ok`
+  # and never an error. `source` round-trips through `to_string/1` so
+  # Phase 57 can branch on it after a plain jsonb read (never an Elixir atom
+  # literal). Called at RESOLUTION time (from `resolve_classification/2`'s
+  # non-refusal branch), not from `finalize_tool_result/5` -- unlike taint,
+  # which is only meaningful for a completed `{:ok, value}` result, Phase 57
+  # needs the classification of blocked and stubbed calls too. Never called
+  # on the strict-refusal branch: a refused call never runs and has no step
+  # evidence to attach.
+  defp persist_classification_to_step(context, tool_module, %Classification{} = resolved) do
+    case Map.get(context, :step_id) do
+      nil ->
+        :ok
+
+      step_id ->
+        data = %{
+          "action_class" => resolved.action_class,
+          "source" => to_string(resolved.source),
+          "reads_private_data" => resolved.reads_private_data,
+          "sees_untrusted_content" => resolved.sees_untrusted_content,
+          "can_exfiltrate" => resolved.can_exfiltrate,
+          "tool_ref" => inspect(tool_module)
+        }
+
+        try do
+          from(step in Step,
+            where: step.id == ^step_id,
+            update: [
+              set: [
+                result_envelope:
+                  fragment(
+                    "? || ?",
+                    step.result_envelope,
+                    type(^%{"scoria.classification" => data}, :map)
+                  )
+              ]
+            ]
+          )
+          |> Repo.update_all([])
+        rescue
+          _ -> :ok
+        end
+
+        :ok
+    end
+  end
+
+  # Soft-launch flag (D-08): the return VALUE stays byte-identical to 0.1.3
+  # unless `config :scoria, Scoria.MCP.Envelope, wrap_tool_output: true` is
+  # set (default off). `opts[:provenance_overrides]` lets the replay-stub
+  # call site (D-10) tag its provenance distinctly while sharing this same
+  # gate. `opts[:tier]` carries the resolved `Scoria.Trust.Scan` verdict
+  # tier (D-18, already monotonic-resolved over the default by `Scan`
+  # itself) -- defaults to `Trust.default_tier/0` when absent (the
+  # replay-stub call site below never scans, so it keeps the pre-Plan-05
+  # default). `opts[:scan]` carries the `Envelope.scan` slot (D-06) -- `nil`
+  # for the replay-stub path and for a `Scanner.NoOp` resolution.
+  defp maybe_wrap_envelope(value, tool_module, context, opts) do
+    if wrap_tool_output?() do
+      provenance =
+        %{
+          tool_ref: Map.get(context, :tool_ref, inspect(tool_module)),
+          tool_name: tool_name(tool_module),
+          trace_id: Map.get(context, :trace_id),
+          workflow_run_id: Map.get(context, :run_id),
+          step_id: Map.get(context, :step_id),
+          args_fingerprint: Map.get(context, :args_fingerprint)
+        }
+        |> Map.merge(Keyword.get(opts, :provenance_overrides, %{}))
+
+      Envelope.wrap(value,
+        tier: Keyword.get(opts, :tier) || Trust.default_tier(),
+        provenance: provenance,
+        scan: Keyword.get(opts, :scan)
+      )
+    else
+      value
+    end
+  end
+
+  defp wrap_tool_output? do
+    :scoria
+    |> Application.get_env(Envelope, [])
+    |> Keyword.get(:wrap_tool_output, false)
   end
 
   defp execute_tool(tool_module, args, context, timeout, metadata) do
@@ -250,11 +601,19 @@ defmodule Scoria.MCP.Executor do
   defp attach_budget_metadata(metadata, %{audit_outbox_event: audit_outbox_event}), do: Map.put(metadata, :audit_outbox_event_id, audit_outbox_event.id)
   defp attach_budget_metadata(metadata, %{reservation: reservation}), do: Map.put(metadata, :budget_reservation_id, reservation.id)
 
+  # Site 3 (D-05, plan 56-03): the SAME shared declared-only sensitivity
+  # predicate used by site 2 (`policy_sensitive_invocation?/1`) is the
+  # fifth OR operand -- one origin for "does this declaration count as
+  # sensitive" is what keeps the two sites from drifting apart. This also
+  # widens the read-only `maybe_emit_budget/4` call site (`:843-858`): a
+  # declaring tool now emits budget telemetry too, which is intended and
+  # consistent with reserving budget for it.
   defp budget_required?(context) do
     Map.get(context, :estimated_cost_usd) ||
       Map.get(context, :estimated_tokens) ||
       Map.get(context, :estimated_units) ||
-      Map.get(context, :sensitive_tool)
+      Map.get(context, :sensitive_tool) ||
+      Classification.declared_sensitive?(Map.get(context, :tool_classification))
   end
 
   defp budget_resource(context) do
@@ -275,11 +634,24 @@ defmodule Scoria.MCP.Executor do
     end
   end
 
-  defp actual_units(_context, _result, outcome) when outcome in ["timeout", "execution_failed"], do: 0
+  # `@doc false` (not `defp`) so the D-07 defense-in-depth `%Envelope{}` head
+  # below is directly unit-testable even though the current (correct)
+  # `execute_live/4` ordering never routes a wrapped value through here —
+  # billing runs on the raw result before `finalize_tool_result/3` wraps it.
+  # This is an internal function, not a published API.
+  @doc false
+  def actual_units(_context, _result, outcome) when outcome in ["timeout", "execution_failed"], do: 0
 
-  defp actual_units(context, {:ok, result}, outcome), do: actual_units(context, result, outcome)
+  def actual_units(context, {:ok, result}, outcome), do: actual_units(context, result, outcome)
 
-  defp actual_units(context, result, _outcome) do
+  # Defense-in-depth (D-07): billing runs on the RAW result before any
+  # envelope wrap happens (see `finalize_tool_result/3`), so this head never
+  # fires in the current ordering. It exists so a future reorder that wraps
+  # before billing can't silently mis-bill against `%Envelope{}`'s own struct
+  # shape instead of its inner `value`.
+  def actual_units(context, %Envelope{value: v}, outcome), do: actual_units(context, v, outcome)
+
+  def actual_units(context, result, _outcome) do
     cond do
       is_map(result) && Map.has_key?(result, :actual_units) -> Map.fetch!(result, :actual_units)
       is_map(result) && Map.has_key?(result, "actual_units") -> Map.fetch!(result, "actual_units")
@@ -347,8 +719,17 @@ defmodule Scoria.MCP.Executor do
   defp ensure_policy_sensitive_invocation(_tool_module, _args, _context, reservation_context),
     do: {:ok, reservation_context}
 
+  # Site 2 (D-05, plan 56-03): the first two operands stay byte-identical --
+  # a host value still wins and a host-`false` is still falsy exactly as
+  # before this plan. The third OR term is declared-only (D-A2): a tool
+  # that declares `can_exfiltrate: true` or an `action_class` of `"exec"`/
+  # `"admin"` now trips this predicate even when the host passed neither
+  # `:policy_sensitive` nor `:sensitive_tool` -- the fail-open seam
+  # actually closing for adopters who opt in, never for legacy traffic
+  # (the shared predicate below returns `false` for `:unclassified_default`).
   defp policy_sensitive_invocation?(context) do
-    Map.get(context, :policy_sensitive) || Map.get(context, :sensitive_tool)
+    Map.get(context, :policy_sensitive) || Map.get(context, :sensitive_tool) ||
+      Classification.declared_sensitive?(Map.get(context, :tool_classification))
   end
 
   defp policy_sensitive_audit_envelope(tool_module, args, context) do

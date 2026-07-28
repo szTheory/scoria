@@ -179,4 +179,60 @@ defmodule Scoria.Workflows.ReplayDispositionTest do
       assert evidence.executed_live == false
     end
   end
+
+  describe "action_class enum ownership (D-02)" do
+    test "Scoria.MCP.Classification.action_classes/0 preserves the load-bearing order" do
+      # `replay_disposition.ex:93`'s `effectful_or_remote?/1` reads
+      # `Enum.drop(@effectful_classes, 1)` -- this pins `"read"` at index 0
+      # as the sole non-effectful member. `@effectful_classes` is now
+      # derived from `Scoria.MCP.Classification.action_classes/0` rather
+      # than a duplicated literal (this test is that consumer's own order
+      # assertion, not a re-assertion of ownership).
+      assert Scoria.MCP.Classification.action_classes() == ["read", "write", "exec", "admin"]
+
+      assert Enum.drop(Scoria.MCP.Classification.action_classes(), 1) == ["write", "exec", "admin"]
+    end
+  end
+
+  describe "site-5 non-bricking regression: the bare default seam still resolves execute_live" do
+    test "the bare %{local_classification: :pure} default seam is unaffected by this phase" do
+      run = %{id: "replay-run-6", execution_mode: "replay"}
+      seam = %{local_classification: :pure}
+
+      assert {:execute_live, evidence} = ReplayDisposition.resolve(run, seam, %{}, %{}, %{})
+      assert evidence.replay_reason_code == "local_safe_to_rerun"
+    end
+
+    test "the same default seam with :tool_classification added still resolves identically" do
+      run = %{id: "replay-run-7", execution_mode: "replay"}
+
+      seam = %{
+        local_classification: :pure,
+        tool_classification: Scoria.MCP.Classification.unclassified_default()
+      }
+
+      assert {:execute_live, evidence} = ReplayDisposition.resolve(run, seam, %{}, %{}, %{})
+      assert evidence.replay_reason_code == "local_safe_to_rerun"
+    end
+  end
+
+  describe "site-5 named default seam shape (plan 56-03, Workflows.Runtime.default_replay_seam/2)" do
+    test "resolves execute_live/local_safe_to_rerun with :pure intact and a real unclassified_default classification" do
+      run = %{id: "replay-run-8", execution_mode: "replay"}
+
+      # Hand-built to match Runtime.default_replay_seam/2's literal output --
+      # kept as a pure-map assertion per this plan's own instruction, not a
+      # DB-backed Runtime integration test.
+      seam = %{
+        local_classification: :pure,
+        tool_classification: Scoria.MCP.Classification.unclassified_default()
+      }
+
+      assert {:execute_live, evidence} = ReplayDisposition.resolve(run, seam, %{}, %{}, %{})
+      assert evidence.replay_reason_code == "local_safe_to_rerun"
+
+      assert seam.local_classification == :pure
+      assert %Scoria.MCP.Classification{source: :unclassified_default} = seam.tool_classification
+    end
+  end
 end

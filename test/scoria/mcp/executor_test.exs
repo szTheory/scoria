@@ -1,10 +1,14 @@
 defmodule Scoria.MCP.ExecutorTest do
   use ExUnit.Case, async: false
+  import Ecto.Query
 
+  alias Scoria.MCP.Envelope
   alias Scoria.MCP.Executor
   alias Scoria.Repo
   alias Scoria.SRE
+  alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.SRE.BudgetReservation
+  alias Scoria.Trust.Verdict
   alias Scoria.Workflows
 
   defmodule DummyTool do
@@ -35,6 +39,93 @@ defmodule Scoria.MCP.ExecutorTest do
     
     def execute(%{"action" => "exit"}, _context) do
       exit(:killed)
+    end
+  end
+
+  defmodule ClassifiedTool do
+    use Scoria.MCP.Tool, action_class: "write", reads_private_data: true
+
+    @impl true
+    def name, do: "classified_tool"
+
+    @impl true
+    def description, do: "Declares a classification for persistence tests"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(%{"action" => "success"}, _context), do: {:ok, %{result: "success"}}
+  end
+
+  defmodule ExfiltratingTool do
+    use Scoria.MCP.Tool, can_exfiltrate: true
+
+    @impl true
+    def name, do: "exfiltrating_tool"
+
+    @impl true
+    def description, do: "Declares can_exfiltrate: true for declared_sensitive?/1 site 2/3 tests (plan 56-03)"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(%{"action" => "success"}, _context), do: {:ok, %{result: "success"}}
+  end
+
+  defmodule AdminActionTool do
+    use Scoria.MCP.Tool, action_class: "admin"
+
+    @impl true
+    def name, do: "admin_action_tool"
+
+    @impl true
+    def description, do: "Declares action_class: admin for declared_sensitive?/1 site 2/3 tests (plan 56-03)"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(%{"action" => "success"}, _context), do: {:ok, %{result: "success"}}
+  end
+
+  defmodule ActualUnitsTool do
+    @behaviour Scoria.MCP.Tool
+
+    @impl true
+    def name, do: "actual_units_tool"
+
+    @impl true
+    def description, do: "A tool that declares its own actual_units for billing tests"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(%{"action" => "success"}, _context) do
+      {:ok, %{actual_units: 3}}
+    end
+  end
+
+  # Test scanner doubles for the scan-at-envelope tests below (D-18, D-21),
+  # mirroring the fixture style already used by test/scoria/trust/scan_test.exs.
+  defmodule FlaggingScanner do
+    @behaviour Scoria.Trust.Scanner
+
+    @impl true
+    def scan(_content, _context), do: {:ok, %Verdict{tier: "untrusted", reason_code: :prompt_injection}}
+  end
+
+  # Actively tries to leak a numeric confidence score -- proves the leak is
+  # structurally impossible (Scoria.Trust.Scan.scan/2 always resolves
+  # `score: nil`, and Semconv.trust_attributes/1 has no `:score` key at all).
+  defmodule ScoringScanner do
+    @behaviour Scoria.Trust.Scanner
+
+    @impl true
+    def scan(_content, _context) do
+      {:ok, %Verdict{tier: "untrusted", score: 0.987, reason_code: :moderation_flag}}
     end
   end
 
@@ -313,6 +404,429 @@ defmodule Scoria.MCP.ExecutorTest do
       assert envelope.status == :replay_blocked
       assert envelope.replay_disposition == :blocked
       assert envelope.replay_reason_code == "missing_source_evidence"
+    end
+  end
+
+  describe "Scoria.MCP.Envelope soft-launch wrap (D-07, D-08, D-10)" do
+    setup do
+      on_exit(fn -> Application.delete_env(:scoria, Scoria.MCP.Envelope) end)
+      :ok
+    end
+
+    test "flag OFF (default): return shape is byte-identical to the raw tool value, and taint is still persisted",
+         %{context: context} do
+      refute Keyword.get(Application.get_env(:scoria, Scoria.MCP.Envelope, []), :wrap_tool_output)
+
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "tool",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      assert persisted_step.result_envelope["scoria.taint"]["tier"] == "untrusted"
+      assert persisted_step.result_envelope["scoria.taint"]["tool_ref"] =~ "DummyTool"
+    end
+
+    test "flag ON: return shape wraps the inner value in an Envelope, not the {:ok, value} tuple (Pitfall 1)",
+         %{context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(DummyTool, %{"action" => "success"}, context)
+
+      assert Envelope.value(envelope) == %{result: "success"}
+      assert Envelope.tier(envelope) == "untrusted"
+    end
+
+    test "{:error, reason} is returned unchanged under both flag states", %{context: context} do
+      assert {:error, :execution_failed} = Executor.execute(DummyTool, %{"action" => "crash"}, context)
+
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+      assert {:error, :execution_failed} = Executor.execute(DummyTool, %{"action" => "crash"}, context)
+    end
+
+    test "ordering: reconcile_budget/billing reads the RAW result, not the Envelope (D-07 load-bearing order)",
+         %{context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+      create_budget_policy!("tenant-1", "cost_usd")
+      trace_id = "trace-envelope-billing"
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(
+                 ActualUnitsTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{
+                   trace_id: trace_id,
+                   run_id: Ecto.UUID.generate(),
+                   estimated_cost_usd: Decimal.new("5.0"),
+                   integration_kind: "tool",
+                   sensitive_tool: true
+                 })
+               )
+
+      assert Envelope.value(envelope) == %{actual_units: 3}
+
+      # Billing read the raw `%{actual_units: 3}` map BEFORE the wrap, so the
+      # reservation reflects 3 (the tool's declared units), not the 5.0
+      # estimate and not a mis-billed reading of the `%Envelope{}` struct's
+      # own fields.
+      reservation = Repo.get_by!(BudgetReservation, trace_id: trace_id)
+      assert reservation.status == "reconciled"
+      assert Decimal.equal?(reservation.actual_units, Decimal.new("3"))
+    end
+
+    test "actual_units/3 defense-in-depth head bills against an Envelope's inner value directly" do
+      assert Executor.actual_units(%{}, %Envelope{value: %{actual_units: 7}, tier: "untrusted"}, "completed") == 7
+
+      assert Executor.actual_units(
+               %{},
+               %Envelope{value: %{estimated_units: 1}, tier: "untrusted"},
+               "completed"
+             ) == 1
+    end
+
+    test "replay historical-stub result matches the live envelope shape when the flag is ON (D-10)",
+         %{context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          replay_overrides: %{"live_tool_allowlist" => ["allowed.tool"]}
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      replay_context =
+        Map.merge(context, %{
+          run: run,
+          run_id: run.id,
+          step_id: step.id,
+          tool_id: "repo.read",
+          local_classification: :read,
+          action_class: "read",
+          risk_level: "low",
+          args_fingerprint: "same",
+          subject_ref: "repo:acme/scoria",
+          required_scopes: ["repo:read"],
+          grant_state: "active",
+          policy_key: "repo.read",
+          source_evidence: %{
+            source_run_id: run.source_run_id || run.id,
+            source_checkpoint_id: run.source_checkpoint_id || Ecto.UUID.generate(),
+            source_step_id: step.id,
+            source_audit_outbox_event_id: Ecto.UUID.generate(),
+            tool_id: "repo.read",
+            args_fingerprint: "same",
+            subject_ref: "repo:acme/scoria",
+            required_scopes: ["repo:read"],
+            grant_state: "active",
+            policy_key: "repo.read",
+            result: %{"cached" => true}
+          }
+        })
+
+      assert {:ok, replay_result} = Executor.execute(DummyTool, %{"action" => "read"}, replay_context)
+
+      assert replay_result.status == :historical_stub
+      assert %Envelope{} = replay_result.result
+      assert Envelope.value(replay_result.result) == %{"cached" => true}
+      assert Envelope.tier(replay_result.result) == "untrusted"
+      assert replay_result.result.provenance.source == :replay_stub
+    end
+  end
+
+  describe "trust scan wired at envelope creation (D-18, D-21)" do
+    setup do
+      on_exit(fn -> Application.delete_env(:scoria, Scoria.MCP.Envelope) end)
+      :ok
+    end
+
+    test "NoOp (no scanner registered): Envelope.scan stays nil and the tool telemetry carries no scoria.trust.reason_code beyond default",
+         %{ref: ref, context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(DummyTool, %{"action" => "success"}, context)
+
+      assert Envelope.value(envelope) == %{result: "success"}
+      assert Envelope.tier(envelope) == "untrusted"
+      assert Envelope.scan(envelope) == nil
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :tool, :completed], _measurements, metadata}
+      assert metadata["scoria.trust.tier"] == "untrusted"
+      refute Map.has_key?(metadata, "scoria.trust.reason_code")
+    end
+
+    test "a registered flagging scanner populates Envelope.scan and tags the tool telemetry with scoria.trust.*",
+         %{ref: ref, context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(context, :content_scanner, FlaggingScanner)
+               )
+
+      assert %Verdict{tier: "untrusted", reason_code: :prompt_injection} = Envelope.scan(envelope)
+      assert Envelope.tier(envelope) == "untrusted"
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :tool, :completed], _measurements, metadata}
+      assert metadata["scoria.trust.tier"] == "untrusted"
+      assert metadata["scoria.trust.reason_code"] == :prompt_injection
+      assert metadata["scoria.trust.scanner"] =~ "FlaggingScanner"
+    end
+
+    test "flag OFF: a registered scanner still persists taint to the step, byte-identical return shape", %{
+      context: context
+    } do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id, content_scanner: FlaggingScanner})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      assert persisted_step.result_envelope["scoria.taint"]["tier"] == "untrusted"
+    end
+
+    test "score never appears in step.result_envelope nor in the tool telemetry attributes, even when the scanner sets one",
+         %{context: context} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      test_pid = self()
+      handler_id = "executor-trust-score-test-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :tool, :completed],
+        fn _event, _measurements, metadata, _config -> send(test_pid, {:completed_metadata, metadata}) end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id, content_scanner: ScoringScanner})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      refute Map.has_key?(persisted_step.result_envelope["scoria.taint"], "score")
+
+      assert_receive {:completed_metadata, metadata}
+      refute Map.has_key?(metadata, "scoria.trust.score")
+    end
+  end
+
+  describe "classification persisted to step.result_envelope (D-03/D-06, plan 56-02)" do
+    test "persists action_class/source/legs/tool_ref for an undeclared tool (source: unclassified_default)",
+         %{context: context} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      classification = persisted_step.result_envelope["scoria.classification"]
+
+      assert classification["source"] == "unclassified_default"
+      assert classification["action_class"] == "admin"
+      assert classification["reads_private_data"] == true
+      assert classification["sees_untrusted_content"] == true
+      assert classification["can_exfiltrate"] == true
+      assert classification["tool_ref"] =~ "DummyTool"
+    end
+
+    test "persists source: tool_declared and the declared action_class for a declaring tool", %{context: context} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 ClassifiedTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      classification = persisted_step.result_envelope["scoria.classification"]
+
+      assert classification["source"] == "tool_declared"
+      assert classification["action_class"] == "write"
+      assert classification["reads_private_data"] == true
+    end
+
+    test "jsonb MERGE: a pre-existing scoria.taint key survives the classification write, persisted even for a replay-blocked call",
+         %{context: context} do
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          source_run_id: Ecto.UUID.generate(),
+          source_checkpoint_id: Ecto.UUID.generate()
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "tool",
+          role_id: "executor",
+          status: "queued",
+          result_envelope: %{"scoria.taint" => %{"tier" => "trusted"}}
+        })
+
+      assert {:error, envelope} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{
+                   run_id: run.id,
+                   step_id: step.id,
+                   local_classification: :write,
+                   action_class: "write",
+                   risk_level: "high",
+                   tool_id: DummyTool.name(),
+                   policy_key: "deploy.publish"
+                 })
+               )
+
+      assert envelope.status == :replay_blocked
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      # The pre-existing "scoria.taint" key (from a prior, separate call) is
+      # untouched — the classification write is a jsonb MERGE, never a
+      # replace, and this call never reaches `finalize_tool_result/5`'s taint
+      # write since it was blocked before `execute_live/4`.
+      assert persisted_step.result_envelope["scoria.taint"]["tier"] == "trusted"
+      # Classification is persisted at RESOLUTION time (before `replay_gate/3`),
+      # so a blocked call still has its classification durable on the step (D-06).
+      assert persisted_step.result_envelope["scoria.classification"]["source"] == "unclassified_default"
+    end
+
+    test "execute/4 with no :step_id in context returns the tool's normal result and raises nothing",
+         %{context: context} do
+      assert {:ok, %{result: "success"}} = Executor.execute(DummyTool, %{"action" => "success"}, context)
+    end
+
+    test "a :step_id that matches no row returns normally — not an error", %{context: context} do
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{step_id: Ecto.UUID.generate()})
+               )
+    end
+  end
+
+  describe "declared_sensitive?/1 widens sites 2 and 3 declared-only (D-A2, plan 56-03)" do
+    test "an undeclared tool with a bare context writes zero tool.invocation audit rows and reserves zero budget",
+         %{context: context} do
+      trace_id = "trace-declared-sensitive-undeclared"
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{trace_id: trace_id})
+               )
+
+      assert Repo.aggregate(
+               from(a in AuditOutboxEvent, where: a.trace_id == ^trace_id and a.event_type == "tool.invocation"),
+               :count
+             ) == 0
+
+      refute Repo.get_by(BudgetReservation, trace_id: trace_id)
+    end
+
+    test "a can_exfiltrate: true declaring tool with the same bare context writes one tool.invocation row and reserves budget",
+         %{context: context} do
+      create_budget_policy!("tenant-1", "tool_calls")
+      trace_id = "trace-declared-sensitive-exfiltrate"
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 ExfiltratingTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{trace_id: trace_id})
+               )
+
+      assert Repo.aggregate(
+               from(a in AuditOutboxEvent, where: a.trace_id == ^trace_id and a.event_type == "tool.invocation"),
+               :count
+             ) == 1
+
+      assert Repo.get_by!(BudgetReservation, trace_id: trace_id)
+    end
+
+    test "an action_class: admin declaring tool does the same", %{context: context} do
+      create_budget_policy!("tenant-1", "tool_calls")
+      trace_id = "trace-declared-sensitive-admin"
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 AdminActionTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{trace_id: trace_id})
+               )
+
+      assert Repo.aggregate(
+               from(a in AuditOutboxEvent, where: a.trace_id == ^trace_id and a.event_type == "tool.invocation"),
+               :count
+             ) == 1
+
+      assert Repo.get_by!(BudgetReservation, trace_id: trace_id)
+    end
+
+    test "a host already passing :policy_sensitive sees no change in either predicate's result", %{context: context} do
+      trace_id = "trace-declared-sensitive-host-passed"
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{trace_id: trace_id, policy_sensitive: true})
+               )
+
+      assert Repo.aggregate(
+               from(a in AuditOutboxEvent, where: a.trace_id == ^trace_id and a.event_type == "tool.invocation"),
+               :count
+             ) == 1
     end
   end
 

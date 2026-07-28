@@ -38,6 +38,7 @@ defmodule Scoria.Workflows.Runtime do
   alias Decimal, as: D
   alias Scoria.Identity
   alias Scoria.Knowledge.Embedder
+  alias Scoria.MCP.Classification
   alias Scoria.Observe
   alias Scoria.Observe.Guardrail
   alias Scoria.Observe.SpanKind
@@ -471,7 +472,7 @@ defmodule Scoria.Workflows.Runtime do
          trace_id,
          parent_id
        ) do
-    seam = Keyword.get(opts, :replay_seam, %{local_classification: :pure})
+    seam = Keyword.get(opts, :replay_seam) || default_replay_seam(run, step)
     source_evidence = Keyword.get(opts, :replay_source_evidence, %{})
     approval_context = Keyword.get(opts, :replay_approval_context, %{})
     override_context = Keyword.get(opts, :replay_override_context, run.replay_overrides || %{})
@@ -534,6 +535,49 @@ defmodule Scoria.Workflows.Runtime do
     BreakerRegistry.run(breaker_context, fn ->
       execute_handler(handler, step, run, timeout, trace_id, parent_id)
     end)
+  end
+
+  # Site 5 (D-05, "the worst"): this is the single, named, documented origin
+  # of the total step-granularity replay bypass a caller gets when it
+  # passes NO `:replay_seam` opt. Before this plan that bypass was an
+  # anonymous inline literal (`%{local_classification: :pure}`) with no
+  # telemetry -- silent and untraceable. This helper is NOT a widening of
+  # what the bypass permits: `local_classification: :pure` is carried
+  # EXACTLY as before (load-bearing -- `ReplayDisposition.pure_local?/1`,
+  # clause 3, short-circuits to `:execute_live` on that value before clause
+  # 7's `effectful_or_remote?/1` is ever evaluated; substituting any other
+  # value here would flip every currently-replaying workflow step to
+  # `:blocked`). It ADDS `tool_classification:
+  # Classification.unclassified_default/0` alongside the unchanged `:pure`
+  # value, and emits exactly one `[:scoria, :class, :unclassified]` event
+  # (`site: :workflow_runtime_step`) so this bypass is now inspectable
+  # rather than silent (D-05).
+  #
+  # This is a STEP-GRANULARITY REPLAY DEFAULT, not a tool-classification
+  # refusal point: there is no tool module here to classify (a workflow
+  # step is a bare handler function), so `require_tool_classification`
+  # (D-03, scoped to `MCP.Executor` resolution only) is deliberately NOT
+  # consulted or extended to this site -- inventing a step-level refusal
+  # here would halt workflow replay for a reason no adopter opted into.
+  defp default_replay_seam(run, step) do
+    emit_workflow_runtime_step_unclassified(run, step)
+
+    %{
+      local_classification: :pure,
+      tool_classification: Classification.unclassified_default()
+    }
+  end
+
+  defp emit_workflow_runtime_step_unclassified(run, step) do
+    try do
+      :telemetry.execute(
+        [:scoria, :class, :unclassified],
+        %{},
+        %{site: :workflow_runtime_step, run_id: run.id, step_id: step.id}
+      )
+    rescue
+      _ -> :ok
+    end
   end
 
   defp replay_blocked_envelope(evidence) do
