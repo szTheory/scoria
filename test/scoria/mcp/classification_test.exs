@@ -360,4 +360,157 @@ defmodule Scoria.MCP.ClassificationTest do
     end
   end
 
+  describe "join_action_class/2 (D-04, tighten-only, polarity inverted vs Trust.Scan)" do
+    test "directional pair: both argument orders resolve to the tighter member" do
+      assert Classification.join_action_class("read", "admin") == "admin"
+      assert Classification.join_action_class("admin", "read") == "admin"
+    end
+
+    test "equal values collapse rather than escalate" do
+      assert Classification.join_action_class("read", "read") == "read"
+    end
+
+    test "an intermediate pair picks the tighter member" do
+      assert Classification.join_action_class("write", "exec") == "exec"
+    end
+
+    test "junk normalizes to the most-restrictive member before the ordinal lookup, so it dominates" do
+      assert Classification.join_action_class("banana", "read") == "admin"
+    end
+  end
+
+  describe "host_declaration/1" do
+    test "an empty context yields :none" do
+      assert Classification.host_declaration(%{}) == :none
+    end
+
+    test "a context with no classification keys yields :none" do
+      assert Classification.host_declaration(%{actor_id: "user-1", tenant_id: "tenant-1"}) == :none
+    end
+  end
+
+  describe "resolve/2 (D-04 disagreement table)" do
+    test "no tool declaration, no host: unclassified_default/0, never a join operand" do
+      assert %Classification{source: :unclassified_default, action_class: "admin"} =
+               Classification.resolve(:none, %{})
+    end
+
+    test "no tool declaration, host present: still unclassified_default/0 (host alone cannot stand in)" do
+      host = %{action_class: "write", reads_private_data: true}
+
+      assert %Classification{source: :unclassified_default, action_class: "admin"} =
+               Classification.resolve(:none, %{host_classification: host})
+    end
+
+    test "tool declaration, no host: the declaration wins verbatim and silently" do
+      declared = Classification.declared(action_class: "write", reads_private_data: true)
+
+      handler_id = "precedence-conflict-test-#{System.unique_integer()}"
+      parent = self()
+      ref = make_ref()
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :class, :precedence_conflict],
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, ref, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert %Classification{source: :tool_declared, action_class: "write", reads_private_data: true} =
+               Classification.resolve({:ok, declared}, %{})
+
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :precedence_conflict], _measurements, _metadata}
+    end
+
+    test "host equal to the declaration: declaration wins, source stays :tool_declared, no event" do
+      declared = Classification.declared(action_class: "write", reads_private_data: true)
+      host = %{action_class: "write", reads_private_data: true}
+
+      handler_id = "precedence-conflict-test-#{System.unique_integer()}"
+      parent = self()
+      ref = make_ref()
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :class, :precedence_conflict],
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, ref, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert %Classification{source: :tool_declared, action_class: "write", reads_private_data: true} =
+               Classification.resolve({:ok, declared}, %{host_classification: host})
+
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :precedence_conflict], _measurements, _metadata}
+    end
+
+    test "host strictly tighter: joined value applied, source: :host_tightened, no warning" do
+      declared = Classification.declared(action_class: "read")
+      host = %{action_class: "write", can_exfiltrate: true}
+
+      assert %Classification{source: :host_tightened, action_class: "write", can_exfiltrate: true} =
+               Classification.resolve({:ok, declared}, %{host_classification: host})
+    end
+
+    test "host looser: clamped to the declaration, one warning and one precedence_conflict event" do
+      declared = Classification.declared(action_class: "exec", can_exfiltrate: true)
+      host = %{action_class: "read", can_exfiltrate: false}
+
+      handler_id = "precedence-conflict-test-#{System.unique_integer()}"
+      parent = self()
+      ref = make_ref()
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :class, :precedence_conflict],
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, ref, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert %Classification{source: :tool_declared, action_class: "exec", can_exfiltrate: true} =
+               Classification.resolve({:ok, declared}, %{host_classification: host})
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :class, :precedence_conflict], _measurements, metadata}
+      assert metadata.declared == declared
+      assert metadata.resolved == declared
+
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :precedence_conflict], _measurements, _metadata2}
+    end
+
+    test "host junk action_class: normalized to admin first, so it can only tighten -- same warning + event as looser" do
+      declared = Classification.declared(action_class: "write")
+      host = %{action_class: "banana"}
+
+      handler_id = "precedence-conflict-test-#{System.unique_integer()}"
+      parent = self()
+      ref = make_ref()
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :class, :precedence_conflict],
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, ref, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert %Classification{source: :tool_declared, action_class: "write"} =
+               Classification.resolve({:ok, declared}, %{host_classification: host})
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :class, :precedence_conflict], _measurements, _metadata}
+    end
+  end
 end

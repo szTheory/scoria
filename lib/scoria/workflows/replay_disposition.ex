@@ -8,7 +8,7 @@ defmodule Scoria.Workflows.ReplayDisposition do
 
   @exact_match_fields ~w(tool_id args_fingerprint subject_ref required_scopes grant_state policy_key)a
   @authority_expanding_markers ~w(scope escalation re-auth reauth)
-  @effectful_classes ~w(read write exec admin)
+  @effectful_classes Scoria.MCP.Classification.action_classes()
 
   @spec resolve(map(), map(), map(), map(), map()) :: {disposition(), map()}
   def resolve(run, seam, source_evidence, approval_context, override_context) do

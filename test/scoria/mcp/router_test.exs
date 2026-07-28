@@ -86,7 +86,19 @@ defmodule Scoria.MCP.RouterTest do
              },
              "metadata" => %{},
              "session_id" => nil,
-             "tenant_id" => nil
+             "tenant_id" => nil,
+             # Phase 56 (D-05): `MCP.Executor.execute/4` resolves the tool's
+             # classification once before `replay_gate/3` and carries it on
+             # this context key, which therefore reaches `execute/2` too.
+             # `DummyTool` declares no `classification/0`, so this resolves
+             # to the fail-closed-but-inspectable maximal default.
+             "tool_classification" => %{
+               "reads_private_data" => true,
+               "sees_untrusted_content" => true,
+               "can_exfiltrate" => true,
+               "action_class" => "admin",
+               "source" => "unclassified_default"
+             }
            }
   end
 

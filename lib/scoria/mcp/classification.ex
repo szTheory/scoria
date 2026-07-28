@@ -31,10 +31,17 @@ defmodule Scoria.MCP.Classification do
   require Logger
 
   @action_classes ~w(read write exec admin)
+  @action_class_order @action_classes |> Enum.with_index() |> Map.new()
   @default_action_class "admin"
   @sources [:tool_declared, :host_tightened, :unclassified_default]
   @default_isolation_timeout_ms 5_000
 
+  # Every field is a closed enum/boolean, never free-form prose (see the
+  # module-level prohibition against a `reason`/`note`/`description`/`score`
+  # field) -- safe to serialize wholesale wherever a resolved classification
+  # flows into a context a host later encodes to JSON (e.g. a tool that
+  # echoes its `context` back to a caller).
+  @derive Jason.Encoder
   @enforce_keys [:source]
   defstruct [
     :source,
@@ -177,6 +184,166 @@ defmodule Scoria.MCP.Classification do
   end
 
   def tool_declaration(_tool_module), do: :none
+
+  @doc """
+  Tighten-only join over the ordered enum (D-04): normalizes both operands
+  through `normalize_action_class/1` first (an ordinal lookup on a junk
+  value would raise), then returns whichever operand has the HIGHER
+  ordinal. Mirrors the trust-tier scanner's `Map.fetch!/2` ordinal-lookup
+  shape, but the comparison direction is INVERTED: `action_class` tightens
+  UPWARD (`"read" < "write" < "exec" < "admin"`), where that scanner's own
+  axis tightens DOWNWARD. A verbatim copy of that comparison direction
+  would silently de-escalate every join.
+  """
+  @spec join_action_class(term(), term()) :: action_class()
+  def join_action_class(a, b) do
+    a = normalize_action_class(a)
+    b = normalize_action_class(b)
+
+    if Map.fetch!(@action_class_order, a) >= Map.fetch!(@action_class_order, b), do: a, else: b
+  end
+
+  @doc """
+  Reads a host-supplied classification from `context` under the single new
+  namespaced key this phase introduces (`:host_classification`), holding
+  either a `%__MODULE__{}` or a keyword list/map of raw trifecta +
+  `action_class` attributes. Returns `:none` when the key is absent.
+
+  Deliberately does NOT read any of the six pre-existing, separately-owned
+  context keys (`:policy_sensitive`, `:sensitive_tool`,
+  `:approval_sensitive`, `:local_classification`, `:action_class`,
+  `:risk_level`) -- this phase neither reads nor writes those as
+  classification (D-03). `action_class` is intentionally left
+  UNNORMALIZED here (junk passes through raw) so `resolve/2` can detect and
+  flag a junk host value distinctly from a genuinely tighter one.
+  """
+  @spec host_declaration(map()) :: {:ok, t()} | :none
+  def host_declaration(context) when is_map(context) do
+    case extract_host_attrs(context) do
+      nil -> :none
+      attrs -> {:ok, build_host_classification(attrs)}
+    end
+  end
+
+  def host_declaration(_context), do: :none
+
+  defp extract_host_attrs(context) do
+    case Map.get(context, :host_classification) do
+      %__MODULE__{} = struct -> Map.from_struct(struct)
+      attrs when is_map(attrs) -> Map.new(attrs)
+      attrs when is_list(attrs) -> Map.new(attrs)
+      _other -> nil
+    end
+  end
+
+  defp build_host_classification(attrs) do
+    %__MODULE__{
+      reads_private_data: coerce_boolean(Map.get(attrs, :reads_private_data, false)),
+      sees_untrusted_content: coerce_boolean(Map.get(attrs, :sees_untrusted_content, false)),
+      can_exfiltrate: coerce_boolean(Map.get(attrs, :can_exfiltrate, false)),
+      action_class: Map.get(attrs, :action_class, @default_action_class),
+      source: :tool_declared
+    }
+  end
+
+  @doc """
+  Resolves the effective classification from a tool's own declaration
+  (`tool_declaration_result`, as returned by `tool_declaration/1`) and an
+  optional host-supplied declaration read from `context` (D-04).
+
+  Implements the tighten-only disagreement table exactly:
+
+    - no tool declaration exists -> `unclassified_default/0`, regardless of
+      any host input. The host mechanism only ever tightens an EXISTING
+      tool declaration; without one there is nothing to tighten, and
+      letting a host value stand alone would reopen the very
+      request-derived channel this phase closes.
+    - tool declaration exists, host absent -> the tool declaration wins,
+      silently (`source: :tool_declared`) -- this is every adopter's
+      traffic today; a warning here would be pure noise.
+    - host present, strictly equal -> the tool declaration, `source:
+      :tool_declared` (a tie is not a tightening).
+    - host present, strictly tighter on at least one dimension and no
+      raw junk `action_class` -> the joined value, `source:
+      :host_tightened`, no warning.
+    - host present but looser (contributes nothing beyond the
+      declaration), OR its raw `action_class` was not a valid enum member
+      -> clamped to the tool declaration, plus one `Logger.warning` and
+      one `[:scoria, :class, :precedence_conflict]` event.
+  """
+  @spec resolve({:ok, t()} | :none, map()) :: t()
+  def resolve(:none, _context), do: unclassified_default()
+
+  def resolve({:ok, declared}, context) when is_map(context) do
+    case host_declaration(context) do
+      :none -> declared
+      {:ok, host} -> join_with_host(declared, host)
+    end
+  end
+
+  defp join_with_host(declared, host) do
+    host_action_class_junk? = host.action_class not in @action_classes
+
+    joined_action_class = join_action_class(declared.action_class, host.action_class)
+
+    joined = %__MODULE__{
+      reads_private_data: declared.reads_private_data or host.reads_private_data,
+      sees_untrusted_content: declared.sees_untrusted_content or host.sees_untrusted_content,
+      can_exfiltrate: declared.can_exfiltrate or host.can_exfiltrate,
+      action_class: joined_action_class,
+      source: :tool_declared
+    }
+
+    cond do
+      host_action_class_junk? ->
+        emit_precedence_conflict(declared, host)
+        %{declared | source: :tool_declared}
+
+      classification_values_equal?(joined, declared) ->
+        if classification_values_equal?(declared, host) do
+          %{declared | source: :tool_declared}
+        else
+          emit_precedence_conflict(declared, host)
+          %{declared | source: :tool_declared}
+        end
+
+      true ->
+        %{joined | source: :host_tightened}
+    end
+  end
+
+  defp classification_values_equal?(a, b) do
+    a.reads_private_data == b.reads_private_data and
+      a.sees_untrusted_content == b.sees_untrusted_content and
+      a.can_exfiltrate == b.can_exfiltrate and
+      a.action_class == b.action_class
+  end
+
+  defp emit_precedence_conflict(declared, host) do
+    fields = disagreeing_fields(declared, host)
+
+    Logger.warning(
+      "Host-declared classification is not tighter than the tool's own declaration on #{inspect(fields)}; clamping to the tool declaration"
+    )
+
+    try do
+      :telemetry.execute(
+        [:scoria, :class, :precedence_conflict],
+        %{},
+        %{fields: fields, declared: declared, host: host, resolved: declared}
+      )
+    rescue
+      _ -> :ok
+    end
+  end
+
+  @classification_fields ~w(reads_private_data sees_untrusted_content can_exfiltrate action_class)a
+
+  defp disagreeing_fields(declared, host) do
+    Enum.filter(@classification_fields, fn field ->
+      Map.get(declared, field) != Map.get(host, field)
+    end)
+  end
 
   defp resolve_declaration(tool_module) do
     cond do

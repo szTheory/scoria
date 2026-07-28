@@ -65,16 +65,10 @@ defmodule Scoria.MCP.Executor do
       _ ->
         declaration = Classification.tool_declaration(tool_module)
         maybe_emit_unclassified(declaration, tool_module, context)
-        resolved = classification_from_declaration(declaration)
+        resolved = Classification.resolve(declaration, context)
         {:ok, Map.put(context, :tool_classification, resolved)}
     end
   end
-
-  # Task 1 baseline: the bare tool declaration (or the maximal fail-closed
-  # default) with no host-tightening join yet. Repointed at
-  # `Classification.resolve/2`'s tighten-only host join once that lands.
-  defp classification_from_declaration({:ok, declared}), do: declared
-  defp classification_from_declaration(:none), do: Classification.unclassified_default()
 
   defp maybe_emit_unclassified(:none, tool_module, context) do
     try do
