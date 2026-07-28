@@ -80,6 +80,29 @@ defmodule Scoria.ChangelogContractTest do
              "Historical sections below may retain old terminology as history."
   end
 
+  test "the per-run rails migration disclosure coexists deliberately with the pinned terminology-migration sentence (RAIL-01, D-21)" do
+    content = File.read!(@changelog)
+
+    unreleased = section!(content, "## [Unreleased]", "## [0.1.2]")
+
+    # The new subsection must exist alongside (never replacing) the pinned
+    # "no database migration" sentence pinned by the terminology-migration
+    # test above -- both statements must coexist deliberately, not by accident.
+    assert unreleased =~ "Migration Required (per-run rails, RAIL-01)"
+    assert unreleased =~ "requires no schema change"
+    assert unreleased =~ "20260728120000_add_rail_columns_to_ai_workflow_runs.exs"
+    assert unreleased =~ "rail_max_steps"
+    assert unreleased =~ "\"halted\""
+    assert unreleased =~ "run.rail.tripped"
+    assert unreleased =~ "no database migration"
+
+    # Ordering: the new rails subsection appears before the pre-existing
+    # terminology-migration subsection, since it is placed right after the
+    # breaking-changes block per D-21.
+    assert index_of!(unreleased, "Migration Required (per-run rails, RAIL-01)") <
+             index_of!(unreleased, "Pre-1.0 terminology migration")
+  end
+
   defp count_occurrences(content, needle) do
     content
     |> String.split(needle)

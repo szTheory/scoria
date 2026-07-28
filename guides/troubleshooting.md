@@ -164,6 +164,19 @@ If `--check` reports drift or manual review:
 
 `--check` classifies live host surfaces. The stored manifest is an informational last-applied snapshot, not the source of check truth.
 
+**Run your migrations after every upgrade**, including the per-run rails migration
+(`20260728120000_add_rail_columns_to_ai_workflow_runs.exs`):
+
+```bash
+mix ecto.migrate
+```
+
+If you skip this, expect Postgres `42703 undefined_column` on the entire run
+lifecycle — not just on rail-specific code paths. `Scoria.Workflows.Run` is a plain
+Ecto schema, so the generated `SELECT` names the seven new `rail_*` columns on every
+run read, and any query against `ai_workflow_runs` fails until the migration runs. See
+[Per-Run Rails](guides/capabilities/per-run-rails.md) for the full rails contract.
+
 ## Which proof to run next
 
 | You changed | Run |
