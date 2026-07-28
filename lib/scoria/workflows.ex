@@ -230,6 +230,20 @@ defmodule Scoria.Workflows do
         now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
         Repo.transaction(fn ->
+          # G1 (RAIL-01 D-02, the keystone guard): the run row is locked
+          # FOR UPDATE first -- BEFORE the step is re-read/updated -- so the
+          # global lock order stays run-then-steps, matching `halt_run/3`'s
+          # own order and keeping the two paths deadlock-free (D-04). This
+          # is the sole in-`lib/` caller of `claim_step/1`
+          # (`runtime.ex:195`), so it closes the dispatched-Task race,
+          # direct `Runtime.execute_step/2` calls, and adopter calls in one
+          # place.
+          run = Repo.one!(from(r in Run, where: r.id == ^step.run_id, lock: "FOR UPDATE"))
+
+          if Run.halted?(run) do
+            Repo.rollback(:run_halted)
+          end
+
           step = Repo.get!(Step, step_id)
 
           case step.status do
@@ -276,8 +290,14 @@ defmodule Scoria.Workflows do
         )
         |> repo.aggregate(:count)
 
+      # G4 (RAIL-01 D-02): clamp the computed next status back to `run.status`
+      # when `run` (read above) is already halted. See `clamp_run_status/2`
+      # for the documented interleaving this does NOT cover.
       run_status =
-        Keyword.get(opts, :run_status, if(pending_count == 0, do: "completed", else: "running"))
+        clamp_run_status(
+          run,
+          Keyword.get(opts, :run_status, if(pending_count == 0, do: "completed", else: "running"))
+        )
 
       checkpoint =
         insert_checkpoint(
@@ -300,15 +320,24 @@ defmodule Scoria.Workflows do
         replay_transition_event_attrs(run, "step_completed", result_envelope, :result)
       )
 
-      updated_run =
-        run
-        |> Run.changeset(%{
+      # When `run` is halted, suppress `completed_at`/`current_step_id`/
+      # `error_envelope` from the changeset entirely (rather than writing
+      # `run`'s own pre-halt values) so the halt's own values survive --
+      # `Repo.update` SETs only `changeset.changes`, so an absent key is
+      # never written.
+      run_update_attrs =
+        %{
           status: run_status,
           current_step_id: if(run_status == "completed", do: nil, else: completed_step.id),
           latest_checkpoint_id: checkpoint.id,
           completed_at: if(run_status == "completed", do: now, else: run.completed_at),
           error_envelope: %{}
-        })
+        }
+        |> suppress_when_halted(run, [:completed_at, :current_step_id, :error_envelope])
+
+      updated_run =
+        run
+        |> Run.changeset(run_update_attrs)
         |> repo.update!()
 
       {updated_run, completed_step, checkpoint}
@@ -344,9 +373,15 @@ defmodule Scoria.Workflows do
 
       approval_identity = immutable_identity(run, attrs)
 
+      # G6 (RAIL-01 D-02): without this clamp a sibling escalating after the
+      # halt commits would rewrite "halted" to "waiting_for_approval", which
+      # `resume_run/1` resumes.
       updated_run =
         repo.update!(
-          Run.changeset(run, %{status: "waiting_for_approval", current_step_id: step.id})
+          Run.changeset(run, %{
+            status: clamp_run_status(run, "waiting_for_approval"),
+            current_step_id: step.id
+          })
         )
 
       repo.update!(
@@ -483,7 +518,11 @@ defmodule Scoria.Workflows do
     Repo.transaction(fn repo ->
       step = repo.get!(Step, step_id)
       run = repo.get!(Run, step.run_id)
-      run_status = Keyword.get(opts, :run_status, "failed")
+
+      # G5 (RAIL-01 D-02): the sneakiest of the three clamps -- without it a
+      # sibling failing after the halt commits rewrites "halted" to
+      # "failed", re-opening `resume_run/1`'s retry branch.
+      run_status = clamp_run_status(run, Keyword.get(opts, :run_status, "failed"))
 
       failed_step =
         step
@@ -736,6 +775,36 @@ defmodule Scoria.Workflows do
   defp rail_check_order("max_tool_calls"), do: 3
   defp rail_check_order(_rail), do: nil
 
+  # G4/G5/G6 (RAIL-01 D-02): the completion-side clamp. Takes the
+  # freshly-read `%Run{}` and the computed next status, returning
+  # `run.status` unchanged when the run is already halted, otherwise the
+  # computed status.
+  #
+  # ACCEPTED, DOCUMENTED GAP -- do not try to fix this by catching and
+  # retrying: `optimistic_lock(:lock_version)` force-changes `lock_version`
+  # on every `Run.changeset/2` write. A sibling ALREADY inside
+  # `complete_step/3` (or `fail_step/3`/`mark_waiting_for_approval/3`) --
+  # i.e. one that read `run` BEFORE this transaction's halt committed --
+  # never reaches this clamp at all: its own final `repo.update!` raises
+  # `Ecto.StaleEntryError`, unwinding that WHOLE transaction, including the
+  # step's own "completed"/"failed" write. The step strands in whatever
+  # status it was in and its result/error envelope is lost. Correctness
+  # survives either way (no resurrection), but evidence does not. This
+  # clamp covers only siblings whose transaction STARTS reading `run` after
+  # the halt has already committed. Writing catch-and-retry code for the
+  # stale-copy path would silently resurrect the exact race the run-first
+  # lock order (D-04) exists to prevent.
+  defp clamp_run_status(%Run{} = run, computed_status) do
+    if Run.halted?(run), do: run.status, else: computed_status
+  end
+
+  # Drops `keys` from `attrs` when `run` is halted, so `Repo.update` (which
+  # SETs only `changeset.changes`) never touches them -- the halt's own
+  # values for those fields survive untouched.
+  defp suppress_when_halted(attrs, %Run{} = run, keys) do
+    if Run.halted?(run), do: Map.drop(attrs, keys), else: attrs
+  end
+
   def create_handoff(%Step{} = step, attrs) do
     attrs =
       attrs
@@ -756,6 +825,13 @@ defmodule Scoria.Workflows do
     Repo.transaction(fn repo ->
       step = repo.get!(Step, step_id)
       run = repo.get!(Run, step.run_id)
+
+      # G2 (RAIL-01 D-02): this is the path ROADMAP SC#2 names through
+      # `Resume.retry_failed_step/2`, which performs no status check of its
+      # own -- refusing here is the only place that guards it.
+      if Run.halted?(run) do
+        repo.rollback(:run_not_retryable)
+      end
 
       retried_step =
         step
