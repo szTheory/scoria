@@ -898,6 +898,55 @@ defmodule Scoria.WorkflowsTest do
       assert Enum.count(results, &match?({:ok, %Run{}}, &1)) == 1
       assert Enum.count(results, &match?({:error, :already_halted}, &1)) == 1
     end
+
+    test "D-04: mixed concurrent halt_run/3 and claim_step/1 tasks against overlapping run/step sets all complete without a Postgres deadlock (56.1-03 Task 3)" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      steps =
+        for seq <- 1..10 do
+          {:ok, step} =
+            Workflows.create_step(run.id, %{
+              sequence: seq,
+              kind: "work",
+              role_id: "executor",
+              status: "queued"
+            })
+
+          step
+        end
+
+      parent = self()
+
+      halt_tasks =
+        for step <- Enum.take(steps, 5) do
+          Task.async(fn ->
+            Ecto.Adapters.SQL.Sandbox.allow(Repo, parent, self())
+            Workflows.halt_run(run.id, step.id, rail_envelope(run, step))
+          end)
+        end
+
+      claim_tasks =
+        for step <- steps do
+          Task.async(fn ->
+            Ecto.Adapters.SQL.Sandbox.allow(Repo, parent, self())
+            Workflows.claim_step(step.id)
+          end)
+        end
+
+      # The run-first FOR UPDATE lock order (D-04) shared by `halt_run/3`
+      # and `claim_step/1`'s G1 guard is what makes this deadlock-free --
+      # `Task.await_many/2`'s bound below is the proof: a genuine
+      # {run,step}/{step,run} lock-order deadlock would surface as a
+      # Postgres `40P01` error returned from one of the racing
+      # transactions, not a hang, so completing inside the timeout with no
+      # deadlock error in any result is the whole assertion.
+      results = Task.await_many(halt_tasks ++ claim_tasks, 5_000)
+
+      refute Enum.any?(results, fn
+               {:error, %{postgres: %{code: :deadlock_detected}}} -> true
+               _ -> false
+             end)
+    end
   end
 
   describe "HITL tenant fan-out" do
