@@ -413,14 +413,16 @@ Not applicable in the conventional sense — there is no "old approach being rep
 
 **If this table is empty:** N/A — see above; three low/medium-risk assumptions logged, none touching the locked design surface.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Exact field name collision between `Scoria.Spotlight.Marked{tier}` and the D-21 `scoria.spotlight.tier` registry key vs. the D-02 `Scoria.Trust.tier_key/0` = `"scoria.trust.tier"` string**
+> Both resolved during planning (2026-07-27): Q1 → Plan 55-03 Task 1 (`Spotlight.render/2` re-derives tier via the `Trust.Tiered` protocol per item); Q2 → Plan 55-04 Task 2 (`Scoria.Trust.scan/2` implemented as a thin public delegator to `Scoria.Trust.Scan`, preserving the D-23 leaf constraint). Neither was blocking; both were executor-discretion wiring details.
+
+1. **RESOLVED — Exact field name collision between `Scoria.Spotlight.Marked{tier}` and the D-21 `scoria.spotlight.tier` registry key vs. the D-02 `Scoria.Trust.tier_key/0` = `"scoria.trust.tier"` string**
    - What we know: D-14 names a `tier :enum` field under `scoria.spotlight.*`, distinct from D-02/D-21's `scoria.trust.tier`/`scoria.trust.*` group — these are two different dotted-key namespaces (`scoria.spotlight.tier` vs `scoria.trust.tier`), not a literal string collision.
    - What's unclear: whether `Scoria.Spotlight.Marked.tier` should be sourced by re-reading the same `Trust.tier/1` value already resolved upstream (at `Knowledge.retrieve/2` or wherever the host got the item), or independently re-derived by `Spotlight.render/2` via the `Trust.Tiered` protocol on each input item.
    - Recommendation: `Spotlight.render/2` should call `Trust.Tiered.tier/1` (via the protocol) on each item itself — this is what D-12 implies ("prose/untyped untrusted content ⇒ `:datamark`") and keeps `Spotlight` from requiring a pre-resolved tier as an extra parameter. Left as executor discretion per CONTEXT.md's "private helper names ... executor discretion" carve-out — this is a call-site wiring detail, not a public-API naming question.
 
-2. **Whether `Scoria.Trust.scan/2` (the public per-leg host-callable function, D-18) and `Scoria.Trust.Scan`'s internal orchestration expose the same or different function signatures**
+2. **RESOLVED — Whether `Scoria.Trust.scan/2` (the public per-leg host-callable function, D-18) and `Scoria.Trust.Scan`'s internal orchestration expose the same or different function signatures**
    - What we know: D-18 names both — a public `Scoria.Trust.scan/2` "also callable per-leg by hosts," and a separate `Scoria.Trust.Scan` module for the internal chokepoint orchestration (Task timeout, error isolation, telemetry, monotonic law).
    - What's unclear: whether `Scoria.Trust.scan/2` (on the leaf module) is a thin public delegator to `Scoria.Trust.Scan`'s internal logic, or a genuinely separate simpler synchronous-only entry point without the bounded-Task machinery.
    - Recommendation: Given D-23's leaf-module constraint ("Scoria.Trust must remain a dependency-free leaf"), `Scoria.Trust.scan/2` living ON the leaf module while calling into `Scoria.Trust.Scan` (a sibling, not a dependency `Trust` requires to compile) is fine IF `Trust.scan/2` is implemented as a thin wrapper that itself has no compile-time dependency on `Scan` beyond a runtime `apply/3` or the public function simply lives on `Scan` and is aliased/documented as `Scoria.Trust.scan/2` in moduledocs without literally being defined in `trust.ex`. This is a naming/delegation-shape decision for the planner, not a blocking ambiguity — flag as a task-level decision point, not a redesign.
