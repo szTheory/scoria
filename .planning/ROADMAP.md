@@ -104,7 +104,7 @@
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 56.1-04-PLAN.md — Timeout rail: active-time predicate + changeset-derived pause accounting (RAIL-01) [wave 3]
+- [x] 56.1-04-PLAN.md — Timeout rail: active-time predicate + changeset-derived pause accounting (RAIL-01) [wave 3]
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
