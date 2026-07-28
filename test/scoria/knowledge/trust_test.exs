@@ -279,4 +279,112 @@ defmodule Scoria.Knowledge.TrustTest do
       assert_received {:telemetry_event, [:scoria, :trust, :fallback], %{}, %{value: "bogus"}}
     end
   end
+
+  describe "reembed_source/2 and reindex_source/2 trust idempotency (D-04 red-team fix)" do
+    test "reembed_source/2 preserves a declared trusted tier (never reverts to untrusted)" do
+      assert {:ok, source} =
+               Knowledge.ingest_source(
+                 %{
+                   kind: "doc",
+                   title: "reembed trusted doc",
+                   uri: "file:///reembed-trusted.md",
+                   body: "Content that must stay trusted across a re-embed."
+                 },
+                 scope: @scope,
+                 trust: "trusted"
+               )
+
+      [chunk | _] = Knowledge.list_source_chunks(source.id, scope: @scope)
+      assert Trust.tier(chunk.metadata) == "trusted"
+
+      assert {:ok, reembedded_chunks} = Knowledge.reembed_source(source, scope: @scope)
+      refute reembedded_chunks == []
+
+      for reembedded_chunk <- reembedded_chunks do
+        assert Trust.tier(reembedded_chunk.metadata) == "trusted"
+      end
+
+      [persisted_chunk | _] = Knowledge.list_source_chunks(source.id, scope: @scope)
+      assert Trust.tier(persisted_chunk.metadata) == "trusted"
+    end
+
+    test "reindex_source/2 preserves a declared trusted tier (never reverts to untrusted)" do
+      assert {:ok, source} =
+               Knowledge.ingest_source(
+                 %{
+                   kind: "doc",
+                   title: "reindex trusted doc",
+                   uri: "file:///reindex-trusted.md",
+                   body: "Content that must stay trusted across a re-index."
+                 },
+                 scope: @scope,
+                 trust: "trusted"
+               )
+
+      assert {:ok, reindexed_chunks} = Knowledge.reindex_source(source, scope: @scope)
+      refute reindexed_chunks == []
+
+      for reindexed_chunk <- reindexed_chunks do
+        assert Trust.tier(reindexed_chunk.metadata) == "trusted"
+      end
+
+      [persisted_chunk | _] = Knowledge.list_source_chunks(source.id, scope: @scope)
+      assert Trust.tier(persisted_chunk.metadata) == "trusted"
+    end
+
+    test "a source with no declared trust survives reembed/reindex reading untrusted (unchanged)" do
+      assert {:ok, source} =
+               Knowledge.ingest_source(
+                 %{
+                   kind: "doc",
+                   title: "reembed untagged doc",
+                   uri: "file:///reembed-untagged.md",
+                   body: "Content with no declared trust across a re-embed."
+                 },
+                 scope: @scope
+               )
+
+      assert {:ok, reembedded_chunks} = Knowledge.reembed_source(source, scope: @scope)
+
+      for reembedded_chunk <- reembedded_chunks do
+        assert Trust.tier(reembedded_chunk.metadata) == "untrusted"
+      end
+
+      assert {:ok, reindexed_chunks} = Knowledge.reindex_source(source, scope: @scope)
+
+      for reindexed_chunk <- reindexed_chunks do
+        assert Trust.tier(reindexed_chunk.metadata) == "untrusted"
+      end
+    end
+
+    test "a post-hoc set_source_trust/3 flip survives a subsequent reembed_source/2" do
+      assert {:ok, source} =
+               Knowledge.create_source(
+                 %{
+                   kind: "doc",
+                   title: "flip-then-reembed doc",
+                   uri: "file:///flip-then-reembed.md",
+                   digest: "flip-then-reembed-digest"
+                 },
+                 scope: @scope
+               )
+
+      assert {:ok, _chunks} =
+               Knowledge.ingest_source(
+                 source,
+                 scope: @scope,
+                 source_payload: %{body: "Flip-then-reembed content."}
+               )
+
+      assert {:ok, updated_source, _count} =
+               Knowledge.set_source_trust(source, "trusted", scope: @scope)
+
+      assert {:ok, reembedded_chunks} = Knowledge.reembed_source(updated_source, scope: @scope)
+      refute reembedded_chunks == []
+
+      for reembedded_chunk <- reembedded_chunks do
+        assert Trust.tier(reembedded_chunk.metadata) == "trusted"
+      end
+    end
+  end
 end

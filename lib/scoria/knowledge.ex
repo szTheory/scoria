@@ -134,6 +134,16 @@ defmodule Scoria.Knowledge do
     scope = Scope.for_write!(scope_input(source, opts))
     embedder = Keyword.get(opts, :embedder, Embedder.Deterministic)
     backend = Keyword.get(opts, :backend, Pgvector)
+
+    # D-04 red-team fix: re-stamp every chunk's metadata with the tier
+    # DERIVED FROM THE STORED `source.metadata` value -- never a fresh
+    # `Trust.default_tier()` -- so a re-embed is idempotent w.r.t. trust
+    # and never silently reverts a host's declared tier back to
+    # "untrusted" (Pitfall 4). Runs BEFORE `list_source_chunks/2` below so
+    # the chunks handed to the embedder/backend already carry the
+    # preserved metadata.
+    preserve_chunk_trust_from_source(source, scope)
+
     chunks = list_source_chunks(source.id, scope: scope)
     embeddings = embedder.embed_chunks(chunks, opts)
     backend.upsert_chunk_embeddings(chunks, embeddings)
@@ -530,6 +540,35 @@ defmodule Scoria.Knowledge do
         |> Source.changeset(%{metadata: Trust.put_tier(source.metadata || %{}, trust)})
         |> repo.update()
     end
+  end
+
+  # D-04 red-team fix / Pitfall 4: derives the tier from the STORED
+  # `source.metadata` (via `Trust.tier/1`, itself fail-closed) and
+  # re-stamps it onto every chunk row for this source, scoped by
+  # `tenant_id` -- the same tenant-scoped `WHERE` shape used by
+  # `ingest_source/2`'s `Multi.delete_all` and `set_source_trust/3`'s bulk
+  # update. Never reconstructs chunk attrs with `Trust.default_tier()`.
+  defp preserve_chunk_trust_from_source(%Source{} = source, %Scope{} = scope) do
+    source_tier = Trust.tier(source.metadata || %{})
+
+    Repo.update_all(
+      from(chunk in Chunk,
+        where: chunk.source_id == ^source.id and chunk.tenant_id == ^scope.tenant_id,
+        update: [
+          set: [
+            metadata:
+              fragment(
+                "? || ?",
+                chunk.metadata,
+                type(^%{Trust.tier_key() => source_tier}, :map)
+              )
+          ]
+        ]
+      ),
+      []
+    )
+
+    :ok
   end
 
   defp source_or_payload(source, opts) do
