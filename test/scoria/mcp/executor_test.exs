@@ -40,6 +40,22 @@ defmodule Scoria.MCP.ExecutorTest do
     end
   end
 
+  defmodule ClassifiedTool do
+    use Scoria.MCP.Tool, action_class: "write", reads_private_data: true
+
+    @impl true
+    def name, do: "classified_tool"
+
+    @impl true
+    def description, do: "Declares a classification for persistence tests"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(%{"action" => "success"}, _context), do: {:ok, %{result: "success"}}
+  end
+
   defmodule ActualUnitsTool do
     @behaviour Scoria.MCP.Tool
 
@@ -592,6 +608,115 @@ defmodule Scoria.MCP.ExecutorTest do
 
       assert_receive {:completed_metadata, metadata}
       refute Map.has_key?(metadata, "scoria.trust.score")
+    end
+  end
+
+  describe "classification persisted to step.result_envelope (D-03/D-06, plan 56-02)" do
+    test "persists action_class/source/legs/tool_ref for an undeclared tool (source: unclassified_default)",
+         %{context: context} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      classification = persisted_step.result_envelope["scoria.classification"]
+
+      assert classification["source"] == "unclassified_default"
+      assert classification["action_class"] == "admin"
+      assert classification["reads_private_data"] == true
+      assert classification["sees_untrusted_content"] == true
+      assert classification["can_exfiltrate"] == true
+      assert classification["tool_ref"] =~ "DummyTool"
+    end
+
+    test "persists source: tool_declared and the declared action_class for a declaring tool", %{context: context} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 ClassifiedTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id})
+               )
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      classification = persisted_step.result_envelope["scoria.classification"]
+
+      assert classification["source"] == "tool_declared"
+      assert classification["action_class"] == "write"
+      assert classification["reads_private_data"] == true
+    end
+
+    test "jsonb MERGE: a pre-existing scoria.taint key survives the classification write, persisted even for a replay-blocked call",
+         %{context: context} do
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          source_run_id: Ecto.UUID.generate(),
+          source_checkpoint_id: Ecto.UUID.generate()
+        })
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "tool",
+          role_id: "executor",
+          status: "queued",
+          result_envelope: %{"scoria.taint" => %{"tier" => "trusted"}}
+        })
+
+      assert {:error, envelope} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{
+                   run_id: run.id,
+                   step_id: step.id,
+                   local_classification: :write,
+                   action_class: "write",
+                   risk_level: "high",
+                   tool_id: DummyTool.name(),
+                   policy_key: "deploy.publish"
+                 })
+               )
+
+      assert envelope.status == :replay_blocked
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      # The pre-existing "scoria.taint" key (from a prior, separate call) is
+      # untouched — the classification write is a jsonb MERGE, never a
+      # replace, and this call never reaches `finalize_tool_result/5`'s taint
+      # write since it was blocked before `execute_live/4`.
+      assert persisted_step.result_envelope["scoria.taint"]["tier"] == "trusted"
+      # Classification is persisted at RESOLUTION time (before `replay_gate/3`),
+      # so a blocked call still has its classification durable on the step (D-06).
+      assert persisted_step.result_envelope["scoria.classification"]["source"] == "unclassified_default"
+    end
+
+    test "execute/4 with no :step_id in context returns the tool's normal result and raises nothing",
+         %{context: context} do
+      assert {:ok, %{result: "success"}} = Executor.execute(DummyTool, %{"action" => "success"}, context)
+    end
+
+    test "a :step_id that matches no row returns normally — not an error", %{context: context} do
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{step_id: Ecto.UUID.generate()})
+               )
     end
   end
 

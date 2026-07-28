@@ -73,6 +73,7 @@ defmodule Scoria.MCP.Executor do
           {:error, unclassified_tool_envelope(tool_module, context)}
         else
           maybe_emit_unclassified(declaration, tool_module, context)
+          persist_classification_to_step(context, tool_module, resolved)
           {:ok, Map.put(context, :tool_classification, resolved)}
         end
     end
@@ -413,6 +414,56 @@ defmodule Scoria.MCP.Executor do
                     "? || ?",
                     step.result_envelope,
                     type(^%{"scoria.taint" => taint}, :map)
+                  )
+              ]
+            ]
+          )
+          |> Repo.update_all([])
+        rescue
+          _ -> :ok
+        end
+
+        :ok
+    end
+  end
+
+  # Persists every resolved classification (declared, host-tightened, or
+  # unclassified-default) onto the step's `result_envelope` jsonb, mirroring
+  # `persist_taint_to_step/3`'s choke point and best-effort discipline
+  # exactly (D-03/D-06): a `nil` `:step_id`, or one matching no row, is `:ok`
+  # and never an error. `source` round-trips through `to_string/1` so
+  # Phase 57 can branch on it after a plain jsonb read (never an Elixir atom
+  # literal). Called at RESOLUTION time (from `resolve_classification/2`'s
+  # non-refusal branch), not from `finalize_tool_result/5` -- unlike taint,
+  # which is only meaningful for a completed `{:ok, value}` result, Phase 57
+  # needs the classification of blocked and stubbed calls too. Never called
+  # on the strict-refusal branch: a refused call never runs and has no step
+  # evidence to attach.
+  defp persist_classification_to_step(context, tool_module, %Classification{} = resolved) do
+    case Map.get(context, :step_id) do
+      nil ->
+        :ok
+
+      step_id ->
+        data = %{
+          "action_class" => resolved.action_class,
+          "source" => to_string(resolved.source),
+          "reads_private_data" => resolved.reads_private_data,
+          "sees_untrusted_content" => resolved.sees_untrusted_content,
+          "can_exfiltrate" => resolved.can_exfiltrate,
+          "tool_ref" => inspect(tool_module)
+        }
+
+        try do
+          from(step in Step,
+            where: step.id == ^step_id,
+            update: [
+              set: [
+                result_envelope:
+                  fragment(
+                    "? || ?",
+                    step.result_envelope,
+                    type(^%{"scoria.classification" => data}, :map)
                   )
               ]
             ]
