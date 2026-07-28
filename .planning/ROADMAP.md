@@ -76,7 +76,7 @@
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 56-03-PLAN.md — Fail-open sites 2-5 consume the classification (CLASS-03) [wave 3]
+- [x] 56-03-PLAN.md — Fail-open sites 2-5 consume the classification (CLASS-03) [wave 3]
 
 **Context**: `.planning/phases/56-tool-declared-trifecta-classification-per-run-rails/56-CONTEXT.md`
 

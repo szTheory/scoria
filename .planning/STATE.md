@@ -2,16 +2,17 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Portcullis
-status: executing
-stopped_at: Completed 56-02-PLAN.md
-last_updated: "2026-07-28T16:49:56.699Z"
+current_phase: 56
+current_phase_name: tool-declared-trifecta-classification-per-run-rails
+status: verifying
+stopped_at: Completed 56-03-PLAN.md
+last_updated: "2026-07-28T17:18:54.738Z"
 last_activity: 2026-07-28
 progress:
-  total_phases: 5
-  completed_phases: 1
+  total_phases: 2
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
-  percent: 20
+  completed_plans: 8
 ---
 
 # Project State
@@ -28,10 +29,10 @@ See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 
 Phase: 56 (tool-declared-trifecta-classification-per-run-rails) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-28
 
-Progress: [█████████░] 88%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -59,6 +60,7 @@ Progress: [█████████░] 88%
 |------|----------|-------|-------|
 | Phase 56 P01 | 50min | 2 tasks | 7 files |
 | Phase 56 P02 | 35min | 3 tasks | 6 files |
+| Phase 56 P03 | 30min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -263,6 +265,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 56-02]: require_tool_classification gates on source == :unclassified_default specifically -- a host-tightened resolution is a real classification and is never refused, even under the strict flag.
 - [Phase ?]: [Phase 56-02]: persist_classification_to_step/3 runs at resolve_classification/2's resolution time (before replay_gate/3), not from finalize_tool_result/5 -- so blocked and stubbed replay calls still get their classification persisted, unlike taint.
 - [Phase ?]: [Phase 56-02]: classification_attributes_for_telemetry/1 merges the five scoria.classification.* keys into the EXISTING [:scoria, :tool, :completed] event alongside trust_attrs -- no new span, :telemetry.execute( count in executor.ex unchanged at 7.
+- [Phase ?]: [Phase 56-03]: declared_sensitive?/1 is a declared-only sensitivity predicate (D-A2) shared by sites 2/3 -- false for nil and :unclassified_default, never writes into any of the six prohibited context keys.
+- [Phase ?]: [Phase 56-03]: sites 4 and 5 route through Classification.tool_declaration/1 + Classification.resolve/2 directly and never consult or extend require_tool_classification -- D-03 scopes that refusal to MCP.Executor resolution only.
+- [Phase ?]: [Phase 56-03]: Workflows.Runtime.default_replay_seam/2 keeps local_classification: :pure byte-identical and only adds tool_classification alongside it -- ReplayDisposition's clause-3 short-circuit is unchanged, the bypass is now inspectable via telemetry instead of silent.
 
 ### Resolved And Deferred Work
 
@@ -381,8 +386,8 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-28T16:49:56.694Z
-Stopped at: Completed 56-02-PLAN.md
+Last session: 2026-07-28T17:18:54.731Z
+Stopped at: Completed 56-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
