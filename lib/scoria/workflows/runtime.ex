@@ -45,6 +45,7 @@ defmodule Scoria.Workflows.Runtime do
   alias Scoria.MCP.Classification
   alias Scoria.Observe
   alias Scoria.Observe.Guardrail
+  alias Scoria.Observe.Semconv
   alias Scoria.Observe.SpanKind
   alias Scoria.Runtime.Params
   alias Scoria.SemanticCache
@@ -244,40 +245,63 @@ defmodule Scoria.Workflows.Runtime do
       # performed. Only when it is `:ok` does `Rails.admit_step/2`'s atomic
       # CAS (max_steps, with the active-time predicate as a SQL-level
       # defense-in-depth second check) run.
-      body_fun =
+      #
+      # RAIL-01 D-18: on a denial branch, `attributes: Semconv.rail_attributes(...)`
+      # is added to `span_opts` BEFORE `Observe.span/4` is called -- the check
+      # must stay outside the span body since `span/4` reads `opts[:attributes]`
+      # at emit time with no API to add them from inside. On the admit path no
+      # `:attributes` key is added at all -- zero change, zero span overhead.
+      {span_opts, body_fun} =
         case active_time_check(run) do
           {:exceeded, elapsed_ms} ->
             envelope = active_time_denied_envelope(run, step, elapsed_ms)
 
-            fn ->
-              Workflows.halt_run(run.id, step.id, envelope)
-              raise StepFailureSignal, return_value: {:error, envelope}
-            end
+            attrs =
+              Semconv.rail_attributes(%{
+                rail: "max_active_ms",
+                limit: run.rail_max_active_ms,
+                observed: elapsed_ms
+              })
+
+            {Map.put(span_opts, :attributes, attrs),
+             fn ->
+               Workflows.halt_run(run.id, step.id, envelope)
+               raise StepFailureSignal, return_value: {:error, envelope}
+             end}
 
           :ok ->
             case Rails.admit_step(run.id) do
               {:ok, _count} ->
-                fn ->
-                  execute_step_body(
-                    step,
-                    run,
-                    handler,
-                    timeout,
-                    opts,
-                    budget_context,
-                    breaker_context,
-                    trace_id,
-                    step_span_id
-                  )
-                end
+                {span_opts,
+                 fn ->
+                   execute_step_body(
+                     step,
+                     run,
+                     handler,
+                     timeout,
+                     opts,
+                     budget_context,
+                     breaker_context,
+                     trace_id,
+                     step_span_id
+                   )
+                 end}
 
               :denied ->
                 envelope = rail_denied_envelope(run, step)
 
-                fn ->
-                  Workflows.halt_run(run.id, step.id, envelope)
-                  raise StepFailureSignal, return_value: {:error, envelope}
-                end
+                attrs =
+                  Semconv.rail_attributes(%{
+                    rail: "max_steps",
+                    limit: run.rail_max_steps,
+                    observed: run.rail_steps
+                  })
+
+                {Map.put(span_opts, :attributes, attrs),
+                 fn ->
+                   Workflows.halt_run(run.id, step.id, envelope)
+                   raise StepFailureSignal, return_value: {:error, envelope}
+                 end}
             end
         end
 

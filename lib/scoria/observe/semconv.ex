@@ -48,6 +48,12 @@ defmodule Scoria.Observe.Semconv do
     `guardrail_attributes/1`'s no-passthrough shape. There is deliberately
     NO `score` key — `Scoria.Trust.Verdict.score` is host-only and
     structurally cannot reach a span through this projector (T-55-20).
+  - the per-run rail vocabulary (RAIL-01, D-18) — `rail_keys/0` (the three
+    `scoria.rail.*` dimensions a rail denial tags on the step span it
+    trips) and `rail_attributes/1`, a fixed three-key projector mirroring
+    `trust_attributes/1`'s no-passthrough shape. No new span is created
+    for a rail denial — the attributes land on the existing step span
+    (Phase 55 D-21 holds).
   - `error_attributes/1` — a type-only exception projection
     (`exception.type` / `error.type`, both the module name, never
     `Exception.message/1` or `__STACKTRACE__`). This deliberately inverts
@@ -290,6 +296,20 @@ defmodule Scoria.Observe.Semconv do
   @spec trust_keys() :: keyword(String.t())
   def trust_keys, do: @trust_keys
 
+  @rail_keys [
+    rail: "scoria.rail.rail",
+    limit: "scoria.rail.limit",
+    observed: "scoria.rail.observed"
+  ]
+
+  @doc """
+  Returns the canonical keyword list mapping the three per-run rail
+  dimensions (RAIL-01, D-18) to their dotted `scoria.rail.*` attribute-key
+  strings. Sole origin for `rail_attributes/1`'s fixed-key projection.
+  """
+  @spec rail_keys() :: keyword(String.t())
+  def rail_keys, do: @rail_keys
+
   @classification_keys [
     action_class: "scoria.classification.action_class",
     source: "scoria.classification.source",
@@ -411,7 +431,10 @@ defmodule Scoria.Observe.Semconv do
                           Keyword.fetch!(@classification_keys, :source) => :enum,
                           Keyword.fetch!(@classification_keys, :reads_private_data) => :flag,
                           Keyword.fetch!(@classification_keys, :sees_untrusted_content) => :flag,
-                          Keyword.fetch!(@classification_keys, :can_exfiltrate) => :flag
+                          Keyword.fetch!(@classification_keys, :can_exfiltrate) => :flag,
+                          Keyword.fetch!(@rail_keys, :rail) => :enum,
+                          Keyword.fetch!(@rail_keys, :limit) => :count,
+                          Keyword.fetch!(@rail_keys, :observed) => :count
                         },
                         Map.new(@host_declared_keys, &{Atom.to_string(&1), :enum})
                       )
@@ -600,6 +623,24 @@ defmodule Scoria.Observe.Semconv do
   @spec classification_attributes(map()) :: map()
   def classification_attributes(input) when is_map(input) do
     Enum.reduce(@classification_keys, %{}, fn {field, key}, acc ->
+      case Map.get(input, field) do
+        nil -> acc
+        value -> Map.put(acc, key, value)
+      end
+    end)
+  end
+
+  @doc """
+  Projects a rail-denial map onto EXACTLY the three `rail_keys/0` strings
+  and nothing else (RAIL-01, D-18). Never spreads the input map -- a `nil`
+  value is omitted, never defaulted, never put, mirroring
+  `trust_attributes/1`'s and `classification_attributes/1`'s no-passthrough
+  discipline. Persisted onto the step span that raised the denial -- no
+  second span, no guardrail span (Phase 55 D-21 holds).
+  """
+  @spec rail_attributes(map()) :: map()
+  def rail_attributes(input) when is_map(input) do
+    Enum.reduce(@rail_keys, %{}, fn {field, key}, acc ->
       case Map.get(input, field) do
         nil -> acc
         value -> Map.put(acc, key, value)
