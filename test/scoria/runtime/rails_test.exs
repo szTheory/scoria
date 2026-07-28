@@ -1,9 +1,14 @@
 defmodule Scoria.Runtime.RailsTest do
   use ExUnit.Case, async: false
 
+  alias Scoria.Repo
   alias Scoria.Runtime.Rails
+  alias Scoria.Workflows
 
   setup do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+    Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+
     previous = Application.get_env(:scoria, Scoria.Runtime.Rails)
 
     on_exit(fn ->
@@ -117,6 +122,81 @@ defmodule Scoria.Runtime.RailsTest do
       Application.put_env(:scoria, Scoria.Runtime.Rails, max_steps: "")
 
       assert {:error, {:invalid_rail, :max_steps, ""}} = Rails.resolve([])
+    end
+  end
+
+  describe "Params.start/2 threading (Scoria.start_run/2)" do
+    test "creates a run whose rail_max_steps persists the resolved per-run value" do
+      identity = %{
+        actor_id: "actor-rails-start",
+        tenant_id: "tenant-rails-start",
+        session_id: "session-rails-start"
+      }
+
+      assert {:ok, summary} = Scoria.start_run(identity, rails: [max_steps: 5])
+
+      run = Workflows.get_run!(summary.run_id)
+      assert run.rail_max_steps == 5
+    end
+
+    test "an invalid rail value refuses the run and the ai_workflow_runs row count is unchanged" do
+      count_before = Repo.aggregate(Workflows.Run, :count)
+
+      identity = %{actor_id: "actor-rails-invalid", tenant_id: "tenant-rails-invalid"}
+
+      assert {:error, {:invalid_rail, :max_steps, 0}} =
+               Scoria.start_run(identity, rails: [max_steps: 0])
+
+      assert Repo.aggregate(Workflows.Run, :count) == count_before
+    end
+  end
+
+  describe "Params.start_handoff/3 threading (Scoria.start_handoff_run/3)" do
+    test "a handoff run honours max_steps exactly as a normal run does -- halts on its second dispatched step" do
+      identity = %{
+        actor_id: "actor-rails-handoff",
+        tenant_id: "tenant-rails-handoff",
+        session_id: "session-rails-handoff"
+      }
+
+      assert {:ok, summary} =
+               Scoria.start_handoff_run(identity, "critic",
+                 root_role_id: "planner",
+                 delegated_kind: "review",
+                 handoff_input: %{"brief" => "review draft"},
+                 projected_context: %{"task" => "review"},
+                 rails: [max_steps: 1]
+               )
+
+      run = Workflows.get_run!(summary.run_id)
+      assert run.rail_max_steps == 1
+      assert run.status == "running"
+
+      detail = Scoria.Runtime.get_run_detail!(summary.run_id)
+
+      child_step =
+        Enum.find(detail.steps, &(&1.parent_step_id != nil and &1.role_id == "critic"))
+
+      refute is_nil(child_step)
+
+      handler = fn step, _run -> {:ok, %{"step_id" => step.id, "status" => "ok"}} end
+
+      assert {:error, envelope} =
+               Scoria.Workflows.Runtime.execute_step(child_step.id, handler: handler)
+
+      assert envelope["reason_code"] == "max_steps_exceeded"
+
+      reloaded_run = Workflows.get_run!(summary.run_id)
+      assert reloaded_run.status == "halted"
+    end
+  end
+
+  describe "Params.resume/2 cannot change rails (D-11 -- :rails is absent from @dispatch_keys)" do
+    test "a rails: option passed to resume is not forwarded into dispatch_opts" do
+      assert {:ok, dispatch_opts} =
+               Scoria.Runtime.Params.resume("some-run-id", rails: [max_steps: 999])
+
+      refute Keyword.has_key?(dispatch_opts, :rails)
     end
   end
 

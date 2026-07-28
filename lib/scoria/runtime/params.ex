@@ -4,6 +4,7 @@ defmodule Scoria.Runtime.Params do
   """
 
   alias Scoria.{Identity, Runtime.Defaults}
+  alias Scoria.Runtime.Rails
   alias Scoria.SemanticCache.Profile, as: SemanticProfile
 
   @dispatch_keys ~w(dispatch handlers timeout budget_context breaker_context)a
@@ -14,7 +15,8 @@ defmodule Scoria.Runtime.Params do
     identity = Identity.normalize(identity)
 
     with {:ok, resolved_defaults} <- Defaults.resolve(identity, opts),
-         {:ok, semantic_cache} <- semantic_cache_config(opts, runtime) do
+         {:ok, semantic_cache} <- semantic_cache_config(opts, runtime),
+         {:ok, rails} <- Rails.resolve(opts) do
       root_role_id =
         value(opts, runtime, :root_role_id) ||
           "executor"
@@ -25,6 +27,9 @@ defmodule Scoria.Runtime.Params do
           actor_id: identity.actor_id,
           tenant_id: identity.tenant_id,
           session_id: identity.session_id,
+          rail_max_steps: rails.rail_max_steps,
+          rail_max_tool_calls: rails.rail_max_tool_calls,
+          rail_max_active_ms: rails.rail_max_active_ms,
           metadata: start_metadata(opts, runtime, identity, resolved_defaults, semantic_cache)
         }
         |> maybe_put_initial_step(initial_step(opts, runtime))
@@ -44,6 +49,7 @@ defmodule Scoria.Runtime.Params do
 
     with {:ok, resolved_defaults} <- Defaults.resolve(identity, opts),
          {:ok, semantic_cache} <- semantic_cache_config(opts, runtime),
+         {:ok, rails} <- Rails.resolve(opts),
          {:ok, root_role_id} <-
            required_string(opts, runtime, :root_role_id, :invalid_root_role_id),
          {:ok, delegated_kind} <-
@@ -58,6 +64,9 @@ defmodule Scoria.Runtime.Params do
         actor_id: identity.actor_id,
         tenant_id: identity.tenant_id,
         session_id: identity.session_id,
+        rail_max_steps: rails.rail_max_steps,
+        rail_max_tool_calls: rails.rail_max_tool_calls,
+        rail_max_active_ms: rails.rail_max_active_ms,
         metadata: start_metadata(opts, runtime, identity, resolved_defaults, semantic_cache)
       }
 
