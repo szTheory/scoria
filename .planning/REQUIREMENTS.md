@@ -16,7 +16,7 @@ Requirements for this milestone (v3.7). Each maps to exactly one roadmap phase.
 
 Supplies the missing untrusted-content leg — the substrate the confluence gate reads.
 
-- [ ] **TAINT-01**: Retrieved knowledge chunks carry a trust-tier/taint tag on `Knowledge.Chunk` metadata reflecting provenance, defaulting to untrusted for externally-sourced/retrieved content.
+- [x] **TAINT-01**: Retrieved knowledge chunks carry a trust-tier/taint tag on `Knowledge.Chunk` metadata reflecting provenance, defaulting to untrusted for externally-sourced/retrieved content.
 - [ ] **TAINT-02**: Tool outputs are wrapped in an envelope carrying a trust tier, so tool results are treated as potentially-untrusted content rather than implicitly-trusted context.
 - [ ] **TAINT-03**: At prompt assembly in the orchestrator, untrusted content is spotlighted/datamarked (delimited with a model-agnostic marking) so the model can distinguish instructions from untrusted data.
 - [ ] **TAINT-04**: Scoria exposes a `scan/2` behaviour hook (default no-op) for BYO content scanners (e.g. Rebuff/LlamaGuard) and tags scanned/untrusted content in traces — no detector or classifier is shipped in-lib.
@@ -84,7 +84,7 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TAINT-01 | Phase 55 | Pending |
+| TAINT-01 | Phase 55 | Complete |
 | TAINT-02 | Phase 55 | Pending |
 | TAINT-03 | Phase 55 | Pending |
 | TAINT-04 | Phase 55 | Pending |
@@ -102,6 +102,7 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 | GOVERN-01 | Phase 58 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 16 total
 - Mapped to phases: 16
 - Unmapped: 0 ✓
