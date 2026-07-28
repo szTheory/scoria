@@ -7,7 +7,7 @@ defmodule Scoria.Workflows.Run do
 
   # RAIL-01 D-14/D-15: the timeout rail's pause set. A run whose status is
   # in this set is not dispatchable and consumes no active time.
-  @rail_pause_set ~w(waiting_for_approval paused)
+  @rail_pause_set ["waiting_for_approval", "paused"]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
