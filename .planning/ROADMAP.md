@@ -95,7 +95,7 @@
 **Plans**: 6 plans (5 waves)
 **Wave 1**
 
-- [ ] 56.1-01-PLAN.md — Tracer: rail columns, CAS step admission, terminal audited halt + six guards G1-G6 (RAIL-01) [wave 1]
+- [x] 56.1-01-PLAN.md — Tracer: rail columns, CAS step admission, terminal audited halt + six guards G1-G6 (RAIL-01) [wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
