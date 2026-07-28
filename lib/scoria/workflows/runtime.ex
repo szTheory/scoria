@@ -51,6 +51,7 @@ defmodule Scoria.Workflows.Runtime do
   alias Scoria.SRE.BreakerRegistry
   alias Scoria.SRE.Telemetry
   alias Scoria.Workflows
+  alias Scoria.Workflows.Rails
   alias Scoria.Workflows.Runtime.StepFailureSignal
 
   @default_timeout 5_000
@@ -219,24 +220,68 @@ defmodule Scoria.Workflows.Runtime do
         session_id: run.session_id
       }
 
+      # Per-run rail admission (RAIL-01, D-08): after `claim_step/1` succeeds
+      # and `run` is loaded, BEFORE `span_opts`' `:attributes` could be built
+      # -- `Observe.span/4` reads `opts[:attributes]` at emit time with no
+      # API to add them from inside the body, so the check must precede it.
+      # On `{:ok, _}` nothing changes: no `:attributes` key is added, zero
+      # span overhead. On `:denied`, the trip (not the check) happens inside
+      # the span body, as the FIRST statement -- `halt_run/3` then
+      # `raise StepFailureSignal` so this exact span is still ERROR-marked
+      # (mirrors `fail_step_and_signal/2`).
+      body_fun =
+        case Rails.admit_step(run.id) do
+          {:ok, _count} ->
+            fn ->
+              execute_step_body(
+                step,
+                run,
+                handler,
+                timeout,
+                opts,
+                budget_context,
+                breaker_context,
+                trace_id,
+                step_span_id
+              )
+            end
+
+          :denied ->
+            envelope = rail_denied_envelope(run, step)
+
+            fn ->
+              Workflows.halt_run(run.id, step.id, envelope)
+              raise StepFailureSignal, return_value: {:error, envelope}
+            end
+        end
+
       try do
-        Observe.span(span_kind, @step_span_name, span_opts, fn ->
-          execute_step_body(
-            step,
-            run,
-            handler,
-            timeout,
-            opts,
-            budget_context,
-            breaker_context,
-            trace_id,
-            step_span_id
-          )
-        end)
+        Observe.span(span_kind, @step_span_name, span_opts, body_fun)
       rescue
         e in StepFailureSignal -> e.return_value
       end
     end
+  end
+
+  # Task 1 covers only `max_steps` -- `max_active_ms`'s check order (D-08:
+  # max_active_ms -> max_steps -> max_tool_calls) and its own denial site
+  # land in a later 56.1 plan; the reason_code/rail here are deliberately
+  # fixed rather than parameterized.
+  defp rail_denied_envelope(run, step) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    %{
+      "status" => "run_halted",
+      "reason_code" => "max_steps_exceeded",
+      "rail" => "max_steps",
+      "limit" => run.rail_max_steps,
+      "observed" => run.rail_steps,
+      "attempted" => (run.rail_steps || 0) + 1,
+      "run_id" => run.id,
+      "step_id" => step.id,
+      "halted_at" => DateTime.to_iso8601(now),
+      "site" => "workflow_runtime_step"
+    }
   end
 
   # Every outcome branch's side effects (reconcile_budget/emit_runtime_telemetry/

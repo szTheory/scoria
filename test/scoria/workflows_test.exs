@@ -5,6 +5,8 @@ defmodule Scoria.WorkflowsTest do
   alias Scoria.Repo
   alias Scoria.Observe.Approval
   alias Scoria.Observe.OperatorBroadcast
+  alias Scoria.SRE
+  alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
   alias Scoria.Workflows.{Checkpoint, Event, Handoff, Run, Step}
 
@@ -513,6 +515,391 @@ defmodule Scoria.WorkflowsTest do
     end
   end
 
+  describe "halt_run/3 (RAIL-01)" do
+    test "writes the new terminal \"halted\" status and audits exactly one run.rail.tripped row" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, _claimed} = Workflows.claim_step(step.id)
+
+      envelope = rail_envelope(run, step)
+
+      assert {:ok, %Run{status: "halted"} = halted_run} = Workflows.halt_run(run.id, step.id, envelope)
+      assert Repo.get!(Step, step.id).status == "failed"
+
+      audit_events =
+        AuditOutboxEvent
+        |> where(
+          [e],
+          e.workflow_run_id == ^halted_run.id and e.event_type == "run.rail.tripped"
+        )
+        |> Repo.all()
+
+      assert length(audit_events) == 1
+      assert hd(audit_events).actor_ref == "system:scoria.rails"
+    end
+
+    test "a second halt_run/3 on the same run returns {:error, :already_halted}" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, _claimed} = Workflows.claim_step(step.id)
+
+      envelope = rail_envelope(run, step)
+
+      assert {:ok, %Run{status: "halted"}} = Workflows.halt_run(run.id, step.id, envelope)
+      assert {:error, :already_halted} = Workflows.halt_run(run.id, step.id, envelope)
+    end
+
+    test "a forced duplicate dedupe_key rolls back the whole transaction; the run stays running" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, _claimed} = Workflows.claim_step(step.id)
+
+      dedupe_key = "run.rail.tripped:" <> run.id
+
+      {:ok, _existing} =
+        SRE.create_audit_outbox_event(%{
+          tenant_id: "system",
+          event_type: "run.rail.tripped",
+          policy_class: "run_rail",
+          dedupe_key: dedupe_key,
+          actor_ref: "system:scoria.rails",
+          workflow_run_id: run.id
+        })
+
+      envelope = rail_envelope(run, step)
+
+      assert {:error, :already_halted} = Workflows.halt_run(run.id, step.id, envelope)
+      assert Repo.get!(Run, run.id).status == "running"
+    end
+  end
+
+  describe "terminality guards G1-G6 (RAIL-01 D-02)" do
+    test "G1: claim_step/1 refuses a queued step created on an already-halted run" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      {:ok, late_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:error, :run_halted} = Workflows.claim_step(late_step.id)
+      assert Repo.get!(Step, late_step.id).status == "queued"
+    end
+
+    test "G2: retry_step/1 refuses a failed step of a halted run" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, failed_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "failed"
+        })
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert {:error, :run_not_retryable} = Workflows.retry_step(failed_step.id)
+      assert Repo.get!(Step, failed_step.id).status == "failed"
+    end
+
+    test "G3: resume_run/1 on a halted run returns {:error, :not_resumable} (no code change; regression only)" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert {:error, :not_resumable} = Workflows.resume_run(run.id)
+    end
+
+    test "G4(a): complete_step/3 on a sibling read after the halt commits leaves the run halted" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, sibling_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      {:ok, halted_run} = Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert {:ok, completed_step} = Workflows.complete_step(sibling_step.id, %{"result" => "ok"})
+      assert completed_step.status == "completed"
+
+      reloaded_run = Repo.get!(Run, run.id)
+      assert reloaded_run.status == "halted"
+      assert reloaded_run.current_step_id == halted_run.current_step_id
+      assert reloaded_run.completed_at == halted_run.completed_at
+      assert reloaded_run.error_envelope == halted_run.error_envelope
+    end
+
+    test "G4(b): a %Run{} copy loaded BEFORE the halt raises Ecto.StaleEntryError on complete_step/3's own write shape" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, sibling_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      stale_run = Repo.get!(Run, run.id)
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert_raise Ecto.StaleEntryError, fn ->
+        Repo.update!(
+          Run.changeset(stale_run, %{
+            status: "completed",
+            current_step_id: sibling_step.id,
+            completed_at: DateTime.utc_now() |> DateTime.truncate(:microsecond),
+            error_envelope: %{}
+          })
+        )
+      end
+    end
+
+    test "G5(a): fail_step/3 on a sibling read after the halt commits leaves the run halted" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, sibling_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      {:ok, halted_run} = Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert {:ok, failed_step} = Workflows.fail_step(sibling_step.id, %{"reason" => "boom"})
+      assert failed_step.status == "failed"
+
+      reloaded_run = Repo.get!(Run, run.id)
+      assert reloaded_run.status == "halted"
+      assert halted_run.status == "halted"
+    end
+
+    test "G5(b): a %Run{} copy loaded BEFORE the halt raises Ecto.StaleEntryError on fail_step/3's own write shape" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, sibling_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      stale_run = Repo.get!(Run, run.id)
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert_raise Ecto.StaleEntryError, fn ->
+        Repo.update!(
+          Run.changeset(stale_run, %{
+            status: "failed",
+            current_step_id: sibling_step.id,
+            error_envelope: %{"reason" => "boom"}
+          })
+        )
+      end
+    end
+
+    test "G6(a): mark_waiting_for_approval/3 on a sibling read after the halt commits leaves the run halted" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, sibling_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert {:ok, _approval} =
+               Workflows.mark_waiting_for_approval(run.id, sibling_step.id, %{
+                 tool_name: "publish",
+                 local_tool_name: "publish"
+               })
+
+      reloaded_run = Repo.get!(Run, run.id)
+      assert reloaded_run.status == "halted"
+    end
+
+    test "G6(b): a %Run{} copy loaded BEFORE the halt raises Ecto.StaleEntryError on mark_waiting_for_approval/3's own write shape" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, sibling_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      stale_run = Repo.get!(Run, run.id)
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert_raise Ecto.StaleEntryError, fn ->
+        Repo.update!(
+          Run.changeset(stale_run, %{
+            status: "waiting_for_approval",
+            current_step_id: sibling_step.id
+          })
+        )
+      end
+    end
+
+    test "D-04: two concurrent halt_run/3 calls on one run yield exactly one {:ok, %Run{}} and one {:error, :already_halted}" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, step_a} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, step_b} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      parent = self()
+
+      tasks =
+        for step <- [step_a, step_b] do
+          Task.async(fn ->
+            Ecto.Adapters.SQL.Sandbox.allow(Repo, parent, self())
+            Workflows.halt_run(run.id, step.id, rail_envelope(run, step))
+          end)
+        end
+
+      results = Task.await_many(tasks, 5_000)
+
+      assert Enum.count(results, &match?({:ok, %Run{}}, &1)) == 1
+      assert Enum.count(results, &match?({:error, :already_halted}, &1)) == 1
+    end
+  end
+
   describe "HITL tenant fan-out" do
     test "mark_waiting_for_approval/3 broadcasts hitl_request on tenant topic" do
       tenant_id = "tenant-hitl-#{System.unique_integer([:positive])}"
@@ -596,5 +983,20 @@ defmodule Scoria.WorkflowsTest do
       assert {:ok, _} = Workflows.approve(approval.id, "approved", %{})
       assert {:error, :not_pending} = Workflows.approve(approval.id, "approved", %{})
     end
+  end
+
+  defp rail_envelope(run, step) do
+    %{
+      "status" => "run_halted",
+      "reason_code" => "max_steps_exceeded",
+      "rail" => "max_steps",
+      "limit" => 1,
+      "observed" => 1,
+      "attempted" => 2,
+      "run_id" => run.id,
+      "step_id" => step.id,
+      "halted_at" => DateTime.to_iso8601(DateTime.utc_now()),
+      "site" => "workflow_runtime_step"
+    }
   end
 end
