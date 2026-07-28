@@ -148,6 +148,33 @@ defmodule Scoria.MCP.Classification do
   end
 
   @doc """
+  Declared-only sensitivity predicate (D-A2, plan 56-03): a strict boolean
+  answer to "does this resolved classification make sites 2
+  (`policy_sensitive_invocation?/1`) and 3 (`budget_required?/1`) fire".
+
+  Returns `false` for `nil` and for any classification whose `source` is
+  `:unclassified_default` -- that guard is written as an explicit clause
+  (not left to fall out of the leg values) because it is the direct
+  expression of D-04's "the fallback is never an operand" law: without it,
+  every undeclared tool's maximal default would trip both sites, which is
+  exactly the noise D-06 exists to avoid.
+
+  For a `:tool_declared` or `:host_tightened` classification (a
+  host-tightened resolution is a real declaration, treated identically),
+  returns `true` when `can_exfiltrate` is `true` or when `action_class` is
+  a member of `Enum.drop(action_classes(), 2)` -- i.e. `["exec",
+  "admin"]`, "exec and above". Derived from `action_classes/0` rather than
+  a second literal list so this moves correctly if the enum ever grows.
+  """
+  @spec declared_sensitive?(t() | nil) :: boolean()
+  def declared_sensitive?(nil), do: false
+  def declared_sensitive?(%__MODULE__{source: :unclassified_default}), do: false
+
+  def declared_sensitive?(%__MODULE__{} = classification) do
+    classification.can_exfiltrate or classification.action_class in Enum.drop(action_classes(), 2)
+  end
+
+  @doc """
   Resolves `tool_module`'s declared classification, or `:none` when the
   module has no usable declaration.
 

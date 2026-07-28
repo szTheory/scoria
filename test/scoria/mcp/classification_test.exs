@@ -187,6 +187,29 @@ defmodule Scoria.MCP.ClassificationTest do
     :ok
   end
 
+  # `DeclaringTool` declares `can_exfiltrate: true` and `action_class: "exec"`,
+  # which trips `declared_sensitive?/1` (plan 56-03, site 3) -- any test
+  # routing it through `Executor.execute/4` now requires a real budget policy
+  # for its tenant + the default "tool_calls" resource, or `BudgetEngine`
+  # errors out before the tool ever runs.
+  defp create_budget_policy!(tenant_id, resource_kind) do
+    {:ok, _policy} =
+      Scoria.SRE.create_budget_policy(%{
+        tenant_id: tenant_id,
+        policy_key: "tenant:default:#{resource_kind}",
+        scope_key: "tenant:#{tenant_id}",
+        scope_kind: "tenant",
+        resource_kind: resource_kind,
+        status: "active",
+        warn_threshold: Decimal.new("80.0"),
+        trip_threshold: Decimal.new("100.0"),
+        max_workflow_steps: 25,
+        max_repeated_tool_calls: 3,
+        max_consecutive_failures: 2,
+        metadata: %{}
+      })
+  end
+
   describe "action_classes/0" do
     test "returns the closed enum in load-bearing order" do
       assert Classification.action_classes() == ["read", "write", "exec", "admin"]
@@ -255,6 +278,43 @@ defmodule Scoria.MCP.ClassificationTest do
                action_class: "read",
                source: :tool_declared
              } = BareUseTool.classification()
+    end
+  end
+
+  describe "declared_sensitive?/1 (D-A2, plan 56-03)" do
+    test "nil is never sensitive" do
+      refute Classification.declared_sensitive?(nil)
+    end
+
+    test "unclassified_default/0 is never sensitive -- the fallback is never an operand (D-04)" do
+      refute Classification.declared_sensitive?(Classification.unclassified_default())
+    end
+
+    test "a tool_declared struct with can_exfiltrate: true is sensitive" do
+      assert Classification.declared_sensitive?(Classification.declared(can_exfiltrate: true))
+    end
+
+    test "a tool_declared struct with action_class in [exec, admin] is sensitive" do
+      assert Classification.declared_sensitive?(Classification.declared(action_class: "exec"))
+      assert Classification.declared_sensitive?(Classification.declared(action_class: "admin"))
+    end
+
+    test "a tool_declared struct with all legs false and action_class read/write is not sensitive" do
+      refute Classification.declared_sensitive?(Classification.declared(action_class: "read"))
+      refute Classification.declared_sensitive?(Classification.declared(action_class: "write"))
+    end
+
+    test "behaves identically for source: :host_tightened -- a host-tightened classification is a real declaration" do
+      tightened = %Classification{
+        source: :host_tightened,
+        can_exfiltrate: true,
+        action_class: "read"
+      }
+
+      assert Classification.declared_sensitive?(tightened)
+
+      not_sensitive = %Classification{source: :host_tightened, action_class: "write"}
+      refute Classification.declared_sensitive?(not_sensitive)
     end
   end
 
@@ -338,6 +398,8 @@ defmodule Scoria.MCP.ClassificationTest do
     end
 
     test "a declaring tool emits no unclassified event and carries its declaration on the context" do
+      create_budget_policy!("tenant-1", "tool_calls")
+
       handler_id = "classification-test-declaring-#{System.unique_integer()}"
       parent = self()
       ref = make_ref()
@@ -375,6 +437,8 @@ defmodule Scoria.MCP.ClassificationTest do
     end
 
     test "the context handed through a replay run carries :tool_classification into build_replay_seam/2's seam" do
+      create_budget_policy!("tenant-1", "tool_calls")
+
       {:ok, run} =
         Scoria.Workflows.create_run(%{
           root_role_id: "executor",
@@ -386,6 +450,7 @@ defmodule Scoria.MCP.ClassificationTest do
       assert {:ok, %{context: context}} =
                Executor.execute(DeclaringTool, %{}, %{
                  run_id: run.id,
+                 tenant_id: "tenant-1",
                  local_classification: :pure,
                  tool_id: DeclaringTool.name()
                })
@@ -605,6 +670,7 @@ defmodule Scoria.MCP.ClassificationTest do
 
     test "flag true + a declaring tool: unaffected -- runs, no refusal, no unclassified event", %{ref: ref} do
       put_require_tool_classification(true)
+      create_budget_policy!("tenant-1", "tool_calls")
 
       assert {:ok, %{context: context}} =
                Executor.execute(DeclaringTool, %{}, %{actor_id: "user-1", tenant_id: "tenant-1"})

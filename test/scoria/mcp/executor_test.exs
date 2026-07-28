@@ -1,10 +1,12 @@
 defmodule Scoria.MCP.ExecutorTest do
   use ExUnit.Case, async: false
+  import Ecto.Query
 
   alias Scoria.MCP.Envelope
   alias Scoria.MCP.Executor
   alias Scoria.Repo
   alias Scoria.SRE
+  alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.SRE.BudgetReservation
   alias Scoria.Trust.Verdict
   alias Scoria.Workflows
@@ -48,6 +50,38 @@ defmodule Scoria.MCP.ExecutorTest do
 
     @impl true
     def description, do: "Declares a classification for persistence tests"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(%{"action" => "success"}, _context), do: {:ok, %{result: "success"}}
+  end
+
+  defmodule ExfiltratingTool do
+    use Scoria.MCP.Tool, can_exfiltrate: true
+
+    @impl true
+    def name, do: "exfiltrating_tool"
+
+    @impl true
+    def description, do: "Declares can_exfiltrate: true for declared_sensitive?/1 site 2/3 tests (plan 56-03)"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(%{"action" => "success"}, _context), do: {:ok, %{result: "success"}}
+  end
+
+  defmodule AdminActionTool do
+    use Scoria.MCP.Tool, action_class: "admin"
+
+    @impl true
+    def name, do: "admin_action_tool"
+
+    @impl true
+    def description, do: "Declares action_class: admin for declared_sensitive?/1 site 2/3 tests (plan 56-03)"
 
     @impl true
     def input_schema, do: %{}
@@ -717,6 +751,82 @@ defmodule Scoria.MCP.ExecutorTest do
                  %{"action" => "success"},
                  Map.merge(context, %{step_id: Ecto.UUID.generate()})
                )
+    end
+  end
+
+  describe "declared_sensitive?/1 widens sites 2 and 3 declared-only (D-A2, plan 56-03)" do
+    test "an undeclared tool with a bare context writes zero tool.invocation audit rows and reserves zero budget",
+         %{context: context} do
+      trace_id = "trace-declared-sensitive-undeclared"
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{trace_id: trace_id})
+               )
+
+      assert Repo.aggregate(
+               from(a in AuditOutboxEvent, where: a.trace_id == ^trace_id and a.event_type == "tool.invocation"),
+               :count
+             ) == 0
+
+      refute Repo.get_by(BudgetReservation, trace_id: trace_id)
+    end
+
+    test "a can_exfiltrate: true declaring tool with the same bare context writes one tool.invocation row and reserves budget",
+         %{context: context} do
+      create_budget_policy!("tenant-1", "tool_calls")
+      trace_id = "trace-declared-sensitive-exfiltrate"
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 ExfiltratingTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{trace_id: trace_id})
+               )
+
+      assert Repo.aggregate(
+               from(a in AuditOutboxEvent, where: a.trace_id == ^trace_id and a.event_type == "tool.invocation"),
+               :count
+             ) == 1
+
+      assert Repo.get_by!(BudgetReservation, trace_id: trace_id)
+    end
+
+    test "an action_class: admin declaring tool does the same", %{context: context} do
+      create_budget_policy!("tenant-1", "tool_calls")
+      trace_id = "trace-declared-sensitive-admin"
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 AdminActionTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{trace_id: trace_id})
+               )
+
+      assert Repo.aggregate(
+               from(a in AuditOutboxEvent, where: a.trace_id == ^trace_id and a.event_type == "tool.invocation"),
+               :count
+             ) == 1
+
+      assert Repo.get_by!(BudgetReservation, trace_id: trace_id)
+    end
+
+    test "a host already passing :policy_sensitive sees no change in either predicate's result", %{context: context} do
+      trace_id = "trace-declared-sensitive-host-passed"
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{trace_id: trace_id, policy_sensitive: true})
+               )
+
+      assert Repo.aggregate(
+               from(a in AuditOutboxEvent, where: a.trace_id == ^trace_id and a.event_type == "tool.invocation"),
+               :count
+             ) == 1
     end
   end
 

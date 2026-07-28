@@ -601,11 +601,19 @@ defmodule Scoria.MCP.Executor do
   defp attach_budget_metadata(metadata, %{audit_outbox_event: audit_outbox_event}), do: Map.put(metadata, :audit_outbox_event_id, audit_outbox_event.id)
   defp attach_budget_metadata(metadata, %{reservation: reservation}), do: Map.put(metadata, :budget_reservation_id, reservation.id)
 
+  # Site 3 (D-05, plan 56-03): the same shared `Classification.declared_sensitive?/1`
+  # predicate as site 2 (site 2, `policy_sensitive_invocation?/1`) is the
+  # fifth OR operand -- one origin for "does this declaration count as
+  # sensitive" is what keeps the two sites from drifting apart. This also
+  # widens the read-only `maybe_emit_budget/4` call site (`:843-858`): a
+  # declaring tool now emits budget telemetry too, which is intended and
+  # consistent with reserving budget for it.
   defp budget_required?(context) do
     Map.get(context, :estimated_cost_usd) ||
       Map.get(context, :estimated_tokens) ||
       Map.get(context, :estimated_units) ||
-      Map.get(context, :sensitive_tool)
+      Map.get(context, :sensitive_tool) ||
+      Classification.declared_sensitive?(Map.get(context, :tool_classification))
   end
 
   defp budget_resource(context) do
@@ -711,8 +719,18 @@ defmodule Scoria.MCP.Executor do
   defp ensure_policy_sensitive_invocation(_tool_module, _args, _context, reservation_context),
     do: {:ok, reservation_context}
 
+  # Site 2 (D-05, plan 56-03): the first two operands stay byte-identical --
+  # a host value still wins and a host-`false` is still falsy exactly as
+  # before this plan. The third OR term is declared-only (D-A2): a tool
+  # that declares `can_exfiltrate: true` or an `action_class` of `"exec"`/
+  # `"admin"` now trips this predicate even when the host passed neither
+  # `:policy_sensitive` nor `:sensitive_tool` -- the fail-open seam
+  # actually closing for adopters who opt in, never for legacy traffic
+  # (`Classification.declared_sensitive?/1` returns `false` for
+  # `:unclassified_default`).
   defp policy_sensitive_invocation?(context) do
-    Map.get(context, :policy_sensitive) || Map.get(context, :sensitive_tool)
+    Map.get(context, :policy_sensitive) || Map.get(context, :sensitive_tool) ||
+      Classification.declared_sensitive?(Map.get(context, :tool_classification))
   end
 
   defp policy_sensitive_audit_envelope(tool_module, args, context) do
