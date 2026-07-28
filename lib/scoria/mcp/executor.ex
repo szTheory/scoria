@@ -48,14 +48,17 @@ defmodule Scoria.MCP.Executor do
   # may inject one ahead of this), it is reused unchanged and no telemetry
   # fires a second time. Otherwise the tool's own declaration (or the
   # fail-closed-but-inspectable maximal default, D-03) is resolved and
-  # carried forward on that same new context key. `execute/4`'s call site
-  # deliberately matches only `{:ok, context}` plus a catch-all `other ->
-  # other` (never a literal `{:error, _}` clause) -- this function only
-  # ever returns `{:ok, map()}` today, and a literal `{:error, _}` clause
-  # would trip the compiler's unreachable-clause check. A later opt-in
-  # `require_tool_classification` refusal path can start returning
-  # `{:error, envelope}` here without any change at the `execute/4` call
-  # site, since the catch-all already passes it through unchanged.
+  # carried forward on that same new context key.
+  #
+  # Plan 56-02: when `config :scoria, :require_tool_classification` is
+  # truthy (default `false`) AND the resolved classification's `source` is
+  # `:unclassified_default`, this now returns `{:error, envelope}` instead --
+  # a genuine refusal, never reached for a host-tightened or tool-declared
+  # resolution. `execute/4`'s call site matches only `{:ok, context}` plus a
+  # catch-all `other -> other`, so this branch flows straight back to the
+  # caller with zero further side effects (no `replay_gate/3`, no budget
+  # reservation, no audit insert, no tool Task -- mirrors
+  # `Scoria.Runtime.ReleaseGate.handle_missing_verdict/1`).
   @spec resolve_classification(module(), map()) :: {:ok, map()} | {:error, map()}
   defp resolve_classification(tool_module, context) do
     case Map.get(context, :tool_classification) do
@@ -64,10 +67,37 @@ defmodule Scoria.MCP.Executor do
 
       _ ->
         declaration = Classification.tool_declaration(tool_module)
-        maybe_emit_unclassified(declaration, tool_module, context)
         resolved = Classification.resolve(declaration, context)
-        {:ok, Map.put(context, :tool_classification, resolved)}
+
+        if refuse_unclassified_tool?(resolved) do
+          {:error, unclassified_tool_envelope(tool_module, context)}
+        else
+          maybe_emit_unclassified(declaration, tool_module, context)
+          {:ok, Map.put(context, :tool_classification, resolved)}
+        end
     end
+  end
+
+  # Gate on `source == :unclassified_default` specifically (D-03) -- a
+  # host-tightened resolution is a real classification and must never be
+  # refused by this flag. Mirrors `release_gate.ex:82`'s
+  # `Application.get_env(:scoria, :require_eval_verdict, false)` --
+  # default-off, no config-file entry (grep-verified in acceptance
+  # criteria), so no existing adopter inherits the strict behavior.
+  defp refuse_unclassified_tool?(%Classification{source: :unclassified_default}) do
+    Application.get_env(:scoria, :require_tool_classification, false)
+  end
+
+  defp refuse_unclassified_tool?(_resolved), do: false
+
+  defp unclassified_tool_envelope(tool_module, context) do
+    %{
+      status: :unclassified_tool,
+      reason_code: "tool_classification_required",
+      tool_ref: inspect(tool_module),
+      trace_id: Map.get(context, :trace_id),
+      policy_key: Map.get(context, :policy_key)
+    }
   end
 
   defp maybe_emit_unclassified(:none, tool_module, context) do

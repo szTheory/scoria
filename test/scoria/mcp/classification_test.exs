@@ -116,6 +116,41 @@ defmodule Scoria.MCP.ClassificationTest do
     def classification, do: :not_a_classification_struct
   end
 
+  defmodule RefusalProbeTool do
+    @behaviour Scoria.MCP.Tool
+
+    @impl true
+    def name, do: "refusal_probe_tool"
+
+    @impl true
+    def description, do: "Undeclared tool used to prove the strict-refusal path never invokes execute/2"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, context) do
+      send(context.test_pid, {:refusal_probe_invoked, self()})
+      {:ok, %{}}
+    end
+  end
+
+  defmodule HostTightenableTool do
+    use Scoria.MCP.Tool, action_class: "read"
+
+    @impl true
+    def name, do: "host_tightenable_tool"
+
+    @impl true
+    def description, do: "Declares a loose classification a host may tighten"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, context), do: {:ok, %{context: context}}
+  end
+
   defmodule JunkFieldsTool do
     @behaviour Scoria.MCP.Tool
 
@@ -511,6 +546,109 @@ defmodule Scoria.MCP.ClassificationTest do
                Classification.resolve({:ok, declared}, %{host_classification: host})
 
       assert_receive {:telemetry_event, ^ref, [:scoria, :class, :precedence_conflict], _measurements, _metadata}
+    end
+  end
+
+  describe "require_tool_classification strict refusal (D-03 opt-in flag, plan 56-02)" do
+    setup do
+      parent = self()
+      ref = make_ref()
+
+      handler_id = "strict-refusal-test-#{System.unique_integer()}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :class, :unclassified],
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, ref, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      %{ref: ref}
+    end
+
+    defp put_require_tool_classification(value) do
+      previous = Application.get_env(:scoria, :require_tool_classification)
+      Application.put_env(:scoria, :require_tool_classification, value)
+
+      on_exit(fn ->
+        case previous do
+          nil -> Application.delete_env(:scoria, :require_tool_classification)
+          _ -> Application.put_env(:scoria, :require_tool_classification, previous)
+        end
+      end)
+    end
+
+    test "flag absent (default false): an undeclared tool still runs and emits exactly one unclassified event", %{
+      ref: ref
+    } do
+      refute Application.get_env(:scoria, :require_tool_classification, false)
+
+      assert {:ok, %{}} = Executor.execute(RefusalProbeTool, %{}, %{test_pid: self()})
+
+      assert_receive {:refusal_probe_invoked, _pid}
+      assert_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata}
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata2}
+    end
+
+    test "flag explicitly false: identical to absent", %{ref: ref} do
+      put_require_tool_classification(false)
+
+      assert {:ok, %{}} = Executor.execute(RefusalProbeTool, %{}, %{test_pid: self()})
+
+      assert_receive {:refusal_probe_invoked, _pid}
+      assert_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata}
+    end
+
+    test "flag true + a declaring tool: unaffected -- runs, no refusal, no unclassified event", %{ref: ref} do
+      put_require_tool_classification(true)
+
+      assert {:ok, %{context: context}} =
+               Executor.execute(DeclaringTool, %{}, %{actor_id: "user-1", tenant_id: "tenant-1"})
+
+      assert %Classification{source: :tool_declared} = Map.get(context, :tool_classification)
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata}
+    end
+
+    test "flag true + an undeclared tool: refused with zero side effects and zero unclassified events", %{ref: ref} do
+      put_require_tool_classification(true)
+
+      assert {:error,
+              %{
+                status: :unclassified_tool,
+                reason_code: "tool_classification_required",
+                tool_ref: tool_ref,
+                trace_id: "trace-refusal",
+                policy_key: "policy.refusal"
+              }} =
+               Executor.execute(RefusalProbeTool, %{}, %{
+                 test_pid: self(),
+                 trace_id: "trace-refusal",
+                 policy_key: "policy.refusal"
+               })
+
+      assert tool_ref =~ "RefusalProbeTool"
+
+      refute_receive {:refusal_probe_invoked, _pid}
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata}
+    end
+
+    test "flag true + a host-tightened resolution: the flag refuses only genuinely unclassified calls, not this one",
+         %{ref: ref} do
+      put_require_tool_classification(true)
+
+      assert {:ok, %{context: context}} =
+               Executor.execute(HostTightenableTool, %{}, %{
+                 host_classification: %{action_class: "write"}
+               })
+
+      assert %Classification{source: :host_tightened, action_class: "write"} =
+               Map.get(context, :tool_classification)
+
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata}
     end
   end
 end
