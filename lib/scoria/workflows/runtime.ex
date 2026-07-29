@@ -767,6 +767,17 @@ defmodule Scoria.Workflows.Runtime do
       nil ->
         {:error, {:timeout, elapsed_ms(started_at)}}
 
+      # D-20: matched ABOVE the generic `{:exit, reason}` clause below (a
+      # more specific pattern must come first) -- `Scoria.MCP.Executor`'s
+      # confluence gate signals a pause with `exit({:shutdown,
+      # {:scoria_confluence_escalation, attrs}})` rather than a raise,
+      # because `try/rescue _ ->` (the most common adopter defensive
+      # pattern) does not catch an exit. Reuses the SAME
+      # `{:waiting_for_approval, ...}` outcome handling every other pause
+      # already flows through -- no bespoke branch.
+      {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} ->
+        {:ok, {:waiting_for_approval, attrs, elapsed_ms(started_at)}}
+
       {:exit, reason} ->
         {:error, {:execution_failed, reason, elapsed_ms(started_at)}}
     end

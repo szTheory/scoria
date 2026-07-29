@@ -7,6 +7,10 @@ defmodule Scoria.MCP.Executor do
   import Ecto.Query, warn: false
   require Logger
 
+  # Per D-03, `Scoria.Confluence` itself aliases nothing Scoria-side -- but
+  # the EXECUTOR (caller) legitimately aliases it here; the executor
+  # already holds every edge this decision needs.
+  alias Scoria.Confluence
   alias Scoria.MCP.Classification
   alias Scoria.MCP.Envelope
   alias Scoria.Observe.Semconv
@@ -47,7 +51,13 @@ defmodule Scoria.MCP.Executor do
           {:ok, context} ->
             case replay_gate(tool_module, args, context) do
               {:continue, context} ->
-                execute_live(tool_module, args, context, timeout)
+                case confluence_gate(tool_module, args, context) do
+                  {:continue, context} ->
+                    execute_live(tool_module, args, context, timeout)
+
+                  other ->
+                    other
+                end
 
               other ->
                 other
@@ -301,6 +311,117 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp maybe_emit_unclassified({:ok, _declared}, _tool_module, _context), do: :ok
+
+  # D-14: positioned between `replay_gate/3`'s `{:continue, context}` branch
+  # and `execute_live/4` -- after the rail (already run above), after
+  # classification (`context[:tool_classification]` IS the leg source),
+  # and after the replay gate (a `:historical_stub` never executes the
+  # exfil action, so the gate must not fire for it); before
+  # `execute_live/4` and therefore before `maybe_capture_sensitive_mcp_access/3`
+  # and `reserve_budget/3`, so an escalated call reserves no budget and
+  # writes no `mcp.access.granted` row for an action that never happened.
+  #
+  # Reads the resolved `%Classification{}` from `context[:tool_classification]`
+  # -- never from the persisted step `result_envelope` jsonb, which
+  # `complete_step/3` wholesale-replaces and connector-routed calls never
+  # write. A single tool declaring all three legs escalates on itself (a
+  # single call's own declared legs are sufficient per D-11), so no
+  # per-run accumulator read is needed for this tracer slice.
+  defp confluence_gate(tool_module, _args, context) do
+    case Confluence.classify(confluence_input(tool_module, context)) do
+      {"exfiltration_path", %Confluence.Evidence{grade: "declared"} = evidence} ->
+        escalate(tool_module, context, evidence)
+
+      _other ->
+        {:continue, context}
+    end
+  end
+
+  defp confluence_input(tool_module, context) do
+    base = %{
+      run_id: Map.get(context, :run_id),
+      step_id: Map.get(context, :step_id),
+      tool_ref: inspect(tool_module)
+    }
+
+    case Map.get(context, :tool_classification) do
+      # The fail-closed-but-inspectable `unclassified_default/0` (56 D-06)
+      # is NEVER an operand here (mirrors `Classification.declared_sensitive?/1`'s
+      # own explicit `source: :unclassified_default` guard) -- an
+      # undeclared tool's maximal-caution default must never be folded
+      # into a "declared" leg witness, or every undeclared tool call
+      # would spuriously escalate. Grading the unclassified cascade is a
+      # later plan's job (D-29/D-31); this task only proves the declared
+      # path, so an unclassified tool simply produces no witnesses and
+      # falls to `Confluence.classify/1`'s terminal fallback.
+      %Classification{source: :unclassified_default} ->
+        Map.merge(base, %{private_data: nil, untrusted_content: nil, exfil: nil})
+
+      %Classification{} = classification ->
+        Map.merge(base, %{
+          private_data: leg_witness(classification.reads_private_data),
+          untrusted_content: leg_witness(classification.sees_untrusted_content),
+          exfil: leg_witness(classification.can_exfiltrate),
+          action_class: classification.action_class
+        })
+
+      _no_classification ->
+        Map.merge(base, %{private_data: nil, untrusted_content: nil, exfil: nil})
+    end
+  end
+
+  defp leg_witness(true), do: %{source: :declared}
+  defp leg_witness(_falsy), do: nil
+
+  # Escalation body, in order (D-19, D-23, D-24, D-28, D-46): (1) a halt is
+  # terminal and beats a pause, so a halted run is denied without ever
+  # creating an approval row; (2) an unattributed call (no run/step to
+  # pause) is left to run, mirroring the rail's own no-op discipline --
+  # never create an unconsumable approval row on a seam that cannot be
+  # resumed; (3) otherwise build atom-keyed attrs that always carry
+  # `:tool_name` (`Approval.changeset/2` requires it and
+  # `mark_waiting_for_approval/3` uses `repo.insert!`, so mixed
+  # atom/string keys would raise in `cast/3`) plus `blocker_kind:
+  # "confluence"`, reuse the EXISTING `Workflows.mark_waiting_for_approval/3`
+  # (no bespoke `Approval` insert, no new lifecycle function -- that
+  # single call yields all twelve GATE-03 artifacts for free), then
+  # signal the runtime with an `exit`, never a `raise` (D-20): a raise is
+  # defeated by the common `try/rescue _ ->` adopter pattern; an
+  # `exit({:shutdown, term})` from a `Task.Supervisor.async_nolink` task
+  # is defeated only by the rare `catch :exit`.
+  defp escalate(tool_module, context, evidence) do
+    run_id = Map.get(context, :run_id)
+    step_id = Map.get(context, :step_id)
+
+    cond do
+      is_nil(run_id) or is_nil(step_id) ->
+        {:continue, context}
+
+      Run.halted?(Workflows.get_run!(run_id)) ->
+        {:error, confluence_halted_envelope(tool_module, run_id, step_id)}
+
+      true ->
+        attrs = %{
+          tool_name: tool_module.name(),
+          blocker_kind: "confluence",
+          reason: "confluence gate: #{evidence.combination}"
+        }
+
+        {:ok, _approval} = Workflows.mark_waiting_for_approval(run_id, step_id, attrs)
+
+        exit({:shutdown, {:scoria_confluence_escalation, attrs}})
+    end
+  end
+
+  defp confluence_halted_envelope(tool_module, run_id, step_id) do
+    %{
+      status: :confluence_denied,
+      reason_code: "run_halted",
+      tool_ref: inspect(tool_module),
+      run_id: run_id,
+      step_id: step_id
+    }
+  end
 
   defp execute_live(tool_module, args, context, timeout) do
 
