@@ -8,6 +8,50 @@ defmodule ScoriaWeb.ApprovalCopy do
 
   @seed_keys ~w(seed_kind seed_key seed_version)
 
+  # -- D-48/D-49: confluence evidence copy -----------------------------------
+  #
+  # A confluence approval's request rows must show a human WHY they are being
+  # asked to authorize an exfiltration: the named combination, which legs are
+  # lit and where each came from, and how strong that evidence is. An approval
+  # prompt with only a free-text reason is a consent-manufacturing machine,
+  # not a human-in-the-loop control.
+  #
+  # Machine names use the `Scoria.Confluence.combinations/0` exfil spelling
+  # (owned by the phase that owns the enum); human-facing strings use
+  # "external egress" (GOVERN-01's own word). This split is deliberate — do
+  # not unify them.
+  @combination_labels %{
+    "none" => "No trifecta legs observed",
+    "private_data" => "Private data only",
+    "untrusted_content" => "Untrusted content only",
+    "exfil_capable" => "External egress capable only",
+    "private_data_and_untrusted_content" => "Private data + untrusted content",
+    "private_data_to_egress" => "Private data + external egress",
+    "untrusted_content_to_egress" => "Untrusted content + external egress",
+    "exfiltration_path" =>
+      "Private data + untrusted content + external egress → exfiltration path"
+  }
+
+  @combination_tones %{
+    "none" => :neutral,
+    "private_data" => :neutral,
+    "untrusted_content" => :neutral,
+    "exfil_capable" => :neutral,
+    "private_data_and_untrusted_content" => :warn,
+    "private_data_to_egress" => :warn,
+    "untrusted_content_to_egress" => :warn,
+    "exfiltration_path" => :fail
+  }
+
+  # {evidence field key, human-facing leg label} -- deliberately mirrors
+  # `Scoria.Confluence.Evidence{}`'s field names so a caller that eventually
+  # persists the evidence onto the approval needs no translation layer here.
+  @leg_specs [
+    {:private_data_source, "Private data"},
+    {:untrusted_content_source, "Untrusted content"},
+    {:exfil_source, "External egress"}
+  ]
+
   def title(nil), do: "Approval request"
 
   def title(approval) do
@@ -306,6 +350,24 @@ defmodule ScoriaWeb.ApprovalCopy do
 
   def decision_receipt(_status, _decider, _decided_at), do: "Decision pending"
 
+  @doc """
+  Human-facing label for a `Scoria.Confluence` combination value (D-49).
+  Falls back to a neutral generic label for any unrecognized value and never
+  raises — an unknown combination must never crash the drawer.
+  """
+  def combination_label(combination) do
+    Map.get(@combination_labels, combination, "Unrecognized combination")
+  end
+
+  @doc """
+  Semantic tone (`:fail` | `:warn` | `:neutral`) for a `Scoria.Confluence`
+  combination value (D-49). Falls back to `:neutral` for any unrecognized
+  value and never raises.
+  """
+  def combination_tone(combination) do
+    Map.get(@combination_tones, combination, :neutral)
+  end
+
   def request_rows(nil), do: []
 
   def request_rows(approval) do
@@ -313,6 +375,7 @@ defmodule ScoriaWeb.ApprovalCopy do
       {"Target", target(approval)},
       {"Policy reason", detail(approval)}
     ]
+    |> maybe_append_confluence_rows(approval)
     |> reject_blank_rows()
   end
 
@@ -422,4 +485,44 @@ defmodule ScoriaWeb.ApprovalCopy do
   defp tool_label(tool), do: to_string(tool)
 
   defp present?(value), do: is_binary(value) and value != ""
+
+  # D-48: a non-confluence approval's rows must stay byte-identical to their
+  # pre-phase values -- only a `blocker_kind: "confluence"` approval gains
+  # the combination/leg/grade rows.
+  defp maybe_append_confluence_rows(rows, approval) do
+    if field(approval, :blocker_kind) == "confluence" do
+      rows ++ confluence_rows(approval)
+    else
+      rows
+    end
+  end
+
+  defp confluence_rows(approval) do
+    combination = field(approval, :combination)
+
+    leg_rows =
+      @leg_specs
+      |> Enum.map(fn {key, label} ->
+        case field(approval, key) do
+          nil -> nil
+          source -> {"#{label} evidence", witness_source_label(source)}
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    [{"Combination", combination && combination_label(combination)}] ++
+      leg_rows ++ [{"Evidence grade", grade_label(field(approval, :grade))}]
+  end
+
+  defp witness_source_label(:declared), do: "Declared by the tool"
+  defp witness_source_label(:scanner_infra), do: "Observed by the content scanner"
+  defp witness_source_label(:default_tier), do: "Default tier (no scanner installed)"
+  defp witness_source_label(:unclassified), do: "Unclassified"
+  defp witness_source_label(_other), do: "Unknown source"
+
+  defp grade_label("declared"), do: "Declared"
+  defp grade_label("scanner_infra"), do: "Scanner infrastructure"
+  defp grade_label("default_tier"), do: "Default tier"
+  defp grade_label("unclassified"), do: "Unclassified"
+  defp grade_label(_other), do: nil
 end

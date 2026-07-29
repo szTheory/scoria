@@ -183,4 +183,127 @@ defmodule ScoriaWeb.ApprovalCopyTest do
       assert rows != []
     end
   end
+
+  describe "combination_label/1 and combination_tone/1 (D-49)" do
+    test "every value of Scoria.Confluence.combinations/0 has a non-empty label and a valid tone" do
+      for combination <- Scoria.Confluence.combinations() do
+        label = ApprovalCopy.combination_label(combination)
+        tone = ApprovalCopy.combination_tone(combination)
+
+        assert is_binary(label) and label != "",
+               "expected a non-empty label for combination #{inspect(combination)}"
+
+        assert tone in [:fail, :warn, :neutral],
+               "expected tone in [:fail, :warn, :neutral] for combination #{inspect(combination)}, got #{inspect(tone)}"
+      end
+    end
+
+    test "the all-three-legs combination renders the verbatim operator string with the rightwards arrow and fail tone" do
+      assert ApprovalCopy.combination_label("exfiltration_path") ==
+               "Private data + untrusted content + external egress → exfiltration path"
+
+      assert ApprovalCopy.combination_tone("exfiltration_path") == :fail
+    end
+
+    test "the three two-leg combinations carry the warn tone" do
+      assert ApprovalCopy.combination_tone("private_data_and_untrusted_content") == :warn
+      assert ApprovalCopy.combination_tone("private_data_to_egress") == :warn
+      assert ApprovalCopy.combination_tone("untrusted_content_to_egress") == :warn
+    end
+
+    test "single legs and none carry the neutral tone" do
+      assert ApprovalCopy.combination_tone("private_data") == :neutral
+      assert ApprovalCopy.combination_tone("untrusted_content") == :neutral
+      assert ApprovalCopy.combination_tone("exfil_capable") == :neutral
+      assert ApprovalCopy.combination_tone("none") == :neutral
+    end
+
+    test "an unrecognized combination value falls back to a neutral label and never raises" do
+      assert ApprovalCopy.combination_label("some_future_combination") == "Unrecognized combination"
+      assert ApprovalCopy.combination_tone("some_future_combination") == :neutral
+
+      assert ApprovalCopy.combination_label(nil) == "Unrecognized combination"
+      assert ApprovalCopy.combination_tone(nil) == :neutral
+    end
+  end
+
+  describe "request_rows/1 (D-48 confluence evidence rows)" do
+    test "a confluence approval's rows include the combination, one row per lit leg with its source, and a grade row" do
+      approval = %{
+        blocker_kind: "confluence",
+        tool_name: "send_reply",
+        reason: "Tool policy requires review.",
+        combination: "exfiltration_path",
+        grade: "declared",
+        private_data_source: :declared,
+        untrusted_content_source: :declared,
+        exfil_source: :declared
+      }
+
+      rows = ApprovalCopy.request_rows(approval)
+      labels = Enum.map(rows, fn {label, _value} -> label end)
+
+      assert {"Target", ApprovalCopy.target(approval)} in rows
+      assert {"Policy reason", ApprovalCopy.detail(approval)} in rows
+
+      assert Enum.any?(rows, fn {label, value} ->
+               label == "Combination" and
+                 value ==
+                   "Private data + untrusted content + external egress → exfiltration path"
+             end)
+
+      assert Enum.count(labels, &(&1 =~ "evidence")) == 3
+      assert Enum.any?(rows, fn {label, _value} -> label == "Evidence grade" end)
+    end
+
+    test "only lit legs get a row" do
+      approval = %{
+        blocker_kind: "confluence",
+        tool_name: "send_reply",
+        combination: "private_data",
+        grade: "declared",
+        private_data_source: :declared,
+        untrusted_content_source: nil,
+        exfil_source: nil
+      }
+
+      rows = ApprovalCopy.request_rows(approval)
+      leg_rows = Enum.filter(rows, fn {label, _value} -> label =~ "evidence" end)
+
+      assert length(leg_rows) == 1
+      assert {"Private data evidence", "Declared by the tool"} in rows
+    end
+
+    test "an unrecognized witness source renders a neutral fallback without raising" do
+      approval = %{
+        blocker_kind: "confluence",
+        combination: "untrusted_content",
+        grade: nil,
+        untrusted_content_source: :some_future_source
+      }
+
+      rows = ApprovalCopy.request_rows(approval)
+
+      assert Enum.any?(rows, fn {label, value} ->
+               label == "Untrusted content evidence" and is_binary(value)
+             end)
+    end
+
+    test "a non-confluence approval's request rows are unchanged from their pre-phase values" do
+      approval = %{
+        tool_name: "issue_refund",
+        reason: "Enterprise refund exceeds the self-serve support threshold.",
+        arguments_preview: %{"amount_cents" => 12_900, "customer" => "Morgan Patel"}
+      }
+
+      rows = ApprovalCopy.request_rows(approval)
+
+      assert rows == [
+               {"Target", ApprovalCopy.target(approval)},
+               {"Policy reason", ApprovalCopy.detail(approval)}
+             ]
+
+      refute Enum.any?(rows, fn {label, _value} -> label == "Combination" end)
+    end
+  end
 end
