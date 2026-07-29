@@ -52,6 +52,21 @@ defmodule Scoria.Confluence do
   telemetry-only under shipped defaults, matching the `ReleaseGate`
   doctrine GATE-04 names: positive evidence enforces, absence of evidence
   is inspectable but never blocking on its own.
+
+  ## What "replayable" means for this gate (D-43, D-44)
+
+  A confluence decision is REPLAYABLE because it is RECONSTRUCTABLE from
+  persisted evidence -- the audit outbox row (`audit_metadata/1`'s output),
+  the per-run `confluence_legs` accumulator, and the approval row together
+  -- never because an approved escalation is a REUSABLE grant a later
+  replay can pass through on. Phase 57 adds NOTHING to
+  `Scoria.Workflows.ReplayDisposition` -- no disposition value, no replay
+  reason code, no replay scope -- so a historical stub never re-executes
+  the tool and therefore never reaches this gate, and a live re-execution
+  during replay (reachable only through the `live_override_approved` path)
+  evaluates this gate AFRESH, exactly like any other live call, scoped to
+  its OWN run id. A human approval is a historical decision recorded in
+  event history, not a standing exfiltration grant to be re-spent.
   """
 
   require Logger

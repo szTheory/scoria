@@ -355,4 +355,245 @@ defmodule Scoria.ConfluenceAuditTest do
       assert after_marker =~ "Workflows.mark_waiting_for_approval(run_id, step_id, attrs)"
     end
   end
+
+  describe "replay contract pinned negatively -- Phase 57 adds nothing to ReplayDisposition (D-43, D-44)" do
+    test "ReplayDisposition's disposition enum -- the set of atoms resolve/5 can return -- equals its pre-phase value" do
+      source =
+        File.read!(
+          Path.join([File.cwd!(), "lib", "scoria", "workflows", "replay_disposition.ex"])
+        )
+
+      dispositions =
+        ~r/\{:(\w+),\s*evidence\(/
+        |> Regex.scan(source)
+        |> Enum.map(fn [_, atom] -> atom end)
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      assert dispositions == ["blocked", "execute_live", "historical_stub"]
+    end
+
+    test "ReplayDisposition's replay_reason_code enum -- the set of literal reason code strings resolve/5 can emit -- equals its pre-phase value" do
+      source =
+        File.read!(
+          Path.join([File.cwd!(), "lib", "scoria", "workflows", "replay_disposition.ex"])
+        )
+
+      reason_codes =
+        ~r/evidence\(\s*:\w+,\s*"([a-z_]+)"/
+        |> Regex.scan(source)
+        |> Enum.map(fn [_, code] -> code end)
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      expected =
+        ~w(
+          authority_expanding_change
+          exact_source_match
+          live_override_approved
+          live_override_requires_policy_and_replay_approval
+          local_safe_to_rerun
+          missing_source_evidence
+          run_not_in_replay_mode
+        )
+        |> Enum.sort()
+
+      assert reason_codes == expected
+    end
+
+    test "the replay_scope value space (Workflows.mark_waiting_for_approval/3's default) equals its pre-phase value" do
+      source = File.read!(Path.join([File.cwd!(), "lib", "scoria", "workflows.ex"]))
+
+      replay_scope_literals =
+        ~r/replay_scope[^\n]*"([a-z_]+)"/
+        |> Regex.scan(source)
+        |> Enum.map(fn [_, value] -> value end)
+        |> Enum.uniq()
+
+      assert replay_scope_literals == ["replay_live"]
+    end
+
+    test "a replayed call resolving to a historical stub never fires the confluence gate -- no telemetry event, no audit row, no approval row" do
+      {:ok, run} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          source_run_id: Ecto.UUID.generate(),
+          source_checkpoint_id: Ecto.UUID.generate()
+        })
+
+      step = new_step!(run, 1)
+
+      ref = make_ref()
+      test_pid = self()
+      handler_id = "confluence-replay-stub-#{inspect(ref)}"
+
+      :telemetry.attach_many(
+        handler_id,
+        [
+          [:scoria, :gate, :confluence, :observed],
+          [:scoria, :gate, :confluence, :skipped]
+        ],
+        fn event, _measurements, _metadata, _config ->
+          send(test_pid, {:confluence_telemetry, ref, event})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      context = %{
+        actor_id: "user-1",
+        tenant_id: "tenant-1",
+        run: run,
+        run_id: run.id,
+        step_id: step.id,
+        test_pid: self(),
+        tool_id: "confluence_audit_three_leg_tool",
+        local_classification: :read,
+        action_class: "read",
+        risk_level: "low",
+        args_fingerprint: "same",
+        subject_ref: "subj-1",
+        required_scopes: [],
+        grant_state: "active",
+        policy_key: "confluence_audit_three_leg_tool",
+        source_evidence: %{
+          source_run_id: run.source_run_id,
+          source_checkpoint_id: run.source_checkpoint_id,
+          source_step_id: step.id,
+          source_audit_outbox_event_id: Ecto.UUID.generate(),
+          tool_id: "confluence_audit_three_leg_tool",
+          args_fingerprint: "same",
+          subject_ref: "subj-1",
+          required_scopes: [],
+          grant_state: "active",
+          policy_key: "confluence_audit_three_leg_tool",
+          result: %{"cached" => true}
+        }
+      }
+
+      assert {:ok, result} = Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+      assert result.status == :historical_stub
+
+      # The load-bearing proof: the tool's execute/2 side effect never
+      # fired -- a historical stub never executes the tool at all, so
+      # there is no exfil for the gate to guard against.
+      refute_receive {:tool_body_executed, _pid}, 200
+      refute_receive {:confluence_telemetry, ^ref, _event}, 200
+
+      assert confluence_audit_events(run.id) == []
+      refute Repo.get_by(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
+    end
+
+    test "a replayed call resolving to live execution through the override path fires the confluence gate" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", execution_mode: "replay"})
+      step = new_step!(run, 1)
+
+      context = %{
+        actor_id: "user-1",
+        tenant_id: "tenant-1",
+        run: run,
+        run_id: run.id,
+        step_id: step.id,
+        test_pid: self(),
+        args_fingerprint: "fp-live-override-1",
+        approval_context: %{current_policy_ok?: true},
+        override_context: %{"live_tool_allowlist" => [inspect(ThreeLegTool)]}
+      }
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "confluence_audit_three_leg_tool"
+      refute_receive {:tool_body_executed, _pid}, 200
+
+      assert [_event] = confluence_audit_events(run.id)
+    end
+
+    test "an approved escalation is not a reusable replay grant -- a replay of an approved run re-evaluates rather than passing through" do
+      run_a = new_run!()
+      step_a1 = new_step!(run_a, 1)
+
+      context_a = exfil_context(run_a, step_a1, "fp-replay-reuse-1")
+
+      result_a =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context_a)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _}}} = result_a
+
+      approval_a =
+        Repo.get_by!(Approval, workflow_run_id: run_a.id, blocker_kind: "confluence")
+
+      approval_a
+      |> Approval.changeset(%{status: "approved"})
+      |> Repo.update!()
+
+      # A replay of run_a reaching the IDENTICAL tool call (same
+      # args_fingerprint) under a DIFFERENT run id -- `local_classification:
+      # :pure` forces ReplayDisposition to resolve :execute_live without
+      # needing exact-source-match evidence, isolating this test to the
+      # gate's own re-evaluation behavior.
+      {:ok, run_b} =
+        Workflows.create_run(%{
+          root_role_id: "executor",
+          execution_mode: "replay",
+          source_run_id: run_a.id
+        })
+
+      step_b1 = new_step!(run_b, 1)
+
+      context_b =
+        exfil_context(run_b, step_b1, "fp-replay-reuse-1")
+        |> Map.merge(%{run: run_b, local_classification: :pure})
+
+      result_b =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context_b)
+        end)
+
+      # A pass-through on run_a's approval would have returned
+      # {:ok, %{result: "leaked"}} here -- the gate instead evaluates
+      # AFRESH and escalates run_b independently, because
+      # consume_call_scope/3 is scoped to a.workflow_run_id == ^run_id and
+      # run_a's approved approval can never match run_b's id.
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _}}} = result_b
+      refute_receive {:tool_body_executed, _pid}, 200
+
+      approval_b =
+        Repo.get_by!(Approval, workflow_run_id: run_b.id, blocker_kind: "confluence")
+
+      assert approval_b.id != approval_a.id
+      assert approval_b.status == "pending"
+    end
+
+    test "a tool routed through the connector invocation path is gated identically -- the connector seam needs no separate hook" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      run = new_run!()
+      step = new_step!(run, 1)
+
+      context = %{
+        actor_id: "user-1",
+        tenant_id: "tenant-1",
+        run_id: run.id,
+        step_id: step.id,
+        args_fingerprint: "fp-connector-1",
+        test_pid: self()
+      }
+
+      result =
+        run_in_supervised_task(fn ->
+          Scoria.Connectors.Invocation.invoke(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "confluence_audit_three_leg_tool"
+      refute_receive {:tool_body_executed, _pid}, 200
+    end
+  end
 end
