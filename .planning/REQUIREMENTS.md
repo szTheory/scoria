@@ -34,9 +34,9 @@ Supplies the missing untrusted-content leg — the substrate the confluence gate
 ### Confluence Escalation Policy (GATE) — the differentiator
 
 - [ ] **GATE-01**: A confluence evaluator classifies a tainted execution path by which of the three legs are present, mirroring `ReplayDisposition`'s seam-classification style.
-- [ ] **GATE-02**: When private-data + untrusted-content + exfil co-occur in one tainted execution path, the run escalates to approval / human-in-the-loop at `MCP.Executor` before the exfil action executes.
+- [x] **GATE-02**: When private-data + untrusted-content + exfil co-occur in one tainted execution path, the run escalates to approval / human-in-the-loop at `MCP.Executor` before the exfil action executes.
 - [ ] **GATE-03**: Confluence escalation decisions are audited (audit outbox) and replayable, consistent with existing approval and replay evidence.
-- [ ] **GATE-04**: Confluence enforcement has a fail-closed-but-inspectable default plus an opt-in strict mode; ungated confluence emits telemetry so adopters are never silently bricked (mirrors the v3.4 `ReleaseGate` compatibility doctrine).
+- [x] **GATE-04**: Confluence enforcement has a fail-closed-but-inspectable default plus an opt-in strict mode; ungated confluence emits telemetry so adopters are never silently bricked (mirrors the v3.4 `ReleaseGate` compatibility doctrine).
 
 ### Safety Hooks (HOOK)
 
@@ -93,9 +93,9 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 | CLASS-03 | Phase 56 | Complete |
 | RAIL-01 | Phase 56.1 | Complete |
 | GATE-01 | Phase 57 | Pending |
-| GATE-02 | Phase 57 | Pending |
+| GATE-02 | Phase 57 | Complete |
 | GATE-03 | Phase 57 | Pending |
-| GATE-04 | Phase 57 | Pending |
+| GATE-04 | Phase 57 | Complete |
 | HOOK-01 | Phase 58 | Pending |
 | HOOK-02 | Phase 58 | Pending |
 | BOUND-01 | Phase 58 | Pending |

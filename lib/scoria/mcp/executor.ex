@@ -13,6 +13,7 @@ defmodule Scoria.MCP.Executor do
   alias Scoria.Confluence
   alias Scoria.MCP.Classification
   alias Scoria.MCP.Envelope
+  alias Scoria.Observe.Approval
   alias Scoria.Observe.Semconv
   alias Scoria.Repo
   alias Scoria.SRE.BudgetEngine
@@ -192,8 +193,11 @@ defmodule Scoria.MCP.Executor do
 
   defp ensure_rail_warned_table do
     case :ets.whereis(@rail_warned_table) do
-      :undefined -> :ets.new(@rail_warned_table, [:named_table, :set, :public, read_concurrency: true])
-      _table -> :ok
+      :undefined ->
+        :ets.new(@rail_warned_table, [:named_table, :set, :public, read_concurrency: true])
+
+      _table ->
+        :ok
     end
   end
 
@@ -250,10 +254,23 @@ defmodule Scoria.MCP.Executor do
   # caller with zero further side effects (no `replay_gate/3`, no budget
   # reservation, no audit insert, no tool Task -- mirrors
   # `Scoria.Runtime.ReleaseGate.handle_missing_verdict/1`).
+  # Plan 57-05 (D-35): gated on `source` -- a classification already on
+  # `context` short-circuits ONLY when its `source` is anything other than
+  # `:unclassified_default`. Before this fix the clause matched ANY
+  # `%Classification{}` struct regardless of source, and BOTH
+  # `Connectors.Invocation.invoke/4`'s `resolve_tool_classification/2` and
+  # `Workflows.Runtime`'s `default_replay_seam/2` inject exactly a
+  # pre-resolved `%Classification{source: :unclassified_default}` onto the
+  # context ahead of this call -- so an undeclared tool's fail-closed
+  # default was bypassing `refuse_unclassified_tool?/1` entirely on both
+  # of those seams, silently defeating `require_tool_classification` for
+  # connector-routed and replay-default-seam calls. A genuinely resolved
+  # classification (`:tool_declared`/`:host_tightened`) still short-
+  # circuits unchanged.
   @spec resolve_classification(module(), map()) :: {:ok, map()} | {:error, map()}
   defp resolve_classification(tool_module, context) do
     case Map.get(context, :tool_classification) do
-      %Classification{} ->
+      %Classification{source: source} when source != :unclassified_default ->
         {:ok, context}
 
       _ ->
@@ -327,15 +344,207 @@ defmodule Scoria.MCP.Executor do
   # write. A single tool declaring all three legs escalates on itself (a
   # single call's own declared legs are sufficient per D-11), so no
   # per-run accumulator read is needed for this tracer slice.
-  defp confluence_gate(tool_module, _args, context) do
-    case Confluence.classify(confluence_input(tool_module, context)) do
-      {"exfiltration_path", %Confluence.Evidence{grade: "declared"} = evidence} ->
-        escalate(tool_module, context, evidence)
+  #
+  # Plan 57-05: the gate's FIRST action is now the atomic approval-consume
+  # CAS (D-26) -- BEFORE any classification, accumulation or evaluation
+  # work, mirroring `Rails.admit_tool_call/2`'s single-statement shape.
+  # `:consumed` passes the call through unevaluated (the SAME approval can
+  # never be consumed twice, so a resumed run never re-escalates the
+  # identical call). `:rejected` denies with the confluence-rejected
+  # reason code and never re-escalates. `:no_match` (including a `nil`
+  # args fingerprint, which fails CLOSED as no-match) falls through to a
+  # genuine evaluation. Every exit path emits exactly one
+  # `[:scoria, :gate, :confluence, :observed]` event (D-36) -- evaluation,
+  # persistence and telemetry are ALWAYS ON with no off switch (D-32).
+  defp confluence_gate(tool_module, args, context) do
+    run_id = Map.get(context, :run_id)
+    step_id = Map.get(context, :step_id)
+    args_fingerprint = Map.get(context, :args_fingerprint)
 
-      _other ->
+    case consume_confluence_approval(run_id, step_id, args_fingerprint) do
+      :consumed ->
+        emit_confluence_observed(context, tool_module, nil, "allow", nil)
+        {:continue, context}
+
+      :rejected ->
+        emit_confluence_observed(
+          context,
+          tool_module,
+          nil,
+          "block",
+          Confluence.normalize_reason_code(:confluence_rejected)
+        )
+
+        {:error, confluence_rejected_envelope(tool_module, run_id, context)}
+
+      :no_match ->
+        evaluate_confluence(tool_module, args, context, run_id, step_id)
+    end
+  end
+
+  # D-26: single-statement `Repo.update_all` CAS mirroring
+  # `Rails.admit_tool_call/2` exactly: a query with guard clauses in
+  # `where`, one update, a two-element tuple match distinguishing the
+  # consumed case from everything else. Never a read-then-write round
+  # trip. A `nil` args fingerprint FAILS CLOSED -- `build_replay_seam/2`
+  # reads it with no default, so nil is reachable, and a nil-matches-
+  # anything query would be a universal bypass; it is guarded here by
+  # simply never attempting the match (both the call-scope CAS and the
+  # rejected lookup require a non-nil fingerprint).
+  defp consume_confluence_approval(nil, _step_id, _args_fingerprint), do: :no_match
+  defp consume_confluence_approval(_run_id, _step_id, nil), do: :no_match
+
+  defp consume_confluence_approval(run_id, step_id, args_fingerprint) do
+    case consume_call_scope(run_id, step_id, args_fingerprint) do
+      :consumed -> :consumed
+      :no_match -> resolve_non_consuming_match(run_id, args_fingerprint)
+    end
+  end
+
+  defp consume_call_scope(run_id, step_id, args_fingerprint) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    query =
+      from(a in Approval,
+        where: a.workflow_run_id == ^run_id,
+        where: a.blocker_kind == "confluence",
+        where: a.status == "approved",
+        where: is_nil(a.consumed_at),
+        where: a.args_fingerprint == ^args_fingerprint,
+        # Only a `"call"` (or legacy-NULL, which means `"call"`) scoped
+        # approval is ever consumed here -- a `"run_tool"`-scoped grant is
+        # matched separately below and is DELIBERATELY never consumed, so
+        # it stays usable for the remainder of the granting run.
+        where: is_nil(a.confluence_scope) or a.confluence_scope == "call",
+        select: a.id
+      )
+
+    case Repo.update_all(query, set: [consumed_at: now, consumed_by_step_id: step_id]) do
+      {1, [_id]} -> :consumed
+      {0, _} -> :no_match
+    end
+  end
+
+  defp resolve_non_consuming_match(run_id, args_fingerprint) do
+    rejected_query =
+      from(a in Approval,
+        where: a.workflow_run_id == ^run_id,
+        where: a.blocker_kind == "confluence",
+        where: a.status == "rejected",
+        where: a.args_fingerprint == ^args_fingerprint
+      )
+
+    if Repo.exists?(rejected_query), do: :rejected, else: :no_match
+  end
+
+  # D-44/D-50 (checkpoint-resolved `d50-scope`, recorded verbatim in
+  # 57-01-SUMMARY.md): a `"run_tool"`-scoped approval matches on workflow
+  # run id, `blocker_kind`, approved status, `tool_name`, AND the recorded
+  # grade -- DELIBERATELY NOT on the args fingerprint (every call of a
+  # per-message reply tool has different arguments) -- and is NEVER
+  # consumed here, so the grant remains usable for the rest of THIS run.
+  # There is no separate persisted "grade" column on `ai_approvals`: a
+  # `"run_tool"` approval can only ever have been created for an
+  # escalation this executor actually paused on, which is what the
+  # `"declared"` guard clause below makes STRUCTURAL rather than
+  # assumed -- a differently-graded escalation of the SAME tool (reachable
+  # only under a host's own `strict: true` override extending enforcement
+  # to the weaker grades) never matches a run_tool grant, because that
+  # grant was never issued for it. Bounded by the run's own lifetime and
+  # rails -- it is NOT a standing exfiltration grant: it cannot match a
+  # different run, a different tool, or a different grade. Do NOT
+  # "generalize" this scope across runs, tools, or grades.
+  defp run_tool_scope_granted?(nil, _tool_module, _grade), do: false
+
+  defp run_tool_scope_granted?(run_id, tool_module, "declared") do
+    Repo.exists?(
+      from(a in Approval,
+        where: a.workflow_run_id == ^run_id,
+        where: a.blocker_kind == "confluence",
+        where: a.status == "approved",
+        where: a.confluence_scope == "run_tool",
+        where: a.tool_name == ^tool_module.name()
+      )
+    )
+  end
+
+  defp run_tool_scope_granted?(_run_id, _tool_module, _other_grade), do: false
+
+  defp confluence_rejected_envelope(tool_module, run_id, context) do
+    %{
+      status: :confluence_denied,
+      reason_code: "confluence_rejected",
+      tool_ref: inspect(tool_module),
+      run_id: run_id,
+      step_id: Map.get(context, :step_id),
+      trace_id: Map.get(context, :trace_id)
+    }
+  end
+
+  defp evaluate_confluence(tool_module, args, context, run_id, step_id) do
+    {combination, evidence} = Confluence.classify(confluence_input(tool_module, context))
+    evidence = attach_confluence_idempotency_key(evidence, context, tool_module)
+    config = Confluence.resolve_config(context)
+    decision = confluence_decision(evidence, config)
+
+    cond do
+      combination == "exfiltration_path" and decision == "escalate" ->
+        if run_tool_scope_granted?(run_id, tool_module, evidence.grade) do
+          emit_confluence_observed(context, tool_module, evidence, "allow", nil)
+          {:continue, context}
+        else
+          resolve_escalation(tool_module, args, context, evidence, run_id, step_id)
+        end
+
+      combination == "exfiltration_path" and decision == "block" ->
+        # Reachable only when a host has tightened `declared: :block` via
+        # per-call context or application env (D-33) -- never under
+        # shipped defaults (D-31 ships `declared: :escalate`).
+        emit_confluence_observed(context, tool_module, evidence, "block", nil)
+        {:error, confluence_rejected_envelope(tool_module, run_id, context)}
+
+      true ->
+        emit_confluence_observed(context, tool_module, evidence, "allow", nil)
         {:continue, context}
     end
   end
+
+  defp confluence_decision(%Confluence.Evidence{grade: nil}, _config), do: "allow"
+
+  defp confluence_decision(%Confluence.Evidence{grade: grade}, config),
+    do: Confluence.decide(grade, config)
+
+  # Recommendation, not a lock (57-CONTEXT.md "Claude's Discretion"):
+  # `Confluence.classify/1` already computes a `confluence_idempotency_key`
+  # from run id + tool ref alone (`confluence.ex` is out of this plan's
+  # file scope). This overrides it with the richer key the plan
+  # describes -- run id, tool identifier, args fingerprint and policy key
+  # -- reusing `ReplayDisposition.replay_idempotency_key/2`'s call shape
+  # (join with `:`, sha256, hex-encode) rather than hand-rolling a
+  # different one.
+  defp attach_confluence_idempotency_key(evidence, context, tool_module) do
+    run_id = Map.get(context, :run_id)
+
+    if is_nil(run_id) do
+      evidence
+    else
+      raw =
+        [
+          run_id,
+          inspect(tool_module),
+          Map.get(context, :args_fingerprint),
+          Map.get(context, :policy_key)
+        ]
+        |> Enum.map(&to_string_or_empty/1)
+        |> Enum.join(":")
+
+      key = "confluence:" <> Base.encode16(:crypto.hash(:sha256, raw), case: :lower)
+      %{evidence | confluence_idempotency_key: key}
+    end
+  end
+
+  defp to_string_or_empty(nil), do: ""
+  defp to_string_or_empty(value), do: to_string(value)
 
   defp confluence_input(tool_module, context) do
     base = %{
@@ -373,43 +582,94 @@ defmodule Scoria.MCP.Executor do
   defp leg_witness(true), do: %{source: :declared}
   defp leg_witness(_falsy), do: nil
 
-  # Escalation body, in order (D-19, D-23, D-24, D-28, D-46): (1) a halt is
-  # terminal and beats a pause, so a halted run is denied without ever
-  # creating an approval row; (2) an unattributed call (no run/step to
-  # pause) is left to run, mirroring the rail's own no-op discipline --
-  # never create an unconsumable approval row on a seam that cannot be
-  # resumed; (3) otherwise build atom-keyed attrs that always carry
-  # `:tool_name` (`Approval.changeset/2` requires it and
-  # `mark_waiting_for_approval/3` uses `repo.insert!`, so mixed
-  # atom/string keys would raise in `cast/3`) plus `blocker_kind:
-  # "confluence"`, reuse the EXISTING `Workflows.mark_waiting_for_approval/3`
-  # (no bespoke `Approval` insert, no new lifecycle function -- that
-  # single call yields all twelve GATE-03 artifacts for free), then
-  # signal the runtime with an `exit`, never a `raise` (D-20): a raise is
-  # defeated by the common `try/rescue _ ->` adopter pattern; an
-  # `exit({:shutdown, term})` from a `Task.Supervisor.async_nolink` task
-  # is defeated only by the rare `catch :exit`.
-  defp escalate(tool_module, context, evidence) do
-    run_id = Map.get(context, :run_id)
-    step_id = Map.get(context, :step_id)
-
+  # D-18/D-22 attribution + D-21 containment resolution, evaluated in order
+  # BEFORE the escalation body proper: (1) unattributed (no run/step to
+  # pause) resolves the `unattributed` configuration key -- shipped
+  # default `:allow` -- rather than deny-by-default, because Scoria's own
+  # reference handler (`test/scoria/workflows/runtime_span_test.exs`,
+  # fixed alongside this plan) does not forward the keys the gate depends
+  # on, and denying would refuse every tool call from the canonical
+  # copy-paste example (D-22); (2) a halt is terminal and beats
+  # EVERYTHING (D-24, checked here verbatim mirroring the pre-existing
+  # order -- a halted run is denied without ever creating an approval row,
+  # and this check does NOT depend on containment: `Run.halted?/1` never
+  # signals `exit`, so it carries none of the risk containment guards
+  # against); (3) uncontained (no proof this process is inside a Task
+  # lineage `Workflows.Runtime.execute_handler/6` -- or an equivalent host
+  # wrapper -- can catch the `exit` below from) is left to run, exactly
+  # mirroring the unattributed default, because exiting a process the gate
+  # cannot prove is safely caught would crash an arbitrary caller (D-21);
+  # unattributed and uncontained both emit the skipped telemetry event
+  # mirroring the shipped rail-skipped idiom and NEVER create an approval
+  # row -- a pending approval nobody can consume is decorative; (4)
+  # otherwise the escalation body proper runs (D-19, D-23, D-28, D-46):
+  # build atom-keyed attrs that always carry `:tool_name`
+  # (`Approval.changeset/2` requires it and `mark_waiting_for_approval/3`
+  # uses `repo.insert!`, so mixed atom/string keys would raise in
+  # `cast/3`) plus `blocker_kind: "confluence"` plus `args_fingerprint`
+  # (so a LATER approval of this row is consumable by
+  # `consume_call_scope/3` above), reuse the EXISTING
+  # `Workflows.mark_waiting_for_approval/3` (no bespoke `Approval` insert,
+  # no new lifecycle function -- that single call yields all twelve
+  # GATE-03 artifacts for free), then signal the runtime with an `exit`,
+  # never a `raise` (D-20): a raise is defeated by the common
+  # `try/rescue _ ->` adopter pattern; an `exit({:shutdown, term})` from a
+  # `Task.Supervisor.async_nolink` task is defeated only by the rare
+  # `catch :exit`.
+  defp resolve_escalation(tool_module, _args, context, evidence, run_id, step_id) do
     cond do
       is_nil(run_id) or is_nil(step_id) ->
-        {:continue, context}
+        emit_confluence_skipped(context, tool_module, :unattributed)
+        apply_unattributed_disposition(tool_module, context, evidence)
 
       Run.halted?(Workflows.get_run!(run_id)) ->
+        emit_confluence_observed(context, tool_module, evidence, "block", nil)
         {:error, confluence_halted_envelope(tool_module, run_id, step_id)}
+
+      not confluence_contained?() ->
+        emit_confluence_skipped(context, tool_module, :uncontained)
+        emit_confluence_observed(context, tool_module, evidence, "allow", nil)
+        {:continue, context}
 
       true ->
         attrs = %{
           tool_name: tool_module.name(),
           blocker_kind: "confluence",
-          reason: "confluence gate: #{evidence.combination}"
+          reason: "confluence gate: #{evidence.combination}",
+          args_fingerprint: Map.get(context, :args_fingerprint)
         }
+
+        emit_confluence_observed(context, tool_module, evidence, "escalate", nil)
 
         {:ok, _approval} = Workflows.mark_waiting_for_approval(run_id, step_id, attrs)
 
         exit({:shutdown, {:scoria_confluence_escalation, attrs}})
+    end
+  end
+
+  # D-22: `unattributed` defaults to `:allow`. Anything else a host
+  # configures cannot literally be honored as a PAUSE (there is no
+  # run/step to pause), so it is honored as a DENIAL instead -- never an
+  # approval row (there is nothing resumable to attach one to).
+  defp apply_unattributed_disposition(tool_module, context, evidence) do
+    config = Confluence.resolve_config(context)
+    disposition = Map.get(config, :unattributed, :allow) |> to_string()
+
+    case disposition do
+      "allow" ->
+        emit_confluence_observed(context, tool_module, evidence, "allow", nil)
+        {:continue, context}
+
+      _other ->
+        emit_confluence_observed(
+          context,
+          tool_module,
+          evidence,
+          "block",
+          Confluence.normalize_reason_code(:unknown)
+        )
+
+        {:error, confluence_unattributed_envelope(tool_module, context)}
     end
   end
 
@@ -423,11 +683,146 @@ defmodule Scoria.MCP.Executor do
     }
   end
 
-  defp execute_live(tool_module, args, context, timeout) do
+  defp confluence_unattributed_envelope(tool_module, context) do
+    %{
+      status: :confluence_denied,
+      reason_code: "unattributed",
+      tool_ref: inspect(tool_module),
+      trace_id: Map.get(context, :trace_id)
+    }
+  end
 
+  # D-21: proves this process is running inside a Task lineage
+  # `Workflows.Runtime.execute_handler/6` (or an equivalent host wrapper)
+  # can safely catch the `exit({:shutdown, ...})` escalation signal from,
+  # rather than directly in an arbitrary caller process (a LiveView, a
+  # Phoenix controller, a bare GenServer) the gate has no business
+  # exiting -- there is genuinely no channel from `Workflows.Runtime` into
+  # the executor's `context` to carry an explicit flag instead
+  # (`decorate_run_with_trace_context/4` writes onto an ephemeral run copy
+  # the host handler must hand-forward, which cannot be guaranteed).
+  #
+  # `self()` is checked FIRST via `@confluence_containment_key`, an
+  # explicit Scoria-owned marker this function caches once containment is
+  # proven, so a synchronous nested `Executor.execute/4` call in the SAME
+  # process is an O(1) hit. `Process.get(:"$callers", [])` is checked
+  # SECOND, over every pid it names: `Task.async/1`, `Task.Supervisor.async(_nolink)/2,3`,
+  # and `Task.async_stream/3` (itself `Task.Supervisor`-backed) all
+  # propagate `:"$callers"` to the spawned process automatically and
+  # TRANSITIVELY (a doubly-nested `Task.async` chains the full ancestor
+  # lineage back to the very first non-Task process), so a non-emptiness
+  # check on self()'s OWN `$callers` already covers arbitrary nesting
+  # depth of both idioms with zero additional Scoria-side wiring --
+  # exactly the "no channel exists" finding above. Each named pid is ALSO
+  # checked for the explicit marker directly, in case a host process was
+  # marked without itself being Task-spawned. A raw `spawn/1` propagates
+  # NEITHER the process dictionary NOR `$callers` -- the honest,
+  # telemetried residual; never papered over.
+  @confluence_containment_key :scoria_confluence_contained
+
+  defp confluence_contained? do
+    contained =
+      Process.get(@confluence_containment_key, false) == true or
+        Process.get(:"$callers", []) != [] or
+        Enum.any?(Process.get(:"$callers", []), &confluence_ancestor_marked?/1)
+
+    if contained, do: Process.put(@confluence_containment_key, true)
+    contained
+  end
+
+  defp confluence_ancestor_marked?(pid) do
+    case Process.info(pid, :dictionary) do
+      {:dictionary, dict} -> Keyword.get(dict, @confluence_containment_key, false) == true
+      _other -> false
+    end
+  end
+
+  # Mirrors the shipped `[:scoria, :run, :rail, :skipped]` idiom
+  # (`emit_rail_skipped_event/3` above) exactly -- same naming shape, same
+  # metadata discipline, wrapped so a raising host handler cannot break
+  # the tool call.
+  defp emit_confluence_skipped(context, tool_module, reason) do
+    try do
+      :telemetry.execute(
+        [:scoria, :gate, :confluence, :skipped],
+        %{},
+        %{
+          reason: reason,
+          tool_ref: inspect(tool_module),
+          site: :mcp_executor,
+          tenant_id: Map.get(context, :tenant_id),
+          session_id: Map.get(context, :session_id),
+          trace_id: Map.get(context, :trace_id),
+          run_id: Map.get(context, :run_id),
+          step_id: Map.get(context, :step_id)
+        }
+      )
+    rescue
+      _ -> :ok
+    end
+  end
+
+  # D-36: exactly ONE event per confluence evaluation, on ALL THREE
+  # dispositions (allow/escalate/block), `decision` carried as a metadata
+  # TAG rather than as separate per-decision events -- an ungated-only
+  # event has no denominator, which is exactly how truncated dry-run
+  # signals have historically failed operators. Measurements are an empty
+  # map, copying the shipped unclassified-classification event's shape.
+  # The span-bound half (`combination`/`decision`/`grade`/`reason_code`/
+  # `approval_ref`) is projected through `Semconv.confluence_attributes/1`
+  # so no unregistered field can ride along; `run_id`/`step_id`/`trace_id`
+  # ride as CORRELATION identifiers only and must never be used as metric
+  # dimensions. Wrapped so a raising host handler cannot break the tool
+  # call -- the deliberate asymmetry from plan 06's accumulator write,
+  # where a write failure must NOT be silently swallowed.
+  #
+  # Operator guidance (D-36): the adopter-facing number must be
+  # would-have-paused counts segmented by `grade`, never a raw firing
+  # count -- in observe posture the trifecta fires on effectively all
+  # legacy traffic, and a 100%-by-construction number is the one that
+  # makes operators stop looking. Phase 58 owns rendering it; this event's
+  # shape is what makes that segmentation possible.
+  defp emit_confluence_observed(context, tool_module, evidence, decision, reason_code_override) do
+    try do
+      span_attrs =
+        %{
+          combination: evidence && evidence.combination,
+          decision: decision,
+          grade: evidence && evidence.grade,
+          reason_code: reason_code_override || (evidence && evidence.reason_code),
+          approval_ref: nil
+        }
+        |> Semconv.confluence_attributes()
+
+      metadata =
+        Map.merge(span_attrs, %{
+          action_class: evidence && evidence.action_class,
+          private_data_source: evidence && evidence.private_data_source,
+          untrusted_content_source: evidence && evidence.untrusted_content_source,
+          exfil_source: evidence && evidence.exfil_source,
+          tool_ref: inspect(tool_module),
+          site: :mcp_executor,
+          run_id: Map.get(context, :run_id),
+          step_id: Map.get(context, :step_id),
+          trace_id: Map.get(context, :trace_id)
+        })
+
+      :telemetry.execute([:scoria, :gate, :confluence, :observed], %{}, metadata)
+    rescue
+      _ -> :ok
+    end
+  end
+
+  defp execute_live(tool_module, args, context, timeout) do
     with {:ok, access_context} <- maybe_capture_sensitive_mcp_access(tool_module, args, context),
          {:ok, reservation_context} <- reserve_budget(tool_module, args, access_context),
-         {:ok, execution_context} <- ensure_policy_sensitive_invocation(tool_module, args, access_context, reservation_context) do
+         {:ok, execution_context} <-
+           ensure_policy_sensitive_invocation(
+             tool_module,
+             args,
+             access_context,
+             reservation_context
+           ) do
       metadata =
         access_context
         |> Map.merge(%{tool: tool_module, args: args})
@@ -477,19 +872,31 @@ defmodule Scoria.MCP.Executor do
         {:error, {:execution_failed, duration, reason}} ->
           reconcile_budget(execution_context, access_context, %{}, "execution_failed")
           emit_sre_telemetry(tool_module, access_context, "execution_failed", duration, %{})
-          :telemetry.execute([:scoria, :tool, :failed], %{duration: duration}, Map.put(metadata, :reason, reason))
+
+          :telemetry.execute(
+            [:scoria, :tool, :failed],
+            %{duration: duration},
+            Map.put(metadata, :reason, reason)
+          )
+
           {:error, :execution_failed}
 
         {:error, %{status: :breaker_open} = envelope} ->
           reconcile_budget(execution_context, access_context, %{}, "breaker_open")
           emit_breaker_open_telemetry(tool_module, access_context, envelope)
-          :telemetry.execute([:scoria, :tool, :failed], %{duration: 0}, Map.put(metadata, :reason, :breaker_open))
+
+          :telemetry.execute(
+            [:scoria, :tool, :failed],
+            %{duration: 0},
+            Map.put(metadata, :reason, :breaker_open)
+          )
+
           {:error, envelope}
       end
     else
-        {:error, envelope} ->
-          emit_access_denied_telemetry(tool_module, context, envelope)
-          {:error, envelope}
+      {:error, envelope} ->
+        emit_access_denied_telemetry(tool_module, context, envelope)
+        {:error, envelope}
     end
   end
 
@@ -501,7 +908,13 @@ defmodule Scoria.MCP.Executor do
         approval_context = Map.get(context, :approval_context, %{})
         override_context = Map.get(context, :override_context, run.replay_overrides || %{})
 
-        case ReplayDisposition.resolve(run, seam, source_evidence, approval_context, override_context) do
+        case ReplayDisposition.resolve(
+               run,
+               seam,
+               source_evidence,
+               approval_context,
+               override_context
+             ) do
           {:historical_stub, evidence} ->
             record_replay_audit(context, tool_module, evidence, "tool.replay.stubbed")
 
@@ -559,7 +972,9 @@ defmodule Scoria.MCP.Executor do
 
   defp load_replay_run(context) do
     case Map.get(context, :run) do
-      %Run{} = run -> run
+      %Run{} = run ->
+        run
+
       _ ->
         try do
           case Map.get(context, :run_id) do
@@ -579,7 +994,8 @@ defmodule Scoria.MCP.Executor do
       tool_id: Map.get(context, :tool_id, inspect(tool_module)),
       action_class: Map.get(context, :action_class, "write"),
       risk_level: Map.get(context, :risk_level, "high"),
-      approval_sensitive: Map.get(context, :approval_sensitive, Map.get(context, :policy_sensitive, false)),
+      approval_sensitive:
+        Map.get(context, :approval_sensitive, Map.get(context, :policy_sensitive, false)),
       args_fingerprint: Map.get(context, :args_fingerprint),
       subject_ref: Map.get(context, :subject_ref),
       required_scopes: Map.get(context, :required_scopes, []),
@@ -622,10 +1038,16 @@ defmodule Scoria.MCP.Executor do
   # `{:error, _}` passes through untouched under both flag states.
   defp finalize_tool_result({:ok, value}, tool_module, context, verdict, scan_slot) do
     persist_taint(context, tool_module, verdict)
-    {:ok, maybe_wrap_envelope(value, tool_module, context, tier: verdict && verdict.tier, scan: scan_slot)}
+
+    {:ok,
+     maybe_wrap_envelope(value, tool_module, context,
+       tier: verdict && verdict.tier,
+       scan: scan_slot
+     )}
   end
 
-  defp finalize_tool_result({:error, _} = error, _tool_module, _context, _verdict, _scan_slot), do: error
+  defp finalize_tool_result({:error, _} = error, _tool_module, _context, _verdict, _scan_slot),
+    do: error
 
   # Defensive fallback: `Scoria.MCP.Tool.execute/2`'s callback contract is
   # `{:ok, any()} | {:error, any()}`, but a misbehaving tool returning
@@ -662,7 +1084,12 @@ defmodule Scoria.MCP.Executor do
   # path's default (`Trust.tier/1`) is a completely separate code path and
   # is NOT touched by this fix.
   defp scan_tool_output({:ok, value}, context) do
-    scanner = Map.get(context, :content_scanner, Application.get_env(:scoria, :content_scanner, Scanner.NoOp))
+    scanner =
+      Map.get(
+        context,
+        :content_scanner,
+        Application.get_env(:scoria, :content_scanner, Scanner.NoOp)
+      )
 
     scan_context = Map.put(context, :content_scanner, scanner)
 
@@ -675,14 +1102,22 @@ defmodule Scoria.MCP.Executor do
 
     {:ok, verdict} = Trust.scan(value, scan_context)
 
+    # Plan 57-05 reconciliation: `scanner_tier` now rides `Semconv.trust_attributes/1`'s
+    # closed five-key projector (`:scanner_tier` registered phase 57 plan
+    # 05) rather than the hand-injected `Map.put("scoria.trust.scanner_tier",
+    # ...)` plan 57-03 used as a stopgap because `lib/scoria/observe/semconv.ex`
+    # was outside that plan's file scope. Fixes the SEC-01 closed-registry
+    # hole 57-03 flagged: an unregistered key emitted at runtime that the
+    # registry canary (which only pins the registry literal) could not
+    # catch.
     trust_attrs =
       %{
         tier: verdict.tier,
         scanner: verdict.scanner && inspect(verdict.scanner),
-        reason_code: verdict.reason_code
+        reason_code: verdict.reason_code,
+        scanner_tier: verdict.scanner_tier
       }
       |> Semconv.trust_attributes()
-      |> put_scanner_tier_attr(verdict.scanner_tier)
 
     scan_slot = if scanner == Scanner.NoOp, do: nil, else: verdict
 
@@ -690,19 +1125,6 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp scan_tool_output(_other, _context), do: {%{}, nil, nil}
-
-  # `Semconv.trust_attributes/1` is a closed four-key projector (D-21) that
-  # deliberately does not know about `scanner_tier` (a Phase 57 addition,
-  # `lib/scoria/observe/semconv.ex` is out of this plan's file scope). This
-  # value is threaded through by hand as a STRING (never a bare atom -- see
-  # the reason_code caveat at `persist_taint_to_step/4` below) so plan 05's
-  # confluence gate can grade on evidence quality via the same
-  # `[:scoria, :tool, :completed]` telemetry event trust_attrs already rides.
-  defp put_scanner_tier_attr(trust_attrs, nil), do: trust_attrs
-
-  defp put_scanner_tier_attr(trust_attrs, scanner_tier) when is_binary(scanner_tier) do
-    Map.put(trust_attrs, "scoria.trust.scanner_tier", scanner_tier)
-  end
 
   # Plan 56-02: projects the resolved `%Classification{}` already carried on
   # `context` (put there by `resolve_classification/2`) through
@@ -809,7 +1231,9 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp maybe_put_scanner_tier(taint, nil), do: taint
-  defp maybe_put_scanner_tier(taint, scanner_tier) when is_binary(scanner_tier), do: Map.put(taint, "scanner_tier", scanner_tier)
+
+  defp maybe_put_scanner_tier(taint, scanner_tier) when is_binary(scanner_tier),
+    do: Map.put(taint, "scanner_tier", scanner_tier)
 
   # Persists every resolved classification (declared, host-tightened, or
   # unclassified-default) onto the step's `result_envelope` jsonb, mirroring
@@ -905,14 +1329,20 @@ defmodule Scoria.MCP.Executor do
 
     start_time = System.monotonic_time()
 
-    task = Task.Supervisor.async_nolink(Scoria.MCP.TaskSupervisor, fn ->
-      tool_module.execute(args, context)
-    end)
+    task =
+      Task.Supervisor.async_nolink(Scoria.MCP.TaskSupervisor, fn ->
+        tool_module.execute(args, context)
+      end)
 
     case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
-      {:ok, result} -> {:ok, {:completed, result, System.monotonic_time() - start_time}}
-      nil -> {:error, {:timeout, System.monotonic_time() - start_time}}
-      {:exit, reason} -> {:error, {:execution_failed, System.monotonic_time() - start_time, reason}}
+      {:ok, result} ->
+        {:ok, {:completed, result, System.monotonic_time() - start_time}}
+
+      nil ->
+        {:error, {:timeout, System.monotonic_time() - start_time}}
+
+      {:exit, reason} ->
+        {:error, {:execution_failed, System.monotonic_time() - start_time, reason}}
     end
   end
 
@@ -943,7 +1373,9 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp reconcile_budget(nil, _context, _result, _outcome), do: :ok
-  defp reconcile_budget(%{audit_outbox_event: _audit_outbox_event}, _context, _result, _outcome), do: :ok
+
+  defp reconcile_budget(%{audit_outbox_event: _audit_outbox_event}, _context, _result, _outcome),
+    do: :ok
 
   defp reconcile_budget(%{reservation: reservation}, _context, _result, "breaker_open") do
     BudgetEngine.reconcile_breaker_open(reservation)
@@ -957,8 +1389,12 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp attach_budget_metadata(metadata, nil), do: metadata
-  defp attach_budget_metadata(metadata, %{audit_outbox_event: audit_outbox_event}), do: Map.put(metadata, :audit_outbox_event_id, audit_outbox_event.id)
-  defp attach_budget_metadata(metadata, %{reservation: reservation}), do: Map.put(metadata, :budget_reservation_id, reservation.id)
+
+  defp attach_budget_metadata(metadata, %{audit_outbox_event: audit_outbox_event}),
+    do: Map.put(metadata, :audit_outbox_event_id, audit_outbox_event.id)
+
+  defp attach_budget_metadata(metadata, %{reservation: reservation}),
+    do: Map.put(metadata, :budget_reservation_id, reservation.id)
 
   # Site 3 (D-05, plan 56-03): the SAME shared declared-only sensitivity
   # predicate used by site 2 (`policy_sensitive_invocation?/1`) is the
@@ -999,7 +1435,8 @@ defmodule Scoria.MCP.Executor do
   # billing runs on the raw result before `finalize_tool_result/3` wraps it.
   # This is an internal function, not a published API.
   @doc false
-  def actual_units(_context, _result, outcome) when outcome in ["timeout", "execution_failed"], do: 0
+  def actual_units(_context, _result, outcome) when outcome in ["timeout", "execution_failed"],
+    do: 0
 
   def actual_units(context, {:ok, result}, outcome), do: actual_units(context, result, outcome)
 
@@ -1012,11 +1449,20 @@ defmodule Scoria.MCP.Executor do
 
   def actual_units(context, result, _outcome) do
     cond do
-      is_map(result) && Map.has_key?(result, :actual_units) -> Map.fetch!(result, :actual_units)
-      is_map(result) && Map.has_key?(result, "actual_units") -> Map.fetch!(result, "actual_units")
-      is_map(result) && Map.has_key?(result, :actual_cost_usd) -> Map.fetch!(result, :actual_cost_usd)
-      is_map(result) && Map.has_key?(result, "actual_cost_usd") -> Map.fetch!(result, "actual_cost_usd")
-      true -> estimated_units(context)
+      is_map(result) && Map.has_key?(result, :actual_units) ->
+        Map.fetch!(result, :actual_units)
+
+      is_map(result) && Map.has_key?(result, "actual_units") ->
+        Map.fetch!(result, "actual_units")
+
+      is_map(result) && Map.has_key?(result, :actual_cost_usd) ->
+        Map.fetch!(result, :actual_cost_usd)
+
+      is_map(result) && Map.has_key?(result, "actual_cost_usd") ->
+        Map.fetch!(result, "actual_cost_usd")
+
+      true ->
+        estimated_units(context)
     end
   end
 
@@ -1066,7 +1512,9 @@ defmodule Scoria.MCP.Executor do
 
   defp ensure_policy_sensitive_invocation(tool_module, args, context, nil) do
     if policy_sensitive_invocation?(context) do
-      case SRE.create_audit_outbox_event(policy_sensitive_audit_envelope(tool_module, args, context)) do
+      case SRE.create_audit_outbox_event(
+             policy_sensitive_audit_envelope(tool_module, args, context)
+           ) do
         {:ok, audit_outbox_event} -> {:ok, %{audit_outbox_event: audit_outbox_event}}
         {:error, value} -> {:error, value}
       end
@@ -1194,6 +1642,7 @@ defmodule Scoria.MCP.Executor do
     runtime = runtime_context(context)
 
     context
+    |> maybe_alias_run_id()
     |> maybe_put_runtime_field(:provider, Map.get(runtime, :provider))
     |> maybe_put_runtime_field(:model, Map.get(runtime, :model))
     |> maybe_put_runtime_field(:policy_key, Map.get(runtime, :policy_key))
@@ -1206,6 +1655,20 @@ defmodule Scoria.MCP.Executor do
     |> Map.put(:identity, Scoria.Identity.to_map(identity))
   end
 
+  # D-22: `:workflow_run_id` is an alias for `:run_id` -- Scoria's own
+  # reference handler (`test/scoria/workflows/runtime_span_test.exs`)
+  # forwards `workflow_run_id:`, not `run_id:`, into the executor context,
+  # so the confluence gate's attribution check (which reads `:run_id`)
+  # must recognize both. `:run_id` (if already present) always wins --
+  # this is additive, never destructive.
+  defp maybe_alias_run_id(%{run_id: _} = context), do: context
+
+  defp maybe_alias_run_id(%{workflow_run_id: workflow_run_id} = context)
+       when not is_nil(workflow_run_id),
+       do: Map.put(context, :run_id, workflow_run_id)
+
+  defp maybe_alias_run_id(context), do: context
+
   defp context_identity(context) do
     context
     |> Map.get(:identity, %{})
@@ -1213,7 +1676,9 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp tool_name(tool_module) do
-    if function_exported?(tool_module, :name, 0), do: tool_module.name(), else: inspect(tool_module)
+    if function_exported?(tool_module, :name, 0),
+      do: tool_module.name(),
+      else: inspect(tool_module)
   end
 
   defp maybe_emit_budget(attrs, context, outcome, result) do
@@ -1233,8 +1698,9 @@ defmodule Scoria.MCP.Executor do
     end
   end
 
-  defp numeric_ratio(actual, estimated) when is_number(actual) and is_number(estimated) and estimated != 0,
-    do: actual / estimated
+  defp numeric_ratio(actual, estimated)
+       when is_number(actual) and is_number(estimated) and estimated != 0,
+       do: actual / estimated
 
   defp numeric_ratio(_actual, _estimated), do: 0
 

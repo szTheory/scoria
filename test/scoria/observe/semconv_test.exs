@@ -316,6 +316,7 @@ defmodule Scoria.Observe.SemconvTest do
                "scoria.trust.reason_code",
                "scoria.trust.scanned_count",
                "scoria.trust.scanner",
+               "scoria.trust.scanner_tier",
                "scoria.trust.tier",
                "session_id",
                "status",
@@ -481,7 +482,13 @@ defmodule Scoria.Observe.SemconvTest do
     end
 
     test "a nil field is omitted, never defaulted (structural never-free-text guarantee)" do
-      attrs = Semconv.spotlight_attributes(%{technique: :delimit, marked_spans: 1, marked_bytes: nil, tier: "untrusted"})
+      attrs =
+        Semconv.spotlight_attributes(%{
+          technique: :delimit,
+          marked_spans: 1,
+          marked_bytes: nil,
+          tier: "untrusted"
+        })
 
       refute Map.has_key?(attrs, "scoria.spotlight.marked_bytes")
       assert map_size(attrs) == 3
@@ -489,7 +496,7 @@ defmodule Scoria.Observe.SemconvTest do
   end
 
   describe "trust_attributes/1 fixed-key projection (D-21)" do
-    test "projects onto exactly the four scoria.trust.* keys, all registry keys, no extras, and score is NEVER projected" do
+    test "projects onto exactly the five scoria.trust.* keys, all registry keys, no extras, and score is NEVER projected" do
       registry = Semconv.attribute_registry()
       trust_key_strings = Semconv.trust_keys() |> Keyword.values() |> MapSet.new()
 
@@ -498,13 +505,14 @@ defmodule Scoria.Observe.SemconvTest do
         scanner: "MyApp.PromptGuard",
         reason_code: :prompt_injection,
         scanned_count: 5,
+        scanner_tier: "trusted",
         score: 0.987
       }
 
       attrs = Semconv.trust_attributes(input)
 
       assert MapSet.new(Map.keys(attrs)) |> MapSet.subset?(trust_key_strings)
-      assert map_size(attrs) == 4
+      assert map_size(attrs) == 5
 
       for key <- Map.keys(attrs) do
         assert Map.has_key?(registry, key),
@@ -544,7 +552,9 @@ defmodule Scoria.Observe.SemconvTest do
   describe "classification_attributes/1 fixed-key projection (phase 56, CLASS-02)" do
     test "projects onto exactly the five scoria.classification.* keys, all registry keys, no extras" do
       registry = Semconv.attribute_registry()
-      classification_key_strings = Semconv.classification_keys() |> Keyword.values() |> MapSet.new()
+
+      classification_key_strings =
+        Semconv.classification_keys() |> Keyword.values() |> MapSet.new()
 
       input = %{
         action_class: "admin",
