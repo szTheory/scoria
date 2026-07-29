@@ -34,7 +34,8 @@ defmodule Scoria.Connectors.InvocationTest do
     def name, do: "classified_replay_tool"
 
     @impl true
-    def description, do: "Declares a classification for site-4 connector-invocation seam tests (plan 56-03)"
+    def description,
+      do: "Declares a classification for site-4 connector-invocation seam tests (plan 56-03)"
 
     @impl true
     def input_schema, do: %{}
@@ -49,12 +50,27 @@ defmodule Scoria.Connectors.InvocationTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
-    {:ok, run} = Workflows.create_run(%{root_role_id: "executor", execution_mode: "replay", replay_overrides: %{"live_tool_allowlist" => ["allowed.tool"]}})
-    {:ok, step} = Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        execution_mode: "replay",
+        replay_overrides: %{"live_tool_allowlist" => ["allowed.tool"]}
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "tool",
+        role_id: "executor",
+        status: "queued"
+      })
+
     %{run: Workflows.get_run!(run.id), step: step}
   end
 
-  test "replay read seam with exact evidence returns a historical stub and never executes the tool", %{run: run, step: step} do
+  test "replay read seam with exact evidence returns a historical stub and never executes the tool",
+       %{run: run, step: step} do
     assert {:ok, result} =
              Invocation.invoke(
                ReplayTool,
@@ -94,7 +110,8 @@ defmodule Scoria.Connectors.InvocationTest do
     refute_receive {:tool_executed, _, _}
   end
 
-  test "remote safety hints cannot override local unsafe classification and missing evidence blocks", %{run: run, step: step} do
+  test "remote safety hints cannot override local unsafe classification and missing evidence blocks",
+       %{run: run, step: step} do
     assert {:error, envelope} =
              Invocation.invoke(
                ReplayTool,
@@ -122,7 +139,10 @@ defmodule Scoria.Connectors.InvocationTest do
     refute_receive {:tool_executed, _, _}
   end
 
-  test "approval-sensitive seams require exact effect matches to historical stub", %{run: run, step: step} do
+  test "approval-sensitive seams require exact effect matches to historical stub", %{
+    run: run,
+    step: step
+  } do
     assert {:error, envelope} =
              Invocation.invoke(
                ReplayTool,
@@ -160,7 +180,10 @@ defmodule Scoria.Connectors.InvocationTest do
     assert envelope.replay_reason_code == "missing_source_evidence"
   end
 
-  test "scope escalation and re-auth seams stay blocked in the default lane", %{run: run, step: step} do
+  test "scope escalation and re-auth seams stay blocked in the default lane", %{
+    run: run,
+    step: step
+  } do
     assert {:error, envelope} =
              Invocation.invoke(
                ReplayTool,
@@ -186,7 +209,8 @@ defmodule Scoria.Connectors.InvocationTest do
     refute_receive {:tool_executed, _, _}
   end
 
-  test "allowlisted live tools require current policy and fresh replay approval before executing", %{run: run, step: step} do
+  test "allowlisted live tools require current policy and fresh replay approval before executing",
+       %{run: run, step: step} do
     blocked_context = %{
       run: run,
       run_id: run.id,
@@ -205,12 +229,17 @@ defmodule Scoria.Connectors.InvocationTest do
       approval_context: %{current_policy_ok?: false, replay_approved?: false}
     }
 
-    assert {:error, blocked} = Invocation.invoke(ReplayTool, %{"action" => "live"}, blocked_context)
+    assert {:error, blocked} =
+             Invocation.invoke(ReplayTool, %{"action" => "live"}, blocked_context)
+
     assert blocked.replay_reason_code == "live_override_requires_policy_and_replay_approval"
     refute_receive {:tool_executed, _, _}
 
     live_context =
-      Map.put(blocked_context, :approval_context, %{current_policy_ok?: true, replay_approved?: true})
+      Map.put(blocked_context, :approval_context, %{
+        current_policy_ok?: true,
+        replay_approved?: true
+      })
 
     assert {:ok, live} = Invocation.invoke(ReplayTool, %{"action" => "live"}, live_context)
     assert live.status == :execute_live
@@ -218,7 +247,10 @@ defmodule Scoria.Connectors.InvocationTest do
     assert is_binary(tool_context.replay_idempotency_key)
   end
 
-  test "replay-live retries reuse the same replay_idempotency_key and dedupe audit writes", %{run: run, step: step} do
+  test "replay-live retries reuse the same replay_idempotency_key and dedupe audit writes", %{
+    run: run,
+    step: step
+  } do
     context = %{
       run: run,
       run_id: run.id,
@@ -250,7 +282,12 @@ defmodule Scoria.Connectors.InvocationTest do
     assert first.replay_idempotency_key == second.replay_idempotency_key
     assert first_ctx.replay_idempotency_key == second_ctx.replay_idempotency_key
 
-    assert Repo.aggregate(from(a in AuditOutboxEvent, where: a.trace_id == "replay-live" and a.event_type == "tool.invocation"), :count) == 1
+    assert Repo.aggregate(
+             from(a in AuditOutboxEvent,
+               where: a.trace_id == "replay-live" and a.event_type == "tool.invocation"
+             ),
+             :count
+           ) == 1
   end
 
   describe "Site 4 (D-05, plan 56-03): classification resolved before Invocation's own replay decision" do
@@ -277,7 +314,7 @@ defmodule Scoria.Connectors.InvocationTest do
       %{live_context: live_context}
     end
 
-    test "undeclared tool: exactly one unclassified event fires, and the tool's context carries :tool_classification",
+    test "undeclared tool: an unclassified event fires at each resolution site, and the tool's context carries :tool_classification",
          %{live_context: live_context} do
       parent = self()
       ref = make_ref()
@@ -294,15 +331,37 @@ defmodule Scoria.Connectors.InvocationTest do
 
       on_exit(fn -> :telemetry.detach(handler_id) end)
 
-      assert {:ok, %{status: :execute_live}} = Invocation.invoke(ReplayTool, %{"action" => "live"}, live_context)
+      assert {:ok, %{status: :execute_live}} =
+               Invocation.invoke(ReplayTool, %{"action" => "live"}, live_context)
 
       assert_receive {:tool_executed, _args, tool_context}
-      assert %Classification{source: :unclassified_default} = Map.get(tool_context, :tool_classification)
 
-      assert_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, metadata}
-      assert metadata.site == :connector_invocation
+      assert %Classification{source: :unclassified_default} =
+               Map.get(tool_context, :tool_classification)
 
-      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata2}
+      # Phase 57 plan 05 (D-35): `MCP.Executor.resolve_classification/2`'s
+      # idempotence clause is now gated on `source` -- a pre-resolved
+      # `unclassified_default` classification (exactly what
+      # `resolve_tool_classification/2` above injects) no longer
+      # short-circuits it, so the executor genuinely RE-resolves and emits
+      # its own `[:scoria, :class, :unclassified]` event too. This is the
+      # fix, not a regression: before it, an undeclared tool routed
+      # through the connector silently bypassed
+      # `require_tool_classification` at the executor. One event now
+      # fires per genuine resolution site (`:connector_invocation` here,
+      # `:mcp_executor` from the executor), never a third.
+      assert_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements,
+                      connector_metadata}
+
+      assert connector_metadata.site == :connector_invocation
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements,
+                      executor_metadata}
+
+      assert executor_metadata.site == :mcp_executor
+
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements,
+                      _metadata3}
     end
 
     test "a declaring tool: no unclassified event fires, and the tool's received context carries its declaration",
@@ -332,7 +391,8 @@ defmodule Scoria.Connectors.InvocationTest do
       assert %Classification{source: :tool_declared, action_class: "write", can_exfiltrate: true} =
                Map.get(tool_context, :tool_classification)
 
-      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements, _metadata}
+      refute_receive {:telemetry_event, ^ref, [:scoria, :class, :unclassified], _measurements,
+                      _metadata}
     end
   end
 
