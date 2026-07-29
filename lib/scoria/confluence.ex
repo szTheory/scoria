@@ -39,6 +39,15 @@ defmodule Scoria.Confluence do
   exists to avoid. Do NOT "fix" this back to mirror `ReplayDisposition`'s
   fall-through; that would silently disable the entire gate on the
   fallback path.
+
+  ## Weakest-evidence grading (D-29) and disposition (D-31, D-32)
+
+  `grade/1` grades a classification by the WEAKEST evidence backing its
+  lit legs (`grades/0`'s fixed weakest-first order), and `decide/2` maps
+  a grade plus a resolved configuration map to a disposition. Both are
+  pure functions over their arguments -- the caller is responsible for
+  resolving that configuration and for snapshotting the resolved
+  decision onto persisted evidence.
   """
 
   require Logger
@@ -125,6 +134,102 @@ defmodule Scoria.Confluence do
   def normalize_reason_code(value) when value in @reason_codes, do: value
   def normalize_reason_code(_value), do: :unknown
 
+  # -- weakest-evidence grading (D-29, D-30) -------------------------------
+
+  @grades ~w(unclassified scanner_infra default_tier declared)
+  @grade_rank %{"unclassified" => 0, "scanner_infra" => 1, "default_tier" => 2, "declared" => 3}
+
+  @doc """
+  Returns the four grades in their fixed WEAKEST-FIRST order (D-29).
+  """
+  @spec grades() :: [String.t()]
+  def grades, do: @grades
+
+  @doc """
+  Returns the grade of the WEAKEST evidence backing the LIT legs of
+  `legs` (a map with `:private_data`, `:untrusted_content`, `:exfil`
+  witness entries -- the same shape `classify/1` accepts), first-
+  applicable wins in `grades/0`'s fixed weakest-first order, so exactly
+  one grade is recorded per evaluation and the decision is
+  deterministically replayable (D-29).
+
+  An unrecognized or absent witness `:source` value fails closed to the
+  WEAKEST grade (`"unclassified"`), never the strongest (`"declared"`) --
+  a garbage or foreign source must never be presented to the enforcement
+  ladder as strong evidence (D-30). Returns `nil` when no leg is lit.
+  """
+  @spec grade(map()) :: String.t() | nil
+  def grade(legs) when is_map(legs) do
+    categories =
+      [:private_data, :untrusted_content, :exfil]
+      |> Enum.map(&Map.get(legs, &1))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&Map.get(&1, :source))
+      |> Enum.map(&grade_for_source/1)
+
+    case categories do
+      [] -> nil
+      _ -> Enum.min_by(categories, &Map.fetch!(@grade_rank, &1))
+    end
+  end
+
+  defp grade_for_source(:unclassified), do: "unclassified"
+  defp grade_for_source(:scanner_infra), do: "scanner_infra"
+  defp grade_for_source(:default_tier), do: "default_tier"
+  defp grade_for_source(:declared), do: "declared"
+  # Fail-closed (D-30): a witness carrying an unrecognized or absent
+  # `:source` must never be treated as strong ("declared") evidence --
+  # absence of trustworthy evidence must never be presented to the
+  # enforcement ladder as presence of it.
+  defp grade_for_source(_other), do: "unclassified"
+
+  # -- disposition (D-31, D-32) --------------------------------------------
+
+  @decisions ~w(allow block escalate)
+
+  @doc """
+  Maps `grade` (a member of `grades/0`) plus `config` (a resolved
+  configuration map, as returned by `resolve_config/1`) to one of the
+  three dispositions `"allow"`, `"escalate"` or `"block"` -- reusing
+  `Semconv.guardrail_decisions/0`'s three values verbatim as the
+  vocabulary WITHOUT calling into `Semconv` (D-03 forbids the edge; the
+  three strings are hand-written here). `"warn"` is rejected -- Scoria has
+  no caller-warning channel at the executor return; telemetry is the
+  warning.
+
+  `config[:enforcement] == :observe` is the incident kill switch: every
+  grade resolves to `"allow"` regardless of its own configured value or
+  `:strict`. Otherwise the `"declared"` grade always consults
+  `config[:declared]` (shipped `:escalate`, D-31). For the three weak
+  grades, `config[:strict] == true` forces `"escalate"` unconditionally
+  (SC#4's opt-in extending enforcement to the ungated grades); otherwise
+  each weak grade consults its own configured value (shipped `:allow`).
+  """
+  @spec decide(String.t(), map()) :: String.t()
+  def decide(grade, config) when grade in @grades and is_map(config) do
+    cond do
+      Map.get(config, :enforcement) == :observe ->
+        "allow"
+
+      grade == "declared" ->
+        normalize_decision(Map.get(config, :declared, :escalate))
+
+      Map.get(config, :strict) == true ->
+        "escalate"
+
+      true ->
+        normalize_decision(Map.get(config, grade_config_key(grade), :allow))
+    end
+  end
+
+  defp grade_config_key("unclassified"), do: :unclassified
+  defp grade_config_key("scanner_infra"), do: :scanner_infra
+  defp grade_config_key("default_tier"), do: :default_tier
+
+  defp normalize_decision(value) when value in [:allow, :block, :escalate], do: Atom.to_string(value)
+  defp normalize_decision(value) when value in @decisions, do: value
+  defp normalize_decision(_other), do: "allow"
+
   # -- classify/1 -----------------------------------------------------------
 
   @doc """
@@ -204,11 +309,15 @@ defmodule Scoria.Confluence do
   defp lit?(_), do: false
 
   defp build_evidence(combination, input, private_data, untrusted_content, exfil, opts \\ []) do
+    computed_grade = grade(%{private_data: private_data, untrusted_content: untrusted_content, exfil: exfil})
+
     %Evidence{
       combination: combination,
-      grade: weakest_grade(private_data, untrusted_content, exfil),
+      grade: computed_grade,
       decision: Keyword.get(opts, :decision),
-      reason_code: Keyword.get(opts, :reason_code),
+      reason_code:
+        Keyword.get(opts, :reason_code) ||
+          leg_reason_code(computed_grade, private_data, untrusted_content, exfil),
       private_data_source: witness_source(private_data),
       untrusted_content_source: witness_source(untrusted_content),
       exfil_source: witness_source(exfil),
@@ -223,25 +332,23 @@ defmodule Scoria.Confluence do
   defp witness_source(nil), do: nil
   defp witness_source(%{} = witness), do: Map.get(witness, :source)
 
-  # Weakest-evidence-wins grading, ranked weakest-first: any lit leg
-  # witnessed by a weaker source grades the WHOLE disposition at that
-  # weaker grade, regardless of how strong the other legs are -- a
-  # boolean or flat mode enum cannot express this. Promoted to the public
-  # `grades/0`/`grade/1` pair in Task 2, which also corrects an
-  # unrecognized-source fail-closed default this private helper does not
-  # yet have.
-  defp weakest_grade(private_data, untrusted_content, exfil) do
-    sources =
-      [private_data, untrusted_content, exfil]
-      |> Enum.reject(&is_nil/1)
-      |> Enum.map(&Map.get(&1, :source))
+  # Surfaces the culprit leg's own `:reason_code` onto the evidence when
+  # that leg's `:source` is the very category that determined the overall
+  # grade -- e.g. an untrusted-content leg carrying
+  # `%{source: :scanner_infra, reason_code: :scanner_malformed}` surfaces
+  # `:scanner_malformed` on the evidence exactly when `"scanner_infra"` is
+  # the resolved grade (D-30's cascade four). Never picks a reason code
+  # from a leg that did NOT contribute the winning grade.
+  defp leg_reason_code(nil, _private_data, _untrusted_content, _exfil), do: nil
 
-    cond do
-      :unclassified in sources -> "unclassified"
-      :scanner_infra in sources -> "scanner_infra"
-      :default_tier in sources -> "default_tier"
-      sources != [] -> "declared"
-      true -> nil
+  defp leg_reason_code(computed_grade, private_data, untrusted_content, exfil) do
+    [private_data, untrusted_content, exfil]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.filter(fn witness -> grade_for_source(Map.get(witness, :source)) == computed_grade end)
+    |> Enum.find_value(fn witness -> Map.get(witness, :reason_code) end)
+    |> case do
+      nil -> nil
+      code -> normalize_reason_code(code)
     end
   end
 

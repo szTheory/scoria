@@ -207,6 +207,160 @@ defmodule Scoria.ConfluenceTest do
     end
   end
 
+  describe "grades/0 and grade/1 -- weakest-evidence grading ladder (D-29)" do
+    @tag :grading
+    test "grades/0 returns the four grades in fixed weakest-first order" do
+      assert Confluence.grades() == ["unclassified", "scanner_infra", "default_tier", "declared"]
+    end
+
+    @tag :grading
+    test "a combination whose lit legs are all backed by an explicit tool declaration grades \"declared\"" do
+      input = %{
+        private_data: %{source: :declared},
+        untrusted_content: %{source: :declared},
+        exfil: %{source: :declared}
+      }
+
+      assert {"exfiltration_path", %Evidence{grade: "declared"}} = Confluence.classify(input)
+    end
+
+    @tag :grading
+    test "a lit leg sourced from an unclassified-default classification grades \"unclassified\" even when the other two legs are declared" do
+      input = %{
+        private_data: %{source: :unclassified, reason_code: :unclassified_default},
+        untrusted_content: %{source: :declared},
+        exfil: %{source: :declared}
+      }
+
+      assert {"exfiltration_path", %Evidence{grade: "unclassified", reason_code: :unclassified_default}} =
+               Confluence.classify(input)
+    end
+
+    @tag :grading
+    test "an untrusted-content leg from a scanner-infra-failure witness grades \"scanner_infra\", unless a weaker unclassified leg is also present" do
+      input = %{
+        private_data: %{source: :declared},
+        untrusted_content: %{source: :scanner_infra, reason_code: :scanner_error},
+        exfil: %{source: :declared}
+      }
+
+      assert {"exfiltration_path", %Evidence{grade: "scanner_infra"}} = Confluence.classify(input)
+
+      input_with_weaker_leg = %{
+        input
+        | private_data: %{source: :unclassified, reason_code: :unclassified_default}
+      }
+
+      assert {"exfiltration_path", %Evidence{grade: "unclassified"}} =
+               Confluence.classify(input_with_weaker_leg)
+    end
+
+    @tag :grading
+    test "an untrusted-content leg from the shipped default tier with no scanner installed grades \"default_tier\"" do
+      input = %{
+        private_data: %{source: :declared},
+        untrusted_content: %{source: :default_tier},
+        exfil: %{source: :declared}
+      }
+
+      assert {"exfiltration_path", %Evidence{grade: "default_tier"}} = Confluence.classify(input)
+    end
+
+    @tag :grading
+    test "exactly one grade is recorded, chosen by first-applicable in the fixed weakest-first order" do
+      input = %{
+        private_data: %{source: :unclassified},
+        untrusted_content: %{source: :scanner_infra},
+        exfil: %{source: :declared}
+      }
+
+      assert {"exfiltration_path", %Evidence{grade: "unclassified"}} = Confluence.classify(input)
+    end
+
+    @tag :grading
+    test "a malformed scanner tier that resolved through the junk-value fallback grades \"scanner_infra\" with reason code :scanner_malformed, never \"declared\" (D-30)" do
+      input = %{
+        private_data: %{source: :declared},
+        untrusted_content: %{source: :scanner_infra, reason_code: :scanner_malformed},
+        exfil: %{source: :declared}
+      }
+
+      assert {"exfiltration_path", %Evidence{grade: "scanner_infra", reason_code: :scanner_malformed}} =
+               Confluence.classify(input)
+    end
+
+    @tag :grading
+    test "an unrecognized leg witness source fails closed to the weakest grade rather than \"declared\" (D-30)" do
+      legs = %{
+        private_data: %{source: :something_bogus},
+        untrusted_content: nil,
+        exfil: nil
+      }
+
+      assert Confluence.grade(legs) == "unclassified"
+    end
+
+    @tag :grading
+    test "grade/1 returns nil when no leg is lit" do
+      assert Confluence.grade(%{private_data: nil, untrusted_content: nil, exfil: nil}) == nil
+    end
+  end
+
+  describe "decide/2 -- grade + resolved config -> disposition (GATE-04)" do
+    @shipped_defaults %{
+      enforcement: :enforce,
+      declared: :escalate,
+      unclassified: :allow,
+      scanner_infra: :allow,
+      default_tier: :allow,
+      strict: false,
+      unattributed: :allow
+    }
+
+    test "the declared grade resolves to escalate under shipped defaults" do
+      assert Confluence.decide("declared", @shipped_defaults) == "escalate"
+    end
+
+    test "the three weak grades resolve to allow under shipped defaults" do
+      assert Confluence.decide("unclassified", @shipped_defaults) == "allow"
+      assert Confluence.decide("scanner_infra", @shipped_defaults) == "allow"
+      assert Confluence.decide("default_tier", @shipped_defaults) == "allow"
+    end
+
+    test "the three weak grades resolve to escalate when the resolved config has strict: true" do
+      strict_config = %{@shipped_defaults | strict: true}
+
+      assert Confluence.decide("unclassified", strict_config) == "escalate"
+      assert Confluence.decide("scanner_infra", strict_config) == "escalate"
+      assert Confluence.decide("default_tier", strict_config) == "escalate"
+    end
+
+    test "the declared grade still escalates under strict: true" do
+      strict_config = %{@shipped_defaults | strict: true}
+
+      assert Confluence.decide("declared", strict_config) == "escalate"
+    end
+
+    test "enforcement: :observe forces allow regardless of grade or strict (the incident kill switch)" do
+      observe_config = %{@shipped_defaults | enforcement: :observe, strict: true}
+
+      assert Confluence.decide("declared", observe_config) == "allow"
+      assert Confluence.decide("unclassified", observe_config) == "allow"
+    end
+
+    test "a loosened declared config of :allow is honored" do
+      config = %{@shipped_defaults | declared: :allow}
+
+      assert Confluence.decide("declared", config) == "allow"
+    end
+
+    test "a tightened weak-grade config of :block is honored" do
+      config = %{@shipped_defaults | unclassified: :block}
+
+      assert Confluence.decide("unclassified", config) == "block"
+    end
+  end
+
   describe "module hygiene (D-03)" do
     test "the module defines no Scoria-side alias other than its own leaf Evidence struct" do
       {:ok, source} = File.read(Path.join([File.cwd!(), "lib", "scoria", "confluence.ex"]))
@@ -221,7 +375,7 @@ defmodule Scoria.ConfluenceTest do
              "Scoria.Confluence must not alias any Scoria-side module beyond its own Evidence struct (D-03), found: #{inspect(offending)}"
     end
 
-    test "the module compiles without warnings and defines classify/1, combinations/0 and reason_codes/0" do
+    test "the module compiles without warnings and defines classify/1, grade/1 and decide/2" do
       # function_exported?/3 reports false for a module that is merely not loaded
       # yet, and Elixir loads modules lazily. In this async case that races the
       # rest of the suite: under a seed where nothing has called classify/1
@@ -232,6 +386,9 @@ defmodule Scoria.ConfluenceTest do
       assert function_exported?(Confluence, :normalize_combination, 1)
       assert function_exported?(Confluence, :reason_codes, 0)
       assert function_exported?(Confluence, :normalize_reason_code, 1)
+      assert function_exported?(Confluence, :grades, 0)
+      assert function_exported?(Confluence, :grade, 1)
+      assert function_exported?(Confluence, :decide, 2)
     end
   end
 end
