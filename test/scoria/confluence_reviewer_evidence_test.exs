@@ -103,4 +103,50 @@ defmodule Scoria.ConfluenceReviewerEvidenceTest do
       assert {"Combination", "Private data + untrusted content + external egress → exfiltration path"} in rows
     end
   end
+
+  describe "the same real escalation's leg and grade rows (D-40, D-48, GATE-02, Plan 57-11 Task 2)" do
+    test "get_approval_lineage!/1 and list_pending_approvals/1 both render all three leg rows and the evidence grade, non-blank" do
+      run = new_run!()
+      step = new_step!(run, 1)
+
+      context = %{
+        actor_id: "user-1",
+        tenant_id: "tenant-reviewer-evidence-2",
+        run_id: run.id,
+        step_id: step.id,
+        args_fingerprint: "fp-reviewer-evidence-2",
+        test_pid: self()
+      }
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+
+      approval =
+        Repo.get_by!(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
+
+      # Entry point 1: the drawer's own lineage read.
+      lineage_projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      lineage_rows = ApprovalCopy.request_rows(lineage_projection)
+
+      assert {"Combination", "Private data + untrusted content + external egress → exfiltration path"} in lineage_rows
+      assert {"Private data evidence", "Declared by the tool"} in lineage_rows
+      assert {"Untrusted content evidence", "Declared by the tool"} in lineage_rows
+      assert {"External egress evidence", "Declared by the tool"} in lineage_rows
+      assert {"Evidence grade", "Declared"} in lineage_rows
+
+      # Entry point 2: the pending-inbox page read -- both entry points must
+      # agree, not just the lineage path (D-51's batch loader must reach the
+      # list path too).
+      assert [pending_projection] =
+               RemoteApprovalProjection.list_pending_approvals(%{workflow_run_id: run.id})
+
+      pending_rows = ApprovalCopy.request_rows(pending_projection)
+
+      assert lineage_rows == pending_rows
+    end
+  end
 end
