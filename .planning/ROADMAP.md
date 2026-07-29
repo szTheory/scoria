@@ -155,7 +155,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 57-07-PLAN.md — Audit trail on escalate and block, closed metadata projector, replay contract (GATE-03) [wave 6]
+- [x] 57-07-PLAN.md — Audit trail on escalate and block, closed metadata projector, replay contract (GATE-03) [wave 6]
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
