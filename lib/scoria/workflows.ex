@@ -934,6 +934,25 @@ defmodule Scoria.Workflows do
         repo.rollback(:run_not_retryable)
       end
 
+      # D-27: a retry must never strand a pending confluence escalation.
+      # `Scoria.Workflows.Resume.retry_failed_step/2` has NO status check of
+      # its own and targets the run's CURRENT step -- which after an
+      # escalation IS the escalated step -- so calling it would flip the
+      # run to "retrying", ZERO this step's `result_envelope` (destroying
+      # the classification/taint evidence the confluence gate and Phase 58
+      # depend on), leave the approval pending FOREVER (nothing ever
+      # resolves it), and mint a SECOND approval on re-execution. Refusing
+      # here -- mirroring `halt_run/3`'s guard style just above -- is the
+      # only place in the codebase that guards it (56.1 D-22.5 already
+      # forbids routing an escalation through the "retrying" status; this
+      # is the enforcement). Two independent triggers, checked separately
+      # so either alone is sufficient: the step's own status, and a
+      # belt-and-suspenders direct approval lookup in case a future path
+      # ever decouples the two.
+      if step.status == "waiting_for_approval" or pending_confluence_approval?(repo, step) do
+        repo.rollback(:step_not_retryable)
+      end
+
       retried_step =
         step
         |> Step.changeset(%{
@@ -1266,6 +1285,16 @@ defmodule Scoria.Workflows do
       %Step{status: "waiting_for_approval"} -> true
       _other -> false
     end
+  end
+
+  # D-27's belt-and-suspenders check inside `retry_step/1`'s guard.
+  defp pending_confluence_approval?(repo, %Step{id: step_id}) do
+    Approval
+    |> where(
+      [a],
+      a.step_id == ^step_id and a.status == "pending" and a.blocker_kind == "confluence"
+    )
+    |> repo.exists?()
   end
 
   defp approval_decision_context(repo, approval, attrs) do

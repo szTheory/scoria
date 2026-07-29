@@ -858,6 +858,98 @@ defmodule Scoria.WorkflowsTest do
     end
   end
 
+  describe "retry_step/1 refuses a pending confluence escalation (D-27, plan 57-08)" do
+    @describetag :confluence
+
+    defp escalated_run_and_step!(result_envelope \\ %{"prior" => "evidence"}) do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      # A non-empty result_envelope at creation time, mirroring the
+      # classification/taint evidence a real confluence escalation's step
+      # would carry -- gives the "unchanged after refusal" assertions
+      # something concrete to compare against.
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "running",
+          result_envelope: result_envelope
+        })
+
+      {:ok, approval} =
+        Workflows.mark_waiting_for_approval(run.id, step.id, %{
+          tool_name: "publish",
+          blocker_kind: "confluence"
+        })
+
+      {run, Repo.get!(Step, step.id), approval}
+    end
+
+    test "refuses a step whose status is waiting_for_approval, and changes nothing" do
+      {run, step, approval} = escalated_run_and_step!()
+      assert step.status == "waiting_for_approval"
+
+      assert {:error, :step_not_retryable} = Workflows.retry_step(step.id)
+
+      reloaded_step = Repo.get!(Step, step.id)
+      assert reloaded_step.status == "waiting_for_approval"
+      assert reloaded_step.result_envelope == step.result_envelope
+      assert Repo.get!(Approval, approval.id).status == "pending"
+      assert Repo.get!(Run, run.id).status == Workflows.get_run!(run.id).status
+    end
+
+    test "refuses a step with a pending confluence approval even when the step's own status is not waiting_for_approval" do
+      {run, step, approval} = escalated_run_and_step!()
+
+      # Force the step's OWN status away from "waiting_for_approval" while
+      # leaving the approval pending, to prove the belt-and-suspenders
+      # approval lookup is independently sufficient.
+      forced_step =
+        step
+        |> Step.changeset(%{status: "running"})
+        |> Repo.update!()
+
+      run_before = Repo.get!(Run, run.id)
+
+      assert {:error, :step_not_retryable} = Workflows.retry_step(forced_step.id)
+
+      reloaded_step = Repo.get!(Step, forced_step.id)
+      assert reloaded_step.status == "running"
+      assert reloaded_step.result_envelope == step.result_envelope
+      assert Repo.get!(Approval, approval.id).status == "pending"
+      assert Repo.get!(Run, run.id).status == run_before.status
+    end
+
+    test "Scoria.Workflows.Resume.retry_failed_step/2 surfaces the refusal for an escalated current step and does not change the run status" do
+      {run, step, approval} = escalated_run_and_step!()
+      run_before = Repo.get!(Run, run.id)
+      assert run_before.current_step_id == step.id
+
+      assert {:error, :step_not_retryable} = Scoria.Workflows.Resume.retry_failed_step(run.id)
+
+      assert Repo.get!(Run, run.id).status == run_before.status
+      assert Repo.get!(Approval, approval.id).status == "pending"
+      assert Repo.get!(Step, step.id).status == "waiting_for_approval"
+    end
+
+    test "a genuinely failed step with no pending confluence approval still retries exactly as before" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "failed"
+        })
+
+      assert {:ok, retried} = Workflows.retry_step(step.id)
+      assert retried.status == "retrying"
+      assert Repo.get!(Run, run.id).status == "retrying"
+    end
+  end
+
   describe "halt_run/3 (RAIL-01)" do
     test "writes the new terminal \"halted\" status and audits exactly one run.rail.tripped row" do
       {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
