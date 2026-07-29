@@ -133,8 +133,8 @@
 Plans:
 **Wave 1**
 
-- [ ] 57-01-PLAN.md — Tracer: one tainted path pauses end-to-end, plus the consolidated migration (GATE-01, GATE-02) [wave 1]
-- [ ] 57-04-PLAN.md — Semconv confluence attribute group and registry canary (GATE-04) [wave 1]
+- [x] 57-01-PLAN.md — Tracer: one tainted path pauses end-to-end, plus the consolidated migration (GATE-01, GATE-02) [wave 1]
+- [x] 57-04-PLAN.md — Semconv confluence attribute group and registry canary (GATE-04) [wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
