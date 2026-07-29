@@ -128,7 +128,7 @@
   3. Every confluence escalation decision is written to the audit outbox and can be replayed, consistent with existing approval/replay evidence.
   4. *(amended 2026-07-29, plan 57-10, D-31)* Confluence enforcement is graded by evidence quality: the `declared` grade enforces from the shipped default; the three ungated grades (`unclassified`, `scanner_infra`, `default_tier`) emit telemetry only and never block on their own, so an adopter who has declared nothing is never silently bricked; opting into strict mode extends enforcement to the three ungated grades too.
 
-**Plans**: 10 plans
+**Plans**: 12 plans (10 executed + 2 gap-closure)
 
 Plans:
 **Wave 1**
@@ -164,6 +164,14 @@ Plans:
 **Wave 8** *(blocked on Wave 7 completion)*
 
 - [x] 57-10-PLAN.md — Concurrency suite, shipped-lie repair, requirement and roadmap amendments (GATE-01..04) [wave 8]
+
+**Wave 9** *(gap closure — blocked on Wave 8 completion; closes `57-VERIFICATION.md`'s failed truth 5)*
+
+- [ ] 57-11-PLAN.md — Escalation-time evidence reaches the reviewer drawer, proven against a real executor escalation (GATE-02, GATE-03) [wave 9]
+
+**Wave 10** *(gap closure — blocked on Wave 9 completion)*
+
+- [ ] 57-12-PLAN.md — GATE-01/GATE-03 status correction and the unmet-truth window closure (GATE-01, GATE-03) [wave 10]
 
 **Context**: `.planning/phases/57-confluence-escalation-gate/57-CONTEXT.md` is the canonical locked spec (D-01..D-54); `57-RESEARCH.md` re-verified its citations against the worktree and its file:line coordinates win on conflict
 
