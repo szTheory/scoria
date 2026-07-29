@@ -119,6 +119,17 @@ defmodule Scoria.MCP.ExecutorTest do
     def scan(_content, _context), do: {:ok, %Verdict{tier: "untrusted", reason_code: :prompt_injection}}
   end
 
+  # A real scanner judging content clean -- the load-bearing regression
+  # fixture for plan 57-03's mint-site fix (D-01a): a clean verdict must now
+  # be reachable (resolve trusted), where the pre-phase defect pinned every
+  # tool output to untrusted regardless of what the scanner returned.
+  defmodule CleanScanner do
+    @behaviour Scoria.Trust.Scanner
+
+    @impl true
+    def scan(_content, _context), do: {:ok, %Verdict{tier: "trusted"}}
+  end
+
   # Actively tries to leak a numeric confidence score -- proves the leak is
   # structurally impossible (Scoria.Trust.Scan.scan/2 always resolves
   # `score: nil`, and Semconv.trust_attributes/1 has no `:score` key at all).
@@ -644,6 +655,91 @@ defmodule Scoria.MCP.ExecutorTest do
 
       assert_receive {:completed_metadata, metadata}
       refute Map.has_key?(metadata, "scoria.trust.score")
+    end
+  end
+
+  describe "mint-site incoming_tier fix -- a clean scanner verdict is no longer clamped to untrusted (D-01a, plan 57-03)" do
+    setup do
+      on_exit(fn -> Application.delete_env(:scoria, Scoria.MCP.Envelope) end)
+      :ok
+    end
+
+    test "a real scanner judging tool output clean resolves the trusted tier -- the pre-phase defect pinned this to untrusted",
+         %{ref: ref, context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(context, :content_scanner, CleanScanner)
+               )
+
+      assert Envelope.tier(envelope) == "trusted"
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :tool, :completed], _measurements, metadata}
+      assert metadata["scoria.trust.tier"] == "trusted"
+    end
+
+    test "a real scanner judging tool output malicious still resolves the untrusted tier, and the two outcomes differ",
+         %{context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      assert {:ok, %Envelope{} = clean_envelope} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(context, :content_scanner, CleanScanner)
+               )
+
+      assert {:ok, %Envelope{} = malicious_envelope} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.put(context, :content_scanner, FlaggingScanner)
+               )
+
+      assert Envelope.tier(clean_envelope) == "trusted"
+      assert Envelope.tier(malicious_envelope) == "untrusted"
+      # The load-bearing assertion (RESEARCH.md warning sign): a suite that
+      # asserts untrusted for both a clean and a malicious fixture proves
+      # nothing -- the difference itself must be asserted.
+      assert Envelope.tier(clean_envelope) != Envelope.tier(malicious_envelope)
+    end
+
+    test "the shipped NoOp scanner path still yields Scoria.Trust.default_tier() (D-17 unchanged)",
+         %{context: context} do
+      Application.put_env(:scoria, Scoria.MCP.Envelope, wrap_tool_output: true)
+
+      assert {:ok, %Envelope{} = envelope} =
+               Executor.execute(DummyTool, %{"action" => "success"}, context)
+
+      assert Envelope.tier(envelope) == Scoria.Trust.default_tier()
+    end
+
+    test "the metadata reader path's default is unchanged by the mint-site fix" do
+      assert Scoria.Trust.tier(%{}) == Scoria.Trust.default_tier()
+    end
+
+    test "verdict.scanner_tier carries the scanner's pre-clamp opinion into telemetry and the persisted step taint",
+         %{ref: ref, context: context} do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step} =
+        Workflows.create_step(run.id, %{sequence: 1, kind: "tool", role_id: "executor", status: "queued"})
+
+      assert {:ok, %{result: "success"}} =
+               Executor.execute(
+                 DummyTool,
+                 %{"action" => "success"},
+                 Map.merge(context, %{run_id: run.id, step_id: step.id, content_scanner: CleanScanner})
+               )
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :tool, :completed], _measurements, metadata}
+      assert metadata["scoria.trust.scanner_tier"] == "trusted"
+
+      persisted_step = Repo.get!(Workflows.Step, step.id)
+      assert persisted_step.result_envelope["scoria.taint"]["scanner_tier"] == "trusted"
     end
   end
 

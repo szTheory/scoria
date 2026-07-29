@@ -68,14 +68,23 @@ defmodule Scoria.Trust.Scan do
     scanner = resolve_scanner(context)
 
     if scanner == Scanner.NoOp do
-      {:ok, %Verdict{tier: incoming_tier, scanner: Scanner.NoOp}}
+      # D-30: no scanner ran, so there is no pre-clamp opinion to carry --
+      # `scanner_tier` stays nil, distinguishable from a scanner that
+      # genuinely returned the default tier.
+      {:ok, %Verdict{tier: incoming_tier, scanner_tier: nil, scanner: Scanner.NoOp}}
     else
       verdict = run_scanner(scanner, content, context)
-      resolved_tier = most_restrictive(incoming_tier, Trust.normalize_tier(verdict.tier))
+      # Captured BEFORE most_restrictive/2 folds it against incoming_tier --
+      # this is the scanner's PRE-CLAMP opinion (D-01b), carried as evidence
+      # only. `tier` below remains the clamped, min-wins value; the Phase 55
+      # monotonic law (D-19) is untouched.
+      scanner_tier = Trust.normalize_tier(verdict.tier)
+      resolved_tier = most_restrictive(incoming_tier, scanner_tier)
 
       {:ok,
        %Verdict{
          tier: resolved_tier,
+         scanner_tier: scanner_tier,
          score: nil,
          reason_code: Verdict.normalize_reason_code(verdict.reason_code),
          scanner: verdict.scanner || scanner

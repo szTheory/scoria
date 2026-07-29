@@ -20,16 +20,24 @@ defmodule Scoria.Trust.Verdict do
       scanner_timeout unknown)` enum before use (D-21). See
       `normalize_reason_code/1`.
     - `scanner` — the scanner module that produced this verdict.
+    - `scanner_tier` — the scanner's own PRE-CLAMP opinion (Phase 57, D-01b),
+      carried as EVIDENCE so the confluence gate can grade on evidence
+      quality. This is never authority: `tier` remains the clamped,
+      min-wins value and the Phase 55 monotonic law (D-19) is untouched.
+      `nil` means no scanner produced an opinion (e.g. the `Scanner.NoOp`
+      short-circuit), distinguishable from a scanner that genuinely
+      returned the default tier.
   """
 
   @enforce_keys [:tier]
-  defstruct [:tier, :score, :reason_code, :scanner]
+  defstruct [:tier, :score, :reason_code, :scanner, :scanner_tier]
 
   @type t :: %__MODULE__{
           tier: String.t(),
           score: float() | nil,
           reason_code: atom() | nil,
-          scanner: module() | nil
+          scanner: module() | nil,
+          scanner_tier: String.t() | nil
         }
 
   @reason_codes ~w(
