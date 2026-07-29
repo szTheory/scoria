@@ -91,6 +91,11 @@ defmodule Scoria.ConfluenceTest do
     end
 
     test "the module compiles without warnings and defines classify/1" do
+      # function_exported?/3 reports false for a module that is merely not loaded
+      # yet, and Elixir loads modules lazily. In this async case that races the
+      # rest of the suite: under a seed where nothing has called classify/1
+      # first, the module is unloaded and the assertion fails spuriously.
+      assert Code.ensure_loaded?(Confluence)
       assert function_exported?(Confluence, :classify, 1)
     end
   end
