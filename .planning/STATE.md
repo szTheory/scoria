@@ -1,40 +1,46 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.5
-milestone_name: Documentation & Release Readiness — ACTIVE
-status: executing
-stopped_at: Completed 50-08-PLAN.md
-last_updated: "2026-07-11T16:11:12.926Z"
-last_activity: 2026-07-11
+milestone: v3.7
+milestone_name: Portcullis
+current_phase: 58
+current_phase_name: Safety Hooks, Security Boundary & Govern Surface
+status: planning
+stopped_at: Completed 57-12-PLAN.md
+last_updated: "2026-07-29T15:54:12.740Z"
+last_activity: 2026-07-29
+last_activity_desc: Phase 57 complete, transitioned to Phase 58
 progress:
-  total_phases: 5
+  total_phases: 4
   completed_phases: 4
-  total_plans: 39
-  completed_plans: 38
-  percent: 80
+  total_plans: 26
+  completed_plans: 26
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-07-09 after starting v3.5 milestone)
+See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 
 **Core value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
 
-**Current focus:** Phase 50 — release-readiness-and-0-1-3-cut
+**Current focus:** Phase 57 — confluence-escalation-gate
 
 ## Current Position
 
-Phase: 50 (release-readiness-and-0-1-3-cut) — EXECUTING
-Plan: 8 of 11
-Status: Ready to execute
-Last activity: 2026-07-11
-Resume file: None
+Phase: 58 — Safety Hooks, Security Boundary & Govern Surface
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-29 — Phase 57 complete, transitioned to Phase 58
+
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
-- **Latest Shipped:** `v3.4 Pre-1.0 Trust & Security Hardening` (2026-07-09) — 24 plans, 4 phases, 61 tasks. Audit `passed` (17/17 requirements, 4/4 phases); archived in `.planning/milestones/v3.4-*`.
+- **Release cut (D-04 closeout, 2026-07-11):** `0.1.3` LIVE on Hex — PR #12 squash-merged (`b904c22a`), tag `v0.1.3`, published + post-publish registry attest **green** in Release Please run `29162646314` (https://github.com/szTheory/scoria/actions/runs/29162646314). `curl https://hex.pm/api/packages/scoria/releases/0.1.3` → HTTP 200 (has_docs, full requirements). Post-publish smoke proved fresh install + `0.1.0 → 0.1.3` lineage upgrade. REL-04 satisfied; v3.5 milestone 100% complete.
+- **Latest Shipped:** `v3.6 Trace Foundation` (2026-07-19) — 28 plans, 6 phases (51-54.1), 67 tasks. Audit `passed` (16/16 requirements, 6/6 phases, 12/12 integration seams, 1/1 E2E flow); `override_closeout` with one pre-existing SEED-004-class test flake deferred; archived in `.planning/milestones/v3.6-*`.
+- **Previous Shipped:** `v3.5 Documentation & Release Readiness` (2026-07-11) — 39 plans, 5 phases, 66 tasks. Audit `passed` (18/18 requirements, 5/5 phases, 5/5 seams) after inline closure of release-train branch drift + a Phase 46 verification-doc gap; Hex `0.1.3` LIVE (tag `v0.1.3`, post-publish attest green); archived in `.planning/milestones/v3.5-*`.
+- **Previous Shipped:** `v3.4 Pre-1.0 Trust & Security Hardening` (2026-07-09) — 24 plans, 4 phases, 61 tasks. Audit `passed` (17/17 requirements, 4/4 phases); archived in `.planning/milestones/v3.4-*`.
 - **Previous Shipped:** `v3.3 Design System Stress Test` (2026-07-04) — 30 plans, 7 phases, 74 tasks. Audit `passed` (22/22 requirements, 6/6 seams); tag `v3.3` local.
 - **Previous Shipped:** `v3.2 Drydock` (2026-06-19) — 15 plans, 7 phases. Audit `passed`; Hex `0.1.2` live and post-publish smoke green.
 - **Phase 42 P01:** 6 min — 3 tasks, 7 files, verification 14 tests green.
@@ -49,6 +55,15 @@ Resume file: None
 - **Phase 45:** 5 plans, 11 tasks — correctness sweep + doctrine closeout complete; focused Phase 45 and scope-doctrine tests green during closeout.
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 56 P01 | 50min | 2 tasks | 7 files |
+| Phase 56 P02 | 35min | 3 tasks | 6 files |
+| Phase 56 P03 | 30min | 3 tasks | 8 files |
+| Phase 57 P11 | 25min | 3 tasks | 4 files |
+| Phase 57 P12 | 12min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -57,6 +72,7 @@ Resume file: None
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- v3.7: Roadmap sequences Phase 55 (TAINT substrate) and Phase 56 (CLASS classification + RAIL per-run rails) as parallel-capable — neither depends on the other — both feeding Phase 57's confluence escalation gate (the milestone's differentiator, GATE-01..04), with Phase 58 (HOOK safety hooks + BOUND SECURITY-BOUNDARY.md + GOVERN read-only surface) sequenced last as the closing surface/docs layer.
 - v3.4: Phases 42 (eval) / 43 (knowledge) / 44 (dashboard) are independent subsystems — parallelizable; Phase 45 (correctness sweep + doctrine + closeout) depends on 42 + 43.
 - v3.4: Fix + prove only — NO Hex publish. The honest `0.1.3` release cut belongs to SEED-005 / Backlog 999.2. `0.1.3` PR #12 stays held.
 - v3.4: DOC-01 is confirm-and-cross-link (P1–P6 scope doctrine already recorded in PROJECT.md Constraints + Key Decisions at v3.3 close) — kept lightweight in Phase 45.
@@ -230,6 +246,33 @@ Recent decisions affecting current work:
 - [Phase ?]: package_surface_test :79 homepage_url assertion updated to https://scoria.hexdocs.pm to track mix.exs @hexdocs_url (REL-03/D-14); one-publish-surface invariant preserved
 - [Phase ?]: capture_parity_test.exs left unchanged - verify-first reproduction on the release head passed, confirming Bucket F was a local-env-only artifact, not a real contract break
 - [Phase ?]: [Phase 50-11]: Forward-fixed a real ExDoc --warnings-as-errors regression (docs/design_system.md broken markdown link in guides/maintainers.md, non-extras dev-only doc) discovered on PR #12's first CI pass; changed the link to a plain code span (same technique as prior c809241c fix), no assertions weakened. One duplicate push-triggered CI run hit an unrelated flaky eventually() timeout (SEED-004 class); re-ran via gh run rerun --failed rather than treating it as a new bucket.
+- [Phase 51-01]: Fallback telemetry event name locked as [:scoria, :observe, :span_kind, :fallback] with metadata %{value:, default:}, documented in the SpanKind moduledoc
+- [Phase 51-01]: workflow_tree_component.ex keeps its 3 step-vocab mapping clauses (approval->guardrail, handoff->agent, answer->llm) since it maps a different input than trace_tree_component.ex's real ai_spans.span_kind; only the fallback routes through SpanKind.normalize/1
+- [Phase 51-02]: Semconv.merge_req_llm_attributes/2 delegates wholesale to ReqLLM.OpenTelemetry.Attributes.start/1 + .terminal/1 rather than re-declaring the gen_ai.* key strings, per RESEARCH Pattern 3 / D-16 — avoids a second, driftable copy of req_llm's own vocabulary.
+- [Phase 51-02]: Test fixtures use LLMDB.Model.new!/1 (a real %LLMDB.Model{} struct) for metadata[:model] instead of a bare string, matching the real [:req_llm, :request, :stop] telemetry shape (RESEARCH Pitfall 1).
+- [Phase 51-03]: Ecto.Multi trace-upsert (insert_all traces on_conflict: :nothing, conflict_target: [:id]) followed by insert_all spans in one transaction -- avoids N round-trips per flush batch and is race-safe if two Buffer instances flush overlapping trace_ids
+- [Phase 51-03]: :on_flush_error :raise only fires from the handle_info(:flush,...) timer path (from_timer?: true); handle_call(:flush_now,...) and terminate/2 both pass from_timer?: false so neither can ever raise, even in :raise mode (D-09 i)
+- [Phase 51-03]: consecutive_failures storm-control counter lives in Buffer GenServer state, not CircuitBreaker (model-ID-keyed, semantically mismatched per RESEARCH Pitfall 4) -- logs full detail once per failure run, telemetry always fires
+- [Phase ?]: [Phase 51-04]: span_kind reads metadata[:span_kind] (host-override, defaults to llm) rather than the plan-literal metadata[:operation] -- operation is req_llm's own :chat/:embedding/:object vocabulary and would defeat SpanKind.normalize/2's fallback; mirrors the Jido sibling adapter's override convention.
+- [Phase ?]: [Phase 51-04]: CHANGELOG 0.1.4 breaking-change entry (gen_ai.*/server.* key mapping + flush_error/on_flush_error announcement) added as a new BREAKING CHANGES subsection inside the existing (pre-dated) Unreleased heading rather than a second Unreleased heading.
+- [Phase ?]: [Phase 51-05]: No deviations from the plan's literal instruction -- unlike Plan 51-04, this plan's metadata[:span_kind] || "tool" seam was already correct as written, so implemented verbatim.
+- [Phase 52-02]: model_name/0 is declared @optional_callbacks so host embedders that only implement embed_chunks/2 produce no missing-callback warning; the guarded function_exported?/3 call site lives in retrieve/2 (52-04), not this plan.
+- [Phase 52-03]: emit_prompt_span/1's gen_ai.usage.input_tokens sourcing lives in a new Semconv.merge_usage_input_tokens/2 (not inlined in observe.ex), per Task 2's own action instructions (FOUND-03 single-origin sourcing).
+- [Phase ?]: 52-05: Both req_llm and jido adapters route metadata through Semconv.merge_host_declared/2 identically; req_llm carries an inline D-ATTR01-7 caveat comment (hand-synthesized-only), jido is documented as production-reachable
+- [Phase 52]: opts[:embedding_model] wins outright; when opts[:query_embedding] is host-supplied, embedder.model_name/0 is never called and the field falls through to the "none" sentinel.
+- [Phase 52]: Dropped ai_retrieval_runs.trace_id/span_id hard foreign keys (kept columns+indexes) so the eventually-consistent run<->span join no longer raises on every context-less retrieve/2 call (D-R1/D-R2).
+- [Phase ?]: Test file mirrors telemetry_test.exs's real DB-backed setup (scoped Buffer + Telemetry.attach) rather than hand-synthesizing a span map, so the SC#4 proof exercises the actual production telemetry->buffer->Postgres pipeline (D-ATTR01-6).
+- [Phase ?]: [Phase 56-01]: host_declaration/1 reads a single new :host_classification context key (action_class left un-normalized at extraction) so resolve/2 can flag a raw-junk host action_class identically to a looser one per D-04, even when normalization would make it look tighter.
+- [Phase ?]: [Phase 56-01]: When no tool declaration exists, resolve/2 always returns unclassified_default/0 regardless of any host input -- the host-tightening mechanism never stands in for a missing tool declaration.
+- [Phase ?]: [Phase 56-01]: Added @derive Jason.Encoder to Scoria.MCP.Classification (Rule 1 fix) since :tool_classification now flows into every tool's context by design and a pre-existing router test echoes context through JSON.
+- [Phase ?]: [Phase 56-02]: require_tool_classification gates on source == :unclassified_default specifically -- a host-tightened resolution is a real classification and is never refused, even under the strict flag.
+- [Phase ?]: [Phase 56-02]: persist_classification_to_step/3 runs at resolve_classification/2's resolution time (before replay_gate/3), not from finalize_tool_result/5 -- so blocked and stubbed replay calls still get their classification persisted, unlike taint.
+- [Phase ?]: [Phase 56-02]: classification_attributes_for_telemetry/1 merges the five scoria.classification.* keys into the EXISTING [:scoria, :tool, :completed] event alongside trust_attrs -- no new span, :telemetry.execute( count in executor.ex unchanged at 7.
+- [Phase ?]: [Phase 56-03]: declared_sensitive?/1 is a declared-only sensitivity predicate (D-A2) shared by sites 2/3 -- false for nil and :unclassified_default, never writes into any of the six prohibited context keys.
+- [Phase ?]: [Phase 56-03]: sites 4 and 5 route through Classification.tool_declaration/1 + Classification.resolve/2 directly and never consult or extend require_tool_classification -- D-03 scopes that refusal to MCP.Executor resolution only.
+- [Phase ?]: [Phase 56-03]: Workflows.Runtime.default_replay_seam/2 keeps local_classification: :pure byte-identical and only adds tool_classification alongside it -- ReplayDisposition's clause-3 short-circuit is unchanged, the bypass is now inspectable via telemetry instead of silent.
+- [Phase ?]: SRE.build_audit_metadata/1 is a drop-list over the whole envelope, not an allowlist keyed on an incoming metadata: field -- test fixtures must merge evidence fields at the envelope's top level, exactly like Executor.record_confluence_audit/5 does.
+- [Phase ?]: list_pending_approvals/1 and list_decided_approvals/1 each build the confluence audit events-by-id map once per page rather than per-row, so D-51's pagination cap is not undone by an N+1 at the same call site it protects.
 
 ### Resolved And Deferred Work
 
@@ -246,7 +289,7 @@ active.
 - Phase 48 Plan 10 scope-doctrine issue resolved by restoring compatibility-stub fragments expected by `test/scoria/scope_doctrine_contract_test.exs`.
 - Phase 48 Plan 10 generated-doc issue resolved by cleaning generated ExDoc output before release preview rebuilds `doc/`.
 - RESOLVED 2026-07-11 (plan-01 follow-up `c809241c`): release_preview / mix docs --warnings-as-errors was RED on main from guides/maintainers.md:43,57,58 referencing filtered maintainer Mix tasks (plan-01 regression 25ad5233). Fixed by prefixing the three inline spans with `$ ` so ExDoc no longer autolinks them; asserted substrings preserved, no test changed. release_preview exits 0. See deferred-items.md D-50-DEF-01.
-- 50-04 Task 1 route-back: REL-01/02/03 fixes (entire v3.5 milestone, 162 commits) are on LOCAL main only; origin/main is at 2b0fa962 (end of v3.4) and PR #12 head 620d7144 was built by Release Please on that stale base, so PR #12 policy+e2e stay RED with the original pre-fix run IDs (29043718187/29043715702). Maintainer must push local main to origin/main so Release Please refreshes PR #12 with the fixes and re-runs CI. Local release_preview + mix docs --warnings-as-errors are GREEN on 2e38ac16.
+- RESOLVED 2026-07-11 (50-04 release cut): the v3.5 fixes + gap-closure train (50-05..50-11) were pushed to origin/main; Release Please refreshed PR #12 to green `ci-gate` (CLEAN/MERGEABLE, head be87badd), the maintainer squash-merged it (`b904c22a`), and `0.1.3` published to Hex with a green post-publish attest (run 29162646314). No open release blockers remain.
 
 ### Roadmap Evolution
 
@@ -254,6 +297,9 @@ active.
 - v3.4 completed and reconciled (2026-07-09): Phases 42–45, 24/24 plans, 17/17 requirements, audit `passed`; SEED-006 archived and removed from the forward backlog.
 - v3.5 roadmap created (2026-07-09): Phases 46-50 promote SEED-005 from the backlog for terminology, README/scope doctrine, ExDoc/guide ladder, AI-accessible docs, and the clean `0.1.3` release cut. 18/18 requirements mapped.
 - Phase 41.1 inserted after Phase 41: Wire orphaned ScoriaWeb.Copy/DatasetCopy into dataset page (COPY-01 SSOT) — surfaced by v3.3 milestone audit (URGENT)
+- v3.6 roadmap created (2026-07-11): Phases 51-54 promote SEED-007 from the backlog — 51 foundation fix + key convention + span-kind taxonomy (FOUND-01..03, SPAN-01..02, COMPAT-01), 52 RETRIEVER span + host-declared attributes (RETR-01..02, ATTR-01..02), 53 structured child spans + ai_span_events (EVENT-01..03, SEC-01), 54 docs accuracy + conformance check (DOCS-01..02). 16/16 requirements mapped; Phase 53 flagged for phase-level research (no existing point-event call sites; async-FK design for user_feedback_received deferred to SEED-011).
+- Phase 54.1 inserted after Phase 54: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (v3.6 audit integration gap) (URGENT)
+- v3.7 roadmap created (2026-07-19): Phases 55-58 promote SEED-010 from the backlog — 55 content trust & taint substrate (TAINT-01..04, no dependency, builds on v3.6's shipped taint-adjacent substrate), 56 tool-declared trifecta classification & per-run rails (CLASS-01..03, RAIL-01, independent of 55) at `MCP.Executor`, 57 confluence escalation gate (GATE-01..04, depends on 55+56 — the milestone's flagship differentiator), 58 safety hooks + `SECURITY-BOUNDARY.md` + minimal read-only Govern surface (HOOK-01..02, BOUND-01, GOVERN-01, depends on 57, closing surface/docs layer). 16/16 requirements mapped; no orphans.
 
 ## Deferred Items
 
@@ -265,14 +311,15 @@ active.
 | v3.0 gaps | Phase 13/14 verification-doc gaps (functional: 0 unsatisfied; 10 partials are proof-only) | Deferred | v3.0 close |
 | Release | Publish 0.1.1 → superseded by 0.1.2 in Phase 35 | Absorbed into REL-01 | v3.2 REL |
 | Trust/security P0 | SEED-006: eval fail-open, knowledge cross-tenant leak, dashboard auth bypass — completed by v3.4 (Phases 42–45) | Completed | 2026-07-09 v3.4 close |
-| Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt | Active in v3.5 | 2026-07-09 v3.5 start |
-| Observability | SEED-007: OTel-GenAI/OpenInference trace foundation | Deferred | 2026-07-03 audit |
+| Docs & positioning | SEED-005: terminology sense-aware rename, scope-doctrine/positioning, ExDoc grouping, glossary, curated llms.txt — completed by v3.5 (Phases 46–50) | Completed | 2026-07-11 v3.5 close |
+| Observability | SEED-007: OTel-GenAI/OpenInference trace foundation — completed by v3.6 (Phases 51–54.1) | Completed | 2026-07-19 v3.6 close |
 | Eval depth | SEED-008: real scorers, judge calibration, regression comparison | Deferred | 2026-07-03 audit |
 | RAG depth | SEED-009: precision/NDCG/abstention/staleness + faithfulness/rerank hooks | Deferred | 2026-07-03 audit |
-| Agent security | SEED-010: lethal-trifecta governance (⭐ flagship differentiator) | Deferred | 2026-07-03 audit |
+| Agent security | SEED-010: lethal-trifecta governance ⭐ flagship differentiator — active in v3.7 (Phases 55-58) | Active | 2026-07-19 v3.7 start |
 | Privacy/feedback | SEED-011: retention/purge, PII masking hook, human-feedback flywheel | Deferred | 2026-07-03 audit |
+| Test determinism | `2026-07-18-flaky-capture-parity-test.md`: `capture_parity_test.exs:53` flakes under full-suite `--seed 0` ordering (passes in isolation); pre-existing, not a v3.6 regression — SEED-004-class | Acknowledged & deferred | 2026-07-19 v3.6 close |
 
-> **Ordered roadmap + dependencies** for SEED-007…013 live in `ROADMAP.md` `## Backlog` (999.3–999.9); SEED-005 is active in v3.5. "Why" index in `.planning/seeds/README.md`.
+> **Ordered roadmap + dependencies** for SEED-008…013 live in `ROADMAP.md` `## Backlog` (999.5–999.9); SEED-010 is active in v3.7. "Why" index in `.planning/seeds/README.md`.
 | Phase 46 P01 | 4 min | 3 tasks | 11 files |
 | Phase 46 P02 | 6 min | 1 tasks | 10 files |
 | Phase 46 P03 | 4 min | 1 tasks | 5 files |
@@ -310,6 +357,17 @@ active.
 | Phase 50 P09 | 25min | 1 tasks | 2 files |
 | Phase 50 P10 | 10min | 2 tasks | 1 files |
 | Phase 50 P11 | 45min | 2 tasks | 1 files |
+| Phase 51 P01 | 6min | 3 tasks | 7 files |
+| Phase 51 P02 | 3min | 2 tasks | 2 files |
+| Phase 51 P03 | 14min | 3 tasks | 3 files |
+| Phase 51 P04 | 7min | 3 tasks | 3 files |
+| Phase 51 P05 | 10min | 2 tasks | 2 files |
+| Phase 52 P01 | 6min | 3 tasks | 2 files |
+| Phase 52 P02 | 5min | 1 tasks | 2 files |
+| Phase 52 P03 | 4min | 2 tasks | 4 files |
+| Phase 52 P05 | 8min | 2 tasks | 4 files |
+| Phase 52 P04 | 25min | 2 tasks | 3 files |
+| Phase 52 P06 | 16min | 1 tasks | 1 files |
 
 ### Acknowledged at v3.3 milestone close (2026-07-04)
 
@@ -321,22 +379,22 @@ active.
 | todo | `ci-policy-job-cache-key-mislabel` (CI cache-key/env mismatch) | Completed at v3.4 closeout |
 | todo | `docker-dx-fleet-hardening` (FLEET-01/02; out of scope) | Deferred |
 | seed | SEED-003 CI/CD efficiency overhaul | Archived |
-| seed | SEED-005 Documentation & positioning overhaul (v3.5 active) | Active |
+| seed | SEED-005 Documentation & positioning overhaul — shipped in v3.5 | Archived |
 | seed | SEED-006 Pre-1.0 Trust & Security Hardening — shipped in v3.4 | Archived |
-| seed | SEED-007 Trace foundation OTel-GenAI/OpenInference (ROADMAP 999.3) | Deferred |
+| seed | SEED-007 Trace foundation OTel-GenAI/OpenInference — shipped in v3.6 | Archived |
 | seed | SEED-008 Trustworthy eval depth (ROADMAP 999.5) | Deferred |
 | seed | SEED-009 Retrieval eval depth & seams (ROADMAP 999.6) | Deferred |
-| seed | SEED-010 Lethal-trifecta governance ⭐ flagship (ROADMAP 999.4) | Deferred |
+| seed | SEED-010 Lethal-trifecta governance ⭐ flagship — active in v3.7 (ROADMAP 999.4) | Active |
 | seed | SEED-011 Privacy & feedback governance (ROADMAP 999.7) | Deferred |
 | seed | SEED-012 Architecture-archetype awareness (ROADMAP 999.8) | Deferred |
 | seed | SEED-013 Operator IA pivot / Control-Room v2 (ROADMAP 999.9) | Deferred |
 
 ## Session Continuity
 
-Last session: 2026-07-11T15:47:40.332Z
-Stopped at: Completed 50-08-PLAN.md
+Last session: 2026-07-29T15:10:24.865Z
+Stopped at: Completed 57-12-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
 
-- Discuss or plan Phase 49: AI-accessible docs and docs verification gate.
+- v3.7 Portcullis roadmap created (2026-07-19): Phases 55 (Content Trust & Taint Substrate), 56 (Tool-Declared Trifecta Classification & Per-Run Rails), 57 (Confluence Escalation Gate), 58 (Safety Hooks, Security Boundary & Govern Surface) — 16/16 requirements mapped, 0 orphans. Next: `/gsd-plan-phase 55`.

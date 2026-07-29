@@ -17,6 +17,18 @@ defmodule ScoriaWeb.WorkflowTreeComponentTest do
     assert html =~ ~s(--indent-level: 1)
   end
 
+  test "renders the lowercase-native scoria-span--llm rail class for the answer step vocab" do
+    html =
+      render_component(&ScoriaWeb.WorkflowTreeComponent.workflow_tree/1,
+        steps: [
+          %{id: "1", role_id: "root", kind: "answer", status: "running", depth: 0}
+        ],
+        selected_step_id: nil
+      )
+
+    assert html =~ "scoria-span--llm"
+  end
+
   test "workflow tree source keeps selection behavior without raw palette classes" do
     source = File.read!("lib/scoria_web/components/workflow_tree_component.ex")
 

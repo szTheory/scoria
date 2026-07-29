@@ -9,209 +9,258 @@
 - ✅ **v3.2 Drydock** — Phases 29–35, Docker dev-DX hardening + `0.1.2` maintenance release (shipped 2026-06-19)
 - ✅ **v3.3 Design System Stress Test** — Phases 36–41.1, `/scoria` UI coherence foundation→proof (shipped 2026-07-04)
 - ✅ **v3.4 Pre-1.0 Trust & Security Hardening** — Phases 42–45, SEED-006 P0 trust/security gate (shipped 2026-07-09)
-- ◆ **v3.5 Documentation & Release Readiness** — Phases 46–50, SEED-005 stable docs + clean `0.1.3` release (active)
+- ✅ **v3.5 Documentation & Release Readiness** — Phases 46–50, SEED-005 stable docs + honest `0.1.3` release (shipped 2026-07-11)
+- ✅ **v3.6 Trace Foundation** — Phases 51–54.1, SEED-007 OTel-GenAI/OpenInference trace substrate (shipped 2026-07-19)
 
 ## Phases
 
-### v3.5 Documentation & Release Readiness — ACTIVE
+**Phase Numbering:** Integer phases (1, 2, 3): planned milestone work. Decimal phases (2.1, 2.2): urgent insertions. Phase numbering continues from the previous milestone (v3.6 ended at Phase 54.1) — v3.7 starts at Phase 55.
 
-**Goal:** Make Scoria adoption-ready again after the v3.4 trust/security fixes by replacing jargon-first adopter docs with stable positioning, repairing release-blocking CI/browser drift, and cutting the honest `0.1.3` Hex release.
+**Current milestone: v3.7 Portcullis (SEED-010 Lethal-Trifecta Governance)**
 
-**Selected seed:** `SEED-005 Documentation overhaul → clean Hex release`.
+- [x] **Phase 55: Content Trust & Taint Substrate** - Trust tiers on knowledge chunks/tool outputs + prompt-assembly spotlighting + BYO `scan/2` hook
+- [x] **Phase 56: Tool-Declared Trifecta Classification** - Tool-declared trifecta legs resolved at `MCP.Executor`, fail-closed-but-inspectable defaults across all five fail-open seams
+- [x] **Phase 56.1: Per-Run Rails (SPLIT from 56)** - Per-run `max_steps`/`max_tool_calls`/`timeout` rails with an audited, non-resumable halt (completed 2026-07-28)
+- [x] **Phase 57: Confluence Escalation Gate** - Escalate to human approval when private-data + untrusted-content + exfil co-occur on one tainted path (completed 2026-07-29)
+- [ ] **Phase 58: Safety Hooks, Security Boundary & Govern Surface** - BYO moderation/output-scanner hooks, `guides/security-boundary.md`, minimal read-only Exposure surface
+- [ ] **Phase 58.1: Scanner-to-Gate Wiring & Escalation Operability (SPLIT from 58)** - Scanner-observed taint lights the untrusted-content leg, the `:site`/`:model_output` scan contract, the stuck-escalation queue, and grade-segmented would-have-paused counts
 
-**Boundary:** Stable adopter docs and release readiness only. Feature-specific docs for trace foundation, lethal-trifecta governance, eval depth, retrieval depth, and privacy/feedback stay with their owning future seeds.
+## Phase Details
 
-- [x] **Phase 46: Terminology and public vocabulary migration** — final sense-aware rename map, glossary, code-name cleanup, and upgrade note. (completed 2026-07-09)
-- [x] **Phase 47: README first-screen positioning and scope doctrine** — plain-English front door, persona/not-ours framing, owns-vs-delegates table, and hosted LLM-ops comparison. (completed 2026-07-10)
-- [x] **Phase 48: ExDoc and guide ladder restructure** — grouped modules/extras, version-aware docs metadata, stable guide tree, and public moduledoc alignment. (completed 2026-07-10)
-- [ ] **Phase 49: AI-accessible docs and docs verification gate** — curated `llms.txt`/`AGENTS.md`, guide index for coding agents, and warning-clean docs command.
-- [ ] **Phase 50: Release readiness and `0.1.3` cut** — policy/e2e release blockers, stale version refs, green release PR, Hex publish, and post-publish smoke.
+### Phase 55: Content Trust & Taint Substrate
 
-### Phase 46: Terminology and public vocabulary migration
+**Goal**: Untrusted content moving through Scoria — retrieved knowledge chunks and tool outputs — carries a trust tier, is visibly separated from instructions at prompt assembly, and is scannable via a BYO hook, supplying the missing untrusted-content leg the confluence gate (Phase 57) will read.
+**Depends on**: Nothing (first phase of this milestone; builds on the v3.6 trace substrate — `span_kind`, structured child spans, `ai_span_events`/`emit_event/1`, `Observe.Bounds` IDs-only bounding)
+**Requirements**: TAINT-01, TAINT-02, TAINT-03, TAINT-04
+**Success Criteria** (what must be TRUE):
 
-**Goal:** Public language uses the final SEED-005 vocabulary before the README/guides explain it, so docs describe the product users will actually see.
+  1. A retrieved knowledge chunk carries a trust-tier/taint tag in its `Knowledge.Chunk` metadata, defaulting to untrusted for externally-sourced/retrieved content.
+  2. A tool's output arrives wrapped in an envelope carrying a trust tier, so downstream code treats it as potentially-untrusted rather than implicitly-trusted context.
+  3. When a prompt is assembled in the orchestrator, untrusted content is spotlighted/datamarked with a model-agnostic delimiter that distinguishes it from instructions.
+  4. A host can register a `scan/2` hook (e.g. Rebuff/LlamaGuard-shaped) and see scanned/untrusted content tagged in traces; with none registered, the default no-op leaves current behavior unchanged.
 
-**Depends on:** Nothing.
-
-**Requirements:** TERM-01, TERM-02, TERM-03, TERM-04
-
-**Plans:** 8/8 plans complete
-
-Plans:
+**Plans**: 5 plans (3 waves)
 **Wave 1**
 
-- [x] 46-01-PLAN.md — Public verification suite/reviewer broadcast aliases, call-site migration, and early storage guard
-- [x] 46-02-PLAN.md — Reviewer surface and LiveView alias migration
-- [x] 46-03-PLAN.md — Semantic cache profile and scoped-context runtime aliases
+- [x] 55-01-PLAN.md — Trust leaf vocab + Tiered protocol + TAINT-01 Knowledge (tracer) [wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [x] 46-04-PLAN.md — Private run-inspection trace adapter rename
-- [x] 46-05-PLAN.md — Remote invocation and incident trace/evidence copy boundary
+- [x] 55-02-PLAN.md — Scoria.MCP.Envelope + executor wrap + soft-launch flag (TAINT-02) [wave 2]
+- [x] 55-03-PLAN.md — Scoria.Spotlight datamark/delimit + spotlight trace keys (TAINT-03) [wave 2]
+- [x] 55-04-PLAN.md — Scan engine: Scanner/Verdict/Scan, monotonic law, fail-closed (TAINT-04) [wave 2]
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [x] 46-06-PLAN.md — Glossary creation plus package, release-preview, and Hex consumer exposure
+- [x] 55-05-PLAN.md — Wire scan at retrieve/executor + scoria.trust.* trace tagging (TAINT-04) [wave 3]
 
-**Wave 4** *(blocked on Wave 3 completion)*
+### Phase 56: Tool-Declared Trifecta Classification
 
-- [x] 46-07-PLAN.md — README and stable guide final vocabulary migration
+**Goal**: Every tool call enforced at `MCP.Executor` carries an explicit, tool-declared trifecta classification instead of a silent host-passed default.
+**Depends on**: Nothing new (independent of Phase 55's taint substrate — both feed Phase 57's confluence gate)
+**Requirements**: CLASS-01, CLASS-02, CLASS-03
+**Success Criteria** (what must be TRUE):
 
-**Wave 5** *(blocked on Wave 4 completion)*
+  1. A tool declares its `reads_private_data`/`sees_untrusted_content`/`can_exfiltrate` legs plus an `action_class` once, on the tool itself, rather than passed per call.
+  2. An unclassified tool no longer silently resolves to `approval_sensitive: false`; it fails closed to an inspectable default and emits telemetry for unclassified/ungated use, closing the fail-open seam (formerly cited as `executor.ex:150-165`; the code moved during Phase 55 — the live-path seam is now `executor.ex:552-554` and the replay seam `executor.ex:181-194`).
+  3. At `MCP.Executor` enforcement, every tool call's per-call taint is resolved from the tool's own declaration, never a host-passed default.
+  4. Resolution covers ALL five fail-open seams, not just `MCP.Executor`: the replay seam, the live `policy_sensitive_invocation?/1` path, `budget_required?/1`, `Connectors.Invocation.build_seam/2` (which decides replay BEFORE the executor), and `Workflows.Runtime`'s `%{local_classification: :pure}` default.
 
-- [x] 46-08-PLAN.md — README/CHANGELOG upgrade notes and focused phase verification
-
-**Success Criteria:**
-
-1. A committed glossary maps final Scoria terms to industry equivalents and defines `run`, reviewer/operator, trace, evidence, capability, verification suite, scoped context, semantic cache, knowledge base, grounding, and bounded handoff.
-2. Adopter-facing docs and user-visible copy apply the final terminology strategy, including reviewer for the persona and trace for run-inspection surface sense.
-3. RAG/citation use of evidence remains intact; no schema migration or global `evidence_refs` rename is introduced.
-4. Leaked internal code names (`Keystone`, `v2.0 Relay`) and the `Four Lanes` count bug are removed from adopter docs.
-5. CHANGELOG/upgrade notes explain pre-1.0 terminology changes and any renamed documented modules or user-visible copy.
-
-### Phase 47: README first-screen positioning and scope doctrine
-
-**Goal:** A Phoenix adopter immediately understands what Scoria is, who it is for, where its boundary is, and why embedded governance differs from hosted LLM-ops.
-
-**Depends on:** Phase 46.
-
-**Requirements:** POS-01, POS-02, POS-03, POS-04
-
-**Success Criteria:**
-
-1. README opens with a plain-English paragraph before coined vocabulary, using the SEED-005 wording as the baseline.
-2. README and stable docs state the n=1 default lens, CORE/ADJACENT/NOT-OURS persona boundaries, and the reviewer/operator role clearly.
-3. An adopter-facing owns-vs-delegates table makes the P1–P6 scope doctrine concrete.
-4. A stable comparison page explains Scoria vs hosted LLM-ops with honest strengths and ceded tradeoffs.
-5. README version references and install fallback examples no longer point at stale `0.1.1` guidance.
-
-### Phase 48: ExDoc and guide ladder restructure
-
-**Goal:** HexDocs becomes a navigable product surface instead of a flat dump of modules and historical guides.
-
-**Depends on:** Phase 47.
-
-**Requirements:** DOCS-01, DOCS-02, DOCS-03
-
-**Plans:** 15 plans
-
-Plans:
+**Plans**: 3 plans (3 waves)
 **Wave 1**
 
-- [x] 48-01-PLAN.md — RED ExDoc/package/release-preview contracts for guide groups, source metadata, redirects, and package assets
-- [x] 48-02-PLAN.md — RED canonical guide, stable-doc, glossary, scope, and public moduledoc contracts
-
-**Wave 2** *(blocked on Wave 1 contracts)*
-
-- [x] 48-03-PLAN.md — Start Here guide ladder: Getting Started, Golden Path, JTBD, ownership boundary, and cheatsheet
-- [x] 48-04-PLAN.md — Capability and reference guides: default runtime, handoffs, semantic cache, connectors/MCP, support gallery, and glossary
-- [x] 48-05-PLAN.md — Operate/verify, troubleshooting, comparison, and maintainer guides
-
-**Wave 3** *(blocked on Wave 2 guides)*
-
-- [x] 48-06-PLAN.md — README canonical guide links
-- [x] 48-11-PLAN.md — Old start/reference/runtime/comparison docs compatibility stubs for copied source links
-- [x] 48-14-PLAN.md — Old capability docs compatibility stubs for copied source links
-- [x] 48-15-PLAN.md — Old reviewer verification and maintainer docs compatibility stubs for copied source links
-- [x] 48-08-PLAN.md — Public moduledocs for start/install/runtime facade entry points
-- [x] 48-12-PLAN.md — Public moduledocs for router, dashboard scope, reviewer surface, broadcast, and verification suites
-- [x] 48-09-PLAN.md — Public moduledocs for capability and integration modules
-- [x] 48-13-PLAN.md — Public moduledocs for SRE/governance and compatibility alias modules
-
-**Wave 4** *(blocked on Wave 3 docs and module docs)*
-
-- [x] 48-07-PLAN.md — ExDoc docs config, module groups, redirects, dynamic source refs, package files, and release-preview paths
-
-**Wave 5** *(blocked on Wave 4 config)*
-
-- [x] 48-10-PLAN.md — Focused contract suite, release preview, generated docs inspection, and validation closeout
-
-**Success Criteria:**
-
-1. `mix.exs` docs config groups modules by domain area and extras by adopter/maintainer guide ladder.
-2. Source/ref/doc links handle dev versions without pointing to missing tag URLs, and brand logo/favicon metadata is wired where supported.
-3. Stable guides are organized around getting started, golden path, JTBD/user flows, troubleshooting, hosted LLM-ops comparison, and cheatsheet content.
-4. Public moduledocs and README links point to the reorganized guide structure without stale file paths.
-
-### Phase 49: AI-accessible docs and docs verification gate
-
-**Goal:** Humans and coding agents can reliably navigate Scoria's public surface, and docs drift is caught before release.
-
-**Depends on:** Phase 48.
-
-**Requirements:** DOCS-04, AI-01, AI-02
-
-**Plans:** 2 plans
-
-Plans:
-**Wave 1**
-
-- [x] 49-01-PLAN.md — Root AI docs entry points and AI docs source contracts
+- [x] 56-01-PLAN.md — Classification leaf + Tool declaration surface + executor resolution choke point (tracer) [wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [x] 49-02-PLAN.md — Package AI docs and harden release preview as docs warning gate
+- [x] 56-02-PLAN.md — require_tool_classification refusal + result_envelope persistence + scoria.classification.* registry (CLASS-02) [wave 2]
 
-**Success Criteria:**
+**Wave 3** *(blocked on Wave 2 completion)*
 
-1. A curated root `llms.txt` and/or `AGENTS.md` points to the public facade, guide ladder, glossary, capabilities, and verification suites.
-2. The AI-accessibility surface distinguishes curated source docs from generated ExDoc artifacts.
-3. The docs verification command runs warning-clean locally and is wired into the appropriate CI/policy path or documented release gate.
-4. New docs/source contracts cover the glossary, guide index, and docs command enough to prevent silent front-door drift.
+- [x] 56-03-PLAN.md — Fail-open sites 2-5 consume the classification (CLASS-03) [wave 3]
 
-### Phase 50: Release readiness and `0.1.3` cut
+**Context**: `.planning/phases/56-tool-declared-trifecta-classification-per-run-rails/56-CONTEXT.md`
 
-**Goal:** The release train is green, the package truth is current, and Hex `0.1.3` is published with post-publish proof.
+### Phase 56.1: Per-Run Rails (SPLIT from Phase 56)
 
-**Depends on:** Phases 46–49.
+**Goal**: A single run cannot exceed its own step/call/time budget unnoticed; exceeding a rail halts the run terminally and the halt is audited.
+**Depends on**: Nothing new. **Split out of Phase 56 on 2026-07-28** after research showed the two halves share no files or failure modes, that Phase 57 depends on Phase 56 for classification only (not rails), and that rails require a schema migration classification does not. Splitting unblocks Phase 57 earlier.
+**Requirements**: RAIL-01
+**Success Criteria** (what must be TRUE):
 
-**Requirements:** REL-01, REL-02, REL-03, REL-04
+  1. A single run that exceeds its `max_steps`/`max_tool_calls`/`timeout` rails halts, and the halt is recorded in the audit trail.
+  2. The halt is genuinely terminal — not resurrectable via `Workflows.retry_step/1` / `Resume.retry_failed_step/2`.
+  3. Rails default to unlimited, so an adopter who configures nothing sees unchanged behavior; counting is always on so limits can be sized from real traffic.
+  4. Surfaces with no run attribution (inbound JSON-RPC via `MCP.Router`) are an explicit, telemetried no-op rather than a silent gap.
 
-**Plans:** 11 plans (50-01..04 original; 50-05..11 gap closure for CI verify-lane debt exposed by the release push)
+**Plans**: 6 plans (5 waves)
+**Wave 1**
+
+- [x] 56.1-01-PLAN.md — Tracer: rail columns, CAS step admission, terminal audited halt + six guards G1-G6 (RAIL-01) [wave 1]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 56.1-02-PLAN.md — Config ladder `Scoria.Runtime.Rails` + threading into both `Params` entry points (RAIL-01) [wave 2]
+- [x] 56.1-03-PLAN.md — `max_tool_calls` at both tool entry points, SC#4 no-op, `run_id` forward, CAS determinism battery (RAIL-01) [wave 2]
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 56.1-04-PLAN.md — Timeout rail: active-time predicate + changeset-derived pause accounting (RAIL-01) [wave 3]
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 56.1-05-PLAN.md — Halt evidence surfaces: `:observed` telemetry, `scoria.rail.*` trace keys, operator halt message (RAIL-01) [wave 4]
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 56.1-06-PLAN.md — Adopter surface: per-run-rails guide, mirrored footgun notes, migration disclosure (RAIL-01) [wave 5]
+
+**Context**: `.planning/phases/56.1-per-run-rails-split-from-phase-56/56.1-CONTEXT.md` is the canonical locked spec (D-01..D-23); the older D-56.1-A..H notes in `56-CONTEXT.md` are superseded and several of their citations are stale
+
+### Phase 57: Confluence Escalation Gate
+
+**Goal**: When a single tainted execution path touches private data, untrusted content, and an exfil-capable action at once, Scoria pauses for human approval before the exfil action executes — audited, replayable, and fail-closed-but-inspectable by default so no adopter is bricked.
+**Depends on**: Phase 55, Phase 56 (consumes the taint substrate and the tool-declared classification the gate evaluates)
+**Requirements**: GATE-01, GATE-02, GATE-03, GATE-04
+**Success Criteria** (what must be TRUE):
+
+  1. A confluence evaluator classifies a tainted execution path by which of the three legs (private-data / untrusted-content / exfil) are present, mirroring `ReplayDisposition`'s seam-classification style.
+  2. *(amended 2026-07-29, plan 57-10, D-18/D-25)* When all three legs co-occur on one tainted path, the confluence gate decides and refuses at `Scoria.MCP.Executor`, before the tool's execution task is started, and the run's STEP (not the whole run) transitions to `waiting_for_approval` through the existing pause function, so the escalation is resumable. This is a step-scoped pause, not a run-level freeze — a sibling step already in flight may still complete and reopen sibling dispatch while the escalated step alone stays paused (an accepted, documented limitation). Tool calls with no runtime step attribution cannot be paused; that gap is telemetried and documented.
+  3. Every confluence escalation decision is written to the audit outbox and can be replayed, consistent with existing approval/replay evidence.
+  4. *(amended 2026-07-29, plan 57-10, D-31)* Confluence enforcement is graded by evidence quality: the `declared` grade enforces from the shipped default; the three ungated grades (`unclassified`, `scanner_infra`, `default_tier`) emit telemetry only and never block on their own, so an adopter who has declared nothing is never silently bricked; opting into strict mode extends enforcement to the three ungated grades too.
+
+**Plans**: 12 plans (10 executed + 2 gap-closure)
 
 Plans:
-**Wave 1** *(original — complete)*
+**Wave 1**
 
-- [x] 50-01-PLAN.md — REL-01: repoint docs-contract constants to canonical guides/ and restore dropped maintainer content (policy lane green)
-- [x] 50-02-PLAN.md — REL-02: fix dev_seed.exs arity-3 tenant-scoped call sites + theme-toggle visible-locator (e2e lane green)
-- [x] 50-03-PLAN.md — REL-03: version/docs-truth polish (stale docs/ comments, 0.1.1 example, HexDocs subdomain URL)
+- [x] 57-01-PLAN.md — Tracer: one tainted path pauses end-to-end, plus the consolidated migration (GATE-01, GATE-02) [wave 1]
+- [x] 57-04-PLAN.md — Semconv confluence attribute group and registry canary (GATE-04) [wave 1]
 
-**Wave 2** *(original — blocked pending gap closure)*
+**Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 50-04-PLAN.md — REL-04: gate on ci-gate green, release-please publish 0.1.3, post-publish smoke proof (maintainer checkpoints)
+- [x] 57-03-PLAN.md — Phase 55 mint-site repair and the scanner-tier evidence field (GATE-01) [wave 2]
 
-**Gap closure — Wave 1** *(REL-04 CI verify-lane debt, parallel; ~30 failures across Buckets A–G)*
+**Wave 3** *(blocked on Wave 2 completion)*
 
-- [x] 50-05-PLAN.md — Bucket G: DashboardScope mount-halt regression (14 failures, 1 root cause) — fail-closed redirect + seed scope in shared test conns
-- [x] 50-06-PLAN.md — Bucket A: docs-source alignment — repoint example-source + SupportJourney doc surfaces to canonical guides/ SSOT (7 cases)
-- [x] 50-07-PLAN.md — Bucket C: runtime/LiveView seeded-run + rendered contracts (tenant-scoped run lookup, notebook primitives, incident evidence)
-- [x] 50-08-PLAN.md — Bucket D: UI/dev-lab contracts — repoint docs/MAINTAINERS.md reads to guides/maintainers.md + guard #7 inventory-ID reference
-- [x] 50-09-PLAN.md — Bucket E: SupportCopilot nested-gallery journeys (knowledge-lane grounding, producer→approvals)
-- [x] 50-10-PLAN.md — Buckets B+F: package-surface subdomain SSOT + warning-inventory verify-first
+- [x] 57-02-PLAN.md — Confluence evaluation model: eight-value ladder, weakest-evidence grading, config surface (GATE-01, GATE-04) [wave 3]
 
-**Gap closure — Wave 2** *(release re-entry; depends on 50-05..10)*
+**Wave 4** *(blocked on Wave 3 completion)*
 
-- [x] 50-11-PLAN.md — Full-suite + connector green → push → refresh PR #12 → confirm ci-gate green → hand off to 50-04 maintainer checkpoint
+- [x] 57-05-PLAN.md — Gate wiring: approval-consume CAS, attribution and containment, always-on telemetry (GATE-02, GATE-04) [wave 4]
+- [x] 57-09-PLAN.md — Reviewer evidence rows, bounded run-scoped approval, capped pending query (GATE-02) [wave 4]
 
-**Success Criteria:**
+**Wave 5** *(blocked on Wave 4 completion)*
 
-1. The current policy failure is fixed: `ROADMAP.md` keeps the archived `v2.15 Connector Adoption Lane` breadcrumb required by `CiPolicyContractTest`.
-2. Browser e2e failures observed on PR #12 are fixed or legitimately descoped with guard updates: IA orientation, release-workbench modal focus, and theme-toggle visibility/clickability.
-3. README, maintainer docs, CHANGELOG, release automation, and package metadata agree on live `0.1.2` baseline and `0.1.3` target.
-4. The release PR reaches green `ci-gate` and merges through the intended release-please path or a documented maintainer recovery path.
-5. Hex lists `0.1.3`, and post-publish smoke proves fresh install plus live-lineage upgrade.
+- [x] 57-06-PLAN.md — Per-run leg accumulator: strongest-wins, lit-legs-only, single-statement fold (GATE-01, GATE-02) [wave 5]
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [x] 57-07-PLAN.md — Audit trail on escalate and block, closed metadata projector, replay contract (GATE-03) [wave 6]
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [x] 57-08-PLAN.md — Resume widening, retry guard, concurrency rescue, halt invariants (GATE-02) [wave 7]
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [x] 57-10-PLAN.md — Concurrency suite, shipped-lie repair, requirement and roadmap amendments (GATE-01..04) [wave 8]
+
+**Wave 9** *(gap closure — blocked on Wave 8 completion; closes `57-VERIFICATION.md`'s failed truth 5)*
+
+- [x] 57-11-PLAN.md — Escalation-time evidence reaches the reviewer drawer, proven against a real executor escalation (GATE-02, GATE-03) [wave 9]
+
+**Wave 10** *(gap closure — blocked on Wave 9 completion)*
+
+- [x] 57-12-PLAN.md — GATE-01/GATE-03 status correction and the unmet-truth window closure (GATE-01, GATE-03) [wave 10]
+
+**Context**: `.planning/phases/57-confluence-escalation-gate/57-CONTEXT.md` is the canonical locked spec (D-01..D-54); `57-RESEARCH.md` re-verified its citations against the worktree and its file:line coordinates win on conflict
+
+### Phase 58: Safety Hooks, Security Boundary & Govern Surface
+
+**Goal**: Adopters can wire optional moderation/output-scanning through Scoria's existing eval seam, know exactly what Scoria enforces versus what they must own, and see the named dangerous-combination classification for a tainted run through a minimal read-only screen.
+**Depends on**: Phase 57 (the Govern surface renders the confluence gate's classification output; hooks and the boundary doc close out the milestone)
+**Requirements**: HOOK-01, HOOK-02, BOUND-01, GOVERN-01
+**Success Criteria** (what must be TRUE):
+
+  1. *(amended 2026-07-29, phase 58 discuss, D-04/D-05)* A host can register a moderation scanner through the shipped `Scoria.Trust.Scanner` behaviour; with none registered, `Scanner.NoOp` keeps moderation off by default at zero overhead.
+  2. *(amended 2026-07-29, phase 58 discuss, D-04/D-07 — reduced scope)* A host can call `Scoria.Trust.scan_model_output/2` and see model output tagged `scoria.trust.*` in traces when a registered scanner fires. Scoria does NOT automatically scan model output this phase, and a model-output verdict is trace evidence only — it does not light the confluence untrusted-content leg (that is Phase 58.1, HOOK-03).
+  3. *(amended 2026-07-29, phase 58 discuss, D-12)* A committed `guides/security-boundary.md` states, side by side, what Scoria enforces versus what the host must own across improper-output-handling, moderation, system-prompt-leakage, and per-user-allowlist scenarios — refining, not duplicating, `guides/ownership-boundary.md`.
+  4. An operator can open a read-only Govern screen and see, for a tainted run, the named dangerous combination ("private data + untrusted content + external egress → exfiltration path") plus per-tool trifecta classification, with no policy-builder or simulate-on-history present.
+
+*(SC amendment rationale: the original SC1/SC2 named `Eval.online_scoring`/`judge_runner` as "the existing scorer seam". That seam does not exist — `lib/scoria/eval/` declares zero `@callback`s, `Runner.score_dataset_item/6` dispatches on two hardcoded literals and silently `not_scored`s everything else, `SubjectOutput.resolve/2` grades a frozen dataset capture in both modes so it never observes live output, and `OnlineScoreSampler` is prod-only, host-invoked and sampled. The seam described already shipped in Phase 55 as `Scoria.Trust.Scanner`. SC2 additionally drops the automatic step-boundary seam: zero `kind: "llm"` steps exist in the repo, `step.kind` is a UI display taxonomy rather than a declaration that a step calls a model, and a synchronous in-step scan charges its latency to `rail_max_active_ms`, which can trip a non-resurrectable halt on latency alone. SC4 was deliberately NOT amended — see 58-CONTEXT.md D-20.)*
+
+**Plans**: TBD
+**UI hint**: yes
+**Context**: `.planning/phases/58-safety-hooks-security-boundary-govern-surface/58-CONTEXT.md` is the canonical locked spec (D-01..D-40)
+
+### Phase 58.1: Scanner-to-Gate Wiring & Escalation Operability (SPLIT from Phase 58)
+
+**Goal**: A registered scanner's verdict actually reaches the confluence gate, and an escalation that nobody decides is visible and recoverable rather than an immortal paused run.
+
+**Depends on**: Phase 58. **Split out of Phase 58 on 2026-07-29** after the discuss-phase red-team pass inventoried the drafted phase at ~15-17 plans against Phase 57's 12, in a closing phase with no Phase 59 to absorb overflow. The split is along a real seam: Phase 58 ships observation and surfaces (span-only model-output evidence, the boundary doc, the Exposure screen), 58.1 ships enforcement wiring and operability. It also re-homes two Phase 57 cross-phase obligations the Phase 58 draft had dropped, and absorbs the work Phase 57 deferred to a "Phase 57.1" that was never added to this roadmap.
+
+**Requirements**: HOOK-03, GOVERN-02
+**Success Criteria** (what must be TRUE):
+
+  1. A registered scanner returning an `untrusted` verdict lights the confluence untrusted-content leg with a correct witness source, so the gate evaluates observed taint and not only tool self-declaration — closing Phase 57's D-13, which was promised and never wired (`executor.ex:731` hardcodes `%{source: :declared}`; `:737-739` records that `:default_tier`/`:scanner_infra` are not constructible through any live path).
+  2. The `:site` scan-context discriminator and the `:model_output` content shape are published together as one deliberate `Scoria.Trust.Scanner` contract change with a CHANGELOG upgrade note — absent `:site` means unspecified, never a defaulted `:tool_output` that would mislabel the existing retrieval call site.
+  3. Scan latency is accounted for against `rail_max_active_ms`, so registering a scanner cannot halt a run on latency alone.
+  4. A stuck-escalation queue surfaces confluence approvals nobody has decided, ordered by age, so a forgotten escalation is not an immortal `waiting_for_approval` run. Approval expiry — deferred by Phase 57 to a phase that was never created — is re-homed here, since its stated remedy was this queue supplying the human trigger.
+  5. Would-have-paused counts are rendered segmented by evidence grade, never as a raw firing count (which is 100% by construction), per the operator guidance recorded in shipped code at `executor.ex:1282-1287`. This requires a durable sink: nothing currently attaches to `[:scoria, :gate, :confluence, :observed]`.
+
+**Plans**: TBD
+**Context**: inherits `.planning/phases/58-safety-hooks-security-boundary-govern-surface/58-CONTEXT.md` D-06, D-07, D-09, D-36, D-37
 
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 46. Terminology and public vocabulary migration | v3.5 | 8/8 | Complete    | 2026-07-09 |
-| 47. README first-screen positioning and scope doctrine | v3.5 | 3/3 | Complete    | 2026-07-10 |
-| 48. ExDoc and guide ladder restructure | v3.5 | 15/15 | Complete    | 2026-07-10 |
-| 49. AI-accessible docs and docs verification gate | v3.5 | 2/2 | Complete    | 2026-07-11 |
-| 50. Release readiness and `0.1.3` cut | v3.5 | 10/11 | In Progress|  |
+| 51. Foundation Fix + Key Convention + Span-Kind Taxonomy | v3.6 | 5/5 | Complete | 2026-07-12 |
+| 52. RETRIEVER Span + Host-Declared Attributes | v3.6 | 6/6 | Complete | 2026-07-12 |
+| 53. Structured Child Spans + Write-Time Bound | v3.6 | 8/8 | Complete | 2026-07-18 |
+| 53b. `ai_span_events` + `emit_event/1` | v3.6 | 5/5 | Complete | 2026-07-18 |
+| 54. Docs Accuracy + Conformance Check | v3.6 | 2/2 | Complete | 2026-07-19 |
+| 54.1. Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG (INSERTED) | v3.6 | 2/2 | Complete | 2026-07-18 |
+| 55. Content Trust & Taint Substrate | v3.7 | 5/5 | Complete    | 2026-07-28 |
+| 56. Tool-Declared Trifecta Classification | v3.7 | 3/3 | Complete    | 2026-07-28 |
+| 56.1. Per-Run Rails (SPLIT from 56) | v3.7 | 6/6 | Complete    | 2026-07-28 |
+| 57. Confluence Escalation Gate | v3.7 | 12/12 | Complete    | 2026-07-29 |
+| 58. Safety Hooks, Security Boundary & Govern Surface | v3.7 | 0/TBD | Not started | - |
+| 58.1. Scanner-to-Gate Wiring & Escalation Operability (SPLIT from 58) | v3.7 | 0/TBD | Not started | - |
 
 ## Archived Milestones
+
+<details>
+<summary>✅ v3.6 Trace Foundation (Phases 51–54.1) — SHIPPED 2026-07-19</summary>
+
+**Goal:** Finish the trace schema Scoria already half-designed — make spans structured and portable (OTel-GenAI / OpenInference naming convention over the existing `attributes` jsonb map, not typed columns, not a schema rewrite) so eval, regression detection, and every downstream seed can attribute a quality delta to a prompt version, retrieval config, or model change instead of reading a flat blob.
+
+- [x] Phase 51: Foundation Fix + Key Convention + Span-Kind Taxonomy (5/5 plans) — completed 2026-07-12
+- [x] Phase 52: RETRIEVER Span + Host-Declared Attributes (6/6 plans) — completed 2026-07-12
+- [x] Phase 53: Structured Child Spans + Write-Time Bound (8/8 plans) — completed 2026-07-18
+- [x] Phase 53b: `ai_span_events` + `emit_event/1` (5/5 plans) — completed 2026-07-18
+- [x] Phase 54: Docs Accuracy + Conformance Check (2/2 plans) — completed 2026-07-19
+- [x] Phase 54.1: Wire ReqLLM/Jido adapters at boot + reconcile CHANGELOG — INSERTED (2/2 plans) — completed 2026-07-18
+
+Closed the pre-existing silent FK gap that swallowed every span; established `SpanKind` (8-value) + version-pinned `Semconv` as single key origins; captured model config; emitted structured `tool`/`prompt`/`retrieval`/`guardrail` child spans on a pipeline that boots under `Scoria.Application`; dual-wrote a linked `RETRIEVER` span alongside `ai_retrieval_runs`; resurrected `ai_span_events` via allow-listed `emit_event/1`; bounded all payloads to IDs-and-counts at one write-time choke point; and landed an honest version-pinned "OpenInference-compatible" claim backed by a falsifiable conformance test + boot-attached ReqLLM/Jido adapters. No Hex publish (convention staged under Unreleased `0.1.4`). Milestone audit `passed` (16/16 requirements, 6/6 phases, 12/12 integration seams, 1/1 E2E flow); closed `override_closeout` with one pre-existing SEED-004-class test flake deferred. Inserted Phase 54.1 closed the audit-found adapter boot-attach integration gap. Full phase detail archived in `.planning/milestones/v3.6-ROADMAP.md`; requirements in `.planning/milestones/v3.6-REQUIREMENTS.md`; audit in `.planning/milestones/v3.6-MILESTONE-AUDIT.md`.
+
+</details>
+
+<details>
+<summary>✅ v3.5 Documentation & Release Readiness (Phases 46–50) — SHIPPED 2026-07-11</summary>
+
+**Goal:** Make Scoria adoption-ready again after the v3.4 trust/security fixes by replacing jargon-first adopter docs with stable positioning, repairing release-blocking CI/browser drift, and cutting the honest `0.1.3` Hex release.
+
+- [x] Phase 46: Terminology and public vocabulary migration (8/8 plans) — completed 2026-07-09
+- [x] Phase 47: README first-screen positioning and scope doctrine (3/3 plans) — completed 2026-07-10
+- [x] Phase 48: ExDoc and guide ladder restructure (15/15 plans) — completed 2026-07-10
+- [x] Phase 49: AI-accessible docs and docs verification gate (2/2 plans) — completed 2026-07-11
+- [x] Phase 50: Release readiness and `0.1.3` cut (11/11 plans) — completed 2026-07-11
+
+Shipped Hex `0.1.3` (tag `v0.1.3`, PR #12 via release-please merge `b904c22a`, post-publish registry attest green). Milestone audit `passed` (18/18 requirements, 5/5 phases verified, 5/5 integration seams) after inline closure of two audit-time gaps: local `main` reconciled onto `origin/main` (it lacked the release commit), and a Phase 46 verification-doc gap closed via gsd-verifier. Full phase detail archived in `.planning/milestones/v3.5-ROADMAP.md`; requirements in `.planning/milestones/v3.5-REQUIREMENTS.md`; audit in `.planning/milestones/v3.5-MILESTONE-AUDIT.md`.
+
+</details>
 
 <details>
 <summary>✅ v3.4 Pre-1.0 Trust & Security Hardening (Phases 42–45) — SHIPPED 2026-07-09</summary>
@@ -270,60 +319,90 @@ See `.planning/MILESTONES.md` for full closeout history.
 
 ### Planned milestone order
 
-Sequenced (dependency + priority). Order was set by a 2026-07-03 AI-eval posture audit
-(6-agent adjudication vs LangSmith/Langfuse/Phoenix/Ragas/Braintrust/Inspect/OTel). Cadence
-decision: **P0 fixes → docs/positioning → feature milestones**, each feature milestone
-interleaving its own feature docs + a release as it lands. SEED-005 has been promoted into
-active milestone v3.5.
+**Execution order (do top-to-bottom): SEED-010 → SEED-008 → SEED-012 → {SEED-009, SEED-011} → SEED-013.**
+The `999.x` tags are stable seed IDs (cross-referenced from PROJECT.md/STATE.md), **not** the execution
+rank — read the numbered list below for order. **SEED-007 (999.3) shipped as v3.6 Trace Foundation (2026-07-19)**;
+the substrate it emits (span_kind / gen_ai.* / model-config / RETRIEVER span + host-declared
+feature/route/archetype/intent attrs) is now available to every seed below. **SEED-010 (999.4) is now
+active as v3.7 Portcullis (Phases 55–58, roadmap created 2026-07-19).**
 
-1. **999.3 → SEED-007 — Trace Foundation (OTel-GenAI / OpenInference interop)**  (foundational for eval attribution)
-   Semconv as a naming convention over the existing attrs map (not a schema rewrite) + span_kind +
-   model config + structured spans/events + RETRIEVER span + README claim fix. → see `SEED-007`.
+Provenance: the base order was set by a 2026-07-03 AI-eval posture audit (6-agent adjudication vs
+LangSmith/Langfuse/Phoenix/Ragas/Braintrust/Inspect/OTel). Cadence decision: **P0 fixes →
+docs/positioning → feature milestones**, each feature milestone interleaving its own feature docs + a
+release as it lands. SEED-006 (P0 trust/security) shipped in v3.4, SEED-005 (docs/positioning +
+honest `0.1.3` release) shipped in v3.5, and SEED-007 (trace foundation) shipped in v3.6, so the next
+milestone is the flagship differentiator → SEED-010.
 
-2. **999.4 → SEED-010 — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR]**
+> **Sequencing refinement (2026-07-11) — recorded so it is not re-derived after a context clear.**
+> A dependency+dividend re-analysis (all seeds' hard prereqs and what each *emits* for the ones after
+> it) kept 007 → 010 → 008 first, then made two deliberate changes vs the original 2026-07-03 list:
+> 1. **Pulled SEED-012 forward to right after SEED-008** (was stranded last-but-one). 012 is a pure
+>    dividend of 007's attribute convention + 008's confusion-matrix/archetype slot — cheapest to build
+>    while that machinery is still warm, not months later behind 009/011.
+> 2. **Split SEED-013** into (a) an **early cross-cutting shell** — nav re-group, unified Queue,
+>    persistent scope contract, progressive-disclosure/receipts law — which is buildable on **today's**
+>    backend (`depends_on: []`), and (b) **late feature-specific screens** (Run Workbench evidence
+>    canvas, story-spine, Govern/Privacy/Quality/Cockpit content) that ride their backends. Landing the
+>    shell early means 010/008/009/011 build their screens *into* the north-star frame and plug their
+>    human-work items into one Queue, instead of building into the old IA and re-slotting later (rework).
+>    Whether to actually land the 013 shell early vs keep 013 as one closing capstone is a maintainer
+>    call at that point — both are recorded; the dividend case favors early.
+>
+> **Dividend map (why this order):** 007 (now shipped) emitted `span_kind`/`gen_ai.*`/model-config/RETRIEVER-span +
+> host-declared `feature`/`route`/`archetype`/`intent` attrs → consumed by 008 (scorers read spans),
+> 010 (taint substrate), 012 (archetype attr), and every 013 screen. 008 emits the confusion-matrix +
+> typed archetype slot → 012 reuses both wholesale. 009 and 011 depend only on shipped 006 (independent
+> tracks; order between them is priority, not dependency). 013 depends on nothing structurally but
+> composes every feature seed's UI slice.
+
+1. **SEED-010 (999.4) — Lethal-Trifecta Governance**  ⭐ **[FLAGSHIP DIFFERENTIATOR — ACTIVE AS v3.7 PORTCULLIS]**
    Content trust tiers + spotlighting + tool-declared trifecta classification + confluence
    escalation policy (Meta Rule-of-Two) + moderation/output hooks + SECURITY-BOUNDARY.md. No peer
-   ships this as a runtime seam; Scoria is 2/3 built. Sequence early (after 006 + 007). → see `SEED-010`.
+   ships this as a runtime seam; Scoria is 2/3 built. Consumes 007's now-shipped taint substrate —
+   build while trace work is fresh; highest external/positioning payoff. Roadmapped as Phases 55–58
+   (2026-07-19). → see `SEED-010`.
 
-3. **999.5 → SEED-008 — Trustworthy Eval Depth**  (after 006 + 007)
+2. **SEED-008 (999.5) — Trustworthy Eval Depth**  (after 007 — scorers are meaningless over attribution-less traces)
    Real scorer library + regression-comparison engine + judge calibration (the unique join Scoria
-   already captures but discards) + versioned rubric + typed risk/intent taxonomy slots. → see `SEED-008`.
+   already captures but discards) + versioned rubric + typed risk/intent taxonomy slots. Emits the
+   confusion-matrix + archetype slot that 012 reuses. → see `SEED-008`.
 
-4. **999.6 → SEED-009 — Retrieval Eval Depth & Seams**  (after 006)
-   precision@k/NDCG/abstention/staleness (model-free, Scoria-owned) + faithfulness/rerank as
-   host-supplied hooks (no model in-lib) + tiny gold set. → see `SEED-009`.
-
-5. **999.7 → SEED-011 — Privacy & Feedback Governance**
-   Trace/memory retention/TTL/purge + right-to-erasure (Scoria owns the tables → owns deletion) +
-   PII masking contract + regex pack + human-feedback capture → flywheel + memory forget/expire.
-   Unblocks the currently-unserved privacy/legal/compliance persona. → see `SEED-011`.
-
-6. **999.8 → SEED-012 — Architecture-Archetype Awareness (Rule-8 lens)**  (small capstone; after 007 + 008)
+3. **SEED-012 (999.8) — Architecture-Archetype Awareness (Rule-8 lens)**  (small capstone; PULLED FORWARD — do immediately after 008)
    Host-declared `archetype`/`route` on runs (Scoria records/segments, never infers) + a
    segment-by-attribute dashboard facet (per-archetype/per-route cost/latency/scores) + per-archetype
    Rule-8 eval presets + Router observability (routing accuracy via the SEED-008 confusion-matrix reuse).
-   A thin composition over the SEED-007 attribute convention + SEED-008 eval machinery — not new infra.
-   From the 2026-07-03 AI-architecture-patterns ingest (memo: `.planning/research/ai-architectural-patterns.md`,
-   which validated ~85% of Scoria as-built). → see `SEED-012`.
+   A thin composition over the SEED-007 attribute convention + SEED-008 eval machinery — not new infra;
+   cheapest while that machinery is warm. From the 2026-07-03 AI-architecture-patterns ingest (memo:
+   `.planning/research/ai-architectural-patterns.md`, which validated ~85% of Scoria as-built). → see `SEED-012`.
 
-7. **999.9 → SEED-013 — Operator IA Pivot (Control-Room v2)**  (dashboard coherence; sequence after 006, alongside/after 005)
-   The **structural** operator-UI pivot buildable on today's backend: a tighter nav re-group
+4. **SEED-009 (999.6) — Retrieval Eval Depth & Seams**  (independent track — needs only shipped 006; benefits from 007's RETRIEVER span)
+   precision@k/NDCG/abstention/staleness (model-free, Scoria-owned) + faithfulness/rerank as
+   host-supplied hooks (no model in-lib) + tiny gold set. → see `SEED-009`.
+
+5. **SEED-011 (999.7) — Privacy & Feedback Governance**  (independent track — depends on nothing; order vs 009 is a priority call)
+   Trace/memory retention/TTL/purge + right-to-erasure (Scoria owns the tables → owns deletion) +
+   PII masking contract + regex pack + human-feedback capture → flywheel + memory forget/expire.
+   Unblocks the currently-unserved privacy/legal/compliance persona. Also owns the deferred
+   `user_feedback_received` emission (reserved in v3.6's EVENT-02 vocabulary but not emitted). → see `SEED-011`.
+
+6. **SEED-013 (999.9) — Operator IA Pivot (Control-Room v2)**  (SPLIT — see refinement note above)
+   **(a) Early cross-cutting shell** (buildable on today's backend, `depends_on: []`): tighter nav re-group
    (Home · Queue · Features · Runs · Quality · Govern · [Data & Privacy] · [Audit]), a **unified Queue**
    (one ranked human-work inbox over existing approvals+incidents+reviews), a persistent scope contract
-   (Tenant/Feature/Time/Live, cross-tenant loud), a 3-pane **Run Workbench**, the progressive-disclosure
-   law + receipts + "create policy rule from this," a **Feature Cockpit shell** (host-declared feature
-   attribute), and the "story-spine-with-vesicles" trace viz. It is the umbrella the feature-specific
-   screens fold into: Govern/blast-radius rides `SEED-010`, Data & Privacy rides `SEED-011`, Quality depth
-   rides `SEED-008`/`SEED-009`, Feature Cockpit content rides `SEED-012`. From the 2026-07-03 operator-UI
-   storyboard ingest (**UI source-of-record: `.planning/research/operator-ui-north-star.md`**, which
-   doctrine-filtered a blank-slate/maximalist storyboard down to this one structural seed + annotations —
-   ~40% of its ideas already ship). → see `SEED-013`.
+   (Tenant/Feature/Time/Live, cross-tenant loud), and the progressive-disclosure law + receipts +
+   "create policy rule from this." Landing this early lets each feature seed build into the frame + plug
+   into one Queue. **(b) Late feature-specific screens** that ride their backends: 3-pane **Run Workbench**
+   evidence canvas + "story-spine-with-vesicles" trace viz (SEED-007), Govern/blast-radius (SEED-010),
+   Data & Privacy (SEED-011), Quality depth (SEED-008/009), **Feature Cockpit** content (SEED-012). From
+   the 2026-07-03 operator-UI storyboard ingest (**UI source-of-record:
+   `.planning/research/operator-ui-north-star.md`**, ~40% of its ideas already ship). → see `SEED-013`.
 
 ### Carried-forward deferred work (pre-audit)
 
 - **SEED-004 — Test-code determinism** (async `IntegrationCase`, remove `Process.sleep`→`eventually/2`,
-  raise shard count). Deferred at v3.1 close; keep separate unless a release-blocking test failure requires a narrow fix. *(No seed
-  file on disk — tracked only here + STATE.md Deferred Items.)*
+  raise shard count). Deferred at v3.1 close; keep separate unless a release-blocking test failure requires a narrow fix.
+  Now also owns the one v3.6-deferred flake (`capture_parity_test.exs:53`, order-sensitive under full-suite `--seed 0`).
+  *(No seed file on disk — tracked only here + STATE.md Deferred Items.)*
 
 - **FLEET-01** — migrate sibling repos onto the shared Traefik + unpublished-DB standard. Deferred v3.2.
 - **FLEET-02** — `make nuke-all` fleet-wide teardown (high blast radius). Deferred v3.2.

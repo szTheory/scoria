@@ -16,4 +16,8 @@ defmodule ScoriaWeb.EvalVocabularyTest do
     assert UI.tone("passed") == :pass
     assert UI.tone("failed") == :fail
   end
+
+  test "a halted run renders with the failure tone, not a neutral badge (RAIL-01 D-01, plan 56.1-05 Task 3)" do
+    assert UI.tone("halted") == :fail
+  end
 end

@@ -1064,11 +1064,19 @@
   }
 
   /* ---------- Trace span row ---------- */
+  /* padding-left consumes --indent-level (D-07a): the depth is computed
+     server-side (TraceProjection.with_depths/1) and set as a CSS custom
+     property by the component; this is the ONE rule that renders it as
+     visual nesting. Shared by every `.scoria-span` row (trace tree AND
+     workflow tree) — do not add a second depth-computation or rendering
+     path. Rows that never set --indent-level fall back to depth 0 via the
+     var()'s default. */
   .scoria-span {
     display: flex;
     align-items: center;
     gap: var(--scoria-space-3);
     padding: var(--scoria-space-2) var(--scoria-space-3);
+    padding-left: calc(0.75rem + var(--indent-level, 0) * 1.25rem);
     border-radius: var(--scoria-radius-sm);
   }
   .scoria-span:hover { background: var(--scoria-tone-neutral-bg); }
@@ -1087,9 +1095,35 @@
   .scoria-span--retriever .scoria-span__rail { background: var(--scoria-span-retriever); }
   .scoria-span--guardrail .scoria-span__rail { background: var(--scoria-span-guardrail); }
   .scoria-span--eval .scoria-span__rail { background: var(--scoria-span-eval); }
-  .scoria-span--error .scoria-span__rail { background: var(--scoria-span-error); }
   .scoria-span--redacted .scoria-span__rail { background: var(--scoria-span-redacted); }
   .scoria-row-selected { background: var(--scoria-tone-brand-bg); }
+
+  /* status-error is an OVERLAY (D-12: error is a status, not a kind) —
+     composed alongside a span's real kind rail (e.g. "LLM + errored"),
+     never a standalone rail color swap. Non-color-only per WCAG 1.4.1: a
+     left border PLUS an alert-icon affordance both signal the errored
+     state. The icon glyph below is decorative; the component pairing this
+     class must also render a visually-hidden "Errored" label (.sr-only,
+     06-utilities.css) for screen readers. */
+  .scoria-span--status-error {
+    position: relative;
+    border-left: 3px solid var(--scoria-span-error);
+  }
+  .scoria-span--status-error::after {
+    content: "!";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    margin-left: auto;
+    flex: none;
+    border-radius: var(--scoria-radius-pill);
+    color: var(--scoria-text-onaccent);
+    background: var(--scoria-span-error);
+    font-size: var(--scoria-fs-label);
+    font-weight: 700;
+  }
 
   /* ---------- Page header ---------- */
   .scoria-pagehead { margin-bottom: var(--scoria-space-5); }

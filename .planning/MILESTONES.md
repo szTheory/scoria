@@ -1,5 +1,91 @@
 # Milestones
 
+## v3.6 Trace Foundation (Shipped: 2026-07-19)
+
+**Phases completed:** 6 phases (51, 52, 53, 53B, 54, 54.1), 28 plans, 67 tasks
+
+**Delivered:** Finished the half-designed trace schema — spans are now structured and portable via an OTel-GenAI / OpenInference **naming convention over the existing `attributes` jsonb map** (no typed columns, no schema rewrite). Closed the pre-existing silent FK gap that swallowed every span insert; established `Scoria.Observe.SpanKind` (8-value taxonomy) and version-pinned `Scoria.Observe.Semconv` as the single origins for `span_kind` and all `gen_ai.*`/`openinference.*` keys; captured model-config on LLM spans; emitted `tool`/`prompt`/`retrieval`/`guardrail` as real duration/failure-bearing child spans on a pipeline that now boots under `Scoria.Application`; dual-wrote a linked `RETRIEVER` span alongside `ai_retrieval_runs` (kept as system-of-record); resurrected `ai_span_events` via an allow-listed, redaction-safe `emit_event/1`; bounded all attribute payloads to IDs-and-counts at a single write-time choke point; and landed the honest, version-pinned "OpenInference-compatible" docs claim backed by a falsifiable conformance test — with the ReqLLM/Jido adapters boot-attached so LLM/TOOL spans persist with zero host hand-wiring.
+
+**Closeout:** `override_closeout` — all 6 phases verified (`passed`) and 16/16 v1 requirements complete; milestone audit `passed` (16/16 requirements, 12/12 integration seams, 1/1 E2E flow). **Known verification overrides: 1** — one pre-existing test flake (`capture_parity_test.exs:53`, SEED-004-class, not a v3.6 regression) acknowledged and deferred at close (see STATE.md → Deferred Items).
+
+**Key accomplishments (per plan):**
+
+- Shared `Scoria.Observe.SpanKind` taxonomy module (8 canonical kinds, observable normalize/2 fallback, mcp/eval OpenInference mapping) now drives both trace-rendering UI components, replacing two independently-drifted inline whitelists and the stale `error`-as-kind entry with a CSS status overlay.
+- Ecto.Multi trace-upsert-then-span-insert closes the pre-existing silent FK gap in `Buffer.flush_spans/1`, replacing the bare `rescue` with structured `Logger.error` + a new `[:scoria, :observe, :buffer, :flush_error]` telemetry event, an `:on_flush_error` (`:log`/`:raise`) knob, a `:flush_now` sync test hook, and error-storm control.
+- `Scoria.Observe.Adapters.ReqLLM` now captures the four model-config params together (`gen_ai.request.model/temperature/top_p/max_tokens/seed`) via `ReqLLM.OpenTelemetry.Attributes`, sets `span_kind` from the host-declared `metadata[:span_kind]` override (defaulting correctly rather than the plan-literal `metadata[:operation]`), and clean-replaces the legacy `llm.*`/`req.url` keys per CHANGELOG `0.1.4`.
+- `Scoria.Observe.Adapters.Jido` now sets `span_kind` via `SpanKind.normalize(metadata[:span_kind] || "tool")` (host-declared override, default `"tool"`, no action-name inference) with a mirrored `openinference.span.kind` attribute via `Semconv`/`SpanKind` — replacing the `"INTERNAL"` OTel category-error literal, mirroring the ReqLLM adapter's established pattern exactly.
+- Extended `Scoria.Observe.Semconv` with three sibling key-string-owning projection families (retrieval-config, host-declared, prompt-context) plus 19 drift-guard tests proving single-origin key ownership across the codebase.
+- Added an `@optional_callbacks`-declared `model_name/0` to `Scoria.Knowledge.Embedder` and implemented it on `Deterministic` with a stable literal, proven safe for host embedders that omit it via `function_exported?/3` (no `UndefinedFunctionError` risk).
+- `Scoria.Observe.emit_retriever_span/1` and `emit_prompt_span/1` — two symmetric, failure-isolated host-facing span emitters that route every attribute key through Semconv/SpanKind, resolving the D-ATTR01-7 host-metadata-forwarding blocker via a Scoria-owned seam.
+- `Knowledge.retrieve/2` now mints trace_id/span_id up front, builds one canonical retrieval-config map shared by `ai_retrieval_runs.metadata` and the emitted RETRIEVER span's attributes, and emits `Scoria.Observe.emit_retriever_span/1` after the with-chain succeeds — closing the RETR-01/RETR-02/ATTR-01 spine with a migrated D-R2b linkage test plus four new real-Postgres integration tests.
+- Inserted the shared `Semconv.merge_host_declared/2` stage into both req_llm and jido adapter attribute pipes so host-declared feature/route/archetype/intent keys ride the LLM and TOOL spans when present in metadata, with the jido path proven production-reachable and the req_llm path's hand-synthesized-only caveat documented inline.
+- A real `emit_prompt_span/1` emission — driven through the actual telemetry -> `Buffer` -> Postgres pipeline (not a hand-synthesized event) — persists `ai_spans` attributes carrying the nested `scoria.prompt.context` composition map coexisting with `gen_ai.usage.input_tokens`, proving SC#4 end-to-end.
+- `Scoria.Observe.Buffer` now boots as a supervised child of `Scoria.Application` and `Scoria.Observe.Telemetry.attach/1` fires on boot, so spans emitted by Phases 51/52 persist to Postgres in a real host app instead of firing into a void.
+- `Scoria.Observe.Semconv` now owns a closed, canaried `%{key => class}` attribute registry over a 6-value class vocabulary with no free-text class, the closed guardrail decision/reason-code enums with a fixed-key projector, and a type-only exception projection — the structural SEC-01 tollbooth plans 53-03/53-04/53-05/53-07 will consume.
+- `Scoria.Observe.span/4` is now the single transparent span primitive (mint, run, time, mark ERROR-on-failure, reraise unchanged) that `with_tool/3`/`with_prompt/3`/`with_guardrail/3` wrap and both Phase-52 emitters (`emit_retriever_span/1`, `emit_prompt_span/1`) now share via one private span-map builder that double-writes `tenant_id`/`workflow_run_id`/`session_id`.
+- `Scoria.Observe.Bounds.enforce/2` is now the single write-time choke point every span attribute payload passes through -- a closed-registry positive allowlist (never a deny-pattern), size/count/depth caps, and a fail-closed guarantee -- wired into `Telemetry.handle_event/4` between redaction and both the operator PubSub broadcast and Postgres persistence.
+- The trace tree now renders parent-child indentation via a shared `padding-left: calc()` CSS rule consuming an already-computed `--indent-level`, `depth_for/3` is cycle-guarded (visited-set + hard depth cap) against the DoS this same phase arms via write-time `parent_id`, and guardrail/error spans get accessible, closed-vocabulary operator affordances.
+- `Scoria.Observe.Guardrail.emit/1` produces one GUARDRAIL-kind span per policy decision (allow/block/escalate) with a structurally unreachable free-text reason key, wired into `Scoria.Runtime.start_run/2`'s release gate (G1) on all three of its paths without touching `ReleaseGate.check/1`'s locked return contract.
+- `Scoria.Workflows.Runtime.execute_step/2` now opens a step-level parent span (trace_id = run.id, span_id minted at the call site) and threads `trace_id`/`parent_id` into the step handler so handler-emitted LLM/tool spans link as children; G2/G3/G4 guardrail decisions and the JudgeRunner prompt-render site emit through the existing span/4 + Guardrail.emit/1 primitives, completing SC#1's trace tree with ids-and-duration-only payloads (SEC-01).
+- Core-lane migration dropping the ai_span_events.span_id FK (orphan events now insertable) plus Semconv's closed 3-atom point-event vocabulary and the new scoria.prompt.template_ref registry key.
+- Buffer gained a second, independently-capped `events` accumulator and a two-phase `do_flush` where events flush via a separate `Repo.insert_all` + try/rescue that runs regardless of the spans phase's outcome, so an orphan/failing event insert can never roll back already-committed spans.
+- `Scoria.Observe.emit_event/1` is the new never-raising, allow-list-gated public verb for the closed point-event vocabulary; the `[:scoria, :observe, :event, :emit]` telemetry handler independently re-checks the allow-list, redacts through a single collapsed call site, closes the two raw-bus NOT NULL raise classes before Bounds, activates `Bounds.enforce(_, :event)`, and casts to the durable `ai_span_events` table via a fixed-key projection.
+- Both real point-events (EVENT-03) now fire from live production code paths: `guardrail_triggered` inline inside `Guardrail.do_emit` gated to actual interventions, and `prompt_rendered` inline at the judge's prompt-render helper after a successful render -- both structurally incapable of leaking free text.
+- New `test/scoria/observe/event_emit_test.exs` proves SC#1 (identical redaction), SC#2 (closed vocabulary on both the direct and raw-bus paths), SC#4 (orphan isolation), D-05 (fail-closed batch atomicity), and SEC-01 (Bounds:event wiring) end-to-end against the real telemetry -> handler -> Buffer -> Postgres pipeline — all 6 tests green, full suite green except one pre-existing, confirmed-unrelated flake.
+- Flipped the adopter-facing observability claim from the softened "OpenInference-style" to an honest, version-pinned "OpenInference-compatible convention keys" claim across 5 doc surfaces, additively extending the doc-contract's allowed/required lists in the same change.
+- A falsifiable `Scoria.Observe.ConformanceTest` that replays the exact production `Redactor.redact/1 |> Bounds.enforce/2` pipeline in-test to prove all three span-emitting adapters (ReqLLM, MCP, Jido) only ever persist SSOT-allow-listed convention keys and a whitelisted `span_kind`, registered in `mix test.adoption`.
+- Closed the runtime integration gap: `Scoria.Application.observe_children/0` now boot-attaches both the ReqLLM and Jido telemetry adapters (previously test-only), proven by an additive boot-path test with zero manual attach, and reconciled the one test moduledoc that had gone stale.
+- Amended the CHANGELOG's ReqLLM/Jido adapter claim to distinguish span persistence from trace-join, added a new `guides/capabilities/llm-and-tool-adapters.md` adopter guide plus a troubleshooting entry, and registered the guide across all six mirrored docs-source inventory sites — while forward-fixing a pre-existing, baseline-broken `mix docs --warnings-as-errors` gate along the way.
+
+---
+
+## v3.5 Documentation & Release Readiness (Shipped: 2026-07-11)
+
+**Phases completed:** 5 phases, 39 plans, 66 tasks
+
+**Key accomplishments:**
+
+- Verification suite and reviewer broadcast aliases now lead with final vocabulary while legacy 0.1.x names continue to work.
+- The dashboard read model now leads with reviewer vocabulary while the 0.1.x operator module name remains compatible.
+- Semantic cache and bounded handoff inputs now expose final vocabulary while preserving legacy aliases and stored keys.
+- Workflow run-inspection UI now uses trace vocabulary while preserving legacy private component module names.
+- Remote invocation and incident top-level copy now uses trace and reviewer language while support proof sections keep evidence vocabulary.
+- The final terminology glossary now exists and is exposed through README, ExDoc, Hex package metadata, release preview, and Hex consumer contracts.
+- README and stable adopter guides now use the final public vocabulary while preserving explicit 0.1.x compatibility notes.
+- README and CHANGELOG now explain the pre-1.0 terminology migration without implying a schema migration or a new Hex release.
+- Executable README and scope-doctrine RED contracts now pin the missing first-screen positioning, persona boundaries, stale-version cleanup, and owns-vs-delegates table before docs copy changes.
+- README now opens with embedded Phoenix positioning, n=1 reviewer role boundaries, live 0.1.2 release truth, and a public owns-vs-delegates table locked by docs contracts.
+- RED ExUnit contracts now pin the Phase 48 HexDocs, package, redirect, guide-ladder, and release-preview inventory before implementation changes land.
+- Stable-doc, glossary, ownership-boundary, and public moduledoc contracts now point at the Phase 48 canonical guide ladder before the guides and moduledocs are green.
+- Start Here guide ladder with Getting Started, Golden Path, JTBD/user flows, ownership boundary, and cheatsheet content for the new canonical `guides/` surface.
+- Canonical capability guide bodies now cover default runtime, handoffs, semantic cache, connectors/MCP, support-copilot gallery, and the final vocabulary glossary.
+- Canonical Operate & Verify, Troubleshooting, external LLM-ops comparison, and Maintainer guide bodies now exist under `guides/` with Phase 46/47 vocabulary preserved.
+- README navigation now points at the canonical Phase 48 guide ladder while keeping the README as the GitHub/package front door.
+- ExDoc now opens on the canonical guide ladder with grouped public modules, dynamic source refs, redirects, brand assets, and release-preview package coverage.
+- Public facade, identity, runtime lifecycle, runtime DTO, and prompt-policy moduledocs now read as adopter-facing entry pages with canonical guide links and ID-boundary guidance.
+- Capability and integration public moduledocs now point to canonical guides and frame optional semantic cache, knowledge, connector, eval, and prompt surfaces through Scoria's ownership boundary.
+- Phase 48 validation is complete. Focused contracts, release preview, generated-doc assertions, and compile warnings-as-errors all pass.
+- Old copied docs source paths now land on thin compatibility pages that point to the canonical Phase 48 guide ladder.
+- Dashboard, reviewer trace, and verification-suite public moduledocs now teach the host-authenticated scope boundary and link to canonical Phase 48 guides.
+- SRE and legacy compatibility alias public moduledocs now use reviewer, verification-suite, ownership-boundary, and final replacement-module vocabulary.
+- Old capability docs source paths now resolve to thin compatibility pages that point at the canonical `guides/capabilities/` guide ladder.
+- Old reviewer verification and maintainer source links now land on thin compatibility pages that point to the canonical guides ladder.
+- Root AI-readable docs now give humans and coding agents one source-oriented map, one repo-agent operating contract, and a small tested contract module that keeps those files aligned.
+- Root AI docs now ship deliberately, ExDoc source docs are warning-clean, and release preview is the canonical warning-failing docs/package gate.
+- Repointed CiPolicyContractTest docs constants to canonical `guides/maintainers.md` and restored the genuinely-dropped maintainer content (Hex release secrets, CI gate map topology, Version namespaces, PR-vs-release proof depth), turning the 7 red policy-lane tests green without weakening a single assertion.
+- Fixed the two stale arity-2 `start_release_workflow` dev-seed call sites to the Phase 44-06 tenant-scoped arity-3 contract and hardened four theme-toggle Playwright locators with `.filter({ visible: true })`, turning the full e2e CI lane green (165 passed, 3 pre-existing skips).
+- Repointed four release-automation header comments to guides/maintainers.md, refreshed the post-publish-smoke example to 0.1.3, and moved @hexdocs_url to the per-package HexDocs subdomain form — while surfacing a pre-existing plan-01 docs-gate regression that blocks the 0.1.3 release preview.
+- Cut the 0.1.3 release: squash-merged the green PR #12, Release Please tagged `v0.1.3` and published to Hex, and the canonical post-publish registry attest passed — REL-04 satisfied, milestone v3.5 complete.
+- DashboardScope.on_mount/4 now redirects instead of bare-halting on missing/unauthorized scope, closing all 14 LiveView 1.1.30 `raise_halt_without_redirect!` failures.
+- All 7 Bucket-A docs-source cases now pass: repointed phoenix/handoff/semantic-cache example-source tests and all 4 SupportJourney adopter-doc surfaces to the canonical guides/ SSOT, applying the user's decision to update fixture wording/paths to current canonical text and drop fragments whose concept Phase 46/48 genuinely removed, while leaving guides/ itself untouched.
+- Repaired 4 REL-04 CI verify-lane failures by fixing a tenant_id seed/scope mismatch in two runtime integration tests and repointing two rendered-contract assertions (delegated-notebook primitives, incident-evidence heading) to their relocated/reworded canonical source — zero assertions deleted or loosened.
+- Repointed 3 stale-path CI failures (2 in ui_component_test.exs, 1 in dev_lab_boundary_test.exs) to their current canonical sources without weakening any assertion.
+- Fixed a missing tenant_id in the nested gallery app's knowledge seeding (root cause of the journey_test:110 crash) and repointed two vocabulary-drifted assertions in orchestrator_producer_test:31 to the current D-19/D-20/D-25 approval-copy rendered text — closing all 3 Bucket-E CI failures.
+- Aligned package_surface_test's one-publish-surface assertion to the REL-03 HexDocs subdomain SSOT (https://scoria.hexdocs.pm) and confirmed capture_parity_test:53 is a local-env-only artifact that passes clean on the release head.
+- 1. [Rule 1 - Bug] Fixed ExDoc `--warnings-as-errors` regression: broken markdown link to a dev-only, non-extras doc
+
+---
+
 ## v3.4 Pre-1.0 Trust & Security Hardening (Shipped: 2026-07-09)
 
 **Phases completed:** 4 phases, 24 plans, 61 tasks

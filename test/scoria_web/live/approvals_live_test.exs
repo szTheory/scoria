@@ -31,6 +31,8 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
+  alias Scoria.MCP.Executor
+  alias Scoria.Observe.Approval
   alias Scoria.Repo
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
@@ -53,6 +55,51 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     end
 
     def succeed(step, _run), do: {:ok, %{"step_id" => step.id, "status" => "approved"}}
+
+    # D-50: a confluence-kind escalation, mirroring the shape
+    # `MCP.Executor.escalate/3` produces (blocker_kind, tool_name, reason)
+    # for a bounded run-scoped approve action to act on.
+    def wait_for_confluence_approval(_step, run) do
+      {:waiting_for_approval,
+       %{
+         tool_name: "send_reply",
+         arguments: %{"ticket_id" => "TKT-1"},
+         reason: "confluence gate: exfiltration_path",
+         blocker_kind: "confluence",
+         actor_id: "operator-live",
+         tenant_id: "tenant-live",
+         trace_id: "trace-#{run.id}"
+       }}
+    end
+  end
+
+  # Plan 57-11 Task 3: a REAL confluence escalation, distinct from
+  # `pending_confluence_approval/1` above (SYNTHETIC -- mimics the shape but
+  # carries no `blocker_audit_outbox_event_id`). This tool declares all
+  # three trifecta legs, mirroring `Scoria.ConfluenceAuditTest.ThreeLegTool`
+  # and `Scoria.ConfluenceReviewerEvidenceTest.ThreeLegTool`, so
+  # `Scoria.MCP.Executor.execute/4` genuinely escalates and writes a real
+  # `blocker_audit_outbox_event_id` back-link the projection can read.
+  defmodule RealConfluenceThreeLegTool do
+    use Scoria.MCP.Tool,
+      reads_private_data: true,
+      sees_untrusted_content: true,
+      can_exfiltrate: true
+
+    @impl true
+    def name, do: "approvals_live_real_confluence_three_leg_tool"
+
+    @impl true
+    def description, do: "Declares all three trifecta legs for the rendered-drawer proof"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, context) do
+      send(context.test_pid, {:tool_body_executed, self()})
+      {:ok, %{result: "leaked"}}
+    end
   end
 
   setup_all do
@@ -103,6 +150,74 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     {:ok, approval} =
       Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_approval})
+
+    %{run: run, step: step, approval: approval}
+  end
+
+  defp pending_confluence_approval(opts \\ []) do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        tenant_id: Keyword.get(opts, :tenant_id, "tenant-live")
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    {:ok, approval} =
+      Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_confluence_approval})
+
+    %{run: run, step: step, approval: approval}
+  end
+
+  # Plan 57-11 Task 3: drives a REAL `Executor.execute/4` escalation --
+  # `Scoria.IntegrationCase`'s own setup already checks out the sandbox in
+  # SHARED mode and allows `Scoria.Workflow.TaskSupervisor` (and
+  # `Scoria.MCP.TaskSupervisor`) to use the same connection, so the
+  # supervised task this escalation runs in can see the same transaction.
+  # The run's tenant MUST equal the session's tenant ("tenant-live") --
+  # `mark_waiting_for_approval/3`'s `immutable_identity/2` sources the
+  # approval's tenant from the RUN, not from the escalation context, so a
+  # tenant mismatch here would make the approval invisible to this
+  # LiveView.
+  defp real_confluence_approval(opts \\ []) do
+    tenant_id = Keyword.get(opts, :tenant_id, "tenant-live")
+
+    {:ok, run} =
+      Workflows.create_run(%{root_role_id: "executor", tenant_id: tenant_id})
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "work",
+        role_id: "executor",
+        status: "running"
+      })
+
+    context = %{
+      actor_id: "operator-live",
+      tenant_id: tenant_id,
+      run_id: run.id,
+      step_id: step.id,
+      args_fingerprint: "fp-approvals-live-real-confluence-#{System.unique_integer([:positive])}",
+      test_pid: self()
+    }
+
+    task =
+      Task.Supervisor.async_nolink(Scoria.Workflow.TaskSupervisor, fn ->
+        Executor.execute(RealConfluenceThreeLegTool, %{"action" => "leak"}, context)
+      end)
+
+    result = Task.yield(task, 5_000) || Task.shutdown(task, :brutal_kill)
+
+    assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+
+    approval = Repo.get_by!(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
 
     %{run: run, step: step, approval: approval}
   end
@@ -569,6 +684,67 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     refute html =~ "scoria-toast--pass"
   end
 
+  # RAIL-01, D-05 (plan 56.1-05 Task 3): `maybe_resume_approval/3` calls
+  # `Resume.resume_run/1` AFTER `Workflows.approve/3` has already committed
+  # the decision. A run halted by a per-run rail falls through
+  # `Workflows.resume_run/1`'s catch-all as `{:error, :not_resumable}` --
+  # the decision WAS recorded, only the resume did not happen. Before this
+  # fix the generic `approval_error_message/2` fallback rendered "Could not
+  # record approved approval decision", telling the operator their approval
+  # failed when it did not.
+  test "approving a decision on a run halted by a per-run rail shows an accurate info-tone toast, not a false failure" do
+    %{run: run, step: step, approval: approval} = pending_approval()
+
+    envelope = %{
+      "status" => "run_halted",
+      "reason_code" => "max_steps_exceeded",
+      "rail" => "max_steps",
+      "limit" => 1,
+      "observed" => 1,
+      "attempted" => 2,
+      "run_id" => run.id,
+      "step_id" => step.id,
+      "halted_at" => DateTime.to_iso8601(DateTime.utc_now()),
+      "site" => "workflow_runtime_step"
+    }
+
+    assert {:ok, %Scoria.Workflows.Run{status: "halted"}} =
+             Workflows.halt_run(run.id, step.id, envelope)
+
+    # D-05: halting a run never modifies its pending Approval rows.
+    assert Workflows.get_approval!(approval.id).status == "pending"
+
+    # RAIL-01 D-18/D-01: a halted run's own dashboard rendering must not
+    # raise, and it renders with the failure tone (asserted separately in
+    # eval_vocabulary_test.exs's tone/1 unit test). This LiveView mount
+    # succeeding, below, is the end-to-end proof for the approvals surface.
+    {:ok, view, _html} =
+      live(
+        session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+        "/scoria/approvals?runtime=#{run.id}"
+      )
+
+    projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+    send(view.pid, {:hitl_request, projection})
+
+    render_click(view, "approve", %{})
+
+    eventually(fn -> render(view) =~ "scoria-toast--info" end)
+    html = render(view)
+
+    assert html =~ "scoria-toast--info"
+
+    assert html =~
+             "Approval decision recorded. This run was halted by a per-run rail and cannot be resumed."
+
+    refute html =~ "Could not record"
+    refute html =~ "Approval granted."
+    refute html =~ "scoria-toast--fail"
+
+    # The decision itself WAS recorded despite the run staying halted.
+    assert Workflows.get_approval!(approval.id).status == "approved"
+  end
+
   # D-21: fixtures MUST route decided rows through approve/3 (not Repo.update_all)
   # so the real path emits the decision audit event and the history surface is
   # exercised honestly.
@@ -758,6 +934,135 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
       assert html =~ "Decided · time unavailable"
       refute html =~ "Expired by"
+    end
+  end
+
+  describe "D-50 bounded run-scoped approve action" do
+    test "the scoped action renders only for a confluence approval" do
+      %{run: run, approval: approval} = pending_confluence_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      html = render(view)
+      assert html =~ ~s(phx-value-decision="approve_run_scoped")
+      assert html =~ "Approve send_reply for the rest of this run"
+    end
+
+    test "the scoped action does not render for a non-confluence approval" do
+      %{run: run, approval: approval} = pending_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      refute render(view) =~ ~s(phx-value-decision="approve_run_scoped")
+    end
+
+    test "invoking the scoped action sets confluence_scope to the run-scoped value and approves" do
+      %{run: run, approval: approval} = pending_confluence_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      render_click(view, "approve_run_scoped", %{})
+
+      eventually(fn ->
+        Repo.get!(Scoria.Observe.Approval, approval.id).status == "approved"
+      end)
+
+      updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
+      assert updated_approval.status == "approved"
+      assert updated_approval.confluence_scope == "run_tool"
+    end
+
+    test "invoking the plain approve action on a confluence approval leaves the scope at its default" do
+      %{run: run, approval: approval} = pending_confluence_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      render_click(view, "approve", %{})
+
+      eventually(fn ->
+        Repo.get!(Scoria.Observe.Approval, approval.id).status == "approved"
+      end)
+
+      updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
+      assert updated_approval.status == "approved"
+      assert updated_approval.confluence_scope == nil
+    end
+  end
+
+  # Plan 57-11 Task 3 (D-40, D-48, GATE-02): the failing verification truth
+  # this closes -- a reviewer sees the named combination, the legs with
+  # their sources, and the grade -- proven by RENDERING a real escalation in
+  # the actual approvals drawer, not by inspecting a row list.
+  describe "a reviewer sees the named combination, the legs with their sources, and the grade" do
+    test "a real confluence escalation's rendered drawer shows the combination, each lit leg's witness source, and the evidence grade" do
+      %{run: run, approval: approval} = real_confluence_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      html = render(view)
+
+      assert html =~
+               "Private data + untrusted content + external egress → exfiltration path"
+
+      assert html =~ "Declared by the tool"
+      assert html =~ "Evidence grade"
+      assert html =~ "Declared"
+    end
+
+    test "a non-confluence approval's rendered drawer contains none of the confluence evidence strings" do
+      %{run: run, approval: approval} = pending_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      html = render(view)
+
+      refute html =~
+               "Private data + untrusted content + external egress → exfiltration path"
+
+      refute html =~ "Declared by the tool"
+      refute html =~ "Evidence grade"
     end
   end
 

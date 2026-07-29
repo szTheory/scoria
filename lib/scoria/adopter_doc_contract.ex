@@ -68,7 +68,8 @@ defmodule Scoria.AdopterDocContract do
     "tenant-scoped knowledge retrieval",
     "upgrade-safe verification suites",
     "no separate Scoria-hosted control plane",
-    "no required egress for Scoria governance records"
+    "no required egress for Scoria governance records",
+    "OpenInference-compatible convention keys"
   ]
 
   @comparison_ceded_strengths [
@@ -82,7 +83,6 @@ defmodule Scoria.AdopterDocContract do
 
   @comparison_deferred_not_current_claims [
     "OpenInference export is not a current Scoria claim",
-    "Rule-of-Two/lethal-trifecta enforcement is not a current Scoria claim",
     "deeper scorer calibration is not a current Scoria claim",
     "richer retrieval evals are not current Scoria claims",
     "retention, masking, purge, and feedback governance are not current Scoria claims",
@@ -92,8 +92,6 @@ defmodule Scoria.AdopterDocContract do
   @comparison_forbidden_current_claims [
     "OpenInference export",
     "OpenInference-compatible export",
-    "Rule-of-Two",
-    "lethal-trifecta enforcement",
     "mature scorer calibration",
     "regression depth",
     "deep retrieval eval",
@@ -103,6 +101,17 @@ defmodule Scoria.AdopterDocContract do
     "purge governance",
     "feedback governance",
     "persistent AI feature grouping"
+  ]
+
+  # (D-53) The confluence escalation gate shipped in Phase 57 -- unlike
+  # the deferred/forbidden lists above, this is a REQUIRED claim: the
+  # adoption-surface test asserts the guide CONTAINS it, so the ABSENCE
+  # of the guide edit is what fails, not its presence. Worded in the
+  # phase's own vocabulary (confluence escalation gate / private data /
+  # untrusted content / external egress) -- never the hyphenated coinage
+  # forms `lib/scoria/ai_doc_contract.ex` machine-forbids.
+  @comparison_required_current_claims [
+    "Scoria ships a confluence escalation gate that pauses for human approval when private data, untrusted content, and an external-egress-capable action co-occur on one tainted execution path"
   ]
 
   @milestone_banner_refutes [
@@ -212,6 +221,15 @@ defmodule Scoria.AdopterDocContract do
   Claims that must not appear inside the current-Scoria section.
   """
   def comparison_forbidden_current_claims, do: @comparison_forbidden_current_claims
+
+  @doc """
+  Claims that MUST appear inside the current-Scoria section (D-53) --
+  unlike every other list in this module, this is a POSITIVE assertion:
+  the adoption-surface test asserts the guide contains every entry here,
+  so removing the corresponding guide edit is what turns the suite red,
+  not adding a forbidden phrase.
+  """
+  def comparison_required_current_claims, do: @comparison_required_current_claims
 
   @doc """
   Milestone banner phrases README must not contain.

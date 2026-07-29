@@ -117,6 +117,19 @@ Persist `started.run_id` anywhere your host app already tracks ongoing work: ses
 
 Do not try to resume from `session_id` alone.
 
+## Per-run rails
+
+Rails (`max_steps`/`max_tool_calls`/`max_active_ms`) are enforced only where a `run_id`
+is present in the tool-call context. Scoria populates `run_id` and `step_id` into
+`run.metadata["runtime"]` at step dispatch, but the handler must forward them into
+whatever context it passes to `Scoria.MCP.Executor.execute/4` — Scoria will not infer
+one. Inbound JSON-RPC MCP requests handled by `Scoria.MCP.Router` carry only `actor_id`,
+`tenant_id`, and `session_id` and therefore have no `max_tool_calls` coverage at all
+today; the same gap shape applies wherever else a `run_id` is absent from context. Every
+unattributed call emits `[:scoria, :run, :rail, :skipped]` with `reason: :no_run_id`, and
+counting that event measures exactly how much of your tool traffic is unrailed. See
+[Per-Run Rails](guides/capabilities/per-run-rails.md) for the full contract.
+
 ## Inspect and resume
 
 Your app can inspect one run directly or list all runs that share the same `session_id`:

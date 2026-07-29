@@ -56,6 +56,54 @@ defmodule ScoriaWeb.ReviewCopy do
     end
   end
 
+  @doc """
+  Operator-facing copy for a guardrail span badge, mapping the closed
+  `(gate name, decision)` pair to a sentence in operator words — never
+  the raw `reason_code` enum value (D-07e, T-53-01).
+
+  A `block` decision reads "Blocked", never "Failed" — the evaluation
+  succeeded and the business decision went a particular way (D-05e); an
+  `allow` decision reads "Checked — allowed", deliberately NOT "Passed" —
+  "passed" reads like an eval score, while a guardrail gates. Keeping
+  those two vocabularies distinct is the point of modeling the guardrail
+  decision separately from eval results.
+  """
+  def guardrail_label(name, decision) do
+    case {status_value(name), status_value(decision)} do
+      {"release_gate", "block"} ->
+        "Blocked — prompt version is a draft, not released"
+
+      {"approval_gate", "escalate"} ->
+        "Held for approval — this step needs a human"
+
+      {"budget_gate", "block"} ->
+        "Blocked — budget exhausted"
+
+      {"breaker_gate", "block"} ->
+        "Blocked — provider circuit is open"
+
+      {_gate, "allow"} ->
+        "Checked — allowed"
+
+      {gate, decision} when is_binary(gate) or is_binary(decision) ->
+        humanize_guardrail(gate, decision)
+
+      _ ->
+        "Guardrail decision not recorded"
+    end
+  end
+
+  defp humanize_guardrail(gate, decision) do
+    [gate, decision]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&humanize/1)
+    |> Enum.join(" — ")
+    |> case do
+      "" -> "Guardrail decision not recorded"
+      label -> label
+    end
+  end
+
   def field(nil, _key), do: nil
 
   def field(record, key) when is_map(record),

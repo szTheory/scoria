@@ -35,11 +35,8 @@ defmodule ScoriaWeb.WorkflowTreeComponent do
   end
 
   # Map a step kind to a trace span-kind for the colored rail (brand book §8.8).
-  defp span_kind(kind) when kind in ~w(llm tool prompt mcp retriever guardrail eval agent),
-    do: kind
-
   defp span_kind("approval"), do: "guardrail"
   defp span_kind("handoff"), do: "agent"
   defp span_kind("answer"), do: "llm"
-  defp span_kind(_), do: "agent"
+  defp span_kind(kind), do: Scoria.Observe.SpanKind.normalize(kind)
 end

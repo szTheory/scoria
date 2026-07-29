@@ -150,6 +150,127 @@ install axis and do not map to Hex versions.
 
 ## [Unreleased]
 
+### ⚠ BREAKING CHANGES (`0.1.4` cut)
+
+**ReqLLM observability adapter attribute key rename.** Scoria.Observe.Adapters.ReqLLM
+now emits OTel-GenAI / OpenInference convention keys (`gen_ai.*`, `server.*`,
+`openinference.span.kind`) instead of Scoria's own ad hoc keys. This is a **clean
+replacement — no dual-emit, no runtime shim, no config flag.** No adopter Postgres
+database has ever actually persisted the old keys: a separate pre-existing bug (the
+`ai_spans.trace_id` foreign-key gap, fixed alongside this change) meant every span
+emitted through Scoria.Observe.Buffer was silently dropped before reaching the
+database, so there is zero legacy row data to protect.
+
+| Old key | New key(s) | Note |
+|---|---|---|
+| `llm.model_name` | `gen_ai.request.model` (requested) / `gen_ai.response.model` (actually used) | Was a single string; now split into request-vs-response semantics — some providers silently route to a different underlying model than requested |
+| `llm.token_count` | `gen_ai.usage.input_tokens` + `gen_ai.usage.output_tokens` | Was a single total; reconstruct the old total as `input_tokens + output_tokens` if you need it |
+| `req.url` | `server.address` + `server.port` | **Lossy**: the old key held a presumed full request URL; the new keys hold only host + port, not path. Combine with `gen_ai.operation.name` (e.g. `"chat"`) for "what kind of call, to what host" — not literal path-level detail |
+
+If you attached a custom `:telemetry` handler to `[:scoria, :observe, :span, :stop]`
+that reads the old key names out of `attributes` in memory, update it to read the new
+`gen_ai.*`/`server.*` keys above.
+
+**New persistence-failure observability.** Scoria.Observe.Buffer no longer silently
+swallows flush failures with a bare `rescue`. A new `[:scoria, :observe, :buffer,
+:flush_error]` telemetry event fires on every failed flush (logged by default), and a
+new `:on_flush_error` `Buffer` start-link option (`:log` default | `:raise`) lets you
+choose whether a persistent Postgres failure should crash the buffer process instead
+of only logging.
+
+### Migration Required (per-run rails, RAIL-01)
+
+The pre-1.0 terminology migration described below requires no schema change, and the
+per-run rails feature described here adds one.
+
+**One new migration: `20260728120000_add_rail_columns_to_ai_workflow_runs.exs`.** This
+migration adds seven columns to `ai_workflow_runs`: `rail_max_steps`,
+`rail_max_tool_calls`, `rail_max_active_ms`, `rail_steps`, `rail_tool_calls`,
+`rail_paused_ms`, and `rail_paused_at`. It is catalog-only — there is no backfill, so
+every existing row reads zero counters and null limits, and every pre-existing run
+behaves exactly as before. **Hosts must run their migrations after upgrading** (`mix
+ecto.migrate`); see [Troubleshooting](guides/troubleshooting.md) for the failure symptom
+if this step is skipped.
+
+**A new terminal run status: `"halted"`.** A run that exceeds a configured rail now
+reaches this status instead of being silently allowed to continue.
+
+**A new audit-outbox event type: `"run.rail.tripped"`.** Call this out explicitly if you
+maintain a custom `Scoria.SRE.AuditSink` implementation: `SRE.Relay` is
+event-type-agnostic and every in-repo UI filter is positive, but an adopter's own sink
+that pattern-matches `event_type` exhaustively could crash on an unrecognised value
+unless it is updated to handle `"run.rail.tripped"` before upgrading.
+
+See [Per-Run Rails](guides/capabilities/per-run-rails.md) for the full capability guide.
+
+### Added
+
+**Scoria.Observe.Buffer now boots automatically.** Spans emitted by Phases 51/52
+(Scoria.Observe.emit_*_span/1 and any custom `:telemetry.execute/3` on
+`[:scoria, :observe, :span, :stop]`) were previously inert outside of tests:
+Scoria.Observe.Buffer was never a supervised child of Scoria.Application and
+Scoria.Observe.Telemetry.attach/1 had no `lib/` caller, so every span fired into a
+void in a real host app. Scoria.Application.start/2 now starts
+Scoria.Observe.Buffer under `Scoria.Supervisor` and calls
+Scoria.Observe.Telemetry.attach/0 on boot, so spans persist to Postgres with zero
+host wiring. Opt out with `config :scoria, Scoria.Observe, enabled: false`.
+
+**The ReqLLM and Jido adapters now boot-attach too.** Scoria.Application.start/2
+also calls the new `safe_attach_observe_req_llm/0` and `safe_attach_observe_jido/0`
+helpers this release adds, so their LLM/TOOL spans **persist to Postgres with zero host wiring**,
+the same as the default pipeline above. One caveat: a persisted adapter span only
+joins the current workflow run's trace as a child of the step span when the host
+forwards `trace_id`, `parent_id`, and `tenant_id` into the call's telemetry
+metadata. That forwarding is automatic for calls made inside
+Scoria.Workflows.Runtime.execute_step/2; a raw call made outside a workflow
+persists as a standalone single-span trace until the host forwards those keys
+itself. See
+[LLM and Tool Adapters](guides/capabilities/llm-and-tool-adapters.md) for the full
+metadata-forwarding contract. Note that `jido` is not a Scoria dependency: the Jido
+handler stays dormant unless the host app itself depends on and runs Jido. Opt out
+of both adapters the same way, with `config :scoria, Scoria.Observe, enabled: false`.
+
+**Write-time attribute bound behind a closed key registry (SEC-01).**
+Scoria.Observe.Bounds.enforce/2 is now the single write-time choke point every
+span attribute payload passes through, immediately after redaction and before both
+the operator PubSub broadcast and Postgres persistence. Attribute keys are admitted
+only via a closed registry (Scoria.Observe.Semconv.attribute_registry/0), a small
+set of vendor prefixes (`gen_ai.`, `server.`, `openai.`, `req_llm.`, `error.`) minus
+an exact-key/dot-segment denylist, or host-configured prefixes
+(`allowed_key_prefixes`, default `[]`). An unregistered or denied key is **dropped,
+never truncated** -- a byte-capped prefix of a leaked prompt is still a leaked
+prompt. Admitted values are size-bounded (`max_attribute_bytes`, `max_total_bytes`)
+and the attribute map is depth/count/list-length bounded
+(`max_depth`/`max_attribute_count`/`max_list_length`); a drop or truncation emits
+`[:scoria, :observe, :bounds, :exceeded]` telemetry so an SRE can alert on "my
+instrumentation is trying to log prompts." Configure via
+`config :scoria, Scoria.Observe.Bounds, ...` -- there is no disable switch, limits
+tune upward only.
+
+**Honest SEC-01 scope note.** This bound protects the DURABLE `ai_spans.attributes`
+column and the `ReviewerBroadcast` fan-out. It does **not** yet cover streaming
+completion text: `[:scoria, :observe, :span, :delta]` chunks are broadcast to the
+operator's browser (capped at `max_delta_chunk_bytes` on egress) but never
+persisted -- streaming deltas live only in the operator's LiveView process memory
+for the duration of the connection.
+
+**New Scoria.Observe.emit_event/1 point-event surface (EVENT-02).** A new
+public verb for the closed, 3-atom point-event vocabulary
+(`prompt_rendered`, `guardrail_triggered`, `user_feedback_received`) --
+`user_feedback_received` is reserved-only for now and has no `lib/`
+emitter (that flywheel work belongs to SEED-011 / FB-01). `emit_event/1`
+checks the name against the vocabulary up front for a clean bus and a
+synchronous `:ok` / `{:error, :unknown_event}` return, and never raises.
+The `[:scoria, :observe, :event, :emit]` telemetry handler is the real
+boundary of record: it independently re-checks the vocabulary (closing the
+raw-bus bypass), redacts through the same single call site spans and
+deltas already use, defaults a missing `time` and drops a `nil` `span_id`
+before persistence, runs the events through the SEC-01 `Bounds.enforce/2`
+tollbooth, and casts to the durable `ai_span_events` table. **Deliberate
+v3.6 gap:** a fired `guardrail_triggered` event lands in Postgres with **no
+operator UI yet** -- that dashboard surface is Phase 53 D-08 / D-07 future
+work, not part of this change.
+
 ### Changed
 
 #### Pre-1.0 terminology migration

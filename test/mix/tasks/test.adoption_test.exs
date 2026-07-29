@@ -18,7 +18,8 @@ defmodule Mix.Tasks.Scoria.Test.AdoptionTest do
       "test/scoria/host_app_upgrade_proof_test.exs",
       "test/mix/tasks/scoria.install_test.exs",
       "test/mix/tasks/scoria.install_route_smoke_test.exs",
-      "test/scoria/bootstrap/migration_lane_compatibility_test.exs"
+      "test/scoria/bootstrap/migration_lane_compatibility_test.exs",
+      "test/scoria/observe/conformance_test.exs"
     ]
 
     assert Code.ensure_loaded?(Mix.Tasks.Scoria.Test.Adoption)

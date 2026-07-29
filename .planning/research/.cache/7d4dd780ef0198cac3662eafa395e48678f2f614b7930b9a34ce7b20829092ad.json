@@ -1,0 +1,1 @@
+{"content":"SemVer states public API must be declared precisely and that 0.y.z APIs may change, while deprecation should be documented before removal. Phase 46 should communicate terminology changes clearly without implying a stable 1.0 contract.","source":"web","provider":"jina","confidence":"MEDIUM","fetched_at":"2026-07-09T20:46:22.263Z","ttl":86400000,"kind":"web"}

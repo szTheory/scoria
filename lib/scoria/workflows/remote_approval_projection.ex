@@ -8,6 +8,7 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
   alias Scoria.Observe.Approval
   alias Scoria.Observe.Redactor
   alias Scoria.Repo
+  alias Scoria.SRE.AuditOutboxEvent
 
   @filter_fields ~w(actor_id session_id status tenant_id tool_name workflow_run_id replay_scope)a
   @preview_max_keys 10
@@ -15,15 +16,55 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
   @decided_statuses ~w(approved rejected expired)
   @decided_default_limit 50
 
-  def list_pending_approvals(filters \\ %{}) do
-    filters = normalize_filters(filters)
+  # Plan 57-11 (D-39/D-40): this string MUST equal
+  # `Scoria.MCP.Executor`'s own `@confluence_audit_event_type` module
+  # attribute -- the two modules are coupled by this literal because the
+  # audit row a confluence approval's `blocker_audit_outbox_event_id`
+  # back-link resolves to is only ever written under this event type, and
+  # constraining the batch lookup to it (rather than any row sharing the
+  # id) keeps a forged or coincidental back-link from ever resolving to
+  # unrelated audit evidence.
+  @confluence_audit_event_type "tool.confluence.escalated"
 
-    Approval
-    |> where([approval], approval.status == "pending")
-    |> apply_filters(filters)
-    |> order_by([approval], desc: approval.inserted_at, desc: approval.id)
-    |> Repo.all()
-    |> Enum.map(&project_approval/1)
+  # Closed conversion from the STRING leg-source values
+  # `Scoria.Confluence.audit_metadata_value/1` persists into the JSON the
+  # copy layer's `ScoriaWeb.ApprovalCopy.witness_source_label/1` matches as
+  # ATOMS. Never call `String.to_atom/1` or `String.to_existing_atom/1` on
+  # a value read out of persisted JSON -- this hardcoded map is the only
+  # conversion, and anything outside it resolves to `:unknown`.
+  @confluence_leg_source_map %{
+    "declared" => :declared,
+    "scanner_infra" => :scanner_infra,
+    "default_tier" => :default_tier,
+    "unclassified" => :unclassified
+  }
+
+  # D-51: capped with the SAME page-size attribute and the same
+  # limit-popping/load-more pattern `list_decided_approvals/1` already uses
+  # (`@decided_default_limit`) -- two functions differing only in status
+  # scope must not invent two different pagination shapes. The uncapped
+  # query was safe only because approvals were rare and human-initiated;
+  # the confluence escalation gate is precisely what makes escalation
+  # machine-initiated and potentially high volume, and this is the call
+  # site an unattended strict-mode adopter's LiveView mounts and PubSub
+  # reloads hit on every pending-inbox load.
+  def list_pending_approvals(filters \\ %{}) do
+    {limit, filters} =
+      filters
+      |> normalize_filters()
+      |> Map.pop(:limit, @decided_default_limit)
+
+    approvals =
+      Approval
+      |> where([approval], approval.status == "pending")
+      |> apply_filters(filters)
+      |> order_by([approval], desc: approval.inserted_at, desc: approval.id)
+      |> limit(^limit)
+      |> Repo.all()
+
+    events_by_id = confluence_audit_events_by_id(approvals)
+
+    Enum.map(approvals, &project_approval(&1, events_by_id))
   end
 
   @doc """
@@ -41,19 +82,23 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
       |> normalize_filters()
       |> Map.pop(:limit, @decided_default_limit)
 
-    Approval
-    |> where([approval], approval.status in @decided_statuses)
-    |> apply_filters(filters)
-    |> order_by([approval], desc: approval.updated_at, desc: approval.id)
-    |> limit(^limit)
-    |> Repo.all()
-    |> Enum.map(&project_approval/1)
+    approvals =
+      Approval
+      |> where([approval], approval.status in @decided_statuses)
+      |> apply_filters(filters)
+      |> order_by([approval], desc: approval.updated_at, desc: approval.id)
+      |> limit(^limit)
+      |> Repo.all()
+
+    events_by_id = confluence_audit_events_by_id(approvals)
+
+    Enum.map(approvals, &project_approval(&1, events_by_id))
   end
 
   def get_approval_lineage!(approval_id) do
-    Approval
-    |> Repo.get!(approval_id)
-    |> project_approval()
+    approval = Repo.get!(Approval, approval_id)
+    events_by_id = confluence_audit_events_by_id([approval])
+    project_approval(approval, events_by_id)
   end
 
   defp apply_filters(query, filters) do
@@ -65,8 +110,92 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
     end)
   end
 
-  defp project_approval(%Approval{} = approval) do
+  # Plan 57-11: batch-loads the confluence audit rows for a PAGE of
+  # approvals in exactly one query, mirroring
+  # `ScoriaWeb.ApprovalsLive.Index.decision_events_by_approval_id/1`'s
+  # batch-by-visible-id-set pattern rather than a per-row lookup. Collects
+  # `blocker_audit_outbox_event_id` from ONLY the approvals whose
+  # `blocker_kind` is `"confluence"` and whose back-link is non-nil, and
+  # returns an empty map immediately (no query at all) when that id list is
+  # empty -- a page with zero confluence approvals costs nothing extra
+  # (D-51).
+  defp confluence_audit_events_by_id(approvals) do
+    ids =
+      approvals
+      |> Enum.filter(fn approval ->
+        approval.blocker_kind == "confluence" and
+          not is_nil(approval.blocker_audit_outbox_event_id)
+      end)
+      |> Enum.map(& &1.blocker_audit_outbox_event_id)
+
+    case ids do
+      [] ->
+        %{}
+
+      ids ->
+        AuditOutboxEvent
+        |> where([event], event.id in ^ids)
+        |> where([event], event.event_type == ^@confluence_audit_event_type)
+        |> Repo.all()
+        |> Map.new(&{&1.id, &1})
+    end
+  end
+
+  # Resolves the escalation-time confluence evidence for ONE approval out
+  # of the batch-loaded events map. All five keys stay nil unless: the
+  # approval is a confluence approval, its back-link is non-nil, the map
+  # holds an event for that id, AND that event's `workflow_run_id` equals
+  # the approval's own `workflow_run_id` (D-40) -- the back-link column
+  # carries no foreign key and is reachable through pass-through decision
+  # attrs, so a pointer at another run's evidence must be ignored rather
+  # than rendered. Never defaulted, inferred, or synthesized -- an
+  # unreadable back-link produces absent values, never a manufactured
+  # grade or leg source.
+  defp confluence_evidence_fields(
+         %Approval{
+           blocker_kind: "confluence",
+           blocker_audit_outbox_event_id: event_id,
+           workflow_run_id: workflow_run_id
+         },
+         events_by_id
+       )
+       when not is_nil(event_id) do
+    case Map.get(events_by_id, event_id) do
+      %AuditOutboxEvent{workflow_run_id: ^workflow_run_id} = event ->
+        metadata = event.metadata || %{}
+
+        %{
+          combination: Map.get(metadata, "combination"),
+          grade: Map.get(metadata, "grade"),
+          private_data_source: confluence_leg_source(Map.get(metadata, "private_data_source")),
+          untrusted_content_source:
+            confluence_leg_source(Map.get(metadata, "untrusted_content_source")),
+          exfil_source: confluence_leg_source(Map.get(metadata, "exfil_source"))
+        }
+
+      _other ->
+        confluence_evidence_nil()
+    end
+  end
+
+  defp confluence_evidence_fields(_approval, _events_by_id), do: confluence_evidence_nil()
+
+  defp confluence_evidence_nil do
+    %{
+      combination: nil,
+      grade: nil,
+      private_data_source: nil,
+      untrusted_content_source: nil,
+      exfil_source: nil
+    }
+  end
+
+  defp confluence_leg_source(nil), do: nil
+  defp confluence_leg_source(value), do: Map.get(@confluence_leg_source_map, value, :unknown)
+
+  defp project_approval(%Approval{} = approval, events_by_id) do
     baseline_target = baseline_target(approval)
+    confluence_evidence = confluence_evidence_fields(approval, events_by_id)
 
     %{
       id: approval.id,
@@ -107,7 +236,12 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
       blocker_workflow_event_id: approval.blocker_workflow_event_id,
       blocker_audit_outbox_event_id: approval.blocker_audit_outbox_event_id,
       inserted_at: approval.inserted_at,
-      updated_at: approval.updated_at
+      updated_at: approval.updated_at,
+      combination: confluence_evidence.combination,
+      grade: confluence_evidence.grade,
+      private_data_source: confluence_evidence.private_data_source,
+      untrusted_content_source: confluence_evidence.untrusted_content_source,
+      exfil_source: confluence_evidence.exfil_source
     }
   end
 

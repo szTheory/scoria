@@ -1,60 +1,79 @@
-# Requirements: Scoria v3.5 Documentation & Release Readiness
+# Requirements: Scoria — v3.7 Portcullis (Lethal-Trifecta Governance)
 
-**Defined:** 2026-07-09
+**Defined:** 2026-07-19
 **Core Value:** Phoenix teams can add AI runtime governance, visibility, and recovery to an existing app without guessing where Scoria begins, where their app owns identity and policy, or how to verify the integration is working.
+**Milestone goal:** Be the first embedded framework that escalates to a human when one run touches private data, untrusted content, and an exfil channel at once — by shipping the missing untrusted-content taint leg and a confluence-escalation gate enforced at `MCP.Executor`, audited and replayable. (SEED-010 · ⭐ flagship differentiator.)
+
+**Scope doctrine (build-vs-delegate):** Scoria owns the *mechanism* (taint substrate, classification, confluence gate, rails, hook seams); the host owns the *decision* (approve/deny), *identity/policy* (allowlists), and the *content model* (detectors, sinks, moderation opinions). P2 (mechanism, not policy value) + P4 (identity delegated by reference). Fail-closed-but-inspectable defaults (v3.4 `ReleaseGate` precedent) — no adopter gets bricked; strict enforcement is opt-in.
+
+---
 
 ## v1 Requirements
 
-Requirements for this milestone. Each maps to roadmap phases.
+Requirements for this milestone (v3.7). Each maps to exactly one roadmap phase.
 
-### Positioning
+### Content Trust & Spotlighting (TAINT)
 
-- [x] **POS-01**: A Phoenix adopter can read the README first screen and understand that Scoria is an embedded Phoenix library for durable, inspectable AI/LLM work before encountering capability or verification-suite vocabulary.
-- [x] **POS-02**: A Phoenix adopter can identify who Scoria is for, who it is not for, and how the n=1 reviewer/operator persona maps to the product surface.
-- [x] **POS-03**: A Phoenix adopter can see what Scoria owns versus what the host app owns through a concrete scope-doctrine table.
-- [x] **POS-04**: A Phoenix adopter can compare Scoria to hosted LLM-ops tools using honest tradeoffs: embedded governance, zero required egress, in-path gates, and ceded warehouse/cross-language strengths.
+Supplies the missing untrusted-content leg — the substrate the confluence gate reads.
 
-### Terminology
+- [x] **TAINT-01**: Retrieved knowledge chunks carry a trust-tier/taint tag on `Knowledge.Chunk` metadata reflecting provenance, defaulting to untrusted for externally-sourced/retrieved content.
+- [x] **TAINT-02**: Tool outputs are wrapped in an envelope carrying a trust tier, so tool results are treated as potentially-untrusted content rather than implicitly-trusted context.
+- [x] **TAINT-03**: At prompt assembly in the orchestrator, untrusted content is spotlighted/datamarked (delimited with a model-agnostic marking) so the model can distinguish instructions from untrusted data.
+- [x] **TAINT-04**: Scoria exposes a `scan/2` behaviour hook (default no-op) for BYO content scanners (e.g. Rebuff/LlamaGuard) and tags scanned/untrusted content in traces — no detector or classifier is shipped in-lib.
 
-- [x] **TERM-01**: A Phoenix adopter can learn final canonical terms from a glossary that maps Scoria terms to industry equivalents.
-- [x] **TERM-02**: Adopter-facing docs use the final terminology strategy: reviewer for the persona, trace for run-inspection surface sense, capabilities for adoption scope, verification suite for `mix test.*` proof commands, scoped context, semantic cache, and optional knowledge base.
-- [x] **TERM-03**: Adopter-facing docs preserve correct RAG/citation use of evidence while removing leaked internal milestone code names and stale lane/count/version wording.
-- [x] **TERM-04**: Public README and CHANGELOG include a pre-1.0 upgrade note for terminology changes that affect documented names, modules, or user-visible copy.
+### Tool-Declared Trifecta Classification (CLASS)
 
-### Documentation
+- [x] **CLASS-01**: The `Tool` behaviour is extended so a tool declares its trifecta legs (`reads_private_data`, `sees_untrusted_content`, `can_exfiltrate`) plus an `action_class`, declared once on the tool rather than passed per-call.
+- [x] **CLASS-02**: Unclassified tools resolve to a fail-closed-but-inspectable default (no silent `approval_sensitive: false`; unclassified/ungated use emits telemetry), closing the fail-open seam (code moved during Phase 55; see 56-CONTEXT.md D-05 for all five sites).
+- [x] **CLASS-03**: The declared classification is resolved at the `MCP.Executor` enforcement point for every tool call, so per-call taint derives from the tool's declaration and cannot rely on host-passed defaults.
 
-- [x] **DOCS-01**: A Phoenix adopter can navigate ExDoc through grouped modules and grouped extras instead of one flat sidebar.
-- [x] **DOCS-02**: ExDoc source links, release docs links, logo/favicon metadata, and markdown/html formatter settings are version-aware and do not point `-dev` docs at missing tag URLs.
-- [x] **DOCS-03**: Stable adopter guides are organized into a clear guide ladder covering getting started, golden path, user flows/JTBD, troubleshooting, hosted-LLM-ops comparison, and a cheatsheet.
-- [x] **DOCS-04**: Public moduledocs and guide links are warning-clean under the milestone's docs verification command.
+### Per-Run Agent Rails (RAIL)
 
-### AI Accessibility
+- [x] **RAIL-01**: A single run enforces `max_steps` / `max_tool_calls` / `timeout` rails (distinct from tenant-level budgets/breakers) and halts a run that exceeds them, with the halt audited.
 
-- [x] **AI-01**: An LLM or coding agent can use a curated root `llms.txt` and/or `AGENTS.md` to find Scoria's public facade, guide ladder, glossary, capabilities, and verification suites.
-- [x] **AI-02**: The AI-accessibility surface distinguishes curated source docs from generated ExDoc artifacts and avoids stale or internal planning-only vocabulary.
+### Confluence Escalation Policy (GATE) — the differentiator
 
-### Release
+- [x] **GATE-01**: A confluence evaluator classifies a tainted execution path by which of the three legs are present, mirroring `ReplayDisposition`'s seam-classification style.
+- [x] **GATE-02** *(amended 2026-07-29, plan 57-10, D-18/D-25)*: When private-data + untrusted-content + exfil co-occur in one tainted execution path, the confluence gate decides and refuses at `Scoria.MCP.Executor`, before the tool's execution task is started, and the run's STEP (not the whole run) is transitioned to `waiting_for_approval` through the existing `Scoria.Workflows.mark_waiting_for_approval/3` pause function, so the escalation is resumable via `Scoria.Workflows.resume_run/1`. This is a step-scoped pause, not a run-level freeze: a sibling step already in flight may still complete and rewrite the run's own status back to `"running"`, and any other queued sibling becomes dispatchable again — the escalated step alone remains genuinely paused until a human decides it (an accepted, documented limitation, pinned by a regression test, not a bug). Tool calls that reach the executor with no runtime step attribution cannot be paused; that gap is telemetried and documented.
+  *(Reason: the original wording ("the run escalates ... before the exfil action executes") does not name where the decision is made or where the transition happens, and no implementation can honor a run-level freeze without a `complete_step/3` change the developer's D-25 checkpoint answer explicitly declined — see 57-01-SUMMARY.md and 57-08-SUMMARY.md.)*
+- [x] **GATE-03**: Confluence escalation decisions are audited (audit outbox) and replayable, consistent with existing approval and replay evidence.
+- [x] **GATE-04** *(amended 2026-07-29, plan 57-10, D-31)*: Confluence enforcement is graded by evidence quality. The `declared` grade — a tool's own positive declaration of private-data/untrusted-content/exfil legs — enforces (escalates) from the shipped default. The three UNGATED grades — `unclassified`, `scanner_infra`, and `default_tier` — emit telemetry only and never block on their own, so an adopter who has declared nothing is never silently bricked. An opt-in strict mode extends enforcement to the three ungated grades as well (mirrors the v3.4 `ReleaseGate` compatibility doctrine: positive evidence enforces, absence of evidence is inspectable but never blocking on its own).
+  *(Reason: no design satisfies the original sentence's "fail-closed-but-inspectable default" and "ungated confluence emits telemetry" clauses simultaneously without naming which grades are "ungated" — see 57-CONTEXT.md D-31.)*
 
-- [x] **REL-01**: The release train no longer fails on planning-ledger drift; the roadmap includes archived milestone breadcrumbs required by the policy contract, including v2.15 Connector Adoption Lane.
-- [x] **REL-02**: The release train no longer fails on current browser e2e regressions from PR #12, including hidden theme-toggle clicks, modal focus checks, and orientation walkthrough failures.
-- [x] **REL-03**: Version references in README, maintainer docs, release notes, and release automation reflect the live `0.1.2` baseline and the `0.1.3` release target without stale `0.1.1` guidance.
-- [ ] **REL-04**: The `0.1.3` release PR reaches green `ci-gate`, publishes to Hex, and passes post-publish smoke for fresh install plus live-lineage upgrade.
+### Safety Hooks (HOOK)
 
-## v2 Requirements
+- [ ] **HOOK-01** *(amended 2026-07-29, phase 58 discuss, D-04/D-05)*: A moderation hook runs through the shipped `Scoria.Trust.Scanner` behaviour (BYO, `Scoria.Trust.Scanner.NoOp` default = off) — the same seam TAINT-04 established. No detector, classifier, or moderation content ships in-lib. `Eval.online_scoring` is the OFFLINE measurement and human-review destination for scanner-flagged traces, never the enforcement path.
+- [ ] **HOOK-02** *(amended 2026-07-29, phase 58 discuss, D-04/D-07 — **reduced scope**)*: `Scoria.Trust.scan_model_output/2` lets a host scan model output through the same `Scoria.Trust.Scanner` seam and tags it `scoria.trust.*` on the step span. Scoria does NOT automatically scan model output, and a model-output verdict is trace evidence only — lighting the confluence untrusted-content leg from a scanner verdict is HOOK-03 (Phase 58.1).
 
-Deferred to future milestones. Tracked but not in the current roadmap.
+*(HOOK-01/HOOK-02 amendment rationale: the original wording named `Eval.online_scoring`/`judge_runner` as "the existing scorer seam". It does not exist and could not do the job if it did — `lib/scoria/eval/` declares zero `@callback`s; `Runner.score_dataset_item/6` dispatches on two hardcoded literals and turns any host `scorer_kind` into `{:not_scored, :unknown_scorer}`; `SubjectOutput.resolve/2` grades the frozen `dataset_item.captured_output` in BOTH modes so the eval path never observes live production output; `OnlineScoreSampler` is prod-env-only, host-invoked and sampled, making a safety control there partial by construction. The seam described already shipped in Phase 55 with `:moderation_flag` already in its closed reason-code enum. HOOK-02 additionally drops the automatic step-boundary seam — zero `kind: "llm"` steps exist in the repo, `step.kind` is a UI display taxonomy rather than a declaration that a step calls a model, and a synchronous in-step scan charges latency to `rail_max_active_ms`, which can trip a non-resurrectable halt on latency alone. Per the amendment-legitimacy test in 58-CONTEXT.md D-20, HOOK-01 is a same-outcome correction while HOOK-02 shrinks adopter-observable outcome and is therefore labelled **reduced scope** rather than silently reworded.)*
 
-### Future Capability Docs
+- [ ] **HOOK-03** *(added 2026-07-29, phase 58 discuss, D-06/D-36 → Phase 58.1)*: A registered scanner's `untrusted` verdict lights the confluence untrusted-content leg with a correct witness source, so the gate evaluates observed taint and not only tool self-declaration. Ships with the `:site` scan-context discriminator and the published `:model_output` content shape as one deliberate contract change, and with scan-latency accounting against `rail_max_active_ms`. Closes Phase 57's D-13, which was promised and never wired.
 
-- **TRACE-01**: OpenInference-compatible trace claims are updated after SEED-007 implements the trace substrate.
-- **GOV-01**: Lethal-trifecta security boundary docs are written after SEED-010 implements the governance seam.
-- **EVAL-DEPTH-01**: Trustworthy eval-depth guides are written after SEED-008 implements scorer/calibration/regression depth.
-- **RAG-DEPTH-01**: Retrieval eval and faithfulness/reranker guides are written after SEED-009 implements the RAG depth seams.
-- **PRIV-01**: Privacy, retention, purge, masking, and feedback docs are written after SEED-011 implements those controls.
+### Security Boundary Doc (BOUND)
 
-### Repo Health
+- [ ] **BOUND-01** *(filename amended 2026-07-29, phase 58 discuss, D-12 — mechanical, same outcome)*: A `guides/security-boundary.md` shared-responsibility doc states what Scoria enforces (taint substrate, tool classification, confluence gate, per-run rails, hook seams) versus what the host must own (detector/classifier, per-user allowlists, sinks, content/moderation policy), spanning improper-output-handling, moderation, system-prompt-leakage, and per-user allowlists.
 
-- **TEST-DET-01**: Broad SEED-004 test-code determinism work converts forced-serial test surfaces and removes non-essential sleeps after the release-readiness slice is complete.
+### Govern Surface (GOVERN)
+
+- [ ] **GOVERN-01**: A minimal read-only Govern surface names the dangerous combination for a tainted run ("private data + untrusted content + external egress → **exfiltration path**") and shows per-tool trifecta classification — read-only only; the policy-builder and simulate-on-history are deferred to SEED-013.
+
+*(GOVERN-01 was deliberately NOT amended. The run-scoped accumulator structurally cannot hold the exfil leg, so a run panel fed from it can never name "exfiltration path" — but weakening the requirement to match would be trimming intent to fit the implementation, the mirror image of the tracking-outruns-code failure Phase 57's own verification caught. The requirement is satisfied in the escalation-events section, where frozen audit rows genuinely carry the full combination. See 58-CONTEXT.md D-20 and D-22.)*
+
+- [ ] **GOVERN-02** *(added 2026-07-29, phase 58 discuss, D-37 → Phase 58.1)*: A stuck-escalation queue surfaces confluence approvals nobody has decided, ordered by age, and would-have-paused counts render segmented by evidence grade rather than as a raw firing count. Re-homes two Phase 57 cross-phase obligations — one of which Phase 57 called "load-bearing, not nice-to-have" — plus the approval expiry Phase 57 deferred to a "Phase 57.1" that was never added to the roadmap.
+
+## v2 Requirements (deferred)
+
+Acknowledged, not in this roadmap.
+
+### Govern UI depth (→ SEED-013 Operator IA Pivot)
+
+- **GOV2-01**: Plain-language approval-policy builder (`When … Then pause & require approval`).
+- **GOV2-02**: Simulate-policy-on-past-runs ("would have matched 38 runs — 32 correct, 4 unnecessary, 2 need review") as an approval-fatigue preventer.
+- **GOV2-03**: Full Tools & blast-radius panel (per tool/connector compound-risk matrix; guardrail gate-location screens).
+
+### Host-BYO reference implementations (host-owned)
+
+- **HOST-01**: Reference moderation / injection scanner implementations for the `scan/2` and eval-seam hooks (host or example gallery, not in-lib).
 
 ## Out of Scope
 
@@ -62,44 +81,44 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Implementing SEED-007 trace substrate | This milestone may correct overclaims, but the OTel/OpenInference implementation belongs to the next feature milestone. |
-| Implementing lethal-trifecta governance | This is the flagship feature milestone after trace substrate, not docs/release readiness. |
-| Writing feature-specific guides for unbuilt seeds | Stable docs only; feature-specific docs must be written with their owning build milestone. |
-| Broad SEED-004 async/test determinism refactor | Only release-blocking CI/e2e failures are in scope; broad test architecture cleanup remains a separate milestone. |
-| Hosted demo or managed onboarding | Scoria remains an embedded library with local examples and docs, not a hosted service. |
-| Modeling host business nouns such as Feature, Env, identity, or policy values | The scope doctrine says host declares and owns these nouns; Scoria records, gates, surfaces, and reconstructs. |
+| Injection / prompt-injection detector or classifier in-lib | Model layer / host; Scoria owns the taint substrate + delimiting + BYO hook only. Building a detector is the over-reach anti-pattern (observability peers ship none; Anthropic hardens at the model). |
+| Per-user / per-intent tool allowlists | Host identity/policy (scope doctrine P4). Only tool-*declared* classification is Scoria's. |
+| Opinionated moderation content policy / output sanitizer / sinks | Host/jurisdiction (P2: hooks, not opinions). Scoria ships the seam + docs, not the content. |
+| Modeling or inferring `feature`/`archetype`/`route` | Host-declared attributes only — Scoria segments by them, never infers (existing v3.6/SEED-012 doctrine). |
+| Full Govern policy-builder UI + simulate-on-history + blast-radius panel | SEED-013 owns the IA shell those plug into; this milestone ships a minimal read-only surface only. |
+| Hex release cut this milestone | `0.1.4` convention/feature change stays staged under CHANGELOG Unreleased; the cut is a maintainer call at closeout after the seam is proven. |
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
+Which phases cover which requirements. Phase numbering continues from v3.6 (next phase is 55).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| POS-01 | Phase 47 | Complete |
-| POS-02 | Phase 47 | Complete |
-| POS-03 | Phase 47 | Complete |
-| POS-04 | Phase 47 | Complete |
-| TERM-01 | Phase 46 | Complete |
-| TERM-02 | Phase 46 | Complete |
-| TERM-03 | Phase 46 | Complete |
-| TERM-04 | Phase 46 | Complete |
-| DOCS-01 | Phase 48 | Complete |
-| DOCS-02 | Phase 48 | Complete |
-| DOCS-03 | Phase 48 | Complete |
-| DOCS-04 | Phase 49 | Complete |
-| AI-01 | Phase 49 | Complete |
-| AI-02 | Phase 49 | Complete |
-| REL-01 | Phase 50 | Complete |
-| REL-02 | Phase 50 | Complete |
-| REL-03 | Phase 50 | Complete |
-| REL-04 | Phase 50 | Pending |
+| TAINT-01 | Phase 55 | Complete |
+| TAINT-02 | Phase 55 | Complete |
+| TAINT-03 | Phase 55 | Complete |
+| TAINT-04 | Phase 55 | Complete |
+| CLASS-01 | Phase 56 | Complete |
+| CLASS-02 | Phase 56 | Complete |
+| CLASS-03 | Phase 56 | Complete |
+| RAIL-01 | Phase 56.1 | Complete |
+| GATE-01 | Phase 57 | Complete |
+| GATE-02 | Phase 57 | Complete |
+| GATE-03 | Phase 57 | Complete |
+| GATE-04 | Phase 57 | Complete |
+| HOOK-01 | Phase 58 | Pending |
+| HOOK-02 | Phase 58 | Pending |
+| HOOK-03 | Phase 58.1 | Pending |
+| BOUND-01 | Phase 58 | Pending |
+| GOVERN-01 | Phase 58 | Pending |
+| GOVERN-02 | Phase 58.1 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 18 total
+- v1 requirements: 18 total (16 original + HOOK-03 and GOVERN-02, added 2026-07-29 by the phase 58 discuss split)
 - Mapped to phases: 18
-- Unmapped: 0
+- Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-07-09*
-*Last updated: 2026-07-09 after roadmap creation*
+*Requirements defined: 2026-07-19*
+*Last updated: 2026-07-29 after the phase 58 discuss pass — HOOK-01/HOOK-02 seam amendments and BOUND-01 filename amendment (58-CONTEXT.md D-04/D-05/D-07/D-12), HOOK-03 and GOVERN-02 added for the Phase 58.1 split (D-36/D-37), GOVERN-01 deliberately left unamended (D-20).*

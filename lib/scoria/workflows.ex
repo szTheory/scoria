@@ -10,6 +10,7 @@ defmodule Scoria.Workflows do
   alias Scoria.Connectors.Connector
   alias Scoria.Connectors.LocalTool
   alias Scoria.Identity
+  alias Scoria.Observe
   alias Scoria.Observe.Approval
   alias Scoria.Observe.ReviewerBroadcast
   alias Scoria.Repo
@@ -229,6 +230,20 @@ defmodule Scoria.Workflows do
         now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
         Repo.transaction(fn ->
+          # G1 (RAIL-01 D-02, the keystone guard): the run row is locked
+          # FOR UPDATE first -- BEFORE the step is re-read/updated -- so the
+          # global lock order stays run-then-steps, matching `halt_run/3`'s
+          # own order and keeping the two paths deadlock-free (D-04). This
+          # is the sole in-`lib/` caller of `claim_step/1`
+          # (`runtime.ex:195`), so it closes the dispatched-Task race,
+          # direct `Runtime.execute_step/2` calls, and adopter calls in one
+          # place.
+          run = Repo.one!(from(r in Run, where: r.id == ^step.run_id, lock: "FOR UPDATE"))
+
+          if Run.halted?(run) do
+            Repo.rollback(:run_halted)
+          end
+
           step = Repo.get!(Step, step_id)
 
           case step.status do
@@ -257,6 +272,15 @@ defmodule Scoria.Workflows do
       step = repo.get!(Step, step_id)
       run = repo.get!(Run, step.run_id)
 
+      # Captured BEFORE this transaction's own write (RAIL-01 D-17): true
+      # only when `run` arrived already terminal (the G4 clamp path -- a
+      # sibling whose transaction started reading `run` AFTER the halt
+      # already committed). Threaded through so the post-commit
+      # `maybe_emit_rail_observed/1` call below never double-emits for a
+      # run that already emitted its one `:observed` event at its real
+      # terminal transition.
+      already_terminal? = Run.halted?(run)
+
       completed_step =
         step
         |> Step.changeset(%{
@@ -275,8 +299,14 @@ defmodule Scoria.Workflows do
         )
         |> repo.aggregate(:count)
 
+      # G4 (RAIL-01 D-02): clamp the computed next status back to `run.status`
+      # when `run` (read above) is already halted. See `clamp_run_status/2`
+      # for the documented interleaving this does NOT cover.
       run_status =
-        Keyword.get(opts, :run_status, if(pending_count == 0, do: "completed", else: "running"))
+        clamp_run_status(
+          run,
+          Keyword.get(opts, :run_status, if(pending_count == 0, do: "completed", else: "running"))
+        )
 
       checkpoint =
         insert_checkpoint(
@@ -299,22 +329,32 @@ defmodule Scoria.Workflows do
         replay_transition_event_attrs(run, "step_completed", result_envelope, :result)
       )
 
-      updated_run =
-        run
-        |> Run.changeset(%{
+      # When `run` is halted, suppress `completed_at`/`current_step_id`/
+      # `error_envelope` from the changeset entirely (rather than writing
+      # `run`'s own pre-halt values) so the halt's own values survive --
+      # `Repo.update` SETs only `changeset.changes`, so an absent key is
+      # never written.
+      run_update_attrs =
+        %{
           status: run_status,
           current_step_id: if(run_status == "completed", do: nil, else: completed_step.id),
           latest_checkpoint_id: checkpoint.id,
           completed_at: if(run_status == "completed", do: now, else: run.completed_at),
           error_envelope: %{}
-        })
+        }
+        |> suppress_when_halted(run, [:completed_at, :current_step_id, :error_envelope])
+
+      updated_run =
+        run
+        |> Run.changeset(run_update_attrs)
         |> repo.update!()
 
-      {updated_run, completed_step, checkpoint}
+      {updated_run, completed_step, checkpoint, already_terminal?}
     end)
     |> case do
-      {:ok, {run, step, _checkpoint}} ->
+      {:ok, {run, step, _checkpoint, already_terminal?}} ->
         broadcast(run.id, {:workflow_updated, run.id})
+        unless already_terminal?, do: maybe_emit_rail_observed(run)
         {:ok, step}
 
       {:error, value} ->
@@ -343,9 +383,15 @@ defmodule Scoria.Workflows do
 
       approval_identity = immutable_identity(run, attrs)
 
+      # G6 (RAIL-01 D-02): without this clamp a sibling escalating after the
+      # halt commits would rewrite "halted" to "waiting_for_approval", which
+      # `resume_run/1` resumes.
       updated_run =
         repo.update!(
-          Run.changeset(run, %{status: "waiting_for_approval", current_step_id: step.id})
+          Run.changeset(run, %{
+            status: clamp_run_status(run, "waiting_for_approval"),
+            current_step_id: step.id
+          })
         )
 
       repo.update!(
@@ -482,7 +528,15 @@ defmodule Scoria.Workflows do
     Repo.transaction(fn repo ->
       step = repo.get!(Step, step_id)
       run = repo.get!(Run, step.run_id)
-      run_status = Keyword.get(opts, :run_status, "failed")
+
+      # Captured BEFORE this transaction's own write (RAIL-01 D-17) --
+      # see the identical comment in `complete_step/3`.
+      already_terminal? = Run.halted?(run)
+
+      # G5 (RAIL-01 D-02): the sneakiest of the three clamps -- without it a
+      # sibling failing after the halt commits rewrites "halted" to
+      # "failed", re-opening `resume_run/1`'s retry branch.
+      run_status = clamp_run_status(run, Keyword.get(opts, :run_status, "failed"))
 
       failed_step =
         step
@@ -520,16 +574,362 @@ defmodule Scoria.Workflows do
         })
         |> repo.update!()
 
-      {updated_run, failed_step}
+      {updated_run, failed_step, already_terminal?}
     end)
     |> case do
-      {:ok, {run, step}} ->
+      {:ok, {run, step, already_terminal?}} ->
         broadcast(run.id, {:workflow_updated, run.id})
+        unless already_terminal?, do: maybe_emit_rail_observed(run)
         {:ok, step}
 
       {:error, value} ->
         {:error, value}
     end
+  end
+
+  @doc """
+  Terminally halts a run for exceeding a per-run rail (RAIL-01). Unlike
+  `fail_step/3`, this is a new lifecycle transition -- it writes the new
+  `"halted"` status (never `"failed"`), a dedicated `"run_halted"`
+  checkpoint/event transition, and a `run.rail.tripped` audit-outbox row,
+  all inside one transaction.
+
+  `run_id` is locked `FOR UPDATE` FIRST, establishing a single global lock
+  order (run before steps) shared with `claim_step/1`'s G1 guard -- this is
+  what makes the two paths deadlock-free (56.1-CONTEXT.md D-04). A second
+  `halt_run/3` call on an already-halted run rolls back with
+  `{:error, :already_halted}`; a genuine race that instead surfaces as
+  `Ecto.StaleEntryError` or a unique-constraint violation on the audit
+  outbox's `dedupe_key` is normalized to the same value below.
+  """
+  @spec halt_run(binary() | Run.t(), binary() | nil, map()) ::
+          {:ok, Run.t()} | {:error, :already_halted} | {:error, Ecto.Changeset.t()}
+  def halt_run(%Run{id: run_id}, step_id, envelope), do: halt_run(run_id, step_id, envelope)
+
+  def halt_run(run_id, step_id, envelope) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    Repo.transaction(fn repo ->
+      run = repo.one!(from(r in Run, where: r.id == ^run_id, lock: "FOR UPDATE"))
+
+      if Run.halted?(run) do
+        repo.rollback(:already_halted)
+      end
+
+      if step_id do
+        step = repo.get!(Step, step_id)
+
+        step
+        |> Step.changeset(%{status: "failed", completed_at: now, error_envelope: envelope})
+        |> repo.update!()
+      end
+
+      {cancelled_sibling_count, _} =
+        repo.update_all(
+          from(s in Step, where: s.run_id == ^run.id and s.status in ["queued", "retrying"]),
+          set: [status: "cancelled"]
+        )
+
+      checkpoint =
+        insert_checkpoint(
+          repo,
+          run.id,
+          step_id,
+          replay_transition_checkpoint_attrs(run, "run_halted", "halted", envelope, :error)
+        )
+
+      insert_event(
+        repo,
+        run.id,
+        step_id,
+        replay_transition_event_attrs(run, "run_halted", envelope, :error)
+      )
+
+      audit_outbox_event =
+        SRE.insert_audit_outbox_event(
+          repo,
+          halt_audit_envelope(run, step_id, envelope, cancelled_sibling_count)
+        )
+
+      updated_run =
+        run
+        |> Run.changeset(%{
+          status: "halted",
+          current_step_id: step_id,
+          latest_checkpoint_id: checkpoint.id,
+          error_envelope: envelope,
+          completed_at: now
+        })
+        |> repo.update!()
+
+      {updated_run, audit_outbox_event}
+    end)
+    |> case do
+      {:ok, {run, audit_outbox_event}} ->
+        broadcast(run.id, {:workflow_updated, run.id})
+        emit_rail_tripped(run, audit_outbox_event, envelope)
+        maybe_emit_rail_observed(run)
+        resolve_pending_confluence_approvals(run)
+        {:ok, run}
+
+      {:error, :already_halted} ->
+        {:error, :already_halted}
+
+      {:error, value} ->
+        normalize_halt_error(value)
+    end
+  rescue
+    _e in Ecto.StaleEntryError -> {:error, :already_halted}
+  end
+
+  # D-52: a halt is terminal and beats the pause (D-24), so a pending
+  # confluence approval on THIS run becomes unactionable -- a human staring
+  # at an approval action that can no longer resume anything. Resolve it to
+  # a terminal status through the EXISTING decision function (`approve/3`,
+  # no new lifecycle function) rather than leaving an undecidable row --
+  # the sibling to 56.1's own halt-with-pending-review invariant. Runs
+  # post-commit (like `emit_rail_tripped/3` and `maybe_emit_rail_observed/1`
+  # just above): `approve/3` owns its own transaction, audit write, and
+  # broadcast side effects, so nesting it inside this function's own
+  # transaction would just add a redundant savepoint for no benefit. There
+  # is normally at most one pending confluence approval per run at halt
+  # time, but this resolves ALL of them defensively (D-26's two-concurrent-
+  # escalations case means more than one CAN exist).
+  defp resolve_pending_confluence_approvals(%Run{} = run) do
+    Approval
+    |> where(
+      [a],
+      a.workflow_run_id == ^run.id and a.status == "pending" and a.blocker_kind == "confluence"
+    )
+    |> Repo.all()
+    |> Enum.each(fn approval ->
+      approve(approval.id, "expired", %{reason: "run halted"})
+    end)
+  end
+
+  defp normalize_halt_error(%Ecto.Changeset{} = changeset) do
+    if unique_dedupe_error?(changeset) do
+      {:error, :already_halted}
+    else
+      {:error, changeset}
+    end
+  end
+
+  defp normalize_halt_error(value), do: {:error, value}
+
+  defp unique_dedupe_error?(%Ecto.Changeset{} = changeset) do
+    Enum.any?(changeset.errors, fn
+      {:dedupe_key, {_message, metadata}} -> Keyword.get(metadata, :constraint) == :unique
+      _ -> false
+    end)
+  end
+
+  @rail_observed_terminal_statuses ~w(completed failed halted)
+
+  # `[:scoria, :run, :rail, :observed]` fires exactly ONCE per run, at its
+  # terminal transition ("completed", "failed", "halted") -- NEVER per
+  # check (56.1-CONTEXT.md D-17). Called post-commit from the three --
+  # and only three -- functions that write a terminal run status:
+  # `complete_step/3`, `fail_step/3`, `halt_run/3`. That set is the choke
+  # point; emitting from anywhere else would double-count. Each of those
+  # three callers skips this call entirely when its own freshly-read
+  # `%Run{}` arrived ALREADY terminal (the G4/G5 clamp path -- a sibling
+  # whose transaction started reading `run` after a halt already
+  # committed), so a run that transitions to "halted" and then has a
+  # sibling step complete/fail against the already-halted row still emits
+  # exactly one `:observed` event, not two.
+  #
+  # Frequency is once per run at the terminal transition, NOT per check:
+  # sizing needs the distribution of final per-run totals, and a stream
+  # of running counters would force every adopter to build a stateful
+  # aggregator keyed by `run_id` with an eviction policy (nobody does
+  # that) -- and threshold-crossing has no denominator because rails are
+  # `nil` for essentially every adopter. A terminal event is
+  # histogram-ready.
+  #
+  # Measurements separate `steps`, `tool_calls`, `active_ms`, `paused_ms`
+  # and `wall_ms` as five distinct numbers, deliberately: a consumer must
+  # be able to show what the rail measures (`active_ms`), the human wait
+  # cost (`paused_ms`), and the derived wall-clock total (`wall_ms`)
+  # separately, and must NEVER render `wall_ms` against the rail limit --
+  # that re-teaches the wrong mental model (56.1-CONTEXT.md D-17, D-23).
+  #
+  # Cardinality contract: `run_id`, `step_id`, `trace_id` and
+  # `audit_outbox_event_id` are unbounded and are included (where a given
+  # `[:scoria, :run, :rail, *]` event carries them) deliberately as
+  # correlation keys for log and trace joins, NEVER as metric tags -- the
+  # safe-to-tag dimensions across the whole `[:scoria, :run, :rail, *]`
+  # family are `rail`, `reason_code`, `unit`, `terminal_status`,
+  # `tripped`, `reason` and `site`. `Observe.Bounds` does not apply here
+  # -- its own docstring pins it to the span tree -- so cardinality
+  # discipline is entirely ours; an adopter attaching a run id to a
+  # counter and killing their Prometheus registry is the one foreseeable
+  # way this contract hurts someone.
+  #
+  # Known, documented gap: a run wedged in "running" or parked in
+  # `waiting_for_approval` never reaches a terminal transition and never
+  # emits, so the sizing histogram this event feeds is a distribution
+  # over terminated runs only.
+  #
+  # Wrapped in `try/rescue -> :ok` -- a broken adopter handler must not
+  # break a run's terminal transition.
+  defp maybe_emit_rail_observed(%Run{status: status} = run)
+       when status in @rail_observed_terminal_statuses do
+    try do
+      now = DateTime.utc_now()
+      anchor = run.started_at || run.inserted_at
+      wall_ms = if anchor, do: DateTime.diff(now, anchor, :millisecond), else: 0
+      paused_ms = run.rail_paused_ms || 0
+      active_ms = wall_ms - paused_ms
+
+      measurements = %{
+        steps: run.rail_steps || 0,
+        tool_calls: run.rail_tool_calls || 0,
+        active_ms: active_ms,
+        paused_ms: paused_ms,
+        wall_ms: wall_ms
+      }
+
+      metadata = %{
+        run_id: run.id,
+        tenant_id: run.tenant_id,
+        terminal_status: String.to_atom(status),
+        tripped: status == "halted",
+        max_steps: run.rail_max_steps,
+        max_tool_calls: run.rail_max_tool_calls,
+        max_active_ms: run.rail_max_active_ms,
+        site: :workflow_lifecycle
+      }
+
+      :telemetry.execute([:scoria, :run, :rail, :observed], measurements, metadata)
+    rescue
+      _ -> :ok
+    end
+  end
+
+  defp maybe_emit_rail_observed(_run), do: :ok
+
+  # `[:scoria, :run, :rail, :tripped]` fires ONCE, post-commit, only on
+  # `{:ok, run}` -- never on `{:error, :already_halted}`, because a host
+  # looping against a halted run's id would otherwise produce a telemetry
+  # storm (56.1-CONTEXT.md D-17). Wrapped in try/rescue so a broken adopter
+  # handler cannot halt a halt.
+  defp emit_rail_tripped(run, audit_outbox_event, envelope) do
+    try do
+      rail = attr_value(envelope, :rail)
+
+      measurements = %{
+        limit: attr_value(envelope, :limit),
+        observed: attr_value(envelope, :observed),
+        attempted: attr_value(envelope, :attempted)
+      }
+
+      metadata = %{
+        rail: rail && String.to_atom(rail),
+        reason_code: attr_value(envelope, :reason_code),
+        unit: rail_unit(rail),
+        run_id: run.id,
+        step_id: audit_outbox_event.step_id,
+        trace_id: audit_outbox_event.trace_id,
+        tenant_id: audit_outbox_event.tenant_id,
+        audit_outbox_event_id: audit_outbox_event.id,
+        site: attr_value(envelope, :site) |> maybe_atomize()
+      }
+
+      :telemetry.execute([:scoria, :run, :rail, :tripped], measurements, metadata)
+    rescue
+      _ -> :ok
+    end
+  end
+
+  defp maybe_atomize(nil), do: nil
+  defp maybe_atomize(value) when is_binary(value), do: String.to_atom(value)
+  defp maybe_atomize(value), do: value
+
+  defp halt_audit_envelope(run, step_id, envelope, cancelled_sibling_count) do
+    rail = attr_value(envelope, :rail)
+
+    %{
+      tenant_id: run.tenant_id || "system",
+      workflow_run_id: run.id,
+      step_id: step_id,
+      trace_id: Observe.trace_id_for_run(run),
+      actor_ref: "system:scoria.rails",
+      event_type: "run.rail.tripped",
+      policy_class: "run_rail",
+      reason_code: attr_value(envelope, :reason_code),
+      dedupe_key: "run.rail.tripped:" <> run.id,
+      metadata: %{
+        "rail" => rail,
+        "limit" => attr_value(envelope, :limit),
+        "observed" => attr_value(envelope, :observed),
+        "attempted" => attr_value(envelope, :attempted),
+        "unit" => rail_unit(rail),
+        "check_order" => rail_check_order(rail),
+        "rails_snapshot" => rails_snapshot(run),
+        "halting_step_id" => step_id,
+        "cancelled_sibling_count" => cancelled_sibling_count,
+        "run_actor_id" => run.actor_id,
+        "run_started_at" => run.started_at && DateTime.to_iso8601(run.started_at),
+        "run_paused_ms" => run.rail_paused_ms,
+        "run_status_after" => "halted"
+      }
+    }
+  end
+
+  # Computed eagerly from the already-locked run row (Claude's Discretion 3)
+  # -- all three legs, INCLUDING the untripped ones, at zero extra queries.
+  defp rails_snapshot(run) do
+    %{
+      "max_steps" => %{"limit" => run.rail_max_steps, "observed" => run.rail_steps},
+      "max_tool_calls" => %{"limit" => run.rail_max_tool_calls, "observed" => run.rail_tool_calls},
+      "max_active_ms" => %{"limit" => run.rail_max_active_ms, "observed" => observed_active_ms(run)}
+    }
+  end
+
+  defp observed_active_ms(%Run{started_at: nil, inserted_at: nil}), do: 0
+
+  defp observed_active_ms(run) do
+    anchor = run.started_at || run.inserted_at
+    DateTime.diff(DateTime.utc_now(), anchor, :millisecond) - (run.rail_paused_ms || 0)
+  end
+
+  defp rail_unit("max_active_ms"), do: "ms"
+  defp rail_unit(_rail), do: "count"
+
+  defp rail_check_order("max_active_ms"), do: 1
+  defp rail_check_order("max_steps"), do: 2
+  defp rail_check_order("max_tool_calls"), do: 3
+  defp rail_check_order(_rail), do: nil
+
+  # G4/G5/G6 (RAIL-01 D-02): the completion-side clamp. Takes the
+  # freshly-read `%Run{}` and the computed next status, returning
+  # `run.status` unchanged when the run is already halted, otherwise the
+  # computed status.
+  #
+  # ACCEPTED, DOCUMENTED GAP -- do not try to fix this by catching and
+  # retrying: `optimistic_lock(:lock_version)` force-changes `lock_version`
+  # on every `Run.changeset/2` write. A sibling ALREADY inside
+  # `complete_step/3` (or `fail_step/3`/`mark_waiting_for_approval/3`) --
+  # i.e. one that read `run` BEFORE this transaction's halt committed --
+  # never reaches this clamp at all: its own final `repo.update!` raises
+  # `Ecto.StaleEntryError`, unwinding that WHOLE transaction, including the
+  # step's own "completed"/"failed" write. The step strands in whatever
+  # status it was in and its result/error envelope is lost. Correctness
+  # survives either way (no resurrection), but evidence does not. This
+  # clamp covers only siblings whose transaction STARTS reading `run` after
+  # the halt has already committed. Writing catch-and-retry code for the
+  # stale-copy path would silently resurrect the exact race the run-first
+  # lock order (D-04) exists to prevent.
+  defp clamp_run_status(%Run{} = run, computed_status) do
+    if Run.halted?(run), do: run.status, else: computed_status
+  end
+
+  # Drops `keys` from `attrs` when `run` is halted, so `Repo.update` (which
+  # SETs only `changeset.changes`) never touches them -- the halt's own
+  # values for those fields survive untouched.
+  defp suppress_when_halted(attrs, %Run{} = run, keys) do
+    if Run.halted?(run), do: Map.drop(attrs, keys), else: attrs
   end
 
   def create_handoff(%Step{} = step, attrs) do
@@ -552,6 +952,32 @@ defmodule Scoria.Workflows do
     Repo.transaction(fn repo ->
       step = repo.get!(Step, step_id)
       run = repo.get!(Run, step.run_id)
+
+      # G2 (RAIL-01 D-02): this is the path ROADMAP SC#2 names through
+      # `Resume.retry_failed_step/2`, which performs no status check of its
+      # own -- refusing here is the only place that guards it.
+      if Run.halted?(run) do
+        repo.rollback(:run_not_retryable)
+      end
+
+      # D-27: a retry must never strand a pending confluence escalation.
+      # `Scoria.Workflows.Resume.retry_failed_step/2` has NO status check of
+      # its own and targets the run's CURRENT step -- which after an
+      # escalation IS the escalated step -- so calling it would flip the
+      # run to "retrying", ZERO this step's `result_envelope` (destroying
+      # the classification/taint evidence the confluence gate and Phase 58
+      # depend on), leave the approval pending FOREVER (nothing ever
+      # resolves it), and mint a SECOND approval on re-execution. Refusing
+      # here -- mirroring `halt_run/3`'s guard style just above -- is the
+      # only place in the codebase that guards it (56.1 D-22.5 already
+      # forbids routing an escalation through the "retrying" status; this
+      # is the enforcement). Two independent triggers, checked separately
+      # so either alone is sufficient: the step's own status, and a
+      # belt-and-suspenders direct approval lookup in case a future path
+      # ever decouples the two.
+      if step.status == "waiting_for_approval" or pending_confluence_approval?(repo, step) do
+        repo.rollback(:step_not_retryable)
+      end
 
       retried_step =
         step
@@ -601,51 +1027,40 @@ defmodule Scoria.Workflows do
     end
   end
 
+  # D-26 (three-axis resume widening for confluence approvals, 57-08):
+  #
+  #   Axis 1 (OUTER predicate, here): a sibling step's `complete_step/3`
+  #   rewrites `run.status` back to `"running"` mid-escalation (D-25's
+  #   accepted step-scoped partial-freeze -- `complete_step/3`'s run-status
+  #   computation is deliberately untouched by this phase), so accepting
+  #   only `"waiting_for_approval"` would fall through to `:not_resumable`
+  #   REGARDLESS of any finder widening. `"running"` is accepted here only
+  #   when `current_approved_approval/1` actually returns a confluence-kind
+  #   approval -- which (axis 2/3 below) it only does when that approval's
+  #   OWN step is still `waiting_for_approval`. That conjunct is what keeps
+  #   the widening safe: a running run with no genuinely paused step still
+  #   falls through to `:not_resumable`.
+  #
+  #   Axis 2/3 live in `current_approved_approval/1` below: the current-step
+  #   and latest-checkpoint predicates are dropped for a confluence-kind
+  #   approval, because two concurrent escalations in one run each overwrite
+  #   `run.current_step_id`/`run.latest_checkpoint_id`, so requiring a match
+  #   would strand all but the most recently-escalated one.
+  #
+  # Every other blocker kind (nil, remote-approval kinds, ...) keeps every
+  # original predicate, byte-identical to pre-phase-57 behavior.
   def resume_run(run_id) do
     run = get_run_tree!(run_id)
+    approval = current_approved_approval(run)
 
-    case {run.status, List.last(run.checkpoints), current_approved_approval(run)} do
-      {"waiting_for_approval", _checkpoint, %Approval{status: "approved"} = approval} ->
-        Repo.transaction(fn repo ->
-          step = repo.get!(Step, approval.step_id)
-          run = repo.get!(Run, run_id)
+    cond do
+      run.status == "waiting_for_approval" and match?(%Approval{status: "approved"}, approval) ->
+        do_resume(run, approval)
 
-          resumed_step = repo.update!(Step.changeset(step, %{status: "queued"}))
+      run.status == "running" and confluence_approval?(approval) ->
+        do_resume(run, approval)
 
-          checkpoint =
-            insert_checkpoint(repo, run.id, resumed_step.id, %{
-              transition: "resume_requested",
-              status: "running",
-              snapshot: %{checkpoint_id: approval.checkpoint_id},
-              metadata: %{}
-            })
-
-          insert_event(repo, run.id, resumed_step.id, %{
-            event_type: "resume_requested",
-            payload: %{approval_id: approval.id}
-          })
-
-          updated_run =
-            run
-            |> Run.changeset(%{
-              status: "running",
-              latest_checkpoint_id: checkpoint.id,
-              current_step_id: resumed_step.id
-            })
-            |> repo.update!()
-
-          {updated_run, resumed_step}
-        end)
-        |> case do
-          {:ok, {resumed_run, resumed_step}} ->
-            broadcast(resumed_run.id, {:workflow_updated, resumed_run.id})
-            {:ok, resumed_step}
-
-          {:error, value} ->
-            {:error, value}
-        end
-
-      {"failed", checkpoint, _approval} when not is_nil(checkpoint) ->
+      run.status == "failed" and not is_nil(List.last(run.checkpoints)) ->
         current_step = Enum.find(run.steps, &(&1.id == run.current_step_id))
 
         if current_step do
@@ -654,8 +1069,52 @@ defmodule Scoria.Workflows do
           {:error, :no_failed_step}
         end
 
-      _ ->
+      true ->
         {:error, :not_resumable}
+    end
+  end
+
+  defp confluence_approval?(%Approval{blocker_kind: "confluence"}), do: true
+  defp confluence_approval?(_approval), do: false
+
+  defp do_resume(%Run{id: run_id}, %Approval{} = approval) do
+    Repo.transaction(fn repo ->
+      step = repo.get!(Step, approval.step_id)
+      run = repo.get!(Run, run_id)
+
+      resumed_step = repo.update!(Step.changeset(step, %{status: "queued"}))
+
+      checkpoint =
+        insert_checkpoint(repo, run.id, resumed_step.id, %{
+          transition: "resume_requested",
+          status: "running",
+          snapshot: %{checkpoint_id: approval.checkpoint_id},
+          metadata: %{}
+        })
+
+      insert_event(repo, run.id, resumed_step.id, %{
+        event_type: "resume_requested",
+        payload: %{approval_id: approval.id}
+      })
+
+      updated_run =
+        run
+        |> Run.changeset(%{
+          status: "running",
+          latest_checkpoint_id: checkpoint.id,
+          current_step_id: resumed_step.id
+        })
+        |> repo.update!()
+
+      {updated_run, resumed_step}
+    end)
+    |> case do
+      {:ok, {resumed_run, resumed_step}} ->
+        broadcast(resumed_run.id, {:workflow_updated, resumed_run.id})
+        {:ok, resumed_step}
+
+      {:error, value} ->
+        {:error, value}
     end
   end
 
@@ -813,10 +1272,55 @@ defmodule Scoria.Workflows do
     run.approvals
     |> Enum.reverse()
     |> Enum.find(fn approval ->
-      (approval.status == "approved" and
-         approval.step_id == run.current_step_id and
-         latest_checkpoint) && approval.checkpoint_id == latest_checkpoint.id
+      approval.status == "approved" and
+        confluence_approval_location_match?(approval, run, latest_checkpoint)
     end)
+  end
+
+  # D-26 axes 2/3: for a confluence-kind approval, the current-step and
+  # latest-checkpoint predicates are dropped entirely -- two concurrent
+  # escalations in one run each overwrite `run.current_step_id`/
+  # `run.latest_checkpoint_id`, so requiring a match would strand all but
+  # the most recently-escalated one. In their place, a STRONGER and
+  # necessary predicate: the approval's own step must still be
+  # `waiting_for_approval`. Without this, an already-resumed confluence
+  # approval (its step moved on to "queued"/beyond, but its OWN `status`
+  # column is still "approved" -- resume_run/1 never mutates that column)
+  # would keep matching forever, since dropping the location predicates
+  # removes the ONLY thing that previously made "already resumed" stop
+  # matching. This is what lets `resume_run/1`'s "running" branch (D-26
+  # axis 1) correctly skip an already-resumed escalation and find the
+  # NEXT genuinely pending one when two escalations coexist.
+  defp confluence_approval_location_match?(
+         %Approval{blocker_kind: "confluence"} = approval,
+         %Run{} = run,
+         _latest_checkpoint
+       ) do
+    confluence_step_waiting?(run, approval)
+  end
+
+  # Every other blocker kind: byte-identical to pre-phase-57 behavior.
+  defp confluence_approval_location_match?(%Approval{} = approval, %Run{} = run, latest_checkpoint) do
+    approval.step_id == run.current_step_id and
+      not is_nil(latest_checkpoint) and
+      approval.checkpoint_id == latest_checkpoint.id
+  end
+
+  defp confluence_step_waiting?(%Run{} = run, %Approval{} = approval) do
+    case Enum.find(run.steps, &(&1.id == approval.step_id)) do
+      %Step{status: "waiting_for_approval"} -> true
+      _other -> false
+    end
+  end
+
+  # D-27's belt-and-suspenders check inside `retry_step/1`'s guard.
+  defp pending_confluence_approval?(repo, %Step{id: step_id}) do
+    Approval
+    |> where(
+      [a],
+      a.step_id == ^step_id and a.status == "pending" and a.blocker_kind == "confluence"
+    )
+    |> repo.exists?()
   end
 
   defp approval_decision_context(repo, approval, attrs) do

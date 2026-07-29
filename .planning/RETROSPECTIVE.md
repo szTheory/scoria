@@ -2,6 +2,74 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v3.6 — Trace Foundation
+
+**Shipped:** 2026-07-19
+**Phases:** 6 (51, 52, 53, 53B, 54, 54.1) | **Plans:** 28 | **Tasks:** 67
+
+### What Was Built
+SEED-007's trace substrate: closed the pre-existing silent FK gap that swallowed every span insert (`Buffer.flush_spans/1` Ecto.Multi trace-upsert + loud `[:scoria, :observe, :buffer, :flush_error]` telemetry, pipeline now boots under `Scoria.Application`); an OTel-GenAI/OpenInference **naming convention over the existing `attributes` jsonb map** (no typed columns, no schema rewrite) with `Scoria.Observe.SpanKind` (8-value) and version-pinned `Scoria.Observe.Semconv` as single key origins; model-config capture on LLM spans; `tool`/`prompt`/`retrieval`/`guardrail` as real duration/failure-bearing child spans with `parent_id`; a linked `RETRIEVER` span dual-written alongside `ai_retrieval_runs` (system-of-record preserved); `ai_span_events` resurrected via an allow-listed, redaction-safe `emit_event/1`; write-time IDs-and-counts bounds at one choke point (`Observe.Bounds`, closed positive-allowlist); and an honest version-pinned "OpenInference-compatible" claim backed by a falsifiable conformance test + boot-attached ReqLLM/Jido adapters. No Hex publish (convention staged under Unreleased `0.1.4`).
+
+### What Worked
+- **The research pass surfaced the FK gap before planning.** The pre-existing silent `rescue` in `Buffer.flush_spans/1` that made nothing v3.6 emitted persist was identified as the milestone-gating bug up front (Phase 51), not discovered mid-build — so the foundation phase was correctly sequenced first.
+- **Single-origin key modules + drift-guard tests held.** `SpanKind` and `Semconv` as the only sources for `span_kind`/`gen_ai.*`/`openinference.*` keys, each backed by drift-guard tests, meant the convention could not silently re-diverge across adapters and UI components.
+- **Convention-over-columns kept it migration-light.** Naming the existing `attributes` map instead of adding typed columns delivered portability with essentially zero schema churn — validating the locked pre-1.0 discipline.
+- **The falsifiable conformance test replays the real pipeline.** `ConformanceTest` drives all three adapters through the actual `Redactor.redact/1 |> Bounds.enforce/2` path (not a hand-copied allow-list), so the "OpenInference-compatible" docs claim fails loudly if it stops being true.
+- **The milestone audit again caught a real integration gap green per-phase verification missed** — the ReqLLM/Jido adapters had no `lib/` caller (only tests attached them), so their spans fired into a void in production while the CHANGELOG claimed otherwise. Closed via inserted Phase 54.1.
+
+### What Was Inefficient
+- **"Verified correct" ≠ "reachable at runtime" — again.** Phases 51/53 verified the adapters and pipeline as `passed`, but nothing asserted a real boot attached them; the gap only surfaced at milestone-audit time. This is the same class as v3.5's "green tests miss integration reality," now on its third milestone.
+- **A stale first audit.** The initial 2026-07-18 audit ran `gaps_found` before Phases 54 and 54.1 executed and had to be superseded — a re-audit cost that better sequencing (audit only after all planned phases) would have avoided.
+- **Scope grew during execution.** Phase 53 split into 53 + 53B (`ai_span_events`), and Phase 54.1 was inserted for the boot-attach gap — the milestone ran 6 phases against a 4-phase plan.
+- **A pre-existing flake surfaced at the 54.1 gate** (`capture_parity_test.exs:53`, order-sensitive under full-suite `--seed 0`) — not a v3.6 regression, deferred to SEED-004.
+
+### Patterns Established
+- **Integration-completion assertion for wiring phases:** anything that attaches telemetry/adapters needs a boot-path test with *no manual attach in the test body* proving the production boot path did the wiring. Per-unit "correct" verification does not prove runtime reachability.
+- **Falsifiable conformance over adjectives:** back a compatibility/claim in docs with a test that replays the real production pipeline, so the claim is executable and self-invalidating.
+- **Closed positive-allowlist registry (never a deny-pattern)** for write-time payload bounds — a new unbounded free-text attribute goes RED by default instead of leaking.
+
+### Key Lessons
+- The milestone audit has now earned its keep three milestones running (v3.4 fake-green eval, v3.5 branch drift + missing verify doc, v3.6 adapters-fire-into-a-void) — each a gap a green suite would not show. The recurring theme is **cross-phase/runtime integration**, not per-unit correctness; a "reachable from a real boot?" check belongs in wiring-phase verification, not just the milestone audit.
+- Run the milestone audit only after all *planned* phases execute; auditing mid-milestone produces a stale `gaps_found` that must be superseded.
+- Convention-over-columns is the right pre-1.0 discipline for evolving a schema-adjacent surface — it bought portability with no migration churn.
+
+### Cost Observations
+- Opus-heavy for research, per-plan execution, the two audits, and closeout; 6 phases / 28 plans over ~7 days (2026-07-11 → 2026-07-18).
+- Notable: the avoidable costs were the stale first audit (re-run) and the 54.1 insertion — both traceable to verifying units in isolation rather than asserting runtime reachability. Milestone close itself was clean (audit `passed`, one flake deferred).
+
+## Milestone: v3.5 — Documentation & Release Readiness
+
+**Shipped:** 2026-07-11
+**Phases:** 5 (46–50) | **Plans:** 39 | **Tasks:** 66
+
+### What Was Built
+SEED-005's docs/positioning gate and the honest `0.1.3` release: final glossary-backed terminology across the adopter surface (leaked code names removed, `evidence_refs` preserved), a plain-English README front door (n=1 reviewer persona, CORE/ADJACENT/NOT-OURS, owns-vs-delegates scope table, hosted-LLM-ops comparison), a grouped version-aware ExDoc guide ladder with aligned public moduledocs, curated `llms.txt`/`AGENTS.md` AI navigation plus `mix scoria.release_preview` as the warnings-as-errors docs/package gate, and the `0.1.3` Hex publish with post-publish registry attest.
+
+### What Worked
+- **RED-contract-first for docs.** Phase 48 Wave 1 pinned ExDoc/package/release-preview/guide-ladder contracts before writing a single guide, so the large restructure landed against executable expectations instead of vibes.
+- **Compatibility stubs preserved copied source links.** Moving canonical truth to `guides/` while leaving old `docs/*.md` as thin stubs kept externally-copied source links alive through a vocabulary migration.
+- **release-please + `release_preview` as the reproducible release path.** The `0.1.3` cut went through the same automated PR → merge → publish → post-publish-attest chain as `0.1.2`, not a hand-published tag.
+- **The milestone audit again caught real drift before close.** As in v3.4, the audit surfaced genuine gaps a green test suite would not: a Phase 46 missing `VERIFICATION.md` and a local↔origin branch divergence that meant local `main` never contained the release commit.
+
+### What Was Inefficient
+- **The v3.4 verification-lag lesson recurred.** Phase 46 shipped functionally complete but without a `VERIFICATION.md` — the exact anti-pattern v3.4's retro flagged. The lesson was recorded but not enforced, so it repeated.
+- **A large reactive gap-closure train (50-05..50-11).** The release push exposed ~30 CI verify-lane failures across Buckets A–G, because the 46–49 terminology/guide renames rippled into source-fixture and rendered-contract tests that weren't run until release CI. Phase 50 nearly tripled from 4 planned plans to 11.
+- **Local `main` diverged from `origin/main`.** The release-please merge (`b904c22a`) landed on the remote while local accumulated planning-only commits, so the local branch memorialized a release it didn't contain — caught only at milestone-audit time.
+
+### Patterns Established
+- **Release-train reconciliation check at close:** before tagging/archiving a release milestone, assert the local default branch actually contains the release commit (`git merge-base --is-ancestor origin/main main`). Never tag a milestone against a branch that predates its release.
+- **Rename milestones must budget a full verify-lane sweep inside the phase.** Docs/terminology renames are code changes for test purposes — they break source-fixture and rendered-contract assertions. Run the full suite + e2e as part of the renaming phase, not at the release push.
+- **Compatibility stubs for relocated docs** keep copied/external source links valid across a canonical-path migration.
+
+### Key Lessons
+- Enforce a `VERIFICATION.md`-exists gate at *phase* close, not milestone close — the v3.4 lesson recurred verbatim in Phase 46 because it lived only in prose, not in a gate.
+- When release-please merges the release PR on the remote, reconcile the local branch immediately; don't let planning-doc commits pile up on a diverged local `main`.
+- Sequence the verify-lane sweep into terminology/rename phases; deferring it to the release turned one release plan into a 7-plan reactive bucket train.
+
+### Cost Observations
+- Opus-heavy for the audit + closeout; per-plan execution and the gap-closure train spread across multiple sessions.
+- Notable: the reactive gap-closure train (50-05..11, +7 plans) was the milestone's dominant avoidable cost — a direct consequence of not running the full verify lane during the rename phases. Milestone close itself was cheap once the two audit gaps (branch reconcile + Phase 46 verify) were closed inline.
+
 ## Milestone: v3.4 — Pre-1.0 Trust & Security Hardening
 
 **Shipped:** 2026-07-09
@@ -470,6 +538,9 @@ An infra/docs-only CI overhaul (SEED-003) that cut PR CI critical path from ~77 
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v3.6 | multiple | 6 | SEED-007 trace substrate (convention-over-columns, no schema rewrite, no Hex publish); audit caught adapters that attached only in tests (spans fired into a void in production) — closed via inserted Phase 54.1; single-origin `SpanKind`/`Semconv` + drift guards prevented convention drift; one pre-existing test flake deferred |
+| v3.5 | multiple | 5 | Docs/positioning + honest `0.1.3` release; audit caught a local↔origin branch divergence (local `main` lacked the release commit) + a Phase 46 verification gap, both closed inline; deferring the verify-lane sweep past the rename phases produced a 7-plan reactive gap-closure train (50-05..11) |
+| v3.4 | multiple | 4 | SEED-006 P0 trust/security, fix-and-prove with no Hex publish; audit caught missing Phase 43/44 VERIFICATION artifacts before close |
 | v3.0 | not tracked | 7 | First large UI/IA/DX milestone; build-failing DS-06 design-system drift guard; closed `gaps_found` with documented Known Gaps (verification-doc partials, 0 unsatisfied) |
 | v2.15 | 1 | 4 | Named connector adoption lane with PR CI WAE; 07.1 retroactive VERIFICATION closeout |
 | v2.11 | 2 | 2 | Producer-path orchestrator live wiring + 01.1 hardening after audit |
@@ -480,6 +551,9 @@ An infra/docs-only CI overhaul (SEED-003) that cut PR CI critical path from ~77 
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v3.6 | `SpanKind`/`Semconv` drift-guard suites + real-Postgres span-persist integration tests + boot-path attach test + falsifiable `ConformanceTest` (all 3 adapters through the real redact→bounds pipeline) + `Bounds` write-time registry canaries; boot-attach + conformance live: 17 tests, 0 failures | requirement audit 16/16 satisfied, 0 unsatisfied; 12/12 integration seams; 1/1 E2E flow | trace substrate is convention-over-columns (no new Ecto columns, no runtime dep — `req_llm` already ships the attribute builder) |
+| v3.5 | terminology/glossary/changelog contract suites + `release_preview` warnings-as-errors docs gate + full `mix scoria.ui.e2e` 165/0 + policy lane 58/0 | requirement audit 18/18 satisfied, 0 partial (after inline Phase 46 verify) | `llms.txt` + `AGENTS.md` curated AI-navigation |
+| v3.4 | focused eval/knowledge/dashboard-auth + scope-doctrine contract green at closeout | requirement audit 17/17 satisfied | none |
 | v3.0 | DS-06 drift guard (raw-palette zero) + 22/22 Playwright light/dark parity smoke + `ui_component_test` | requirement audit 18/28 satisfied, 10 partial (verification-doc/proof), 0 unsatisfied | none |
 | v2.5 | adoption lane (77 tests) + installer contract suites + `verification_lanes_test` green at closeout | requirement audit 6/6 (`INST-03`–`INST-08`) | none |
 | v2.4 | canonical closeout chain green (`release_preview`, `test.adoption`, `test.runtime_to_handoff`) plus contract suites | requirement audit 10/10 | none |
@@ -490,7 +564,10 @@ An infra/docs-only CI overhaul (SEED-003) that cut PR CI critical path from ~77 
 1. Canonical lane naming plus drift tests is the fastest way to keep support truth honest.
 2. Closeout is safer when archive artifacts are normalized immediately rather than treated as immutable snapshots.
 3. Build-failing drift guards (DS-06 raw-palette) make a quality win permanent — preferred over one-time cleanups.
-4. The "implementation ships ahead of VERIFICATION.md" gap recurs across milestone types (v2.15, v2.16, v3.0) — run `/gsd:verify-work` per phase before close, or the milestone audit becomes the only verification pass.
+4. The "implementation ships ahead of VERIFICATION.md" gap recurs across milestone types (v2.15, v2.16, v3.0, v3.4 Phase 43/44, v3.5 Phase 46) — it now recurs *despite* being a written lesson, so it needs a hard `VERIFICATION.md`-exists gate at phase close, not just prose guidance.
+5. Release milestones must reconcile the local default branch with the remote before tagging/archiving: when release-please merges the release PR on the remote, local can silently diverge and memorialize a release it doesn't contain (v3.5). Assert `git merge-base --is-ancestor origin/main main` at close.
+6. Terminology/guide renames are code changes for test purposes: they break source-fixture and rendered-contract assertions. Run the full verify lane inside the rename phase, or the release push becomes a reactive bug-fix train (v3.5: 50-05..11).
+7. The milestone audit's integration check catches gaps green per-phase verification cannot, and the pattern is now cross-milestone: v3.0 hardcoded mount path, v3.4 fake-green eval + tenant leaks, v3.5 branch drift + missing verify doc, v3.6 adapters that attached only in tests and fired into a void in production. The common failure mode is **cross-phase/runtime integration, not per-unit correctness** — wiring phases (anything that attaches telemetry/adapters/supervision) need a boot-path test with *no manual wiring in the test body* proving the production boot did it, not just a unit-level "correct" verification.
 
 ---
 

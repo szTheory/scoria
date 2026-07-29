@@ -230,6 +230,15 @@ end
 
 This keeps reuse tenant-partitioned, compatibility-aware, and reviewer-visible. The semantic cache stays opt-in, falls back to the normal runtime path on `bypass`, `miss`, `reject`, or stale outcomes, and exposes trace details at `/scoria/workflows/:run_id`. The full guide lives in [Semantic Cache](guides/capabilities/semantic-cache.md).
 
+## Trace Observability
+
+Scoria records OpenTelemetry-GenAI / OpenInference-compatible convention keys (`gen_ai.*`,
+`server.*`, `openinference.span.kind`) in your host Postgres, pinned to OpenTelemetry GenAI
+semantic-conventions schema 1.37.0 (via `req_llm ~> 1.13`; these GenAI conventions are still
+experimental upstream). Scoria is not an OpenTelemetry exporter — sending these traces onward
+to Langfuse, Datadog, or Arize Phoenix is host-owned and opt-in. The full guide lives in [Trace
+Observability](guides/capabilities/trace-observability.md).
+
 ## Verification
 
 Default Phoenix verification suite:

@@ -1,0 +1,1 @@
+{"content":"Gemini CLI docs: GEMINI.md is the default context filename; Gemini loads global, workspace, and just-in-time context files hierarchically, supports /memory show/reload, imports, and configurable context filenames.","source":"web","provider":"websearch","confidence":"MEDIUM","fetched_at":"2026-07-10T23:43:36.274Z","ttl":86400000,"kind":"web"}

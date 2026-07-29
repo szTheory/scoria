@@ -260,6 +260,27 @@ defmodule Scoria.AdoptionSurfaceTest do
              "expected current-Scoria section not to claim #{inspect(forbidden_claim)}"
     end
 
+    # (D-53) POSITIVE assertion: the guide MUST contain every required
+    # current claim, so the ABSENCE of the guide edit is what fails --
+    # unlike the deferred/forbidden lists above, a missing entry here is
+    # what turns this suite red, not an added one.
+    for required_claim <- AdopterDocContract.comparison_required_current_claims() do
+      assert current_section =~ required_claim,
+             "expected current-Scoria section to contain the required claim #{inspect(required_claim)}"
+    end
+
+    # (D-53, D-02) The guide names the confluence escalation gate more
+    # than once and states the retrieval residual honestly -- untrusted
+    # content from Scoria.Knowledge.retrieve/2 does not light the
+    # untrusted-content leg this milestone.
+    confluence_mentions = content |> String.split("confluence", trim: true) |> length()
+    assert confluence_mentions - 1 >= 2,
+           "expected the comparison guide to mention \"confluence\" at least twice"
+
+    assert content =~ "retrieval-sourced content" and content =~ "does not light" and
+             content =~ "untrusted-content leg",
+           "expected the comparison guide to state the retrieval residual (D-02) honestly"
+
     ceded_section =
       section_between!(
         content,

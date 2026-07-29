@@ -26,6 +26,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   import Ecto.Query, warn: false
 
   alias Phoenix.LiveView.JS
+  alias Scoria.Observe.Approval
   alias Scoria.Repo
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
@@ -151,6 +152,16 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     {:noreply, record_approval_decision(socket, "rejected")}
   end
 
+  # D-50/D-44: the bounded run-scoped approve action, confluence approvals
+  # only. This is NOT approve-once-exfil-forever -- the grant is bounded to
+  # THIS run, THIS tool and THIS evidence grade (57-05's confluence_gate/3
+  # CAS is what reads and enforces that bound on the next call). See
+  # `maybe_set_confluence_scope/2` below for why the scope is written
+  # through a non-cast update rather than through the approval changeset.
+  def handle_event("approve_run_scoped", _, socket) do
+    {:noreply, record_approval_decision(socket, "approved", confluence_scope: "run_tool")}
+  end
+
   def handle_event("dismiss_approval", _, socket) do
     {:noreply,
      socket
@@ -174,7 +185,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
   end
 
   def handle_event("open_decision_modal", %{"decision" => decision}, socket)
-      when decision in ["approve", "reject"] do
+      when decision in ["approve", "reject", "approve_run_scoped"] do
     {:noreply, assign(socket, :decision_modal, decision)}
   end
 
@@ -299,6 +310,18 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
             >
               {ApprovalCopy.approve_label(@active_approval)}
             </button>
+            <%!-- D-50/D-48: bounded run-scoped approve, confluence approvals
+                  only — no new screen, one additional decision action
+                  alongside the existing approve/deny pair. --%>
+            <button
+              :if={confluence_approval?(@active_approval)}
+              type="button"
+              phx-click={JS.push_focus() |> JS.push("open_decision_modal")}
+              phx-value-decision="approve_run_scoped"
+              class="scoria-button scoria-button--ghost"
+            >
+              {ApprovalCopy.run_scoped_approve_label(@active_approval)}
+            </button>
           </div>
 
           <%!-- D-18: a legitimate re-decision offers "Start a new request"
@@ -402,6 +425,14 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
             class="scoria-button scoria-button--primary"
           >
             {ApprovalCopy.approve_label(@active_approval)}
+          </button>
+          <button
+            :if={@decision_modal == "approve_run_scoped"}
+            type="button"
+            phx-click="approve_run_scoped"
+            class="scoria-button scoria-button--primary"
+          >
+            {ApprovalCopy.run_scoped_approve_label(@active_approval)}
           </button>
         </:footer>
       </.modal>
@@ -659,7 +690,7 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     end
   end
 
-  defp record_approval_decision(socket, status) do
+  defp record_approval_decision(socket, status, opts \\ []) do
     case socket.assigns.active_approval do
       nil ->
         socket
@@ -668,14 +699,28 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
         attrs = approval_decision_attrs(socket, approval)
 
         with {:ok, updated_approval} <- Workflows.approve(approval.id, status, attrs),
-             {:ok, updated_socket} <- maybe_resume_approval(socket, updated_approval, status) do
+             updated_approval <- maybe_set_confluence_scope(updated_approval, opts),
+             {:ok, updated_socket, resume_outcome} <-
+               maybe_resume_approval(socket, updated_approval, status) do
           # WR-03: a rejection deliberately keeps the workflow paused, so it must not
           # report the same green ":pass / decision recorded" toast as an approval —
           # that blurs a safety-relevant distinction. Branch the toast on status.
+          #
+          # `:not_resumable` (RAIL-01, D-05) overrides the default "Approval
+          # granted." copy: the decision was recorded, but the run was halted
+          # by a per-run rail and cannot be resumed, so telling the operator
+          # it was "granted" would mislead them into thinking the run is
+          # proceeding.
           toast_opts =
-            case status do
-              "approved" -> [tone: :pass, message: "Approval granted."]
-              _ -> [tone: :warn, message: "Approval denied - run is still waiting for approval."]
+            case {status, resume_outcome} do
+              {"approved", :not_resumable} ->
+                [tone: :info, message: approval_error_message("approved", :not_resumable)]
+
+              {"approved", _outcome} ->
+                [tone: :pass, message: "Approval granted."]
+
+              _ ->
+                [tone: :warn, message: "Approval denied - run is still waiting for approval."]
             end
 
           # Clearing the drawer selection via push_patch (instead of a bare assign)
@@ -697,19 +742,57 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
     end
   end
 
+  # `Resume.resume_run/1` runs AFTER `Workflows.approve/3` has already
+  # committed the decision (this function is called second in
+  # `record_approval_decision/2`'s own `with` chain). A run halted by a
+  # per-run rail (RAIL-01) falls through `Workflows.resume_run/1`'s
+  # catch-all as `{:error, :not_resumable}` -- the decision WAS recorded,
+  # only the resume did not happen. Reporting that through the generic
+  # failure branch would tell the operator their approval failed when it
+  # did not (D-05). The third element of the returned tuple carries the
+  # resume outcome so the caller can pick an accurate toast instead of the
+  # default "Approval granted." copy, which would otherwise mislead the
+  # operator into thinking the run is proceeding.
   defp maybe_resume_approval(socket, _approval, status) when status != "approved",
-    do: {:ok, socket}
+    do: {:ok, socket, :not_applicable}
 
   defp maybe_resume_approval(socket, approval, "approved") do
     case approval.workflow_run_id do
-      nil -> {:ok, socket}
+      nil -> {:ok, socket, :not_applicable}
       run_id -> Resume.resume_run(run_id)
     end
     |> case do
-      {:ok, _run} -> {:ok, socket}
+      {:ok, _run} -> {:ok, socket, :resumed}
+      {:error, :not_resumable} -> {:ok, socket, :not_resumable}
       {:error, reason} -> {:error, reason}
     end
   end
+
+  # D-50, D-44: `confluence_scope` is deliberately absent from
+  # `Approval.changeset/2`'s cast list (see the LOAD-BEARING comment there)
+  # -- `Workflows.approve/3` passes caller attrs straight through that
+  # changeset, so a castable scope would let a caller widen a grant via
+  # pass-through attrs. This is the SAME non-cast write class the D-26
+  # consume CAS uses: a bare `Repo.update_all`, never a changeset. The
+  # bound is this approval's own run/tool/grade only -- the run-scoped
+  # grant is a deliberate resolution of the D-50 approval-fatigue defect,
+  # not a loosening of the single-use consume rule (D-44).
+  defp maybe_set_confluence_scope(approval, opts) do
+    case Keyword.get(opts, :confluence_scope) do
+      nil ->
+        approval
+
+      scope ->
+        {1, _} =
+          Approval
+          |> where([a], a.id == ^approval.id)
+          |> Repo.update_all(set: [confluence_scope: scope, updated_at: DateTime.utc_now()])
+
+        %{approval | confluence_scope: scope}
+    end
+  end
+
+  defp confluence_approval?(approval), do: ApprovalCopy.field(approval, :blocker_kind) == "confluence"
 
   defp approval_decision_attrs(socket, approval) do
     request_event = approval_request_event(approval)
@@ -744,6 +827,13 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   defp approval_error_message(_status, %Ecto.StaleEntryError{}) do
     "This approval was already decided by another operator."
+  end
+
+  # RAIL-01, D-05: `Resume.resume_run/1` runs AFTER the decision has already
+  # committed, so this is NOT a failed approval -- the decision was recorded.
+  # The run simply cannot be resumed because a per-run rail halted it.
+  defp approval_error_message(_status, :not_resumable) do
+    "Approval decision recorded. This run was halted by a per-run rail and cannot be resumed."
   end
 
   defp approval_error_message(status, reason) do
@@ -809,10 +899,12 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   defp decision_badge("approve"), do: ApprovalCopy.decision_badge("approve")
   defp decision_badge("reject"), do: ApprovalCopy.decision_badge("reject")
+  defp decision_badge("approve_run_scoped"), do: ApprovalCopy.decision_badge("approve_run_scoped")
   defp decision_badge(_decision), do: "Decision pending"
 
   defp decision_tone("approve"), do: :pass
   defp decision_tone("reject"), do: :warn
+  defp decision_tone("approve_run_scoped"), do: :pass
   defp decision_tone(_decision), do: :neutral
 
   defp run_href(_base_path, nil), do: nil
@@ -841,6 +933,10 @@ defmodule ScoriaWeb.ApprovalsLive.Index do
 
   defp decision_confirm_copy("reject", approval) do
     "#{ApprovalCopy.impact_lead(approval)} Scoria records the decision; the run stays paused until approved."
+  end
+
+  defp decision_confirm_copy("approve_run_scoped", approval) do
+    ApprovalCopy.run_scoped_decision_copy(approval)
   end
 
   defp decision_confirm_copy(_decision, _approval), do: nil

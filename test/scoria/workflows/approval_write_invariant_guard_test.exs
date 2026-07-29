@@ -28,17 +28,27 @@ defmodule Scoria.Workflows.ApprovalWriteInvariantGuardTest do
   # `pending` state. Verified against HEAD, exactly two `Approval.changeset(...)`
   # call sites terminate in an update (a third terminates in `insert!`, which is
   # the row's creation and is not a concern here):
-  #   1. workflows.ex:435 — the creation-time second `Approval.changeset |> update!`
+  #   1. workflows.ex:481 — the creation-time second `Approval.changeset |> update!`
   #      that backfills `audit_outbox_event_id` right after insert; the row is
   #      still "pending" at that point (not yet decided) — allow-listed.
-  #   2. workflows.ex:684 — the single decision write inside `approve/3` that
+  #   2. workflows.ex:1143 — the single decision write inside `approve/3` that
   #      performs the pending -> decided transition itself — allow-listed (this
-  #      IS the sanctioned decision writer the rest of the system relies on).
+  #      IS the sanctioned decision writer the rest of the system relies on;
+  #      plan 57-08's `halt_run/3` D-52 addition routes a halt-orphaned pending
+  #      confluence approval through THIS SAME `approve/3` call rather than
+  #      writing a new call site, so the writer count stays at two).
   # Any OTHER `Approval.changeset(...) |> update!/update(` call site is a
   # violation of the decided-at write invariant this guard protects.
+  #
+  # NOTE (56.1-01, re-verified 56.1-05, re-verified 57-08 Tasks 1-3): these
+  # line numbers drift whenever code is inserted above them in workflows.ex
+  # (most recently by 57-08's D-27 retry guard and D-52 halt-with-pending-
+  # approval addition, both of which land above line 1143). Re-verify with
+  # `grep -n "Approval.changeset" lib/scoria/workflows.ex` after any edit that
+  # adds/removes lines above these two call sites.
   @allowed_approval_updates MapSet.new([
-                              {"lib/scoria/workflows.ex", 435},
-                              {"lib/scoria/workflows.ex", 684}
+                              {"lib/scoria/workflows.ex", 481},
+                              {"lib/scoria/workflows.ex", 1143}
                             ])
 
   setup do
@@ -125,22 +135,31 @@ defmodule Scoria.Workflows.ApprovalWriteInvariantGuardTest do
     end
 
     test "no update_all call site references the Approval schema (the removed seed shape)" do
+      # Proximity-scoped (not whole-file): a file is flagged only when an
+      # `update_all(` call site's own nearby lines reference the Approval
+      # schema -- e.g. `Repo.update_all(from(a in Approval, ...), set: ...)`.
+      # A whole-file check would false-positive on any OTHER schema's
+      # legitimate `update_all` (e.g. RAIL-01's `halt_run/3` cancelling
+      # sibling `Step` rows) merely because the same file also happens to
+      # reference `Approval` elsewhere (e.g. `mark_waiting_for_approval/3`).
       offenders =
         for path <- @scan_paths,
-            source = code_lines(path) |> Enum.join("\n"),
-            Regex.match?(~r/\bupdate_all\(/, source),
-            Regex.match?(~r/Scoria\.Observe\.Approval\b|\bin\s+Approval[,\)\s]/, source) do
-          path
+            lines = code_lines(path),
+            {line, line_number} <- Enum.with_index(lines, 1),
+            Regex.match?(~r/\bupdate_all\(/, line),
+            approval_scoped_update_all?(lines, line_number) do
+          "#{path}:#{line_number}"
         end
 
       assert offenders == [],
              """
-             D-20 write-invariant guard: found update_all(...) in a file that also references
+             D-20 write-invariant guard: found update_all(...) whose own call site references
              the Approval schema — this is the fragile shape dev_seed.exs used to have
              (Repo.update_all(set: [status: "expired"])), which bypasses the decision audit
              event and the updated_at bump. Route decided/expired writes through
              `Workflows.approve(id, status)` instead (D-21).
-             Offenders: #{Enum.join(offenders, ", ")}
+             Offenders:
+             #{Enum.join(offenders, "\n")}
              """
     end
   end
@@ -171,6 +190,23 @@ defmodule Scoria.Workflows.ApprovalWriteInvariantGuardTest do
         true -> nil
       end
     end)
+  end
+
+  # Looks at a bounded window around an `update_all(` call site for a literal
+  # reference to the Approval schema (`from(a in Approval, ...)` or
+  # `Scoria.Observe.Approval`) -- a real `Repo.update_all(from(a in Approval,
+  # ...), ...)` shape always has its `Approval` reference within a couple of
+  # lines of the `update_all(` call, so this window catches the offending
+  # shape without flagging an unrelated schema's `update_all` elsewhere in
+  # the same file.
+  defp approval_scoped_update_all?(lines, line_number) do
+    window_start = max(line_number - 6, 1)
+    window_end = min(line_number + 2, length(lines))
+
+    lines
+    |> Enum.slice((window_start - 1)..(window_end - 1))
+    |> Enum.join("\n")
+    |> then(&Regex.match?(~r/Scoria\.Observe\.Approval\b|\bin\s+Approval[,\)\s]/, &1))
   end
 
   defp unique_tenant_id, do: "tenant-decided-#{System.unique_integer([:positive])}"
