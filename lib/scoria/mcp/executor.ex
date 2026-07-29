@@ -481,8 +481,50 @@ defmodule Scoria.MCP.Executor do
     }
   end
 
+  # Plan 57-06 (D-11, D-14): the fold happens HERE, after the D-26
+  # approval-consume CAS (`confluence_gate/3` only reaches this function on
+  # `:no_match`) and BEFORE `Confluence.classify/1` -- exactly the order
+  # the gate already establishes. `call_input` is THIS call's own witness
+  # map (unchanged from the pre-accumulator shape: `:private_data`,
+  # `:untrusted_content`, `:exfil`, plus the `:run_id`/`:step_id`/
+  # `:tool_ref`/`:action_class` correlation keys `Confluence.classify/1`
+  # also reads). Only `:private_data` and `:untrusted_content` -- the two
+  # EXPOSURE legs -- are ever folded into the per-run accumulator; `:exfil`
+  # is read from `call_input` UNCHANGED below and is NEVER accumulated
+  # (D-11): `reads_private_data`/`sees_untrusted_content` describe what the
+  # agent has been EXPOSED TO (monotone, run-scoped), `can_exfiltrate`
+  # describes what THIS CALL can do. Accumulating exfil too would pause a
+  # later harmless read merely because an earlier, unrelated call in the
+  # same run happened to be exfil-capable. A single tool declaring all
+  # three legs still escalates on itself, because its OWN legs fold into
+  # the accumulator before this same call's classify input is built --
+  # per-call is a strict subset of the accumulated model, never a second
+  # mode.
   defp evaluate_confluence(tool_module, args, context, run_id, step_id) do
-    {combination, evidence} = Confluence.classify(confluence_input(tool_module, context))
+    call_input = confluence_input(tool_module, context)
+
+    classify_input =
+      case fold_confluence_legs(run_id, step_id, call_input, tool_module) do
+        {:ok, accumulated_legs} ->
+          call_input
+          |> Map.put(:private_data, Map.get(accumulated_legs, :private_data))
+          |> Map.put(:untrusted_content, Map.get(accumulated_legs, :untrusted_content))
+
+        {:error, _reason} ->
+          # D-16: a failed accumulator write must not be silently
+          # swallowed (fallback telemetry already fired inside
+          # `fold_confluence_legs/4`), but it must also not crash this
+          # tool call (the observe-layer "never break host business
+          # logic" rule). Fail closed on the ACCUMULATOR read only, never
+          # on the call: fall back to evaluating on this call's OWN
+          # witnesses alone -- never weaker than the pre-accumulator
+          # tracer's behavior (a single tool declaring all three legs
+          # still escalates on itself), and never stronger than what this
+          # call itself can prove.
+          call_input
+      end
+
+    {combination, evidence} = Confluence.classify(classify_input)
     evidence = attach_confluence_idempotency_key(evidence, context, tool_module)
     config = Confluence.resolve_config(context)
     decision = confluence_decision(evidence, config)
@@ -581,6 +623,273 @@ defmodule Scoria.MCP.Executor do
 
   defp leg_witness(true), do: %{source: :declared}
   defp leg_witness(_falsy), do: nil
+
+  # `@doc false` (not `defp`), mirroring `actual_units/3`'s precedent
+  # elsewhere in this module ("exists so ... is directly unit-testable"):
+  # exposes the leg-fold primitive directly so its STRONGEST-WINS ranking
+  # can be unit-tested with synthetic witness sources (`:default_tier`,
+  # `:scanner_infra`) that are NOT constructible through any live call
+  # path via `Executor.execute/4`'s public API today -- `confluence_input/2`
+  # only ever constructs `source: :declared` witnesses in this plan's
+  # scope (D-13), so the ordering-independence proof this accumulator's
+  # correctness depends on (D-15.1) is otherwise unreachable from a
+  # black-box test. This is an internal function, not a published API.
+  @doc false
+  def fold_confluence_legs_for_test(run_id, step_id, call_input, tool_module \\ __MODULE__) do
+    fold_confluence_legs(run_id, step_id, call_input, tool_module)
+  end
+
+  # -- Plan 57-06: per-run leg accumulator (D-15, D-16, D-17) -------------
+  #
+  # D-12: legs are MONOTONE within a run, and the only reset is a new run.
+  # There is, and must never be, any clearing/reset/downgrade/untaint
+  # primitive anywhere in this section -- Perl's `untaint` is the canonical
+  # footgun this deliberately avoids (a taint substrate with a clearing
+  # primitive becomes a rubber stamp, and the clearing call becomes the
+  # attack surface; it is also why the Ruby `$SAFE` post-mortem reads the
+  # way it does). An approval clears the GATE (`consume_confluence_approval/3`,
+  # keyed by the idempotency key), never the LEGS -- do NOT add a
+  # convenience "clear this run's confluence_legs" helper for an approval,
+  # an admin action, or a replay; every function below only ever WRITES a
+  # leg to `true`/stronger, never to `false`/weaker/absent.
+  #
+  # Ranks a leg witness's `:source` for STRONGEST-WINS comparison (D-15.1).
+  # Mirrors `Scoria.Confluence.grade/1`'s weakest-first `@grade_rank`
+  # ordering, but inverted in USE (this ranks a SINGLE witness so a
+  # per-leg maximum can be taken across calls, not the weakest across
+  # legs within one call, which is `Confluence.grade/1`'s own job and
+  # stays untouched). An unrecognized or missing source fails closed to
+  # rank 0 (the weakest, `:unclassified`), mirroring `Confluence`'s own
+  # D-30 fallback -- a garbage source must never win a "strongest" compare
+  # against a genuine one.
+  @confluence_leg_source_rank %{
+    declared: 3,
+    scanner_infra: 1,
+    default_tier: 2,
+    unclassified: 0
+  }
+
+  defp confluence_leg_source_rank(source), do: Map.get(@confluence_leg_source_rank, source, 0)
+
+  # Builds the jsonb "candidates" parameter the merge fragment below
+  # iterates via `jsonb_each/1`: ONLY the two accumulated exposure legs
+  # (D-11), and ONLY the ones THIS call actually lit (D-15.2 -- a `nil`
+  # witness contributes no candidate at all, never a `false`/absent
+  # placeholder). An empty result (`%{}`, when this call lights neither
+  # exposure leg) makes `jsonb_each` iterate zero rows, so the merge below
+  # degrades to a pure READ of the current accumulator state -- still a
+  # single statement, still takes the second row lock every call (T-57-32,
+  # accepted and documented below), never a separate read-then-write.
+  defp confluence_leg_candidates(private_witness, untrusted_witness) do
+    %{}
+    |> maybe_put_confluence_leg_candidate("private_data", private_witness)
+    |> maybe_put_confluence_leg_candidate("untrusted_content", untrusted_witness)
+  end
+
+  defp maybe_put_confluence_leg_candidate(candidates, _leg_key, nil), do: candidates
+
+  defp maybe_put_confluence_leg_candidate(candidates, leg_key, witness) do
+    source = to_string(witness.source)
+    reason_code = Map.get(witness, :reason_code)
+
+    Map.put(candidates, leg_key, %{
+      "source" => source,
+      "reason_code" => reason_code && to_string(reason_code),
+      "rank" => confluence_leg_source_rank(witness.source)
+    })
+  end
+
+  # No run to persist against (D-19/D-22's unattributed gap -- a call with
+  # no `:run_id` at all): return THIS call's own witnesses unchanged, with
+  # NO database round trip. This is not a degraded case -- there is
+  # genuinely no accumulator row to read or write, and this mirrors the
+  # historical pre-accumulator tracer behavior exactly (a single call's
+  # own declared legs are the only evidence there ever was for an
+  # unattributed call).
+  defp fold_confluence_legs(nil, _step_id, call_input, _tool_module) do
+    {:ok,
+     %{
+       private_data: Map.get(call_input, :private_data),
+       untrusted_content: Map.get(call_input, :untrusted_content)
+     }}
+  end
+
+  # D-17: the merge and the read happen in ONE statement -- a single
+  # `Repo.update_all` whose `update:` clause computes the new per-leg
+  # values and whose `select:` clause (Ecto's `update_all` reads the
+  # second `{count, results}` element ONLY when the update query itself
+  # carries a `select:` -- there is no separate `returning:` opt for
+  # `update_all/3`, unlike `insert_all/3`; mirrors `consume_call_scope/3`'s
+  # and `Rails.admit_tool_call/2`'s own `select:` shape above) reads the
+  # POST-merge value back in the SAME statement, never a
+  # read-then-decide-then-write pair. This is a SECOND exclusive
+  # row lock on the run, per tool call, on top of the rail counter's own
+  # lock (`admit_tool_call_rail/2` -> `Rails.admit_tool_call/2`) --
+  # accepted and documented (T-57-32, 56.1 D-09 precedent), not papered
+  # over: this fold runs on EVERY evaluated call, including one that
+  # lights no leg at all, because the accumulator must still be READ to
+  # pick up legs a different call already lit.
+  #
+  # The `jsonb_each(candidates)` / `jsonb_object_agg(...)` shape handles
+  # zero, one, or two lit legs UNIFORMLY in one fragment -- no per-count
+  # branching. For each candidate leg: the EXISTING witness's rank is
+  # computed from its stored `"source"` string via a fixed `CASE` (absent
+  # entirely -> `NULL` -> `COALESCE(..., -1)`, always beaten by a real
+  # witness's rank 0-3); a STRICTLY GREATER candidate rank wins and
+  # replaces the leg (STRONGEST-WINS, D-15.1 -- a plain `||` cannot
+  # express this, it always keeps the FIRST witness, which is exactly the
+  # bug D-15.1 corrects); a tied-or-weaker candidate changes nothing, so
+  # the existing map (source, reason_code, first_step_id, all of it) is
+  # left byte-identical. On a win, `first_step_id` is preserved from
+  # whatever was already stored (`COALESCE(existing, this_call's step_id)`)
+  # even though `source` itself is upgraded -- the step that FIRST lit a
+  # leg does not change just because a later call proves it more strongly.
+  # Legs this call does not light are never touched at all: they are
+  # absent from `candidates`, so `jsonb_each` never visits their key, so
+  # neither their presence NOR their absence is ever written (D-15.2) --
+  # this is also what makes a later call's `false` for an already-lit leg
+  # a pure no-op (there is no candidate for it, so nothing merges).
+  defp fold_confluence_legs(run_id, step_id, call_input, tool_module) do
+    candidates =
+      confluence_leg_candidates(
+        Map.get(call_input, :private_data),
+        Map.get(call_input, :untrusted_content)
+      )
+
+    query =
+      from(r in Run,
+        where: r.id == ^run_id,
+        update: [
+          set: [
+            confluence_legs:
+              fragment(
+                """
+                (SELECT ? || COALESCE(
+                   jsonb_object_agg(
+                     cand.key,
+                     CASE
+                       WHEN (cand.value->>'rank')::int > COALESCE(
+                         CASE (?->cand.key->>'source')
+                           WHEN 'declared' THEN 3
+                           WHEN 'scanner_infra' THEN 1
+                           WHEN 'default_tier' THEN 2
+                           WHEN 'unclassified' THEN 0
+                           ELSE NULL
+                         END,
+                         -1
+                       )
+                       THEN jsonb_set(
+                         jsonb_build_object(
+                           'lit', true,
+                           'source', cand.value->>'source',
+                           'reason_code', cand.value->'reason_code',
+                           'strongest_source', cand.value->>'source'
+                         ),
+                         '{first_step_id}',
+                         to_jsonb(COALESCE(?->cand.key->>'first_step_id', ?::text))
+                       )
+                       ELSE ?->cand.key
+                     END
+                   ),
+                   '{}'::jsonb
+                 )
+                 FROM jsonb_each(?::jsonb) AS cand(key, value))
+                """,
+                r.confluence_legs,
+                r.confluence_legs,
+                r.confluence_legs,
+                ^step_id,
+                r.confluence_legs,
+                type(^candidates, :map)
+              )
+          ]
+        ],
+        select: r.confluence_legs
+      )
+
+    result =
+      try do
+        case Repo.update_all(query, []) do
+          {1, [legs]} -> {:ok, decode_confluence_legs(legs)}
+          {0, _} -> {:error, :run_not_found}
+        end
+      rescue
+        exception -> {:error, exception}
+      end
+
+    case result do
+      {:ok, _} = ok ->
+        ok
+
+      {:error, reason} = error ->
+        emit_confluence_accumulator_fallback(run_id, step_id, tool_module, reason)
+        error
+    end
+  end
+
+  defp decode_confluence_legs(legs) when is_map(legs) do
+    %{
+      private_data: decode_confluence_leg(Map.get(legs, "private_data")),
+      untrusted_content: decode_confluence_leg(Map.get(legs, "untrusted_content"))
+    }
+  end
+
+  defp decode_confluence_legs(_other), do: %{private_data: nil, untrusted_content: nil}
+
+  defp decode_confluence_leg(%{"lit" => true} = leg) do
+    %{
+      source: safe_confluence_leg_source(Map.get(leg, "source")),
+      reason_code: safe_confluence_leg_reason_code(Map.get(leg, "reason_code"))
+    }
+  end
+
+  defp decode_confluence_leg(_other), do: nil
+
+  defp safe_confluence_leg_source("declared"), do: :declared
+  defp safe_confluence_leg_source("scanner_infra"), do: :scanner_infra
+  defp safe_confluence_leg_source("default_tier"), do: :default_tier
+  defp safe_confluence_leg_source("unclassified"), do: :unclassified
+  # D-30-style fail-closed fallback: a stored source string this reader
+  # does not recognize must never be treated as strong evidence.
+  defp safe_confluence_leg_source(_other), do: :unclassified
+
+  defp safe_confluence_leg_reason_code(nil), do: nil
+
+  defp safe_confluence_leg_reason_code(code) when is_binary(code) do
+    Confluence.reason_codes()
+    |> Enum.find(&(Atom.to_string(&1) == code))
+    |> case do
+      nil -> :unknown
+      atom -> atom
+    end
+  end
+
+  defp safe_confluence_leg_reason_code(_other), do: nil
+
+  # D-16: a failed accumulator write (or a run row that no longer exists,
+  # `{:error, :run_not_found}`) must NOT be silently swallowed --
+  # `persist_taint_to_step/4` and `persist_classification_to_step/3` both
+  # `rescue _ -> :ok`, and copying that discipline here would mean a
+  # failed `confluence_legs` merge produces no leg, no escalation, and no
+  # signal: a silent fail-open on the security control under strict mode.
+  # Wrapped so a raising host telemetry handler still cannot break the
+  # tool call, mirroring every other telemetry emit in this module.
+  defp emit_confluence_accumulator_fallback(run_id, step_id, tool_module, reason) do
+    try do
+      :telemetry.execute(
+        [:scoria, :gate, :confluence, :fallback],
+        %{},
+        %{
+          run_id: run_id,
+          step_id: step_id,
+          tool_ref: inspect(tool_module),
+          reason: inspect(reason)
+        }
+      )
+    rescue
+      _ -> :ok
+    end
+  end
 
   # D-18/D-22 attribution + D-21 containment resolution, evaluated in order
   # BEFORE the escalation body proper: (1) unattributed (no run/step to
@@ -1145,9 +1454,24 @@ defmodule Scoria.MCP.Executor do
     end
   end
 
-  # D-08: taint is ALWAYS computed and persisted (inspectable via the step's
-  # jsonb `result_envelope` and via telemetry), regardless of the
-  # `wrap_tool_output` return-shape flag. The flag below only gates the
+  # D-08: taint is ALWAYS computed, and is durably persisted -- but NOT
+  # ALWAYS via the step's jsonb `result_envelope`. Corrected (plan 57-06):
+  # this used to claim taint is "always ... inspectable via the step's
+  # jsonb result_envelope", which is false for the completing workflow
+  # path. `persist_taint_to_step/4` below best-effort merges the taint map
+  # onto the step's `result_envelope` immediately after this call, but
+  # `Scoria.Workflows.complete_step/3` WHOLESALE-REPLACES that envelope
+  # from the handler's own return on every successful step, and
+  # `Scoria.Workflows.retry_step/1` zeroes it entirely on retry -- so this
+  # merge (and the Phase 56 classification merge in
+  # `persist_classification_to_step/3`) survives only for a step that is
+  # NOT currently completed-and-replaced at read time (failed, timed out,
+  # or paused `waiting_for_approval`), and is destroyed on every
+  # successful completion. The durable, run-scoped record Phase 57 (and
+  # Phase 58's read path) actually relies on is
+  # `ai_workflow_runs.confluence_legs` (`Scoria.Workflows.Run`), written
+  # independently of the step result envelope's own lifecycle by this
+  # phase's dedicated accumulator fold. The flag below only gates the
   # RETURN SHAPE, never this computation. `verdict` is the resolved
   # `Scoria.Trust.Scan` verdict (D-18) -- under `Scanner.NoOp` this resolves
   # to the same `Trust.default_tier/0` value persisted here before this
@@ -1177,12 +1501,16 @@ defmodule Scoria.MCP.Executor do
     end
   end
 
-  # Persists the always-computed taint map onto the step's `result_envelope`
-  # jsonb via a Postgres jsonb merge (mirrors
+  # Persists the always-COMPUTED (not always-DURABLE -- see the corrected
+  # note on `persist_taint/3` above) taint map onto the step's
+  # `result_envelope` jsonb via a Postgres jsonb merge (mirrors
   # `Knowledge.set_source_trust/3`'s `fragment("? || ?", ...)` pattern) — no
   # new Ecto column (D-08). Best-effort: a standalone/non-workflow tool
   # invocation with no `step_id` in context, or no matching step row, is not
-  # an error — taint has already been telemetried above.
+  # an error — taint has already been telemetried above. This value is
+  # WHOLESALE-REPLACED by `Scoria.Workflows.complete_step/3` on every
+  # successful completion and zeroed by `Scoria.Workflows.retry_step/1` on
+  # retry -- it is inspectable here only transiently, never durably.
   #
   # `scanner_tier` (plan 57-03, D-01b) rides alongside `tier` here as the
   # SAME kind of confluence-facing evidence `persist_classification_to_step/3`

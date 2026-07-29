@@ -102,6 +102,64 @@ defmodule Scoria.MCP.ExecutorConfluenceTest do
     def execute(_args, _context), do: {:ok, %{result: "ok"}}
   end
 
+  # -- Plan 57-06 accumulator fixtures: single-leg tools used to prove the
+  # per-run leg fold in isolation from a single call's own three-leg
+  # declaration.
+
+  defmodule PrivateDataOnlyTool do
+    use Scoria.MCP.Tool, reads_private_data: true
+
+    @impl true
+    def name, do: "private_data_only_tool"
+
+    @impl true
+    def description, do: "Declares only the private-data leg"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, _context), do: {:ok, %{result: "ok"}}
+  end
+
+  defmodule UntrustedContentOnlyTool do
+    use Scoria.MCP.Tool, sees_untrusted_content: true
+
+    @impl true
+    def name, do: "untrusted_content_only_tool"
+
+    @impl true
+    def description, do: "Declares only the untrusted-content leg"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, _context), do: {:ok, %{result: "ok"}}
+  end
+
+  # A genuine declaration of NOTHING sensitive (`source: :tool_declared`,
+  # all three legs false) -- distinct from `UndeclaredTool`'s
+  # `:unclassified_default`, which produces no witnesses at all regardless
+  # of the accumulator. This is the honest "pure harmless read" fixture:
+  # its own call never lights anything, but it still folds through (and
+  # reads back) the accumulator exactly like any other evaluated call.
+  defmodule PureReadTool do
+    use Scoria.MCP.Tool
+
+    @impl true
+    def name, do: "pure_read_tool"
+
+    @impl true
+    def description, do: "Declares no trifecta legs at all"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, _context), do: {:ok, %{result: "ok"}}
+  end
+
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
@@ -703,6 +761,309 @@ defmodule Scoria.MCP.ExecutorConfluenceTest do
         end)
 
       assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+    end
+  end
+
+  describe "confluence leg accumulator (D-15, D-16, D-17)" do
+    test "the private-data leg is first lit by a default-tier witness and later by a declared witness, and the stored source becomes the declared one" do
+      {run, step} = new_run_and_step!()
+
+      default_tier_witness = %{private_data: %{source: :default_tier}, untrusted_content: nil, exfil: nil}
+      declared_witness = %{private_data: %{source: :declared}, untrusted_content: nil, exfil: nil}
+
+      {:ok, first_legs} =
+        Executor.fold_confluence_legs_for_test(run.id, step.id, default_tier_witness)
+
+      assert first_legs.private_data.source == :default_tier
+
+      {:ok, second_legs} = Executor.fold_confluence_legs_for_test(run.id, step.id, declared_witness)
+
+      assert second_legs.private_data.source == :declared
+
+      stored = Repo.get!(Run, run.id).confluence_legs
+      assert stored["private_data"]["source"] == "declared"
+      assert stored["private_data"]["lit"] == true
+    end
+
+    test "reversing the arrival order of a default-tier witness and a declared witness produces the identical final accumulator state" do
+      {run_a, _step_a} = new_run_and_step!()
+      {run_b, _step_b} = new_run_and_step!()
+
+      # A shared literal step id (not tied to either run's own steps) so the
+      # two runs' final `first_step_id` values are directly comparable --
+      # the property under test is ordering-independence of the SOURCE
+      # resolution, not the (trivially always-equal-to-itself) step
+      # identity of whichever call happens to run first in each run.
+      shared_step_id = Ecto.UUID.generate()
+
+      default_tier_witness = %{private_data: %{source: :default_tier}, untrusted_content: nil, exfil: nil}
+      declared_witness = %{private_data: %{source: :declared}, untrusted_content: nil, exfil: nil}
+
+      {:ok, _} = Executor.fold_confluence_legs_for_test(run_a.id, shared_step_id, default_tier_witness)
+      {:ok, _} = Executor.fold_confluence_legs_for_test(run_a.id, shared_step_id, declared_witness)
+
+      {:ok, _} = Executor.fold_confluence_legs_for_test(run_b.id, shared_step_id, declared_witness)
+      {:ok, _} = Executor.fold_confluence_legs_for_test(run_b.id, shared_step_id, default_tier_witness)
+
+      stored_a = Repo.get!(Run, run_a.id).confluence_legs
+      stored_b = Repo.get!(Run, run_b.id).confluence_legs
+
+      assert stored_a == stored_b
+      assert stored_a["private_data"]["source"] == "declared"
+    end
+
+    test "a call whose classification marks a leg false writes nothing for that leg -- the key remains absent" do
+      {run, step} = new_run_and_step!()
+
+      assert {:ok, _result} = Executor.execute(PureReadTool, %{}, exfil_context(run, step))
+
+      stored = Repo.get!(Run, run.id).confluence_legs
+      refute Map.has_key?(stored, "private_data")
+      refute Map.has_key?(stored, "untrusted_content")
+    end
+
+    test "after a call that lights one leg, the accumulator contains exactly that one key" do
+      {run, step} = new_run_and_step!()
+
+      assert {:ok, _result} =
+               Executor.execute(PrivateDataOnlyTool, %{}, exfil_context(run, step))
+
+      stored = Repo.get!(Run, run.id).confluence_legs
+      assert Map.keys(stored) == ["private_data"]
+    end
+
+    test "the merge is a single Repo.update_all reading confluence_legs back via the query's own select:, with no separate accumulator read preceding it" do
+      # `Ecto.Repo.update_all/3` has no `:returning` opt (unlike
+      # `insert_all/3`) -- the second `{count, results}` element is
+      # populated only when the update QUERY itself carries a `select:`,
+      # mirroring `consume_call_scope/3`'s and `Rails.admit_tool_call/2`'s
+      # own shape. Assert the fold's query selects `confluence_legs` and
+      # is read back through the SAME `Repo.update_all` call, never a
+      # separate `Repo.one`/`Repo.get` read immediately before it.
+      source = File.read!(Path.join([File.cwd!(), "lib", "scoria", "mcp", "executor.ex"]))
+
+      assert source =~ ~r/select: r\.confluence_legs/
+      assert source =~ ~r/Repo\.update_all\(query, \[\]\)/
+    end
+
+    test "two concurrent tool calls against one run, each lighting a different leg, produce an accumulator containing both legs" do
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step)
+
+      tasks = [
+        Task.async(fn -> Executor.execute(PrivateDataOnlyTool, %{}, context) end),
+        Task.async(fn -> Executor.execute(UntrustedContentOnlyTool, %{}, context) end)
+      ]
+
+      results = Task.await_many(tasks, 5_000)
+      assert Enum.all?(results, &match?({:ok, _}, &1))
+
+      stored = Repo.get!(Run, run.id).confluence_legs
+      assert Map.has_key?(stored, "private_data")
+      assert Map.has_key?(stored, "untrusted_content")
+    end
+
+    test "a failed accumulator write (a run id matching no row) emits the fallback telemetry event and the tool call does not crash" do
+      ref = attach_confluence_telemetry([[:scoria, :gate, :confluence, :fallback]])
+
+      {_run, step} = new_run_and_step!()
+      bogus_run_id = Ecto.UUID.generate()
+
+      context = %{
+        actor_id: "user-1",
+        tenant_id: "tenant-1",
+        run_id: bogus_run_id,
+        step_id: step.id,
+        test_pid: self()
+      }
+
+      assert {:ok, _result} = Executor.execute(PrivateDataOnlyTool, %{}, context)
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :gate, :confluence, :fallback],
+                      measurements, metadata}
+
+      assert measurements == %{}
+      assert metadata.run_id == bogus_run_id
+    end
+  end
+
+  describe "confluence gate wiring: exposure legs accumulate, exfil stays per-call (D-11, D-12)" do
+    test "a run where step one declares private data, step two declares untrusted content, and step three declares exfil escalates on step three" do
+      {run, step1} = new_run_and_step!()
+
+      assert {:ok, _} = Executor.execute(PrivateDataOnlyTool, %{}, exfil_context(run, step1))
+
+      {:ok, step2} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      assert {:ok, _} = Executor.execute(UntrustedContentOnlyTool, %{}, exfil_context(run, step2))
+
+      {:ok, step3} =
+        Workflows.create_step(run.id, %{
+          sequence: 3,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ExfilOnlyTool, %{}, exfil_context(run, step3))
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "exfil_only_tool"
+
+      approval = Repo.get_by!(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
+      assert approval.tool_name == "exfil_only_tool"
+    end
+
+    test "reordering the two exposure legs still escalates on whichever step carries the exfil leg" do
+      {run, step1} = new_run_and_step!()
+
+      assert {:ok, _} = Executor.execute(UntrustedContentOnlyTool, %{}, exfil_context(run, step1))
+
+      {:ok, step2} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      assert {:ok, _} = Executor.execute(PrivateDataOnlyTool, %{}, exfil_context(run, step2))
+
+      {:ok, step3} =
+        Workflows.create_step(run.id, %{
+          sequence: 3,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ExfilOnlyTool, %{}, exfil_context(run, step3))
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "exfil_only_tool"
+    end
+
+    test "an exfil-capable tool that ran earlier does not poison a later pure read" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      {run, step1} = new_run_and_step!()
+
+      assert {:ok, _} = Executor.execute(ExfilOnlyTool, %{}, exfil_context(run, step1))
+
+      {:ok, step2} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      assert {:ok, _} = Executor.execute(PureReadTool, %{}, exfil_context(run, step2))
+
+      refute Repo.get!(Run, run.id).status == "waiting_for_approval"
+      refute Repo.get_by(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
+    end
+
+    test "a single tool declaring all three legs still escalates on itself, because its own legs fold in before evaluation" do
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step)
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "three_leg_tool"
+    end
+
+    test "a later call declaring a previously-lit leg false leaves the accumulator's entry for that leg unchanged" do
+      {run, step1} = new_run_and_step!()
+
+      assert {:ok, _} = Executor.execute(PrivateDataOnlyTool, %{}, exfil_context(run, step1))
+      before_legs = Repo.get!(Run, run.id).confluence_legs
+
+      {:ok, step2} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      assert {:ok, _} = Executor.execute(PureReadTool, %{}, exfil_context(run, step2))
+      after_legs = Repo.get!(Run, run.id).confluence_legs
+
+      assert after_legs == before_legs
+    end
+
+    test "after an approval is consumed and the tool runs, confluence_legs still contains every leg lit before the approval" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      {run, step1} = new_run_and_step!()
+
+      # Light BOTH exposure legs before the approved call -- the D-26
+      # consume-CAS path passes an approved call through UNEVALUATED (it
+      # never calls `evaluate_confluence/5`, so it never folds its OWN
+      # legs), which is exactly why this test proves the accumulator is
+      # untouched by consumption rather than proving the consumed call's
+      # own declaration gets folded.
+      assert {:ok, _} = Executor.execute(PrivateDataOnlyTool, %{}, exfil_context(run, step1))
+
+      {:ok, step2} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      assert {:ok, _} = Executor.execute(UntrustedContentOnlyTool, %{}, exfil_context(run, step2))
+
+      before_legs = Repo.get!(Run, run.id).confluence_legs
+      assert Map.has_key?(before_legs, "private_data")
+      assert Map.has_key?(before_legs, "untrusted_content")
+
+      {:ok, step3} =
+        Workflows.create_step(run.id, %{
+          sequence: 3,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      insert_confluence_approval!(run,
+        tool_name: "three_leg_tool",
+        status: "approved",
+        args_fingerprint: "fp-retain-legs"
+      )
+
+      context3 = exfil_context(run, step3) |> Map.put(:args_fingerprint, "fp-retain-legs")
+
+      assert {:ok, %{result: "leaked"}} =
+               Executor.execute(ThreeLegTool, %{"action" => "leak"}, context3)
+
+      final_legs = Repo.get!(Run, run.id).confluence_legs
+      assert Map.has_key?(final_legs, "private_data")
+      assert Map.has_key?(final_legs, "untrusted_content")
+      assert final_legs == before_legs
+    end
+
+    test "no function in the executor clears, resets, or downgrades confluence_legs (D-12)" do
+      source = File.read!(Path.join([File.cwd!(), "lib", "scoria", "mcp", "executor.ex"]))
+
+      refute source =~ ~r/defp?\s+\w*(clear|reset|downgrade|untaint)\w*confluence_leg/i
+      refute source =~ ~r/defp?\s+\w*confluence_leg\w*(clear|reset|downgrade|untaint)/i
     end
   end
 

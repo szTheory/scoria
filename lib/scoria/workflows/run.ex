@@ -51,6 +51,35 @@ defmodule Scoria.Workflows.Run do
     # fold (never by this changeset -- see the LOAD-BEARING comment on
     # `cast/3` below, which this field joins on the same disjointness
     # rule as the rail counters).
+    #
+    # Value shape (plan 57-06, cross-phase obligation 1 for Phase 58): a
+    # map keyed by leg name -- currently `"private_data"` and
+    # `"untrusted_content"` only, the two EXPOSURE legs D-11 accumulates
+    # per run; the EXFIL leg is per-call and NEVER appears here. Each LIT
+    # leg's value is itself a map with:
+    #   - "lit" -- always `true` when the key is present. An unlit leg is
+    #     never written (D-15.2); there is no `false` sentinel and no key
+    #     ever means "not (yet) lit".
+    #   - "source" -- the STRONGEST witness source seen for this leg so
+    #     far (`"declared"` > observed `"scanner_infra"` >
+    #     `"default_tier"` > `"unclassified"`), re-graded upward whenever
+    #     a stronger witness arrives later in the run (D-15.1) -- never
+    #     downward, and never cleared (D-12).
+    #   - "reason_code" -- the winning witness's own reason code, or
+    #     `nil` when it carries none.
+    #   - "first_step_id" -- the id of the step that FIRST lit this leg,
+    #     preserved across every later re-grade of "source".
+    #   - "strongest_source" -- identical to "source"; both keys exist so
+    #     this map is self-describing to a reader who does not already
+    #     know "source" here means "the strongest one accumulated so
+    #     far", not "the most recent one".
+    #
+    # This is Phase 58's read path for re-deriving both the named
+    # combination and the grade via `Scoria.Confluence.classify/1` --
+    # NOT the step's `result_envelope` (wholesale-replaced by
+    # `Scoria.Workflows.complete_step/3` on every successful step and
+    # zeroed by `retry_step/1`; see the corrected durability note on
+    # `Scoria.MCP.Executor.persist_taint/3`) and NOT the audit outbox.
     field :confluence_legs, :map, default: %{}
 
     has_many :steps, Scoria.Workflows.Step
