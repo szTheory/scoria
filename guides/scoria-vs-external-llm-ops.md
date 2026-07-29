@@ -28,6 +28,7 @@ Scoria currently makes these claims:
 - Scoria supports durable runs, reviewer-visible traces, approvals, fail-closed eval posture, tenant-scoped knowledge retrieval, and upgrade-safe verification suites.
 - Scoria requires no separate Scoria-hosted control plane.
 - Scoria requires no required egress for Scoria governance records beyond model or tool providers the host app already calls.
+- Scoria ships a confluence escalation gate that pauses for human approval when private data, untrusted content, and an external-egress-capable action co-occur on one tainted execution path. The gate refuses the call at `Scoria.MCP.Executor` before the tool's execution task starts, and the escalation is audited and resumable. Today the untrusted-content leg is sourced from a tool's own declaration and from a real content scanner's verdict only — retrieval-sourced content (from `Scoria.Knowledge.retrieve/2`) is not linked to a run this milestone, so it does not light the untrusted-content leg yet.
 
 Scoria records OpenTelemetry-GenAI / OpenInference-compatible convention keys (`gen_ai.*`,
 `server.*`, `openinference.span.kind`) in your host Postgres, pinned to OpenTelemetry GenAI
@@ -81,10 +82,9 @@ Use the peer names respectfully and exactly. Write **Arize Phoenix** when referr
 The following are future or deferred work. They must not be presented as current Scoria capabilities:
 
 - OpenInference export is not a current Scoria claim. Scoria uses trace vocabulary, but export compatibility belongs to the future trace-foundation seed.
-- Rule-of-Two/lethal-trifecta enforcement is not a current Scoria claim. Today Scoria has governance mechanisms; the dedicated agent-security policy layer is deferred.
 - deeper scorer calibration is not a current Scoria claim. Current eval posture is fail-closed and evidence-backed, not a mature calibration suite.
 - richer retrieval evals are not current Scoria claims. Precision, NDCG, faithfulness, rerank, and abstention depth remain deferred.
 - retention, masking, purge, and feedback governance are not current Scoria claims. Privacy and feedback governance need their owning future seed.
 - persistent AI feature grouping is not a current Scoria claim. Feature cockpits and durable feature grouping remain part of the later operator-IA work.
 
-The safe comparison is simple: Scoria is embedded Phoenix governance with durable records, reviewer-visible traces, approvals, tenant-scoped knowledge retrieval, fail-closed eval posture, and package verification. External platforms often bring broader language coverage, managed collaboration, and cross-service analytics.
+The safe comparison is simple: Scoria is embedded Phoenix governance with durable records, reviewer-visible traces, approvals, tenant-scoped knowledge retrieval, fail-closed eval posture, package verification, and the confluence escalation gate. External platforms often bring broader language coverage, managed collaboration, and cross-service analytics.
