@@ -151,7 +151,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 57-06-PLAN.md — Per-run leg accumulator: strongest-wins, lit-legs-only, single-statement fold (GATE-01, GATE-02) [wave 5]
+- [x] 57-06-PLAN.md — Per-run leg accumulator: strongest-wins, lit-legs-only, single-statement fold (GATE-01, GATE-02) [wave 5]
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
