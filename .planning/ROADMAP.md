@@ -159,7 +159,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 57-08-PLAN.md — Resume widening, retry guard, concurrency rescue, halt invariants (GATE-02) [wave 7]
+- [x] 57-08-PLAN.md — Resume widening, retry guard, concurrency rescue, halt invariants (GATE-02) [wave 7]
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
