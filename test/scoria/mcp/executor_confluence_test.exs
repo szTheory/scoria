@@ -326,6 +326,117 @@ defmodule Scoria.MCP.ExecutorConfluenceTest do
 
       assert Repo.get!(Run, run.id).status == "halted"
     end
+
+    test "a run that halts via a sibling rail trip AFTER this step was claimed still denies the escalation without creating an approval row (D-24)" do
+      {run, step} = new_run_and_step!()
+
+      {:ok, sibling_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      # The halt lands on a DIFFERENT step than the one about to escalate --
+      # proving the halted-run check is necessary even given a per-step
+      # claim-time guard, because a sibling rail can trip after this step
+      # was already claimed/dispatched.
+      {:ok, _halted_run} =
+        Workflows.halt_run(run.id, sibling_step.id, %{"reason" => "sibling rail tripped"})
+
+      context = exfil_context(run, step)
+
+      assert {:error, %{status: :confluence_denied, reason_code: "run_halted"}} =
+               Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+
+      refute_receive {:tool_body_executed, _pid}, 200
+      refute Repo.get_by(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
+      assert Repo.get!(Run, run.id).status == "halted"
+    end
+  end
+
+  describe "resumed confluence escalation re-execution (D-26, plan 57-08 Task 1)" do
+    test "a resumed confluence escalation re-reaching the identical tool call passes through on the consumed approval instead of escalating again" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step) |> Map.put(:args_fingerprint, "fp-resume-passthrough")
+
+      result = run_in_supervised_task(fn -> Executor.execute(ThreeLegTool, %{"action" => "leak"}, context) end)
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+
+      approval = Repo.get_by!(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
+      assert {:ok, _approved} = Workflows.approve(approval.id, "approved", %{})
+
+      assert {:ok, resumed_step} = Workflows.resume_run(run.id)
+      assert resumed_step.id == step.id
+      assert Repo.get!(Step, step.id).status == "queued"
+
+      # The identical tool call, on the identical args fingerprint, now
+      # passes through and consumes the approval instead of escalating
+      # again -- proving resume_run/1's widening composes correctly with
+      # the pre-existing (57-05) approval-consume CAS.
+      assert {:ok, %{result: "leaked"}} =
+               Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+
+      assert_receive {:tool_body_executed, _pid}
+
+      reloaded_approval = Repo.get!(Approval, approval.id)
+      refute is_nil(reloaded_approval.consumed_at)
+      assert count_confluence_approvals(run.id) == 1
+    end
+  end
+
+  describe "concurrency and attrs shape (D-28, plan 57-08 Task 3)" do
+    test "a sibling step completing concurrently with an in-flight escalation does not crash the escalating task, and the escalating step is never left running" do
+      {run, step_a} = new_run_and_step!()
+
+      {:ok, step_b} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      context = exfil_context(run, step_a)
+
+      tasks = [
+        Task.async(fn ->
+          run_in_supervised_task(fn -> Executor.execute(ThreeLegTool, %{"action" => "leak"}, context) end)
+        end),
+        Task.async(fn -> Workflows.complete_step(step_b.id, %{"result" => "ok"}) end)
+      ]
+
+      [escalation_result, sibling_result] = Task.await_many(tasks, 5_000)
+
+      # The escalating task never crashed the calling process -- either
+      # branch below is a legitimate outcome under D-28's normalize-
+      # fail-closed rescue; `Task.await_many/2` itself would have raised
+      # had either task died with an uncaught exception.
+      assert match?({:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}}, escalation_result) or
+               match?(
+                 {:ok, {:error, %{status: :confluence_denied, reason_code: "confluence_concurrent_run_mutation"}}},
+                 escalation_result
+               )
+
+      assert {:ok, %Step{status: "completed"}} = sibling_result
+
+      reloaded_step_a = Repo.get!(Step, step_a.id)
+      refute reloaded_step_a.status == "running"
+    end
+
+    test "escalation attrs handed to mark_waiting_for_approval/3 are atom-keyed and always carry a non-nil tool name (D-28)" do
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step)
+
+      result = run_in_supervised_task(fn -> Executor.execute(ThreeLegTool, %{"action" => "leak"}, context) end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert Enum.all?(Map.keys(attrs), &is_atom/1)
+      refute is_nil(attrs.tool_name)
+      assert attrs.tool_name == "three_leg_tool"
+    end
   end
 
   describe "approval consume (D-26)" do

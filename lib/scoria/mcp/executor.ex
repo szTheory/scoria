@@ -1092,10 +1092,58 @@ defmodule Scoria.MCP.Executor do
 
         emit_confluence_observed(context, tool_module, evidence, "escalate", nil)
 
-        {:ok, _approval} = Workflows.mark_waiting_for_approval(run_id, step_id, attrs)
+        case mark_confluence_waiting_for_approval(run_id, step_id, attrs) do
+          {:ok, _approval} ->
+            exit({:shutdown, {:scoria_confluence_escalation, attrs}})
 
-        exit({:shutdown, {:scoria_confluence_escalation, attrs}})
+          {:error, :stale_entry} ->
+            {:error, confluence_concurrent_envelope(tool_module, run_id, step_id)}
+        end
     end
+  end
+
+  # D-28 (MANDATORY, not optional): `Workflows.mark_waiting_for_approval/3`
+  # has no stale-entry rescue the way `Workflows.halt_run/3` does (its own
+  # explicit `rescue _e in Ecto.StaleEntryError`). A sibling step completing
+  # between that function's internal `run = repo.get!(Run, run_id)` read and
+  # its own `repo.update!(Run.changeset(run, ...))` write -- a genuine race
+  # under Task-dispatched concurrent steps against a real connection pool,
+  # not merely theoretical -- raises `Ecto.StaleEntryError`. Left uncaught,
+  # this crashes the unlinked dispatch task (`Workflows.Runtime`'s step
+  # executor rescues only its OWN step-failure signal, never this), and
+  # because the whole `mark_waiting_for_approval/3` transaction rolls back
+  # together, the escalating step's own status write rolls back too --
+  # stranding the step in "running" forever with no exit signal ever
+  # firing. Normalize fail-closed instead: explicitly fail the step (via
+  # the ordinary `Workflows.fail_step/3` path every other step failure in
+  # this codebase already goes through, so it is never left stuck running)
+  # and return the executor's existing confluence-denied refusal-envelope
+  # shape rather than propagating. Telemetry/audit for this evaluation
+  # already fired "escalate" above (D-36's one-event-per-evaluation
+  # invariant is preserved -- this path emits nothing further); the audit
+  # row survives as an orphan exactly like any other post-audit pause
+  # failure, per plan 57-07's own accepted design (the trifecta fired IS
+  # the truth).
+  defp mark_confluence_waiting_for_approval(run_id, step_id, attrs) do
+    Workflows.mark_waiting_for_approval(run_id, step_id, attrs)
+  rescue
+    _e in Ecto.StaleEntryError ->
+      Workflows.fail_step(step_id, %{
+        "reason_code" => "confluence_concurrent_run_mutation",
+        "reason" => "a sibling step mutated the run concurrently with this escalation"
+      })
+
+      {:error, :stale_entry}
+  end
+
+  defp confluence_concurrent_envelope(tool_module, run_id, step_id) do
+    %{
+      status: :confluence_denied,
+      reason_code: "confluence_concurrent_run_mutation",
+      tool_ref: inspect(tool_module),
+      run_id: run_id,
+      step_id: step_id
+    }
   end
 
   # D-22: `unattributed` defaults to `:allow`. Anything else a host

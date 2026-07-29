@@ -669,6 +669,7 @@ defmodule Scoria.Workflows do
         broadcast(run.id, {:workflow_updated, run.id})
         emit_rail_tripped(run, audit_outbox_event, envelope)
         maybe_emit_rail_observed(run)
+        resolve_pending_confluence_approvals(run)
         {:ok, run}
 
       {:error, :already_halted} ->
@@ -679,6 +680,31 @@ defmodule Scoria.Workflows do
     end
   rescue
     _e in Ecto.StaleEntryError -> {:error, :already_halted}
+  end
+
+  # D-52: a halt is terminal and beats the pause (D-24), so a pending
+  # confluence approval on THIS run becomes unactionable -- a human staring
+  # at an approval action that can no longer resume anything. Resolve it to
+  # a terminal status through the EXISTING decision function (`approve/3`,
+  # no new lifecycle function) rather than leaving an undecidable row --
+  # the sibling to 56.1's own halt-with-pending-review invariant. Runs
+  # post-commit (like `emit_rail_tripped/3` and `maybe_emit_rail_observed/1`
+  # just above): `approve/3` owns its own transaction, audit write, and
+  # broadcast side effects, so nesting it inside this function's own
+  # transaction would just add a redundant savepoint for no benefit. There
+  # is normally at most one pending confluence approval per run at halt
+  # time, but this resolves ALL of them defensively (D-26's two-concurrent-
+  # escalations case means more than one CAN exist).
+  defp resolve_pending_confluence_approvals(%Run{} = run) do
+    Approval
+    |> where(
+      [a],
+      a.workflow_run_id == ^run.id and a.status == "pending" and a.blocker_kind == "confluence"
+    )
+    |> Repo.all()
+    |> Enum.each(fn approval ->
+      approve(approval.id, "expired", %{reason: "run halted"})
+    end)
   end
 
   defp normalize_halt_error(%Ecto.Changeset{} = changeset) do
@@ -934,6 +960,25 @@ defmodule Scoria.Workflows do
         repo.rollback(:run_not_retryable)
       end
 
+      # D-27: a retry must never strand a pending confluence escalation.
+      # `Scoria.Workflows.Resume.retry_failed_step/2` has NO status check of
+      # its own and targets the run's CURRENT step -- which after an
+      # escalation IS the escalated step -- so calling it would flip the
+      # run to "retrying", ZERO this step's `result_envelope` (destroying
+      # the classification/taint evidence the confluence gate and Phase 58
+      # depend on), leave the approval pending FOREVER (nothing ever
+      # resolves it), and mint a SECOND approval on re-execution. Refusing
+      # here -- mirroring `halt_run/3`'s guard style just above -- is the
+      # only place in the codebase that guards it (56.1 D-22.5 already
+      # forbids routing an escalation through the "retrying" status; this
+      # is the enforcement). Two independent triggers, checked separately
+      # so either alone is sufficient: the step's own status, and a
+      # belt-and-suspenders direct approval lookup in case a future path
+      # ever decouples the two.
+      if step.status == "waiting_for_approval" or pending_confluence_approval?(repo, step) do
+        repo.rollback(:step_not_retryable)
+      end
+
       retried_step =
         step
         |> Step.changeset(%{
@@ -982,51 +1027,40 @@ defmodule Scoria.Workflows do
     end
   end
 
+  # D-26 (three-axis resume widening for confluence approvals, 57-08):
+  #
+  #   Axis 1 (OUTER predicate, here): a sibling step's `complete_step/3`
+  #   rewrites `run.status` back to `"running"` mid-escalation (D-25's
+  #   accepted step-scoped partial-freeze -- `complete_step/3`'s run-status
+  #   computation is deliberately untouched by this phase), so accepting
+  #   only `"waiting_for_approval"` would fall through to `:not_resumable`
+  #   REGARDLESS of any finder widening. `"running"` is accepted here only
+  #   when `current_approved_approval/1` actually returns a confluence-kind
+  #   approval -- which (axis 2/3 below) it only does when that approval's
+  #   OWN step is still `waiting_for_approval`. That conjunct is what keeps
+  #   the widening safe: a running run with no genuinely paused step still
+  #   falls through to `:not_resumable`.
+  #
+  #   Axis 2/3 live in `current_approved_approval/1` below: the current-step
+  #   and latest-checkpoint predicates are dropped for a confluence-kind
+  #   approval, because two concurrent escalations in one run each overwrite
+  #   `run.current_step_id`/`run.latest_checkpoint_id`, so requiring a match
+  #   would strand all but the most recently-escalated one.
+  #
+  # Every other blocker kind (nil, remote-approval kinds, ...) keeps every
+  # original predicate, byte-identical to pre-phase-57 behavior.
   def resume_run(run_id) do
     run = get_run_tree!(run_id)
+    approval = current_approved_approval(run)
 
-    case {run.status, List.last(run.checkpoints), current_approved_approval(run)} do
-      {"waiting_for_approval", _checkpoint, %Approval{status: "approved"} = approval} ->
-        Repo.transaction(fn repo ->
-          step = repo.get!(Step, approval.step_id)
-          run = repo.get!(Run, run_id)
+    cond do
+      run.status == "waiting_for_approval" and match?(%Approval{status: "approved"}, approval) ->
+        do_resume(run, approval)
 
-          resumed_step = repo.update!(Step.changeset(step, %{status: "queued"}))
+      run.status == "running" and confluence_approval?(approval) ->
+        do_resume(run, approval)
 
-          checkpoint =
-            insert_checkpoint(repo, run.id, resumed_step.id, %{
-              transition: "resume_requested",
-              status: "running",
-              snapshot: %{checkpoint_id: approval.checkpoint_id},
-              metadata: %{}
-            })
-
-          insert_event(repo, run.id, resumed_step.id, %{
-            event_type: "resume_requested",
-            payload: %{approval_id: approval.id}
-          })
-
-          updated_run =
-            run
-            |> Run.changeset(%{
-              status: "running",
-              latest_checkpoint_id: checkpoint.id,
-              current_step_id: resumed_step.id
-            })
-            |> repo.update!()
-
-          {updated_run, resumed_step}
-        end)
-        |> case do
-          {:ok, {resumed_run, resumed_step}} ->
-            broadcast(resumed_run.id, {:workflow_updated, resumed_run.id})
-            {:ok, resumed_step}
-
-          {:error, value} ->
-            {:error, value}
-        end
-
-      {"failed", checkpoint, _approval} when not is_nil(checkpoint) ->
+      run.status == "failed" and not is_nil(List.last(run.checkpoints)) ->
         current_step = Enum.find(run.steps, &(&1.id == run.current_step_id))
 
         if current_step do
@@ -1035,8 +1069,52 @@ defmodule Scoria.Workflows do
           {:error, :no_failed_step}
         end
 
-      _ ->
+      true ->
         {:error, :not_resumable}
+    end
+  end
+
+  defp confluence_approval?(%Approval{blocker_kind: "confluence"}), do: true
+  defp confluence_approval?(_approval), do: false
+
+  defp do_resume(%Run{id: run_id}, %Approval{} = approval) do
+    Repo.transaction(fn repo ->
+      step = repo.get!(Step, approval.step_id)
+      run = repo.get!(Run, run_id)
+
+      resumed_step = repo.update!(Step.changeset(step, %{status: "queued"}))
+
+      checkpoint =
+        insert_checkpoint(repo, run.id, resumed_step.id, %{
+          transition: "resume_requested",
+          status: "running",
+          snapshot: %{checkpoint_id: approval.checkpoint_id},
+          metadata: %{}
+        })
+
+      insert_event(repo, run.id, resumed_step.id, %{
+        event_type: "resume_requested",
+        payload: %{approval_id: approval.id}
+      })
+
+      updated_run =
+        run
+        |> Run.changeset(%{
+          status: "running",
+          latest_checkpoint_id: checkpoint.id,
+          current_step_id: resumed_step.id
+        })
+        |> repo.update!()
+
+      {updated_run, resumed_step}
+    end)
+    |> case do
+      {:ok, {resumed_run, resumed_step}} ->
+        broadcast(resumed_run.id, {:workflow_updated, resumed_run.id})
+        {:ok, resumed_step}
+
+      {:error, value} ->
+        {:error, value}
     end
   end
 
@@ -1194,10 +1272,55 @@ defmodule Scoria.Workflows do
     run.approvals
     |> Enum.reverse()
     |> Enum.find(fn approval ->
-      (approval.status == "approved" and
-         approval.step_id == run.current_step_id and
-         latest_checkpoint) && approval.checkpoint_id == latest_checkpoint.id
+      approval.status == "approved" and
+        confluence_approval_location_match?(approval, run, latest_checkpoint)
     end)
+  end
+
+  # D-26 axes 2/3: for a confluence-kind approval, the current-step and
+  # latest-checkpoint predicates are dropped entirely -- two concurrent
+  # escalations in one run each overwrite `run.current_step_id`/
+  # `run.latest_checkpoint_id`, so requiring a match would strand all but
+  # the most recently-escalated one. In their place, a STRONGER and
+  # necessary predicate: the approval's own step must still be
+  # `waiting_for_approval`. Without this, an already-resumed confluence
+  # approval (its step moved on to "queued"/beyond, but its OWN `status`
+  # column is still "approved" -- resume_run/1 never mutates that column)
+  # would keep matching forever, since dropping the location predicates
+  # removes the ONLY thing that previously made "already resumed" stop
+  # matching. This is what lets `resume_run/1`'s "running" branch (D-26
+  # axis 1) correctly skip an already-resumed escalation and find the
+  # NEXT genuinely pending one when two escalations coexist.
+  defp confluence_approval_location_match?(
+         %Approval{blocker_kind: "confluence"} = approval,
+         %Run{} = run,
+         _latest_checkpoint
+       ) do
+    confluence_step_waiting?(run, approval)
+  end
+
+  # Every other blocker kind: byte-identical to pre-phase-57 behavior.
+  defp confluence_approval_location_match?(%Approval{} = approval, %Run{} = run, latest_checkpoint) do
+    approval.step_id == run.current_step_id and
+      not is_nil(latest_checkpoint) and
+      approval.checkpoint_id == latest_checkpoint.id
+  end
+
+  defp confluence_step_waiting?(%Run{} = run, %Approval{} = approval) do
+    case Enum.find(run.steps, &(&1.id == approval.step_id)) do
+      %Step{status: "waiting_for_approval"} -> true
+      _other -> false
+    end
+  end
+
+  # D-27's belt-and-suspenders check inside `retry_step/1`'s guard.
+  defp pending_confluence_approval?(repo, %Step{id: step_id}) do
+    Approval
+    |> where(
+      [a],
+      a.step_id == ^step_id and a.status == "pending" and a.blocker_kind == "confluence"
+    )
+    |> repo.exists?()
   end
 
   defp approval_decision_context(repo, approval, attrs) do
