@@ -644,17 +644,45 @@ defmodule Scoria.MCP.Executor do
   # short-circuit), but the `Envelope.scan` slot stays `nil` (byte-identical
   # Plan 02 behavior) -- only a REAL scanner's verdict is ever exposed
   # there.
+  #
+  # D-01 (plan 57-03 fix): a freshly minted tool output has no PRIOR taint,
+  # so omitting `:incoming_tier` here previously left `Trust.Scan.scan/2` to
+  # silently default it to `Trust.default_tier/0` ("untrusted"), and the
+  # min-wins `most_restrictive/2` fold then pinned EVERY tool output to
+  # untrusted regardless of what a real scanner returned. When a real
+  # scanner is actually going to evaluate `value`, seed `:incoming_tier` at
+  # the trusted identity explicitly (mirroring `Knowledge.retrieve/2`'s
+  # `aggregate_incoming_tier/1` pattern of computing the incoming tier
+  # rather than relying on the callee's default) so the scanner's own
+  # verdict decides the outcome. When the resolved scanner is the shipped
+  # NoOp (nothing evaluates `value`), `:incoming_tier` is deliberately left
+  # unset so `Trust.Scan.scan/2` keeps its existing fail-closed default --
+  # "untrusted" is the correct identity for content nobody looked at;
+  # "trusted" is only correct once something is about to look. The reader
+  # path's default (`Trust.tier/1`) is a completely separate code path and
+  # is NOT touched by this fix.
   defp scan_tool_output({:ok, value}, context) do
     scanner = Map.get(context, :content_scanner, Application.get_env(:scoria, :content_scanner, Scanner.NoOp))
 
-    {:ok, verdict} = Trust.scan(value, Map.put(context, :content_scanner, scanner))
+    scan_context = Map.put(context, :content_scanner, scanner)
+
+    scan_context =
+      if scanner == Scanner.NoOp do
+        scan_context
+      else
+        Map.put(scan_context, :incoming_tier, "trusted")
+      end
+
+    {:ok, verdict} = Trust.scan(value, scan_context)
 
     trust_attrs =
-      Semconv.trust_attributes(%{
+      %{
         tier: verdict.tier,
         scanner: verdict.scanner && inspect(verdict.scanner),
         reason_code: verdict.reason_code
-      })
+      }
+      |> Semconv.trust_attributes()
+      |> put_scanner_tier_attr(verdict.scanner_tier)
 
     scan_slot = if scanner == Scanner.NoOp, do: nil, else: verdict
 
@@ -662,6 +690,19 @@ defmodule Scoria.MCP.Executor do
   end
 
   defp scan_tool_output(_other, _context), do: {%{}, nil, nil}
+
+  # `Semconv.trust_attributes/1` is a closed four-key projector (D-21) that
+  # deliberately does not know about `scanner_tier` (a Phase 57 addition,
+  # `lib/scoria/observe/semconv.ex` is out of this plan's file scope). This
+  # value is threaded through by hand as a STRING (never a bare atom -- see
+  # the reason_code caveat at `persist_taint_to_step/4` below) so plan 05's
+  # confluence gate can grade on evidence quality via the same
+  # `[:scoria, :tool, :completed]` telemetry event trust_attrs already rides.
+  defp put_scanner_tier_attr(trust_attrs, nil), do: trust_attrs
+
+  defp put_scanner_tier_attr(trust_attrs, scanner_tier) when is_binary(scanner_tier) do
+    Map.put(trust_attrs, "scoria.trust.scanner_tier", scanner_tier)
+  end
 
   # Plan 56-02: projects the resolved `%Classification{}` already carried on
   # `context` (put there by `resolve_classification/2`) through
@@ -691,9 +732,10 @@ defmodule Scoria.MCP.Executor do
   # plan, so NoOp behavior is byte-identical (D-17).
   defp persist_taint(context, tool_module, verdict) do
     tier = (verdict && verdict.tier) || Trust.default_tier()
+    scanner_tier = verdict && verdict.scanner_tier
 
     emit_taint_telemetry(context, tool_module, tier)
-    persist_taint_to_step(context, tool_module, tier)
+    persist_taint_to_step(context, tool_module, tier, scanner_tier)
   end
 
   defp emit_taint_telemetry(context, tool_module, tier) do
@@ -719,17 +761,29 @@ defmodule Scoria.MCP.Executor do
   # new Ecto column (D-08). Best-effort: a standalone/non-workflow tool
   # invocation with no `step_id` in context, or no matching step row, is not
   # an error — taint has already been telemetried above.
-  defp persist_taint_to_step(context, tool_module, tier) do
+  #
+  # `scanner_tier` (plan 57-03, D-01b) rides alongside `tier` here as the
+  # SAME kind of confluence-facing evidence `persist_classification_to_step/3`
+  # writes for classification -- a plain jsonb string, never an Elixir atom
+  # literal (unlike the pre-existing `verdict.reason_code` passthrough into
+  # `Semconv.trust_attributes/1`, which stays a bare atom on the telemetry
+  # side because that projector is out of this plan's file scope; this
+  # value must not repeat that pattern). Omitted from the map entirely when
+  # nil (NoOp path, or no scanner opinion) rather than persisted as a
+  # placeholder.
+  defp persist_taint_to_step(context, tool_module, tier, scanner_tier) do
     case Map.get(context, :step_id) do
       nil ->
         :ok
 
       step_id ->
-        taint = %{
-          "tier" => tier,
-          "tool_ref" => inspect(tool_module),
-          "args_fingerprint" => Map.get(context, :args_fingerprint)
-        }
+        taint =
+          %{
+            "tier" => tier,
+            "tool_ref" => inspect(tool_module),
+            "args_fingerprint" => Map.get(context, :args_fingerprint)
+          }
+          |> maybe_put_scanner_tier(scanner_tier)
 
         try do
           from(step in Step,
@@ -754,9 +808,12 @@ defmodule Scoria.MCP.Executor do
     end
   end
 
+  defp maybe_put_scanner_tier(taint, nil), do: taint
+  defp maybe_put_scanner_tier(taint, scanner_tier) when is_binary(scanner_tier), do: Map.put(taint, "scanner_tier", scanner_tier)
+
   # Persists every resolved classification (declared, host-tightened, or
   # unclassified-default) onto the step's `result_envelope` jsonb, mirroring
-  # `persist_taint_to_step/3`'s choke point and best-effort discipline
+  # `persist_taint_to_step/4`'s choke point and best-effort discipline
   # exactly (D-03/D-06): a `nil` `:step_id`, or one matching no row, is `:ok`
   # and never an error. `source` round-trips through `to_string/1` so
   # Phase 57 can branch on it after a plain jsonb read (never an Elixir atom
