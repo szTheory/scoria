@@ -33,7 +33,7 @@ Supplies the missing untrusted-content leg — the substrate the confluence gate
 
 ### Confluence Escalation Policy (GATE) — the differentiator
 
-- [ ] **GATE-01**: A confluence evaluator classifies a tainted execution path by which of the three legs are present, mirroring `ReplayDisposition`'s seam-classification style.
+- [x] **GATE-01**: A confluence evaluator classifies a tainted execution path by which of the three legs are present, mirroring `ReplayDisposition`'s seam-classification style.
 - [x] **GATE-02** *(amended 2026-07-29, plan 57-10, D-18/D-25)*: When private-data + untrusted-content + exfil co-occur in one tainted execution path, the confluence gate decides and refuses at `Scoria.MCP.Executor`, before the tool's execution task is started, and the run's STEP (not the whole run) is transitioned to `waiting_for_approval` through the existing `Scoria.Workflows.mark_waiting_for_approval/3` pause function, so the escalation is resumable via `Scoria.Workflows.resume_run/1`. This is a step-scoped pause, not a run-level freeze: a sibling step already in flight may still complete and rewrite the run's own status back to `"running"`, and any other queued sibling becomes dispatchable again — the escalated step alone remains genuinely paused until a human decides it (an accepted, documented limitation, pinned by a regression test, not a bug). Tool calls that reach the executor with no runtime step attribution cannot be paused; that gap is telemetried and documented.
   *(Reason: the original wording ("the run escalates ... before the exfil action executes") does not name where the decision is made or where the transition happens, and no implementation can honor a run-level freeze without a `complete_step/3` change the developer's D-25 checkpoint answer explicitly declined — see 57-01-SUMMARY.md and 57-08-SUMMARY.md.)*
 - [x] **GATE-03**: Confluence escalation decisions are audited (audit outbox) and replayable, consistent with existing approval and replay evidence.
@@ -94,7 +94,7 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 | CLASS-02 | Phase 56 | Complete |
 | CLASS-03 | Phase 56 | Complete |
 | RAIL-01 | Phase 56.1 | Complete |
-| GATE-01 | Phase 57 | Pending |
+| GATE-01 | Phase 57 | Complete |
 | GATE-02 | Phase 57 | Complete |
 | GATE-03 | Phase 57 | Complete |
 | GATE-04 | Phase 57 | Complete |
@@ -111,4 +111,4 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 
 ---
 *Requirements defined: 2026-07-19*
-*Last updated: 2026-07-19 after ROADMAP creation (Phases 55–58)*
+*Last updated: 2026-07-29 after plan 57-12 (GATE-01/GATE-03 status bookkeeping, evidenced by 57-VERIFICATION.md and 57-11-SUMMARY.md)*
