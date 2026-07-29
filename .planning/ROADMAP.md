@@ -146,8 +146,8 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 57-05-PLAN.md — Gate wiring: approval-consume CAS, attribution and containment, always-on telemetry (GATE-02, GATE-04) [wave 4]
-- [ ] 57-09-PLAN.md — Reviewer evidence rows, bounded run-scoped approval, capped pending query (GATE-02) [wave 4]
+- [x] 57-05-PLAN.md — Gate wiring: approval-consume CAS, attribution and containment, always-on telemetry (GATE-02, GATE-04) [wave 4]
+- [x] 57-09-PLAN.md — Reviewer evidence rows, bounded run-scoped approval, capped pending query (GATE-02) [wave 4]
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
