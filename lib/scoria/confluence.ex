@@ -536,4 +536,55 @@ defmodule Scoria.Confluence do
       "confluence:" <> Base.encode16(:crypto.hash(:sha256, raw), case: :lower)
     end
   end
+
+  # -- audit_metadata/1 (D-39, plan 57-07) ---------------------------------
+
+  @audit_metadata_keys [
+    {:combination, "combination"},
+    {:grade, "grade"},
+    {:decision, "decision"},
+    {:reason_code, "reason_code"},
+    {:private_data_source, "private_data_source"},
+    {:untrusted_content_source, "untrusted_content_source"},
+    {:exfil_source, "exfil_source"},
+    {:action_class, "action_class"},
+    {:confluence_idempotency_key, "confluence_idempotency_key"},
+    {:tool_ref, "tool_ref"}
+  ]
+
+  @doc """
+  Projects `evidence` onto EXACTLY the closed confluence audit key set --
+  the combination, the grade, the decision, the reason code, the three leg
+  sources, the action class, the confluence idempotency key and the tool
+  reference -- and nothing else (D-39).
+
+  Structured like `Semconv.confluence_attributes/1`: a reduce over a
+  hand-written fixed key list, reading ONLY the named fields off `evidence`
+  and skipping a `nil` value entirely (never defaulted, never put). This is
+  an OUTPUT, never a spread: an extra field attached to `evidence` (via
+  `Map.put/3`, bypassing the struct's own closed field set) is simply never
+  read, so it can never appear in the result -- no raw tool arguments, no
+  free-text content, no scanner output can ride along, regardless of what
+  is attached to the input.
+
+  The caller (`Scoria.MCP.Executor`) passes this map's OUTPUT directly as
+  the audit envelope's `metadata:` key handed to
+  `SRE.create_audit_outbox_event/1` -- `SRE.build_audit_metadata/1` is a
+  DROP-LIST, not an allowlist, so this is the ONE place the closed set is
+  defined; nothing upstream of it may assemble metadata inline.
+  """
+  @spec audit_metadata(Evidence.t()) :: map()
+  def audit_metadata(%Evidence{} = evidence) do
+    Enum.reduce(@audit_metadata_keys, %{}, fn {field, key}, acc ->
+      case Map.get(evidence, field) do
+        nil -> acc
+        value -> Map.put(acc, key, audit_metadata_value(value))
+      end
+    end)
+  end
+
+  defp audit_metadata_value(value) when is_atom(value) and not is_boolean(value),
+    do: Atom.to_string(value)
+
+  defp audit_metadata_value(value), do: value
 end

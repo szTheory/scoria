@@ -446,6 +446,100 @@ defmodule Scoria.ConfluenceTest do
     end
   end
 
+  describe "audit_metadata/1 -- a small closed projector, output not a spread (D-39, plan 57-07)" do
+    test "the projected map's sorted key list equals the closed set exactly" do
+      evidence = %Evidence{
+        combination: "exfiltration_path",
+        grade: "declared",
+        decision: "escalate",
+        reason_code: :approval_pending,
+        private_data_source: :declared,
+        untrusted_content_source: :declared,
+        exfil_source: :declared,
+        action_class: "read",
+        confluence_idempotency_key: "confluence:deadbeef",
+        run_id: "run-1",
+        step_id: "step-1",
+        tool_ref: "MyTool"
+      }
+
+      expected_keys =
+        ~w(
+          combination
+          grade
+          decision
+          reason_code
+          private_data_source
+          untrusted_content_source
+          exfil_source
+          action_class
+          confluence_idempotency_key
+          tool_ref
+        )
+        |> Enum.sort()
+
+      assert Confluence.audit_metadata(evidence) |> Map.keys() |> Enum.sort() == expected_keys
+    end
+
+    test "run_id, step_id and tool_ref are NOT part of the closed set even though they are struct fields" do
+      evidence = %Evidence{
+        combination: "exfiltration_path",
+        run_id: "run-1",
+        step_id: "step-1",
+        tool_ref: "MyTool"
+      }
+
+      metadata = Confluence.audit_metadata(evidence)
+
+      refute Map.has_key?(metadata, "run_id")
+      refute Map.has_key?(metadata, "step_id")
+      assert Map.has_key?(metadata, "tool_ref")
+    end
+
+    test "a nil field is skipped entirely, never defaulted, never put" do
+      evidence = %Evidence{combination: "none"}
+
+      metadata = Confluence.audit_metadata(evidence)
+
+      assert metadata == %{"combination" => "none"}
+    end
+
+    test "extra fields attached to the evidence input are absent from the output, including a long free-text string on an unregistered field" do
+      long_free_text = String.duplicate("leaked secret content ", 200)
+
+      evidence =
+        %Evidence{combination: "exfiltration_path", action_class: "read"}
+        |> Map.put(:raw_arguments, %{"ssn" => "123-45-6789"})
+        |> Map.put(:scanner_output, long_free_text)
+        |> Map.put(:free_text_note, long_free_text)
+
+      metadata = Confluence.audit_metadata(evidence)
+
+      refute Map.has_key?(metadata, "raw_arguments")
+      refute Map.has_key?(metadata, "scanner_output")
+      refute Map.has_key?(metadata, "free_text_note")
+
+      metadata
+      |> Map.values()
+      |> Enum.each(fn value ->
+        refute is_binary(value) and String.contains?(value, "leaked secret content")
+      end)
+    end
+
+    test "atom-valued fields are stringified so the result is a plain JSON-safe map" do
+      evidence = %Evidence{
+        combination: "exfiltration_path",
+        reason_code: :approval_pending,
+        private_data_source: :declared
+      }
+
+      metadata = Confluence.audit_metadata(evidence)
+
+      assert metadata["reason_code"] == "approval_pending"
+      assert metadata["private_data_source"] == "declared"
+    end
+  end
+
   describe "module hygiene (D-03)" do
     test "the module defines no Scoria-side alias other than its own leaf Evidence struct" do
       {:ok, source} = File.read(Path.join([File.cwd!(), "lib", "scoria", "confluence.ex"]))
@@ -476,6 +570,7 @@ defmodule Scoria.ConfluenceTest do
       assert function_exported?(Confluence, :decide, 2)
       assert function_exported?(Confluence, :resolve_config, 1)
       assert function_exported?(Confluence, :validate_app_env, 0)
+      assert function_exported?(Confluence, :audit_metadata, 1)
     end
   end
 

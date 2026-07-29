@@ -8,6 +8,7 @@ defmodule Scoria.ConfluenceAuditTest do
 
   import Ecto.Query
 
+  alias Scoria.Confluence
   alias Scoria.MCP.Executor
   alias Scoria.Observe.Approval
   alias Scoria.Repo
@@ -166,6 +167,46 @@ defmodule Scoria.ConfluenceAuditTest do
 
       assert approval.blocker_audit_outbox_event_id == event.id
       assert approval.blocker_kind == "confluence"
+    end
+
+    test "a persisted audit row's metadata key set equals Confluence.audit_metadata/1's output key set for equivalent evidence (D-39 integration)" do
+      run = new_run!()
+      step = new_step!(run, 1)
+      context = exfil_context(run, step, "fp-metadata-keyset-1")
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+
+      assert [event] = confluence_audit_events(run.id)
+
+      # An escalate's evidence has every leg declared and a nil
+      # `reason_code` -- reconstruct the SAME-SHAPE `%Confluence.Evidence{}`
+      # (the exact field VALUES do not matter for a key-set comparison) and
+      # prove the persisted row's metadata key set is EXACTLY
+      # `Confluence.audit_metadata/1`'s output key set for it -- not a
+      # superset, not a subset (D-39).
+      equivalent_evidence = %Confluence.Evidence{
+        combination: "exfiltration_path",
+        grade: "declared",
+        decision: "escalate",
+        private_data_source: :declared,
+        untrusted_content_source: :declared,
+        exfil_source: :declared,
+        action_class: "read",
+        confluence_idempotency_key: "irrelevant-for-key-set-comparison",
+        tool_ref: "irrelevant-for-key-set-comparison"
+      }
+
+      expected_key_set =
+        equivalent_evidence |> Confluence.audit_metadata() |> Map.keys() |> MapSet.new()
+
+      actual_key_set = event.metadata |> Map.keys() |> MapSet.new()
+
+      assert actual_key_set == expected_key_set
     end
 
     test "when the audit write succeeds but the pause transition subsequently fails, the audit row remains an orphan" do

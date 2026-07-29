@@ -532,18 +532,13 @@ defmodule Scoria.MCP.Executor do
   # transition then fails, the orphan audit row saying the trifecta fired
   # is the truth and is preferred over a silent unaudited exfil.
   #
-  # `metadata:` rides a small closed projector's OUTPUT verbatim -- every
-  # OTHER envelope key below is one `SRE.build_audit_metadata/1`'s own
-  # drop-list already excludes from the persisted `metadata` jsonb, so the
-  # two never collide and the persisted row's metadata key set is EXACTLY
-  # the projector's key set, nothing more (D-39).
-  #
-  # Plan 57-07 Task 1 note: the projector is `confluence_audit_metadata/1`
-  # below, a TEMPORARY private function inlined here. Task 2 promotes it to
-  # `Scoria.Confluence.audit_metadata/1` (a pure function on the evidence
-  # struct, mirroring `Semconv.confluence_attributes/1`'s reduce-over-a-
-  # fixed-key-list shape) and repoints this call site at it, so there is
-  # exactly one place the closed key set is defined -- not two.
+  # `metadata:` rides `Confluence.audit_metadata/1`'s OUTPUT verbatim (plan
+  # 57-07 Task 2) -- never assembled inline here, so there is exactly one
+  # place the closed key set is defined (D-39). Every OTHER envelope key
+  # below is one `SRE.build_audit_metadata/1`'s own drop-list already
+  # excludes from the persisted `metadata` jsonb, so the two never collide
+  # and the persisted row's metadata key set is EXACTLY the projector's key
+  # set, nothing more.
   defp record_confluence_audit(context, evidence, run_id, step_id, args_fingerprint) do
     dedupe_key = confluence_audit_dedupe_key(run_id, step_id, args_fingerprint)
 
@@ -558,48 +553,13 @@ defmodule Scoria.MCP.Executor do
         policy_class: @confluence_audit_policy_class,
         dedupe_key: dedupe_key
       }
-      |> Map.merge(confluence_audit_metadata(evidence))
+      |> Map.merge(Confluence.audit_metadata(evidence))
 
     case SRE.create_audit_outbox_event(envelope) do
       {:ok, event} -> event
       {:error, _reason} -> nil
     end
   end
-
-  # TEMPORARY (plan 57-07 Task 1 only -- see the note on
-  # `record_confluence_audit/5` above): Task 2 deletes this function and
-  # `maybe_put_confluence_audit_metadata/3` below, replacing this call site
-  # with `Scoria.Confluence.audit_metadata/1`. The closed key set is the
-  # combination, the grade, the decision, the reason code, the three leg
-  # sources, the action class, the confluence idempotency key and the tool
-  # reference -- no raw tool arguments, no free-text content, no scanner
-  # output. A `nil` field is skipped, never defaulted, never put.
-  defp confluence_audit_metadata(%Confluence.Evidence{} = evidence) do
-    %{}
-    |> maybe_put_confluence_audit_metadata("combination", evidence.combination)
-    |> maybe_put_confluence_audit_metadata("grade", evidence.grade)
-    |> maybe_put_confluence_audit_metadata("decision", evidence.decision)
-    |> maybe_put_confluence_audit_metadata("reason_code", evidence.reason_code)
-    |> maybe_put_confluence_audit_metadata("private_data_source", evidence.private_data_source)
-    |> maybe_put_confluence_audit_metadata(
-      "untrusted_content_source",
-      evidence.untrusted_content_source
-    )
-    |> maybe_put_confluence_audit_metadata("exfil_source", evidence.exfil_source)
-    |> maybe_put_confluence_audit_metadata("action_class", evidence.action_class)
-    |> maybe_put_confluence_audit_metadata(
-      "confluence_idempotency_key",
-      evidence.confluence_idempotency_key
-    )
-    |> maybe_put_confluence_audit_metadata("tool_ref", evidence.tool_ref)
-  end
-
-  defp maybe_put_confluence_audit_metadata(map, _key, nil), do: map
-
-  defp maybe_put_confluence_audit_metadata(map, key, value) when is_atom(value),
-    do: Map.put(map, key, Atom.to_string(value))
-
-  defp maybe_put_confluence_audit_metadata(map, key, value), do: Map.put(map, key, value)
 
   # Built at the rejected-approval-consume site (`confluence_gate/3`), the
   # ONE audit-worthy decision point that precedes `evaluate_confluence/5`
