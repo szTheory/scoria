@@ -133,14 +133,14 @@
 Plans:
 - [ ] 57-01-PLAN.md — Tracer: one tainted path pauses end-to-end, plus the consolidated migration (GATE-01, GATE-02) [wave 1]
 - [ ] 57-04-PLAN.md — Semconv confluence attribute group and registry canary (GATE-04) [wave 1]
-- [ ] 57-02-PLAN.md — Confluence evaluation model: eight-value ladder, weakest-evidence grading, config surface (GATE-01, GATE-04) [wave 2]
 - [ ] 57-03-PLAN.md — Phase 55 mint-site repair and the scanner-tier evidence field (GATE-01) [wave 2]
-- [ ] 57-05-PLAN.md — Gate wiring: approval-consume CAS, attribution and containment, always-on telemetry (GATE-02, GATE-04) [wave 3]
-- [ ] 57-09-PLAN.md — Reviewer evidence rows, bounded run-scoped approval, capped pending query (GATE-02) [wave 3]
-- [ ] 57-06-PLAN.md — Per-run leg accumulator: strongest-wins, lit-legs-only, single-statement fold (GATE-01, GATE-02) [wave 4]
-- [ ] 57-07-PLAN.md — Audit trail on escalate and block, closed metadata projector, replay contract (GATE-03) [wave 5]
-- [ ] 57-08-PLAN.md — Resume widening, retry guard, concurrency rescue, halt invariants (GATE-02) [wave 6]
-- [ ] 57-10-PLAN.md — Concurrency suite, shipped-lie repair, requirement and roadmap amendments (GATE-01..04) [wave 7]
+- [ ] 57-02-PLAN.md — Confluence evaluation model: eight-value ladder, weakest-evidence grading, config surface (GATE-01, GATE-04) [wave 3]
+- [ ] 57-05-PLAN.md — Gate wiring: approval-consume CAS, attribution and containment, always-on telemetry (GATE-02, GATE-04) [wave 4]
+- [ ] 57-09-PLAN.md — Reviewer evidence rows, bounded run-scoped approval, capped pending query (GATE-02) [wave 4]
+- [ ] 57-06-PLAN.md — Per-run leg accumulator: strongest-wins, lit-legs-only, single-statement fold (GATE-01, GATE-02) [wave 5]
+- [ ] 57-07-PLAN.md — Audit trail on escalate and block, closed metadata projector, replay contract (GATE-03) [wave 6]
+- [ ] 57-08-PLAN.md — Resume widening, retry guard, concurrency rescue, halt invariants (GATE-02) [wave 7]
+- [ ] 57-10-PLAN.md — Concurrency suite, shipped-lie repair, requirement and roadmap amendments (GATE-01..04) [wave 8]
 
 **Context**: `.planning/phases/57-confluence-escalation-gate/57-CONTEXT.md` is the canonical locked spec (D-01..D-54); `57-RESEARCH.md` re-verified its citations against the worktree and its file:line coordinates win on conflict
 
