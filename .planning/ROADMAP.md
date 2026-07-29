@@ -163,7 +163,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 57-10-PLAN.md — Concurrency suite, shipped-lie repair, requirement and roadmap amendments (GATE-01..04) [wave 8]
+- [x] 57-10-PLAN.md — Concurrency suite, shipped-lie repair, requirement and roadmap amendments (GATE-01..04) [wave 8]
 
 **Context**: `.planning/phases/57-confluence-escalation-gate/57-CONTEXT.md` is the canonical locked spec (D-01..D-54); `57-RESEARCH.md` re-verified its citations against the worktree and its file:line coordinates win on conflict
 
