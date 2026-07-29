@@ -178,3 +178,7 @@ None - no external service configuration required.
 ---
 *Phase: 57-confluence-escalation-gate*
 *Completed: 2026-07-29*
+
+## Self-Check: PASSED
+
+All 7 claimed files found on disk (`lib/scoria_web/approval_copy.ex`, `lib/scoria_web/live/approvals_live/index.ex`, `lib/scoria/workflows/remote_approval_projection.ex`, `test/scoria_web/approval_copy_test.exs`, `test/scoria_web/live/approvals_live_test.exs`, `test/scoria/workflows/remote_approval_projection_test.exs`, this SUMMARY.md); all 4 commits (`6a2fc5f0`, `c5d9b6ab`, `4fba424c`, `f590a7f1`) found in `git log --oneline --all`. `examples/support_copilot/deps` clean, `git status --short` clean after this commit.
