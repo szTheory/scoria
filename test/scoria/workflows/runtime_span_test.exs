@@ -75,7 +75,14 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
 
     # Test 10: one step whose handler triggers all three legs (tool, LLM,
     # guardrail) SC#1's acceptance bar in one call.
-    def full_tree(_step, run) do
+    #
+    # Plan 57-05 (D-22): this is the canonical in-repo reference fixture an
+    # adopter copy-pastes -- it now forwards BOTH `run_id:` and `step_id:`
+    # (in addition to the pre-existing `workflow_run_id:`, kept so the
+    # `:workflow_run_id -> :run_id` alias in `MCP.Executor.canonical_context/1`
+    # stays exercised too) so the example is attributable to the confluence
+    # gate rather than silently falling to the `unattributed` disposition.
+    def full_tree(step, run) do
       {trace_id, parent_id} = trace_context(run)
 
       {:ok, _result} =
@@ -86,7 +93,9 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
             trace_id: trace_id,
             parent_id: parent_id,
             tenant_id: run.tenant_id,
-            workflow_run_id: run.id
+            workflow_run_id: run.id,
+            run_id: run.id,
+            step_id: step.id
           }
         )
 
@@ -224,7 +233,9 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
       run = create_run()
       step = create_step(run, "tool")
 
-      assert {:ok, completed_step} = Runtime.execute_step(step.id, handler: {Handlers, :sleepy_success})
+      assert {:ok, completed_step} =
+               Runtime.execute_step(step.id, handler: {Handlers, :sleepy_success})
+
       assert completed_step.status == "completed"
 
       :ok = Buffer.flush_now(buffer_name)
@@ -269,7 +280,8 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
       run = create_run()
       step = create_step(run, "tool")
 
-      assert {:ok, _completed} = Runtime.execute_step(step.id, handler: {Handlers, :emits_llm_span})
+      assert {:ok, _completed} =
+               Runtime.execute_step(step.id, handler: {Handlers, :emits_llm_span})
 
       :ok = Buffer.flush_now(buffer_name)
 
@@ -291,7 +303,9 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
       run = create_run()
       step = create_step(run, "approval")
 
-      assert {:ok, approval} = Runtime.execute_step(step.id, handler: {Handlers, :wait_for_approval})
+      assert {:ok, approval} =
+               Runtime.execute_step(step.id, handler: {Handlers, :wait_for_approval})
+
       assert approval.workflow_run_id == run.id
 
       :ok = Buffer.flush_now(buffer_name)
@@ -382,7 +396,10 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
                Runtime.execute_step(
                  step.id,
                  handler: {Handlers, :sleepy_success},
-                 breaker_context: %{integration_kind: "provider", provider_ref: "runtime-span-test-g4"}
+                 breaker_context: %{
+                   integration_kind: "provider",
+                   provider_ref: "runtime-span-test-g4"
+                 }
                )
 
       assert blocked_step.status == "failed"
@@ -483,7 +500,14 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
 
       :ok = Buffer.flush_now(buffer_name)
 
-      span = Repo.one!(from(s in Span, where: s.span_kind == "prompt", order_by: [desc: s.inserted_at], limit: 1))
+      span =
+        Repo.one!(
+          from(s in Span,
+            where: s.span_kind == "prompt",
+            order_by: [desc: s.inserted_at],
+            limit: 1
+          )
+        )
 
       assert DateTime.compare(span.end_time, span.start_time) == :gt
 
@@ -536,7 +560,9 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
       run = create_run(%{rail_max_steps: 0})
       step = create_step(run, "tool")
 
-      assert {:error, envelope} = Runtime.execute_step(step.id, handler: {Handlers, :sleepy_success})
+      assert {:error, envelope} =
+               Runtime.execute_step(step.id, handler: {Handlers, :sleepy_success})
+
       assert envelope["reason_code"] == "max_steps_exceeded"
 
       :ok = Buffer.flush_now(buffer_name)
@@ -566,7 +592,9 @@ defmodule Scoria.Workflows.RuntimeSpanTest do
       |> Ecto.Changeset.change(started_at: ten_minutes_ago)
       |> Repo.update!()
 
-      assert {:error, envelope} = Runtime.execute_step(step.id, handler: {Handlers, :sleepy_success})
+      assert {:error, envelope} =
+               Runtime.execute_step(step.id, handler: {Handlers, :sleepy_success})
+
       assert envelope["reason_code"] == "max_active_ms_exceeded"
 
       :ok = Buffer.flush_now(buffer_name)

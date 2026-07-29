@@ -1,9 +1,13 @@
 defmodule Scoria.MCP.ExecutorConfluenceTest do
   use ExUnit.Case, async: false
 
+  import Ecto.Query
+
+  alias Scoria.MCP.Classification
   alias Scoria.MCP.Executor
   alias Scoria.Observe.Approval
   alias Scoria.Repo
+  alias Scoria.SRE
   alias Scoria.Workflows
   alias Scoria.Workflows.Run
   alias Scoria.Workflows.Step
@@ -33,6 +37,69 @@ defmodule Scoria.MCP.ExecutorConfluenceTest do
       send(context.test_pid, {:tool_body_executed, self()})
       {:ok, %{result: "leaked"}}
     end
+  end
+
+  # A second, DISTINCT three-leg tool -- used only to prove a run-scoped
+  # (`confluence_scope: "run_tool"`) grant does NOT match across tools
+  # (D-44).
+  defmodule OtherThreeLegTool do
+    use Scoria.MCP.Tool,
+      reads_private_data: true,
+      sees_untrusted_content: true,
+      can_exfiltrate: true
+
+    @impl true
+    def name, do: "other_three_leg_tool"
+
+    @impl true
+    def description, do: "A second declared three-leg tool, distinct from ThreeLegTool"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, context) do
+      send(context.test_pid, {:tool_body_executed, self()})
+      {:ok, %{result: "leaked"}}
+    end
+  end
+
+  # Declares exactly ONE leg (`can_exfiltrate`) -- never reaches
+  # `"exfiltration_path"`, so the gate always resolves `"allow"` for it.
+  # Used only to exercise the always-on `"allow"` telemetry disposition
+  # (D-36).
+  defmodule ExfilOnlyTool do
+    use Scoria.MCP.Tool, can_exfiltrate: true
+
+    @impl true
+    def name, do: "exfil_only_tool"
+
+    @impl true
+    def description, do: "Declares only the exfil leg -- never reaches exfiltration_path"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, _context), do: {:ok, %{result: "ok"}}
+  end
+
+  # No `classification/0` declaration at all -- resolves to
+  # `Classification.unclassified_default/0` (D-35 fixture).
+  defmodule UndeclaredTool do
+    @behaviour Scoria.MCP.Tool
+
+    @impl true
+    def name, do: "undeclared_tool"
+
+    @impl true
+    def description, do: "No classification declared"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, _context), do: {:ok, %{result: "ok"}}
   end
 
   setup do
@@ -73,6 +140,63 @@ defmodule Scoria.MCP.ExecutorConfluenceTest do
   defp run_in_supervised_task(fun) do
     task = Task.Supervisor.async_nolink(Scoria.Workflow.TaskSupervisor, fun)
     Task.yield(task, 5_000) || Task.shutdown(task, :brutal_kill)
+  end
+
+  # `consumed_at`/`consumed_by_step_id`/`confluence_scope` are deliberately
+  # absent from `Approval.changeset/2`'s `cast/3` (D-26, D-50) -- fixtures
+  # insert a struct literal directly, bypassing the changeset entirely,
+  # exactly the way the CAS itself is the only sanctioned writer in
+  # production.
+  defp insert_confluence_approval!(run, attrs) do
+    %Approval{
+      tool_name: Keyword.fetch!(attrs, :tool_name),
+      status: Keyword.fetch!(attrs, :status),
+      blocker_kind: "confluence",
+      workflow_run_id: run.id,
+      run_id: run.id,
+      args_fingerprint: Keyword.get(attrs, :args_fingerprint),
+      confluence_scope: Keyword.get(attrs, :confluence_scope)
+    }
+    |> Repo.insert!()
+  end
+
+  defp create_budget_policy!(tenant_id, resource_kind) do
+    {:ok, _policy} =
+      SRE.create_budget_policy(%{
+        tenant_id: tenant_id,
+        policy_key: "tenant:default:#{resource_kind}",
+        scope_key: "tenant:#{tenant_id}",
+        scope_kind: "tenant",
+        resource_kind: resource_kind,
+        status: "active",
+        warn_threshold: Decimal.new("80.0"),
+        trip_threshold: Decimal.new("100.0"),
+        max_workflow_steps: 25,
+        max_repeated_tool_calls: 3,
+        max_consecutive_failures: 2,
+        metadata: %{}
+      })
+
+    :ok
+  end
+
+  defp attach_confluence_telemetry(events) do
+    ref = make_ref()
+    test_pid = self()
+    handler_id = "confluence-test-#{inspect(ref)}"
+
+    :telemetry.attach_many(
+      handler_id,
+      events,
+      fn event, measurements, metadata, _config ->
+        send(test_pid, {:telemetry_event, ref, event, measurements, metadata})
+      end,
+      nil
+    )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    ref
   end
 
   describe "confluence gate end-to-end (D-14, D-19, D-20, D-23, D-24, D-46)" do
@@ -144,5 +268,448 @@ defmodule Scoria.MCP.ExecutorConfluenceTest do
 
       assert Repo.get!(Run, run.id).status == "halted"
     end
+  end
+
+  describe "approval consume (D-26)" do
+    test "a pending call with no matching approved approval evaluates normally and may escalate" do
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step) |> Map.put(:args_fingerprint, "fp-no-match")
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+    end
+
+    test "an approved, unconsumed confluence approval matching this call's args fingerprint passes through, and after the call that approval's consumed_at/consumed_by_step_id are set" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      {run, step} = new_run_and_step!()
+
+      approval =
+        insert_confluence_approval!(run,
+          tool_name: "three_leg_tool",
+          status: "approved",
+          args_fingerprint: "fp-consume-1"
+        )
+
+      context = exfil_context(run, step) |> Map.put(:args_fingerprint, "fp-consume-1")
+
+      assert {:ok, %{result: "leaked"}} =
+               Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+
+      assert_receive {:tool_body_executed, _pid}
+
+      reloaded_approval = Repo.get!(Approval, approval.id)
+      refute is_nil(reloaded_approval.consumed_at)
+      assert reloaded_approval.consumed_by_step_id == step.id
+
+      # No NEW approval was minted for this pass-through call.
+      assert count_confluence_approvals(run.id) == 1
+      refute Repo.get!(Run, run.id).status == "waiting_for_approval"
+    end
+
+    test "the same approval consumed once cannot be consumed a second time -- a repeat of the identical call escalates again rather than passing through" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      {run, step} = new_run_and_step!()
+
+      insert_confluence_approval!(run,
+        tool_name: "three_leg_tool",
+        status: "approved",
+        args_fingerprint: "fp-consume-once"
+      )
+
+      context = exfil_context(run, step) |> Map.put(:args_fingerprint, "fp-consume-once")
+
+      assert {:ok, _result} = Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+      assert_receive {:tool_body_executed, _pid}
+
+      # Repeating the IDENTICAL call now finds the approval already
+      # consumed -- it must escalate again, not pass through a second time.
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "three_leg_tool"
+      refute_receive {:tool_body_executed, _pid}, 200
+    end
+
+    test "a call whose args fingerprint is nil is evaluated (and escalates under a three-leg declared classification) rather than passing through" do
+      {run, step} = new_run_and_step!()
+
+      # An approved approval exists, but this call's own context carries no
+      # `:args_fingerprint` at all -- `nil` must fail CLOSED, never match.
+      insert_confluence_approval!(run,
+        tool_name: "three_leg_tool",
+        status: "approved",
+        args_fingerprint: nil
+      )
+
+      context = exfil_context(run, step)
+      refute Map.has_key?(context, :args_fingerprint)
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+      refute_receive {:tool_body_executed, _pid}, 200
+    end
+
+    test "a rejected matching approval produces a refusal envelope carrying the confluence-rejected reason code and produces no new approval row" do
+      {run, step} = new_run_and_step!()
+
+      insert_confluence_approval!(run,
+        tool_name: "three_leg_tool",
+        status: "rejected",
+        args_fingerprint: "fp-rejected-1"
+      )
+
+      context = exfil_context(run, step) |> Map.put(:args_fingerprint, "fp-rejected-1")
+
+      assert {:error, %{status: :confluence_denied, reason_code: "confluence_rejected"}} =
+               Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+
+      refute_receive {:tool_body_executed, _pid}, 200
+      assert count_confluence_approvals(run.id) == 1
+      refute Repo.get!(Run, run.id).status == "waiting_for_approval"
+    end
+  end
+
+  describe "run-scoped grant (confluence_scope: \"run_tool\", D-44/D-50)" do
+    test "matches a second call of the same tool in the same run without being consumed" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      {run, step} = new_run_and_step!()
+
+      insert_confluence_approval!(run,
+        tool_name: "three_leg_tool",
+        status: "approved",
+        confluence_scope: "run_tool"
+      )
+
+      context = exfil_context(run, step)
+
+      assert {:ok, _result} = Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+      assert_receive {:tool_body_executed, _pid}
+
+      # The grant is NOT consumed -- exactly one row remains, still
+      # approved, and no new pending approval was minted.
+      assert count_confluence_approvals(run.id) == 1
+      refute Repo.get!(Run, run.id).status == "waiting_for_approval"
+    end
+
+    test "does not match a different tool" do
+      {run, step} = new_run_and_step!()
+
+      insert_confluence_approval!(run,
+        tool_name: "three_leg_tool",
+        status: "approved",
+        confluence_scope: "run_tool"
+      )
+
+      context = exfil_context(run, step)
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(OtherThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "other_three_leg_tool"
+    end
+
+    test "does not match a different run" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      {run, step} = new_run_and_step!()
+      {other_run, _other_step} = new_run_and_step!()
+
+      insert_confluence_approval!(other_run,
+        tool_name: "three_leg_tool",
+        status: "approved",
+        confluence_scope: "run_tool"
+      )
+
+      context = exfil_context(run, step)
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "three_leg_tool"
+    end
+
+    test "the match is structurally bound to the \"declared\" grade (D-44) -- a differently-graded escalation of the same tool can never be matched" do
+      # `confluence_input/2`'s `leg_witness/1` only ever constructs
+      # `source: :declared` witnesses through the current executor
+      # wiring (declared-only leg sourcing, D-13), so a live
+      # "run_tool"-scoped call at any OTHER grade is not reachable via
+      # `Executor.execute/4` in this plan's scope -- the bound is
+      # asserted structurally instead: `run_tool_scope_granted?/3`'s
+      # match arm is guarded by an explicit `"declared"` head, with a
+      # catch-all fallback (`_other_grade`) that returns `false` for
+      # every other grade, so a future leg source (e.g. `:scanner_infra`)
+      # cannot silently widen the bound without editing this clause.
+      source = File.read!(Path.join([File.cwd!(), "lib", "scoria", "mcp", "executor.ex"]))
+
+      assert source =~ ~r/defp run_tool_scope_granted\?\(run_id, tool_module, "declared"\)/
+
+      assert source =~
+               ~r/defp run_tool_scope_granted\?\(_run_id, _tool_module, _other_grade\), do: false/
+    end
+  end
+
+  describe "attribution and containment (D-21, D-22)" do
+    test "a tool call carrying :run_id and :step_id in its context is attributable and can be paused" do
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step)
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+    end
+
+    test "a tool call carrying :workflow_run_id instead of :run_id is attributable, because canonical_context/1 aliases the two" do
+      {run, step} = new_run_and_step!()
+
+      context =
+        %{
+          actor_id: "user-1",
+          tenant_id: "tenant-1",
+          workflow_run_id: run.id,
+          step_id: step.id,
+          test_pid: self()
+        }
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+    end
+
+    test "a tool call with no step attribution resolves to the unattributed disposition, defaults to allow, emits the skipped telemetry event, and creates no approval row" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      ref = attach_confluence_telemetry([[:scoria, :gate, :confluence, :skipped]])
+
+      context = %{actor_id: "user-1", tenant_id: "tenant-1", test_pid: self()}
+
+      assert {:ok, _result} = Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+      assert_receive {:tool_body_executed, _pid}
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :gate, :confluence, :skipped],
+                      measurements, metadata}
+
+      assert measurements == %{}
+      assert metadata.reason == :unattributed
+
+      refute Repo.get_by(Approval, blocker_kind: "confluence", tool_name: "three_leg_tool")
+    end
+
+    test "a raw spawn with no $callers chain resolves as uncontained: the call proceeds without pausing, and the skipped telemetry event fires" do
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step)
+      ref = attach_confluence_telemetry([[:scoria, :gate, :confluence, :skipped]])
+
+      spawn(fn ->
+        Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+      end)
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :gate, :confluence, :skipped],
+                      measurements, metadata},
+                     1_000
+
+      assert measurements == %{}
+      assert metadata.reason == :uncontained
+
+      refute Repo.get_by(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
+
+      # Give the async spawn a moment to settle, then confirm the run was
+      # never paused.
+      Process.sleep(100)
+      refute Repo.get!(Run, run.id).status == "waiting_for_approval"
+    end
+
+    test "the gate driven from inside a Task.async is treated as contained" do
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step)
+
+      result =
+        run_in_supervised_task(fn ->
+          task =
+            Task.async(fn -> Executor.execute(ThreeLegTool, %{"action" => "leak"}, context) end)
+
+          Task.await(task)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "three_leg_tool"
+    end
+
+    test "the gate driven from inside a Task.async_stream is treated as contained" do
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step)
+
+      result =
+        run_in_supervised_task(fn ->
+          [context]
+          |> Task.async_stream(
+            fn ctx -> Executor.execute(ThreeLegTool, %{"action" => "leak"}, ctx) end,
+            timeout: 5_000
+          )
+          |> Enum.to_list()
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, attrs}}} = result
+      assert attrs.tool_name == "three_leg_tool"
+    end
+  end
+
+  describe "resolve_classification/2 idempotence clause gated on source (D-35)" do
+    setup do
+      previous = Application.get_env(:scoria, :require_tool_classification, false)
+      Application.put_env(:scoria, :require_tool_classification, true)
+
+      on_exit(fn ->
+        Application.put_env(:scoria, :require_tool_classification, previous)
+      end)
+
+      :ok
+    end
+
+    test "a context carrying an unclassified-default classification no longer bypasses the refusal check" do
+      {run, step} = new_run_and_step!()
+
+      context =
+        exfil_context(run, step)
+        |> Map.put(:tool_classification, Classification.unclassified_default())
+
+      assert {:error, %{status: :unclassified_tool}} =
+               Executor.execute(UndeclaredTool, %{}, context)
+    end
+
+    test "a context carrying a declared-source classification still short-circuits the resolution" do
+      {run, step} = new_run_and_step!()
+
+      declared = %Classification{
+        source: :host_tightened,
+        reads_private_data: false,
+        sees_untrusted_content: false,
+        can_exfiltrate: false,
+        action_class: "read"
+      }
+
+      context = exfil_context(run, step) |> Map.put(:tool_classification, declared)
+
+      assert {:ok, %{result: "ok"}} = Executor.execute(UndeclaredTool, %{}, context)
+    end
+  end
+
+  describe "one always-on gate telemetry event (D-36)" do
+    test "the event fires once for an allow, once for an escalate and once for a block, with three distinct decision values, empty measurements, and the grade/combination/action_class/leg sources in metadata" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      ref = attach_confluence_telemetry([[:scoria, :gate, :confluence, :observed]])
+
+      # -- allow: a tool that never reaches exfiltration_path -----------
+      {allow_run, allow_step} = new_run_and_step!()
+      allow_context = exfil_context(allow_run, allow_step)
+      assert {:ok, _} = Executor.execute(ExfilOnlyTool, %{}, allow_context)
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :gate, :confluence, :observed],
+                      allow_measurements, allow_metadata}
+
+      assert allow_measurements == %{}
+      assert allow_metadata["scoria.confluence.decision"] == "allow"
+
+      # -- escalate: the declared three-leg tool -------------------------
+      {escalate_run, escalate_step} = new_run_and_step!()
+      escalate_context = exfil_context(escalate_run, escalate_step)
+
+      escalate_result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, escalate_context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _}}} = escalate_result
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :gate, :confluence, :observed],
+                      escalate_measurements, escalate_metadata}
+
+      assert escalate_measurements == %{}
+      assert escalate_metadata["scoria.confluence.decision"] == "escalate"
+      assert escalate_metadata["scoria.confluence.combination"] == "exfiltration_path"
+      assert escalate_metadata["scoria.confluence.grade"] == "declared"
+      assert escalate_metadata.action_class != nil
+      assert escalate_metadata.private_data_source == :declared
+      assert escalate_metadata.untrusted_content_source == :declared
+      assert escalate_metadata.exfil_source == :declared
+
+      # -- block: a rejected-approval-consume denial ---------------------
+      {block_run, block_step} = new_run_and_step!()
+
+      insert_confluence_approval!(block_run,
+        tool_name: "three_leg_tool",
+        status: "rejected",
+        args_fingerprint: "fp-block-1"
+      )
+
+      block_context =
+        exfil_context(block_run, block_step) |> Map.put(:args_fingerprint, "fp-block-1")
+
+      assert {:error, %{status: :confluence_denied, reason_code: "confluence_rejected"}} =
+               Executor.execute(ThreeLegTool, %{"action" => "leak"}, block_context)
+
+      assert_receive {:telemetry_event, ^ref, [:scoria, :gate, :confluence, :observed],
+                      block_measurements, block_metadata}
+
+      assert block_measurements == %{}
+      assert block_metadata["scoria.confluence.decision"] == "block"
+
+      decisions =
+        [allow_metadata, escalate_metadata, block_metadata]
+        |> Enum.map(&Map.get(&1, "scoria.confluence.decision"))
+        |> Enum.uniq()
+
+      assert length(decisions) == 3
+    end
+
+    test "a raising telemetry handler does not propagate an error out of the tool call" do
+      handler_id = "confluence-raising-handler-#{inspect(make_ref())}"
+
+      :telemetry.attach(
+        handler_id,
+        [:scoria, :gate, :confluence, :observed],
+        fn _event, _measurements, _metadata, _config -> raise "boom" end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step)
+
+      result =
+        run_in_supervised_task(fn ->
+          Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+        end)
+
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+    end
+  end
+
+  defp count_confluence_approvals(run_id) do
+    Repo.aggregate(
+      from(a in Approval, where: a.workflow_run_id == ^run_id and a.blocker_kind == "confluence"),
+      :count
+    )
   end
 end
