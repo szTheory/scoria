@@ -50,6 +50,20 @@ defmodule Scoria.Observe.Approval do
     field(:checkpoint_id, :binary_id)
     field(:lock_version, :integer, default: 1)
 
+    # D-26: the approval-consume CAS pair -- a single `Repo.update_all`
+    # statement is the only writer (`WHERE ... AND consumed_at IS NULL
+    # ... RETURNING id`), preventing `resume_run/1` from re-escalating the
+    # identical tool call forever. Deliberately absent from `cast/3` below
+    # -- see the comment there for why (opposite polarity from the D-15
+    # rail/confluence_legs rule in `Run.changeset/2`).
+    field(:consumed_at, :utc_datetime_usec)
+    field(:consumed_by_step_id, :binary_id)
+
+    # D-50 (checkpoint-resolved `d50-scope`): the bounded
+    # per-run/per-tool/per-grade approval scope. `"call"` (the default,
+    # NULL means `"call"`) or `"run_tool"`.
+    field(:confluence_scope, :string)
+
     timestamps(type: :utc_datetime_usec)
   end
 
@@ -98,6 +112,15 @@ defmodule Scoria.Observe.Approval do
       :step_id,
       :checkpoint_id,
       :lock_version
+      # LOAD-BEARING (D-26, opposite polarity from `Run.changeset/2`'s D-15
+      # rule): `:consumed_at`, `:consumed_by_step_id`, and `:confluence_scope`
+      # are DELIBERATELY absent from this list. `Workflows.approve/3`
+      # passes caller-supplied attrs straight through to this changeset
+      # (`workflows.ex`), so a castable `:consumed_at` would let a caller
+      # pass `consumed_at: nil` and un-consume an already-consumed
+      # approval, re-opening a spent exfiltration grant. The only sanctioned
+      # writer is the D-26 consume CAS's single `Repo.update_all(...)`
+      # statement, which never goes through this changeset at all.
     ])
     |> validate_required([:tool_name, :status])
     |> validate_inclusion(:status, @statuses)
