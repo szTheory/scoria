@@ -22,7 +22,8 @@
 - [x] **Phase 56: Tool-Declared Trifecta Classification** - Tool-declared trifecta legs resolved at `MCP.Executor`, fail-closed-but-inspectable defaults across all five fail-open seams
 - [x] **Phase 56.1: Per-Run Rails (SPLIT from 56)** - Per-run `max_steps`/`max_tool_calls`/`timeout` rails with an audited, non-resumable halt (completed 2026-07-28)
 - [x] **Phase 57: Confluence Escalation Gate** - Escalate to human approval when private-data + untrusted-content + exfil co-occur on one tainted path (completed 2026-07-29)
-- [ ] **Phase 58: Safety Hooks, Security Boundary & Govern Surface** - BYO moderation/output-scanner hooks, `SECURITY-BOUNDARY.md`, minimal read-only Govern surface
+- [ ] **Phase 58: Safety Hooks, Security Boundary & Govern Surface** - BYO moderation/output-scanner hooks, `guides/security-boundary.md`, minimal read-only Exposure surface
+- [ ] **Phase 58.1: Scanner-to-Gate Wiring & Escalation Operability (SPLIT from 58)** - Scanner-observed taint lights the untrusted-content leg, the `:site`/`:model_output` scan contract, the stuck-escalation queue, and grade-segmented would-have-paused counts
 
 ## Phase Details
 
@@ -182,13 +183,34 @@ Plans:
 **Requirements**: HOOK-01, HOOK-02, BOUND-01, GOVERN-01
 **Success Criteria** (what must be TRUE):
 
-  1. A host can register a moderation scorer through the existing `Eval.online_scoring`/`judge_runner` seam; with none registered, moderation stays off by default.
-  2. A host can register an output-scanner hook through the same seam and see model output tagged "untrusted" in traces when it fires.
-  3. A committed `SECURITY-BOUNDARY.md` states, side by side, what Scoria enforces (taint substrate, tool classification, confluence gate, rails, hook seams) versus what the host must own (detectors, allowlists, sinks, content policy) across improper-output-handling, moderation, system-prompt-leakage, and per-user-allowlist scenarios.
+  1. *(amended 2026-07-29, phase 58 discuss, D-04/D-05)* A host can register a moderation scanner through the shipped `Scoria.Trust.Scanner` behaviour; with none registered, `Scanner.NoOp` keeps moderation off by default at zero overhead.
+  2. *(amended 2026-07-29, phase 58 discuss, D-04/D-07 — reduced scope)* A host can call `Scoria.Trust.scan_model_output/2` and see model output tagged `scoria.trust.*` in traces when a registered scanner fires. Scoria does NOT automatically scan model output this phase, and a model-output verdict is trace evidence only — it does not light the confluence untrusted-content leg (that is Phase 58.1, HOOK-03).
+  3. *(amended 2026-07-29, phase 58 discuss, D-12)* A committed `guides/security-boundary.md` states, side by side, what Scoria enforces versus what the host must own across improper-output-handling, moderation, system-prompt-leakage, and per-user-allowlist scenarios — refining, not duplicating, `guides/ownership-boundary.md`.
   4. An operator can open a read-only Govern screen and see, for a tainted run, the named dangerous combination ("private data + untrusted content + external egress → exfiltration path") plus per-tool trifecta classification, with no policy-builder or simulate-on-history present.
+
+*(SC amendment rationale: the original SC1/SC2 named `Eval.online_scoring`/`judge_runner` as "the existing scorer seam". That seam does not exist — `lib/scoria/eval/` declares zero `@callback`s, `Runner.score_dataset_item/6` dispatches on two hardcoded literals and silently `not_scored`s everything else, `SubjectOutput.resolve/2` grades a frozen dataset capture in both modes so it never observes live output, and `OnlineScoreSampler` is prod-only, host-invoked and sampled. The seam described already shipped in Phase 55 as `Scoria.Trust.Scanner`. SC2 additionally drops the automatic step-boundary seam: zero `kind: "llm"` steps exist in the repo, `step.kind` is a UI display taxonomy rather than a declaration that a step calls a model, and a synchronous in-step scan charges its latency to `rail_max_active_ms`, which can trip a non-resurrectable halt on latency alone. SC4 was deliberately NOT amended — see 58-CONTEXT.md D-20.)*
 
 **Plans**: TBD
 **UI hint**: yes
+**Context**: `.planning/phases/58-safety-hooks-security-boundary-govern-surface/58-CONTEXT.md` is the canonical locked spec (D-01..D-40)
+
+### Phase 58.1: Scanner-to-Gate Wiring & Escalation Operability (SPLIT from Phase 58)
+
+**Goal**: A registered scanner's verdict actually reaches the confluence gate, and an escalation that nobody decides is visible and recoverable rather than an immortal paused run.
+
+**Depends on**: Phase 58. **Split out of Phase 58 on 2026-07-29** after the discuss-phase red-team pass inventoried the drafted phase at ~15-17 plans against Phase 57's 12, in a closing phase with no Phase 59 to absorb overflow. The split is along a real seam: Phase 58 ships observation and surfaces (span-only model-output evidence, the boundary doc, the Exposure screen), 58.1 ships enforcement wiring and operability. It also re-homes two Phase 57 cross-phase obligations the Phase 58 draft had dropped, and absorbs the work Phase 57 deferred to a "Phase 57.1" that was never added to this roadmap.
+
+**Requirements**: HOOK-03, GOVERN-02
+**Success Criteria** (what must be TRUE):
+
+  1. A registered scanner returning an `untrusted` verdict lights the confluence untrusted-content leg with a correct witness source, so the gate evaluates observed taint and not only tool self-declaration — closing Phase 57's D-13, which was promised and never wired (`executor.ex:731` hardcodes `%{source: :declared}`; `:737-739` records that `:default_tier`/`:scanner_infra` are not constructible through any live path).
+  2. The `:site` scan-context discriminator and the `:model_output` content shape are published together as one deliberate `Scoria.Trust.Scanner` contract change with a CHANGELOG upgrade note — absent `:site` means unspecified, never a defaulted `:tool_output` that would mislabel the existing retrieval call site.
+  3. Scan latency is accounted for against `rail_max_active_ms`, so registering a scanner cannot halt a run on latency alone.
+  4. A stuck-escalation queue surfaces confluence approvals nobody has decided, ordered by age, so a forgotten escalation is not an immortal `waiting_for_approval` run. Approval expiry — deferred by Phase 57 to a phase that was never created — is re-homed here, since its stated remedy was this queue supplying the human trigger.
+  5. Would-have-paused counts are rendered segmented by evidence grade, never as a raw firing count (which is 100% by construction), per the operator guidance recorded in shipped code at `executor.ex:1282-1287`. This requires a durable sink: nothing currently attaches to `[:scoria, :gate, :confluence, :observed]`.
+
+**Plans**: TBD
+**Context**: inherits `.planning/phases/58-safety-hooks-security-boundary-govern-surface/58-CONTEXT.md` D-06, D-07, D-09, D-36, D-37
 
 ## Progress
 
@@ -205,6 +227,7 @@ Plans:
 | 56.1. Per-Run Rails (SPLIT from 56) | v3.7 | 6/6 | Complete    | 2026-07-28 |
 | 57. Confluence Escalation Gate | v3.7 | 12/12 | Complete    | 2026-07-29 |
 | 58. Safety Hooks, Security Boundary & Govern Surface | v3.7 | 0/TBD | Not started | - |
+| 58.1. Scanner-to-Gate Wiring & Escalation Operability (SPLIT from 58) | v3.7 | 0/TBD | Not started | - |
 
 ## Archived Milestones
 

@@ -42,16 +42,24 @@ Supplies the missing untrusted-content leg — the substrate the confluence gate
 
 ### Safety Hooks (HOOK)
 
-- [ ] **HOOK-01**: A moderation scorer hook runs through the existing `Eval.online_scoring` / `judge_runner` scorer seam (BYO, default off) — no opinionated moderation content shipped.
-- [ ] **HOOK-02**: An output-scanner hook runs through the same eval seam and tags model output as "untrusted" in traces.
+- [ ] **HOOK-01** *(amended 2026-07-29, phase 58 discuss, D-04/D-05)*: A moderation hook runs through the shipped `Scoria.Trust.Scanner` behaviour (BYO, `Scoria.Trust.Scanner.NoOp` default = off) — the same seam TAINT-04 established. No detector, classifier, or moderation content ships in-lib. `Eval.online_scoring` is the OFFLINE measurement and human-review destination for scanner-flagged traces, never the enforcement path.
+- [ ] **HOOK-02** *(amended 2026-07-29, phase 58 discuss, D-04/D-07 — **reduced scope**)*: `Scoria.Trust.scan_model_output/2` lets a host scan model output through the same `Scoria.Trust.Scanner` seam and tags it `scoria.trust.*` on the step span. Scoria does NOT automatically scan model output, and a model-output verdict is trace evidence only — lighting the confluence untrusted-content leg from a scanner verdict is HOOK-03 (Phase 58.1).
+
+*(HOOK-01/HOOK-02 amendment rationale: the original wording named `Eval.online_scoring`/`judge_runner` as "the existing scorer seam". It does not exist and could not do the job if it did — `lib/scoria/eval/` declares zero `@callback`s; `Runner.score_dataset_item/6` dispatches on two hardcoded literals and turns any host `scorer_kind` into `{:not_scored, :unknown_scorer}`; `SubjectOutput.resolve/2` grades the frozen `dataset_item.captured_output` in BOTH modes so the eval path never observes live production output; `OnlineScoreSampler` is prod-env-only, host-invoked and sampled, making a safety control there partial by construction. The seam described already shipped in Phase 55 with `:moderation_flag` already in its closed reason-code enum. HOOK-02 additionally drops the automatic step-boundary seam — zero `kind: "llm"` steps exist in the repo, `step.kind` is a UI display taxonomy rather than a declaration that a step calls a model, and a synchronous in-step scan charges latency to `rail_max_active_ms`, which can trip a non-resurrectable halt on latency alone. Per the amendment-legitimacy test in 58-CONTEXT.md D-20, HOOK-01 is a same-outcome correction while HOOK-02 shrinks adopter-observable outcome and is therefore labelled **reduced scope** rather than silently reworded.)*
+
+- [ ] **HOOK-03** *(added 2026-07-29, phase 58 discuss, D-06/D-36 → Phase 58.1)*: A registered scanner's `untrusted` verdict lights the confluence untrusted-content leg with a correct witness source, so the gate evaluates observed taint and not only tool self-declaration. Ships with the `:site` scan-context discriminator and the published `:model_output` content shape as one deliberate contract change, and with scan-latency accounting against `rail_max_active_ms`. Closes Phase 57's D-13, which was promised and never wired.
 
 ### Security Boundary Doc (BOUND)
 
-- [ ] **BOUND-01**: A `SECURITY-BOUNDARY.md` shared-responsibility doc states what Scoria enforces (taint substrate, tool classification, confluence gate, per-run rails, hook seams) versus what the host must own (detector/classifier, per-user allowlists, sinks, content/moderation policy), spanning improper-output-handling, moderation, system-prompt-leakage, and per-user allowlists.
+- [ ] **BOUND-01** *(filename amended 2026-07-29, phase 58 discuss, D-12 — mechanical, same outcome)*: A `guides/security-boundary.md` shared-responsibility doc states what Scoria enforces (taint substrate, tool classification, confluence gate, per-run rails, hook seams) versus what the host must own (detector/classifier, per-user allowlists, sinks, content/moderation policy), spanning improper-output-handling, moderation, system-prompt-leakage, and per-user allowlists.
 
 ### Govern Surface (GOVERN)
 
 - [ ] **GOVERN-01**: A minimal read-only Govern surface names the dangerous combination for a tainted run ("private data + untrusted content + external egress → **exfiltration path**") and shows per-tool trifecta classification — read-only only; the policy-builder and simulate-on-history are deferred to SEED-013.
+
+*(GOVERN-01 was deliberately NOT amended. The run-scoped accumulator structurally cannot hold the exfil leg, so a run panel fed from it can never name "exfiltration path" — but weakening the requirement to match would be trimming intent to fit the implementation, the mirror image of the tracking-outruns-code failure Phase 57's own verification caught. The requirement is satisfied in the escalation-events section, where frozen audit rows genuinely carry the full combination. See 58-CONTEXT.md D-20 and D-22.)*
+
+- [ ] **GOVERN-02** *(added 2026-07-29, phase 58 discuss, D-37 → Phase 58.1)*: A stuck-escalation queue surfaces confluence approvals nobody has decided, ordered by age, and would-have-paused counts render segmented by evidence grade rather than as a raw firing count. Re-homes two Phase 57 cross-phase obligations — one of which Phase 57 called "load-bearing, not nice-to-have" — plus the approval expiry Phase 57 deferred to a "Phase 57.1" that was never added to the roadmap.
 
 ## v2 Requirements (deferred)
 
@@ -100,15 +108,17 @@ Which phases cover which requirements. Phase numbering continues from v3.6 (next
 | GATE-04 | Phase 57 | Complete |
 | HOOK-01 | Phase 58 | Pending |
 | HOOK-02 | Phase 58 | Pending |
+| HOOK-03 | Phase 58.1 | Pending |
 | BOUND-01 | Phase 58 | Pending |
 | GOVERN-01 | Phase 58 | Pending |
+| GOVERN-02 | Phase 58.1 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 16 total
-- Mapped to phases: 16
+- v1 requirements: 18 total (16 original + HOOK-03 and GOVERN-02, added 2026-07-29 by the phase 58 discuss split)
+- Mapped to phases: 18
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-19*
-*Last updated: 2026-07-29 after plan 57-12 (GATE-01/GATE-03 status bookkeeping, evidenced by 57-VERIFICATION.md and 57-11-SUMMARY.md)*
+*Last updated: 2026-07-29 after the phase 58 discuss pass — HOOK-01/HOOK-02 seam amendments and BOUND-01 filename amendment (58-CONTEXT.md D-04/D-05/D-07/D-12), HOOK-03 and GOVERN-02 added for the Phase 58.1 split (D-36/D-37), GOVERN-01 deliberately left unamended (D-20).*
