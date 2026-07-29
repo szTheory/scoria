@@ -45,14 +45,21 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
   # Plan 57-11 Task 2: writes a REAL audit outbox row through the actual
   # write path (`SRE.create_audit_outbox_event/1`) rather than inserting the
   # schema struct directly, so the persisted metadata's string-keyed shape
-  # matches what a genuine escalation produces.
+  # matches what a genuine escalation produces. `SRE.build_audit_metadata/1`
+  # is a DROP-LIST over the whole envelope (mirroring
+  # `Executor.record_confluence_audit/5`) -- the evidence fields are merged
+  # at the envelope's TOP LEVEL, never nested under a `metadata:` key,
+  # otherwise they survive the drop-list as one extra `"metadata"` key
+  # instead of becoming the top-level metadata keys the projection reads.
   defp confluence_audit_event!(workflow_run_id, metadata) do
-    {:ok, event} =
-      SRE.create_audit_outbox_event(%{
+    envelope =
+      %{
         event_type: "tool.confluence.escalated",
-        workflow_run_id: workflow_run_id,
-        metadata: metadata
-      })
+        workflow_run_id: workflow_run_id
+      }
+      |> Map.merge(metadata)
+
+    {:ok, event} = SRE.create_audit_outbox_event(envelope)
 
     event
   end
@@ -405,7 +412,9 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
         })
 
       assert [result] =
-               RemoteApprovalProjection.list_pending_approvals(%{workflow_run_id: workflow_run_id})
+               RemoteApprovalProjection.list_pending_approvals(%{
+                 workflow_run_id: workflow_run_id
+               })
 
       assert result.id == approval.id
       assert result.combination == "exfiltration_path"
@@ -421,7 +430,9 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
       insert_confluence_approval(%{workflow_run_id: workflow_run_id})
 
       assert [result] =
-               RemoteApprovalProjection.list_pending_approvals(%{workflow_run_id: workflow_run_id})
+               RemoteApprovalProjection.list_pending_approvals(%{
+                 workflow_run_id: workflow_run_id
+               })
 
       assert result.combination == nil
       assert result.grade == nil
@@ -440,7 +451,9 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
       })
 
       assert [result] =
-               RemoteApprovalProjection.list_pending_approvals(%{workflow_run_id: workflow_run_id})
+               RemoteApprovalProjection.list_pending_approvals(%{
+                 workflow_run_id: workflow_run_id
+               })
 
       assert result.combination == nil
       assert result.grade == nil
@@ -469,7 +482,9 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
       })
 
       assert [result] =
-               RemoteApprovalProjection.list_pending_approvals(%{workflow_run_id: workflow_run_id})
+               RemoteApprovalProjection.list_pending_approvals(%{
+                 workflow_run_id: workflow_run_id
+               })
 
       assert result.combination == nil
       assert result.grade == nil
@@ -496,7 +511,9 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
       })
 
       assert [result] =
-               RemoteApprovalProjection.list_pending_approvals(%{workflow_run_id: workflow_run_id})
+               RemoteApprovalProjection.list_pending_approvals(%{
+                 workflow_run_id: workflow_run_id
+               })
 
       assert result.private_data_source == :unknown
 
@@ -513,7 +530,9 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
       })
 
       assert [result] =
-               RemoteApprovalProjection.list_pending_approvals(%{workflow_run_id: workflow_run_id})
+               RemoteApprovalProjection.list_pending_approvals(%{
+                 workflow_run_id: workflow_run_id
+               })
 
       assert result.combination == nil
       assert result.grade == nil

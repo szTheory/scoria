@@ -54,13 +54,17 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
       |> normalize_filters()
       |> Map.pop(:limit, @decided_default_limit)
 
-    Approval
-    |> where([approval], approval.status == "pending")
-    |> apply_filters(filters)
-    |> order_by([approval], desc: approval.inserted_at, desc: approval.id)
-    |> limit(^limit)
-    |> Repo.all()
-    |> Enum.map(&project_approval/1)
+    approvals =
+      Approval
+      |> where([approval], approval.status == "pending")
+      |> apply_filters(filters)
+      |> order_by([approval], desc: approval.inserted_at, desc: approval.id)
+      |> limit(^limit)
+      |> Repo.all()
+
+    events_by_id = confluence_audit_events_by_id(approvals)
+
+    Enum.map(approvals, &project_approval(&1, events_by_id))
   end
 
   @doc """
@@ -78,13 +82,17 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
       |> normalize_filters()
       |> Map.pop(:limit, @decided_default_limit)
 
-    Approval
-    |> where([approval], approval.status in @decided_statuses)
-    |> apply_filters(filters)
-    |> order_by([approval], desc: approval.updated_at, desc: approval.id)
-    |> limit(^limit)
-    |> Repo.all()
-    |> Enum.map(&project_approval/1)
+    approvals =
+      Approval
+      |> where([approval], approval.status in @decided_statuses)
+      |> apply_filters(filters)
+      |> order_by([approval], desc: approval.updated_at, desc: approval.id)
+      |> limit(^limit)
+      |> Repo.all()
+
+    events_by_id = confluence_audit_events_by_id(approvals)
+
+    Enum.map(approvals, &project_approval(&1, events_by_id))
   end
 
   def get_approval_lineage!(approval_id) do
@@ -185,7 +193,7 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
   defp confluence_leg_source(nil), do: nil
   defp confluence_leg_source(value), do: Map.get(@confluence_leg_source_map, value, :unknown)
 
-  defp project_approval(%Approval{} = approval, events_by_id \\ %{}) do
+  defp project_approval(%Approval{} = approval, events_by_id) do
     baseline_target = baseline_target(approval)
     confluence_evidence = confluence_evidence_fields(approval, events_by_id)
 

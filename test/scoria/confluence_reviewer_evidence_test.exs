@@ -132,7 +132,9 @@ defmodule Scoria.ConfluenceReviewerEvidenceTest do
       lineage_projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
       lineage_rows = ApprovalCopy.request_rows(lineage_projection)
 
-      assert {"Combination", "Private data + untrusted content + external egress → exfiltration path"} in lineage_rows
+      assert {"Combination",
+              "Private data + untrusted content + external egress → exfiltration path"} in lineage_rows
+
       assert {"Private data evidence", "Declared by the tool"} in lineage_rows
       assert {"Untrusted content evidence", "Declared by the tool"} in lineage_rows
       assert {"External egress evidence", "Declared by the tool"} in lineage_rows
