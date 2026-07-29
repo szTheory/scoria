@@ -67,6 +67,81 @@ defmodule Scoria.Confluence do
   evaluates this gate AFRESH, exactly like any other live call, scoped to
   its OWN run id. A human approval is a historical decision recorded in
   event history, not a standing exfiltration grant to be re-spent.
+
+  ## The five-rung adoption ladder (D-35)
+
+  There is no `mix` preflight task and no refuse-to-boot check for this
+  gate, and that is deliberate: there is no tool registry to enumerate.
+  `Scoria.MCP.Router` takes `tools:` as a plug option, and a direct
+  `Scoria.MCP.Executor.execute/4` caller bypasses the router entirely.
+  Any static scan built against those seams would be structurally
+  partial -- it could only ever see routed tools, never direct callers --
+  and a partial scan that claims completeness is false assurance, worse
+  than no scan at all.
+
+  1. **Upgrade with zero configuration.** Every confluence evaluation
+     records the `unclassified` grade and the `allow` decision; nothing
+     an adopter's app does changes behavior. This is the shipped default.
+  2. **Declare every tool.** Add `classification/0` (or the `use
+     Scoria.MCP.Tool` declaration options) to each tool, and watch the
+     already-shipped `[:scoria, :class, :unclassified]` counter fall to
+     zero.
+  3. **Close the ratchet.** Set `require_tool_classification: true`, but
+     ONLY after that counter has read zero for a week -- flipping it
+     before every tool is declared refuses every undeclared tool's call,
+     which is an outage with a security rationale, not a guard.
+  4. **Install a real content scanner.** This requires re-sizing rails
+     AND draining in-flight runs FIRST: each escalation round trip costs
+     two against the step budget, and rails freeze at run creation, so a
+     run already in flight when a scanner starts flagging content cannot
+     be re-sized mid-run.
+  5. **(Optional) Enable strict mode.** `strict: true` extends
+     enforcement to the three ungated grades too -- only turn this on
+     after the scanner-infrastructure-failure rate is provably near
+     zero; flipping it before then converts every infra hiccup into a
+     paused run.
+
+  ## Accepted limitations
+
+  This register names every gap this gate does NOT close, in the voice
+  `guides/capabilities/per-run-rails.md`'s own "Accepted limitation"
+  section uses -- named and accepted, not hidden, so Phase 58's boundary
+  document inherits a complete list rather than rediscovering it.
+
+  - **Pause scoping is STEP-level, not run-level (D-25, locked at the
+    plan-01 checkpoint).** `Scoria.Workflows.complete_step/3`'s
+    run-status computation is untouched by this phase: a sibling step
+    already in flight when another step escalates may still complete
+    and rewrite the run's own status back to `"running"`, and any other
+    queued sibling becomes dispatchable again. The escalated step itself
+    remains genuinely paused until a human decides it -- this is an
+    accepted, documented limitation, pinned by a regression test, not a
+    bug.
+  - **A second exclusive row lock per tool call.** The confluence gate's
+    leg-accumulator fold takes its own `FOR UPDATE`-equivalent lock on
+    the run row, on top of the rail counter's existing one -- doubling
+    the serialization window 56.1 D-09 already accepted for the rail
+    counter alone. Accepted, not papered over.
+  - **Some calls cannot be paused at all.** A tool call reaching
+    `Scoria.MCP.Executor` with no runtime step attribution (inbound via
+    `Scoria.MCP.Router`, `MCPController`, or a direct `execute/4` caller
+    with no `run_id`/`step_id`) and a raw `spawn/1` with no `$callers`
+    chain both resolve to `allow` with skipped telemetry rather than a
+    pause -- there is no channel to attribute or contain them.
+  - **A host `catch :exit` between the executor and the runtime disarms
+    the escalation signal.** The pause is delivered as
+    `exit({:shutdown, {:scoria_confluence_escalation, attrs}})`
+    specifically because an ordinary `try/rescue` cannot catch it (D-20)
+    -- but a host handler that explicitly `catch`es `:exit` still can.
+    This is the accepted cost of choosing the harder-to-swallow signal
+    over the easier-to-swallow one.
+  - **The untrusted-content leg is declaration- and scanner-sourced
+    only (D-02).** RAG-retrieved content does not light it this
+    milestone: nothing in `Scoria.Workflows` calls
+    `Scoria.Knowledge.retrieve/2`, and a retrieval run persists no
+    `run_id`/`step_id` to correlate against. This is a real residual,
+    not an oversight -- stated here, and in
+    `guides/scoria-vs-external-llm-ops.md`, rather than implied away.
   """
 
   require Logger
