@@ -31,6 +31,8 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
 
+  alias Scoria.MCP.Executor
+  alias Scoria.Observe.Approval
   alias Scoria.Repo
   alias Scoria.SRE.AuditOutboxEvent
   alias Scoria.Workflows
@@ -68,6 +70,35 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
          tenant_id: "tenant-live",
          trace_id: "trace-#{run.id}"
        }}
+    end
+  end
+
+  # Plan 57-11 Task 3: a REAL confluence escalation, distinct from
+  # `pending_confluence_approval/1` above (SYNTHETIC -- mimics the shape but
+  # carries no `blocker_audit_outbox_event_id`). This tool declares all
+  # three trifecta legs, mirroring `Scoria.ConfluenceAuditTest.ThreeLegTool`
+  # and `Scoria.ConfluenceReviewerEvidenceTest.ThreeLegTool`, so
+  # `Scoria.MCP.Executor.execute/4` genuinely escalates and writes a real
+  # `blocker_audit_outbox_event_id` back-link the projection can read.
+  defmodule RealConfluenceThreeLegTool do
+    use Scoria.MCP.Tool,
+      reads_private_data: true,
+      sees_untrusted_content: true,
+      can_exfiltrate: true
+
+    @impl true
+    def name, do: "approvals_live_real_confluence_three_leg_tool"
+
+    @impl true
+    def description, do: "Declares all three trifecta legs for the rendered-drawer proof"
+
+    @impl true
+    def input_schema, do: %{}
+
+    @impl true
+    def execute(_args, context) do
+      send(context.test_pid, {:tool_body_executed, self()})
+      {:ok, %{result: "leaked"}}
     end
   end
 
@@ -140,6 +171,53 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     {:ok, approval} =
       Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_confluence_approval})
+
+    %{run: run, step: step, approval: approval}
+  end
+
+  # Plan 57-11 Task 3: drives a REAL `Executor.execute/4` escalation --
+  # `Scoria.IntegrationCase`'s own setup already checks out the sandbox in
+  # SHARED mode and allows `Scoria.Workflow.TaskSupervisor` (and
+  # `Scoria.MCP.TaskSupervisor`) to use the same connection, so the
+  # supervised task this escalation runs in can see the same transaction.
+  # The run's tenant MUST equal the session's tenant ("tenant-live") --
+  # `mark_waiting_for_approval/3`'s `immutable_identity/2` sources the
+  # approval's tenant from the RUN, not from the escalation context, so a
+  # tenant mismatch here would make the approval invisible to this
+  # LiveView.
+  defp real_confluence_approval(opts \\ []) do
+    tenant_id = Keyword.get(opts, :tenant_id, "tenant-live")
+
+    {:ok, run} =
+      Workflows.create_run(%{root_role_id: "executor", tenant_id: tenant_id})
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "work",
+        role_id: "executor",
+        status: "running"
+      })
+
+    context = %{
+      actor_id: "operator-live",
+      tenant_id: tenant_id,
+      run_id: run.id,
+      step_id: step.id,
+      args_fingerprint: "fp-approvals-live-real-confluence-#{System.unique_integer([:positive])}",
+      test_pid: self()
+    }
+
+    task =
+      Task.Supervisor.async_nolink(Scoria.Workflow.TaskSupervisor, fn ->
+        Executor.execute(RealConfluenceThreeLegTool, %{"action" => "leak"}, context)
+      end)
+
+    result = Task.yield(task, 5_000) || Task.shutdown(task, :brutal_kill)
+
+    assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+
+    approval = Repo.get_by!(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
 
     %{run: run, step: step, approval: approval}
   end
@@ -936,6 +1014,55 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
       updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
       assert updated_approval.status == "approved"
       assert updated_approval.confluence_scope == nil
+    end
+  end
+
+  # Plan 57-11 Task 3 (D-40, D-48, GATE-02): the failing verification truth
+  # this closes -- a reviewer sees the named combination, the legs with
+  # their sources, and the grade -- proven by RENDERING a real escalation in
+  # the actual approvals drawer, not by inspecting a row list.
+  describe "a reviewer sees the named combination, the legs with their sources, and the grade" do
+    test "a real confluence escalation's rendered drawer shows the combination, each lit leg's witness source, and the evidence grade" do
+      %{run: run, approval: approval} = real_confluence_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      html = render(view)
+
+      assert html =~
+               "Private data + untrusted content + external egress → exfiltration path"
+
+      assert html =~ "Declared by the tool"
+      assert html =~ "Evidence grade"
+      assert html =~ "Declared"
+    end
+
+    test "a non-confluence approval's rendered drawer contains none of the confluence evidence strings" do
+      %{run: run, approval: approval} = pending_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      html = render(view)
+
+      refute html =~
+               "Private data + untrusted content + external egress → exfiltration path"
+
+      refute html =~ "Declared by the tool"
+      refute html =~ "Evidence grade"
     end
   end
 
