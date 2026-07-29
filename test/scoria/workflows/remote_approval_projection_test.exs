@@ -4,12 +4,42 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
   alias Scoria.Repo
   alias Scoria.Observe.Approval
   alias Scoria.Workflows
+  alias Scoria.Workflows.RemoteApprovalProjection
   alias Scoria.Workflows.Run
+
+  # D-51: the SAME page-size attribute `list_decided_approvals/1` already
+  # uses (`@decided_default_limit`) -- pending and decided must not invent
+  # two different pagination shapes.
+  @default_page_size 50
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
     :ok
+  end
+
+  defp insert_pending_approval(attrs) do
+    insert_approval(Map.merge(%{status: "pending", tool_name: "publish"}, attrs))
+  end
+
+  defp insert_decided_approval(attrs) do
+    insert_approval(Map.merge(%{status: "approved", tool_name: "publish"}, attrs))
+  end
+
+  # `Approval.changeset/2` doesn't cast `:inserted_at`/`:updated_at`, so a
+  # deterministic ordering test needs `Ecto.Changeset.change/2` to set an
+  # explicit timestamp rather than relying on insert-order microsecond luck.
+  defp insert_approval(attrs) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    attrs =
+      attrs
+      |> Map.put_new(:inserted_at, now)
+      |> Map.put_new(:updated_at, now)
+
+    %Approval{}
+    |> Ecto.Changeset.change(attrs)
+    |> Repo.insert!()
   end
 
   test "project_approval redacts secrets in arguments_preview and exposes connector_label" do
@@ -219,5 +249,83 @@ defmodule Scoria.Workflows.RemoteApprovalProjectionTest do
 
     assert source_run_id == run.source_run_id
     assert source_checkpoint_id == run.source_checkpoint_id
+  end
+
+  describe "list_pending_approvals/1 cap (D-51)" do
+    test "returns at most the default page size when more pending approvals exist" do
+      tenant_id = "tenant-pending-cap-#{System.unique_integer([:positive])}"
+
+      for _ <- 1..(@default_page_size + 5) do
+        insert_pending_approval(%{tenant_id: tenant_id})
+      end
+
+      results = RemoteApprovalProjection.list_pending_approvals(%{tenant_id: tenant_id})
+
+      assert length(results) == @default_page_size
+    end
+
+    test "an explicit limit overrides the default, exactly as list_decided_approvals/1 allows" do
+      tenant_id = "tenant-pending-explicit-limit-#{System.unique_integer([:positive])}"
+
+      for _ <- 1..10 do
+        insert_pending_approval(%{tenant_id: tenant_id})
+      end
+
+      results =
+        RemoteApprovalProjection.list_pending_approvals(%{tenant_id: tenant_id, limit: 3})
+
+      assert length(results) == 3
+    end
+
+    test "filter and ordering behavior is unchanged against a small fixture" do
+      tenant_id = "tenant-pending-order-#{System.unique_integer([:positive])}"
+      other_tenant_id = "tenant-pending-order-other-#{System.unique_integer([:positive])}"
+
+      older =
+        insert_pending_approval(%{
+          tenant_id: tenant_id,
+          tool_name: "issue_refund",
+          inserted_at: ~U[2026-01-01 00:00:00.000000Z]
+        })
+
+      insert_pending_approval(%{tenant_id: other_tenant_id})
+
+      newer =
+        insert_pending_approval(%{
+          tenant_id: tenant_id,
+          tool_name: "issue_refund",
+          inserted_at: ~U[2026-01-02 00:00:00.000000Z]
+        })
+
+      results =
+        RemoteApprovalProjection.list_pending_approvals(%{
+          tenant_id: tenant_id,
+          tool_name: "issue_refund"
+        })
+
+      assert Enum.map(results, & &1.id) == [newer.id, older.id]
+    end
+
+    test "list_decided_approvals/1 returns the same results as before the change for an identical fixture" do
+      tenant_id = "tenant-decided-unaffected-#{System.unique_integer([:positive])}"
+
+      older =
+        insert_decided_approval(%{
+          tenant_id: tenant_id,
+          updated_at: ~U[2026-01-01 00:00:00.000000Z]
+        })
+
+      newer =
+        insert_decided_approval(%{
+          tenant_id: tenant_id,
+          updated_at: ~U[2026-01-02 00:00:00.000000Z]
+        })
+
+      results = RemoteApprovalProjection.list_decided_approvals(%{tenant_id: tenant_id})
+
+      assert Enum.map(results, & &1.id) == [newer.id, older.id]
+      assert length(RemoteApprovalProjection.list_decided_approvals(%{tenant_id: tenant_id, limit: 1})) ==
+               1
+    end
   end
 end
