@@ -1032,6 +1032,96 @@ defmodule Scoria.WorkflowsTest do
     end
   end
 
+  describe "halt_run/3 with a pending confluence approval (D-52, plan 57-08)" do
+    @describetag :confluence
+
+    test "a run that halts on a rail limit while a confluence approval is pending marks that approval terminal rather than stranding it" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, escalated_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, approval} =
+        Workflows.mark_waiting_for_approval(run.id, escalated_step.id, %{
+          tool_name: "publish",
+          blocker_kind: "confluence"
+        })
+
+      assert approval.status == "pending"
+
+      {:ok, _claimed} = Workflows.claim_step(halting_step.id)
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      reloaded_approval = Repo.get!(Approval, approval.id)
+      refute reloaded_approval.status == "pending"
+      assert reloaded_approval.status == "expired"
+    end
+
+    test "a halt with no pending confluence approval on the run is unaffected (no approval touched)" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, _claimed} = Workflows.claim_step(halting_step.id)
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert Repo.aggregate(Approval, :count) == 0
+    end
+
+    test "a non-confluence pending approval on the run is left untouched by a halt" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor", rail_max_steps: 1})
+
+      {:ok, halting_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "queued"
+        })
+
+      {:ok, other_step} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, approval} =
+        Workflows.mark_waiting_for_approval(run.id, other_step.id, %{tool_name: "publish"})
+
+      {:ok, _claimed} = Workflows.claim_step(halting_step.id)
+
+      assert {:ok, %Run{status: "halted"}} =
+               Workflows.halt_run(run.id, halting_step.id, rail_envelope(run, halting_step))
+
+      assert Repo.get!(Approval, approval.id).status == "pending"
+    end
+  end
+
   describe "maybe_emit_rail_observed/1 (RAIL-01 D-17, plan 56.1-05 Task 2)" do
     setup do
       parent = self()

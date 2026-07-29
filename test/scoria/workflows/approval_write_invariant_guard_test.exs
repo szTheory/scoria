@@ -31,21 +31,24 @@ defmodule Scoria.Workflows.ApprovalWriteInvariantGuardTest do
   #   1. workflows.ex:481 — the creation-time second `Approval.changeset |> update!`
   #      that backfills `audit_outbox_event_id` right after insert; the row is
   #      still "pending" at that point (not yet decided) — allow-listed.
-  #   2. workflows.ex:1117 — the single decision write inside `approve/3` that
+  #   2. workflows.ex:1143 — the single decision write inside `approve/3` that
   #      performs the pending -> decided transition itself — allow-listed (this
-  #      IS the sanctioned decision writer the rest of the system relies on).
+  #      IS the sanctioned decision writer the rest of the system relies on;
+  #      plan 57-08's `halt_run/3` D-52 addition routes a halt-orphaned pending
+  #      confluence approval through THIS SAME `approve/3` call rather than
+  #      writing a new call site, so the writer count stays at two).
   # Any OTHER `Approval.changeset(...) |> update!/update(` call site is a
   # violation of the decided-at write invariant this guard protects.
   #
-  # NOTE (56.1-01, re-verified 56.1-05, re-verified 57-08 Tasks 1-2): these
+  # NOTE (56.1-01, re-verified 56.1-05, re-verified 57-08 Tasks 1-3): these
   # line numbers drift whenever code is inserted above them in workflows.ex
-  # (most recently by plan 57-08 Task 2's D-27 `retry_step/1` confluence
-  # guard, which lands above line 1117). Re-verify with
+  # (most recently by 57-08's D-27 retry guard and D-52 halt-with-pending-
+  # approval addition, both of which land above line 1143). Re-verify with
   # `grep -n "Approval.changeset" lib/scoria/workflows.ex` after any edit that
   # adds/removes lines above these two call sites.
   @allowed_approval_updates MapSet.new([
                               {"lib/scoria/workflows.ex", 481},
-                              {"lib/scoria/workflows.ex", 1117}
+                              {"lib/scoria/workflows.ex", 1143}
                             ])
 
   setup do

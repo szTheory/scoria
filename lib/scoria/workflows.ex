@@ -669,6 +669,7 @@ defmodule Scoria.Workflows do
         broadcast(run.id, {:workflow_updated, run.id})
         emit_rail_tripped(run, audit_outbox_event, envelope)
         maybe_emit_rail_observed(run)
+        resolve_pending_confluence_approvals(run)
         {:ok, run}
 
       {:error, :already_halted} ->
@@ -679,6 +680,31 @@ defmodule Scoria.Workflows do
     end
   rescue
     _e in Ecto.StaleEntryError -> {:error, :already_halted}
+  end
+
+  # D-52: a halt is terminal and beats the pause (D-24), so a pending
+  # confluence approval on THIS run becomes unactionable -- a human staring
+  # at an approval action that can no longer resume anything. Resolve it to
+  # a terminal status through the EXISTING decision function (`approve/3`,
+  # no new lifecycle function) rather than leaving an undecidable row --
+  # the sibling to 56.1's own halt-with-pending-review invariant. Runs
+  # post-commit (like `emit_rail_tripped/3` and `maybe_emit_rail_observed/1`
+  # just above): `approve/3` owns its own transaction, audit write, and
+  # broadcast side effects, so nesting it inside this function's own
+  # transaction would just add a redundant savepoint for no benefit. There
+  # is normally at most one pending confluence approval per run at halt
+  # time, but this resolves ALL of them defensively (D-26's two-concurrent-
+  # escalations case means more than one CAN exist).
+  defp resolve_pending_confluence_approvals(%Run{} = run) do
+    Approval
+    |> where(
+      [a],
+      a.workflow_run_id == ^run.id and a.status == "pending" and a.blocker_kind == "confluence"
+    )
+    |> Repo.all()
+    |> Enum.each(fn approval ->
+      approve(approval.id, "expired", %{reason: "run halted"})
+    end)
   end
 
   defp normalize_halt_error(%Ecto.Changeset{} = changeset) do
