@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-07-29T17:18:13.963Z",
+  "phase": "58",
+  "phase_name": "safety-hooks-security-boundary-govern-surface",
+  "phase_dir": ".planning/phases/58-safety-hooks-security-boundary-govern-surface",
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
+  "pause_reason": "User is pausing Scoria work for a while. Phase 57 fully closed; Phase 58 discussed but not yet planned.",
+  "completed_tasks": [
+    {"id": "55", "name": "Content trust taint substrate", "status": "done"},
+    {"id": "56", "name": "Tool-declared trifecta classification + per-run rails", "status": "done"},
+    {"id": "56.1", "name": "Per-run rails (split from 56)", "status": "done"},
+    {"id": "57", "name": "Confluence escalation gate — executed, verified, reviewed, validated, secured", "status": "done", "commit": "c7ddaec7"},
+    {"id": "58-discuss", "name": "Phase 58 context lock — 40 decisions, 5 researchers + 2 red teams", "status": "done", "commit": "2813f03f"},
+    {"id": "58-bookkeeping", "name": "58.1 split, HOOK-01/02 + BOUND-01 amendments, HOOK-03/GOVERN-02 added, milestone claim revised", "status": "done", "commit": "1cdc4340"}
+  ],
+  "remaining_tasks": [
+    {"id": "58-plan", "name": "/gsd-plan-phase 58 — D-19 (mix docs --warnings-as-errors already red) MUST be a wave-0 plan", "status": "not_started"},
+    {"id": "58-execute", "name": "Execute Phase 58 (safety hooks + security boundary doc + govern surface)", "status": "not_started"},
+    {"id": "58.1-plan", "name": "Plan Phase 58.1 — scanner-to-gate wiring + escalation operability (HOOK-03, GOVERN-02)", "status": "not_started"},
+    {"id": "58.1-execute", "name": "Execute Phase 58.1 — closes the v3.7 milestone", "status": "not_started"}
+  ],
+  "blockers": [
+    {
+      "description": "D-19 / broken-window entry 4: `mix docs --warnings-as-errors` is already RED on main. Phase 58's security-boundary guide adds seven ExDoc registrations that must pass `mix scoria.release_preview`, so the doc build cannot be left broken.",
+      "type": "technical",
+      "workaround": "Make it a wave-0 plan in Phase 58 rather than a footnote inside a later plan."
+    },
+    {
+      "description": "CR-01: `halt_run` confluence-cleanup StaleEntryError race (advisory critical from the Phase 57 code review). Not a regression, not blocking the phase.",
+      "type": "technical",
+      "workaround": "Tracked at .planning/todos/pending/2026-07-29-halt-run-confluence-cleanup-stale-entry-race.md. Fix = wrap the post-commit cleanup call in its own try/rescue like its siblings."
+    },
+    {
+      "description": "Baseline flake: Scoria.WarningInventory.CaptureParityTest at capture_parity_test.exs:53 fails intermittently in the full suite (1748 tests, 1 failure).",
+      "type": "technical",
+      "workaround": "Known and tracked at .planning/todos/pending/2026-07-18-flaky-capture-parity-test.md. Do NOT chase it as a regression."
+    }
+  ],
+  "async_jobs": [],
+  "human_actions_pending": [
+    {
+      "action": "Review / merge draft PR #14 (https://github.com/szTheory/scoria/pull/14)",
+      "context": "Branch worktree-phase-55-content-trust-taint, 419 commits ahead of origin/main, 475 files, +66,311/-2,857. Carries Phases 55-57 implementation plus the Phase 58 planning record. Opened draft at pause time so the work is visible and reviewable while paused.",
+      "blocking": false
+    }
+  ],
+  "decisions": [
+    {"decision": "Phase 58 split into 58 + 58.1", "rationale": "Scope inventory came to ~15-17 plans against Phase 57's 12, in a milestone-closing phase with no Phase 59 to absorb overflow. Followed the 56/56.1 split precedent exactly.", "phase": "58"},
+    {"decision": "Span evidence only for model-output taint (D-06, a reversal)", "rationale": "Both red teams overturned the draft's researcher-B design. Code-truth: enforcement gates on combination == \"exfiltration_path\" and exfil only comes from a declared can_exfiltrate, so unconditional tainting is inert at rung 1 — the '100% pause rate day one' justification was false. Adopter-harm: a correctly-written Phase-55 scanner receives a third undefined content shape, raises FunctionClauseError, fail-closes to :scanner_error, and under strict: true becomes unconditional escalate.", "phase": "58"},
+    {"decision": "GOVERN-01 deliberately NOT amended (D-20)", "rationale": "Adjudicated a genuine red-team disagreement: code-truth said the facts warrant amending it, adopter-lens called that laundering. Sided with adopter-lens and wrote a general amendment-legitimacy test into D-20 so it isn't relitigated per-phase.", "phase": "58"},
+    {"decision": "Milestone claim revised to precision rather than pulling scanner-to-gate wiring back into Phase 58 (D-02/D-39)", "rationale": "The gate escalates when a tool DECLARES all three legs — a self-declaration gate, not an observation gate (executor.ex:705-731, :737-739). Correcting the claim is honest; widening Phase 58 to make the old claim true would blow the split.", "phase": "58"},
+    {"decision": "Two dropped Phase 57 cross-phase obligations re-homed to Phase 58.1", "rationale": "Both red teams independently found obligations 4 and 6 from 57-CONTEXT.md had no landing spot; obligation 2 was FACTUALLY WRONG and is struck through in place with the evidence trail.", "phase": "58"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Run `/gsd-plan-phase 58`. Before planning starts, read .planning/phases/58-safety-hooks-security-boundary-govern-surface/58-CONTEXT.md in full (40 locked decisions, D-01..D-40) and make D-19 (clear the red `mix docs --warnings-as-errors` build) a wave-0 plan.",
+  "context_notes": "Phase 57 is fully closed with all four gates green: verification 5/5, code review (1 critical + 2 warnings, all advisory and tracked), Nyquist validation 0 gaps, security 67/68 threats closed with threats_open: 0. Phase 58 is `discussed` in the roadmap with 40 locked decisions and no plans yet. Requirement coverage is 16 -> 18. Everything is committed and pushed; working tree clean. Nothing is half-finished — this is a clean seam to walk away from."
+}
