@@ -53,6 +53,22 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
     end
 
     def succeed(step, _run), do: {:ok, %{"step_id" => step.id, "status" => "approved"}}
+
+    # D-50: a confluence-kind escalation, mirroring the shape
+    # `MCP.Executor.escalate/3` produces (blocker_kind, tool_name, reason)
+    # for a bounded run-scoped approve action to act on.
+    def wait_for_confluence_approval(_step, run) do
+      {:waiting_for_approval,
+       %{
+         tool_name: "send_reply",
+         arguments: %{"ticket_id" => "TKT-1"},
+         reason: "confluence gate: exfiltration_path",
+         blocker_kind: "confluence",
+         actor_id: "operator-live",
+         tenant_id: "tenant-live",
+         trace_id: "trace-#{run.id}"
+       }}
+    end
   end
 
   setup_all do
@@ -103,6 +119,27 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
     {:ok, approval} =
       Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_approval})
+
+    %{run: run, step: step, approval: approval}
+  end
+
+  defp pending_confluence_approval(opts \\ []) do
+    {:ok, run} =
+      Workflows.create_run(%{
+        root_role_id: "executor",
+        tenant_id: Keyword.get(opts, :tenant_id, "tenant-live")
+      })
+
+    {:ok, step} =
+      Workflows.create_step(run.id, %{
+        sequence: 1,
+        kind: "approval",
+        role_id: "executor",
+        status: "queued"
+      })
+
+    {:ok, approval} =
+      Runtime.execute_step(step.id, handler: {ApprovalHandlers, :wait_for_confluence_approval})
 
     %{run: run, step: step, approval: approval}
   end
@@ -819,6 +856,86 @@ defmodule ScoriaWeb.ApprovalsLiveTest do
 
       assert html =~ "Decided · time unavailable"
       refute html =~ "Expired by"
+    end
+  end
+
+  describe "D-50 bounded run-scoped approve action" do
+    test "the scoped action renders only for a confluence approval" do
+      %{run: run, approval: approval} = pending_confluence_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      html = render(view)
+      assert html =~ ~s(phx-value-decision="approve_run_scoped")
+      assert html =~ "Approve send_reply for the rest of this run"
+    end
+
+    test "the scoped action does not render for a non-confluence approval" do
+      %{run: run, approval: approval} = pending_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      refute render(view) =~ ~s(phx-value-decision="approve_run_scoped")
+    end
+
+    test "invoking the scoped action sets confluence_scope to the run-scoped value and approves" do
+      %{run: run, approval: approval} = pending_confluence_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      render_click(view, "approve_run_scoped", %{})
+
+      eventually(fn ->
+        Repo.get!(Scoria.Observe.Approval, approval.id).status == "approved"
+      end)
+
+      updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
+      assert updated_approval.status == "approved"
+      assert updated_approval.confluence_scope == "run_tool"
+    end
+
+    test "invoking the plain approve action on a confluence approval leaves the scope at its default" do
+      %{run: run, approval: approval} = pending_confluence_approval()
+
+      {:ok, view, _html} =
+        live(
+          session_conn(%{"actor_id" => "operator-live", "tenant_id" => "tenant-live"}),
+          "/scoria/approvals?runtime=#{run.id}"
+        )
+
+      projection = RemoteApprovalProjection.get_approval_lineage!(approval.id)
+      send(view.pid, {:hitl_request, projection})
+
+      render_click(view, "approve", %{})
+
+      eventually(fn ->
+        Repo.get!(Scoria.Observe.Approval, approval.id).status == "approved"
+      end)
+
+      updated_approval = Repo.get!(Scoria.Observe.Approval, approval.id)
+      assert updated_approval.status == "approved"
+      assert updated_approval.confluence_scope == nil
     end
   end
 

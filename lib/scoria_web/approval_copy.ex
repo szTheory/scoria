@@ -221,10 +221,12 @@ defmodule ScoriaWeb.ApprovalCopy do
 
   def decision_title("approve", approval), do: approve_label(approval)
   def decision_title("reject", _approval), do: "Deny request"
+  def decision_title("approve_run_scoped", approval), do: run_scoped_approve_label(approval)
   def decision_title(_decision, _approval), do: "Review approval"
 
   def decision_badge("approve"), do: "Run can continue"
   def decision_badge("reject"), do: "Run waits for approval"
+  def decision_badge("approve_run_scoped"), do: "Run can continue"
   def decision_badge(_decision), do: "Decision pending"
 
   def decision_copy("approve", approval) do
@@ -235,8 +237,30 @@ defmodule ScoriaWeb.ApprovalCopy do
     "Denying records your decision for #{title(approval)}. The run stays waiting for approval until the app retries or requests a new approval."
   end
 
+  def decision_copy("approve_run_scoped", approval), do: run_scoped_decision_copy(approval)
+
   def decision_copy(_decision, _approval),
     do: "Review the evidence before recording a durable approval decision."
+
+  @doc """
+  Reviewer-facing label for the D-50 bounded run-scoped approve action --
+  a confluence-kind approval only. States the bound (this tool, this run)
+  in the label itself, so the drawer never reads like a plain "Approve" a
+  reviewer could mistake for a standing grant.
+  """
+  def run_scoped_approve_label(approval) do
+    "Approve #{tool_name_label(approval)} for the rest of this run"
+  end
+
+  @doc """
+  Reviewer-facing confirmation copy for the D-50 bounded run-scoped
+  approve action. Names the tool and states plainly that the grant ends
+  with this run -- it is not approve-once-exfil-forever (D-44): it cannot
+  match a different run, a different tool, or a different evidence grade.
+  """
+  def run_scoped_decision_copy(approval) do
+    "Approving grants #{tool_name_label(approval)} for the remainder of this run, at this evidence grade. The grant ends when this run ends -- it never applies to a different run, tool, or grade."
+  end
 
   @doc """
   Single canonical decision-status string for the drawer/history badge (D-16 dedup).
@@ -483,6 +507,13 @@ defmodule ScoriaWeb.ApprovalCopy do
 
   defp tool_label(nil), do: "Approval request"
   defp tool_label(tool), do: to_string(tool)
+
+  defp tool_name_label(approval) do
+    case field(approval, :tool_name) do
+      nil -> "this tool"
+      name -> to_string(name)
+    end
+  end
 
   defp present?(value), do: is_binary(value) and value != ""
 
