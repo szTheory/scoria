@@ -327,6 +327,58 @@ defmodule Scoria.Observe.Semconv do
   @spec classification_keys() :: keyword(String.t())
   def classification_keys, do: @classification_keys
 
+  # Phase 57 confluence attribute group (GATE-04, D-08). Hand-written per
+  # D-03/D-08 -- `Scoria.Confluence` is a dependency-free leaf module and
+  # Semconv must never alias or call into it (that would create the module
+  # edge D-03 forbids), so these literals are NOT derived from
+  # `Scoria.Confluence`, mirroring the shipped `@trust_keys` pattern above.
+  # Emitted by the gate itself on all three dispositions (allow/escalate/
+  # block), never riding the `[:scoria, :tool, :completed]` event (D-08 —
+  # that event fires only inside `execute_live`'s success branch, so it
+  # never fires on escalate or block, the two dispositions that matter).
+  # `scoria.confluence.decision` reuses `guardrail_decisions/0`'s existing
+  # three-value set verbatim (D-08) -- see `guardrail_decisions/0` below.
+  # `guardrail_names/0` and `guardrail_reason_codes/0` are NOT widened by
+  # this group (D-09, D-10) -- confluence gets its own reason-code enum
+  # domain-side (`Scoria.Confluence.reason_codes/0`), mirroring
+  # `Trust.Verdict.reason_codes/0`'s escape hatch rather than touching
+  # Semconv's frozen guardrail enum.
+  #
+  # Deliberately absent from this group: any per-leg boolean (already
+  # covered by `@classification_keys`'s `reads_private_data` /
+  # `sees_untrusted_content` / `can_exfiltrate`), a leg count (derivable
+  # from the same three booleans), a scanner or tier key (already covered
+  # by `@trust_keys`), and any score, free-text reason, or explanation
+  # field (the no-passthrough discipline below is what makes this
+  # structural, not a review convention).
+  @confluence_keys [
+    combination: "scoria.confluence.combination",
+    decision: "scoria.confluence.decision",
+    grade: "scoria.confluence.grade",
+    reason_code: "scoria.confluence.reason_code",
+    approval_ref: "scoria.confluence.approval_ref"
+  ]
+
+  @doc """
+  Returns the canonical keyword list mapping the five confluence-gate
+  dimensions (phase 57, GATE-04, D-08) to their dotted
+  `scoria.confluence.*` attribute-key strings. Sole origin for
+  `confluence_attributes/1`'s fixed-key projection.
+  """
+  @spec confluence_keys() :: keyword(String.t())
+  def confluence_keys, do: @confluence_keys
+
+  @confluence_grades ~w(unclassified scanner_infra default_tier declared)
+
+  @doc """
+  Returns the canonical 4-value closed confluence-grade enum, in weakest-
+  to-strongest evidence order (D-29): `unclassified`, `scanner_infra`,
+  `default_tier`, `declared`. Hand-written for the same D-03 reason
+  `confluence_keys/0` is -- Semconv never calls into `Scoria.Confluence`.
+  """
+  @spec confluence_grades() :: [String.t()]
+  def confluence_grades, do: @confluence_grades
+
   @doc """
   Returns the canonical keyword list mapping the five guardrail dimensions
   to their dotted `scoria.guardrail.*` attribute-key strings. Sole origin
@@ -434,7 +486,12 @@ defmodule Scoria.Observe.Semconv do
                           Keyword.fetch!(@classification_keys, :can_exfiltrate) => :flag,
                           Keyword.fetch!(@rail_keys, :rail) => :enum,
                           Keyword.fetch!(@rail_keys, :limit) => :count,
-                          Keyword.fetch!(@rail_keys, :observed) => :count
+                          Keyword.fetch!(@rail_keys, :observed) => :count,
+                          Keyword.fetch!(@confluence_keys, :combination) => :enum,
+                          Keyword.fetch!(@confluence_keys, :decision) => :enum,
+                          Keyword.fetch!(@confluence_keys, :grade) => :enum,
+                          Keyword.fetch!(@confluence_keys, :reason_code) => :enum,
+                          Keyword.fetch!(@confluence_keys, :approval_ref) => :id
                         },
                         Map.new(@host_declared_keys, &{Atom.to_string(&1), :enum})
                       )
@@ -623,6 +680,29 @@ defmodule Scoria.Observe.Semconv do
   @spec classification_attributes(map()) :: map()
   def classification_attributes(input) when is_map(input) do
     Enum.reduce(@classification_keys, %{}, fn {field, key}, acc ->
+      case Map.get(input, field) do
+        nil -> acc
+        value -> Map.put(acc, key, value)
+      end
+    end)
+  end
+
+  @doc """
+  Projects a `Scoria.Confluence.Evidence`-shaped map onto EXACTLY the five
+  `confluence_keys/0` strings and nothing else (phase 57, GATE-04, D-08).
+  Never spreads the input map -- an unlisted key (e.g. a per-leg boolean,
+  a leg count, a scanner/tier key, or a free-text reason/explanation) is
+  structurally impossible to emit through this projector, mirroring
+  `trust_attributes/1`'s, `classification_attributes/1`'s, and
+  `rail_attributes/1`'s no-passthrough discipline.
+
+  Only `nil` is dropped -- a caveat-free allow carries no
+  `scoria.confluence.reason_code`, so that field is omitted rather than
+  emitted with a placeholder value.
+  """
+  @spec confluence_attributes(map()) :: map()
+  def confluence_attributes(input) when is_map(input) do
+    Enum.reduce(@confluence_keys, %{}, fn {field, key}, acc ->
       case Map.get(input, field) do
         nil -> acc
         value -> Map.put(acc, key, value)
