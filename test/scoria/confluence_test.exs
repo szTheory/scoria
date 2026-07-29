@@ -1,5 +1,10 @@
 defmodule Scoria.ConfluenceTest do
-  use ExUnit.Case, async: true
+  # async: false -- resolve_config/1 and validate_app_env/0 read, and this
+  # module's own tests mutate, global `Application.get_env(:scoria,
+  # Scoria.Confluence)`, and both maintain a shared ETS log-once table
+  # (`:scoria_confluence_warned_keys`). Neither is safe to race against a
+  # concurrently-running test file that might one day read the same key.
+  use ExUnit.Case, async: false
 
   alias Scoria.Confluence
   alias Scoria.Confluence.Evidence
@@ -361,6 +366,86 @@ defmodule Scoria.ConfluenceTest do
     end
   end
 
+  describe "resolve_config/1 and validate_app_env/0 -- configuration surface (D-31..D-34)" do
+    setup do
+      previous = Application.get_env(:scoria, Confluence)
+
+      on_exit(fn ->
+        if previous == nil do
+          Application.delete_env(:scoria, Confluence)
+        else
+          Application.put_env(:scoria, Confluence, previous)
+        end
+      end)
+
+      :ok
+    end
+
+    test "with no application environment configured, resolve_config/1 returns exactly the shipped defaults" do
+      config = Confluence.resolve_config(%{})
+
+      assert config.enforcement == :enforce
+      assert config.declared == :escalate
+      assert config.unclassified == :allow
+      assert config.scanner_infra == :allow
+      assert config.default_tier == :allow
+      assert config.unattributed == :allow
+      assert config.strict == false
+    end
+
+    test "an application-environment value of declared: :allow is honored (loosening permitted)" do
+      Application.put_env(:scoria, Confluence, declared: :allow)
+
+      assert Confluence.resolve_config(%{}).declared == :allow
+    end
+
+    test "a per-call context[:confluence] attempting to loosen declared over an app-env :escalate is ignored" do
+      Application.put_env(:scoria, Confluence, declared: :escalate)
+      context = %{confluence: %{declared: :allow}}
+
+      assert Confluence.resolve_config(context).declared == :escalate
+    end
+
+    test "a per-call context tightening unclassified from :allow to :escalate is honored" do
+      context = %{confluence: %{unclassified: :escalate}}
+
+      assert Confluence.resolve_config(context).unclassified == :escalate
+    end
+
+    test "a per-call context attempting to loosen strict from an app-env true is ignored, while tightening false to true is honored" do
+      Application.put_env(:scoria, Confluence, strict: true)
+
+      assert Confluence.resolve_config(%{confluence: %{strict: false}}).strict == true
+      Application.delete_env(:scoria, Confluence)
+      assert Confluence.resolve_config(%{confluence: %{strict: true}}).strict == true
+    end
+
+    test "validate_app_env/0 returns an {:unknown_grade, _} finding for a typo'd key and does not raise" do
+      Application.put_env(:scoria, Confluence, delcared: :escalate)
+
+      assert {:unknown_grade, :delcared} = Confluence.validate_app_env()
+    end
+
+    test "validate_app_env/0 returns :ok when configuration is valid" do
+      Application.put_env(:scoria, Confluence, declared: :allow)
+
+      assert Confluence.validate_app_env() == :ok
+    end
+
+    test "validate_app_env/0 returns :ok when no configuration is set" do
+      assert Confluence.validate_app_env() == :ok
+    end
+
+    test "a malformed value for one grade resolves that grade to its shipped default without raising and without affecting the other grades" do
+      Application.put_env(:scoria, Confluence, declared: :bogus, unclassified: :escalate)
+
+      config = Confluence.resolve_config(%{})
+
+      assert config.declared == :escalate
+      assert config.unclassified == :escalate
+    end
+  end
+
   describe "module hygiene (D-03)" do
     test "the module defines no Scoria-side alias other than its own leaf Evidence struct" do
       {:ok, source} = File.read(Path.join([File.cwd!(), "lib", "scoria", "confluence.ex"]))
@@ -375,7 +460,7 @@ defmodule Scoria.ConfluenceTest do
              "Scoria.Confluence must not alias any Scoria-side module beyond its own Evidence struct (D-03), found: #{inspect(offending)}"
     end
 
-    test "the module compiles without warnings and defines classify/1, grade/1 and decide/2" do
+    test "the module compiles without warnings and defines classify/1, grade/1, decide/2, resolve_config/1 and validate_app_env/0" do
       # function_exported?/3 reports false for a module that is merely not loaded
       # yet, and Elixir loads modules lazily. In this async case that races the
       # rest of the suite: under a seed where nothing has called classify/1
@@ -389,6 +474,22 @@ defmodule Scoria.ConfluenceTest do
       assert function_exported?(Confluence, :grades, 0)
       assert function_exported?(Confluence, :grade, 1)
       assert function_exported?(Confluence, :decide, 2)
+      assert function_exported?(Confluence, :resolve_config, 1)
+      assert function_exported?(Confluence, :validate_app_env, 0)
+    end
+  end
+
+  describe "Scoria.Runtime.Params.start/2 wiring (D-34)" do
+    test "params.ex calls Scoria.Confluence.validate_app_env/0 from start/2" do
+      {:ok, source} = File.read(Path.join([File.cwd!(), "lib", "scoria", "runtime", "params.ex"]))
+
+      assert source =~ "Confluence.validate_app_env()"
+    end
+
+    test "no call to Confluence.validate_app_env/0 exists in Scoria.Application.start/2" do
+      {:ok, source} = File.read(Path.join([File.cwd!(), "lib", "scoria", "application.ex"]))
+
+      refute source =~ "Confluence.validate_app_env"
     end
   end
 end

@@ -40,14 +40,18 @@ defmodule Scoria.Confluence do
   fall-through; that would silently disable the entire gate on the
   fallback path.
 
-  ## Weakest-evidence grading (D-29) and disposition (D-31, D-32)
+  ## Weakest-evidence grading (D-29) and the config surface (D-31..D-34)
 
   `grade/1` grades a classification by the WEAKEST evidence backing its
-  lit legs (`grades/0`'s fixed weakest-first order), and `decide/2` maps
-  a grade plus a resolved configuration map to a disposition. Both are
-  pure functions over their arguments -- the caller is responsible for
-  resolving that configuration and for snapshotting the resolved
-  decision onto persisted evidence.
+  lit legs (`grades/0`'s fixed weakest-first order), `decide/2` maps a
+  grade plus a resolved configuration to a disposition, and
+  `resolve_config/1` resolves that configuration live from a tighten-only
+  per-call rung, a may-loosen application-environment rung, and the
+  shipped defaults. The shipped default ENFORCES only for the `declared`
+  grade (D-31) -- the three absence-of-evidence cascades stay
+  telemetry-only under shipped defaults, matching the `ReleaseGate`
+  doctrine GATE-04 names: positive evidence enforces, absence of evidence
+  is inspectable but never blocking on its own.
   """
 
   require Logger
@@ -229,6 +233,172 @@ defmodule Scoria.Confluence do
   defp normalize_decision(value) when value in [:allow, :block, :escalate], do: Atom.to_string(value)
   defp normalize_decision(value) when value in @decisions, do: value
   defp normalize_decision(_other), do: "allow"
+
+  # -- configuration surface (D-31..D-34) ----------------------------------
+
+  @shipped_config %{
+    enforcement: :enforce,
+    declared: :escalate,
+    unclassified: :allow,
+    scanner_infra: :allow,
+    default_tier: :allow,
+    strict: false,
+    unattributed: :allow
+  }
+
+  @config_keys Map.keys(@shipped_config)
+  @decision_keys ~w(declared unclassified scanner_infra default_tier unattributed)a
+  @warned_table :scoria_confluence_warned_keys
+
+  @doc """
+  Resolves the host-facing configuration surface (D-32) live from
+  `context` (a map that may carry a `:confluence` key with a per-call
+  override) and `config :scoria, Scoria.Confluence` (application
+  environment), over the shipped defaults.
+
+  Precedence (D-33): per-call `context[:confluence]` is TIGHTEN-ONLY --
+  it is only honored when it represents a STRICTER value than whatever
+  the application-environment rung already resolved. Application
+  environment sits below it and MAY loosen OR tighten relative to the
+  shipped default -- an operator who cannot turn a security control down
+  during an incident turns it off permanently, so application environment
+  is a full override at its own rung (deliberately unlike the per-call
+  rung, which is request-adjacent). Shipped defaults sit at the bottom.
+
+  A malformed value at either rung falls back to whatever the next rung
+  down resolved (ultimately the shipped default), logs once via an ETS
+  log-once guard, and never raises -- refusing every tool call on a
+  configuration typo is itself the brick this function exists to avoid.
+
+  Resolved live on every call; the caller is responsible for snapshotting
+  the resolved grade and decision onto persisted evidence so replay reads
+  the recorded decision and never re-resolves configuration (D-33).
+  """
+  @spec resolve_config(map()) :: map()
+  def resolve_config(context \\ %{}) when is_map(context) do
+    app_env = normalize_config_source(Application.get_env(:scoria, __MODULE__, []))
+    per_call = normalize_config_source(Map.get(context, :confluence, %{}))
+
+    Enum.reduce(@config_keys, %{}, fn key, acc ->
+      default = Map.fetch!(@shipped_config, key)
+      after_app = resolve_app_rung(key, app_env, default)
+      final = resolve_per_call_rung(key, per_call, after_app)
+      Map.put(acc, key, final)
+    end)
+  end
+
+  @doc """
+  Validates `config :scoria, Scoria.Confluence` in isolation, without any
+  per-call input. Returns `:ok` or `{:unknown_grade, key}` for the first
+  unrecognized key found.
+
+  NEVER raises and must NEVER be called from `Application.start/2` -- a
+  boot crash takes the entire host application down (D-34); a
+  misconfigured app env is logged once and refuses the next run creation
+  (`Scoria.Runtime.Params.start/2`), never the boot. A malformed VALUE for
+  a recognized key is a separate, silent-fallback concern handled by
+  `resolve_config/1` at the hot path -- refusing every tool call on a
+  configuration typo is itself the brick.
+  """
+  @spec validate_app_env() :: :ok | {:unknown_grade, atom()}
+  def validate_app_env do
+    app_env = normalize_config_source(Application.get_env(:scoria, __MODULE__, []))
+
+    app_env
+    |> Map.keys()
+    |> Enum.find(&(&1 not in @config_keys))
+    |> case do
+      nil -> :ok
+      key -> warn_unknown_key(key)
+    end
+  rescue
+    _exception -> :ok
+  end
+
+  defp resolve_app_rung(key, app_env, default) do
+    case Map.get(app_env, key) do
+      nil ->
+        default
+
+      raw ->
+        if valid_config_value?(key, raw) do
+          raw
+        else
+          warn_invalid_value(key, raw, default)
+          default
+        end
+    end
+  end
+
+  defp resolve_per_call_rung(key, per_call, resolved) do
+    case Map.get(per_call, key) do
+      nil ->
+        resolved
+
+      raw ->
+        if valid_config_value?(key, raw) and tighter?(key, raw, resolved) do
+          raw
+        else
+          resolved
+        end
+    end
+  end
+
+  defp valid_config_value?(:strict, value), do: is_boolean(value)
+  defp valid_config_value?(:enforcement, value), do: value in [:enforce, :observe]
+  defp valid_config_value?(key, value) when key in @decision_keys, do: value in [:allow, :escalate, :block]
+  defp valid_config_value?(_key, _value), do: false
+
+  defp tighter?(:strict, new, old), do: new == true and old != true
+  defp tighter?(:enforcement, new, old), do: enforcement_rank(new) > enforcement_rank(old)
+  defp tighter?(key, new, old) when key in @decision_keys, do: decision_rank(new) > decision_rank(old)
+  defp tighter?(_key, _new, _old), do: false
+
+  defp enforcement_rank(:observe), do: 0
+  defp enforcement_rank(:enforce), do: 1
+  defp enforcement_rank(_other), do: -1
+
+  defp decision_rank(:allow), do: 0
+  defp decision_rank(:escalate), do: 1
+  defp decision_rank(:block), do: 2
+  defp decision_rank(_other), do: -1
+
+  defp normalize_config_source(value) when is_list(value), do: Enum.into(value, %{})
+  defp normalize_config_source(value) when is_map(value), do: value
+  defp normalize_config_source(_value), do: %{}
+
+  defp warn_invalid_value(key, raw, default) do
+    if first_warning_for_key?({:invalid_value, key}) do
+      Logger.warning(
+        "Scoria.Confluence: invalid config :scoria, Scoria.Confluence for #{inspect(key)}: " <>
+          "#{inspect(raw)} -- falling back to #{inspect(default)}"
+      )
+    end
+
+    :ok
+  end
+
+  defp warn_unknown_key(key) do
+    if first_warning_for_key?({:unknown_key, key}) do
+      Logger.warning(
+        "Scoria.Confluence: unknown config key #{inspect(key)} in config :scoria, Scoria.Confluence"
+      )
+    end
+
+    {:unknown_grade, key}
+  end
+
+  defp first_warning_for_key?(key) do
+    ensure_warned_table()
+    :ets.insert_new(@warned_table, {key, true})
+  end
+
+  defp ensure_warned_table do
+    case :ets.whereis(@warned_table) do
+      :undefined -> :ets.new(@warned_table, [:named_table, :set, :public, read_concurrency: true])
+      _table -> :ok
+    end
+  end
 
   # -- classify/1 -----------------------------------------------------------
 

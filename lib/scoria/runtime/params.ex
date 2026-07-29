@@ -3,7 +3,7 @@ defmodule Scoria.Runtime.Params do
   Normalizes public runtime inputs into explicit start and resume contracts.
   """
 
-  alias Scoria.{Identity, Runtime.Defaults}
+  alias Scoria.{Confluence, Identity, Runtime.Defaults}
   alias Scoria.Runtime.Rails
   alias Scoria.SemanticCache.Profile, as: SemanticProfile
 
@@ -16,7 +16,8 @@ defmodule Scoria.Runtime.Params do
 
     with {:ok, resolved_defaults} <- Defaults.resolve(identity, opts),
          {:ok, semantic_cache} <- semantic_cache_config(opts, runtime),
-         {:ok, rails} <- Rails.resolve(opts) do
+         {:ok, rails} <- Rails.resolve(opts),
+         :ok <- validate_confluence_config() do
       root_role_id =
         value(opts, runtime, :root_role_id) ||
           "executor"
@@ -103,6 +104,18 @@ defmodule Scoria.Runtime.Params do
   end
 
   def validate_projected_context(_projected_context), do: {:error, :invalid_projected_context}
+
+  # D-34: the loud, early refusal at the run-creation entry point. Never
+  # called from `Application.start/2` -- `Confluence.validate_app_env/0`
+  # itself never raises and is documented as boot-safe; this call site is
+  # the "cold path" belt to the hot path's silent-fallback braces inside
+  # `Confluence.resolve_config/1`.
+  defp validate_confluence_config do
+    case Confluence.validate_app_env() do
+      :ok -> :ok
+      {:unknown_grade, _key} = finding -> {:error, finding}
+    end
+  end
 
   defp dispatch_opts(opts) do
     Enum.reduce(@dispatch_keys, [], fn key, acc ->
