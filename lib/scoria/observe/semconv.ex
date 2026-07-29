@@ -41,10 +41,12 @@ defmodule Scoria.Observe.Semconv do
     `scoria.spotlight.*` dimensions `Scoria.Spotlight.render/2` emits) and
     `spotlight_attributes/1`, a fixed four-key projector mirroring
     `guardrail_attributes/1`'s no-passthrough shape.
-  - the trust-scan vocabulary (D-21) — `trust_keys/0` (the four
+  - the trust-scan vocabulary (D-21) — `trust_keys/0` (the five
     `scoria.trust.*` dimensions the taint-minting chokepoints tag — see
-    `Scoria.Knowledge.retrieve/2` and `Scoria.MCP.Executor`) and
-    `trust_attributes/1`, a fixed four-key projector mirroring
+    `Scoria.Knowledge.retrieve/2` and `Scoria.MCP.Executor`, including
+    `:scanner_tier`, reconciled into this closed registry by phase 57
+    plan 05 after plan 03 introduced it as a hand-injected key) and
+    `trust_attributes/1`, a fixed five-key projector mirroring
     `guardrail_attributes/1`'s no-passthrough shape. There is deliberately
     NO `score` key — `Scoria.Trust.Verdict.score` is host-only and
     structurally cannot reach a span through this projector (T-55-20).
@@ -283,15 +285,20 @@ defmodule Scoria.Observe.Semconv do
     tier: "scoria.trust.tier",
     scanner: "scoria.trust.scanner",
     reason_code: "scoria.trust.reason_code",
-    scanned_count: "scoria.trust.scanned_count"
+    scanned_count: "scoria.trust.scanned_count",
+    scanner_tier: "scoria.trust.scanner_tier"
   ]
 
   @doc """
-  Returns the canonical keyword list mapping the four `scoria.trust.*`
-  dimensions (D-21) to their dotted attribute-key strings. Sole origin for
-  `trust_attributes/1`'s fixed-key projection. Deliberately has NO
-  `:score` entry — `Scoria.Trust.Verdict.score` is host-only and never
-  reaches a trace (T-55-20).
+  Returns the canonical keyword list mapping the five `scoria.trust.*`
+  dimensions (D-21, `:scanner_tier` added phase 57 plan 05 reconciling a
+  57-03 hand-injected key back into the closed registry) to their dotted
+  attribute-key strings. Sole origin for `trust_attributes/1`'s
+  fixed-key projection. Deliberately has NO `:score` entry —
+  `Scoria.Trust.Verdict.score` is host-only and never reaches a trace
+  (T-55-20). `:scanner_tier` carries the scanner's own PRE-CLAMP opinion
+  (`Scoria.Trust.Verdict.scanner_tier`) -- evidence, never authority; the
+  clamped value is still `:tier`.
   """
   @spec trust_keys() :: keyword(String.t())
   def trust_keys, do: @trust_keys
@@ -479,6 +486,7 @@ defmodule Scoria.Observe.Semconv do
                           Keyword.fetch!(@trust_keys, :scanner) => :id,
                           Keyword.fetch!(@trust_keys, :reason_code) => :enum,
                           Keyword.fetch!(@trust_keys, :scanned_count) => :count,
+                          Keyword.fetch!(@trust_keys, :scanner_tier) => :enum,
                           Keyword.fetch!(@classification_keys, :action_class) => :enum,
                           Keyword.fetch!(@classification_keys, :source) => :enum,
                           Keyword.fetch!(@classification_keys, :reads_private_data) => :flag,
