@@ -21,7 +21,7 @@
 - [x] **Phase 55: Content Trust & Taint Substrate** - Trust tiers on knowledge chunks/tool outputs + prompt-assembly spotlighting + BYO `scan/2` hook
 - [x] **Phase 56: Tool-Declared Trifecta Classification** - Tool-declared trifecta legs resolved at `MCP.Executor`, fail-closed-but-inspectable defaults across all five fail-open seams
 - [x] **Phase 56.1: Per-Run Rails (SPLIT from 56)** - Per-run `max_steps`/`max_tool_calls`/`timeout` rails with an audited, non-resumable halt (completed 2026-07-28)
-- [ ] **Phase 57: Confluence Escalation Gate** - Escalate to human approval when private-data + untrusted-content + exfil co-occur on one tainted path
+- [x] **Phase 57: Confluence Escalation Gate** - Escalate to human approval when private-data + untrusted-content + exfil co-occur on one tainted path (completed 2026-07-29)
 - [ ] **Phase 58: Safety Hooks, Security Boundary & Govern Surface** - BYO moderation/output-scanner hooks, `SECURITY-BOUNDARY.md`, minimal read-only Govern surface
 
 ## Phase Details
@@ -203,7 +203,7 @@ Plans:
 | 55. Content Trust & Taint Substrate | v3.7 | 5/5 | Complete    | 2026-07-28 |
 | 56. Tool-Declared Trifecta Classification | v3.7 | 3/3 | Complete    | 2026-07-28 |
 | 56.1. Per-Run Rails (SPLIT from 56) | v3.7 | 6/6 | Complete    | 2026-07-28 |
-| 57. Confluence Escalation Gate | v3.7 | 11/12 | In Progress|  |
+| 57. Confluence Escalation Gate | v3.7 | 12/12 | Complete    | 2026-07-29 |
 | 58. Safety Hooks, Security Boundary & Govern Surface | v3.7 | 0/TBD | Not started | - |
 
 ## Archived Milestones
