@@ -328,6 +328,37 @@ defmodule Scoria.MCP.ExecutorConfluenceTest do
     end
   end
 
+  describe "resumed confluence escalation re-execution (D-26, plan 57-08 Task 1)" do
+    test "a resumed confluence escalation re-reaching the identical tool call passes through on the consumed approval instead of escalating again" do
+      :ok = create_budget_policy!("tenant-1", "tool_calls")
+      {run, step} = new_run_and_step!()
+      context = exfil_context(run, step) |> Map.put(:args_fingerprint, "fp-resume-passthrough")
+
+      result = run_in_supervised_task(fn -> Executor.execute(ThreeLegTool, %{"action" => "leak"}, context) end)
+      assert {:exit, {:shutdown, {:scoria_confluence_escalation, _attrs}}} = result
+
+      approval = Repo.get_by!(Approval, workflow_run_id: run.id, blocker_kind: "confluence")
+      assert {:ok, _approved} = Workflows.approve(approval.id, "approved", %{})
+
+      assert {:ok, resumed_step} = Workflows.resume_run(run.id)
+      assert resumed_step.id == step.id
+      assert Repo.get!(Step, step.id).status == "queued"
+
+      # The identical tool call, on the identical args fingerprint, now
+      # passes through and consumes the approval instead of escalating
+      # again -- proving resume_run/1's widening composes correctly with
+      # the pre-existing (57-05) approval-consume CAS.
+      assert {:ok, %{result: "leaked"}} =
+               Executor.execute(ThreeLegTool, %{"action" => "leak"}, context)
+
+      assert_receive {:tool_body_executed, _pid}
+
+      reloaded_approval = Repo.get!(Approval, approval.id)
+      refute is_nil(reloaded_approval.consumed_at)
+      assert count_confluence_approvals(run.id) == 1
+    end
+  end
+
   describe "approval consume (D-26)" do
     test "a pending call with no matching approved approval evaluates normally and may escalate" do
       {run, step} = new_run_and_step!()

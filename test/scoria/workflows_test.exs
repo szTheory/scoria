@@ -362,7 +362,191 @@ defmodule Scoria.WorkflowsTest do
       assert run.status == "waiting_for_approval"
       assert run.current_step_id == second_step.id
     end
+  end
 
+  describe "resume_run/1 three-axis widening for confluence approvals (D-26, plan 57-08)" do
+    @describetag :confluence
+
+    test "a confluence escalation resumes after a sibling step's completion flips the run status back to running (the load-bearing sibling-completion case)" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step_a} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      {:ok, step_b} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      {:ok, approval} =
+        Workflows.mark_waiting_for_approval(run.id, step_a.id, %{
+          tool_name: "publish",
+          blocker_kind: "confluence"
+        })
+
+      assert Workflows.get_run!(run.id).status == "waiting_for_approval"
+
+      # The sibling completes WHILE the escalation is still pending --
+      # `complete_step/3`'s run-status computation is untouched by this
+      # phase (D-25), so it rewrites the run status back to "running"
+      # (step_a is still not "completed"/"cancelled", so pending_count > 0).
+      assert {:ok, _completed} = Workflows.complete_step(step_b.id, %{"result" => "ok"})
+      assert Workflows.get_run!(run.id).status == "running"
+
+      assert {:ok, _approved} = Workflows.approve(approval.id, "approved", %{})
+
+      assert {:ok, resumed_step} = Workflows.resume_run(run.id)
+      assert resumed_step.id == step_a.id
+      assert Repo.get!(Step, step_a.id).status == "queued"
+      assert Workflows.get_run!(run.id).status == "running"
+    end
+
+    test "a confluence approval whose step is not the run's current step, and whose checkpoint is not the latest checkpoint, still resumes" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step_a} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      {:ok, step_b} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "work",
+          role_id: "executor",
+          status: "running"
+        })
+
+      {:ok, approval_a} =
+        Workflows.mark_waiting_for_approval(run.id, step_a.id, %{
+          tool_name: "tool_a",
+          blocker_kind: "confluence"
+        })
+
+      # A second, later escalation on a DIFFERENT step overwrites
+      # run.current_step_id/latest_checkpoint_id -- approval_a's own
+      # step_id/checkpoint_id no longer match either pointer.
+      {:ok, _approval_b} =
+        Workflows.mark_waiting_for_approval(run.id, step_b.id, %{
+          tool_name: "tool_b",
+          blocker_kind: "confluence"
+        })
+
+      run_before_approve = Workflows.get_run!(run.id)
+      refute approval_a.step_id == run_before_approve.current_step_id
+      refute approval_a.checkpoint_id == run_before_approve.latest_checkpoint_id
+
+      assert {:ok, _approved} = Workflows.approve(approval_a.id, "approved", %{})
+
+      assert {:ok, resumed_step} = Workflows.resume_run(run.id)
+      assert resumed_step.id == step_a.id
+    end
+
+    test "two escalations in one run are both resumable, in either approval order" do
+      for approve_order <- [:a_then_b, :b_then_a] do
+        {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+        {:ok, step_a} =
+          Workflows.create_step(run.id, %{
+            sequence: 1,
+            kind: "work",
+            role_id: "executor",
+            status: "running"
+          })
+
+        {:ok, step_b} =
+          Workflows.create_step(run.id, %{
+            sequence: 2,
+            kind: "work",
+            role_id: "executor",
+            status: "running"
+          })
+
+        {:ok, approval_a} =
+          Workflows.mark_waiting_for_approval(run.id, step_a.id, %{
+            tool_name: "tool_a",
+            blocker_kind: "confluence"
+          })
+
+        {:ok, approval_b} =
+          Workflows.mark_waiting_for_approval(run.id, step_b.id, %{
+            tool_name: "tool_b",
+            blocker_kind: "confluence"
+          })
+
+        case approve_order do
+          :a_then_b ->
+            assert {:ok, _} = Workflows.approve(approval_a.id, "approved", %{})
+            assert {:ok, resumed_a} = Workflows.resume_run(run.id)
+            assert resumed_a.id == step_a.id
+
+            assert {:ok, _} = Workflows.approve(approval_b.id, "approved", %{})
+            assert {:ok, resumed_b} = Workflows.resume_run(run.id)
+            assert resumed_b.id == step_b.id
+
+          :b_then_a ->
+            assert {:ok, _} = Workflows.approve(approval_b.id, "approved", %{})
+            assert {:ok, resumed_b} = Workflows.resume_run(run.id)
+            assert resumed_b.id == step_b.id
+
+            assert {:ok, _} = Workflows.approve(approval_a.id, "approved", %{})
+            assert {:ok, resumed_a} = Workflows.resume_run(run.id)
+            assert resumed_a.id == step_a.id
+        end
+      end
+    end
+
+    test "a non-confluence approval's resume behavior is byte-identical to its pre-phase behavior on all three predicates" do
+      {:ok, run} = Workflows.create_run(%{root_role_id: "executor"})
+
+      {:ok, step_a} =
+        Workflows.create_step(run.id, %{
+          sequence: 1,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, approval_a} =
+        Workflows.mark_waiting_for_approval(run.id, step_a.id, %{tool_name: "publish"})
+
+      refute approval_a.blocker_kind == "confluence"
+
+      assert {:ok, _} = Workflows.approve(approval_a.id, "approved", %{})
+
+      {:ok, step_b} =
+        Workflows.create_step(run.id, %{
+          sequence: 2,
+          kind: "approval_gate",
+          role_id: "critic",
+          status: "running"
+        })
+
+      {:ok, approval_b} =
+        Workflows.mark_waiting_for_approval(run.id, step_b.id, %{tool_name: "publish"})
+
+      assert {:ok, _} = Workflows.approve(approval_b.id, "rejected", %{})
+
+      # approval_a is approved but no longer tied to the current step or
+      # latest checkpoint (step_b's escalation overwrote both pointers) --
+      # a non-confluence approval must still fail to resume, proving the
+      # widening above is scoped to blocker_kind == "confluence" only.
+      assert {:error, :not_resumable} = Workflows.resume_run(run.id)
+    end
+  end
+
+  describe "durable workflow persistence (continued)" do
     test "request_remote_approval/3 on a replay run creates a replay-scoped blocked approval and seam evidence" do
       {:ok, run} =
         Workflows.create_run(%{
