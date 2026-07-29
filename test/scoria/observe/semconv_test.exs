@@ -291,6 +291,11 @@ defmodule Scoria.Observe.SemconvTest do
                "scoria.classification.reads_private_data",
                "scoria.classification.sees_untrusted_content",
                "scoria.classification.source",
+               "scoria.confluence.approval_ref",
+               "scoria.confluence.combination",
+               "scoria.confluence.decision",
+               "scoria.confluence.grade",
+               "scoria.confluence.reason_code",
                "scoria.guardrail.decision",
                "scoria.guardrail.name",
                "scoria.guardrail.policy_key",
@@ -605,6 +610,98 @@ defmodule Scoria.Observe.SemconvTest do
 
       refute Map.has_key?(attrs, "scoria.classification.reads_private_data")
       assert map_size(attrs) == 4
+    end
+  end
+
+  describe "confluence_keys/0 + confluence_attributes/1 fixed-key projection (phase 57, GATE-04, D-08)" do
+    test "confluence_keys/0 returns the canonical five-entry keyword list mapped to scoria.confluence.* strings" do
+      assert Semconv.confluence_keys() == [
+               combination: "scoria.confluence.combination",
+               decision: "scoria.confluence.decision",
+               grade: "scoria.confluence.grade",
+               reason_code: "scoria.confluence.reason_code",
+               approval_ref: "scoria.confluence.approval_ref"
+             ]
+    end
+
+    test "no-passthrough: unregistered fields (including a long free-text string) never reach the output" do
+      input = %{
+        combination: "exfiltration_path",
+        decision: "escalate",
+        grade: "declared",
+        reason_code: "approval_pending",
+        approval_ref: "approval-123",
+        reads_private_data: true,
+        sees_untrusted_content: true,
+        can_exfiltrate: true,
+        legs: 3,
+        score: 0.99,
+        explanation: String.duplicate("this is a long free-text explanation ", 50)
+      }
+
+      attrs = Semconv.confluence_attributes(input)
+
+      assert Map.keys(attrs) |> Enum.sort() ==
+               Enum.sort([
+                 "scoria.confluence.combination",
+                 "scoria.confluence.decision",
+                 "scoria.confluence.grade",
+                 "scoria.confluence.reason_code",
+                 "scoria.confluence.approval_ref"
+               ])
+    end
+
+    test "omission: a caveat-free allow with no reason_code omits scoria.confluence.reason_code" do
+      attrs =
+        Semconv.confluence_attributes(%{
+          combination: "none",
+          decision: "allow",
+          grade: "unclassified",
+          approval_ref: nil
+        })
+
+      refute Map.has_key?(attrs, "scoria.confluence.reason_code")
+      refute Map.has_key?(attrs, "scoria.confluence.approval_ref")
+      assert map_size(attrs) == 3
+    end
+
+    test "alignment: confluence_keys/0's dotted values are exactly the five keys registered under the confluence prefix" do
+      registry = Semconv.attribute_registry()
+
+      confluence_key_strings = Semconv.confluence_keys() |> Keyword.values() |> MapSet.new()
+
+      registry_confluence_keys =
+        registry
+        |> Map.keys()
+        |> Enum.filter(&String.starts_with?(&1, "scoria.confluence."))
+        |> MapSet.new()
+
+      assert confluence_key_strings == registry_confluence_keys
+    end
+  end
+
+  describe "confluence_grades/0 (phase 57, GATE-04, D-29)" do
+    test "returns the exact 4-value closed grade enum, weakest to strongest" do
+      assert Semconv.confluence_grades() ==
+               ~w(unclassified scanner_infra default_tier declared)
+    end
+  end
+
+  describe "non-widening guard: frozen guardrail enums are unchanged by the confluence group (D-09, D-10)" do
+    test "guardrail_names/0 remains exactly its pre-phase 4-value list" do
+      assert Semconv.guardrail_names() == ~w(release_gate approval_gate budget_gate breaker_gate)
+    end
+
+    test "guardrail_reason_codes/0 remains exactly its pre-phase 6-value list" do
+      assert Semconv.guardrail_reason_codes() ==
+               ~w(unapproved_draft eval_not_passing eval_required approval_required budget_rejected breaker_open)
+    end
+
+    test "guardrail_decisions/0 is unchanged and is the same three-value set scoria.confluence.decision reuses" do
+      assert Semconv.guardrail_decisions() == ~w(allow block escalate)
+
+      confluence_decision_key = Keyword.fetch!(Semconv.confluence_keys(), :decision)
+      assert confluence_decision_key == "scoria.confluence.decision"
     end
   end
 
