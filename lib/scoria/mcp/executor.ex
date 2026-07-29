@@ -356,6 +356,17 @@ defmodule Scoria.MCP.Executor do
   # genuine evaluation. Every exit path emits exactly one
   # `[:scoria, :gate, :confluence, :observed]` event (D-36) -- evaluation,
   # persistence and telemetry are ALWAYS ON with no off switch (D-32).
+  #
+  # Plan 57-07 (D-38): a rejected-approval deny ALSO writes a confluence
+  # audit outbox row here -- it is a decision (the reviewer already denied
+  # this exact call once) and has no other durable record: the
+  # tool-completed event never fires on a refusal. `evidence` does not
+  # exist yet at this point in the pipeline (evaluation hasn't run), so a
+  # minimal synthetic `%Confluence.Evidence{}` is built carrying only what
+  # is already known -- `combination: "exfiltration_path"` is always
+  # correct here because only that combination ever reaches
+  # `resolve_escalation/6` and creates the approval this rejection is
+  # matching against.
   defp confluence_gate(tool_module, args, context) do
     run_id = Map.get(context, :run_id)
     step_id = Map.get(context, :step_id)
@@ -367,12 +378,16 @@ defmodule Scoria.MCP.Executor do
         {:continue, context}
 
       :rejected ->
-        emit_confluence_observed(
+        reason_code = Confluence.normalize_reason_code(:confluence_rejected)
+
+        emit_confluence_observed(context, tool_module, nil, "block", reason_code)
+
+        record_confluence_audit(
           context,
-          tool_module,
-          nil,
-          "block",
-          Confluence.normalize_reason_code(:confluence_rejected)
+          confluence_rejected_evidence(tool_module, run_id, step_id, reason_code),
+          run_id,
+          step_id,
+          args_fingerprint
         )
 
         {:error, confluence_rejected_envelope(tool_module, run_id, context)}
@@ -481,6 +496,129 @@ defmodule Scoria.MCP.Executor do
     }
   end
 
+  # -- Plan 57-07: confluence audit outbox (D-37..D-42) -------------------
+  #
+  # Every confluence ESCALATE and every confluence BLOCK writes exactly one
+  # audit outbox row; an ALLOW writes none (D-38). Reuses the existing
+  # `SRE.create_audit_outbox_event/1` machinery UNMODIFIED -- no new
+  # columns, no bespoke insert path.
+  @confluence_audit_event_type "tool.confluence.escalated"
+  @confluence_audit_policy_class "confluence_gate"
+  @confluence_audit_actor_ref "system:scoria.confluence"
+
+  # D-42: the dedupe key is set EXPLICITLY from event type + run id + step
+  # id + args fingerprint. The AUTOMATIC builder
+  # (`SRE.build_audit_dedupe_key/1`, out of this plan's file scope) composes
+  # from event type + tenant + approval id + trace id + access decision --
+  # for a row written BEFORE the approval exists, approval id and access
+  # decision are both nil, and `Observe`'s trace-id-for-run helper returns
+  # the run id itself, so the auto key would collapse to
+  # `event_type:tenant:run_id` and silently merge two genuine escalations
+  # in the SAME run into one row against the tenant-and-dedupe-key unique
+  # index. Composing from step id (not trace id) instead avoids that
+  # collapse by construction.
+  defp confluence_audit_dedupe_key(run_id, step_id, args_fingerprint) do
+    [@confluence_audit_event_type, run_id, step_id, args_fingerprint]
+    |> Enum.map(&to_string_or_empty/1)
+    |> Enum.join(":")
+  end
+
+  # D-40/D-41: writes ONE row and returns the persisted
+  # `%SRE.AuditOutboxEvent{}` struct (or `nil` on a genuine write failure --
+  # read defensively, this column carries no foreign key). Callers that
+  # need the id (the escalate path, so it can be threaded into
+  # `mark_waiting_for_approval/3`'s attrs as `blocker_audit_outbox_event_id`)
+  # write this FIRST, before creating the approval (D-40): if the pause
+  # transition then fails, the orphan audit row saying the trifecta fired
+  # is the truth and is preferred over a silent unaudited exfil.
+  #
+  # `metadata:` rides a small closed projector's OUTPUT verbatim -- every
+  # OTHER envelope key below is one `SRE.build_audit_metadata/1`'s own
+  # drop-list already excludes from the persisted `metadata` jsonb, so the
+  # two never collide and the persisted row's metadata key set is EXACTLY
+  # the projector's key set, nothing more (D-39).
+  #
+  # Plan 57-07 Task 1 note: the projector is `confluence_audit_metadata/1`
+  # below, a TEMPORARY private function inlined here. Task 2 promotes it to
+  # `Scoria.Confluence.audit_metadata/1` (a pure function on the evidence
+  # struct, mirroring `Semconv.confluence_attributes/1`'s reduce-over-a-
+  # fixed-key-list shape) and repoints this call site at it, so there is
+  # exactly one place the closed key set is defined -- not two.
+  defp record_confluence_audit(context, evidence, run_id, step_id, args_fingerprint) do
+    dedupe_key = confluence_audit_dedupe_key(run_id, step_id, args_fingerprint)
+
+    envelope =
+      %{
+        tenant_id: Map.get(context, :tenant_id, "system"),
+        actor_ref: @confluence_audit_actor_ref,
+        workflow_run_id: run_id,
+        step_id: step_id,
+        trace_id: Map.get(context, :trace_id),
+        event_type: @confluence_audit_event_type,
+        policy_class: @confluence_audit_policy_class,
+        dedupe_key: dedupe_key
+      }
+      |> Map.merge(confluence_audit_metadata(evidence))
+
+    case SRE.create_audit_outbox_event(envelope) do
+      {:ok, event} -> event
+      {:error, _reason} -> nil
+    end
+  end
+
+  # TEMPORARY (plan 57-07 Task 1 only -- see the note on
+  # `record_confluence_audit/5` above): Task 2 deletes this function and
+  # `maybe_put_confluence_audit_metadata/3` below, replacing this call site
+  # with `Scoria.Confluence.audit_metadata/1`. The closed key set is the
+  # combination, the grade, the decision, the reason code, the three leg
+  # sources, the action class, the confluence idempotency key and the tool
+  # reference -- no raw tool arguments, no free-text content, no scanner
+  # output. A `nil` field is skipped, never defaulted, never put.
+  defp confluence_audit_metadata(%Confluence.Evidence{} = evidence) do
+    %{}
+    |> maybe_put_confluence_audit_metadata("combination", evidence.combination)
+    |> maybe_put_confluence_audit_metadata("grade", evidence.grade)
+    |> maybe_put_confluence_audit_metadata("decision", evidence.decision)
+    |> maybe_put_confluence_audit_metadata("reason_code", evidence.reason_code)
+    |> maybe_put_confluence_audit_metadata("private_data_source", evidence.private_data_source)
+    |> maybe_put_confluence_audit_metadata(
+      "untrusted_content_source",
+      evidence.untrusted_content_source
+    )
+    |> maybe_put_confluence_audit_metadata("exfil_source", evidence.exfil_source)
+    |> maybe_put_confluence_audit_metadata("action_class", evidence.action_class)
+    |> maybe_put_confluence_audit_metadata(
+      "confluence_idempotency_key",
+      evidence.confluence_idempotency_key
+    )
+    |> maybe_put_confluence_audit_metadata("tool_ref", evidence.tool_ref)
+  end
+
+  defp maybe_put_confluence_audit_metadata(map, _key, nil), do: map
+
+  defp maybe_put_confluence_audit_metadata(map, key, value) when is_atom(value),
+    do: Map.put(map, key, Atom.to_string(value))
+
+  defp maybe_put_confluence_audit_metadata(map, key, value), do: Map.put(map, key, value)
+
+  # Built at the rejected-approval-consume site (`confluence_gate/3`), the
+  # ONE audit-worthy decision point that precedes `evaluate_confluence/5`
+  # and therefore has no real `%Confluence.Evidence{}` yet. `combination`
+  # is hardcoded to `"exfiltration_path"` because that is the only
+  # combination `resolve_escalation/6` ever creates an approval for -- a
+  # rejected match can only exist against a row that was, in fact, an
+  # exfiltration_path escalation.
+  defp confluence_rejected_evidence(tool_module, run_id, step_id, reason_code) do
+    %Confluence.Evidence{
+      combination: "exfiltration_path",
+      decision: "block",
+      reason_code: reason_code,
+      run_id: run_id,
+      step_id: step_id,
+      tool_ref: inspect(tool_module)
+    }
+  end
+
   # Plan 57-06 (D-11, D-14): the fold happens HERE, after the D-26
   # approval-consume CAS (`confluence_gate/3` only reaches this function on
   # `:no_match`) and BEFORE `Confluence.classify/1` -- exactly the order
@@ -543,6 +681,15 @@ defmodule Scoria.MCP.Executor do
         # per-call context or application env (D-33) -- never under
         # shipped defaults (D-31 ships `declared: :escalate`).
         emit_confluence_observed(context, tool_module, evidence, "block", nil)
+
+        record_confluence_audit(
+          context,
+          %{evidence | decision: "block"},
+          run_id,
+          step_id,
+          Map.get(context, :args_fingerprint)
+        )
+
         {:error, confluence_rejected_envelope(tool_module, run_id, context)}
 
       true ->
@@ -932,7 +1079,18 @@ defmodule Scoria.MCP.Executor do
         apply_unattributed_disposition(tool_module, context, evidence)
 
       Run.halted?(Workflows.get_run!(run_id)) ->
+        reason_code = Confluence.normalize_reason_code(:unknown)
+
         emit_confluence_observed(context, tool_module, evidence, "block", nil)
+
+        record_confluence_audit(
+          context,
+          %{evidence | decision: "block", reason_code: reason_code},
+          run_id,
+          step_id,
+          Map.get(context, :args_fingerprint)
+        )
+
         {:error, confluence_halted_envelope(tool_module, run_id, step_id)}
 
       not confluence_contained?() ->
@@ -941,11 +1099,35 @@ defmodule Scoria.MCP.Executor do
         {:continue, context}
 
       true ->
+        args_fingerprint = Map.get(context, :args_fingerprint)
+
+        # D-40/D-41: the audit row is written FIRST, and its id threaded
+        # into `mark_waiting_for_approval/3`'s attrs as
+        # `blocker_audit_outbox_event_id` -- `mark_waiting_for_approval/3`
+        # merges caller attrs straight through, so no `workflows.ex` change
+        # is needed. Deliberately NO `dedupe_key` in `attrs` (D-41): it
+        # would be consumed for the approval-requested row that function
+        # also writes, and a second escalation in the same run would then
+        # hit the unique index inside that function's OWN transaction,
+        # rolling back and failing the entire pause -- not just the audit
+        # insert. If the pause transition below fails for any other
+        # reason, this row survives as an orphan: the trifecta fired is the
+        # truth, and that beats a silent unaudited exfil.
+        audit_event =
+          record_confluence_audit(
+            context,
+            %{evidence | decision: "escalate"},
+            run_id,
+            step_id,
+            args_fingerprint
+          )
+
         attrs = %{
           tool_name: tool_module.name(),
           blocker_kind: "confluence",
           reason: "confluence gate: #{evidence.combination}",
-          args_fingerprint: Map.get(context, :args_fingerprint)
+          args_fingerprint: args_fingerprint,
+          blocker_audit_outbox_event_id: audit_event && audit_event.id
         }
 
         emit_confluence_observed(context, tool_module, evidence, "escalate", nil)
@@ -970,12 +1152,16 @@ defmodule Scoria.MCP.Executor do
         {:continue, context}
 
       _other ->
-        emit_confluence_observed(
+        reason_code = Confluence.normalize_reason_code(:unknown)
+
+        emit_confluence_observed(context, tool_module, evidence, "block", reason_code)
+
+        record_confluence_audit(
           context,
-          tool_module,
-          evidence,
-          "block",
-          Confluence.normalize_reason_code(:unknown)
+          %{evidence | decision: "block", reason_code: reason_code},
+          Map.get(context, :run_id),
+          Map.get(context, :step_id),
+          Map.get(context, :args_fingerprint)
         )
 
         {:error, confluence_unattributed_envelope(tool_module, context)}
