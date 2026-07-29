@@ -138,7 +138,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 57-03-PLAN.md — Phase 55 mint-site repair and the scanner-tier evidence field (GATE-01) [wave 2]
+- [x] 57-03-PLAN.md — Phase 55 mint-site repair and the scanner-tier evidence field (GATE-01) [wave 2]
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
