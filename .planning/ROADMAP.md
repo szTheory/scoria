@@ -142,7 +142,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 57-02-PLAN.md — Confluence evaluation model: eight-value ladder, weakest-evidence grading, config surface (GATE-01, GATE-04) [wave 3]
+- [x] 57-02-PLAN.md — Confluence evaluation model: eight-value ladder, weakest-evidence grading, config surface (GATE-01, GATE-04) [wave 3]
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
