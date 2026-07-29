@@ -15,13 +15,26 @@ defmodule Scoria.Workflows.RemoteApprovalProjection do
   @decided_statuses ~w(approved rejected expired)
   @decided_default_limit 50
 
+  # D-51: capped with the SAME page-size attribute and the same
+  # limit-popping/load-more pattern `list_decided_approvals/1` already uses
+  # (`@decided_default_limit`) -- two functions differing only in status
+  # scope must not invent two different pagination shapes. The uncapped
+  # query was safe only because approvals were rare and human-initiated;
+  # the confluence escalation gate is precisely what makes escalation
+  # machine-initiated and potentially high volume, and this is the call
+  # site an unattended strict-mode adopter's LiveView mounts and PubSub
+  # reloads hit on every pending-inbox load.
   def list_pending_approvals(filters \\ %{}) do
-    filters = normalize_filters(filters)
+    {limit, filters} =
+      filters
+      |> normalize_filters()
+      |> Map.pop(:limit, @decided_default_limit)
 
     Approval
     |> where([approval], approval.status == "pending")
     |> apply_filters(filters)
     |> order_by([approval], desc: approval.inserted_at, desc: approval.id)
+    |> limit(^limit)
     |> Repo.all()
     |> Enum.map(&project_approval/1)
   end
