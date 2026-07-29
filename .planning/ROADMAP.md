@@ -124,9 +124,9 @@
 **Success Criteria** (what must be TRUE):
 
   1. A confluence evaluator classifies a tainted execution path by which of the three legs (private-data / untrusted-content / exfil) are present, mirroring `ReplayDisposition`'s seam-classification style.
-  2. When all three legs co-occur on one tainted path, the run pauses for approval/human-in-the-loop at `MCP.Executor` before the exfil action executes.
+  2. *(amended 2026-07-29, plan 57-10, D-18/D-25)* When all three legs co-occur on one tainted path, the confluence gate decides and refuses at `Scoria.MCP.Executor`, before the tool's execution task is started, and the run's STEP (not the whole run) transitions to `waiting_for_approval` through the existing pause function, so the escalation is resumable. This is a step-scoped pause, not a run-level freeze — a sibling step already in flight may still complete and reopen sibling dispatch while the escalated step alone stays paused (an accepted, documented limitation). Tool calls with no runtime step attribution cannot be paused; that gap is telemetried and documented.
   3. Every confluence escalation decision is written to the audit outbox and can be replayed, consistent with existing approval/replay evidence.
-  4. With confluence enforcement left at its default, ungated confluence emits telemetry instead of blocking; opting into strict mode makes the pause actually enforce.
+  4. *(amended 2026-07-29, plan 57-10, D-31)* Confluence enforcement is graded by evidence quality: the `declared` grade enforces from the shipped default; the three ungated grades (`unclassified`, `scanner_infra`, `default_tier`) emit telemetry only and never block on their own, so an adopter who has declared nothing is never silently bricked; opting into strict mode extends enforcement to the three ungated grades too.
 
 **Plans**: 10 plans
 
