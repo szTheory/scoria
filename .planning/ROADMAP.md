@@ -171,7 +171,7 @@ Plans:
 
 **Wave 10** *(gap closure — blocked on Wave 9 completion)*
 
-- [ ] 57-12-PLAN.md — GATE-01/GATE-03 status correction and the unmet-truth window closure (GATE-01, GATE-03) [wave 10]
+- [x] 57-12-PLAN.md — GATE-01/GATE-03 status correction and the unmet-truth window closure (GATE-01, GATE-03) [wave 10]
 
 **Context**: `.planning/phases/57-confluence-escalation-gate/57-CONTEXT.md` is the canonical locked spec (D-01..D-54); `57-RESEARCH.md` re-verified its citations against the worktree and its file:line coordinates win on conflict
 
