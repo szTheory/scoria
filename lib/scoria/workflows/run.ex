@@ -45,6 +45,14 @@ defmodule Scoria.Workflows.Run do
     field :rail_paused_ms, :integer, default: 0
     field :rail_paused_at, :utc_datetime_usec
 
+    # D-15: the per-run confluence leg accumulator, keyed on the same
+    # `(tool, grade)` vocabulary the escalation gate evaluates against.
+    # Written ONLY by a dedicated `Repo.update_all(..., returning: [...])`
+    # fold (never by this changeset -- see the LOAD-BEARING comment on
+    # `cast/3` below, which this field joins on the same disjointness
+    # rule as the rail counters).
+    field :confluence_legs, :map, default: %{}
+
     has_many :steps, Scoria.Workflows.Step
     has_many :checkpoints, Scoria.Workflows.Checkpoint
     has_many :events, Scoria.Workflows.Event
@@ -87,7 +95,8 @@ defmodule Scoria.Workflows.Run do
       # counter/pause fields (:rail_steps, :rail_tool_calls, :rail_paused_ms,
       # :rail_paused_at) are DELIBERATELY absent from this list -- see the
       # LOAD-BEARING comment just below this function for why that
-      # separation is load-bearing.
+      # separation is load-bearing. `:confluence_legs` (D-15) joins them on
+      # the SAME rule and is also deliberately absent.
       :rail_max_steps,
       :rail_max_tool_calls,
       :rail_max_active_ms
@@ -103,17 +112,19 @@ defmodule Scoria.Workflows.Run do
     |> optimistic_lock(:lock_version)
   end
 
-  # LOAD-BEARING: `:rail_steps`, `:rail_tool_calls`, `:rail_paused_ms`, and
-  # `:rail_paused_at` are never cast by `changeset/2` above -- they are
-  # written only by `Scoria.Workflows.Rails`' atomic
-  # `Repo.update_all(inc: ...)` (the counters) and by a future pause-
-  # accounting derivation (D-15). This is the read-modify-write defence:
-  # `Repo.update` SETs only `changeset.changes`, so a concurrent changeset
-  # holding a stale `%Run{}` cannot clobber a counter written by another
-  # transaction in between; conversely `Repo.update_all(inc: ...)` never
-  # touches `:lock_version`, so the increment can never provoke
-  # `Ecto.StaleEntryError`. The two writer classes are disjoint by
-  # construction, not by convention.
+  # LOAD-BEARING: `:rail_steps`, `:rail_tool_calls`, `:rail_paused_ms`,
+  # `:rail_paused_at`, and `:confluence_legs` (57 D-15) are never cast by
+  # `changeset/2` above -- they are written only by
+  # `Scoria.Workflows.Rails`' atomic `Repo.update_all(inc: ...)` (the rail
+  # counters), the pause-accounting derivation below, and (for
+  # `:confluence_legs`) a dedicated `Repo.update_all(..., returning: [...])`
+  # fold that keeps the strongest witness per leg. This is the
+  # read-modify-write defence: `Repo.update` SETs only `changeset.changes`,
+  # so a concurrent changeset holding a stale `%Run{}` cannot clobber a
+  # counter written by another transaction in between; conversely
+  # `Repo.update_all(...)` never touches `:lock_version`, so it can never
+  # provoke `Ecto.StaleEntryError` against `optimistic_lock/2`. The two
+  # writer classes stay disjoint by construction, not by convention.
 
   # RAIL-01 D-15: pause accounting derived from the `:status` transition
   # itself -- NOT written at call sites. Mirrors
