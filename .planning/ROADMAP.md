@@ -167,7 +167,7 @@ Plans:
 
 **Wave 9** *(gap closure — blocked on Wave 8 completion; closes `57-VERIFICATION.md`'s failed truth 5)*
 
-- [ ] 57-11-PLAN.md — Escalation-time evidence reaches the reviewer drawer, proven against a real executor escalation (GATE-02, GATE-03) [wave 9]
+- [x] 57-11-PLAN.md — Escalation-time evidence reaches the reviewer drawer, proven against a real executor escalation (GATE-02, GATE-03) [wave 9]
 
 **Wave 10** *(gap closure — blocked on Wave 9 completion)*
 
@@ -203,7 +203,7 @@ Plans:
 | 55. Content Trust & Taint Substrate | v3.7 | 5/5 | Complete    | 2026-07-28 |
 | 56. Tool-Declared Trifecta Classification | v3.7 | 3/3 | Complete    | 2026-07-28 |
 | 56.1. Per-Run Rails (SPLIT from 56) | v3.7 | 6/6 | Complete    | 2026-07-28 |
-| 57. Confluence Escalation Gate | v3.7 | 0/TBD | Not started | - |
+| 57. Confluence Escalation Gate | v3.7 | 11/12 | In Progress|  |
 | 58. Safety Hooks, Security Boundary & Govern Surface | v3.7 | 0/TBD | Not started | - |
 
 ## Archived Milestones

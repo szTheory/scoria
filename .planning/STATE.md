@@ -2,18 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Portcullis
-current_phase: 57
-current_phase_name: confluence-escalation-gate
 status: executing
-stopped_at: Phase 57 context gathered
-last_updated: "2026-07-29T13:02:48.172Z"
-last_activity: 2026-07-28
-last_activity_desc: Phase 57 execution started
+stopped_at: Completed 57-11-PLAN.md
+last_updated: "2026-07-29T15:05:13.252Z"
+last_activity: 2026-07-29
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 3
   total_plans: 26
-  completed_plans: 14
+  completed_plans: 25
+  percent: 60
 ---
 
 # Project State
@@ -29,11 +27,11 @@ See: `.planning/PROJECT.md` (updated 2026-07-19 after v3.6 milestone completion)
 ## Current Position
 
 Phase: 57 (confluence-escalation-gate) — EXECUTING
-Plan: 1 of 10
+Plan: 2 of 12
 Status: Ready to execute
-Last activity: 2026-07-28 — Phase 57 execution started
+Last activity: 2026-07-29
 
-Progress: [██████████] 100%
+Progress: [██████████] 96%
 
 ## Performance Metrics
 
@@ -62,6 +60,7 @@ Progress: [██████████] 100%
 | Phase 56 P01 | 50min | 2 tasks | 7 files |
 | Phase 56 P02 | 35min | 3 tasks | 6 files |
 | Phase 56 P03 | 30min | 3 tasks | 8 files |
+| Phase 57 P11 | 25min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -269,6 +268,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 56-03]: declared_sensitive?/1 is a declared-only sensitivity predicate (D-A2) shared by sites 2/3 -- false for nil and :unclassified_default, never writes into any of the six prohibited context keys.
 - [Phase ?]: [Phase 56-03]: sites 4 and 5 route through Classification.tool_declaration/1 + Classification.resolve/2 directly and never consult or extend require_tool_classification -- D-03 scopes that refusal to MCP.Executor resolution only.
 - [Phase ?]: [Phase 56-03]: Workflows.Runtime.default_replay_seam/2 keeps local_classification: :pure byte-identical and only adds tool_classification alongside it -- ReplayDisposition's clause-3 short-circuit is unchanged, the bypass is now inspectable via telemetry instead of silent.
+- [Phase ?]: SRE.build_audit_metadata/1 is a drop-list over the whole envelope, not an allowlist keyed on an incoming metadata: field -- test fixtures must merge evidence fields at the envelope's top level, exactly like Executor.record_confluence_audit/5 does.
+- [Phase ?]: list_pending_approvals/1 and list_decided_approvals/1 each build the confluence audit events-by-id map once per page rather than per-row, so D-51's pagination cap is not undone by an N+1 at the same call site it protects.
 
 ### Resolved And Deferred Work
 
@@ -387,9 +388,9 @@ active.
 
 ## Session Continuity
 
-Last session: 2026-07-28T23:47:05.330Z
-Stopped at: Phase 57 context gathered
-Resume file: .planning/phases/57-confluence-escalation-gate/57-CONTEXT.md
+Last session: 2026-07-29T15:05:13.246Z
+Stopped at: Completed 57-11-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
